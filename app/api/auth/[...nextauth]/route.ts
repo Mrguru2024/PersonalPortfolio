@@ -1,62 +1,93 @@
-import { getDb } from '@/app/db';
-import { users } from '@/shared/schema';
+import NextAuth from 'next-auth';
+import GithubProvider from 'next-auth/providers/github';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { eq } from 'drizzle-orm';
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { getDb } from '../../../db';
+import { users } from '../../../../shared/schema';
+import { scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
+  const [hashed, salt] = stored.split('.');
+  const hashedBuf = Buffer.from(hashed, 'hex');
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Route handlers
-export async function GET(request: NextRequest) {
-  const cookieStore = cookies();
-  const sessionId = cookieStore.get('session_id')?.value;
-  
-  if (!sessionId) {
-    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+const handler = NextAuth({
+  adapter: DrizzleAdapter(getDb().db),
+  secret: process.env.NEXTAUTH_SECRET || 'default-secret-for-development',
+  session: {
+    strategy: 'jwt',
+  },
+  pages: {
+    signIn: '/auth',
+  },
+  providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.username || !credentials.password) {
+            return null;
+          }
+          
+          const { db } = getDb();
+          const user = await db.query.users.findFirst({
+            where: eq(users.username, credentials.username)
+          });
+          
+          if (!user || !user.password) {
+            return null;
+          }
+          
+          const passwordValid = await comparePasswords(credentials.password, user.password);
+          
+          if (!passwordValid) {
+            return null;
+          }
+          
+          return {
+            id: user.id.toString(),
+            name: user.username,
+            email: user.email,
+            image: user.avatarUrl,
+            isAdmin: user.isAdmin
+          };
+        } catch (error) {
+          console.error('Error in authorize:', error);
+          return null;
+        }
+      }
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = (user as any).isAdmin || false;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).isAdmin = token.isAdmin;
+      }
+      return session;
+    }
   }
-  
-  // Here you would validate the session and return the user
-  // For now, we'll just return a mock response
-  return NextResponse.json({ id: 1, username: 'admin', name: 'Administrator' });
-}
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { username, password } = body;
-  
-  const db = getDb();
-  const [user] = await db.select().from(users).where(eq(users.username, username));
-  
-  if (!user || !(await comparePasswords(password, user.password))) {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-  }
-  
-  // Set a session cookie
-  const sessionId = randomBytes(32).toString('hex');
-  const cookieStore = cookies();
-  cookieStore.set('session_id', sessionId, { 
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: '/' 
-  });
-  
-  // Return the user without sensitive information
-  const { password: _, ...userWithoutPassword } = user;
-  return NextResponse.json(userWithoutPassword);
-}
+});
+ 
+export { handler as GET, handler as POST };

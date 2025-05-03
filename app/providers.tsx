@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { SessionProvider } from 'next-auth/react';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -87,30 +88,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []); // Dependency array intentionally empty for mount/unmount only
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <Toaster />
-            <CustomCursor currentSection={currentSection} />
-            <div className="flex flex-col min-h-screen cursor-none md:cursor-none">
-              <Header />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-              <FloatingNavigation />
-              <GuidedTour />
-              <JourneyExperience activeSection={currentSection} />
-            </div>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <SessionProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AuthProvider>
+              <Toaster />
+              <CustomCursor currentSection={currentSection} />
+              <div className="flex flex-col min-h-screen cursor-none md:cursor-none">
+                <Header />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                <FloatingNavigation />
+                <GuidedTour />
+                <JourneyExperience activeSection={currentSection} />
+              </div>
+            </AuthProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </SessionProvider>
   );
 }
