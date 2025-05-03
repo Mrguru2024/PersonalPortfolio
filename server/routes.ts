@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { portfolioController } from "./controllers/portfolioController";
+import { blogController } from "./controllers/blogController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Portfolio API routes
