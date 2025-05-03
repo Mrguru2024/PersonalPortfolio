@@ -6,12 +6,12 @@ export interface ProjectModel {
   image: string;
   tags: string[];
   category: string;
-  github_url?: string;
-  live_url?: string;
-  details?: string;
-  demo_type?: "iframe" | "video" | "github" | "custom";
-  demo_url?: string;
-  demo_config?: {
+  github_url: string | null;
+  live_url: string | null;
+  details: string | null;
+  demo_type: "iframe" | "video" | "github" | "custom" | null;
+  demo_url: string | null;
+  demo_config: {
     width?: string;
     height?: string;
     allowFullscreen?: boolean;
@@ -19,10 +19,10 @@ export interface ProjectModel {
     showCode?: boolean;
     theme?: string;
     githubBranch?: string;
-  };
-  repo_owner?: string;
-  repo_name?: string;
-  tech_stack?: string[];
+  } | null;
+  repo_owner: string | null;
+  repo_name: string | null;
+  tech_stack: string[] | null;
 }
 
 // Define the client interface with camelCase field names 
@@ -34,12 +34,12 @@ export interface Project {
   image: string;
   tags: string[];
   category: string;
-  githubUrl?: string;
-  liveUrl?: string;
-  details?: string;
-  demoType?: "iframe" | "video" | "github" | "custom";
-  demoUrl?: string;
-  demoConfig?: {
+  githubUrl: string | null;
+  liveUrl: string | null;
+  details: string | null;
+  demoType: "iframe" | "video" | "github" | "custom" | null;
+  demoUrl: string | null;
+  demoConfig: {
     width?: string;
     height?: string;
     allowFullscreen?: boolean;
@@ -47,10 +47,10 @@ export interface Project {
     showCode?: boolean;
     theme?: string;
     githubBranch?: string;
-  };
-  repoOwner?: string;
-  repoName?: string;
-  techStack?: string[];
+  } | null;
+  repoOwner: string | null;
+  repoName: string | null;
+  techStack: string[] | null;
 }
 
 // Adapter functions to convert between the models
@@ -237,18 +237,18 @@ export const projects: Project[] = [
     image: "https://images.unsplash.com/photo-1586864387789-628af9feed72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
     tags: ["SaaS", "Automotive", "Security"],
     category: "business",
-    github_url: "https://github.com/Mrguru2024",
-    live_url: "https://keycodehelp.com",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://keycodehelp.com",
     details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
-    demo_type: "iframe",
-    demo_url: "https://keycodehelp.com",
-    demo_config: {
+    demoType: "iframe",
+    demoUrl: "https://keycodehelp.com",
+    demoConfig: {
       width: "100%",
       height: "600px",
       allowFullscreen: true,
       isResponsive: true
     },
-    tech_stack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
+    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
   },
   {
     id: "portfolio-website",
