@@ -87,7 +87,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     platform: "LinkedIn",
-    url: "https://linkedin.com/in/anthonyfeaster",
+    url: "https://www.linkedin.com/in/anthony-mrguru-feaster/",
     icon: "linkedin"
   },
   {
