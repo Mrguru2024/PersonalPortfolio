@@ -5,8 +5,11 @@ import { storage } from "./storage";
 import { portfolioController } from "./controllers/portfolioController";
 import { blogController } from "./controllers/blogController";
 import { uploadController } from "./controllers/uploadController";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
   // Portfolio API routes
   app.get('/api/projects', portfolioController.getProjects);
   app.get('/api/projects/:id', portfolioController.getProjectById);
