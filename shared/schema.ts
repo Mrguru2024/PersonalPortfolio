@@ -64,11 +64,41 @@ export const skills = pgTable("skills", {
   name: text("name").notNull(),
   percentage: integer("percentage").notNull(),
   category: text("category").notNull(),
+  endorsementCount: integer("endorsement_count").default(0).notNull(),
+});
+
+// Skill Endorsements Table
+export const skillEndorsements = pgTable("skill_endorsements", {
+  id: serial("id").primaryKey(),
+  skillId: integer("skill_id").references(() => skills.id).notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  comment: text("comment"),
+  rating: integer("rating").default(5).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  ipAddress: text("ip_address"),
 });
 
 export const insertSkillSchema = createInsertSchema(skills);
 export type InsertSkill = z.infer<typeof insertSkillSchema>;
 export type Skill = typeof skills.$inferSelect;
+
+export const insertSkillEndorsementSchema = createInsertSchema(skillEndorsements).omit({
+  id: true,
+  createdAt: true,
+  ipAddress: true,
+});
+
+export const skillEndorsementFormSchema = z.object({
+  skillId: z.number().positive("Skill ID is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email address is required"),
+  comment: z.string().optional(),
+  rating: z.number().min(1).max(5).default(5),
+});
+
+export type InsertSkillEndorsement = z.infer<typeof insertSkillEndorsementSchema>;
+export type SkillEndorsement = typeof skillEndorsements.$inferSelect;
 
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
