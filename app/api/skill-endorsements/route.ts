@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/db";
-import { skillEndorsements, skills, skillEndorsementFormSchema } from "@/shared/schema";
+import { z } from "zod";
 import { eq, and } from "drizzle-orm";
+
+// Define the validation schema
+const skillEndorsementSchema = z.object({
+  skillId: z.number().positive("Skill ID is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email address is required"),
+  comment: z.string().optional(),
+  rating: z.number().min(1).max(5).default(5),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
     // Validate request body using Zod schema
-    const validationResult = skillEndorsementFormSchema.safeParse(body);
+    const validationResult = skillEndorsementSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         { error: "Validation error", details: validationResult.error.format() },
@@ -22,8 +31,8 @@ export async function POST(request: NextRequest) {
     // Check if the skill exists
     const [skillExists] = await db
       .select()
-      .from(skills)
-      .where(eq(skills.id, endorsementData.skillId));
+      .from(db.schema.skills)
+      .where(eq(db.schema.skills.id, endorsementData.skillId));
       
     if (!skillExists) {
       return NextResponse.json(
@@ -35,11 +44,11 @@ export async function POST(request: NextRequest) {
     // Check if user has already endorsed this skill
     const [existingEndorsement] = await db
       .select()
-      .from(skillEndorsements)
+      .from(db.schema.skillEndorsements)
       .where(
         and(
-          eq(skillEndorsements.skillId, endorsementData.skillId),
-          eq(skillEndorsements.email, endorsementData.email)
+          eq(db.schema.skillEndorsements.skillId, endorsementData.skillId),
+          eq(db.schema.skillEndorsements.email, endorsementData.email)
         )
       );
     
@@ -52,7 +61,7 @@ export async function POST(request: NextRequest) {
     
     // Insert new endorsement
     const [endorsement] = await db
-      .insert(skillEndorsements)
+      .insert(db.schema.skillEndorsements)
       .values({
         skillId: endorsementData.skillId,
         name: endorsementData.name,
@@ -65,11 +74,11 @@ export async function POST(request: NextRequest) {
     
     // Update endorsement count in the skills table
     await db
-      .update(skills)
+      .update(db.schema.skills)
       .set({ 
         endorsementCount: skillExists.endorsementCount + 1 
       })
-      .where(eq(skills.id, endorsementData.skillId));
+      .where(eq(db.schema.skills.id, endorsementData.skillId));
     
     return NextResponse.json(
       { message: "Skill endorsed successfully", endorsement },
@@ -100,9 +109,9 @@ export async function GET(request: NextRequest) {
     // Get endorsements for the specified skill
     const endorsements = await db
       .select()
-      .from(skillEndorsements)
-      .where(eq(skillEndorsements.skillId, parseInt(skillId)))
-      .orderBy(skillEndorsements.createdAt);
+      .from(db.schema.skillEndorsements)
+      .where(eq(db.schema.skillEndorsements.skillId, parseInt(skillId)))
+      .orderBy(db.schema.skillEndorsements.createdAt);
     
     return NextResponse.json(endorsements);
     

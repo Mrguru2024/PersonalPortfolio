@@ -1,46 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { skills } from '@/shared/schema';
-import { asc, desc, eq } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/app/db";
+import { skills } from "@/shared/schema";
+import { eq, desc, asc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const category = searchParams.get('category');
+    const url = new URL(request.url);
+    const category = url.searchParams.get("category");
+    const sort = url.searchParams.get("sort") || "desc";
+    const limit = url.searchParams.get("limit");
     
-    const db = getDb();
+    let query = db.select().from(skills);
     
+    // Filter by category if specified
     if (category) {
-      // Get skills by category
-      const categorySkills = await db
-        .select()
-        .from(skills)
-        .where(eq(skills.category, category))
-        .orderBy(asc(skills.order));
-      
-      return NextResponse.json(categorySkills);
-    } else {
-      // Get all skills grouped by category
-      const allSkills = await db
-        .select()
-        .from(skills)
-        .orderBy(asc(skills.category), asc(skills.order));
-      
-      // Group skills by category for easier frontend display
-      const groupedSkills = allSkills.reduce((acc, skill) => {
-        if (!acc[skill.category]) {
-          acc[skill.category] = [];
-        }
-        acc[skill.category].push(skill);
-        return acc;
-      }, {} as Record<string, typeof allSkills>);
-      
-      return NextResponse.json(groupedSkills);
+      query = query.where(eq(skills.category, category));
     }
+    
+    // Apply sorting
+    if (sort === "asc") {
+      query = query.orderBy(asc(skills.percentage));
+    } else {
+      query = query.orderBy(desc(skills.percentage));
+    }
+    
+    // Apply limit if specified
+    if (limit) {
+      query = query.limit(parseInt(limit));
+    }
+    
+    const result = await query;
+    
+    // Group skills by category
+    const grouped = result.reduce((acc: any, skill: any) => {
+      const category = skill.category.toLowerCase();
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(skill);
+      return acc;
+    }, {});
+    
+    // Return grouped format if requested
+    if (url.searchParams.get("grouped") === "true") {
+      return NextResponse.json(grouped);
+    }
+    
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching skills:', error);
+    console.error("Error fetching skills:", error);
     return NextResponse.json(
-      { message: 'Failed to fetch skills' },
+      { error: "Failed to fetch skills" },
       { status: 500 }
     );
   }
@@ -48,33 +58,31 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // This endpoint should be protected - check if user is authenticated and admin
-    // This would be handled by middleware in Next.js
+    // Check if user is admin (you would implement proper auth checking)
     
-    const data = await request.json();
-    const db = getDb();
+    const body = await request.json();
     
-    // Get the highest current order value in this category
-    const [result] = await db
-      .select({ maxOrder: ({ fn }) => fn.max(skills.order) })
-      .from(skills)
-      .where(eq(skills.category, data.category));
+    // Validate skill data
+    if (!body.name || !body.percentage || !body.category) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
     
-    const nextOrder = (result?.maxOrder || 0) + 1;
-    
-    const [skill] = await db
-      .insert(skills)
-      .values({
-        ...data,
-        order: nextOrder,
-      })
-      .returning();
+    // Create new skill
+    const [skill] = await db.insert(skills).values({
+      name: body.name,
+      percentage: body.percentage,
+      category: body.category,
+      endorsementCount: 0
+    }).returning();
     
     return NextResponse.json(skill, { status: 201 });
   } catch (error) {
-    console.error('Error creating skill:', error);
+    console.error("Error creating skill:", error);
     return NextResponse.json(
-      { message: 'Failed to create skill' },
+      { error: "Failed to create skill" },
       { status: 500 }
     );
   }
