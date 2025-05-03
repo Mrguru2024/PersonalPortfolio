@@ -12,7 +12,10 @@ import { apiRequest } from "@/lib/queryClient";
 const BlogSection = () => {
   const { data: blogPosts, isLoading, error } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
-    queryFn: () => apiRequest("/api/blog")
+    queryFn: async () => {
+      const response = await apiRequest("/api/blog");
+      return response as BlogPost[];
+    }
   });
 
   return (

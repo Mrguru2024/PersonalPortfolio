@@ -17,6 +17,7 @@ const Header = () => {
     { name: "Projects", href: "#projects" },
     { name: "About", href: "#about" },
     { name: "Skills", href: "#skills" },
+    { name: "Blog", href: "#blog" },
     { name: "Contact", href: "#contact" },
   ];
 
@@ -55,9 +56,14 @@ const Header = () => {
               </button>
             ))
           ) : (
-            <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
-              Home
-            </Link>
+            <>
+              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+                Home
+              </Link>
+              <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+                Blog
+              </Link>
+            </>
           )}
           
           {/* Dark Mode Toggle */}
@@ -92,9 +98,14 @@ const Header = () => {
                 </button>
               ))
             ) : (
-              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
-                Home
-              </Link>
+              <>
+                <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                  Home
+                </Link>
+                <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                  Blog
+                </Link>
+              </>
             )}
           </div>
         </div>
