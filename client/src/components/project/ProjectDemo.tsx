@@ -24,11 +24,17 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
   // Function to handle the refresh button click
   const handleRefresh = () => {
     setIsLoading(true);
-    // We force a refresh by appending a timestamp to the URL
-    const iframe = document.getElementById('demo-iframe') as HTMLIFrameElement;
-    if (iframe && iframe.src) {
-      iframe.src = `${iframe.src.split('?')[0]}?t=${Date.now()}`;
-    }
+    
+    // Find all iframes in the container
+    const iframes = document.querySelectorAll('iframe');
+    
+    // Reload each iframe by updating its src with a timestamp
+    iframes.forEach(iframe => {
+      if (iframe.src) {
+        const baseUrl = iframe.src.split('?')[0];
+        iframe.src = `${baseUrl}?t=${Date.now()}`;
+      }
+    });
   };
 
   // Function to handle fullscreen toggle
@@ -89,56 +95,94 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
     switch (project.demoType) {
       case 'iframe':
         return (
-          <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 rounded-lg border-0 overflow-hidden shadow-md">
+            <iframe
+              src={project.liveUrl || project.demoUrl}
+              title={`${project.title} Live Demo`}
+              className="w-full border-0 transition-opacity duration-300"
+              style={{ 
+                height: project.demoConfig?.height || '600px',
+                opacity: isLoading ? 0 : 1
+              }}
+              allowFullScreen={project.demoConfig?.allowFullscreen}
+              onLoad={handleIframeLoad}
+              sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+            />
+
+            {/* Loading overlay */}
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
-                <RefreshCw className="h-8 w-8 text-primary animate-spin mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">Loading demo...</p>
+                <div className="flex flex-col items-center p-6 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg">
+                  <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
+                  <h3 className="text-xl font-bold">Loading Interactive Demo</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Preparing your hands-on experience...
+                  </p>
+                </div>
               </div>
             )}
-            <div style={{ height: project.demoConfig?.height || '600px' }} className="w-full">
-              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <Rocket className="h-16 w-16 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-3">Interactive Demo Available</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                  Due to security restrictions, we can't embed the live demo directly here. Click below to experience the full interactive demo.
-                </p>
+
+            {/* Demo overlay for better user experience */}
+            <div className="absolute top-0 left-0 w-full bg-gradient-to-b from-white/80 dark:from-gray-900/80 to-transparent h-16 z-10 flex items-center justify-between px-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                <div className="ml-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {project.title} - Live Demo
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2"
+                  onClick={handleRefresh}
+                  title="Refresh Demo"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2"
+                  onClick={handleFullscreenToggle}
+                  title="Toggle Fullscreen"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
                 <a
-                  href={project.demoUrl}
+                  href={project.liveUrl || project.demoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex"
+                  className="h-8 px-2 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground"
+                  title="Open in New Tab"
                 >
-                  <Button size="lg" className="flex items-center gap-2 px-6">
-                    <motion.div
-                      animate={{ 
-                        rotate: [0, 15, 0],
-                        y: [0, -2, 0] 
-                      }}
-                      transition={{ 
-                        duration: 1.5, 
-                        repeat: Infinity,
-                        repeatType: "loop" 
-                      }}
-                    >
-                      <Rocket className="h-5 w-5" />
-                    </motion.div>
-                    Launch Interactive Demo
-                  </Button>
+                  <ExternalLink className="h-4 w-4" />
                 </a>
               </div>
             </div>
-            <div className="absolute bottom-4 right-4 flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
-                onClick={() => window.open(project.demoUrl, '_blank')}
-                title="Open in New Tab"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
+
+            {/* Fallback content if iframe fails to load */}
+            <noscript>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
+                <Rocket className="h-16 w-16 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">Interactive Demo Available</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md text-center">
+                  JavaScript is required to view this demo. Alternatively, you can visit the live site directly.
+                </p>
+                <a
+                  href={project.liveUrl || project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-2 rounded-md bg-primary text-primary-foreground"
+                >
+                  <Rocket className="h-5 w-5" />
+                  Visit Live Site
+                </a>
+              </div>
+            </noscript>
           </div>
         );
       
@@ -147,27 +191,83 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
           const branch = project.demoConfig?.githubBranch || 'main';
           return (
             <div className="w-full">
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
+              {/* If we have a live URL, display a demo preview first */}
+              {project.liveUrl && (
+                <div className="mb-6">
+                  <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 rounded-lg border-0 overflow-hidden shadow-md">
+                    <iframe
+                      src={project.liveUrl}
+                      title={`${project.title} Live Demo`}
+                      className="w-full border-0 transition-opacity duration-300"
+                      style={{ 
+                        height: "400px",
+                        opacity: isLoading ? 0 : 1
+                      }}
+                      allowFullScreen={true}
+                      onLoad={handleIframeLoad}
+                      sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                    />
+
+                    {/* Loading overlay */}
+                    {isLoading && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
+                        <div className="flex flex-col items-center p-6 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg">
+                          <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
+                          <h3 className="text-xl font-bold">Loading Demo</h3>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Demo overlay */}
+                    <div className="absolute top-0 left-0 w-full bg-gradient-to-b from-white/80 dark:from-gray-900/80 to-transparent h-16 z-10 flex items-center justify-between px-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                        <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                        <div className="ml-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {project.title} - Preview
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-8 px-3 py-1 inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                          title="Open Full Demo"
+                        >
+                          <ArrowUpRight className="h-4 w-4 mr-2" />
+                          <span>Full Demo</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <a 
+                  href={project.liveUrl || `https://github.com/${project.repoOwner}/${project.repoName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full"
+                >
+                  <Button className="w-full justify-center">
+                    <Rocket className="mr-2 h-4 w-4" />
+                    {project.liveUrl ? "Launch Live Demo" : "View Project"}
+                  </Button>
+                </a>
+                
                 <a 
                   href={`https://github.com/${project.repoOwner}/${project.repoName}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1"
+                  className="w-full"
                 >
-                  <Button variant="secondary" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-center">
                     <Github className="mr-2 h-4 w-4" />
-                    View Repository
-                  </Button>
-                </a>
-                <a 
-                  href={`https://github.com/${project.repoOwner}/${project.repoName}/archive/refs/heads/${branch}.zip`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex-1"
-                >
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileCode className="mr-2 h-4 w-4" />
-                    Download Source
+                    Source Code
                   </Button>
                 </a>
               </div>
@@ -182,49 +282,86 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                     Branch: {branch}
                   </Badge>
                 </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-2">
-                    <a 
-                      href={`https://github.com/${project.repoOwner}/${project.repoName}/stargazers`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <Github className="h-4 w-4 mr-2" />
-                      <span>Star</span>
-                    </a>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      View this project on GitHub to star it
-                    </span>
-                  </div>
-                </div>
-                <div className="border-t p-6">
-                  <h3 className="text-lg font-semibold mb-4">Repository Details</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    View the source code, issues, and pull requests directly on GitHub. You can also download the repository as a ZIP file.
-                  </p>
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <a 
-                      href={`https://github.com/${project.repoOwner}/${project.repoName}/issues`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">Issues</Button>
-                    </a>
-                    <a 
-                      href={`https://github.com/${project.repoOwner}/${project.repoName}/pulls`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">Pull Requests</Button>
-                    </a>
-                    <a 
-                      href={`https://github.com/${project.repoOwner}/${project.repoName}/stargazers`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">Stargazers</Button>
-                    </a>
+                
+                <div className="p-6">
+                  {project.details && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-3">Project Overview</h3>
+                      <p className="text-gray-600 dark:text-gray-400">{project.details}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col gap-4">
+                    <h3 className="text-lg font-semibold">Repository Resources</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Github className="h-6 w-6 mb-2 text-primary" />
+                        <span className="text-sm font-medium">Repository</span>
+                      </a>
+                      
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}/issues`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <svg className="h-6 w-6 mb-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-medium">Issues</span>
+                      </a>
+                      
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}/pulls`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <svg className="h-6 w-6 mb-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        <span className="text-sm font-medium">PRs</span>
+                      </a>
+                      
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}/stargazers`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <svg className="h-6 w-6 mb-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        <span className="text-sm font-medium">Stars</span>
+                      </a>
+                      
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}/network/members`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <svg className="h-6 w-6 mb-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        </svg>
+                        <span className="text-sm font-medium">Forks</span>
+                      </a>
+                      
+                      <a 
+                        href={`https://github.com/${project.repoOwner}/${project.repoName}/archive/refs/heads/${branch}.zip`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <FileCode className="h-6 w-6 mb-2 text-primary" />
+                        <span className="text-sm font-medium">Download</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -269,27 +406,106 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
       
       case 'custom':
       default:
-        return (
-          <div className="flex flex-col items-center justify-center p-10 text-center">
-            <Rocket className="h-16 w-16 mb-4 text-primary" />
-            <h3 className="text-xl font-bold mb-2">Live Demo</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Experience this project in action by visiting the live site.
-            </p>
-            {project.liveUrl && (
-              <a
-                href={project.liveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="flex items-center">
-                  <ArrowUpRight className="mr-2 h-4 w-4" />
-                  Launch Live Demo
-                </Button>
-              </a>
-            )}
-          </div>
-        );
+        // If there's a liveUrl, we'll embed that directly
+        if (project.liveUrl) {
+          return (
+            <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 rounded-lg border-0 overflow-hidden shadow-md">
+              <iframe
+                src={project.liveUrl}
+                title={`${project.title} Live Demo`}
+                className="w-full border-0 transition-opacity duration-300"
+                style={{ 
+                  height: project.demoConfig?.height || '600px',
+                  opacity: isLoading ? 0 : 1
+                }}
+                allowFullScreen={project.demoConfig?.allowFullscreen}
+                onLoad={handleIframeLoad}
+                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+              />
+
+              {/* Loading overlay */}
+              {isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
+                  <div className="flex flex-col items-center p-6 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg">
+                    <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
+                    <h3 className="text-xl font-bold">Loading Interactive Demo</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mt-2">
+                      Preparing your hands-on experience...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Demo overlay for better user experience */}
+              <div className="absolute top-0 left-0 w-full bg-gradient-to-b from-white/80 dark:from-gray-900/80 to-transparent h-16 z-10 flex items-center justify-between px-4">
+                <div className="flex items-center space-x-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <div className="ml-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {project.title} - Live Demo
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2"
+                    onClick={handleRefresh}
+                    title="Refresh Demo"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2"
+                    onClick={handleFullscreenToggle}
+                    title="Toggle Fullscreen"
+                  >
+                    <Maximize className="h-4 w-4" />
+                  </Button>
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-8 px-2 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground"
+                    title="Open in New Tab"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        } else {
+          // Fallback for when there's no live URL
+          return (
+            <div className="flex flex-col items-center justify-center p-10 text-center">
+              <Rocket className="h-16 w-16 mb-4 text-primary" />
+              <h3 className="text-xl font-bold mb-2">Live Demo</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                An interactive demo is not available at this moment.
+                {project.details && <span> Learn more about this project in the description.</span>}
+              </p>
+              {project.githubUrl && (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2"
+                >
+                  <Button variant="outline" className="flex items-center">
+                    <Github className="mr-2 h-4 w-4" />
+                    View Source Code
+                  </Button>
+                </a>
+              )}
+            </div>
+          );
+        }
+        
     }
   };
 
