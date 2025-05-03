@@ -1,8 +1,8 @@
 {
-  "app/page.tsx -> @/pages/Home": {
-    "id": "app/page.tsx -> @/pages/Home",
+  "app/page.tsx -> ./pages/Home": {
+    "id": "app/page.tsx -> ./pages/Home",
     "files": [
-      "static/chunks/_app-pages-browser_client_src_pages_Home_tsx.js"
+      "static/chunks/_app-pages-browser_app_pages_Home_tsx.js"
     ]
   }
 }
