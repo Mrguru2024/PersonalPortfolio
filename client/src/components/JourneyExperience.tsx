@@ -86,14 +86,14 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
         </div>
       </div>
       
-      {/* Message bubble when active - responsive positioning */}
+      {/* Message bubble when active - adjusted for left positioning */}
       <AnimatePresence>
         {isActive && (
           <motion.div 
-            className={`absolute ${isMobile ? 'left-8 -top-14' : 'left-16 top-0'} bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-lg text-xs md:text-sm max-w-[150px] md:max-w-[200px] border border-primary/20`}
-            initial={{ opacity: 0, scale: 0.8, x: -20 }}
+            className="absolute right-8 top-0 bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-lg text-xs md:text-sm max-w-[150px] md:max-w-[200px] border border-primary/20"
+            initial={{ opacity: 0, scale: 0.8, x: 20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: -20 }}
+            exit={{ opacity: 0, scale: 0.8, x: 20 }}
             transition={{ duration: 0.3 }}
           >
             <div className="font-medium text-primary mb-1">MrGuru</div>
@@ -102,7 +102,7 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
                 ? "Follow me through this journey!" 
                 : "Follow me through this digital journey! I'll show you what I can create for you."}
             </div>
-            <div className={`absolute ${isMobile ? 'bottom-[-8px] left-4' : '-left-2 top-4'} w-2 h-2 bg-white dark:bg-gray-800 transform ${isMobile ? 'rotate-[135deg]' : 'rotate-45'} border-l border-b border-primary/20`}></div>
+            <div className="absolute -right-2 top-4 w-2 h-2 bg-white dark:bg-gray-800 transform rotate-45 border-r border-t border-primary/20"></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -306,10 +306,10 @@ const JourneyExperience: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Main journey container - fixed to the right side of the screen, responsive positioning */}
+      {/* Main journey container - fixed to the center-left of the screen for better visibility */}
       <motion.div 
         ref={containerRef}
-        className="fixed right-2 md:right-8 inset-y-0 w-12 md:w-20 z-40 pointer-events-none flex items-center"
+        className="fixed left-4 md:left-8 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
@@ -317,11 +317,11 @@ const JourneyExperience: React.FC = () => {
         <div className="relative h-full w-full flex items-center justify-center">
           {/* The 3D journey path */}
           <div ref={pathRef} className="relative h-[80%] flex justify-center">
-            {/* Glowing main path */}
+            {/* Glowing main path - wider and more prominent */}
             <motion.div 
-              className="w-2 bg-gradient-to-b from-blue-400/50 via-primary/70 to-purple-500/50 rounded-full relative overflow-hidden"
+              className="w-3 md:w-4 bg-gradient-to-b from-blue-400/60 via-primary/80 to-purple-500/60 rounded-full relative overflow-hidden"
               animate={{ 
-                boxShadow: ['0 0 10px rgba(59, 130, 246, 0.3)', '0 0 20px rgba(59, 130, 246, 0.5)', '0 0 10px rgba(59, 130, 246, 0.3)']
+                boxShadow: ['0 0 10px rgba(59, 130, 246, 0.4)', '0 0 20px rgba(59, 130, 246, 0.6)', '0 0 10px rgba(59, 130, 246, 0.4)']
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
@@ -353,19 +353,19 @@ const JourneyExperience: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleMilestoneClick(milestone)}
                 >
-                  {/* Milestone node */}
+                  {/* Milestone node - larger and more prominent */}
                   <motion.div 
-                    className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                    className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center ${
                       activeIndex === index 
-                        ? 'bg-primary text-white' 
-                        : 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600'
+                        ? 'bg-gradient-to-br from-primary to-blue-600 text-white border-2 border-white' 
+                        : 'bg-white dark:bg-gray-800 border-2 border-primary/30 dark:border-primary/20'
                     }`}
                     animate={activeIndex === index ? {
                       scale: [1, 1.1, 1],
                       boxShadow: [
-                        '0 0 0 rgba(59, 130, 246, 0.4)',
+                        '0 0 5px rgba(59, 130, 246, 0.4)',
                         '0 0 20px rgba(59, 130, 246, 0.7)',
-                        '0 0 0 rgba(59, 130, 246, 0.4)'
+                        '0 0 5px rgba(59, 130, 246, 0.4)'
                       ]
                     } : {}}
                     transition={{ duration: 2, repeat: activeIndex === index ? Infinity : 0 }}
@@ -373,20 +373,27 @@ const JourneyExperience: React.FC = () => {
                     {milestone.icon}
                   </motion.div>
                   
-                  {/* Label + description + CTA - positioned properly for mobile/desktop */}
+                  {/* Label + description + CTA - now positioned on the right side for better visibility */}
                   <AnimatePresence>
                     {(activeIndex === index || milestone.position === 90) && (
                       <motion.div 
-                        className="absolute left-9 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[200px] md:max-w-[250px] border border-gray-200 dark:border-gray-700"
+                        className={`absolute right-9 p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[200px] md:max-w-[250px] border border-primary/20 
+                        ${
+                          activeIndex === index
+                            ? 'bg-gradient-to-br from-white/95 to-blue-50/95 dark:from-gray-800/95 dark:to-gray-900/95'
+                            : 'bg-white/95 dark:bg-gray-800/95'
+                        }`}
                         style={{
-                          // For mobile, position above on very small screens
-                          [window.innerWidth < 480 ? 'bottom' : 'left']: window.innerWidth < 480 ? '0' : '9',
-                          // For mobile, position to the left only when not near the bottom of the page
-                          ...(window.innerWidth < 480 && milestone.position > 50 ? { left: '-170px' } : {})
+                          // Position to the right of the milestone
+                          right: '12px',
+                          // Ensure the popup is centered vertically relative to the milestone
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 10px rgba(59, 130, 246, 0.1)'
                         }}
-                        initial={{ opacity: 0, x: window.innerWidth < 480 ? 0 : -10, y: window.innerWidth < 480 ? 10 : 0 }}
-                        animate={{ opacity: 1, x: 0, y: 0 }}
-                        exit={{ opacity: 0, x: window.innerWidth < 480 ? 0 : -10, y: window.innerWidth < 480 ? 10 : 0 }}
+                        initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -10, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
                       >
                         <h3 className="font-bold text-primary dark:text-primary mb-1">
