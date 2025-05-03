@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { format } from 'date-fns';
 import path from 'path';
 import fs from 'fs';
+import { adaptToClientModel, Project } from '../../client/src/lib/data';
 
 // Still import these for now as fallback until we populate the database
 import { 
@@ -22,14 +23,17 @@ export const portfolioController = {
   getProjects: async (req: Request, res: Response) => {
     try {
       // Try to get projects from database
-      const projects = await storage.getProjects();
+      const dbProjects = await storage.getProjects();
       
       // If no projects found in DB, return static projects for now
-      if (!projects || projects.length === 0) {
+      if (!dbProjects || dbProjects.length === 0) {
         return res.json(staticProjects);
       }
       
-      res.json(projects);
+      // Convert DB model to client model using the adapter
+      const clientProjects = dbProjects.map(project => adaptToClientModel(project));
+      
+      res.json(clientProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
       res.status(500).json({ message: 'Error fetching projects' });
@@ -41,10 +45,10 @@ export const portfolioController = {
       const { id } = req.params;
       
       // Try to get project from database
-      const project = await storage.getProjectById(id);
+      const dbProject = await storage.getProjectById(id);
       
       // If not found in DB, check static projects
-      if (!project) {
+      if (!dbProject) {
         const staticProject = staticProjects.find(p => p.id === id);
         if (staticProject) {
           return res.json(staticProject);
@@ -52,7 +56,10 @@ export const portfolioController = {
         return res.status(404).json({ message: 'Project not found' });
       }
       
-      res.json(project);
+      // Convert DB model to client model using the adapter
+      const clientProject = adaptToClientModel(dbProject);
+      
+      res.json(clientProject);
     } catch (error) {
       console.error('Error fetching project:', error);
       res.status(500).json({ message: 'Error fetching project' });

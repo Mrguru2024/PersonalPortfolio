@@ -1,3 +1,32 @@
+// Define the database-compatible model with snake_case field names
+export interface ProjectModel {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  tags: string[];
+  category: string;
+  github_url?: string;
+  live_url?: string;
+  details?: string;
+  demo_type?: "iframe" | "video" | "github" | "custom";
+  demo_url?: string;
+  demo_config?: {
+    width?: string;
+    height?: string;
+    allowFullscreen?: boolean;
+    isResponsive?: boolean;
+    showCode?: boolean;
+    theme?: string;
+    githubBranch?: string;
+  };
+  repo_owner?: string;
+  repo_name?: string;
+  tech_stack?: string[];
+}
+
+// Define the client interface with camelCase field names 
+// (this is what the existing code uses)
 export interface Project {
   id: string;
   title: string;
@@ -22,6 +51,47 @@ export interface Project {
   repoOwner?: string;
   repoName?: string;
   techStack?: string[];
+}
+
+// Adapter functions to convert between the models
+export function adaptToClientModel(dbProject: ProjectModel): Project {
+  return {
+    id: dbProject.id,
+    title: dbProject.title,
+    description: dbProject.description,
+    image: dbProject.image,
+    tags: dbProject.tags,
+    category: dbProject.category,
+    githubUrl: dbProject.github_url,
+    liveUrl: dbProject.live_url,
+    details: dbProject.details,
+    demoType: dbProject.demo_type,
+    demoUrl: dbProject.demo_url,
+    demoConfig: dbProject.demo_config,
+    repoOwner: dbProject.repo_owner,
+    repoName: dbProject.repo_name,
+    techStack: dbProject.tech_stack
+  };
+}
+
+export function adaptToDatabaseModel(clientProject: Project): ProjectModel {
+  return {
+    id: clientProject.id,
+    title: clientProject.title,
+    description: clientProject.description,
+    image: clientProject.image,
+    tags: clientProject.tags,
+    category: clientProject.category,
+    github_url: clientProject.githubUrl,
+    live_url: clientProject.liveUrl,
+    details: clientProject.details,
+    demo_type: clientProject.demoType,
+    demo_url: clientProject.demoUrl,
+    demo_config: clientProject.demoConfig,
+    repo_owner: clientProject.repoOwner,
+    repo_name: clientProject.repoName,
+    tech_stack: clientProject.techStack
+  };
 }
 
 export interface Skill {
@@ -167,18 +237,18 @@ export const projects: Project[] = [
     image: "https://images.unsplash.com/photo-1586864387789-628af9feed72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
     tags: ["SaaS", "Automotive", "Security"],
     category: "business",
-    githubUrl: "https://github.com/Mrguru2024",
-    liveUrl: "https://keycodehelp.com",
+    github_url: "https://github.com/Mrguru2024",
+    live_url: "https://keycodehelp.com",
     details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
-    demoType: "iframe",
-    demoUrl: "https://keycodehelp.com",
-    demoConfig: {
+    demo_type: "iframe",
+    demo_url: "https://keycodehelp.com",
+    demo_config: {
       width: "100%",
       height: "600px",
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
+    tech_stack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
   },
   {
     id: "portfolio-website",
