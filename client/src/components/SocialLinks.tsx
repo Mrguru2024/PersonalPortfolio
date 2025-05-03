@@ -1,5 +1,5 @@
 import { FaGithub, FaLinkedin } from "react-icons/fa";
-import { SiThreads } from "react-icons/si";
+import { FaThreads } from "react-icons/fa6";
 import { Mail, Globe } from "lucide-react";
 import { socialLinks } from "@/lib/data";
 
@@ -17,7 +17,7 @@ const SocialLinks = ({ className = "", iconClassName = "", showLabels = false }:
       case "linkedin":
         return <FaLinkedin />;
       case "threads":
-        return <SiThreads />;
+        return <FaThreads />;
       case "mail":
         return <Mail />;
       case "globe":
