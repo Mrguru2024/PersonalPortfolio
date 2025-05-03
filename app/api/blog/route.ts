@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { blogPosts } from '@/shared/schema';
+import { getDb } from '../../db';
+import { blogPosts } from '../../../shared/schema';
 import { desc, eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let query = db.select().from(blogPosts);
     
     if (published === 'true') {
-      query = query.where(eq(blogPosts.published, true));
+      query = query.where(eq(blogPosts.isPublished, true));
     }
     
     // Order by publish date descending

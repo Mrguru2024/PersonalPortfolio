@@ -1,5 +1,13 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import path from 'path';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Logger function
 function log(message: string, source = "express") {
@@ -13,10 +21,36 @@ function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Start Vite dev server in a separate process
+function startViteDevServer() {
+  log("Starting Vite development server...", "vite");
+  
+  const viteProcess = spawn('npx', ['vite', '--port', '3000'], {
+    cwd: path.resolve(__dirname, '..'),
+    stdio: 'pipe',
+    shell: true
+  });
+
+  viteProcess.stdout?.on('data', (data) => {
+    log(`${data.toString().trim()}`, "vite");
+  });
+
+  viteProcess.stderr?.on('data', (data) => {
+    log(`Error: ${data.toString().trim()}`, "vite");
+  });
+
+  viteProcess.on('close', (code) => {
+    log(`Vite process exited with code ${code}`, "vite");
+  });
+
+  return viteProcess;
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -48,8 +82,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Start the Vite dev server for the React client
+  const viteProcess = startViteDevServer();
+
   const server = await registerRoutes(app);
 
+  // Add error handler middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -58,56 +96,100 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // In development, provide a basic route for the root path
-  // In production, Next.js will handle this
-  app.get('/', (_req, res) => {
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>MrGuru.dev API Server</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            h1 { color: #3B82F6; }
-            p { margin-bottom: 1em; }
-            code {
-              background: #f4f4f4;
-              padding: 2px 4px;
-              border-radius: 4px;
-            }
-            .endpoints {
-              background: #f8f8f8;
-              padding: 15px;
-              border-radius: 8px;
-              border-left: 4px solid #3B82F6;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>MrGuru.dev API Server</h1>
-          <p>This is the API server for MrGuru.dev portfolio website. The frontend is being migrated to Next.js.</p>
-          
-          <div class="endpoints">
-            <h2>Available API Endpoints:</h2>
-            <ul>
-              <li><code>GET /api/projects</code> - List all projects</li>
-              <li><code>GET /api/skills</code> - List all skills</li>
-              <li><code>GET /api/blog</code> - List all blog posts</li>
-              <li><code>GET /api/blog/:slug</code> - Get blog post by slug</li>
-            </ul>
-          </div>
-          
-          <p>For more information, visit <a href="https://mrguru.dev">mrguru.dev</a></p>
-        </body>
-      </html>
-    `);
+  // Set up a proxy for the Vite dev server
+  app.use('*', async (req, res, next) => {
+    const url = req.originalUrl;
+    
+    // Skip API requests - those are handled by Express
+    if (url.startsWith('/api')) {
+      return next();
+    }
+    
+    try {
+      // Proxy the request to the Vite dev server
+      const proxyReq = await fetch(`http://localhost:3000${url}`, {
+        method: req.method,
+        headers: req.headers as any,
+        redirect: 'manual',
+        // Pass request body if the request has one
+        ...(req.method !== 'GET' && req.method !== 'HEAD' ? { body: req.body } : {})
+      });
+      
+      // Copy response headers from Vite
+      for (const [key, value] of proxyReq.headers.entries()) {
+        if (key !== 'content-encoding') { // Skip content-encoding as it might cause issues
+          res.setHeader(key, value);
+        }
+      }
+      
+      // Set the status code
+      res.status(proxyReq.status);
+      
+      // Send the response body
+      const body = await proxyReq.arrayBuffer();
+      res.send(Buffer.from(body));
+    } catch (error) {
+      log(`Error proxying to Vite server: ${error}`, "proxy");
+      // Serve a nice error page if Vite server isn't ready yet
+      res.writeHead(500, {
+        'Content-Type': 'text/html',
+      });
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>MrGuru.dev - Frontend Loading</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 20px;
+                text-align: center;
+              }
+              h1 { color: #3B82F6; }
+              p { margin-bottom: 1em; }
+              .loader {
+                border: 5px solid #f3f3f3;
+                border-top: 5px solid #3B82F6;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1.5s linear infinite;
+                margin: 20px auto;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+            <script>
+              setTimeout(() => {
+                window.location.reload();
+              }, 5000);
+            </script>
+          </head>
+          <body>
+            <h1>MrGuru.dev</h1>
+            <p>The frontend is starting up. This page will automatically refresh.</p>
+            <div class="loader"></div>
+            <p>If this page doesn't load within a minute, please check the server logs.</p>
+            
+            <div>
+              <h2>Available API Endpoints:</h2>
+              <ul style="list-style: none; padding: 0;">
+                <li><code>GET /api/projects</code> - List all projects</li>
+                <li><code>GET /api/skills</code> - List all skills</li>
+                <li><code>GET /api/blog</code> - List all blog posts</li>
+                <li><code>GET /api/blog/:slug</code> - Get blog post by slug</li>
+              </ul>
+            </div>
+          </body>
+        </html>
+      `);
+    }
   });
 
   // ALWAYS serve the app on port 5000
@@ -119,6 +201,16 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`API server serving on port ${port}`);
+    log(`Proxying frontend requests to Vite dev server on port 3000`);
+  });
+
+  // Handle shutdown properly
+  process.on('SIGINT', () => {
+    log("Shutting down servers...");
+    if (viteProcess) {
+      viteProcess.kill();
+    }
+    process.exit();
   });
 })();
