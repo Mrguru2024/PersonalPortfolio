@@ -16,9 +16,12 @@ const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   
-  const { data: posts, isLoading, error } = useQuery<BlogPost[]>({
+  const { data: posts, isLoading, error } = useQuery({
     queryKey: ["/api/blog"],
-    queryFn: () => apiRequest("/api/blog")
+    queryFn: async (): Promise<BlogPost[]> => {
+      const response = await apiRequest("/api/blog");
+      return response as BlogPost[];
+    }
   });
   
   // Extract all unique tags from posts

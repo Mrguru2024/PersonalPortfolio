@@ -14,14 +14,20 @@ import { apiRequest } from "@/lib/queryClient";
 const BlogPostPage = () => {
   const { slug } = useParams();
   
-  const { data: post, isLoading: isPostLoading, error: postError } = useQuery<BlogPost>({
+  const { data: post, isLoading: isPostLoading, error: postError } = useQuery({
     queryKey: [`/api/blog/${slug}`],
-    queryFn: () => apiRequest(`/api/blog/${slug}`)
+    queryFn: async (): Promise<BlogPost> => {
+      const response = await apiRequest(`/api/blog/${slug}`);
+      return response as BlogPost;
+    }
   });
   
-  const { data: comments, isLoading: areCommentsLoading } = useQuery<BlogComment[]>({
+  const { data: comments, isLoading: areCommentsLoading } = useQuery({
     queryKey: [`/api/blog/post/${post?.id}/comments`],
-    queryFn: () => apiRequest(`/api/blog/post/${post?.id}/comments`),
+    queryFn: async (): Promise<BlogComment[]> => {
+      const response = await apiRequest(`/api/blog/post/${post?.id}/comments`);
+      return response as BlogComment[];
+    },
     enabled: !!post?.id
   });
 
