@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
 import FloatingNavigation from "@/components/FloatingNavigation";
+import GuidedTour from "@/components/GuidedTour";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -45,6 +46,7 @@ function App() {
             </main>
             <Footer />
             <FloatingNavigation />
+            <GuidedTour />
           </div>
         </AuthProvider>
       </TooltipProvider>
