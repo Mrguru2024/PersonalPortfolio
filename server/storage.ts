@@ -3,7 +3,8 @@ import { users, type User, type InsertUser,
   skills, type Skill, type InsertSkill,
   contacts, type Contact, type InsertContact,
   blogPosts, type BlogPost, type InsertBlogPost,
-  blogComments, type BlogComment, type InsertBlogComment
+  blogComments, type BlogComment, type InsertBlogComment,
+  blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -39,8 +40,16 @@ export interface IStorage {
   // Blog comment operations
   getCommentsByPostId(postId: number): Promise<BlogComment[]>;
   getApprovedCommentsByPostId(postId: number): Promise<BlogComment[]>;
-  createComment(comment: InsertBlogComment): Promise<BlogComment>;
+  createComment(comment: InsertBlogComment, ipAddress: string): Promise<BlogComment>;
   approveComment(id: number): Promise<BlogComment>;
+  markCommentAsSpam(id: number): Promise<BlogComment>;
+  
+  // Blog post contribution operations
+  getBlogPostContributions(isReviewed?: boolean): Promise<BlogPostContribution[]>;
+  getBlogPostContributionById(id: number): Promise<BlogPostContribution | undefined>;
+  createBlogPostContribution(contribution: InsertBlogPostContribution, ipAddress: string): Promise<BlogPostContribution>;
+  reviewBlogPostContribution(id: number, approve: boolean, notes?: string): Promise<BlogPostContribution>;
+  markBlogPostContributionAsSpam(id: number): Promise<BlogPostContribution>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -181,14 +190,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(blogComments.createdAt));
   }
   
-  async createComment(comment: InsertBlogComment): Promise<BlogComment> {
+  async createComment(comment: InsertBlogComment, ipAddress: string): Promise<BlogComment> {
     const now = new Date();
     const [insertedComment] = await db
       .insert(blogComments)
       .values({
         ...comment,
+        ipAddress,
         createdAt: now,
-        isApproved: false
+        isApproved: false,
+        isSpam: false
       })
       .returning();
     return insertedComment;
@@ -201,6 +212,80 @@ export class DatabaseStorage implements IStorage {
       .where(eq(blogComments.id, id))
       .returning();
     return approvedComment;
+  }
+  
+  async markCommentAsSpam(id: number): Promise<BlogComment> {
+    const [markedComment] = await db
+      .update(blogComments)
+      .set({ isSpam: true, isApproved: false })
+      .where(eq(blogComments.id, id))
+      .returning();
+    return markedComment;
+  }
+  
+  // Blog post contribution operations
+  async getBlogPostContributions(isReviewed?: boolean): Promise<BlogPostContribution[]> {
+    if (isReviewed !== undefined) {
+      return db
+        .select()
+        .from(blogPostContributions)
+        .where(eq(blogPostContributions.isReviewed, isReviewed))
+        .orderBy(desc(blogPostContributions.createdAt));
+    }
+    return db
+      .select()
+      .from(blogPostContributions)
+      .orderBy(desc(blogPostContributions.createdAt));
+  }
+  
+  async getBlogPostContributionById(id: number): Promise<BlogPostContribution | undefined> {
+    const [contribution] = await db
+      .select()
+      .from(blogPostContributions)
+      .where(eq(blogPostContributions.id, id));
+    return contribution || undefined;
+  }
+  
+  async createBlogPostContribution(contribution: InsertBlogPostContribution, ipAddress: string): Promise<BlogPostContribution> {
+    const now = new Date();
+    const [insertedContribution] = await db
+      .insert(blogPostContributions)
+      .values({
+        ...contribution,
+        ipAddress,
+        createdAt: now,
+        isReviewed: false,
+        isApproved: false,
+        isSpam: false
+      })
+      .returning();
+    return insertedContribution;
+  }
+  
+  async reviewBlogPostContribution(id: number, approve: boolean, notes?: string): Promise<BlogPostContribution> {
+    const [reviewedContribution] = await db
+      .update(blogPostContributions)
+      .set({ 
+        isReviewed: true,
+        isApproved: approve,
+        reviewNotes: notes || null
+      })
+      .where(eq(blogPostContributions.id, id))
+      .returning();
+    return reviewedContribution;
+  }
+  
+  async markBlogPostContributionAsSpam(id: number): Promise<BlogPostContribution> {
+    const [markedContribution] = await db
+      .update(blogPostContributions)
+      .set({ 
+        isSpam: true,
+        isReviewed: true,
+        isApproved: false
+      })
+      .where(eq(blogPostContributions.id, id))
+      .returning();
+    return markedContribution;
   }
 }
 

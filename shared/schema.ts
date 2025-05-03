@@ -88,6 +88,23 @@ export const blogPosts = pgTable("blog_posts", {
   isPublished: boolean("is_published").notNull().default(false),
 });
 
+export const blogPostContributions = pgTable("blog_post_contributions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  content: text("content").notNull(),
+  coverImage: text("cover_image").notNull(),
+  tags: json("tags").$type<string[]>().notNull(),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  ipAddress: text("ip_address").notNull(),
+  isReviewed: boolean("is_reviewed").notNull().default(false),
+  isApproved: boolean("is_approved").notNull().default(false),
+  isSpam: boolean("is_spam").notNull().default(false),
+  reviewNotes: text("review_notes"),
+});
+
 export const blogComments = pgTable("blog_comments", {
   id: serial("id").primaryKey(),
   postId: integer("post_id").references(() => blogPosts.id).notNull(),
@@ -95,7 +112,10 @@ export const blogComments = pgTable("blog_comments", {
   email: text("email").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull(),
+  ipAddress: text("ip_address").notNull(),
   isApproved: boolean("is_approved").notNull().default(false),
+  isSpam: boolean("is_spam").notNull().default(false),
+  captchaToken: text("captcha_token"),
 });
 
 export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
@@ -107,15 +127,40 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
 export const insertBlogCommentSchema = createInsertSchema(blogComments).omit({
   id: true,
   isApproved: true,
+  isSpam: true,
+});
+
+export const insertBlogPostContributionSchema = createInsertSchema(blogPostContributions).omit({
+  id: true,
+  createdAt: true,
+  ipAddress: true,
+  isReviewed: true,
+  isApproved: true,
+  isSpam: true,
+  reviewNotes: true,
 });
 
 export const blogCommentFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   content: z.string().min(3, "Comment must be at least 3 characters"),
+  captchaToken: z.string().min(1, "CAPTCHA verification is required"),
+});
+
+export const blogPostContributionFormSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title cannot exceed 100 characters"),
+  summary: z.string().min(20, "Summary must be at least 20 characters").max(500, "Summary cannot exceed 500 characters"),
+  content: z.string().min(200, "Content must be at least 200 characters"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  authorName: z.string().min(2, "Author name is required"),
+  authorEmail: z.string().email("Valid email address is required"),
+  coverImage: z.string().min(1, "Cover image is required"),
+  captchaToken: z.string().min(1, "CAPTCHA verification is required"),
 });
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export type BlogPost = typeof blogPosts.$inferSelect;
 export type InsertBlogComment = z.infer<typeof insertBlogCommentSchema>;
 export type BlogComment = typeof blogComments.$inferSelect;
+export type InsertBlogPostContribution = z.infer<typeof insertBlogPostContributionSchema>;
+export type BlogPostContribution = typeof blogPostContributions.$inferSelect;
