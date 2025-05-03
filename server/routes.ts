@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { portfolioController } from "./controllers/portfolioController";
 import { blogController } from "./controllers/blogController";
+import { uploadController } from "./controllers/uploadController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Portfolio API routes
@@ -20,6 +22,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/blog/post/:postId/comments', blogController.getPostComments);
   app.post('/api/blog/post/:postId/comments', blogController.addComment);
   app.get('/api/blog/:slug', blogController.getBlogPostBySlug);
+  
+  // Upload API routes
+  app.post('/api/upload', uploadController.uploadMedia);
+  app.get('/uploads/:filename', uploadController.serveMedia);
 
   const httpServer = createServer(app);
 
