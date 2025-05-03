@@ -4,13 +4,15 @@ import { users, type User, type InsertUser,
   contacts, type Contact, type InsertContact,
   blogPosts, type BlogPost, type InsertBlogPost,
   blogComments, type BlogComment, type InsertBlogComment,
-  blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution
+  blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution,
+  resumeRequests, type ResumeRequest, type InsertResumeRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import * as crypto from "crypto";
 
 // Extended interface with portfolio-related CRUD operations
 export interface IStorage {
@@ -142,7 +144,7 @@ export class DatabaseStorage implements IStorage {
   async createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest> {
     const now = new Date();
     // Generate a unique token for resume access
-    const accessToken = crypto.randomBytes(32).toString('hex');
+    const accessToken = crypto.randomUUID().replace(/-/g, '');
     
     const [insertedRequest] = await db
       .insert(resumeRequests)

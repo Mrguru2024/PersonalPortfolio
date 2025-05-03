@@ -33,7 +33,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/info', portfolioController.getPersonalInfo);
   app.get('/api/contact', portfolioController.getContactInfo);
   app.post('/api/contact', portfolioController.submitContactForm);
-  app.get('/api/resume', portfolioController.downloadResume);
+  
+  // Resume request and download routes
+  app.post('/api/resume/request', portfolioController.requestResume);
+  app.get('/api/resume/download/:token', portfolioController.downloadResume);
   
   // Blog API routes - public
   app.get('/api/blog', blogController.getBlogPosts);
