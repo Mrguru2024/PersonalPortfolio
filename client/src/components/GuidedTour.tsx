@@ -217,9 +217,9 @@ const GuidedTour: React.FC = () => {
               {/* Arrow pointing to element */}
               <div className={getArrowPosition(currentTourStep.position)}></div>
               
-              {/* Content box */}
+              {/* Content box - responsive padding */}
               <div 
-                className={`rounded-lg shadow-xl backdrop-blur-md border border-white/20 p-5 ${getEmphasisStyle(currentTourStep.emphasis)}`}
+                className={`rounded-lg shadow-xl backdrop-blur-md border border-white/20 p-3 md:p-5 ${getEmphasisStyle(currentTourStep.emphasis)}`}
               >
                 {/* Close button */}
                 <button 
@@ -229,14 +229,14 @@ const GuidedTour: React.FC = () => {
                   <X size={18} />
                 </button>
                 
-                {/* Title */}
+                {/* Title - responsive font size */}
                 <div className="flex items-center gap-2 mb-2">
                   {currentTourStep.icon}
-                  <h3 className="font-bold text-lg">{currentTourStep.title}</h3>
+                  <h3 className="font-bold text-base md:text-lg">{currentTourStep.title}</h3>
                 </div>
                 
-                {/* Content */}
-                <p className="mb-4">{currentTourStep.content}</p>
+                {/* Content - responsive font size */}
+                <p className="text-xs md:text-sm mb-3 md:mb-4">{currentTourStep.content}</p>
                 
                 {/* Navigation */}
                 <div className="flex justify-between items-center">

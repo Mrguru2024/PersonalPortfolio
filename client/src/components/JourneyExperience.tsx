@@ -2,8 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Sparkles, Code, Briefcase, Send, Bot, Cpu } from 'lucide-react';
 
-// Character represents MrGuru - a tech guru guiding you through the digital space
+// Character represents MrGuru - a tech guru guiding you through the digital space - Responsive
 const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ position, isActive }) => {
+  // Responsive sizes based on screen width
+  const isMobile = window.innerWidth < 768;
+  const headSize = isMobile ? 8 : 12;
+  const iconSize = isMobile ? 16 : 24;
+  const sparkleSize1 = isMobile ? 10 : 14;
+  const sparkleSize2 = isMobile ? 8 : 12;
+  
   return (
     <motion.div 
       className="absolute z-10 pointer-events-none"
@@ -37,15 +44,19 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
         {/* Guru Character - Stylized tech figure */}
         <div className="relative flex flex-col items-center">
           {/* Head - Tech guru with glasses */}
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white border-2 border-white shadow-lg">
-            <Bot size={24} />
+          <div 
+            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white border-2 border-white shadow-lg"
+            style={{ width: `${headSize * 4}px`, height: `${headSize * 4}px` }}
+          >
+            <Bot size={iconSize} />
           </div>
           
           {/* Body - Digital form */}
           <motion.div 
-            className="mt-1 h-5 w-6 bg-blue-400 rounded-t-full"
+            className="mt-1 bg-blue-400 rounded-t-full"
+            style={{ width: `${isMobile ? 16 : 24}px`, height: `${isMobile ? 4 : 8}px` }}
             animate={{ 
-              height: [5, 8, 5],
+              height: isMobile ? [4, 8, 4] : [8, 14, 8],
             }}
             transition={{ duration: 1.5, repeat: Infinity }}
           />
@@ -59,7 +70,7 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
             }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            <Sparkles size={14} />
+            <Sparkles size={sparkleSize1} />
           </motion.div>
           
           <motion.div 
@@ -70,16 +81,16 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
             }}
             transition={{ duration: 2.5, repeat: Infinity }}
           >
-            <Sparkles size={12} />
+            <Sparkles size={sparkleSize2} />
           </motion.div>
         </div>
       </div>
       
-      {/* Message bubble when active */}
+      {/* Message bubble when active - responsive positioning */}
       <AnimatePresence>
         {isActive && (
           <motion.div 
-            className="absolute left-16 top-0 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg text-sm max-w-[200px] border border-primary/20"
+            className={`absolute ${isMobile ? 'left-8 -top-14' : 'left-16 top-0'} bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-lg text-xs md:text-sm max-w-[150px] md:max-w-[200px] border border-primary/20`}
             initial={{ opacity: 0, scale: 0.8, x: -20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.8, x: -20 }}
@@ -87,9 +98,11 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
           >
             <div className="font-medium text-primary mb-1">MrGuru</div>
             <div className="text-gray-700 dark:text-gray-300">
-              Follow me through this digital journey! I'll show you what I can create for you.
+              {isMobile 
+                ? "Follow me through this journey!" 
+                : "Follow me through this digital journey! I'll show you what I can create for you."}
             </div>
-            <div className="absolute -left-2 top-4 w-2 h-2 bg-white dark:bg-gray-800 transform rotate-45 border-l border-b border-primary/20"></div>
+            <div className={`absolute ${isMobile ? 'bottom-[-8px] left-4' : '-left-2 top-4'} w-2 h-2 bg-white dark:bg-gray-800 transform ${isMobile ? 'rotate-[135deg]' : 'rotate-45'} border-l border-b border-primary/20`}></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -248,17 +261,17 @@ const JourneyExperience: React.FC = () => {
               transition={{ delay: 0.3, duration: 0.5 }}
             >
               <motion.div 
-                className="text-6xl mb-4 inline-block"
+                className="text-4xl md:text-6xl mb-4 inline-block"
                 animate={{ 
                   rotate: [0, 5, 0, -5, 0],
                   scale: [1, 1.2, 1],
                 }}
                 transition={{ duration: 2, repeat: 1 }}
               >
-                <Bot size={80} />
+                <Bot size={window.innerWidth < 768 ? 60 : 80} />
               </motion.div>
               <motion.h1 
-                className="text-3xl font-bold mb-4"
+                className="text-xl md:text-3xl font-bold mb-2 md:mb-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
@@ -266,7 +279,7 @@ const JourneyExperience: React.FC = () => {
                 Welcome to MrGuru's Digital Universe
               </motion.h1>
               <motion.p
-                className="text-lg mb-6"
+                className="text-sm md:text-lg mb-4 md:mb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.5 }}
@@ -293,10 +306,10 @@ const JourneyExperience: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Main journey container - fixed to the right side of the screen */}
+      {/* Main journey container - fixed to the right side of the screen, responsive positioning */}
       <motion.div 
         ref={containerRef}
-        className="fixed right-8 inset-y-0 w-20 z-40 pointer-events-none flex items-center"
+        className="fixed right-2 md:right-8 inset-y-0 w-12 md:w-20 z-40 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
@@ -360,14 +373,20 @@ const JourneyExperience: React.FC = () => {
                     {milestone.icon}
                   </motion.div>
                   
-                  {/* Label + description + CTA */}
+                  {/* Label + description + CTA - positioned properly for mobile/desktop */}
                   <AnimatePresence>
                     {(activeIndex === index || milestone.position === 90) && (
                       <motion.div 
-                        className="absolute left-9 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md min-w-[200px] max-w-[250px] border border-gray-200 dark:border-gray-700"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
+                        className="absolute left-9 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[200px] md:max-w-[250px] border border-gray-200 dark:border-gray-700"
+                        style={{
+                          // For mobile, position above on very small screens
+                          [window.innerWidth < 480 ? 'bottom' : 'left']: window.innerWidth < 480 ? '0' : '9',
+                          // For mobile, position to the left only when not near the bottom of the page
+                          ...(window.innerWidth < 480 && milestone.position > 50 ? { left: '-170px' } : {})
+                        }}
+                        initial={{ opacity: 0, x: window.innerWidth < 480 ? 0 : -10, y: window.innerWidth < 480 ? 10 : 0 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: window.innerWidth < 480 ? 0 : -10, y: window.innerWidth < 480 ? 10 : 0 }}
                         transition={{ duration: 0.3 }}
                       >
                         <h3 className="font-bold text-primary dark:text-primary mb-1">
@@ -399,16 +418,16 @@ const JourneyExperience: React.FC = () => {
         </div>
       </motion.div>
       
-      {/* Start journey prompt - only shows if not started and intro animation is finished */}
+      {/* Start journey prompt - only shows if not started and intro animation is finished - Responsive for mobile */}
       {!hasStartedJourney && !showInitialAnimation && (
         <motion.div 
-          className="fixed right-24 bottom-20 z-40"
+          className="fixed right-4 md:right-24 bottom-20 z-40"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
           <motion.button
-            className="bg-primary text-white font-medium py-3 px-6 rounded-full shadow-lg flex items-center gap-2"
+            className="bg-primary text-white font-medium py-2 md:py-3 px-4 md:px-6 rounded-full shadow-lg flex items-center gap-2 text-xs md:text-sm"
             onClick={startJourney}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -422,9 +441,11 @@ const JourneyExperience: React.FC = () => {
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Bot size={20} />
-            <span>Begin Interactive Tour</span>
-            <ChevronDown size={18} />
+            <Bot size={16} className="flex-shrink-0" />
+            <span className="whitespace-nowrap">
+              {window.innerWidth < 480 ? 'Start Tour' : 'Begin Interactive Tour'}
+            </span>
+            <ChevronDown size={16} className="flex-shrink-0" />
           </motion.button>
         </motion.div>
       )}
