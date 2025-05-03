@@ -100,7 +100,7 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
                     transform: 'translateX(-50%)'
                   }
                 : {
-                    right: '8px',
+                    left: '120%', // To the right of the character on desktop
                     top: '0'
                   }),
               boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08), 0 0 10px rgba(59, 130, 246, 0.08)'
@@ -129,11 +129,11 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
                       transform: 'rotate(-45deg)'
                     }
                   : {
-                      right: '-8px',
+                      left: '-8px',
                       top: '12px',
-                      borderRight: '1px solid',
+                      borderLeft: '1px solid',
                       borderTop: '1px solid',
-                      transform: 'rotate(45deg)'
+                      transform: 'rotate(-45deg)'
                     })
               }}
             ></div>
@@ -340,10 +340,10 @@ const JourneyExperience: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Main journey container - fixed to the center-left with better spacing from page edge */}
+      {/* Main journey container - positioned with enough space for popups */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-3 sm:left-6 md:left-12 lg:left-16 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
+        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
@@ -429,8 +429,9 @@ const JourneyExperience: React.FC = () => {
                                   : { top: '120%' })  // Show below for milestones in bottom half
                               } 
                             : {
-                                // On larger screens, show to the right
-                                right: '12px',
+                                // On larger screens, show in front of the path for better visibility
+                                left: '100%', 
+                                marginLeft: '15px',
                                 top: '50%',
                                 transform: 'translateY(-50%)'
                               }),
@@ -441,7 +442,7 @@ const JourneyExperience: React.FC = () => {
                           scale: 0.95,
                           ...(window.innerWidth < 640 
                             ? { y: milestone.position > 50 ? 10 : -10 } 
-                            : { x: -10 })
+                            : { x: -20 })
                         }}
                         animate={{ 
                           opacity: 1, 
@@ -454,7 +455,7 @@ const JourneyExperience: React.FC = () => {
                           scale: 0.95,
                           ...(window.innerWidth < 640 
                             ? { y: milestone.position > 50 ? 10 : -10 } 
-                            : { x: -10 })
+                            : { x: -20 })
                         }}
                         transition={{ duration: 0.3 }}
                       >
