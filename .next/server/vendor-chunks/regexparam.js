@@ -1,0 +1,25 @@
+"use strict";
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+exports.id = "vendor-chunks/regexparam";
+exports.ids = ["vendor-chunks/regexparam"];
+exports.modules = {
+
+/***/ "(ssr)/./node_modules/regexparam/dist/index.mjs":
+/*!************************************************!*\
+  !*** ./node_modules/regexparam/dist/index.mjs ***!
+  \************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   inject: () => (/* binding */ inject),\n/* harmony export */   parse: () => (/* binding */ parse)\n/* harmony export */ });\n/**\n * @param {string|RegExp} input The route pattern\n * @param {boolean} [loose] Allow open-ended matching. Ignored with `RegExp` input.\n */\nfunction parse(input, loose) {\n\tif (input instanceof RegExp) return { keys:false, pattern:input };\n\tvar c, o, tmp, ext, keys=[], pattern='', arr = input.split('/');\n\tarr[0] || arr.shift();\n\n\twhile (tmp = arr.shift()) {\n\t\tc = tmp[0];\n\t\tif (c === '*') {\n\t\t\tkeys.push(c);\n\t\t\tpattern += tmp[1] === '?' ? '(?:/(.*))?' : '/(.*)';\n\t\t} else if (c === ':') {\n\t\t\to = tmp.indexOf('?', 1);\n\t\t\text = tmp.indexOf('.', 1);\n\t\t\tkeys.push( tmp.substring(1, !!~o ? o : !!~ext ? ext : tmp.length) );\n\t\t\tpattern += !!~o && !~ext ? '(?:/([^/]+?))?' : '/([^/]+?)';\n\t\t\tif (!!~ext) pattern += (!!~o ? '?' : '') + '\\\\' + tmp.substring(ext);\n\t\t} else {\n\t\t\tpattern += '/' + tmp;\n\t\t}\n\t}\n\n\treturn {\n\t\tkeys: keys,\n\t\tpattern: new RegExp('^' + pattern + (loose ? '(?=$|\\/)' : '\\/?$'), 'i')\n\t};\n}\n\nvar RGX = /(\\/|^)([:*][^/]*?)(\\?)?(?=[/.]|$)/g;\n\n// error if key missing?\nfunction inject(route, values) {\n\treturn route.replace(RGX, (x, lead, key, optional) => {\n\t\tx = values[key=='*' ? key : key.substring(1)];\n\t\treturn x ? '/'+x : (optional || key=='*') ? '' : '/' + key;\n\t});\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvcmVnZXhwYXJhbS9kaXN0L2luZGV4Lm1qcyIsIm1hcHBpbmdzIjoiOzs7OztBQUFBO0FBQ0EsV0FBVyxlQUFlO0FBQzFCLFdBQVcsU0FBUztBQUNwQjtBQUNPO0FBQ1AsdUNBQXVDO0FBQ3ZDO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLElBQUk7QUFDSjtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsSUFBSTtBQUNKO0FBQ0E7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBOztBQUVBO0FBQ087QUFDUDtBQUNBO0FBQ0E7QUFDQSxFQUFFO0FBQ0YiLCJzb3VyY2VzIjpbIi9ob21lL3J1bm5lci93b3Jrc3BhY2Uvbm9kZV9tb2R1bGVzL3JlZ2V4cGFyYW0vZGlzdC9pbmRleC5tanMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBAcGFyYW0ge3N0cmluZ3xSZWdFeHB9IGlucHV0IFRoZSByb3V0ZSBwYXR0ZXJuXG4gKiBAcGFyYW0ge2Jvb2xlYW59IFtsb29zZV0gQWxsb3cgb3Blbi1lbmRlZCBtYXRjaGluZy4gSWdub3JlZCB3aXRoIGBSZWdFeHBgIGlucHV0LlxuICovXG5leHBvcnQgZnVuY3Rpb24gcGFyc2UoaW5wdXQsIGxvb3NlKSB7XG5cdGlmIChpbnB1dCBpbnN0YW5jZW9mIFJlZ0V4cCkgcmV0dXJuIHsga2V5czpmYWxzZSwgcGF0dGVybjppbnB1dCB9O1xuXHR2YXIgYywgbywgdG1wLCBleHQsIGtleXM9W10sIHBhdHRlcm49JycsIGFyciA9IGlucHV0LnNwbGl0KCcvJyk7XG5cdGFyclswXSB8fCBhcnIuc2hpZnQoKTtcblxuXHR3aGlsZSAodG1wID0gYXJyLnNoaWZ0KCkpIHtcblx0XHRjID0gdG1wWzBdO1xuXHRcdGlmIChjID09PSAnKicpIHtcblx0XHRcdGtleXMucHVzaChjKTtcblx0XHRcdHBhdHRlcm4gKz0gdG1wWzFdID09PSAnPycgPyAnKD86LyguKikpPycgOiAnLyguKiknO1xuXHRcdH0gZWxzZSBpZiAoYyA9PT0gJzonKSB7XG5cdFx0XHRvID0gdG1wLmluZGV4T2YoJz8nLCAxKTtcblx0XHRcdGV4dCA9IHRtcC5pbmRleE9mKCcuJywgMSk7XG5cdFx0XHRrZXlzLnB1c2goIHRtcC5zdWJzdHJpbmcoMSwgISF+byA/IG8gOiAhIX5leHQgPyBleHQgOiB0bXAubGVuZ3RoKSApO1xuXHRcdFx0cGF0dGVybiArPSAhIX5vICYmICF+ZXh0ID8gJyg/Oi8oW14vXSs/KSk/JyA6ICcvKFteL10rPyknO1xuXHRcdFx0aWYgKCEhfmV4dCkgcGF0dGVybiArPSAoISF+byA/ICc/JyA6ICcnKSArICdcXFxcJyArIHRtcC5zdWJzdHJpbmcoZXh0KTtcblx0XHR9IGVsc2Uge1xuXHRcdFx0cGF0dGVybiArPSAnLycgKyB0bXA7XG5cdFx0fVxuXHR9XG5cblx0cmV0dXJuIHtcblx0XHRrZXlzOiBrZXlzLFxuXHRcdHBhdHRlcm46IG5ldyBSZWdFeHAoJ14nICsgcGF0dGVybiArIChsb29zZSA/ICcoPz0kfFxcLyknIDogJ1xcLz8kJyksICdpJylcblx0fTtcbn1cblxudmFyIFJHWCA9IC8oXFwvfF4pKFs6Kl1bXi9dKj8pKFxcPyk/KD89Wy8uXXwkKS9nO1xuXG4vLyBlcnJvciBpZiBrZXkgbWlzc2luZz9cbmV4cG9ydCBmdW5jdGlvbiBpbmplY3Qocm91dGUsIHZhbHVlcykge1xuXHRyZXR1cm4gcm91dGUucmVwbGFjZShSR1gsICh4LCBsZWFkLCBrZXksIG9wdGlvbmFsKSA9PiB7XG5cdFx0eCA9IHZhbHVlc1trZXk9PScqJyA/IGtleSA6IGtleS5zdWJzdHJpbmcoMSldO1xuXHRcdHJldHVybiB4ID8gJy8nK3ggOiAob3B0aW9uYWwgfHwga2V5PT0nKicpID8gJycgOiAnLycgKyBrZXk7XG5cdH0pO1xufVxuIl0sIm5hbWVzIjpbXSwiaWdub3JlTGlzdCI6WzBdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/regexparam/dist/index.mjs\n");
+
+/***/ })
+
+};
+;

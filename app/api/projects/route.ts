@@ -1,29 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../db';
-import { eq } from 'drizzle-orm';
 import { projects } from '../../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     const { db } = getDb();
-    const id = request.nextUrl.searchParams.get('id');
 
+    // If ID is provided, return a single project
     if (id) {
-      // Get specific project
-      const project = await db.select().from(projects).where(eq(projects.id, id));
-      
-      if (!project || project.length === 0) {
-        return NextResponse.json({ message: "Project not found" }, { status: 404 });
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, id),
+      });
+
+      if (!project) {
+        return NextResponse.json({ message: 'Project not found' }, { status: 404 });
       }
 
-      return NextResponse.json(project[0]);
-    } else {
-      // Get all projects
-      const allProjects = await db.select().from(projects);
-      return NextResponse.json(allProjects);
+      return NextResponse.json(project);
     }
+
+    // Otherwise, return all projects
+    const allProjects = await db.query.projects.findMany({
+      orderBy: (projects, { desc }) => [desc(projects.featured), desc(projects.order)]
+    });
+
+    return NextResponse.json(allProjects);
   } catch (error) {
     console.error('Error fetching projects:', error);
-    return NextResponse.json({ message: "Failed to fetch projects" }, { status: 500 });
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

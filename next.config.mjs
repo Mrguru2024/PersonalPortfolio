@@ -2,11 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [],
-  swcMinify: true,
+  // swcMinify is now enabled by default in Next.js 14+
+  // Next.js 15 configuration
   experimental: {
-    serverComponentsExternalPackages: ["pg"],
-    esmExternals: "loose",
+    serverActions: {
+      bodySizeLimit: '4mb',
+    },
   },
+  output: 'standalone',
+  poweredByHeader: false,
   images: {
     domains: [],
     remotePatterns: [
