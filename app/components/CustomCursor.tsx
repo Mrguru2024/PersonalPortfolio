@@ -28,8 +28,7 @@ export default function CustomCursor({ currentSection }: { currentSection: strin
   useEffect(() => {
     // Detect devices that likely don't have a mouse
     const isTouchDevice = ('ontouchstart' in window) || 
-                          (navigator.maxTouchPoints > 0) || 
-                          (navigator.msMaxTouchPoints > 0);
+                          (navigator.maxTouchPoints > 0);
     
     if (isTouchDevice) {
       setIsVisible(false);

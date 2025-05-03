@@ -1,74 +1,84 @@
-import { Pool } from '@neondatabase/serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import * as schema from "@/shared/schema";
-import { asc, desc, eq, and, or, sql } from 'drizzle-orm';
+import * as schema from '@/shared/schema';
+import ws from 'ws';
 
-let pool: Pool;
+neonConfig.webSocketConstructor = ws;
 
-/**
- * Initializes and returns the database connection pool
- */
-export function getDb() {
-  if (!pool) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL not set in environment");
-    }
-    
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  }
-  
-  return drizzle({ client: pool, schema });
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
 /**
- * Closes the database connection pool
+ * Pool of database connections that can be reused
+ */
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+/**
+ * Drizzle ORM database instance
+ */
+export const db = drizzle(pool, { schema });
+
+/**
+ * Helper function to close the database connection pool
+ * Call this when shutting down the application
  */
 export async function closeDb() {
-  if (pool) {
-    await pool.end();
+  await pool.end();
+}
+
+/**
+ * Execute a SQL query with parameters
+ * @param text SQL query
+ * @param params Query parameters
+ * @returns Query result
+ */
+export async function query<T>(text: string, params?: any[]): Promise<T> {
+  try {
+    const result = await pool.query(text, params);
+    return result.rows as T;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
   }
 }
 
 /**
- * Executes a SQL query with parameters
- */
-export async function query<T>(
-  sql: string,
-  params: any[] = []
-): Promise<T[]> {
-  const db = getDb();
-  const result = await db.execute(sql, params);
-  return result.rows as T[];
-}
-
-/**
- * Finds a record by ID
+ * Find a record by ID
+ * @param table Table name
+ * @param id Record ID
+ * @returns Record or undefined
  */
 export async function findById<T extends { id: any }>(
-  table: any,
-  id: any
+  table: string, 
+  id: string | number
 ): Promise<T | undefined> {
-  const db = getDb();
-  const [record] = await db.select().from(table).where(eq(table.id, id));
+  const [record] = await query<T[]>(`SELECT * FROM ${table} WHERE id = $1 LIMIT 1`, [id]);
   return record;
 }
 
 /**
- * Finds records by a specific field value
+ * Find records by a specific field value
+ * @param table Table name
+ * @param field Field name
+ * @param value Field value
+ * @returns Array of records
  */
 export async function findByField<T>(
-  table: any,
-  field: any,
+  table: string,
+  field: string,
   value: any
 ): Promise<T[]> {
-  const db = getDb();
-  return db.select().from(table).where(eq(field, value));
+  return query<T[]>(`SELECT * FROM ${table} WHERE ${field} = $1`, [value]);
 }
 
 /**
- * Finds all records in a table
+ * Find all records in a table
+ * @param table Table name
+ * @returns Array of records
  */
-export async function findAll<T>(table: any): Promise<T[]> {
-  const db = getDb();
-  return db.select().from(table);
+export async function findAll<T>(table: string): Promise<T[]> {
+  return query<T[]>(`SELECT * FROM ${table}`);
 }

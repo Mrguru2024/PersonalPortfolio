@@ -2,11 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS variables for theme */
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
+    --card: 0 0% 98%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
@@ -29,11 +30,11 @@
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 240 10% 6%;
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 240 5.9% 90%;
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -49,205 +50,210 @@
   }
 }
 
+/* Global styles */
 @layer base {
   * {
-    @apply border-border scroll-smooth;
+    @apply border-border;
   }
-  
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
+
+  /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+    @apply font-bold leading-tight tracking-tighter;
+  }
+
+  .heading-xl {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+  }
+
+  .heading-lg {
+    @apply text-3xl md:text-4xl font-bold;
+  }
+
+  .heading-md {
+    @apply text-2xl md:text-3xl font-bold;
+  }
+
+  .heading-sm {
+    @apply text-xl md:text-2xl font-bold;
+  }
+
+  .font-heading {
+    @apply font-bold tracking-tighter;
+  }
+
+  /* Container with custom padding */
+  .container-custom {
+    @apply container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500;
+  }
+
+  /* Section backgrounds */
+  .section-gradient {
+    @apply bg-gradient-to-b from-background to-muted/50;
   }
 }
 
-/* Custom Scrollbar Styles */
-::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-background;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-secondary rounded-md border-2 border-background;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted;
-}
-
-/* Custom styles for the portfolio */
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600;
-}
-
-.card-hover {
-  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-}
-
-.section-padding {
-  @apply py-16 md:py-24;
-}
-
-.heading-xl {
-  @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
-}
-
-.heading-lg {
-  @apply text-3xl md:text-4xl font-bold;
-}
-
-.heading-md {
-  @apply text-2xl md:text-3xl font-bold;
-}
-
-.heading-sm {
-  @apply text-xl md:text-2xl font-semibold;
-}
-
-.container-custom {
-  @apply container mx-auto px-4 md:px-6;
-}
-
-/* Custom cursor styles */
+/* Custom cursor styling */
 .custom-cursor {
-  @apply fixed pointer-events-none z-50 rounded-full mix-blend-difference;
-  height: 32px;
-  width: 32px;
-  transform: translate(-50%, -50%);
-  transition: transform 0.2s ease, width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
+  @apply fixed w-8 h-8 rounded-full pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 mix-blend-difference transition-transform duration-100 ease-out opacity-80;
 }
 
 .custom-cursor.hovering {
-  height: 64px;
-  width: 64px;
-  @apply bg-white;
+  @apply scale-150 w-6 h-6 opacity-90;
 }
 
 .custom-cursor.clicking {
-  transform: translate(-50%, -50%) scale(0.9);
-  @apply bg-white;
+  @apply scale-75 opacity-100;
 }
 
 .cursor-tooltip {
-  @apply absolute text-xs font-medium bg-primary text-primary-foreground px-2 py-1 rounded-md whitespace-nowrap;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  pointer-events: none;
+  @apply absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-background text-foreground text-xs font-medium rounded-md shadow-md opacity-0 transition-opacity whitespace-nowrap;
 }
 
 .cursor-tooltip.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
+  @apply opacity-100;
 }
 
-/* Project section styles */
+/* Animations */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Skills progress bars */
+.skill-progress-bar {
+  @apply relative h-2 rounded-full bg-secondary overflow-hidden;
+}
+
+.skill-progress-value {
+  @apply absolute left-0 top-0 h-full bg-primary;
+}
+
+/* Project card */
 .project-card {
-  @apply relative overflow-hidden rounded-lg bg-card border border-border transition-all duration-300;
-  height: 350px;
+  @apply relative rounded-xl overflow-hidden border border-border bg-card shadow-sm hover:shadow-md transition-shadow;
 }
 
-.project-card:hover .project-content {
-  transform: translateY(0);
+.project-card-image {
+  @apply aspect-video w-full object-cover;
 }
 
-.project-image {
-  @apply w-full h-full object-cover transition-transform duration-500;
+.project-card-content {
+  @apply p-5;
 }
 
-.project-card:hover .project-image {
-  transform: scale(1.05);
+.project-card-tech {
+  @apply flex flex-wrap gap-2 mt-3;
 }
 
-.project-content {
-  @apply absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-6 transition-transform duration-300;
-  transform: translateY(calc(100% - 100px));
+.project-card-tech-item {
+  @apply text-xs font-medium px-2 py-1 rounded-md bg-secondary/60 text-secondary-foreground;
 }
 
-.project-tags {
-  @apply flex flex-wrap gap-2 mt-4;
-}
-
-/* Skills section styles */
-.skill-card {
-  @apply flex flex-col items-center p-4 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors;
-}
-
-.skill-icon {
-  @apply text-4xl mb-2 text-primary;
-}
-
-/* Blog styles */
-.blog-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
-}
-
+/* Blog card */
 .blog-card {
-  @apply overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:shadow-lg;
+  @apply rounded-xl overflow-hidden border border-border bg-card shadow-sm hover:shadow-md transition-shadow;
 }
 
-.blog-image {
-  @apply w-full h-48 object-cover;
+.blog-card-image {
+  @apply aspect-video w-full object-cover;
 }
 
-.blog-content {
-  @apply p-4;
+.blog-card-content {
+  @apply p-5;
 }
 
-.blog-meta {
-  @apply flex items-center text-sm text-muted-foreground mt-4;
+.blog-card-meta {
+  @apply flex items-center text-sm text-muted-foreground mt-3;
 }
 
-/* Animation utilities */
-.fadeIn {
-  animation: fadeIn 0.5s ease-in-out;
+/* Form fields */
+.form-group {
+  @apply mb-4;
 }
 
-.slideUp {
-  animation: slideUp 0.5s ease-in-out;
+.form-label {
+  @apply block text-sm font-medium mb-1;
 }
 
-.slideDown {
-  animation: slideDown 0.5s ease-in-out;
+.form-input {
+  @apply w-full rounded-md border border-input bg-background px-3 py-2;
 }
 
-.slideLeft {
-  animation: slideLeft 0.5s ease-in-out;
+.form-error {
+  @apply text-xs text-destructive mt-1;
 }
 
-.slideRight {
-  animation: slideRight 0.5s ease-in-out;
+/* Buttons */
+.btn-primary {
+  @apply px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.btn-secondary {
+  @apply px-4 py-2 rounded-md bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.btn-outline {
+  @apply px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors;
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* Shimmer loading effect */
+.shimmer {
+  @apply relative overflow-hidden bg-muted;
 }
 
-@keyframes slideLeft {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+.shimmer::after {
+  content: "";
+  @apply absolute top-0 left-0 w-full h-full;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 1.5s infinite;
 }
 
-@keyframes slideRight {
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30;
+}
+
+/* Mobile menu */
+.mobile-menu {
+  @apply fixed inset-0 z-50 bg-background/90 backdrop-blur-sm;
 }
