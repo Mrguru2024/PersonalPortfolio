@@ -2,7 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [],
-  serverExternalPackages: ["pg"],
+  swcMinify: true,
+  experimental: {
+    serverComponentsExternalPackages: ["pg"],
+  },
   images: {
     domains: [],
     remotePatterns: [
@@ -11,20 +14,6 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-  },
-  // Allow cross-origin requests in development
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-        ],
-      },
-    ];
   },
 };
 

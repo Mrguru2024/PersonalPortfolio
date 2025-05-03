@@ -5,12 +5,6 @@ import { ZodError } from 'zod';
 import { format } from 'date-fns';
 import path from 'path';
 import fs from 'fs';
-import { adaptToClientModel, Project } from '../../client/src/lib/data';
-
-// Helper function to log object structure
-function logObjectStructure(obj: any, label: string) {
-  console.log(`[DEBUG] ${label} - Property names: ${Object.keys(obj).join(', ')}`);
-}
 
 // Still import these for now as fallback until we populate the database
 import { 
@@ -28,28 +22,14 @@ export const portfolioController = {
   getProjects: async (req: Request, res: Response) => {
     try {
       // Try to get projects from database
-      const dbProjects = await storage.getProjects();
+      const projects = await storage.getProjects();
       
       // If no projects found in DB, return static projects for now
-      if (!dbProjects || dbProjects.length === 0) {
+      if (!projects || projects.length === 0) {
         return res.json(staticProjects);
       }
       
-      if (dbProjects.length > 0) {
-        logObjectStructure(dbProjects[0], 'DB Project');
-      }
-      
-      // Convert DB model to client model using the adapter
-      const clientProjects = dbProjects.map(project => {
-        const adapted = adaptToClientModel(project);
-        return adapted;
-      });
-      
-      if (clientProjects.length > 0) {
-        logObjectStructure(clientProjects[0], 'Client Project');
-      }
-      
-      res.json(clientProjects);
+      res.json(projects);
     } catch (error) {
       console.error('Error fetching projects:', error);
       res.status(500).json({ message: 'Error fetching projects' });
@@ -61,10 +41,10 @@ export const portfolioController = {
       const { id } = req.params;
       
       // Try to get project from database
-      const dbProject = await storage.getProjectById(id);
+      const project = await storage.getProjectById(id);
       
       // If not found in DB, check static projects
-      if (!dbProject) {
+      if (!project) {
         const staticProject = staticProjects.find(p => p.id === id);
         if (staticProject) {
           return res.json(staticProject);
@@ -72,14 +52,7 @@ export const portfolioController = {
         return res.status(404).json({ message: 'Project not found' });
       }
       
-      logObjectStructure(dbProject, 'DB Project');
-      
-      // Convert DB model to client model using the adapter
-      const clientProject = adaptToClientModel(dbProject);
-      
-      logObjectStructure(clientProject, 'Client Project');
-      
-      res.json(clientProject);
+      res.json(project);
     } catch (error) {
       console.error('Error fetching project:', error);
       res.status(500).json({ message: 'Error fetching project' });

@@ -36,12 +36,12 @@ export const projects = pgTable("projects", {
   image: text("image").notNull(),
   tags: json("tags").$type<string[]>().notNull(),
   category: text("category").notNull(),
-  github_url: text("github_url"),
-  live_url: text("live_url"),
+  githubUrl: text("github_url"),
+  liveUrl: text("live_url"),
   details: text("details"),
-  demo_type: text("demo_type"), // Types: iframe, video, github, custom
-  demo_url: text("demo_url"), // URL for direct embed/iframe
-  demo_config: json("demo_config").$type<{
+  demoType: text("demo_type"), // Types: iframe, video, github, custom
+  demoUrl: text("demo_url"), // URL for direct embed/iframe
+  demoConfig: json("demo_config").$type<{
     width?: string;
     height?: string;
     allowFullscreen?: boolean;
@@ -50,9 +50,9 @@ export const projects = pgTable("projects", {
     theme?: string;
     githubBranch?: string;
   }>(),
-  repo_owner: text("repo_owner"), // GitHub username/organization
-  repo_name: text("repo_name"), // Repository name
-  tech_stack: json("tech_stack").$type<string[]>(),
+  repoOwner: text("repo_owner"), // GitHub username/organization
+  repoName: text("repo_name"), // Repository name
+  techStack: json("tech_stack").$type<string[]>(),
 });
 
 export const insertProjectSchema = createInsertSchema(projects);

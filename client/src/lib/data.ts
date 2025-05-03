@@ -1,32 +1,3 @@
-// Define the database model matching the actual snake_case database columns
-export interface ProjectModel {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  tags: string[];
-  category: string;
-  github_url: string | null;
-  live_url: string | null;
-  details: string | null;
-  demo_type: "iframe" | "video" | "github" | "custom" | null;
-  demo_url: string | null;
-  demo_config: {
-    width?: string;
-    height?: string;
-    allowFullscreen?: boolean;
-    isResponsive?: boolean;
-    showCode?: boolean;
-    theme?: string;
-    githubBranch?: string;
-  } | null;
-  repo_owner: string | null;
-  repo_name: string | null;
-  tech_stack: string[] | null;
-}
-
-// Define the client interface with camelCase field names 
-// (this is what the existing code uses)
 export interface Project {
   id: string;
   title: string;
@@ -34,12 +5,12 @@ export interface Project {
   image: string;
   tags: string[];
   category: string;
-  githubUrl: string | null;
-  liveUrl: string | null;
-  details: string | null;
-  demoType: "iframe" | "video" | "github" | "custom" | null;
-  demoUrl: string | null;
-  demoConfig: {
+  githubUrl?: string;
+  liveUrl?: string;
+  details?: string;
+  demoType?: "iframe" | "video" | "github" | "custom";
+  demoUrl?: string;
+  demoConfig?: {
     width?: string;
     height?: string;
     allowFullscreen?: boolean;
@@ -47,55 +18,10 @@ export interface Project {
     showCode?: boolean;
     theme?: string;
     githubBranch?: string;
-  } | null;
-  repoOwner: string | null;
-  repoName: string | null;
-  techStack: string[] | null;
-}
-
-// Adapter functions to convert between the models
-export function adaptToClientModel(dbProject: ProjectModel): Project {
-  console.log('Adapting project with columns:', Object.keys(dbProject).join(', '));
-  
-  // Convert from snake_case (database) to camelCase (client)
-  return {
-    id: dbProject.id,
-    title: dbProject.title,
-    description: dbProject.description,
-    image: dbProject.image,
-    tags: dbProject.tags,
-    category: dbProject.category,
-    githubUrl: dbProject.github_url,
-    liveUrl: dbProject.live_url,
-    details: dbProject.details,
-    demoType: dbProject.demo_type,
-    demoUrl: dbProject.demo_url,
-    demoConfig: dbProject.demo_config,
-    repoOwner: dbProject.repo_owner,
-    repoName: dbProject.repo_name,
-    techStack: dbProject.tech_stack
   };
-}
-
-export function adaptToDatabaseModel(clientProject: Project): ProjectModel {
-  // Convert from camelCase (client) to snake_case (database)
-  return {
-    id: clientProject.id,
-    title: clientProject.title,
-    description: clientProject.description,
-    image: clientProject.image,
-    tags: clientProject.tags,
-    category: clientProject.category,
-    github_url: clientProject.githubUrl,
-    live_url: clientProject.liveUrl,
-    details: clientProject.details,
-    demo_type: clientProject.demoType,
-    demo_url: clientProject.demoUrl,
-    demo_config: clientProject.demoConfig,
-    repo_owner: clientProject.repoOwner,
-    repo_name: clientProject.repoName,
-    tech_stack: clientProject.techStack
-  };
+  repoOwner?: string;
+  repoName?: string;
+  techStack?: string[];
 }
 
 export interface Skill {
