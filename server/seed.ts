@@ -124,8 +124,8 @@ In the end, this portfolio is more than just a collection of my work—it's a re
 While frameworks and tools will come and go, these fundamental skills will serve you well throughout your career. What skills would you add to this list?`,
       coverImage: "https://images.unsplash.com/photo-1573495627361-d9b87960b12d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80",
       tags: ["Web Development", "Career", "Skills", "JavaScript"],
-      publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       authorId: userId,
       isPublished: true
     },
@@ -150,8 +150,8 @@ Of course, there's a learning curve. TypeScript introduces concepts like generic
 If you're on the fence about TypeScript, I encourage you to give it a serious try on your next project. The initial friction is quickly outweighed by the benefits, especially as your application grows in complexity.`,
       coverImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
       tags: ["TypeScript", "React", "JavaScript", "Development"],
-      publishedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
-      updatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      publishedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+      updatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
       authorId: userId,
       isPublished: true
     }
@@ -168,7 +168,7 @@ If you're on the fence about TypeScript, I encourage you to give it a serious tr
           name: "Sarah Johnson",
           email: "sarah@example.com",
           content: "Great insights into your development process! I especially liked how you approached the UI/UX challenges.",
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
           isApproved: true
         },
         {
@@ -176,7 +176,7 @@ If you're on the fence about TypeScript, I encourage you to give it a serious tr
           name: "Mike Chen",
           email: "mike@example.com",
           content: "Your portfolio looks amazing! What was the most challenging part of building it?",
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
           isApproved: true
         }
       ]);

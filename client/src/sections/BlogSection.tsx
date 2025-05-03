@@ -12,9 +12,8 @@ import { apiRequest } from "@/lib/queryClient";
 const BlogSection = () => {
   const { data: blogPosts, isLoading, error } = useQuery({
     queryKey: ["/api/blog"],
-    queryFn: async (): Promise<BlogPost[]> => {
-      const response = await apiRequest("/api/blog");
-      return response as BlogPost[];
+    queryFn: async () => {
+      return apiRequest<BlogPost[]>("/api/blog");
     }
   });
 
