@@ -4,7 +4,10 @@ import {
   projects as staticProjects, 
   frontendSkills,
   backendSkills,
-  devopsSkills
+  devopsSkills,
+  personalInfo,
+  socialLinks,
+  contactInfo
 } from '../client/src/lib/data';
 
 async function seedProjects() {

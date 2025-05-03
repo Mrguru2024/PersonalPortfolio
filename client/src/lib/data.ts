@@ -38,9 +38,9 @@ export interface ContactInfo {
 }
 
 export const personalInfo: PersonalInfo = {
-  name: "Anthony MrGuru Feaster",
+  name: "Anthony Feaster (MrGuru.dev)",
   title: "Full Stack Web Developer",
-  description: "Hello! I'm Anthony Feaster, an innovative entrepreneur and tech enthusiast based in Atlanta, Georgia. With a strong background in electronic repair and automotive locksmiths, I founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith industry. Currently, I'm expanding my skill set through Codenoobs WebDev Incubator. My passion lies in problem-solving and continuous learning. I thrive on creating solutions that improve customer experiences and streamline operations.",
+  description: "Hello! I'm Anthony Feaster, also known as MrGuru.dev, an innovative entrepreneur and tech enthusiast based in Atlanta, Georgia. With a strong background in electronic repair and automotive locksmiths, I founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith industry. Currently, I'm expanding my skill set through Codenoobs WebDev Incubator. My passion lies in problem-solving and continuous learning. I thrive on creating solutions that improve customer experiences and streamline operations.",
   education: [
     "Codenoobs WebDev Incubator",
     "Tech Entrepreneurship Training",
@@ -70,6 +70,11 @@ export const socialLinks: SocialLink[] = [
     platform: "Twitter",
     url: "https://twitter.com/mrguru2024",
     icon: "twitter"
+  },
+  {
+    platform: "MrGuru.dev",
+    url: "https://mrguru.dev",
+    icon: "globe"
   },
   {
     platform: "Email",
