@@ -1,7 +1,7 @@
 import { ResumeForm } from "@/components/ResumeForm";
-import { ParallaxBackground } from "@/components/ParallaxBackground";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import ParallaxBackground from "@/components/ParallaxBackground";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 export default function ResumePage() {
   return (
