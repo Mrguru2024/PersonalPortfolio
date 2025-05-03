@@ -37,6 +37,30 @@ export interface ContactInfo {
   phone: string;
 }
 
+export interface BlogPost {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string;
+  content: string;
+  coverImage: string;
+  tags: string[];
+  publishedAt: string;
+  updatedAt: string;
+  authorId: number;
+  isPublished: boolean;
+}
+
+export interface BlogComment {
+  id: number;
+  postId: number;
+  name: string;
+  email: string;
+  content: string;
+  createdAt: string;
+  isApproved: boolean;
+}
+
 export const personalInfo: PersonalInfo = {
   name: "Anthony Feaster (MrGuru.dev)",
   title: "Full Stack Web Developer",

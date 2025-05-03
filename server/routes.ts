@@ -13,6 +13,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/contact', portfolioController.getContactInfo);
   app.post('/api/contact', portfolioController.submitContactForm);
   app.get('/api/resume', portfolioController.downloadResume);
+  
+  // Blog API routes
+  app.get('/api/blog', blogController.getBlogPosts);
+  app.post('/api/blog', blogController.createBlogPost);
+  app.get('/api/blog/post/:postId/comments', blogController.getPostComments);
+  app.post('/api/blog/post/:postId/comments', blogController.addComment);
+  app.get('/api/blog/:slug', blogController.getBlogPostBySlug);
 
   const httpServer = createServer(app);
 

@@ -6,7 +6,7 @@ import { users, type User, type InsertUser,
   blogComments, type BlogComment, type InsertBlogComment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 // Extended interface with portfolio-related CRUD operations
 export interface IStorage {
@@ -174,8 +174,10 @@ export class DatabaseStorage implements IStorage {
     return db
       .select()
       .from(blogComments)
-      .where(eq(blogComments.postId, postId))
-      .where(eq(blogComments.isApproved, true))
+      .where(and(
+        eq(blogComments.postId, postId),
+        eq(blogComments.isApproved, true)
+      ))
       .orderBy(desc(blogComments.createdAt));
   }
   
