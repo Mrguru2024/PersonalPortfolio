@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Calendar, Tag, Search } from "lucide-react";
+import { Calendar, Tag, Search, PlusCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,11 +42,23 @@ const Blog = () => {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">Blog</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-            Thoughts, insights, and updates from my journey as a developer and entrepreneur.
-          </p>
+        <div className="mb-12">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">Blog</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+              Thoughts, insights, and updates from my journey as a developer and entrepreneur.
+            </p>
+          </div>
+          
+          <div className="flex justify-end mb-4">
+            <Link href="/admin/blog">
+              <Button className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Create New Post
+              </Button>
+            </Link>
+          </div>
+          
           <Separator className="my-6" />
         </div>
         

@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import ProjectDetails from "@/pages/ProjectDetails";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
+import AdminBlog from "@/pages/AdminBlog";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/projects/:id" component={ProjectDetails} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/admin/blog" component={AdminBlog} />
       <Route component={NotFound} />
     </Switch>
   );
