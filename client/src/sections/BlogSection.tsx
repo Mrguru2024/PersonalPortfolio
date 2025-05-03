@@ -13,7 +13,8 @@ const BlogSection = () => {
   const { data: blogPosts, isLoading, error } = useQuery({
     queryKey: ["/api/blog"],
     queryFn: async () => {
-      return apiRequest<BlogPost[]>("/api/blog");
+      const res = await apiRequest<BlogPost[]>("GET", "/api/blog");
+      return res.json();
     }
   });
 

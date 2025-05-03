@@ -15,7 +15,7 @@ export async function apiRequest<T = any>(
   console.log(`API request: ${method} ${path}`, data);
   try {
     const res = await fetch(path, {
-      method,
+      method: method,
       headers: data ? { "Content-Type": "application/json" } : {},
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
