@@ -80,7 +80,7 @@ const FloatingNavigation: React.FC = () => {
     <>
       {/* Mobile Navigation Button */}
       <motion.button
-        className="fixed bottom-4 right-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
+        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
@@ -93,7 +93,7 @@ const FloatingNavigation: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-16 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
+            className="fixed bottom-20 right-4 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
