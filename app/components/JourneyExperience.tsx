@@ -232,10 +232,10 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
         )}
       </AnimatePresence>
       
-      {/* Main journey container - positioned with enough space for popups */}
+      {/* Main journey container - positioned with enough space for popups and to avoid header */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-16 bottom-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
+        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-32 sm:top-28 md:top-24 bottom-0 w-14 md:w-20 z-30 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
@@ -313,8 +313,8 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                         <p className="text-muted-foreground text-xs mt-1 mb-2">{milestone.description}</p>
                         
                         {milestone.elementId && (
-                          <motion.button
-                            className="text-xs font-medium text-primary hover:text-primary/90 flex items-center gap-1"
+                          <motion.div
+                            className="text-xs font-medium text-primary hover:text-primary/90 flex items-center gap-1 cursor-pointer"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
@@ -323,7 +323,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                             }}
                           >
                             {milestone.cta} →
-                          </motion.button>
+                          </motion.div>
                         )}
                       </motion.div>
                     )}

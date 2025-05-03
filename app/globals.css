@@ -168,8 +168,20 @@
     transition: all 0.2s ease-out;
   }
   
-  /* Ensure the journey component is not covered by the header */
-  .fixed.top-16 {
-    top: 5rem !important; /* Increased from default 4rem to ensure it's below the header */
+  /* Ensure the journey component is not covered by the header at various screen sizes */
+  .top-32 {
+    top: 8rem !important; /* For mobile screens */
+  }
+  
+  @media (min-width: 640px) {
+    .sm\:top-28 {
+      top: 7rem !important; /* For small screens */
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .md\:top-24 {
+      top: 6rem !important; /* For medium and larger screens */
+    }
   }
 }
