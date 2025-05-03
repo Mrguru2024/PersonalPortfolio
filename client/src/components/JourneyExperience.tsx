@@ -221,9 +221,14 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     },
   ];
   
-  // Update based on activeSection prop
+  // Update based on activeSection prop - using a ref to store previous values
+  const prevActiveSectionRef = useRef<string | undefined>(undefined);
+  
   useEffect(() => {
-    if (activeSection && hasStartedJourney) {
+    if (activeSection && hasStartedJourney && activeSection !== prevActiveSectionRef.current) {
+      // Update ref to current value
+      prevActiveSectionRef.current = activeSection;
+      
       // Find the milestone that matches the active section name
       const sectionLowerCase = activeSection.toLowerCase();
       const matchIndex = milestones.findIndex(milestone => 
@@ -243,9 +248,12 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     }
   }, [activeSection, hasStartedJourney, milestones]);
 
+  // Store previous values to avoid infinite loops
+  const prevIndexRef = useRef<number>(-1);
+  
   // Handle scroll to control guru's position
   useEffect(() => {
-    const unsubscribe = scrollYProgress.onChange((progress) => {
+    const handleScroll = (progress: number) => {
       if (!hasStartedJourney) return;
       
       // Update guru position based on scroll - inversely proportional
@@ -259,17 +267,25 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
         Math.abs(milestone.position - newPosition) < 10
       );
       
-      if (closestIndex !== -1 && closestIndex !== activeIndex) {
+      // Only update if the closest index has changed
+      if (closestIndex !== -1 && closestIndex !== prevIndexRef.current) {
+        prevIndexRef.current = closestIndex;
         setActiveIndex(closestIndex);
         setIsGuruActive(true);
-      } else if (closestIndex === -1) {
+      } else if (closestIndex === -1 && prevIndexRef.current !== -1) {
+        prevIndexRef.current = -1;
         setActiveIndex(-1);
         setIsGuruActive(false);
       }
-    });
+    };
     
-    return () => unsubscribe();
-  }, [scrollYProgress, activeIndex, hasStartedJourney, milestones]);
+    // Use this subscription method to avoid the deprecation warning
+    const unsubscribe = scrollYProgress.on("change", handleScroll);
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [scrollYProgress, hasStartedJourney, milestones]);
   
   // Initial animation
   useEffect(() => {
@@ -295,27 +311,46 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
   };
   
   // Reset manually closed milestones when activeSection changes
+  // Using the same ref from earlier to track previous section
   useEffect(() => {
-    if (activeSection) {
+    if (activeSection && activeSection !== prevActiveSectionRef.current) {
       // Reset the forceClosed state whenever the active section changes
       setForceClosed(false);
       
       // Keep track of which sections have been manually closed
       const prevSection = activeSection.toLowerCase();
-      const newManuallyClosedMilestones = new Set(manuallyClosedMilestones);
       
-      // Remove the current section from manually closed list
-      // This allows it to reopen when we return to the section
+      // Create a copy of the manually closed milestones 
+      const closedMilestonesArray = Array.from(manuallyClosedMilestones);
+      let needsUpdate = false;
+      
+      // Check if we need to remove any milestones from the closed list
       milestones.forEach(milestone => {
-        if (milestone.id.toLowerCase() === prevSection || 
-            (milestone.elementId && milestone.elementId.toLowerCase() === prevSection)) {
-          newManuallyClosedMilestones.delete(milestone.id);
+        if ((milestone.id.toLowerCase() === prevSection || 
+            (milestone.elementId && milestone.elementId.toLowerCase() === prevSection)) && 
+            manuallyClosedMilestones.has(milestone.id)) {
+          // Mark this for update
+          needsUpdate = true;
         }
       });
       
-      setManuallyClosedMilestones(newManuallyClosedMilestones);
+      // Only update state if needed
+      if (needsUpdate) {
+        const newManuallyClosedMilestones = new Set(manuallyClosedMilestones);
+        
+        // Remove the current section from manually closed list
+        // This allows it to reopen when we return to the section
+        milestones.forEach(milestone => {
+          if (milestone.id.toLowerCase() === prevSection || 
+              (milestone.elementId && milestone.elementId.toLowerCase() === prevSection)) {
+            newManuallyClosedMilestones.delete(milestone.id);
+          }
+        });
+        
+        setManuallyClosedMilestones(newManuallyClosedMilestones);
+      }
     }
-  }, [activeSection, milestones, manuallyClosedMilestones]);
+  }, [activeSection, milestones]);
 
   // Handle milestone click - scroll to that section
   const handleMilestoneClick = (milestone: Milestone) => {
