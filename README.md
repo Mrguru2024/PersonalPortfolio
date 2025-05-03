@@ -25,11 +25,12 @@ Make sure your project is pushed to a GitHub repository.
 
 ### 3. Configure Project Settings
 
-- Use the following settings in the Vercel deployment configuration:
-  - Framework Preset: Other
-  - Build Command: `npm run build`
-  - Output Directory: `dist`
-  - Install Command: `npm install`
+Use the following settings in the Vercel deployment configuration:
+- **Framework Preset**: Other
+- **Root Directory**: ./
+- **Build Command**: Leave blank (configured in vercel.json)
+- **Output Directory**: dist
+- **Install Command**: Leave blank (configured in vercel.json)
 
 ### 4. Set Environment Variables
 
@@ -53,15 +54,45 @@ SENDGRID_API_KEY=your_sendgrid_api_key
 For the database, you have several options:
 
 1. **Vercel Postgres**: The easiest option to set up directly in Vercel
-2. **Neon Database**: Works well with Vercel and offers a generous free tier
-3. **Supabase**: Another good option with additional features
-4. **Railway**: Simple deployment with good Postgres support
+   - Go to Storage tab in your Vercel dashboard
+   - Click "Create Database" and select Postgres
+   - Vercel will automatically set DATABASE_URL environment variable
 
-After setting up your database, update the `DATABASE_URL` environment variable in Vercel.
+2. **Neon Database**: Works well with Vercel and offers a generous free tier
+   - Sign up at [neon.tech](https://neon.tech)
+   - Create a new project
+   - Copy the connection string to your `DATABASE_URL` environment variable
+
+3. **Other options**: Supabase or Railway are also good choices
+
+After setting up your database, make sure to run the migration command to create your tables:
+
+```bash
+# In your local development environment
+npm run db:push
+```
 
 ### 6. Deploy
 
-Click "Deploy" and Vercel will build and deploy your application.
+1. Review the Vercel configuration files in your project:
+   - `vercel.json`: Contains all the build and routing configurations
+   - `server/vercel.ts`: Optimized server entry point for Vercel
+   - `vercel-build.js`: Custom build script for better reliability
+
+2. Click "Deploy" in the Vercel dashboard.
+
+### 7. Verify Deployment
+
+Once deployed, check:
+- The frontend is loading correctly
+- API endpoints are responding properly
+- Database connections are working
+- GitHub authentication is functioning (may need to update callback URLs)
+
+If you encounter issues:
+1. Check Vercel deployment logs
+2. Verify environment variables
+3. Ensure database is accessible from Vercel
 
 ## Development
 

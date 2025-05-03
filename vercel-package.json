@@ -1,0 +1,11 @@
+{
+  "name": "mrguru-portfolio",
+  "version": "1.0.0",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "vercel-build": "node vercel-build.js",
+    "start": "NODE_ENV=production node dist/server/vercel.js"
+  }
+}
