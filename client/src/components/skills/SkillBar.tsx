@@ -25,7 +25,7 @@ const SkillBar = ({ skill, barColor = "bg-primary" }: SkillBarProps) => {
   return (
     <motion.div 
       ref={ref}
-      className="mb-5 group"
+      className="mb-8 group" /* Increased bottom margin for more spacing */
       initial={{ opacity: 0, y: 10 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
       transition={{ duration: 0.5, delay: 0.1 }}
@@ -33,9 +33,10 @@ const SkillBar = ({ skill, barColor = "bg-primary" }: SkillBarProps) => {
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ scale: 1.02 }}
     >
-      <div className="flex justify-between mb-1 items-center">
+      {/* Flex layout with wrap to ensure text wraps when needed */}
+      <div className="flex flex-wrap justify-between mb-2 items-center">
         <motion.div
-          className="flex items-center"
+          className="flex items-center mb-1" /* Added margin bottom for when it wraps */
           initial={{ x: -5 }}
           animate={isInView ? { x: 0 } : { x: -5 }}
           transition={{ duration: 0.3, delay: 0.2 }}
@@ -65,9 +66,9 @@ const SkillBar = ({ skill, barColor = "bg-primary" }: SkillBarProps) => {
           </motion.span>
         </motion.div>
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 mb-1"> {/* Added margin bottom for when it wraps */}
           <motion.span 
-            className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-medium" 
+            className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-medium whitespace-nowrap" /* Added whitespace-nowrap to prevent cutting off */
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 0.3, delay: 0.3 }}
