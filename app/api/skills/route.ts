@@ -1,35 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../db';
-import { skills } from '../../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { skills } from '../../../shared/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
     const { db } = getDb();
+    const category = request.nextUrl.searchParams.get('category');
 
-    // If category is provided, filter skills by category
     if (category) {
-      const skillsByCategory = await db.query.skills.findMany({
-        where: eq(skills.category, category),
-        orderBy: (skills, { desc }) => [desc(skills.proficiency)]
-      });
-
-      return NextResponse.json(skillsByCategory);
+      // Get skills by category
+      const filteredSkills = await db.select().from(skills).where(eq(skills.category, category));
+      return NextResponse.json(filteredSkills);
+    } else {
+      // Get all skills
+      const allSkills = await db.select().from(skills);
+      return NextResponse.json(allSkills);
     }
-
-    // Otherwise, return all skills
-    const allSkills = await db.query.skills.findMany({
-      orderBy: [
-        { column: skills.category, order: 'asc' },
-        { column: skills.proficiency, order: 'desc' }
-      ]
-    });
-
-    return NextResponse.json(allSkills);
   } catch (error) {
     console.error('Error fetching skills:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ message: "Failed to fetch skills" }, { status: 500 });
   }
 }

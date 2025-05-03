@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Code, Menu, X, LogIn, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { personalInfo } from "@/lib/data";
-import { useNextAuth } from "@/hooks/use-next-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -15,7 +15,7 @@ import {
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, isAuthenticated, logout } = useNextAuth();
+  const { user, logoutMutation } = useAuth();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -90,14 +90,14 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem className="cursor-default">
-                  <span className="text-sm font-medium">{user.email || user.name}</span>
+                  <span className="text-sm font-medium">@{user.username}</span>
                 </DropdownMenuItem>
-                {(user as any)?.isAdmin && (
+                {user.isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/blog" className="cursor-pointer">Admin Dashboard</Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -170,7 +170,7 @@ const Header = () => {
                     </Link>
                   )}
                   <button
-                    onClick={() => logout()}
+                    onClick={() => logoutMutation.mutate()}
                     className="flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
                   >
                     <LogOut className="h-4 w-4 mr-2" /> Log out
