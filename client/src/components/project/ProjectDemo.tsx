@@ -89,44 +89,54 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
     switch (project.demoType) {
       case 'iframe':
         return (
-          <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 overflow-hidden">
+          <div id="demo-container" className="relative w-full bg-gray-50 dark:bg-gray-900 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 z-10">
                 <RefreshCw className="h-8 w-8 text-primary animate-spin mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">Loading demo...</p>
               </div>
             )}
-            <iframe
-              id="demo-iframe"
-              src={project.demoUrl}
-              title={`${project.title} Demo`}
-              className="w-full border-0"
-              style={{ 
-                height: project.demoConfig?.height || '600px',
-                opacity: isLoading ? 0 : 1,
-                transition: 'opacity 0.3s ease-in-out'
-              }}
-              allowFullScreen={project.demoConfig?.allowFullscreen}
-              onLoad={handleIframeLoad}
-            />
+            <div style={{ height: project.demoConfig?.height || '600px' }} className="w-full">
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <Rocket className="h-16 w-16 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">Interactive Demo Available</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                  Due to security restrictions, we can't embed the live demo directly here. Click below to experience the full interactive demo.
+                </p>
+                <a
+                  href={project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex"
+                >
+                  <Button size="lg" className="flex items-center gap-2 px-6">
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 15, 0],
+                        y: [0, -2, 0] 
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        repeatType: "loop" 
+                      }}
+                    >
+                      <Rocket className="h-5 w-5" />
+                    </motion.div>
+                    Launch Interactive Demo
+                  </Button>
+                </a>
+              </div>
+            </div>
             <div className="absolute bottom-4 right-4 flex gap-2">
               <Button
                 size="sm"
                 variant="secondary"
                 className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
-                onClick={handleRefresh}
-                title="Refresh Demo"
+                onClick={() => window.open(project.demoUrl, '_blank')}
+                title="Open in New Tab"
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
-                onClick={handleFullscreenToggle}
-                title="Toggle Fullscreen"
-              >
-                <Maximize className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -173,21 +183,49 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                   </Badge>
                 </div>
                 <div className="p-4">
-                  <iframe 
-                    src={`https://ghbtns.com/github-btn.html?user=${project.repoOwner}&repo=${project.repoName}&type=star&count=true&size=large`} 
-                    frameBorder="0" 
-                    scrolling="0" 
-                    width="170" 
-                    height="30" 
-                    title="GitHub Stars"
-                  ></iframe>
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={`https://github.com/${project.repoOwner}/${project.repoName}/stargazers`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Github className="h-4 w-4 mr-2" />
+                      <span>Star</span>
+                    </a>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      View this project on GitHub to star it
+                    </span>
+                  </div>
                 </div>
-                <div className="border-t">
-                  <iframe 
-                    src={`https://gh-readme.vercel.app/?user=${project.repoOwner}&repo=${project.repoName}&theme=${project.demoConfig?.theme || 'light'}`}
-                    className="w-full h-[400px] border-0"
-                    title={`${project.title} README`}
-                  ></iframe>
+                <div className="border-t p-6">
+                  <h3 className="text-lg font-semibold mb-4">Repository Details</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    View the source code, issues, and pull requests directly on GitHub. You can also download the repository as a ZIP file.
+                  </p>
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <a 
+                      href={`https://github.com/${project.repoOwner}/${project.repoName}/issues`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="sm">Issues</Button>
+                    </a>
+                    <a 
+                      href={`https://github.com/${project.repoOwner}/${project.repoName}/pulls`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="sm">Pull Requests</Button>
+                    </a>
+                    <a 
+                      href={`https://github.com/${project.repoOwner}/${project.repoName}/stargazers`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="sm">Stargazers</Button>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
