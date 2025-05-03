@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Sparkles, Code, Briefcase, Send, Bot, Cpu } from 'lucide-react';
+import { ChevronDown, Sparkles, Code, Briefcase, Send, Bot, Cpu, X } from 'lucide-react';
 
 // Character represents MrGuru - a tech guru guiding you through the digital space - Responsive
 const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ position, isActive }) => {
@@ -167,6 +167,8 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
   const [isGuruActive, setIsGuruActive] = useState<boolean>(true);
   const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(true);
   const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(false);
+  const [forceClosed, setForceClosed] = useState<boolean>(false);
+  const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<Set<string>>(new Set());
   
   // Track scroll position to update guru's position
   const { scrollYProgress } = useScroll();
@@ -292,6 +294,29 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     });
   };
   
+  // Reset manually closed milestones when activeSection changes
+  useEffect(() => {
+    if (activeSection) {
+      // Reset the forceClosed state whenever the active section changes
+      setForceClosed(false);
+      
+      // Keep track of which sections have been manually closed
+      const prevSection = activeSection.toLowerCase();
+      const newManuallyClosedMilestones = new Set(manuallyClosedMilestones);
+      
+      // Remove the current section from manually closed list
+      // This allows it to reopen when we return to the section
+      milestones.forEach(milestone => {
+        if (milestone.id.toLowerCase() === prevSection || 
+            (milestone.elementId && milestone.elementId.toLowerCase() === prevSection)) {
+          newManuallyClosedMilestones.delete(milestone.id);
+        }
+      });
+      
+      setManuallyClosedMilestones(newManuallyClosedMilestones);
+    }
+  }, [activeSection, milestones, manuallyClosedMilestones]);
+
   // Handle milestone click - scroll to that section
   const handleMilestoneClick = (milestone: Milestone) => {
     if (!milestone.elementId) return;
@@ -300,6 +325,16 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+  
+  // Handle manual closing of a milestone popup
+  const handleClosePopup = (e: React.MouseEvent, milestoneId: string) => {
+    e.stopPropagation(); // Prevent the click from triggering the parent milestone click
+    
+    // Add this milestone to the manually closed set
+    const newManuallyClosedMilestones = new Set(manuallyClosedMilestones);
+    newManuallyClosedMilestones.add(milestoneId);
+    setManuallyClosedMilestones(newManuallyClosedMilestones);
   };
   
   return (
@@ -437,9 +472,15 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                   
                   {/* Label + description + CTA - now positioned on the right side for better visibility */}
                   <AnimatePresence>
-                    {(activeIndex === index || milestone.position === 90) && (
+                    {/* Only show popups that: 
+                        1. Are active or intro (position 90) 
+                        2. Haven't been manually closed
+                        3. Match the current section if we're in a section */}
+                    {(activeIndex === index || milestone.position === 90) && 
+                     !manuallyClosedMilestones.has(milestone.id) && 
+                     !forceClosed && (
                       <motion.div 
-                        className={`absolute p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[180px] md:max-w-[250px] border border-primary/20 
+                        className={`absolute p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[180px] md:max-w-[250px] border border-primary/20 pointer-events-auto
                         ${
                           activeIndex === index
                             ? 'bg-gradient-to-br from-white/95 to-blue-50/95 dark:from-gray-800/95 dark:to-gray-900/95'
@@ -487,7 +528,16 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                         }}
                         transition={{ duration: 0.3 }}
                       >
-                        <h3 className="font-bold text-primary dark:text-primary mb-1">
+                        {/* Close button */}
+                        <button 
+                          onClick={(e) => handleClosePopup(e, milestone.id)}
+                          className="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                          aria-label="Close popup"
+                        >
+                          <X size={14} />
+                        </button>
+                        
+                        <h3 className="font-bold text-primary dark:text-primary mb-1 pr-4">
                           {milestone.label}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">

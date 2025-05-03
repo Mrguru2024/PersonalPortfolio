@@ -40,42 +40,57 @@ function App() {
 
   // Update current section based on scroll position
   useEffect(() => {
+    // Debounced scroll handler to improve performance
+    let scrollTimeout: number | null = null;
+    
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
+      if (scrollTimeout) {
+        window.clearTimeout(scrollTimeout);
+      }
       
-      // Get all section elements
-      const sections = document.querySelectorAll('section[id]');
-      
-      // Find the section that is currently most visible in the viewport
-      let currentSectionId = 'Home';
-      let maxVisibility = 0;
-      
-      sections.forEach((section) => {
-        const sectionTop = (section as HTMLElement).offsetTop;
-        const sectionHeight = (section as HTMLElement).offsetHeight;
+      scrollTimeout = window.setTimeout(() => {
+        const scrollPosition = window.scrollY;
         
-        // Calculate how much of the section is visible
-        const visibility = Math.min(
-          1,
-          Math.max(
-            0,
-            Math.min(
-              window.innerHeight,
-              sectionTop + sectionHeight - scrollPosition
-            ) -
-            Math.max(0, sectionTop - scrollPosition)
-          ) / sectionHeight
-        );
+        // Get all section elements
+        const sections = document.querySelectorAll('section[id]');
         
-        if (visibility > maxVisibility) {
-          maxVisibility = visibility;
-          currentSectionId = section.id || 'Home';
+        // If no sections found, keep Home as default 
+        if (sections.length === 0) {
+          setCurrentSection('Home');
+          return;
         }
-      });
-      
-      // Format the section name (e.g., "projects" -> "Projects")
-      const formattedSectionName = currentSectionId.charAt(0).toUpperCase() + currentSectionId.slice(1);
-      setCurrentSection(formattedSectionName);
+        
+        // Find the section that is currently most visible in the viewport
+        let currentSectionId = 'Home';
+        let maxVisibility = 0;
+        
+        sections.forEach((section) => {
+          const sectionTop = (section as HTMLElement).offsetTop;
+          const sectionHeight = (section as HTMLElement).offsetHeight;
+          
+          // Calculate how much of the section is visible in the viewport
+          const sectionBottom = sectionTop + sectionHeight;
+          const visibleTop = Math.max(sectionTop, scrollPosition);
+          const visibleBottom = Math.min(sectionBottom, scrollPosition + window.innerHeight);
+          const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+          
+          // Calculate visibility as a percentage of the section that's visible
+          const visibility = visibleHeight / sectionHeight;
+          
+          if (visibility > maxVisibility) {
+            maxVisibility = visibility;
+            currentSectionId = section.id || 'Home';
+          }
+        });
+        
+        // Format the section name (e.g., "projects" -> "Projects")
+        const formattedSectionName = currentSectionId.charAt(0).toUpperCase() + currentSectionId.slice(1);
+        
+        // Only update if different (prevents unnecessary re-renders)
+        if (formattedSectionName !== currentSection) {
+          setCurrentSection(formattedSectionName);
+        }
+      }, 100); // Small delay for debounce
     };
     
     window.addEventListener('scroll', handleScroll);
@@ -85,8 +100,11 @@ function App() {
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        window.clearTimeout(scrollTimeout);
+      }
     };
-  }, []);
+  }, [currentSection]);
 
   return (
     <QueryClientProvider client={queryClient}>
