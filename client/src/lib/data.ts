@@ -91,9 +91,9 @@ export const socialLinks: SocialLink[] = [
     icon: "linkedin"
   },
   {
-    platform: "Twitter",
-    url: "https://twitter.com/mrguru2024",
-    icon: "twitter"
+    platform: "Threads",
+    url: "https://threads.net/@mrguru2024",
+    icon: "threads"
   },
   {
     platform: "MrGuru.dev",

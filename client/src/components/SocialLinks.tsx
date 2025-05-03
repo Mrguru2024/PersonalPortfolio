@@ -1,5 +1,6 @@
-import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
-import { Mail } from "lucide-react";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
+import { SiThreads } from "react-icons/si";
+import { Mail, Globe } from "lucide-react";
 import { socialLinks } from "@/lib/data";
 
 interface SocialLinksProps {
@@ -15,10 +16,12 @@ const SocialLinks = ({ className = "", iconClassName = "", showLabels = false }:
         return <FaGithub />;
       case "linkedin":
         return <FaLinkedin />;
-      case "twitter":
-        return <FaTwitter />;
+      case "threads":
+        return <SiThreads />;
       case "mail":
         return <Mail />;
+      case "globe":
+        return <Globe />;
       default:
         return null;
     }
