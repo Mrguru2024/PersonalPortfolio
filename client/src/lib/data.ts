@@ -86,7 +86,7 @@ export const socialLinks: SocialLink[] = [
 export const contactInfo: ContactInfo = {
   email: "5epmgllc@gmail.com",
   location: "Atlanta, Georgia",
-  phone: "+1 (404) 555-1234"
+  phone: "+1 (678) 506-1143"
 };
 
 export const frontendSkills: Skill[] = [
