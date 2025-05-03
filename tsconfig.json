@@ -30,11 +30,11 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
+      "@/*": ["./app/*", "./client/src/*"],
       "@shared/*": ["./shared/*"],
       "@app/*": ["./app/*"],
       "@assets/*": ["./public/assets/*"],
-      "@components/*": ["./components/*"]
+      "@components/*": ["./app/components/*", "./components/*"]
     }
   }
 }
