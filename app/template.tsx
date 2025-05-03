@@ -112,7 +112,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
       {children}
       
       {/* Interactive journey experience */}
-      <JourneyExperience activeSection={currentSection} />
+      <div className="relative mt-40 pt-20" style={{ zIndex: 10 }}>
+        <JourneyExperience activeSection={currentSection} />
+      </div>
       
       {/* Quick navigation overlay */}
       <QuickNav

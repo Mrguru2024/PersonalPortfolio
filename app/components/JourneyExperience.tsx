@@ -29,6 +29,16 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(false);
   const [forceClosed, setForceClosed] = useState<boolean>(false);
   const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<string[]>([]);
+  const [headerHeight, setHeaderHeight] = useState<number>(120); // Default header height
+  
+  // Get header height on mount to position journey
+  useEffect(() => {
+    const header = document.querySelector('header');
+    if (header) {
+      setHeaderHeight(header.offsetHeight + 40); // Add extra padding
+      console.log('Header height:', header.offsetHeight);
+    }
+  }, []);
   
   // Track scroll position to update guru's position
   const { scrollYProgress } = useScroll();
@@ -235,10 +245,11 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
       {/* Main journey container - positioned with enough space for popups and to avoid header */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-32 sm:top-28 md:top-24 bottom-0 w-14 md:w-20 z-30 pointer-events-none flex items-center"
+        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-48 bottom-0 w-14 md:w-20 z-20 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
+        style={{ marginTop: "80px" }}
       >
         <div className="relative h-full w-full flex items-center justify-center">
           {/* The 3D journey path */}
@@ -296,10 +307,11 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                   <AnimatePresence>
                     {shouldShowPopup(milestone, index) && (
                       <motion.div 
-                        className="absolute left-full ml-2 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left"
+                        className="absolute left-full ml-6 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
+                        style={{ zIndex: 50 }}
                       >
                         <button 
                           onClick={(e) => handleClosePopup(e, milestone.id)}
