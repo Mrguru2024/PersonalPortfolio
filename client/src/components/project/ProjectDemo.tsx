@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Project } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,31 +37,67 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
     });
   };
 
-  // Function to handle fullscreen toggle
+  // Function to handle fullscreen toggle with cross-browser support
   const handleFullscreenToggle = () => {
     const demoContainer = document.getElementById('demo-container');
-    if (demoContainer) {
-      if (!isFullscreen) {
-        if (demoContainer.requestFullscreen) {
-          demoContainer.requestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        }
+    if (!demoContainer) return;
+    
+    if (!isFullscreen) {
+      // Request fullscreen with cross-browser support
+      if (demoContainer.requestFullscreen) {
+        demoContainer.requestFullscreen();
+      } else if ((demoContainer as any).mozRequestFullScreen) { // Firefox
+        (demoContainer as any).mozRequestFullScreen();
+      } else if ((demoContainer as any).webkitRequestFullscreen) { // Chrome, Safari
+        (demoContainer as any).webkitRequestFullscreen();
+      } else if ((demoContainer as any).msRequestFullscreen) { // IE/Edge
+        (demoContainer as any).msRequestFullscreen();
       }
-      setIsFullscreen(!isFullscreen);
+    } else {
+      // Exit fullscreen with cross-browser support
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) { // Firefox
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).webkitExitFullscreen) { // Chrome, Safari
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) { // IE/Edge
+        (document as any).msExitFullscreen();
+      }
     }
+    
+    setIsFullscreen(!isFullscreen);
   };
 
-  // Listen for fullscreen change events (e.g. Esc key)
-  if (typeof window !== 'undefined') {
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        setIsFullscreen(false);
+  // Listen for fullscreen change events with cross-browser support
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      
+      if (isFullscreen !== isCurrentlyFullscreen) {
+        setIsFullscreen(isCurrentlyFullscreen);
       }
-    });
-  }
+    };
+    
+    // Add cross-browser fullscreen change event listeners
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    return () => {
+      // Clean up event listeners
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [isFullscreen]);
 
   // Determines which type of demo to render
   const renderDemo = () => {
@@ -102,11 +138,19 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
               className="w-full border-0 transition-opacity duration-300"
               style={{ 
                 height: project.demoConfig?.height || '600px',
-                opacity: isLoading ? 0 : 1
+                opacity: isLoading ? 0 : 1,
+                minHeight: '400px',
+                display: 'block' // Fix for older browsers
               }}
-              allowFullScreen={project.demoConfig?.allowFullscreen}
+              allowFullScreen={true}
               onLoad={handleIframeLoad}
+              referrerPolicy="no-referrer"
+              loading="lazy"
               sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+              // Adding cross-browser fullscreen support with data attributes
+              data-mozallowfullscreen="true"
+              data-webkitallowfullscreen="true"
+              data-msallowfullscreen="true"
             />
 
             {/* Loading overlay */}
@@ -201,11 +245,19 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                       className="w-full border-0 transition-opacity duration-300"
                       style={{ 
                         height: "400px",
-                        opacity: isLoading ? 0 : 1
+                        opacity: isLoading ? 0 : 1,
+                        minHeight: '300px',
+                        display: 'block' // Fix for older browsers
                       }}
                       allowFullScreen={true}
                       onLoad={handleIframeLoad}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
                       sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                      // Adding cross-browser fullscreen support with data attributes
+                      data-mozallowfullscreen="true"
+                      data-webkitallowfullscreen="true"
+                      data-msallowfullscreen="true"
                     />
 
                     {/* Loading overlay */}
@@ -398,7 +450,12 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                 src={project.demoUrl}
                 title={`${project.title} Demo Video`}
                 className="absolute top-0 left-0 w-full h-full border-0"
-                allowFullScreen
+                allowFullScreen={true}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                data-mozallowfullscreen="true"
+                data-webkitallowfullscreen="true"
+                data-msallowfullscreen="true"
               />
             </div>
           </div>
@@ -416,11 +473,18 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                 className="w-full border-0 transition-opacity duration-300"
                 style={{ 
                   height: project.demoConfig?.height || '600px',
-                  opacity: isLoading ? 0 : 1
+                  opacity: isLoading ? 0 : 1,
+                  minHeight: '400px',
+                  display: 'block' // Fix for older browsers
                 }}
-                allowFullScreen={project.demoConfig?.allowFullscreen}
+                allowFullScreen={true}
                 onLoad={handleIframeLoad}
+                referrerPolicy="no-referrer"
+                loading="lazy"
                 sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                data-mozallowfullscreen="true"
+                data-webkitallowfullscreen="true"
+                data-msallowfullscreen="true"
               />
 
               {/* Loading overlay */}
