@@ -1,27 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/lib/utils";
 
 type SectionTooltip = {
   [key: string]: string;
 };
 
 export default function CustomCursor({ currentSection }: { currentSection: string }) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: -100, y: -100 });
   const [isVisible, setIsVisible] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  
-  // Map of section IDs to tooltips
+
+  // Tooltip messages for different sections
   const sectionTooltips: SectionTooltip = {
-    home: "Explore my portfolio",
+    home: "Welcome to MrGuru.dev",
     about: "Learn about me",
-    projects: "View my work",
-    skills: "Check my expertise",
+    projects: "View my projects",
+    skills: "Explore my skills",
     contact: "Get in touch",
-    blog: "Read my articles",
+    blog: "Read my blog",
     resume: "View my resume",
   };
 

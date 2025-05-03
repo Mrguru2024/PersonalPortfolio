@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { Layers, Home, User, Code, Cpu, Mail, FileText, BookOpen, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/components/ui/utils";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { X, Search, Home, Info, Briefcase, Code, Mail, BookOpen, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuickNavProps {
   isOpen: boolean;
@@ -15,15 +15,56 @@ interface QuickNavProps {
 export default function QuickNav({ 
   isOpen, 
   onClose, 
-  currentSection, 
-  onSectionClick 
+  currentSection,
+  onSectionClick
 }: QuickNavProps) {
-  // Handle keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return;
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Navigation items with icons
+  const navItems = [
+    { id: "home", label: "Home", path: "/#home", icon: <Home className="h-5 w-5" /> },
+    { id: "about", label: "About Me", path: "/#about", icon: <Info className="h-5 w-5" /> },
+    { id: "projects", label: "Projects", path: "/#projects", icon: <Briefcase className="h-5 w-5" /> },
+    { id: "skills", label: "Skills", path: "/#skills", icon: <Code className="h-5 w-5" /> },
+    { id: "contact", label: "Contact", path: "/#contact", icon: <Mail className="h-5 w-5" /> },
+    { id: "blog", label: "Blog", path: "/blog", icon: <BookOpen className="h-5 w-5" /> },
+    { id: "resume", label: "Resume", path: "/resume", icon: <FileText className="h-5 w-5" /> },
+  ];
+  
+  // Filter items based on search
+  const filteredItems = search.trim() === ""
+    ? navItems
+    : navItems.filter(item => 
+        item.label.toLowerCase().includes(search.toLowerCase())
+      );
 
+  // Handle item click
+  const handleItemClick = (item: { id: string; path: string }) => {
+    if (item.path.startsWith('/#')) {
+      onSectionClick(item.id);
+    } else {
+      router.push(item.path);
+    }
+    onClose();
+  };
+
+  // Focus input when modal opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    } else {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  // Handle ESC key to close
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
@@ -34,118 +75,71 @@ export default function QuickNav({
     };
   }, [isOpen, onClose]);
 
-  const navItems = [
-    { id: "home", label: "Home", icon: <Home className="h-6 w-6" /> },
-    { id: "about", label: "About Me", icon: <User className="h-6 w-6" /> },
-    { id: "projects", label: "Projects", icon: <Code className="h-6 w-6" /> },
-    { id: "skills", label: "Skills", icon: <Cpu className="h-6 w-6" /> },
-    { id: "contact", label: "Contact", icon: <Mail className="h-6 w-6" /> },
-    { id: "blog", label: "Blog", icon: <BookOpen className="h-6 w-6" /> },
-    { id: "resume", label: "Resume", icon: <FileText className="h-6 w-6" /> },
-  ];
-
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-        staggerChildren: 0.06,
-      }
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={overlayVariants}
-        >
-          <motion.div 
-            className="absolute top-4 right-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
-              aria-label="Close Navigation"
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </motion.div>
-
-          <motion.div
-            className="relative p-8 max-w-md w-full"
-            variants={containerVariants}
-          >
-            <div className="text-center mb-8">
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Layers className="h-16 w-16 mx-auto mb-4 text-primary" />
-                <h2 className="text-3xl font-bold">Quick Navigation</h2>
-                <p className="text-muted-foreground mt-2">
-                  Jump directly to any section of the site
-                </p>
-              </motion.div>
-            </div>
-
-            <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-              variants={containerVariants}
-            >
-              {navItems.map((item) => (
-                <motion.button
-                  key={item.id}
-                  onClick={() => onSectionClick(item.id)}
-                  className={cn(
-                    "flex items-center p-4 rounded-lg transition-colors",
-                    currentSection === item.id
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-card hover:bg-secondary/50 border border-border"
-                  )}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="mr-3">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </motion.button>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-card rounded-lg shadow-lg w-full max-w-lg border border-border">
+        {/* Header with search */}
+        <div className="flex items-center border-b border-border p-4">
+          <Search className="h-5 w-5 text-muted-foreground mr-2" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search navigation..."
+            className="flex-1 bg-transparent border-none outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-full">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        {/* Navigation items */}
+        <div className="p-2 max-h-[60vh] overflow-y-auto">
+          {filteredItems.length > 0 ? (
+            <ul>
+              {filteredItems.map((item) => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => handleItemClick(item)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-md text-left",
+                      "hover:bg-accent transition-colors",
+                      item.id === currentSection && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <span className="text-muted-foreground">{item.icon}</span>
+                    <span>{item.label}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {item.id === "home" && "Alt+1"}
+                      {item.id === "about" && "Alt+2"}
+                      {item.id === "projects" && "Alt+3"}
+                      {item.id === "skills" && "Alt+4"}
+                      {item.id === "contact" && "Alt+5"}
+                      {item.id === "blog" && "Alt+B"}
+                      {item.id === "resume" && "Alt+R"}
+                    </span>
+                  </button>
+                </li>
               ))}
-            </motion.div>
-
-            <motion.div 
-              className="mt-8 text-center text-sm text-muted-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              Press <kbd className="px-2 py-1 bg-secondary rounded-md mx-1">ESC</kbd> to close
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            </ul>
+          ) : (
+            <div className="text-center p-6 text-muted-foreground">
+              <p>No results found</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Footer with keyboard shortcuts */}
+        <div className="border-t border-border p-4 text-sm text-muted-foreground">
+          <p>
+            <span className="font-medium">Tip:</span> Press <kbd className="px-2 py-1 text-xs bg-muted rounded">Esc</kbd> to close, 
+            or use Alt+number shortcuts to navigate directly.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
