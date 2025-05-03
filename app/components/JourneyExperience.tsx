@@ -28,7 +28,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(true);
   const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(false);
   const [forceClosed, setForceClosed] = useState<boolean>(false);
-  const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<Set<string>>(new Set());
+  const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<string[]>([]);
   
   // Track scroll position to update guru's position
   const { scrollYProgress } = useScroll();
@@ -166,12 +166,12 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   // Close a milestone popup manually
   const handleClosePopup = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setManuallyClosedMilestones(prev => new Set([...prev, id]));
+    setManuallyClosedMilestones(prev => [...prev, id]);
   };
   
   // Determine if a milestone popup should show
   const shouldShowPopup = (milestone: Milestone, index: number) => {
-    if (manuallyClosedMilestones.has(milestone.id)) return false;
+    if (manuallyClosedMilestones.includes(milestone.id)) return false;
     if (forceClosed) return false;
     return index === activeIndex;
   };

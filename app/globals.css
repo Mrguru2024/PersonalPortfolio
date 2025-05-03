@@ -156,4 +156,20 @@
   .animate-slide-up {
     animation: slideUp 0.5s ease-out forwards;
   }
+  
+  /* Journey Experience styles */
+  @media (min-width: 1025px) {
+    main {
+      padding-left: 160px !important;
+    }
+  }
+  
+  .journey-milestone {
+    transition: all 0.2s ease-out;
+  }
+  
+  /* Ensure the journey component is not covered by the header */
+  .fixed.top-16 {
+    top: 5rem !important; /* Increased from default 4rem to ensure it's below the header */
+  }
 }

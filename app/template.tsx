@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import QuickNav from "@/components/QuickNav";
 import CustomCursor from "@/components/CustomCursor";
+import JourneyExperience from "@/components/JourneyExperience";
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const [currentSection, setCurrentSection] = useState("home");
@@ -109,6 +110,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
     <>
       {/* Main content with children */}
       {children}
+      
+      {/* Interactive journey experience */}
+      <JourneyExperience activeSection={currentSection} />
       
       {/* Quick navigation overlay */}
       <QuickNav
