@@ -75,7 +75,7 @@ async function seedBlogPosts() {
   if (existingUser.length === 0) {
     const [user] = await db.insert(users).values({
       username: 'admin',
-      passwordHash: 'placeholder', // In a real app, this would be properly hashed
+      password: 'admin123', // In a real app, this would be properly hashed
       email: 'admin@example.com',
       isAdmin: true
     }).returning();
@@ -100,8 +100,8 @@ One of the biggest challenges was designing a user experience that would be intu
 In the end, this portfolio is more than just a collection of my work—it's a reflection of my journey as a developer, and I'm excited to continue improving it as I grow in my career.`,
       coverImage: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80",
       tags: ["React", "TypeScript", "Portfolio", "Web Development"],
-      publishedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      publishedAt: new Date(),
+      updatedAt: new Date(),
       authorId: userId,
       isPublished: true
     },
