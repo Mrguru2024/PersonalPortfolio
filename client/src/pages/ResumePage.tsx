@@ -1,16 +1,13 @@
 import { ResumeForm } from "@/components/ResumeForm";
 import ParallaxBackground from "@/components/ParallaxBackground";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
 import { Link } from "wouter";
 
 export default function ResumePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
       <ParallaxBackground />
-      <Header />
       
-      <main className="container mx-auto px-4 py-12 relative z-10">
+      <div className="container mx-auto px-4 py-12 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600 mb-4">
@@ -81,9 +78,7 @@ export default function ResumePage() {
             <ResumeForm />
           </div>
         </div>
-      </main>
-      
-      <Footer />
+      </div>
     </div>
   );
 }
