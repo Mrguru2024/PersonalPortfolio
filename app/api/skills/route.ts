@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { skills } from '@/shared/schema';
+import { getDb } from '../../db';
 import { eq } from 'drizzle-orm';
+import { skills } from '../../../shared/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    
-    const db = getDb();
-    let query = db.select().from(skills);
-    
+    const { db } = getDb();
+    const category = request.nextUrl.searchParams.get('category');
+
     if (category) {
-      query = query.where(eq(skills.category, category));
+      // Get skills by category
+      const filteredSkills = await db.select().from(skills).where(eq(skills.category, category));
+      return NextResponse.json(filteredSkills);
+    } else {
+      // Get all skills
+      const allSkills = await db.select().from(skills);
+      return NextResponse.json(allSkills);
     }
-    
-    const allSkills = await query;
-    
-    return NextResponse.json(allSkills);
   } catch (error) {
-    console.error('Skills fetch error:', error);
-    return NextResponse.json(
-      { message: 'An error occurred while fetching skills' }, 
-      { status: 500 }
-    );
+    console.error('Error fetching skills:', error);
+    return NextResponse.json({ message: "Failed to fetch skills" }, { status: 500 });
   }
 }

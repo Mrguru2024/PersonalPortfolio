@@ -1,51 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { resumeRequests, resumeRequestFormSchema } from '@/shared/schema';
+import { getDb } from '../../db';
+import { resumeRequests, resumeRequestFormSchema } from '../../../shared/schema';
 import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const formData = await request.json();
     
-    // Validate form data with Zod schema
-    const result = resumeRequestFormSchema.safeParse(body);
+    // Validate the form data
+    const result = resumeRequestFormSchema.safeParse(formData);
+    
     if (!result.success) {
       return NextResponse.json(
-        { message: 'Invalid resume request data', errors: result.error.format() }, 
+        { message: 'Invalid form data', errors: result.error.errors },
         { status: 400 }
       );
     }
     
-    const { name, email, reason } = result.data;
+    const { db } = getDb();
     
-    // Generate a unique token for resume access
-    const token = randomBytes(32).toString('hex');
+    // Generate unique access token
+    const accessToken = randomBytes(32).toString('hex');
     
-    const db = getDb();
+    // Create resume request
     const [resumeRequest] = await db.insert(resumeRequests)
       .values({
-        name,
-        email,
-        reason,
-        token,
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        createdAt: new Date(),
+        ...result.data,
+        createdAt: new Date().toISOString(),
+        accessToken,
         accessed: false,
-        accessedAt: null,
       })
       .returning();
     
-    // In a real application, you would send an email with the token
-    // using SendGrid or another email service
+    // Generate download URL with the token
+    const baseUrl = request.headers.get('host') || process.env.NEXT_PUBLIC_BASE_URL || '';
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const downloadUrl = `${protocol}://${baseUrl}/resume/${accessToken}`;
     
-    return NextResponse.json({ 
-      success: true, 
-      token: resumeRequest.token 
+    // TODO: Send email with download link if needed
+    
+    return NextResponse.json({
+      message: 'Resume request submitted successfully',
+      downloadUrl,
+      accessToken,
     }, { status: 201 });
+    
   } catch (error) {
-    console.error('Resume request error:', error);
+    console.error('Error submitting resume request:', error);
     return NextResponse.json(
-      { message: 'An error occurred while submitting the resume request' }, 
+      { message: 'An error occurred while submitting the request' },
       { status: 500 }
     );
   }

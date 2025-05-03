@@ -1,68 +1,76 @@
-import { getDb } from '@/app/db';
-import { users, insertUserSchema } from '@/shared/schema';
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { getDb } from '../../db';
+import { users } from '../../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
+  const salt = randomBytes(16).toString('hex');
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  return `${buf.toString('hex')}.${salt}`;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // Validate with Zod schema
-    const result = insertUserSchema.safeParse(body);
-    if (!result.success) {
+    const { username, password, email } = await request.json();
+
+    if (!username || !password) {
       return NextResponse.json(
-        { message: 'Invalid user data', errors: result.error.format() }, 
+        { message: 'Username and password are required' },
         { status: 400 }
       );
     }
-    
-    const { username, password, ...rest } = body;
-    
-    const db = getDb();
+
+    const { db } = getDb();
     
     // Check if username already exists
-    const [existingUser] = await db.select().from(users).where(eq(users.username, username));
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+
     if (existingUser) {
       return NextResponse.json(
-        { message: 'Username already exists' }, 
+        { message: 'Username already exists' },
         { status: 400 }
       );
     }
-    
+
     // Hash password and create user
     const hashedPassword = await hashPassword(password);
-    const [user] = await db.insert(users)
-      .values({ ...rest, username, password: hashedPassword })
+    
+    // Insert new user
+    const [newUser] = await db.insert(users)
+      .values({
+        username,
+        password: hashedPassword,
+        email: email || null,
+        isAdmin: false,
+      })
       .returning();
-    
-    // Set a session cookie
-    const sessionId = randomBytes(32).toString('hex');
-    const cookieStore = cookies();
-    cookieStore.set('session_id', sessionId, { 
+
+    // Set session cookie
+    cookies().set({
+      name: 'sessionId',
+      value: newUser.id.toString(),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', 
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7, // 1 week
-      path: '/' 
     });
+
+    // Don't return the password hash
+    const { password: _, ...userWithoutPassword } = newUser;
     
-    // Return the user without sensitive information
-    const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword, { status: 201 });
+    
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Error during registration:', error);
     return NextResponse.json(
-      { message: 'An error occurred during registration' }, 
+      { message: 'An error occurred during registration' },
       { status: 500 }
     );
   }

@@ -1,43 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { contacts, contactFormSchema } from '@/shared/schema';
+import { getDb } from '../../db';
+import { contacts, contactFormSchema } from '../../../shared/schema';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const formData = await request.json();
     
-    // Validate form data with Zod schema
-    const result = contactFormSchema.safeParse(body);
+    // Validate the form data
+    const result = contactFormSchema.safeParse(formData);
+    
     if (!result.success) {
       return NextResponse.json(
-        { message: 'Invalid contact data', errors: result.error.format() }, 
+        { message: 'Invalid form data', errors: result.error.errors },
         { status: 400 }
       );
     }
     
-    const { name, email, phone, subject, message } = result.data;
+    const { db } = getDb();
     
-    const db = getDb();
+    // Create contact submission
     const [contact] = await db.insert(contacts)
       .values({
-        name,
-        email,
-        phone,
-        subject,
-        message,
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        createdAt: new Date(),
+        ...result.data,
+        createdAt: new Date().toISOString(),
       })
       .returning();
     
-    // In a real application, you would send an email notification here
-    // using SendGrid or another email service
+    // TODO: Send email notification if needed
     
-    return NextResponse.json({ success: true, contact }, { status: 201 });
-  } catch (error) {
-    console.error('Contact submission error:', error);
     return NextResponse.json(
-      { message: 'An error occurred while submitting the contact form' }, 
+      { message: 'Contact form submitted successfully', id: contact.id },
+      { status: 201 }
+    );
+    
+  } catch (error) {
+    console.error('Error submitting contact form:', error);
+    return NextResponse.json(
+      { message: 'An error occurred while submitting the form' },
       { status: 500 }
     );
   }
