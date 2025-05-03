@@ -2,6 +2,13 @@ import '../client/src/index.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Providers } from './providers';
+import CustomCursor from '@/components/CustomCursor';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import FloatingNavigation from '@/components/FloatingNavigation';
+import GuidedTour from '@/components/GuidedTour'; 
+import JourneyExperience from '@/components/JourneyExperience';
+import React from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +25,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="flex flex-col min-h-screen cursor-none md:cursor-none">
+            <Header />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+            <FloatingNavigation />
+            <GuidedTour />
+            <JourneyExperience activeSection={undefined} />
+          </div>
+        </Providers>
       </body>
     </html>
   );
