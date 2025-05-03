@@ -35,6 +35,11 @@ export interface IStorage {
   // Contact operations
   createContact(contact: InsertContact): Promise<Contact>;
   
+  // Resume request operations
+  createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest>;
+  getResumeRequestByToken(token: string): Promise<ResumeRequest | undefined>;
+  markResumeRequestAsAccessed(id: number): Promise<ResumeRequest>;
+  
   // Blog operations
   getBlogPosts(): Promise<BlogPost[]>;
   getPublishedBlogPosts(): Promise<BlogPost[]>;
@@ -131,6 +136,48 @@ export class DatabaseStorage implements IStorage {
       .values({ ...contact, createdAt: now })
       .returning();
     return insertedContact;
+  }
+  
+  // Resume request operations
+  async createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest> {
+    const now = new Date();
+    // Generate a unique token for resume access
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    
+    const [insertedRequest] = await db
+      .insert(resumeRequests)
+      .values({
+        ...request,
+        createdAt: now.toISOString(),
+        accessToken,
+        accessed: false,
+      })
+      .returning();
+      
+    return insertedRequest;
+  }
+  
+  async getResumeRequestByToken(token: string): Promise<ResumeRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(resumeRequests)
+      .where(eq(resumeRequests.accessToken, token));
+      
+    return request || undefined;
+  }
+  
+  async markResumeRequestAsAccessed(id: number): Promise<ResumeRequest> {
+    const now = new Date();
+    const [updatedRequest] = await db
+      .update(resumeRequests)
+      .set({
+        accessed: true,
+        accessedAt: now,
+      })
+      .where(eq(resumeRequests.id, id))
+      .returning();
+      
+    return updatedRequest;
   }
   
   // Blog operations

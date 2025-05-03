@@ -80,6 +80,39 @@ export const contactFormSchema = z.object({
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
 
+// Resume Requests schema
+export const resumeRequests = pgTable("resume_requests", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  purpose: text("purpose").notNull(),
+  message: text("message"),
+  createdAt: text("created_at").notNull(),
+  accessToken: text("access_token").notNull().unique(),
+  accessed: boolean("accessed").default(false),
+  accessedAt: timestamp("accessed_at"),
+});
+
+export const insertResumeRequestSchema = createInsertSchema(resumeRequests).omit({
+  id: true,
+  createdAt: true,
+  accessToken: true,
+  accessed: true,
+  accessedAt: true,
+});
+
+export const resumeRequestFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  company: z.string().optional(),
+  purpose: z.string().min(1, "Purpose is required"),
+  message: z.string().optional(),
+});
+
+export type InsertResumeRequest = z.infer<typeof insertResumeRequestSchema>;
+export type ResumeRequest = typeof resumeRequests.$inferSelect;
+
 // Blog schema
 export const blogPosts = pgTable("blog_posts", {
   id: serial("id").primaryKey(),
