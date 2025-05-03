@@ -38,7 +38,7 @@ const Header = () => {
           <span className="sr-only">{personalInfo.name}</span>
           <span className="flex items-center">
             <Code className="h-6 w-6" />
-            <span className="ml-2 hidden sm:inline">DevName</span>
+            <span className="ml-2 hidden sm:inline">MrGuru.dev</span>
           </span>
         </Link>
 
