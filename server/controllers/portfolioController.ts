@@ -30,8 +30,15 @@ export const portfolioController = {
         return res.json(staticProjects);
       }
       
+      console.log('DB Projects first item:', JSON.stringify(dbProjects[0], null, 2));
+      
       // Convert DB model to client model using the adapter
-      const clientProjects = dbProjects.map(project => adaptToClientModel(project));
+      const clientProjects = dbProjects.map(project => {
+        const adapted = adaptToClientModel(project);
+        return adapted;
+      });
+      
+      console.log('Client Projects first item:', JSON.stringify(clientProjects[0], null, 2));
       
       res.json(clientProjects);
     } catch (error) {
