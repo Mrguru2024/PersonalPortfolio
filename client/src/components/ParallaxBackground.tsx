@@ -1,79 +1,98 @@
-import { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface ParallaxBackgroundProps {
   className?: string;
 }
 
-const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = "" }) => {
+const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '' }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const parallaxRef = useRef<HTMLDivElement>(null);
-
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  
   useEffect(() => {
+    // Initial window size
+    setWindowSize({
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+    
+    // Handle mouse movement to update parallax effect
     const handleMouseMove = (e: MouseEvent) => {
-      if (parallaxRef.current) {
-        const rect = parallaxRef.current.getBoundingClientRect();
-        
-        // Calculate mouse position relative to the center of the container
-        const x = ((e.clientX - rect.left) / rect.width) - 0.5;
-        const y = ((e.clientY - rect.top) / rect.height) - 0.5;
-        
-        setMousePosition({ x, y });
-      }
+      // Calculate mouse position as percentage of window size
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      
+      setMousePosition({ x, y });
     };
-
+    
+    // Handle window resize
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  const elements = [
-    {
-      className: "absolute -top-10 -left-10 w-72 h-72 rounded-full bg-blue-500/5 blur-3xl",
-      animate: { x: mousePosition.x * -20, y: mousePosition.y * -20 }
-    },
-    {
-      className: "absolute top-40 -right-20 w-80 h-80 rounded-full bg-purple-500/5 blur-3xl",
-      animate: { x: mousePosition.x * -30, y: mousePosition.y * -30 }
-    },
-    {
-      className: "absolute -bottom-20 left-1/4 w-64 h-64 rounded-full bg-cyan-500/5 blur-3xl",
-      animate: { x: mousePosition.x * -15, y: mousePosition.y * -15 }
-    },
-    {
-      className: "absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-pink-500/5 blur-3xl",
-      animate: { x: mousePosition.x * -25, y: mousePosition.y * -25 }
-    },
-    // Small particles
-    {
-      className: "absolute top-1/3 left-1/3 w-6 h-6 rounded-full bg-primary/10",
-      animate: { x: mousePosition.x * -45, y: mousePosition.y * -45 }
-    },
-    {
-      className: "absolute top-2/3 right-1/4 w-4 h-4 rounded-full bg-secondary/20",
-      animate: { x: mousePosition.x * -55, y: mousePosition.y * -55 }
-    },
-    {
-      className: "absolute bottom-1/4 left-1/5 w-8 h-8 rounded-full bg-blue-400/10",
-      animate: { x: mousePosition.x * -35, y: mousePosition.y * -35 }
-    }
-  ];
-
-  return (
-    <div ref={parallaxRef} className={`absolute inset-0 overflow-hidden ${className}`}>
-      {elements.map((element, index) => (
-        <motion.div
-          key={index}
-          className={element.className}
-          animate={element.animate}
-          transition={{ type: "spring", stiffness: 60, damping: 20 }}
-        />
-      ))}
+  
+  // Generate grid of gradient dots for parallax effect
+  const dotCount = 5; // Grid size (5x5)
+  const dots = [];
+  
+  for (let i = 0; i < dotCount; i++) {
+    for (let j = 0; j < dotCount; j++) {
+      // Calculate position as percentage
+      const x = (i / (dotCount - 1)) * 100;
+      const y = (j / (dotCount - 1)) * 100;
       
-      {/* Grid overlay effect */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] dark:opacity-[0.05] pointer-events-none" />
+      // Calculate parallax offset based on mouse position
+      // Invert the movement direction to create proper parallax effect
+      const offsetX = (0.5 - mousePosition.x) * 30 * ((i - dotCount / 2) / (dotCount / 2));
+      const offsetY = (0.5 - mousePosition.y) * 30 * ((j - dotCount / 2) / (dotCount / 2));
+      
+      dots.push(
+        <motion.div
+          key={`${i}-${j}`}
+          className="absolute rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 blur-md"
+          style={{
+            left: `calc(${x}% + ${offsetX}px)`,
+            top: `calc(${y}% + ${offsetY}px)`,
+            width: '15vmin',
+            height: '15vmin',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.6
+          }}
+          animate={{
+            scale: [1, 1.05, 1],
+            opacity: [
+              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.5,
+              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.7,
+              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.5
+            ]
+          }}
+          transition={{
+            duration: 3 + Math.random() * 3,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+        />
+      );
+    }
+  }
+  
+  return (
+    <div 
+      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+      style={{ perspective: '1000px' }}
+    >
+      {dots}
     </div>
   );
 };

@@ -119,6 +119,13 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
   }, [count, minSize, maxSize, minSpeed, maxSpeed, color, colorArray]);
   
   // Animation loop
+  // Keep track of animation state without triggering re-renders
+  const particlesRef = useRef(particles);
+  
+  useEffect(() => {
+    particlesRef.current = particles;
+  }, [particles]);
+  
   useEffect(() => {
     if (!canvasRef.current || particles.length === 0) return;
     
@@ -129,8 +136,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     const animate = () => {
       ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
       
-      // Update and draw particles
-      const updatedParticles = [...particles];
+      // Create a working copy of particles without triggering state updates
+      const updatedParticles = [...particlesRef.current];
       
       for (let i = 0; i < updatedParticles.length; i++) {
         const p = updatedParticles[i];
@@ -202,7 +209,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         ctx.globalAlpha = 1;
       }
       
-      setParticles(updatedParticles);
+      // Update ref instead of state to avoid re-rendering
+      particlesRef.current = updatedParticles;
       animationRef.current = requestAnimationFrame(animate);
     };
     
@@ -211,7 +219,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [particles, canvasSize, isMouseInCanvas, mousePosition, linkParticles, linkDistance, linkThickness]);
+  }, [canvasSize, isMouseInCanvas, mousePosition, linkParticles, linkDistance, linkThickness]);
 
   return (
     <canvas 

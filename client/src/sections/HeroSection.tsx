@@ -30,38 +30,30 @@ const HeroSection = () => {
 
   return (
     <section ref={sectionRef} id="home" className="py-20 md:py-32 relative overflow-hidden min-h-[90vh] flex items-center">
-      {/* Background with subtle animation */}
+      {/* Interactive particle background */}
+      <ParticleAnimation 
+        count={80}
+        minSize={1}
+        maxSize={4}
+        colorArray={["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb"]}
+        linkParticles={true}
+        linkDistance={150}
+        className="opacity-40 dark:opacity-30"
+      />
+      
+      {/* Parallax mouse-moving background */}
+      <ParallaxBackground className="z-0" />
+      
+      {/* Grid overlay */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+      
+      {/* Background gradient */}
       <motion.div 
         className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5 }}
-      >
-        {/* Animated dots/particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(15)].map((_, i) => (
-            <motion.div 
-              key={i}
-              className="absolute rounded-full bg-primary/20 dark:bg-primary/30"
-              style={{
-                width: Math.random() * 20 + 5,
-                height: Math.random() * 20 + 5,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, Math.random() * 30 - 15, 0],
-                opacity: [0.3, 0.8, 0.3],
-              }}
-              transition={{
-                duration: Math.random() * 5 + 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
-      </motion.div>
+      />
       
       <motion.div 
         className="container mx-auto px-4 relative"
@@ -78,17 +70,18 @@ const HeroSection = () => {
             }}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Hello, I'm</span>{" "}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">Hello, I'm</span>{" "}
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.7 }}
+              className="text-glow"
             >
               {personalInfo.name}
             </motion.span>
           </motion.h1>
           
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ 
@@ -97,10 +90,30 @@ const HeroSection = () => {
               type: "spring",
               stiffness: 50
             }}
-            className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-10"
+            className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4"
           >
-            <span className="font-medium">{personalInfo.title}</span> specializing in creating elegant solutions to complex problems.
-          </motion.p>
+            <span className="font-medium">{personalInfo.title}</span>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="mb-10 text-lg md:text-xl text-gray-600 dark:text-gray-400"
+          >
+            <TypewriterText 
+              phrases={[
+                "specializing in creating elegant solutions to complex problems.",
+                "turning innovative ideas into exceptional digital experiences.",
+                "building modern, responsive web applications that convert.",
+                "helping businesses succeed in the digital landscape."
+              ]}
+              typingSpeed={50}
+              deletingSpeed={20}
+              delayAfterPhrase={3000}
+              className="inline-block font-light"
+            />
+          </motion.div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -108,56 +121,62 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="flex flex-wrap justify-center gap-5"
           >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onHoverStart={() => setHoverWorkBtn(true)}
-              onHoverEnd={() => setHoverWorkBtn(false)}
+            <div
+              onMouseEnter={() => setHoverWorkBtn(true)}
+              onMouseLeave={() => setHoverWorkBtn(false)}
+              className="relative"
             >
-              <Button
+              <AnimatedButton
+                variant="gradient"
                 size="lg"
                 onClick={() => scrollToSection("projects")}
-                className="bg-primary hover:bg-blue-600 text-white shadow-md hover:shadow-lg px-6 py-6 text-lg relative"
+                className="px-8 py-6 text-lg font-medium tracking-wide"
+                withGlowEffect={true}
               >
-                View My Work
-                <AnimatePresence>
-                  {hoverWorkBtn && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      className="absolute -right-2 -top-2 bg-secondary rounded-full p-1"
-                    >
-                      <MousePointer className="h-3 w-3 text-white" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Button>
-            </motion.div>
+                <span className="flex items-center gap-2">
+                  View My Work
+                  <Sparkles className="h-4 w-4" />
+                </span>
+              </AnimatedButton>
+              
+              <AnimatePresence>
+                {hoverWorkBtn && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="absolute -right-2 -top-2 bg-secondary rounded-full p-1"
+                  >
+                    <MousePointer className="h-3 w-3 text-white" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onHoverStart={() => setHoverContactBtn(true)}
-              onHoverEnd={() => setHoverContactBtn(false)}
+            <div
+              onMouseEnter={() => setHoverContactBtn(true)}
+              onMouseLeave={() => setHoverContactBtn(false)}
             >
-              <Button
+              <AnimatedButton
                 variant="outline"
                 size="lg"
                 onClick={() => scrollToSection("contact")}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:border-primary dark:hover:border-primary shadow-md hover:shadow-lg px-6 py-6 text-lg group"
+                className="px-8 py-6 text-lg font-medium tracking-wide"
+                withPressEffect={true}
               >
-                Get In Touch
-                <motion.div
-                  animate={{
-                    x: hoverContactBtn ? 5 : 0
-                  }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:text-primary transition-colors" />
-                </motion.div>
-              </Button>
-            </motion.div>
+                <span className="flex items-center gap-2">
+                  Get In Touch
+                  <motion.div
+                    animate={{
+                      x: hoverContactBtn ? 5 : 0
+                    }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                  >
+                    <ArrowRight className="h-4 w-4 group-hover:text-primary transition-colors" />
+                  </motion.div>
+                </span>
+              </AnimatedButton>
+            </div>
           </motion.div>
           
           <motion.div

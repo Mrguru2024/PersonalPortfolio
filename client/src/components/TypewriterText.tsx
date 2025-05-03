@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface TypewriterTextProps {
@@ -23,75 +23,75 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
   const [displayText, setDisplayText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const [isAnimationPaused, setIsAnimationPaused] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const animateText = useCallback(() => {
-    const currentPhrase = phrases[currentPhraseIndex];
-    
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    // Handle completion of a single phrase animation cycle
-    const handleCompleteCycle = () => {
-      if (once && currentPhraseIndex === phrases.length - 1) {
-        // Stop after completing the last phrase if once is true
-        return;
-      }
-      
-      setIsDeleting(true);
-      timeoutRef.current = setTimeout(animateText, deletingSpeed);
-    };
-
-    if (!isDeleting) {
-      // Typing forward
-      if (displayText.length < currentPhrase.length) {
-        // Still typing the current phrase
-        const nextChar = currentPhrase.charAt(displayText.length);
-        setDisplayText(prev => prev + nextChar);
-        timeoutRef.current = setTimeout(animateText, typingSpeed);
-      } else {
-        // Completed typing, pause before deleting
-        timeoutRef.current = setTimeout(handleCompleteCycle, delayAfterPhrase);
-      }
-    } else {
-      // Deleting
-      if (displayText.length > 0) {
-        // Still deleting
-        setDisplayText(prev => prev.slice(0, -1));
-        timeoutRef.current = setTimeout(animateText, deletingSpeed);
-      } else {
-        // Completed deleting, move to next phrase
-        setIsDeleting(false);
-        setCurrentPhraseIndex((prev) => (prev + 1) % phrases.length);
-        timeoutRef.current = setTimeout(animateText, typingSpeed);
-      }
-    }
-  }, [
-    phrases, 
-    currentPhraseIndex, 
-    isDeleting, 
-    displayText, 
-    typingSpeed, 
-    deletingSpeed, 
-    delayAfterPhrase,
-    once
-  ]);
-
+  const isAnimatingRef = useRef(false);
+  
+  // Store phrases in a ref to avoid dependency issues
+  const phrasesRef = useRef(phrases);
+  
+  // Handle animation state via imperative code to avoid infinite re-renders
   useEffect(() => {
-    if (!isAnimationPaused) {
-      animateText();
-    }
-
+    // Make sure to avoid multiple animation loops
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    
+    let isMounted = true;
+    
+    const animateTyping = () => {
+      if (!isMounted) return;
+      
+      const currentPhrase = phrasesRef.current[currentPhraseIndex];
+      
+      if (!isDeleting) {
+        // Typing forward
+        if (displayText.length < currentPhrase.length) {
+          // Continue typing
+          const nextChar = currentPhrase.charAt(displayText.length);
+          setDisplayText(prev => prev + nextChar);
+          timeoutRef.current = setTimeout(animateTyping, typingSpeed);
+        } else {
+          // Complete, wait before deleting
+          timeoutRef.current = setTimeout(() => {
+            if (!isMounted) return;
+            
+            // Stop here if we're on the last phrase and once=true
+            if (once && currentPhraseIndex === phrasesRef.current.length - 1) return;
+            
+            setIsDeleting(true);
+            animateTyping();
+          }, delayAfterPhrase);
+        }
+      } else {
+        // Deleting
+        if (displayText.length > 0) {
+          // Continue deleting
+          setDisplayText(prev => prev.slice(0, -1));
+          timeoutRef.current = setTimeout(animateTyping, deletingSpeed);
+        } else {
+          // Move to next phrase
+          setIsDeleting(false);
+          setCurrentPhraseIndex((prev) => (prev + 1) % phrasesRef.current.length);
+          timeoutRef.current = setTimeout(animateTyping, typingSpeed);
+        }
+      }
+    };
+    
+    // Start the animation
+    animateTyping();
+    
+    // Cleanup function
     return () => {
+      isMounted = false;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [animateText, isAnimationPaused]);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Ensure phrases ref is updated if phrases prop changes
+  useEffect(() => {
+    phrasesRef.current = phrases;
+  }, [phrases]);
 
   return (
     <motion.span 
@@ -101,6 +101,7 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
       transition={{ duration: 0.5 }}
     >
       {displayText}
+      <span className={`cursor ${cursorClassName}`}>|</span>
     </motion.span>
   );
 };
