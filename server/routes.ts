@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
@@ -6,6 +6,22 @@ import { portfolioController } from "./controllers/portfolioController";
 import { blogController } from "./controllers/blogController";
 import { uploadController } from "./controllers/uploadController";
 import { setupAuth } from "./auth";
+
+// Authentication middleware
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Authentication required" });
+}
+
+// Admin middleware
+function isAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Admin access required" });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -19,28 +35,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/contact', portfolioController.submitContactForm);
   app.get('/api/resume', portfolioController.downloadResume);
   
-  // Blog API routes
+  // Blog API routes - public
   app.get('/api/blog', blogController.getBlogPosts);
-  app.post('/api/blog', blogController.createBlogPost);
   app.get('/api/blog/post/:postId/comments', blogController.getPostComments);
-  app.post('/api/blog/post/:postId/comments', blogController.addComment);
+  app.post('/api/blog/post/:postId/comments', blogController.addComment);  // Consider adding CAPTCHA here
   app.get('/api/blog/:slug', blogController.getBlogPostBySlug);
   
-  // Blog moderation routes (these would be protected with auth middleware in production)
-  app.get('/api/blog/comments/pending', blogController.getPendingComments);
-  app.get('/api/blog/comments/pending/:postId', blogController.getPendingComments);
-  app.post('/api/blog/comments/:commentId/approve', blogController.approveComment);
-  app.post('/api/blog/comments/:commentId/mark-spam', blogController.markCommentAsSpam);
+  // Blog API routes - authenticated users
+  app.post('/api/blog/contributions', blogController.submitBlogPostContribution);  // Any authenticated user can submit
   
-  // Blog contribution routes
-  app.post('/api/blog/contributions', blogController.submitBlogPostContribution);
-  app.get('/api/blog/contributions/pending', blogController.getPendingContributions);
-  app.post('/api/blog/contributions/:contributionId/review', blogController.reviewBlogPostContribution);
-  app.post('/api/blog/contributions/:contributionId/mark-spam', blogController.markContributionAsSpam);
+  // Blog API routes - admin only
+  app.post('/api/blog', isAdmin, blogController.createBlogPost);
+  
+  // Blog moderation routes - admin only
+  app.get('/api/blog/comments/pending', isAdmin, blogController.getPendingComments);
+  app.get('/api/blog/comments/pending/:postId', isAdmin, blogController.getPendingComments);
+  app.post('/api/blog/comments/:commentId/approve', isAdmin, blogController.approveComment);
+  app.post('/api/blog/comments/:commentId/mark-spam', isAdmin, blogController.markCommentAsSpam);
+  
+  // Blog contribution routes - admin only
+  app.get('/api/blog/contributions/pending', isAdmin, blogController.getPendingContributions);
+  app.post('/api/blog/contributions/:contributionId/review', isAdmin, blogController.reviewBlogPostContribution);
+  app.post('/api/blog/contributions/:contributionId/mark-spam', isAdmin, blogController.markContributionAsSpam);
   
   // Upload API routes
-  app.post('/api/upload', uploadController.uploadMedia);
-  app.get('/uploads/:filename', uploadController.serveMedia);
+  app.post('/api/upload', isAdmin, uploadController.uploadMedia); // Only admins can upload
+  app.get('/uploads/:filename', uploadController.serveMedia); // But everyone can view uploaded files
 
   const httpServer = createServer(app);
 
