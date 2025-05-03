@@ -242,13 +242,13 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
         )}
       </AnimatePresence>
       
-      {/* Main journey container with positioning that won't be affected by the header */}
+      {/* Main journey container with extreme top offset to avoid header */}
       <motion.div 
         ref={containerRef}
         className="absolute left-4 sm:left-16 md:left-24 lg:left-32 w-14 md:w-20 pointer-events-none"
         style={{ 
-          top: "150px", 
-          height: "calc(100vh - 200px)" 
+          top: "300px", 
+          height: "calc(100vh - 350px)" 
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
