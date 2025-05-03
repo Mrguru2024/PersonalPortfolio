@@ -111,8 +111,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
       {/* Main content with children */}
       {children}
       
-      {/* Interactive journey experience */}
-      <div className="relative mt-40 pt-20" style={{ zIndex: 10 }}>
+      {/* Interactive journey experience with dedicated positioning wrapper */}
+      <div className="fixed left-0 top-0 w-full h-full pointer-events-none" style={{ zIndex: 30 }}>
         <JourneyExperience activeSection={currentSection} />
       </div>
       

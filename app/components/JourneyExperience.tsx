@@ -242,14 +242,17 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
         )}
       </AnimatePresence>
       
-      {/* Main journey container - positioned with enough space for popups and to avoid header */}
+      {/* Main journey container with positioning that won't be affected by the header */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-48 bottom-0 w-14 md:w-20 z-20 pointer-events-none flex items-center"
+        className="absolute left-4 sm:left-16 md:left-24 lg:left-32 w-14 md:w-20 pointer-events-none"
+        style={{ 
+          top: "150px", 
+          height: "calc(100vh - 200px)" 
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        style={{ marginTop: "80px" }}
       >
         <div className="relative h-full w-full flex items-center justify-center">
           {/* The 3D journey path */}
@@ -307,11 +310,11 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                   <AnimatePresence>
                     {shouldShowPopup(milestone, index) && (
                       <motion.div 
-                        className="absolute left-full ml-6 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left"
+                        className="absolute left-full ml-4 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
-                        style={{ zIndex: 50 }}
+                        style={{ zIndex: 100 }}
                       >
                         <button 
                           onClick={(e) => handleClosePopup(e, milestone.id)}
