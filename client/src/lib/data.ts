@@ -55,6 +55,8 @@ export interface Project {
 
 // Adapter functions to convert between the models
 export function adaptToClientModel(dbProject: ProjectModel): Project {
+  console.log('Adapting project with columns:', Object.keys(dbProject).join(', '));
+  
   return {
     id: dbProject.id,
     title: dbProject.title,
@@ -62,15 +64,15 @@ export function adaptToClientModel(dbProject: ProjectModel): Project {
     image: dbProject.image,
     tags: dbProject.tags,
     category: dbProject.category,
-    githubUrl: dbProject.github_url,
-    liveUrl: dbProject.live_url,
+    githubUrl: (dbProject as any).github_url || dbProject.githubUrl,
+    liveUrl: (dbProject as any).live_url || dbProject.liveUrl,
     details: dbProject.details,
-    demoType: dbProject.demo_type,
-    demoUrl: dbProject.demo_url,
-    demoConfig: dbProject.demo_config,
-    repoOwner: dbProject.repo_owner,
-    repoName: dbProject.repo_name,
-    techStack: dbProject.tech_stack
+    demoType: (dbProject as any).demo_type || dbProject.demoType,
+    demoUrl: (dbProject as any).demo_url || dbProject.demoUrl,
+    demoConfig: (dbProject as any).demo_config || dbProject.demoConfig,
+    repoOwner: (dbProject as any).repo_owner || dbProject.repoOwner,
+    repoName: (dbProject as any).repo_name || dbProject.repoName,
+    techStack: (dbProject as any).tech_stack || dbProject.techStack
   };
 }
 

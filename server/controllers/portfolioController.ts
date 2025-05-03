@@ -7,6 +7,11 @@ import path from 'path';
 import fs from 'fs';
 import { adaptToClientModel, Project } from '../../client/src/lib/data';
 
+// Helper function to log object structure
+function logObjectStructure(obj: any, label: string) {
+  console.log(`[DEBUG] ${label} - Property names: ${Object.keys(obj).join(', ')}`);
+}
+
 // Still import these for now as fallback until we populate the database
 import { 
   projects as staticProjects, 
@@ -30,7 +35,9 @@ export const portfolioController = {
         return res.json(staticProjects);
       }
       
-      console.log('DB Projects first item:', JSON.stringify(dbProjects[0], null, 2));
+      if (dbProjects.length > 0) {
+        logObjectStructure(dbProjects[0], 'DB Project');
+      }
       
       // Convert DB model to client model using the adapter
       const clientProjects = dbProjects.map(project => {
@@ -38,7 +45,9 @@ export const portfolioController = {
         return adapted;
       });
       
-      console.log('Client Projects first item:', JSON.stringify(clientProjects[0], null, 2));
+      if (clientProjects.length > 0) {
+        logObjectStructure(clientProjects[0], 'Client Project');
+      }
       
       res.json(clientProjects);
     } catch (error) {
@@ -63,8 +72,14 @@ export const portfolioController = {
         return res.status(404).json({ message: 'Project not found' });
       }
       
+      console.log('DB Project raw:', JSON.stringify(dbProject, null, 2));
+      console.log('DB Project github_url:', dbProject.githubUrl);
+      console.log('DB Project live_url:', dbProject.liveUrl);
+      
       // Convert DB model to client model using the adapter
       const clientProject = adaptToClientModel(dbProject);
+      
+      console.log('Client Project after adaptation:', JSON.stringify(clientProject, null, 2));
       
       res.json(clientProject);
     } catch (error) {
