@@ -38,144 +38,126 @@ export interface ContactInfo {
 }
 
 export const personalInfo: PersonalInfo = {
-  name: "John Doe",
-  title: "Full-Stack Developer",
-  description: "I'm a passionate full-stack developer specializing in creating elegant solutions to complex problems.",
+  name: "Anthony MrGuru Feaster",
+  title: "Full Stack Web Developer",
+  description: "Hello! I'm Anthony Feaster, an innovative entrepreneur and tech enthusiast based in Atlanta, Georgia. With a strong background in electronic repair and automotive locksmiths, I founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith industry. Currently, I'm expanding my skill set through Codenoobs WebDev Incubator. My passion lies in problem-solving and continuous learning. I thrive on creating solutions that improve customer experiences and streamline operations.",
   education: [
-    "B.S. Computer Science, University",
-    "Web Development Certification",
-    "UX Design Specialization"
+    "Codenoobs WebDev Incubator",
+    "Tech Entrepreneurship Training",
+    "Automotive Security Systems Specialist"
   ],
   experience: [
-    "Senior Developer at TechCorp",
-    "Full-Stack Developer at StartupX",
-    "Freelance Web Developer"
+    "Founder, SSI-M.E.T Repairs-KeyCode Help",
+    "Automotive Locksmith Specialist",
+    "Electronic Repair Technician"
   ],
   resumeUrl: "/api/resume",
-  image: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80"
+  image: "https://raw.githubusercontent.com/Mrguru2024/My-Portfolio-Website/main/assets/Assets/Photos/Copy%20of%20Web%20Designer%20Content%20Posts.jpg"
 };
 
 export const socialLinks: SocialLink[] = [
   {
     platform: "GitHub",
-    url: "https://github.com",
+    url: "https://github.com/Mrguru2024",
     icon: "github"
   },
   {
     platform: "LinkedIn",
-    url: "https://linkedin.com",
+    url: "https://linkedin.com/in/anthonyfeaster",
     icon: "linkedin"
   },
   {
     platform: "Twitter",
-    url: "https://twitter.com",
+    url: "https://twitter.com/mrguru2024",
     icon: "twitter"
   },
   {
     platform: "Email",
-    url: "mailto:contact@example.com",
+    url: "mailto:5epmgllc@gmail.com",
     icon: "mail"
   }
 ];
 
 export const contactInfo: ContactInfo = {
-  email: "developer@example.com",
-  location: "San Francisco, CA",
-  phone: "+1 (555) 123-4567"
+  email: "5epmgllc@gmail.com",
+  location: "Atlanta, Georgia",
+  phone: "+1 (404) 555-1234"
 };
 
 export const frontendSkills: Skill[] = [
-  { name: "React", percentage: 90 },
-  { name: "JavaScript", percentage: 95 },
-  { name: "CSS/SASS", percentage: 85 },
-  { name: "TypeScript", percentage: 80 }
+  { name: "JavaScript", percentage: 85 },
+  { name: "HTML & CSS", percentage: 90 },
+  { name: "React", percentage: 80 },
+  { name: "Responsive Design", percentage: 85 }
 ];
 
 export const backendSkills: Skill[] = [
-  { name: "Node.js", percentage: 85 },
-  { name: "Express", percentage: 90 },
-  { name: "MongoDB", percentage: 80 },
-  { name: "GraphQL", percentage: 75 }
+  { name: "Node.js", percentage: 75 },
+  { name: "Express", percentage: 70 },
+  { name: "MongoDB", percentage: 65 },
+  { name: "Java", percentage: 60 }
 ];
 
 export const devopsSkills: Skill[] = [
-  { name: "Git/GitHub", percentage: 95 },
-  { name: "Docker", percentage: 70 },
-  { name: "AWS", percentage: 65 },
-  { name: "CI/CD", percentage: 75 }
+  { name: "Git/GitHub", percentage: 85 },
+  { name: "Vercel", percentage: 75 },
+  { name: "Netlify", percentage: 70 },
+  { name: "VS Code", percentage: 90 }
 ];
 
 export const additionalSkills: string[] = [
-  "Responsive Design",
-  "UI/UX Design",
-  "SEO Optimization",
-  "Progressive Web Apps",
-  "Agile Methodology",
-  "Test-Driven Development",
-  "REST API Design",
-  "Performance Optimization"
+  "Problem Solving",
+  "Customer Service",
+  "Automotive Security",
+  "Electronic Repair",
+  "Entrepreneurship",
+  "Business Development",
+  "Technical Documentation",
+  "Team Leadership"
 ];
 
 export const projects: Project[] = [
   {
-    id: "ecommerce-dashboard",
-    title: "E-commerce Dashboard",
-    description: "A comprehensive dashboard for online store management with real-time analytics.",
-    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["React", "Node.js", "GraphQL"],
+    id: "keycode-help",
+    title: "Keycode Help",
+    description: "A SaaS business that provides VIN to KeyCode services and online resources for locksmiths.",
+    image: "https://images.unsplash.com/photo-1586864387789-628af9feed72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["SaaS", "Automotive", "Security"],
+    category: "business",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://keycodehelp.com",
+    details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry."
+  },
+  {
+    id: "portfolio-website",
+    title: "Portfolio Website",
+    description: "A responsive portfolio website showcasing my skills, projects and professional information.",
+    image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["HTML", "CSS", "JavaScript", "Responsive"],
     category: "web",
-    githubUrl: "https://github.com",
-    liveUrl: "https://example.com",
-    details: "This e-commerce dashboard provides comprehensive management tools for online stores. Built with React, Node.js and GraphQL, it includes real-time analytics, inventory management, and order processing."
+    githubUrl: "https://github.com/Mrguru2024/My-Portfolio-Website",
+    liveUrl: "https://mrguru2024.github.io/My-Portfolio-Website/",
+    details: "A personal portfolio website built using HTML, CSS, and JavaScript to showcase my projects, skills, and professional experience. The site features responsive design, theme customization, and interactive elements."
   },
   {
-    id: "fitness-tracker",
-    title: "Fitness Tracker App",
-    description: "Mobile application for tracking workouts, nutrition, and personal fitness goals.",
-    image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["React Native", "Firebase", "Redux"],
-    category: "mobile",
-    githubUrl: "https://github.com",
-    details: "A comprehensive fitness tracking application built with React Native and Firebase. It allows users to track workouts, nutrition, and set personal fitness goals with an intuitive interface."
+    id: "ssi-met-repairs",
+    title: "SSI-M.E.T Repairs",
+    description: "Business website for electronic repair and automotive locksmith services.",
+    image: "https://images.unsplash.com/photo-1635262945219-33df0944316a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["Business", "Service", "Automotive"],
+    category: "business",
+    liveUrl: "https://ssi-met-repairs.com",
+    details: "SSI-M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials."
   },
   {
-    id: "design-system",
-    title: "Portfolio Design System",
-    description: "A comprehensive design system for personal and professional portfolios.",
-    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["Figma", "CSS", "Storybook"],
-    category: "design",
-    liveUrl: "https://example.com",
-    details: "A comprehensive design system created for portfolios. Includes reusable components, style guidelines, and documentation built with Figma and implemented with modern CSS practices."
-  },
-  {
-    id: "weather-app",
-    title: "Weather Forecast App",
-    description: "Real-time weather forecasting application with interactive maps and alerts.",
-    image: "https://images.unsplash.com/photo-1558655146-d09347e92766?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["Vue.js", "Mapbox", "Weather API"],
-    category: "web",
-    githubUrl: "https://github.com",
-    details: "A real-time weather forecasting application with interactive maps and alerts. Built with Vue.js and integrated with the Mapbox API for map visualization and Weather API for data."
-  },
-  {
-    id: "project-management",
-    title: "Project Management Tool",
-    description: "Collaborative project management platform with task tracking and team communication.",
-    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["Next.js", "MongoDB", "Socket.io"],
-    category: "web",
-    githubUrl: "https://github.com",
-    details: "A collaborative project management platform that enables teams to track tasks, communicate efficiently, and monitor project progress. Built with Next.js, MongoDB, and Socket.io for real-time updates."
-  },
-  {
-    id: "finance-tracker",
-    title: "Finance Tracker",
-    description: "Personal finance management app with budgeting features and expense tracking.",
-    image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["Flutter", "Firebase", "Chart.js"],
-    category: "mobile",
-    githubUrl: "https://github.com",
-    details: "A personal finance management application that helps users track expenses, set budgets, and visualize spending patterns. Built with Flutter and Firebase for a seamless cross-platform experience."
+    id: "web-development-services",
+    title: "Web Development Services",
+    description: "Professional web development and design services for businesses and individuals.",
+    image: "https://images.unsplash.com/photo-1559028012-481c04fa702d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["Web Development", "Design", "Business"],
+    category: "service",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://forms.gle/vu11jF1nixkoRxH86",
+    details: "Professional web development and design services tailored for businesses and individuals. Services include website creation, redesign, maintenance, and custom web application development to meet client needs."
   }
 ];

@@ -11,8 +11,8 @@ const ProjectFilter = ({ onFilterChange }: ProjectFilterProps) => {
   const filters = [
     { id: "all", label: "All Projects" },
     { id: "web", label: "Web Development" },
-    { id: "mobile", label: "Mobile Apps" },
-    { id: "design", label: "UI/UX Design" }
+    { id: "business", label: "Business" },
+    { id: "service", label: "Services" }
   ];
 
   const handleFilterClick = (filter: string) => {
