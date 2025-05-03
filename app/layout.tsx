@@ -1,12 +1,22 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import React from 'react';
+import { Metadata } from 'next';
+import { Providers } from './providers';
+import { personalInfo } from '@/lib/data';
 import '../client/src/index.css';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'MrGuru.dev - Full Stack Developer',
-  description: 'Anthony "MrGuru" Feaster\'s portfolio showcasing projects, skills and services as a full stack developer in Atlanta, GA',
+  title: {
+    default: `${personalInfo.name} | ${personalInfo.title}`,
+    template: `%s | ${personalInfo.name}`
+  },
+  description: personalInfo.description,
+  keywords: ['developer', 'portfolio', 'web developer', 'full stack', 'javascript', 'react', 'next.js'],
+  authors: [{ name: personalInfo.name }],
+  creator: personalInfo.name,
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -16,8 +26,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {children}
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
