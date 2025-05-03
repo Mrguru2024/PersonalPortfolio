@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowRight, ExternalLink, Github, Play, Monitor } from "lucide-react";
+import { ArrowRight, Github, Play, Monitor, Star, Rocket } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Project } from "@/lib/data";
+import { cn } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: Project;
