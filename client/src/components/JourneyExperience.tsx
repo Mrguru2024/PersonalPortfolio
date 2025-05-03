@@ -155,7 +155,11 @@ interface Milestone {
   elementId?: string; // ID of the element to scroll to
 }
 
-const JourneyExperience: React.FC = () => {
+interface JourneyExperienceProps {
+  activeSection?: string;
+}
+
+const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) => {
   const pathRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -215,6 +219,28 @@ const JourneyExperience: React.FC = () => {
     },
   ];
   
+  // Update based on activeSection prop
+  useEffect(() => {
+    if (activeSection && hasStartedJourney) {
+      // Find the milestone that matches the active section name
+      const sectionLowerCase = activeSection.toLowerCase();
+      const matchIndex = milestones.findIndex(milestone => 
+        milestone.id.toLowerCase() === sectionLowerCase || 
+        milestone.label.toLowerCase().includes(sectionLowerCase) ||
+        (milestone.elementId && milestone.elementId.toLowerCase() === sectionLowerCase)
+      );
+      
+      if (matchIndex !== -1) {
+        // Set the active milestone
+        setActiveIndex(matchIndex);
+        setIsGuruActive(true);
+        
+        // Update guru position to match the milestone position
+        setGuruPosition(milestones[matchIndex].position);
+      }
+    }
+  }, [activeSection, hasStartedJourney, milestones]);
+
   // Handle scroll to control guru's position
   useEffect(() => {
     const unsubscribe = scrollYProgress.onChange((progress) => {
@@ -378,14 +404,16 @@ const JourneyExperience: React.FC = () => {
                 style={{ bottom: `${milestone.position}%` }}
               >
                 <motion.button
-                  className={`flex items-center gap-3 ${
+                  className={`journey-milestone flex items-center gap-3 ${
                     activeIndex === index 
                       ? 'scale-110' 
                       : 'opacity-70 hover:opacity-100'
                   }`}
+                  data-section={milestone.label}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleMilestoneClick(milestone)}
+                  title={`${milestone.label}: ${milestone.description}`}
                 >
                   {/* Milestone node - larger and more prominent */}
                   <motion.div 
