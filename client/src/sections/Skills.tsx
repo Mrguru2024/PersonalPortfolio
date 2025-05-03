@@ -104,13 +104,11 @@ export default function Skills() {
                             <div key={skill.id} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{skill.name}</span>
-                                <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
+                                <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
                               </div>
                               <Progress 
-                                value={skill.proficiency} 
-                                className="h-2 bg-muted/50" 
-                                indicatorClassName={`bg-gradient-to-r ${category.color}`} 
-                              />
+                                value={skill.percentage} 
+                                className="h-2 bg-muted/50" />
                             </div>
                           ))}
                         </div>

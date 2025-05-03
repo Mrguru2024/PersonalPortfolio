@@ -87,15 +87,15 @@ export default function Blog() {
                       <CardHeader className="p-6">
                         <div className="flex justify-between items-start mb-2">
                           <span className="text-xs text-muted-foreground">
-                            {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
+                            {new Date(post.publishedAt).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric'
                             })}
                           </span>
-                          {post.category && (
+                          {post.tags?.length > 0 && (
                             <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary border border-primary/20">
-                              {post.category}
+                              {post.tags[0]}
                             </span>
                           )}
                         </div>
@@ -103,28 +103,23 @@ export default function Blog() {
                           {post.title}
                         </CardTitle>
                         <CardDescription className="line-clamp-2 mt-2 text-muted-foreground">
-                          {post.excerpt || post.content.substring(0, 120) + '...'}
+                          {post.summary || post.content.substring(0, 120) + '...'}
                         </CardDescription>
                       </CardHeader>
                       
                       <CardContent className="px-6 pb-0">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
-                            {post.author?.avatarUrl && (
-                              <div 
-                                className="h-8 w-8 rounded-full bg-cover bg-center mr-2"
-                                style={{ 
-                                  backgroundImage: `url(${post.author.avatarUrl})` 
-                                }}
-                              />
-                            )}
+                            <div 
+                              className="h-8 w-8 rounded-full bg-cover bg-center mr-2 bg-gray-700"
+                            />
                             <span className="text-sm">
-                              {post.author?.username || 'MrGuru'}
+                              MrGuru
                             </span>
                           </div>
                           
                           <div className="text-sm text-muted-foreground">
-                            {post.readTime || '5'} min read
+                            5 min read
                           </div>
                         </div>
                       </CardContent>

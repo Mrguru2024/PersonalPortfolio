@@ -20,15 +20,15 @@ export default function Projects() {
 
   const categorizedProjects = {
     all: projects || [],
-    frontend: projects?.filter(p => p.technologies.some(t => 
-      ['react', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript'].includes(t.toLowerCase())
+    frontend: projects?.filter(p => (p.techStack || p.tags)?.some(t => 
+      ['react', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript'].includes(String(t).toLowerCase())
     )) || [],
-    backend: projects?.filter(p => p.technologies.some(t => 
-      ['node', 'express', 'django', 'python', 'java', 'php', 'ruby', 'api'].includes(t.toLowerCase())
+    backend: projects?.filter(p => (p.techStack || p.tags)?.some(t => 
+      ['node', 'express', 'django', 'python', 'java', 'php', 'ruby', 'api'].includes(String(t).toLowerCase())
     )) || [],
     fullstack: projects?.filter(p => 
-      p.technologies.some(t => ['react', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript'].includes(t.toLowerCase())) && 
-      p.technologies.some(t => ['node', 'express', 'django', 'python', 'java', 'php', 'ruby', 'api'].includes(t.toLowerCase()))
+      (p.techStack || p.tags)?.some(t => ['react', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript'].includes(String(t).toLowerCase())) && 
+      (p.techStack || p.tags)?.some(t => ['node', 'express', 'django', 'python', 'java', 'php', 'ruby', 'api'].includes(String(t).toLowerCase()))
     ) || [],
   };
 
@@ -152,20 +152,23 @@ interface ProjectCardProps {
 }
 
 function ProjectCard({ project }: ProjectCardProps) {
+  // Get technologies from either techStack or tags
+  const technologies = project.techStack || project.tags || [];
+  
   return (
     <Link href={`/projects/${project.id}`}>
       <Card className="h-full overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1">
         <div 
           className="h-48 w-full bg-cover bg-center relative overflow-hidden"
           style={{ 
-            backgroundImage: `url(${project.imageUrl})` 
+            backgroundImage: `url(${project.image})` 
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
           
           <div className="absolute bottom-0 left-0 p-4 w-full">
             <div className="flex flex-wrap gap-2">
-              {project.technologies.slice(0, 3).map((tech, i) => (
+              {technologies.slice(0, 3).map((tech, i) => (
                 <span 
                   key={i} 
                   className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary border border-primary/20"
@@ -173,9 +176,9 @@ function ProjectCard({ project }: ProjectCardProps) {
                   {tech}
                 </span>
               ))}
-              {project.technologies.length > 3 && (
+              {technologies.length > 3 && (
                 <span className="px-2 py-1 text-xs rounded-full bg-muted/30 text-muted-foreground">
-                  +{project.technologies.length - 3}
+                  +{technologies.length - 3}
                 </span>
               )}
             </div>
@@ -189,13 +192,11 @@ function ProjectCard({ project }: ProjectCardProps) {
             </CardTitle>
             <span className={cn(
               "p-1.5 rounded-full text-xs font-medium flex items-center",
-              project.status === "completed" ? "bg-green-500/20 text-green-500" : 
-              project.status === "in-progress" ? "bg-amber-500/20 text-amber-500" : 
-              "bg-blue-500/20 text-blue-500"
+              project.category === "frontend" ? "bg-blue-500/20 text-blue-500" : 
+              project.category === "backend" ? "bg-green-500/20 text-green-500" : 
+              "bg-amber-500/20 text-amber-500"
             )}>
-              {project.status === "completed" ? "Completed" : 
-              project.status === "in-progress" ? "In Progress" : 
-              "Planned"}
+              {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
             </span>
           </div>
           <CardDescription className="line-clamp-2 mt-2 text-muted-foreground">
@@ -206,16 +207,14 @@ function ProjectCard({ project }: ProjectCardProps) {
         <CardContent className="p-4 pt-0">
           <div className="flex justify-between items-center mt-2">
             <div className="text-sm text-muted-foreground">
-              {new Date(project.completedDate || project.startDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short'
-              })}
+              {/* Display a static date or calculated date if needed */}
+              {new Date().getFullYear()}
             </div>
             
             <div className="flex gap-2">
-              {project.demoUrl && (
+              {project.liveUrl && (
                 <a 
-                  href={project.demoUrl} 
+                  href={project.liveUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="p-1.5 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors duration-300"
@@ -225,9 +224,9 @@ function ProjectCard({ project }: ProjectCardProps) {
                 </a>
               )}
               
-              {project.repositoryUrl && (
+              {project.githubUrl && (
                 <a 
-                  href={project.repositoryUrl} 
+                  href={project.githubUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="p-1.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-muted transition-colors duration-300"

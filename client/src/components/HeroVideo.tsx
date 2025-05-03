@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
 
 interface HeroVideoProps {
   videoSrc: string;
@@ -7,76 +8,58 @@ interface HeroVideoProps {
   overlayClassName?: string;
 }
 
-const HeroVideo: React.FC<HeroVideoProps> = ({ 
-  videoSrc, 
-  className = "", 
-  overlayClassName = "" 
-}) => {
+export default function HeroVideo({
+  videoSrc,
+  className = '',
+  overlayClassName = '',
+}: HeroVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const videoElement = videoRef.current;
+    const video = videoRef.current;
     
-    if (videoElement) {
-      const handleCanPlay = () => {
-        setIsLoaded(true);
-      };
-      
-      videoElement.addEventListener('canplay', handleCanPlay);
-      
-      // In case the video is already loaded
-      if (videoElement.readyState >= 3) {
-        setIsLoaded(true);
-      }
-      
-      return () => {
-        videoElement.removeEventListener('canplay', handleCanPlay);
-      };
+    if (!video) return;
+
+    const handleLoadedData = () => {
+      setIsLoaded(true);
+    };
+
+    video.addEventListener('loadeddata', handleLoadedData);
+    
+    // Attempt to start playing, handle autoplay restrictions gracefully
+    const playPromise = video.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .catch(error => {
+          // Auto-play was prevented, add a muted attribute and try again
+          video.muted = true;
+          video.play().catch(e => {
+            console.log('Video autoplay still prevented:', e);
+          });
+        });
     }
+
+    return () => {
+      video.removeEventListener('loadeddata', handleLoadedData);
+    };
   }, []);
 
-  // Create a staggered fade-in effect once the video is loaded
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: {
-        duration: 1,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   return (
-    <motion.div 
-      className={`relative w-full h-full overflow-hidden ${className}`}
-      initial="hidden"
-      animate={isLoaded ? "visible" : "hidden"}
-      variants={containerVariants}
-    >
+    <div className="relative">
       <video
         ref={videoRef}
         autoPlay
-        muted
         loop
+        muted
         playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover"
+        className={`transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
       >
         <source src={videoSrc} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-      
-      {/* Overlay */}
-      <div className={`absolute inset-0 bg-black/30 backdrop-blur-[1px] ${overlayClassName}`}></div>
-      
-      {/* Scan lines effect */}
-      <div className="absolute inset-0 bg-scan-lines opacity-10 pointer-events-none"></div>
-      
-      {/* Vignette effect */}
-      <div className="absolute inset-0 bg-radial-gradient-vignette pointer-events-none"></div>
-    </motion.div>
+      {overlayClassName && <div className={overlayClassName} />}
+    </div>
   );
-};
-
-export default HeroVideo;
+}
