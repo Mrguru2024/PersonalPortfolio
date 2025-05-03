@@ -28,7 +28,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { skillEndorsementFormSchema, Skill } from "@/shared/schema";
+import { Skill } from "@/shared/schema";
+
+// Define the form schema for skill endorsements
+const skillEndorsementFormSchema = z.object({
+  skillId: z.number().positive("Skill ID is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email address is required"),
+  comment: z.string().optional(),
+  rating: z.number().min(1).max(5).default(5),
+});
 
 type SkillEndorsementFormValues = z.infer<typeof skillEndorsementFormSchema>;
 

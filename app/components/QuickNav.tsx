@@ -78,7 +78,7 @@ export default function QuickNav({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-20">
       <div className="bg-card rounded-lg shadow-lg w-full max-w-lg border border-border">
         {/* Header with search */}
         <div className="flex items-center border-b border-border p-4">

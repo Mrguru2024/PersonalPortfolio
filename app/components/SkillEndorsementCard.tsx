@@ -3,7 +3,19 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, MessageCircle, Heart, ChevronDown, ChevronUp } from "lucide-react";
-import { Skill, SkillEndorsement } from "@/shared/schema";
+import { Skill } from "@/shared/schema";
+
+// Define the type for skill endorsements since we don't have direct access from the schema
+type SkillEndorsement = {
+  id: number;
+  skillId: number;
+  name: string;
+  email: string;
+  comment?: string | null;
+  rating: number;
+  createdAt: string;
+  ipAddress?: string | null;
+};
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
