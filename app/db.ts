@@ -1,7 +1,7 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "../shared/schema";
+import ws from 'ws';
+import * as schema from '@/shared/schema';
 
 neonConfig.webSocketConstructor = ws;
 
@@ -11,14 +11,13 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create a singleton for the database connection
-let pool: Pool | null = null;
-let db: ReturnType<typeof drizzle> | null = null;
+let pool: Pool;
+let db: ReturnType<typeof drizzle>;
 
 export function getDb() {
   if (!pool) {
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
     db = drizzle({ client: pool, schema });
   }
-  return db!;
+  return { pool, db };
 }
