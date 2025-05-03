@@ -1,12 +1,21 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Code, Menu, X } from "lucide-react";
+import { Code, Menu, X, LogIn, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { personalInfo } from "@/lib/data";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -66,6 +75,40 @@ const Header = () => {
             </>
           )}
           
+          {/* Auth */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-white">
+                    <User className="h-4 w-4" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="cursor-default">
+                  <span className="text-sm font-medium">@{user.username}</span>
+                </DropdownMenuItem>
+                {user.isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/blog" className="cursor-pointer">Admin Dashboard</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/auth">
+              <Button size="sm" variant="default" className="flex items-center gap-2">
+                <LogIn className="h-4 w-4" />
+                <span>Login</span>
+              </Button>
+            </Link>
+          )}
+          
           {/* Dark Mode Toggle */}
           <ThemeToggle />
         </nav>
@@ -107,6 +150,32 @@ const Header = () => {
                 </Link>
               </>
             )}
+            
+            {/* Mobile Login/Logout */}
+            <div className="py-2 border-t border-gray-200 dark:border-gray-700 mt-2">
+              {user ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Logged in as @{user.username}</span>
+                  </div>
+                  {user.isAdmin && (
+                    <Link href="/admin/blog" className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => logoutMutation.mutate()}
+                    className="flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" /> Log out
+                  </button>
+                </div>
+              ) : (
+                <Link href="/auth" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                  <LogIn className="h-4 w-4 mr-2" /> Login / Register
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}

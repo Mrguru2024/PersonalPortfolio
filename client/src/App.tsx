@@ -9,8 +9,11 @@ import ProjectDetails from "@/pages/ProjectDetails";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import AdminBlog from "@/pages/AdminBlog";
+import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
@@ -19,7 +22,8 @@ function Router() {
       <Route path="/projects/:id" component={ProjectDetails} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
-      <Route path="/admin/blog" component={AdminBlog} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/admin/blog" component={AdminBlog} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -29,14 +33,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">
-            <Router />
-          </main>
-          <Footer />
-        </div>
+        <AuthProvider>
+          <Toaster />
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-grow">
+              <Router />
+            </main>
+            <Footer />
+          </div>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
