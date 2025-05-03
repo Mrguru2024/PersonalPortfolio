@@ -12,6 +12,7 @@ import AdminBlog from "@/pages/AdminBlog";
 import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CustomCursor from "@/components/CustomCursor";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -35,7 +36,8 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <div className="flex flex-col min-h-screen">
+          <CustomCursor />
+          <div className="flex flex-col min-h-screen cursor-none md:cursor-none">
             <Header />
             <main className="flex-grow">
               <Router />

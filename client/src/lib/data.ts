@@ -92,7 +92,7 @@ export const socialLinks: SocialLink[] = [
   },
   {
     platform: "Threads",
-    url: "https://threads.net/@mrguru2024",
+    url: "https://www.threads.com/@therealmrguru",
     icon: "threads"
   },
   {
