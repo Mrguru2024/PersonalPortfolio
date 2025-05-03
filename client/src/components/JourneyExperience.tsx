@@ -314,9 +314,6 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
   // Using the same ref from earlier to track previous section
   useEffect(() => {
     if (activeSection && activeSection !== prevActiveSectionRef.current) {
-      // Reset the forceClosed state whenever the active section changes
-      setForceClosed(false);
-      
       // Keep track of which sections have been manually closed
       const prevSection = activeSection.toLowerCase();
       
@@ -370,6 +367,13 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     const newManuallyClosedMilestones = new Set(manuallyClosedMilestones);
     newManuallyClosedMilestones.add(milestoneId);
     setManuallyClosedMilestones(newManuallyClosedMilestones);
+    
+    // Set forceClosed to true - this ensures the popup remains closed
+    setForceClosed(true);
+    
+    // Set guru to inactive to prevent immediate reappearance
+    setIsGuruActive(false);
+    setActiveIndex(-1);
   };
   
   return (
