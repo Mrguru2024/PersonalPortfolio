@@ -17,15 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>
-          <CustomCursor />
-          <FloatingNavigation />
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
-        </Providers>
+        {children}
       </body>
     </html>
   );

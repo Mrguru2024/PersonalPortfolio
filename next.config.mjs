@@ -22,6 +22,7 @@ const nextConfig = {
       ...config.resolve.alias,
       '@': './client/src',
       '@shared': './shared',
+      '@app': './app',
       '@assets': './public/assets',
     };
     return config;

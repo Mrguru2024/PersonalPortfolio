@@ -1,32 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/app/db';
-import { blogPosts } from '@/shared/schema';
+import { getDb } from '../../db';
 import { desc, eq } from 'drizzle-orm';
+import { blogPosts } from '../../../shared/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    const db = getDb();
-    
-    // Check for query parameters
-    const { searchParams } = new URL(request.url);
-    const published = searchParams.get('published');
-    
-    // Build query based on parameters
-    let query = db.select().from(blogPosts);
-    
-    if (published === 'true') {
-      query = query.where(eq(blogPosts.published, true));
+    const { db } = getDb();
+    const slug = request.nextUrl.searchParams.get('slug');
+
+    if (slug) {
+      // Get specific blog post
+      const post = await db.query.blogPosts.findFirst({
+        where: eq(blogPosts.slug, slug),
+        with: {
+          author: true
+        }
+      });
+
+      if (!post) {
+        return NextResponse.json({ message: "Blog post not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(post);
+    } else {
+      // Get all published blog posts
+      const posts = await db.query.blogPosts.findMany({
+        where: eq(blogPosts.isPublished, true),
+        orderBy: [desc(blogPosts.publishedAt)],
+        with: {
+          author: true
+        }
+      });
+
+      return NextResponse.json(posts);
     }
-    
-    // Order by publish date descending
-    const posts = await query.orderBy(desc(blogPosts.publishedAt));
-    
-    return NextResponse.json(posts);
   } catch (error) {
-    console.error('Blog posts fetch error:', error);
-    return NextResponse.json(
-      { message: 'An error occurred while fetching blog posts' }, 
-      { status: 500 }
-    );
+    console.error('Error fetching blog posts:', error);
+    return NextResponse.json({ message: "Failed to fetch blog posts" }, { status: 500 });
   }
 }
