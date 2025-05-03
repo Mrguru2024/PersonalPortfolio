@@ -5,6 +5,7 @@ const nextConfig = {
   swcMinify: true,
   experimental: {
     serverComponentsExternalPackages: ["pg"],
+    esmExternals: "loose",
   },
   images: {
     domains: [],
@@ -14,6 +15,16 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+  },
+  webpack: (config) => {
+    // Support importing files from src directory
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': './client/src',
+      '@shared': './shared',
+      '@assets': './public/assets',
+    };
+    return config;
   },
 };
 
