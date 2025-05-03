@@ -1,51 +1,52 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CustomCursor from "@/components/CustomCursor";
 import QuickNav from "@/components/QuickNav";
-import { usePathname } from "next/navigation";
+import CustomCursor from "@/components/CustomCursor";
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const [currentSection, setCurrentSection] = useState("home");
   const [quickNavOpen, setQuickNavOpen] = useState(false);
-  const pathname = usePathname();
-
-  // Handle navigation toggle
-  const toggleQuickNav = () => {
-    setQuickNavOpen(!quickNavOpen);
-  };
-
-  // Set current section based on the path
+  
+  // Handle section visibility detection
   useEffect(() => {
-    if (pathname === "/") {
-      // For home page, the sections will be set by the intersection observer
-      setCurrentSection("home");
-    } else if (pathname.startsWith("/projects")) {
-      setCurrentSection("projects");
-    } else if (pathname.startsWith("/blog")) {
-      setCurrentSection("blog");
-    } else if (pathname.startsWith("/resume")) {
-      setCurrentSection("resume");
-    } else if (pathname.startsWith("/auth")) {
-      setCurrentSection("auth");
-    }
-  }, [pathname]);
-
-  // Handle keyboard navigation
+    // Only run on the client side
+    if (typeof window === "undefined") return;
+    
+    // Function to determine the current visible section
+    const handleScroll = () => {
+      const sections = document.querySelectorAll("section[id]");
+      let currentSectionId = currentSection;
+      
+      sections.forEach((section) => {
+        const sectionTop = section.getBoundingClientRect().top;
+        const sectionId = section.getAttribute("id") || "";
+        
+        // If the section is in view
+        if (sectionTop <= 100 && sectionTop >= -section.clientHeight + 100) {
+          currentSectionId = sectionId;
+        }
+      });
+      
+      if (currentSectionId !== currentSection) {
+        setCurrentSection(currentSectionId);
+      }
+    };
+    
+    // Listen for scroll events
+    window.addEventListener("scroll", handleScroll);
+    
+    // Initial check
+    handleScroll();
+    
+    // Clean up the event listener
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [currentSection]);
+  
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // ESC key to close quick nav
-      if (e.key === "Escape" && quickNavOpen) {
-        setQuickNavOpen(false);
-      }
-      
-      // Quick nav toggle with Ctrl+K or Command+K
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        toggleQuickNav();
-      }
-      
-      // Section quick navigation
+      // Only if Alt key is pressed
       if (e.altKey) {
         switch (e.key) {
           case "1":
@@ -64,79 +65,61 @@ export default function Template({ children }: { children: React.ReactNode }) {
             navigateToSection("contact");
             break;
           case "b":
+          case "B":
             window.location.href = "/blog";
             break;
           case "r":
+          case "R":
             window.location.href = "/resume";
             break;
         }
       }
+      
+      // Ctrl+K to open quick navigation
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setQuickNavOpen(true);
+      }
     };
     
-    const navigateToSection = (section: string) => {
-      if (pathname !== "/") {
-        window.location.href = "/#" + section;
-        return;
-      }
-      
-      const sectionElement = document.getElementById(section);
-      if (sectionElement) {
-        sectionElement.scrollIntoView({ behavior: "smooth" });
-        setCurrentSection(section);
-      }
-    };
-
     window.addEventListener("keydown", handleKeyDown);
+    
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [quickNavOpen, pathname]);
-
-  // Handle section scrolling on homepage
-  useEffect(() => {
-    if (pathname !== "/") return;
+  }, []);
+  
+  // Function to navigate to a section on the home page
+  const navigateToSection = (sectionId: string) => {
+    // If not on home page, navigate to home page with hash
+    if (window.location.pathname !== "/") {
+      window.location.href = `/#${sectionId}`;
+      return;
+    }
     
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            setCurrentSection(id);
-            // Update URL hash without scrolling
-            history.replaceState(null, "", `#${id}`);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    const sections = document.querySelectorAll("section[id]");
-    sections.forEach((section) => {
-      observer.observe(section);
-    });
-
-    return () => {
-      sections.forEach((section) => {
-        observer.unobserve(section);
-      });
-    };
-  }, [pathname]);
-
+    // Otherwise, scroll to the section
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+      setCurrentSection(sectionId);
+    }
+  };
+  
   return (
     <>
-      <CustomCursor currentSection={currentSection} />
+      {/* Main content with children */}
+      {children}
       
+      {/* Quick navigation overlay */}
       <QuickNav
         isOpen={quickNavOpen}
         onClose={() => setQuickNavOpen(false)}
         currentSection={currentSection}
-        onSectionClick={(section) => {
-          setCurrentSection(section);
-          setQuickNavOpen(false);
-        }}
+        onSectionClick={navigateToSection}
       />
       
-      {children}
+      {/* Custom cursor */}
+      <CustomCursor currentSection={currentSection} />
     </>
   );
 }
