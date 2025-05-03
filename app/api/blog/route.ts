@@ -1,48 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../db';
-import { blogPosts } from '../../../shared/schema';
-import { desc, eq } from 'drizzle-orm';
+import { getDb } from '@/app/db';
+import { blogPosts, blogPostContributions, blogComments } from '@/shared/schema';
+import { asc, desc, eq, and, sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const slug = searchParams.get('slug');
-    const { db } = getDb();
-
-    // If slug is provided, return a specific blog post
+    
+    const db = getDb();
+    
     if (slug) {
-      const post = await db.query.blogPosts.findFirst({
-        where: eq(blogPosts.slug, slug),
-        with: {
-          author: true,
-        },
-      });
-
+      // Get single blog post by slug
+      const [post] = await db
+        .select()
+        .from(blogPosts)
+        .where(eq(blogPosts.slug, slug))
+        .leftJoin(blogComments, eq(blogComments.postId, blogPosts.id))
+        .orderBy(desc(blogPosts.publishedAt));
+        
       if (!post) {
-        return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Blog post not found' }, { status: 404 });
       }
-
+      
       return NextResponse.json(post);
+    } else {
+      // Get all published blog posts
+      const posts = await db
+        .select()
+        .from(blogPosts)
+        .where(eq(blogPosts.published, true))
+        .orderBy(desc(blogPosts.publishedAt));
+      
+      return NextResponse.json(posts);
     }
-
-    // Otherwise return all published blog posts sorted by date
-    const posts = await db.query.blogPosts.findMany({
-      where: eq(blogPosts.isPublished, true),
-      orderBy: [desc(blogPosts.publishedAt)],
-      with: {
-        author: {
-          columns: {
-            id: true,
-            username: true,
-            avatarUrl: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json(posts);
   } catch (error) {
     console.error('Error fetching blog posts:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Failed to fetch blog posts' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // This endpoint should be protected - check if user is authenticated and admin
+    // This is handled by middleware in Next.js
+    
+    const data = await request.json();
+    const db = getDb();
+    
+    const [post] = await db
+      .insert(blogPosts)
+      .values({
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        summary: data.summary,
+        featuredImage: data.featuredImage,
+        tags: data.tags,
+        authorId: data.authorId,
+        published: data.published ?? false,
+        publishedAt: data.published ? new Date() : null,
+      })
+      .returning();
+    
+    return NextResponse.json(post, { status: 201 });
+  } catch (error) {
+    console.error('Error creating blog post:', error);
+    return NextResponse.json(
+      { message: 'Failed to create blog post' },
+      { status: 500 }
+    );
   }
 }

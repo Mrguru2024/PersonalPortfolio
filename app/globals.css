@@ -4,65 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-
-    --radius: 0.5rem;
-  }
-
-  .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
-
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
+    --destructive-foreground: 0 85.7% 97.3%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --ring: 142.4 71.8% 29.2%;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
   }
 }
 
@@ -70,82 +53,193 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* MrGuru website specific styles */
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500;
 }
 
 .button-gradient {
-  @apply bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition-all;
+  @apply bg-gradient-to-r from-primary to-blue-500 hover:brightness-110 transition-all;
 }
 
-.animated-underline {
-  position: relative;
+.section-padding {
+  @apply py-16 md:py-24;
 }
 
-.animated-underline::after {
+/* Custom cursor styles */
+.custom-cursor {
+  @apply fixed pointer-events-none z-50 mix-blend-difference transform -translate-x-1/2 -translate-y-1/2 transition-all duration-100;
+}
+
+.custom-cursor-inner {
+  @apply bg-white rounded-full transition-all duration-200 ease-out;
+}
+
+.custom-cursor-outer {
+  @apply border border-white rounded-full transition-all duration-300 ease-out;
+}
+
+/* Additional global styles */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}
+
+/* Styles for tooltip and navigation */
+.tooltip {
+  @apply absolute bg-popover text-popover-foreground text-sm px-2 py-1 rounded opacity-0 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50;
+}
+
+.nav-link {
+  @apply relative transition-all duration-300 hover:text-primary;
+}
+
+.nav-link::after {
   content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: -2px;
-  left: 0;
-  @apply bg-gradient-to-r from-purple-600 to-blue-500;
-  transition: width 0.3s ease;
+  @apply absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-500 transition-all duration-300;
 }
 
-.animated-underline:hover::after {
-  width: 100%;
+.nav-link:hover::after {
+  @apply w-full;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+.nav-link.active::after {
+  @apply w-full;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-secondary/30 rounded-full;
+/* Cards and container styles */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-purple-600 to-blue-500 rounded-full;
+/* Projects section specific styles */
+.project-card-overlay {
+  @apply absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-300 p-6 flex flex-col justify-end text-white;
 }
 
-/* Page transition animations */
-.page-transition-enter {
+.project-card:hover .project-card-overlay {
+  @apply opacity-100;
+}
+
+/* Blog post styles */
+.blog-content h1 {
+  @apply text-3xl font-bold mb-4 mt-8;
+}
+
+.blog-content h2 {
+  @apply text-2xl font-bold mb-3 mt-6;
+}
+
+.blog-content h3 {
+  @apply text-xl font-bold mb-2 mt-5;
+}
+
+.blog-content p {
+  @apply mb-4 leading-relaxed;
+}
+
+.blog-content a {
+  @apply text-primary hover:underline;
+}
+
+.blog-content ul, .blog-content ol {
+  @apply mb-4 pl-6;
+}
+
+.blog-content ul {
+  @apply list-disc;
+}
+
+.blog-content ol {
+  @apply list-decimal;
+}
+
+.blog-content pre {
+  @apply bg-card p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.blog-content code {
+  @apply bg-card px-1 py-0.5 rounded text-sm;
+}
+
+.blog-content blockquote {
+  @apply border-l-4 border-primary pl-4 italic my-4;
+}
+
+/* Animation utility classes */
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animate-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animate-delay-500 {
+  animation-delay: 500ms;
+}
+
+/* Mobile menu animation */
+.mobile-menu-enter {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateX(100%);
 }
 
-.page-transition-enter-active {
+.mobile-menu-enter-active {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.4s, transform 0.4s;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
 }
 
-.page-transition-exit {
+.mobile-menu-exit {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
-.page-transition-exit-active {
+.mobile-menu-exit-active {
   opacity: 0;
-  transform: translateY(-20px);
-  transition: opacity 0.4s, transform 0.4s;
-}
-
-.reveal {
-  position: relative;
-  transform: translateY(150px);
-  opacity: 0;
-  transition: 2s all ease;
-}
-
-.reveal.active {
-  transform: translateY(0);
-  opacity: 1;
+  transform: translateX(100%);
+  transition: opacity 300ms, transform 300ms;
 }

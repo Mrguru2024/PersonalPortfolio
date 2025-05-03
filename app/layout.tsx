@@ -1,58 +1,72 @@
 import type { Metadata } from 'next';
-import { Inter as FontSans } from 'next/font/google';
-import './globals.css';
-import { cn } from '@/lib/utils';
+import { Inter } from 'next/font/google';
 import { Providers } from './providers';
+import './globals.css';
 
-// Font configuration
-const fontSans = FontSans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
+const inter = Inter({ subsets: ['latin'] });
 
-// Metadata for SEO
 export const metadata: Metadata = {
-  title: 'MrGuru Dev | Full-Stack Developer & JavaScript Expert',
-  description:
-    'Anthony "MrGuru" Feaster is a full-stack developer, specializing in JavaScript, React, Next.js, and innovative web solutions in Atlanta, GA.',
-  keywords:
-    'MrGuru, Anthony Feaster, Web Developer, JavaScript, React, Next.js, Node.js, Full Stack, Atlanta',
-  authors: [{ name: 'Anthony Feaster', url: 'https://mrguru.dev' }],
-  creator: 'Anthony Feaster',
-  publisher: 'MrGuru Dev',
-  robots: 'index, follow',
+  title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
+  description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
+  keywords: 'developer portfolio, web developer, full stack developer, react developer, javascript developer, node.js developer, Anthony Feaster, MrGuru, Atlanta',
+  authors: [{ name: 'Anthony Feaster' }],
+  creator: 'Anthony "MrGuru" Feaster',
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
+    title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
+    description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
     url: 'https://mrguru.dev',
-    title: 'MrGuru Dev | Full-Stack Developer & JavaScript Expert',
-    description:
-      'Anthony "MrGuru" Feaster is a full-stack developer, specializing in JavaScript, React, Next.js, and innovative web solutions in Atlanta, GA.',
-    siteName: 'MrGuru Dev',
+    siteName: 'MrGuru.dev',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Anthony "MrGuru" Feaster - Full Stack Developer',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MrGuru Dev | Full-Stack Developer & JavaScript Expert',
-    description:
-      'Anthony "MrGuru" Feaster is a full-stack developer, specializing in JavaScript, React, Next.js, and innovative web solutions in Atlanta, GA.',
-    creator: '@MrGuruDev',
+    title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
+    description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
+    creator: '@mrguru2024',
+    images: ['/twitter-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/site.webmanifest',
+  alternates: {
+    canonical: 'https://mrguru.dev',
+  },
+  verification: {
+    google: process.env.GOOGLE_VERIFICATION,
   },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body
-        className={cn(
-          'min-h-screen bg-background font-sans antialiased',
-          fontSans.variable
-        )}
-      >
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
