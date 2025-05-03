@@ -1,43 +1,23 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
+import * as schema from '@/shared/schema';
 import ws from 'ws';
-import * as schema from '../shared/schema';
 
+// Required for Neon database serverless connections
 neonConfig.webSocketConstructor = ws;
 
-// Global is used here to maintain a cached connection across hot reloads
-// in development. This prevents connections from growing exponentially
-// during API Route usage.
-declare global {
-  var pool: Pool | undefined;
-  var db: any;
-}
-
 let pool: Pool;
-let db: any;
-
-if (process.env.NODE_ENV === 'production') {
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle(pool, { schema });
-} else {
-  if (!global.pool) {
-    global.pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    global.db = drizzle(global.pool, { schema });
-
-    // Auto-apply migrations in development (optional)
-    // migrate(global.db, { migrationsFolder: './drizzle' })
-    //  .then(() => console.log('Migrations applied'))
-    //  .catch(console.error);
-  }
-  pool = global.pool;
-  db = global.db;
-}
 
 export function getDb() {
-  if (!pool || !db) {
-    throw new Error('Database not initialized');
+  if (!pool) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
   }
-  return { pool, db };
+  
+  return drizzle({ client: pool, schema });
 }
 
 export async function closeDb() {
