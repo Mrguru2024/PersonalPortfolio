@@ -69,9 +69,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
-          callbackURL: process.env.NODE_ENV === 'production' 
-            ? "https://mrguru.dev/api/auth/github/callback"
-            : "http://localhost:5000/api/auth/github/callback"
+          callbackURL: `${process.env.BASE_URL || "https://mrguru-portfolio.replit.app"}/api/auth/github/callback`
         },
         async (accessToken: string, refreshToken: string, profile: any, done: any) => {
           try {
