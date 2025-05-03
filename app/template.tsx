@@ -21,26 +21,29 @@ export default function Template({ children }: { children: React.ReactNode }) {
   
   // Listen for section changes (used by CustomCursor)
   useEffect(() => {
-    const handleSectionChange = () => {
-      const sections = document.querySelectorAll('section[id]');
-      const scrollPosition = window.scrollY + 100;
-      
-      for (const section of sections) {
-        const sectionTop = (section as HTMLElement).offsetTop;
-        const sectionHeight = (section as HTMLElement).offsetHeight;
-        const sectionId = section.getAttribute('id');
+    // Wrap DOM interactions in client-side check to prevent hydration mismatches
+    if (typeof window !== 'undefined') {
+      const handleSectionChange = () => {
+        const sections = document.querySelectorAll('section[id]');
+        const scrollPosition = window.scrollY + 100;
         
-        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-          setActiveSection(sectionId || undefined);
-          break;
-        }
-      }
-    };
-    
-    window.addEventListener('scroll', handleSectionChange);
-    handleSectionChange(); // Check initial position
-    
-    return () => window.removeEventListener('scroll', handleSectionChange);
+        // Convert NodeList to Array to avoid iteration issues
+        Array.from(sections).forEach((section) => {
+          const sectionTop = (section as HTMLElement).offsetTop;
+          const sectionHeight = (section as HTMLElement).offsetHeight;
+          const sectionId = section.getAttribute('id');
+          
+          if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+            setActiveSection(sectionId || undefined);
+          }
+        });
+      };
+      
+      window.addEventListener('scroll', handleSectionChange);
+      handleSectionChange(); // Check initial position
+      
+      return () => window.removeEventListener('scroll', handleSectionChange);
+    }
   }, []);
   
   return (

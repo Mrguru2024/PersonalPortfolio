@@ -25,9 +25,11 @@ export async function setupNext(app: Express) {
     await nextApp.prepare();
     log("Next.js initialized", "next");
     
-    // Set up a wildcard handler for all non-API routes to be handled by Next.js
+    // Set up a wildcard handler for all routes to be handled by Next.js
+    // but exclude Express API routes that are handled by our own backend
     app.all('*', (req, res) => {
-      if (!req.path.startsWith('/api')) {
+      // Next.js should handle its own API routes (auth, etc)
+      if (req.path.startsWith('/api/auth') || !req.path.startsWith('/api')) {
         return handle(req, res);
       }
     });
