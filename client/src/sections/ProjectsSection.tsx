@@ -294,20 +294,113 @@ const ProjectsSection = () => {
         </motion.div>
         
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="text-center mt-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 50 }}
+          viewport={{ once: true, amount: 0.6 }}
+          className="text-center mt-20 relative"
         >
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-6">
+          {/* Decorative elements */}
+          <motion.div 
+            className="absolute left-1/4 -top-10 h-16 w-16 rounded-full bg-primary/10 blur-xl"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3]
+            }}
+            transition={{ 
+              duration: 5,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+          />
+          <motion.div 
+            className="absolute right-1/4 -bottom-10 h-16 w-16 rounded-full bg-purple-500/10 blur-xl"
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.3, 0.5, 0.3]
+            }}
+            transition={{ 
+              duration: 4,
+              repeat: Infinity,
+              repeatType: "reverse",
+              delay: 1
+            }}
+          />
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 text-lg"
+          >
             Interested in working together? Let's build something amazing for your business!
-          </p>
-          <a href="#contact">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8">
-              Get a Quote for Your Project
-            </Button>
-          </a>
+          </motion.p>
+          
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+          >
+            <motion.div
+              animate={{ 
+                y: [0, -5, 0],
+                scale: [1, 1.02, 1] 
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut" 
+              }}
+            >
+              <a href="#contact">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white px-8 py-6 shadow-lg hover:shadow-primary/20 hover:shadow-xl relative group overflow-hidden"
+                >
+                  <span className="relative z-10 flex items-center gap-2 text-lg">
+                    Get a Quote for Your Project
+                    <motion.div
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ 
+                        duration: 1.5,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <ArrowRight className="h-5 w-5 group-hover:animate-pulse" />
+                    </motion.div>
+                  </span>
+                  
+                  {/* Button shine effect */}
+                  <motion.div 
+                    className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                    animate={{ 
+                      x: ['-100%', '100%'],
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                      ease: "easeInOut"
+                    }}
+                  />
+                </Button>
+              </a>
+            </motion.div>
+          </motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="text-gray-500 dark:text-gray-500 mt-4 text-sm"
+          >
+            No commitment, just a friendly conversation
+          </motion.p>
         </motion.div>
       </div>
     </section>
