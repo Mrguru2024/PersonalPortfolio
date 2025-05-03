@@ -1,99 +1,131 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { cn } from "@/components/ui/utils";
+
+type SectionTooltip = {
+  [key: string]: string;
+};
 
 export default function CustomCursor({ currentSection }: { currentSection: string }) {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isPointer, setIsPointer] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isVisible, setIsVisible] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isClicking, setIsClicking] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
   
-  // Set cursor sizes based on section
-  const getSizes = () => {
-    switch (currentSection) {
-      case 'hero':
-        return { inner: 8, outer: 32 };
-      case 'projects':
-        return { inner: 10, outer: 36 };
-      case 'skills':
-        return { inner: 12, outer: 40 };
-      default:
-        return { inner: 8, outer: 32 };
-    }
+  // Map of section IDs to tooltips
+  const sectionTooltips: SectionTooltip = {
+    home: "Explore my portfolio",
+    about: "Learn about me",
+    projects: "View my work",
+    skills: "Check my expertise",
+    contact: "Get in touch",
+    blog: "Read my articles",
+    resume: "View my resume",
   };
-  
-  const sizes = getSizes();
-  
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
+    // Detect devices that likely don't have a mouse
+    const isTouchDevice = ('ontouchstart' in window) || 
+                          (navigator.maxTouchPoints > 0) || 
+                          (navigator.msMaxTouchPoints > 0);
     
-    const handlePointerDetection = () => {
-      const target = document.elementFromPoint(mousePosition.x, mousePosition.y);
-      
-      if (target) {
-        const computedStyle = window.getComputedStyle(target);
-        setIsPointer(computedStyle.cursor === 'pointer');
+    if (isTouchDevice) {
+      setIsVisible(false);
+      return;
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY });
+      if (!isVisible) setIsVisible(true);
+    };
+
+    const handleMouseEnter = () => {
+      setIsVisible(true);
+    };
+
+    const handleMouseLeave = () => {
+      setIsVisible(false);
+    };
+
+    const handleMouseDown = () => {
+      setIsClicking(true);
+    };
+
+    const handleMouseUp = () => {
+      setIsClicking(false);
+    };
+
+    const handleHoverStart = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' || 
+          target.tagName === 'BUTTON' || 
+          target.closest('a') || 
+          target.closest('button')) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
       }
     };
-    
-    window.addEventListener('mousemove', handleMouseMove);
-    
-    // Use a throttled version for performance
-    const interval = setInterval(handlePointerDetection, 100);
-    
+
+    // Add all event listeners
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseenter", handleMouseEnter);
+    document.addEventListener("mouseleave", handleMouseLeave);
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mouseover", handleHoverStart);
+
+    // Clean up
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      clearInterval(interval);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseenter", handleMouseEnter);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseover", handleHoverStart);
     };
-  }, [mousePosition.x, mousePosition.y]);
-  
+  }, [isVisible, isHovering]);
+
+  // Control tooltip visibility
+  useEffect(() => {
+    if (currentSection && sectionTooltips[currentSection]) {
+      setTooltipVisible(true);
+      
+      // Hide tooltip after a delay
+      const timer = setTimeout(() => {
+        setTooltipVisible(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentSection]);
+
+  if (!isVisible) return null;
+
   return (
     <>
-      {/* Inner cursor */}
-      <motion.div 
-        className="custom-cursor"
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
+      <div 
+        className={cn(
+          "custom-cursor bg-primary",
+          isHovering && "hovering",
+          isClicking && "clicking"
+        )}
+        style={{ 
+          left: `${position.x}px`, 
+          top: `${position.y}px` 
         }}
-        animate={{
-          width: isPointer ? sizes.inner * 1.5 : sizes.inner,
-          height: isPointer ? sizes.inner * 1.5 : sizes.inner,
-        }}
-        transition={{ duration: 0.15 }}
       >
         <div 
-          className="custom-cursor-inner"
-          style={{
-            width: '100%',
-            height: '100%',
-          }}
-        />
-      </motion.div>
-      
-      {/* Outer cursor */}
-      <motion.div 
-        className="custom-cursor"
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-        animate={{
-          width: isPointer ? sizes.outer * 1.2 : sizes.outer,
-          height: isPointer ? sizes.outer * 1.2 : sizes.outer,
-          opacity: isPointer ? 0.8 : 0.5,
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <div 
-          className="custom-cursor-outer"
-          style={{
-            width: '100%',
-            height: '100%',
-          }}
-        />
-      </motion.div>
+          className={cn(
+            "cursor-tooltip",
+            tooltipVisible && "visible"
+          )}
+        >
+          {sectionTooltips[currentSection] || "Explore"}
+        </div>
+      </div>
     </>
   );
 }

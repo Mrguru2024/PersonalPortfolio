@@ -1,61 +1,41 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { Providers } from './providers';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter as FontSans } from "next/font/google";
+import localFont from "next/font/local";
+import "./globals.css";
+import { cn } from "@/components/ui/utils";
+import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ['latin'] });
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+// Define a custom font for headings
+const fontHeading = localFont({
+  src: "../public/fonts/Audiowide-Regular.ttf",
+  variable: "--font-heading",
+});
 
 export const metadata: Metadata = {
-  title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
-  description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
-  keywords: 'developer portfolio, web developer, full stack developer, react developer, javascript developer, node.js developer, Anthony Feaster, MrGuru, Atlanta',
-  authors: [{ name: 'Anthony Feaster' }],
-  creator: 'Anthony "MrGuru" Feaster',
+  title: "MrGuru.dev | Anthony Feaster - Full Stack Developer",
+  description: "Anthony 'MrGuru' Feaster - Portfolio showcasing full stack development expertise in React, Node.js, and modern web technologies.",
+  keywords: "Web Developer, Full Stack, React, Node.js, JavaScript, TypeScript, Portfolio, Anthony Feaster, MrGuru, Atlanta",
+  authors: [{ name: "Anthony Feaster", url: "https://mrguru.dev" }],
+  creator: "Anthony Feaster",
   openGraph: {
-    title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
-    description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
-    url: 'https://mrguru.dev',
-    siteName: 'MrGuru.dev',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Anthony "MrGuru" Feaster - Full Stack Developer',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
+    type: "website",
+    locale: "en_US",
+    url: "https://mrguru.dev",
+    title: "MrGuru.dev | Anthony Feaster - Full Stack Developer",
+    description: "Anthony 'MrGuru' Feaster - Portfolio showcasing full stack development expertise in React, Node.js, and modern web technologies.",
+    siteName: "MrGuru.dev",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Anthony "MrGuru" Feaster | Full Stack Developer',
-    description: 'Professional portfolio of Anthony Feaster, a full stack developer specializing in React, Node.js, and modern web technologies.',
-    creator: '@mrguru2024',
-    images: ['/twitter-image.jpg'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-  manifest: '/site.webmanifest',
-  alternates: {
-    canonical: 'https://mrguru.dev',
-  },
-  verification: {
-    google: process.env.GOOGLE_VERIFICATION,
+    card: "summary_large_image",
+    title: "MrGuru.dev | Anthony Feaster - Full Stack Developer",
+    description: "Anthony 'MrGuru' Feaster - Portfolio showcasing full stack development expertise in React, Node.js, and modern web technologies.",
+    creator: "@MrGuru2024",
   },
 };
 
@@ -66,8 +46,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#000000" />
+      </head>
+      <body 
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable,
+          fontHeading.variable
+        )}
+      >
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

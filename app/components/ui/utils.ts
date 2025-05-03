@@ -1,8 +1,5 @@
-// This file provides a fallback implementation of utils 
-// to resolve any path reference issues
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format } from "date-fns";
 
 /**
  * Combines class names with Tailwind CSS utilities
@@ -15,8 +12,12 @@ export function cn(...inputs: ClassValue[]) {
  * Formats a date string to a human-readable format
  */
 export function formatDate(input: string | number | Date): string {
-  const date = input instanceof Date ? input : new Date(input);
-  return format(date, "MMMM dd, yyyy");
+  const date = new Date(input);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 /**
@@ -24,7 +25,7 @@ export function formatDate(input: string | number | Date): string {
  */
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
+  return text.slice(0, maxLength) + "...";
 }
 
 /**
@@ -33,24 +34,22 @@ export function truncateText(text: string, maxLength: number): string {
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\w ]+/g, "")
-    .replace(/ +/g, "-");
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
  * Generates a random ID of specified length
  */
 export function getRandomID(length: number = 6): string {
-  return Math.random()
-    .toString(36)
-    .substring(2, 2 + length);
-}
-
-/**
- * Generates a unique token for resume access
- */
-export function generateResumeAccessToken(): string {
-  return `access_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 }
 
 /**
@@ -58,48 +57,22 @@ export function generateResumeAccessToken(): string {
  */
 export function calculateReadingTime(content: string): number {
   const wordsPerMinute = 200;
-  const words = content.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
-}
-
-/**
- * Fetches data from an API endpoint with error handling
- */
-export async function fetchFromAPI<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `Error ${response.status}: Failed to fetch data from ${url}`);
-  }
-  
-  return response.json();
-}
-
-/**
- * Checks if the current environment is production
- */
-export function isProduction(): boolean {
-  return process.env.NODE_ENV === "production";
-}
-
-/**
- * Validates an email address format
- */
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  const wordCount = content.trim().split(/\s+/).length;
+  return Math.ceil(wordCount / wordsPerMinute);
 }
 
 /**
  * Groups an array of items by a specified key
  */
 export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((acc: Record<string, T[]>, item) => {
+  return array.reduce((result, item) => {
     const groupKey = String(item[key]);
-    acc[groupKey] = [...(acc[groupKey] || []), item];
-    return acc;
-  }, {});
+    if (!result[groupKey]) {
+      result[groupKey] = [];
+    }
+    result[groupKey].push(item);
+    return result;
+  }, {} as Record<string, T[]>);
 }
 
 /**
@@ -110,8 +83,8 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
-  
-  return function(...args: Parameters<T>): void {
+
+  return function (...args: Parameters<T>) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };

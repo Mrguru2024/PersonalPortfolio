@@ -1,148 +1,183 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { Menu, X, Github, Linkedin, Twitter } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/components/ui/utils";
 
-export default function Header() {
+interface HeaderProps {
+  currentSection: string;
+  onNavToggle: () => void;
+}
+
+export default function Header({ currentSection, onNavToggle }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-  
-  const navItems = [
-    { href: '/', label: 'Home' },
-    { href: '/projects', label: 'Projects' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/resume', label: 'Resume' },
-  ];
-  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const offset = window.scrollY;
+      setIsScrolled(offset > 50);
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    
+
+    window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  
-  useEffect(() => {
-    // Close mobile menu when route changes
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-  
-  useEffect(() => {
-    // Prevent scrolling when mobile menu is open
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const navItems = [
+    { href: "/#home", label: "Home", id: "home" },
+    { href: "/#about", label: "About", id: "about" },
+    { href: "/#projects", label: "Projects", id: "projects" },
+    { href: "/#skills", label: "Skills", id: "skills" },
+    { href: "/#contact", label: "Contact", id: "contact" },
+    { href: "/blog", label: "Blog", id: "blog" },
+    { href: "/resume", label: "Resume", id: "resume" },
+  ];
+
+  const socialLinks = [
+    { 
+      href: "https://github.com/Mrguru2024", 
+      icon: <Github className="h-5 w-5" />, 
+      label: "GitHub" 
+    },
+    { 
+      href: "https://linkedin.com/in/anthony-feaster", 
+      icon: <Linkedin className="h-5 w-5" />, 
+      label: "LinkedIn" 
+    },
+    { 
+      href: "https://twitter.com/MrGuru2024", 
+      icon: <Twitter className="h-5 w-5" />, 
+      label: "Twitter" 
     }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMobileMenuOpen]);
-  
+  ];
+
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${
+      className={cn(
+        "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
         isScrolled 
-          ? 'bg-background/80 backdrop-blur-md shadow-md py-3'
-          : 'bg-transparent py-5'
-      }`}
+          ? "bg-background/80 backdrop-blur-md py-3 shadow-md" 
+          : "bg-transparent py-4"
+      )}
     >
-      <div className="container flex items-center justify-between">
-        <Link 
-          href="/"
-          className="text-2xl font-bold hover:opacity-80 transition-opacity"
-        >
-          <span className="text-gradient">MrGuru</span>.dev
+      <div className="container-custom flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="font-heading text-xl md:text-2xl font-bold">
+          <span className="gradient-text">MrGuru</span>.dev
         </Link>
-        
+
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden md:flex space-x-1">
           {navItems.map((item) => (
             <Link
-              key={item.href}
+              key={item.id}
               href={item.href}
-              className={`nav-link text-sm ${
-                pathname === item.href ? 'active' : ''
-              }`}
+              className={cn(
+                "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                currentSection === item.id
+                  ? "text-foreground bg-secondary/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+              )}
             >
               {item.label}
             </Link>
           ))}
-          
-          <Link href="/auth">
-            <Button variant="outline" size="sm">
-              Log In
-            </Button>
-          </Link>
-          
-          <Link href="/contact">
-            <Button className="button-gradient text-white" size="sm">
-              Contact Me
-            </Button>
-          </Link>
         </nav>
-        
+
+        {/* Social Links - Desktop */}
+        <div className="hidden md:flex items-center space-x-3">
+          {socialLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={link.label}
+            >
+              {link.icon}
+            </a>
+          ))}
+
+          <button
+            onClick={onNavToggle}
+            className="p-2 rounded-full bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
+            aria-label="Toggle Quick Navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+          onClick={toggleMobileMenu}
+          className="md:hidden p-2 rounded-md bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
+          aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
         >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-      
+
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {mobileMenuOpen && (
           <motion.div
-            className="fixed inset-0 top-[65px] z-20 bg-background md:hidden"
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden bg-background/95 backdrop-blur-md border-b border-border"
           >
-            <nav className="flex flex-col p-6 space-y-6">
+            <nav className="container-custom py-4 flex flex-col space-y-2">
               {navItems.map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.id}
                   href={item.href}
-                  className={`text-xl ${
-                    pathname === item.href
-                      ? 'text-primary font-medium'
-                      : 'text-foreground'
-                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "px-4 py-3 rounded-md transition-colors",
+                    currentSection === item.id
+                      ? "text-foreground bg-secondary/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+                  )}
                 >
                   {item.label}
                 </Link>
               ))}
-              
-              <div className="pt-6 flex flex-col space-y-4">
-                <Link href="/auth">
-                  <Button variant="outline" className="w-full">
-                    Log In
-                  </Button>
-                </Link>
-                
-                <Link href="/contact">
-                  <Button className="button-gradient text-white w-full">
-                    Contact Me
-                  </Button>
-                </Link>
+
+              <div className="flex space-x-4 pt-4 pb-2 border-t border-border mt-2">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-muted-foreground hover:text-foreground"
+                    aria-label={link.label}
+                  >
+                    {link.icon}
+                  </a>
+                ))}
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onNavToggle();
+                  }}
+                  className="ml-auto p-2 rounded-md bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
+                  aria-label="Toggle Quick Navigation"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
               </div>
             </nav>
           </motion.div>
