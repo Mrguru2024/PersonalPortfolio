@@ -1,4 +1,4 @@
-// Define the database-compatible model with snake_case field names
+// Define the database-compatible model
 export interface ProjectModel {
   id: string;
   title: string;
@@ -6,12 +6,17 @@ export interface ProjectModel {
   image: string;
   tags: string[];
   category: string;
-  github_url: string | null;
-  live_url: string | null;
+  // Support both camelCase and snake_case fields to handle potential inconsistencies
+  githubUrl?: string | null;
+  github_url?: string | null;
+  liveUrl?: string | null;
+  live_url?: string | null;
   details: string | null;
-  demo_type: "iframe" | "video" | "github" | "custom" | null;
-  demo_url: string | null;
-  demo_config: {
+  demoType?: "iframe" | "video" | "github" | "custom" | null;
+  demo_type?: "iframe" | "video" | "github" | "custom" | null;
+  demoUrl?: string | null;
+  demo_url?: string | null;
+  demoConfig?: {
     width?: string;
     height?: string;
     allowFullscreen?: boolean;
@@ -20,9 +25,21 @@ export interface ProjectModel {
     theme?: string;
     githubBranch?: string;
   } | null;
-  repo_owner: string | null;
-  repo_name: string | null;
-  tech_stack: string[] | null;
+  demo_config?: {
+    width?: string;
+    height?: string;
+    allowFullscreen?: boolean;
+    isResponsive?: boolean;
+    showCode?: boolean;
+    theme?: string;
+    githubBranch?: string;
+  } | null;
+  repoOwner?: string | null;
+  repo_owner?: string | null;
+  repoName?: string | null;
+  repo_name?: string | null;
+  techStack?: string[] | null;
+  tech_stack?: string[] | null;
 }
 
 // Define the client interface with camelCase field names 
@@ -57,6 +74,16 @@ export interface Project {
 export function adaptToClientModel(dbProject: ProjectModel): Project {
   console.log('Adapting project with columns:', Object.keys(dbProject).join(', '));
   
+  // Get values prioritizing camelCase fields if available, falling back to snake_case fields
+  const githubUrl = dbProject.githubUrl ?? dbProject.github_url ?? null;
+  const liveUrl = dbProject.liveUrl ?? dbProject.live_url ?? null;
+  const demoType = dbProject.demoType ?? dbProject.demo_type ?? null;
+  const demoUrl = dbProject.demoUrl ?? dbProject.demo_url ?? null;
+  const demoConfig = dbProject.demoConfig ?? dbProject.demo_config ?? null;
+  const repoOwner = dbProject.repoOwner ?? dbProject.repo_owner ?? null;
+  const repoName = dbProject.repoName ?? dbProject.repo_name ?? null;
+  const techStack = dbProject.techStack ?? dbProject.tech_stack ?? null;
+  
   return {
     id: dbProject.id,
     title: dbProject.title,
@@ -64,19 +91,20 @@ export function adaptToClientModel(dbProject: ProjectModel): Project {
     image: dbProject.image,
     tags: dbProject.tags,
     category: dbProject.category,
-    githubUrl: (dbProject as any).github_url || dbProject.githubUrl,
-    liveUrl: (dbProject as any).live_url || dbProject.liveUrl,
+    githubUrl,
+    liveUrl,
     details: dbProject.details,
-    demoType: (dbProject as any).demo_type || dbProject.demoType,
-    demoUrl: (dbProject as any).demo_url || dbProject.demoUrl,
-    demoConfig: (dbProject as any).demo_config || dbProject.demoConfig,
-    repoOwner: (dbProject as any).repo_owner || dbProject.repoOwner,
-    repoName: (dbProject as any).repo_name || dbProject.repoName,
-    techStack: (dbProject as any).tech_stack || dbProject.techStack
+    demoType,
+    demoUrl,
+    demoConfig,
+    repoOwner,
+    repoName,
+    techStack
   };
 }
 
 export function adaptToDatabaseModel(clientProject: Project): ProjectModel {
+  // We'll use camelCase property names in the database
   return {
     id: clientProject.id,
     title: clientProject.title,
@@ -84,15 +112,15 @@ export function adaptToDatabaseModel(clientProject: Project): ProjectModel {
     image: clientProject.image,
     tags: clientProject.tags,
     category: clientProject.category,
-    github_url: clientProject.githubUrl,
-    live_url: clientProject.liveUrl,
+    githubUrl: clientProject.githubUrl,
+    liveUrl: clientProject.liveUrl,
     details: clientProject.details,
-    demo_type: clientProject.demoType,
-    demo_url: clientProject.demoUrl,
-    demo_config: clientProject.demoConfig,
-    repo_owner: clientProject.repoOwner,
-    repo_name: clientProject.repoName,
-    tech_stack: clientProject.techStack
+    demoType: clientProject.demoType,
+    demoUrl: clientProject.demoUrl,
+    demoConfig: clientProject.demoConfig,
+    repoOwner: clientProject.repoOwner,
+    repoName: clientProject.repoName,
+    techStack: clientProject.techStack
   };
 }
 

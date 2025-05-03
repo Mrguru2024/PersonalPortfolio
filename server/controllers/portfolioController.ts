@@ -72,14 +72,12 @@ export const portfolioController = {
         return res.status(404).json({ message: 'Project not found' });
       }
       
-      console.log('DB Project raw:', JSON.stringify(dbProject, null, 2));
-      console.log('DB Project github_url:', dbProject.githubUrl);
-      console.log('DB Project live_url:', dbProject.liveUrl);
+      logObjectStructure(dbProject, 'DB Project');
       
       // Convert DB model to client model using the adapter
       const clientProject = adaptToClientModel(dbProject);
       
-      console.log('Client Project after adaptation:', JSON.stringify(clientProject, null, 2));
+      logObjectStructure(clientProject, 'Client Project');
       
       res.json(clientProject);
     } catch (error) {
