@@ -1,10 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import path from 'path';
-import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { createServer as createViteServer } from 'vite';
+import { spawn } from 'child_process';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -22,28 +22,29 @@ function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Setup the Vite middleware
-async function setupVite(app: express.Express, server: any) {
-  log("Setting up Vite middleware...", "vite");
+// Start Next.js in a separate process
+function startNextJsDev() {
+  log("Starting Next.js development server...", "nextjs");
   
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'spa',
-    root: path.resolve(__dirname, '..', 'client'),
-    base: '/',
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '..', 'client', 'src'),
-        '@shared': path.resolve(__dirname, '..', 'shared'),
-      }
-    }
+  const nextProcess = spawn('npx', ['next', 'dev', '-p', '3000'], {
+    cwd: path.resolve(__dirname, '..'),
+    stdio: 'pipe',
+    shell: true
   });
 
-  // Use Vite's middleware
-  app.use(vite.middlewares);
+  nextProcess.stdout?.on('data', (data) => {
+    log(`${data.toString().trim()}`, "nextjs");
+  });
 
-  log("Vite middleware setup complete", "vite");
-  return vite;
+  nextProcess.stderr?.on('data', (data) => {
+    log(`Error: ${data.toString().trim()}`, "nextjs");
+  });
+
+  nextProcess.on('close', (code) => {
+    log(`Next.js process exited with code ${code}`, "nextjs");
+  });
+
+  return nextProcess;
 }
 
 const app = express();
@@ -85,8 +86,26 @@ app.use((req, res, next) => {
   // Create an HTTP server
   const server = await registerRoutes(app);
 
-  // Set up the Vite middleware for development
-  const vite = await setupVite(app, server);
+  // Start Next.js in development mode
+  const nextProcess = startNextJsDev();
+
+  // Set up proxy middleware to forward requests to Next.js server
+  app.use('/', createProxyMiddleware({
+    target: 'http://localhost:3000',
+    changeOrigin: true,
+    ws: true,
+    logLevel: 'silent',
+    // Don't proxy API requests - those are handled by Express
+    filter: (pathname) => !pathname.startsWith('/api'),
+    onProxyReq: (proxyReq, req, res) => {
+      // Add any custom headers if needed
+    },
+    onError: (err, req, res) => {
+      log(`Proxy error: ${err}`, "proxy");
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Next.js server not ready yet, please try again in a moment.');
+    }
+  }));
 
   // Add error handler middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -95,35 +114,6 @@ app.use((req, res, next) => {
 
     res.status(status).json({ message });
     throw err;
-  });
-
-  // Catch-all handler for serving the client-side app
-  app.use('*', async (req, res, next) => {
-    const url = req.originalUrl;
-    
-    // Skip API requests - those are handled by Express
-    if (url.startsWith('/api')) {
-      return next();
-    }
-    
-    try {
-      // Read the index.html as a string
-      let template = await fs.readFile(
-        path.resolve(__dirname, '../client/index.html'),
-        'utf-8'
-      );
-      
-      // Apply Vite transformations
-      template = await vite.transformIndexHtml(url, template);
-      
-      // Serve the transformed HTML
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-    } catch (e) {
-      log(`Error handling request: ${e}`, "express");
-      vite.ssrFixStacktrace(e as Error);
-      res.status(500).end('Internal Server Error');
-      next(e);
-    }
   });
 
   // ALWAYS serve the app on port 5000

@@ -12,6 +12,20 @@ const nextConfig = {
       },
     ],
   },
+  // Allow cross-origin requests in development
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
