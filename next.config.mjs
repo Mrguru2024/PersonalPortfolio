@@ -2,10 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [],
-  swcMinify: true,
-  experimental: {
-    serverComponentsExternalPackages: ["pg"],
-  },
+  serverExternalPackages: ["pg"],
   images: {
     domains: [],
     remotePatterns: [
