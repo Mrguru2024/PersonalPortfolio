@@ -22,7 +22,7 @@ export function formatDate(input: string | number | Date): string {
  */
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
+  return text.slice(0, maxLength).trim() + "...";
 }
 
 /**
@@ -30,25 +30,34 @@ export function truncateText(text: string, maxLength: number): string {
  */
 export function slugify(text: string): string {
   return text
+    .toString()
     .toLowerCase()
-    .replace(/[^\w ]+/g, "")
-    .replace(/ +/g, "-");
+    .trim()
+    .replace(/\s+/g, "-") // Replace spaces with -
+    .replace(/&/g, "-and-") // Replace & with 'and'
+    .replace(/[^\w\-]+/g, "") // Remove all non-word characters
+    .replace(/\-\-+/g, "-"); // Replace multiple - with single -
 }
 
 /**
  * Generates a random ID of specified length
  */
 export function getRandomID(length: number = 6): string {
-  return Math.random()
-    .toString(36)
-    .substring(2, 2 + length);
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 /**
  * Generates a unique token for resume access
  */
 export function generateResumeAccessToken(): string {
-  return `access_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  return Array.from({ length: 4 }, () => 
+    Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0')
+  ).join('-');
 }
 
 /**
@@ -64,14 +73,18 @@ export function calculateReadingTime(content: string): number {
  * Fetches data from an API endpoint with error handling
  */
 export async function fetchFromAPI<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `Error ${response.status}: Failed to fetch data from ${url}`);
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json() as T;
+  } catch (error) {
+    console.error("API fetch error:", error);
+    throw error;
   }
-  
-  return response.json();
 }
 
 /**
@@ -85,7 +98,7 @@ export function isProduction(): boolean {
  * Validates an email address format
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
 
@@ -93,11 +106,14 @@ export function isValidEmail(email: string): boolean {
  * Groups an array of items by a specified key
  */
 export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((acc: Record<string, T[]>, item) => {
+  return array.reduce((result, item) => {
     const groupKey = String(item[key]);
-    acc[groupKey] = [...(acc[groupKey] || []), item];
-    return acc;
-  }, {});
+    if (!result[groupKey]) {
+      result[groupKey] = [];
+    }
+    result[groupKey].push(item);
+    return result;
+  }, {} as Record<string, T[]>);
 }
 
 /**
@@ -107,10 +123,10 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function(...args: Parameters<T>): void {
-    clearTimeout(timeout);
+  return function(...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 }
