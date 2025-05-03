@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/app/db';
 import { blogPosts, blogPostContributions, blogComments } from '@/shared/schema';
+// Temporarily use dummy data for development until db connection is fully configured
+import { BlogPost } from '@/shared/schema';
 import { asc, desc, eq, and, sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {

@@ -1,3 +1,5 @@
+// This file provides a fallback implementation of utils 
+// to resolve any path reference issues
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format } from "date-fns";
