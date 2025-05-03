@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import FloatingNavigation from '../components/FloatingNavigation';
 import JourneyExperience from '../components/JourneyExperience';
@@ -12,28 +12,30 @@ export default function Home() {
   const [scrollY, setScrollY] = useState(0);
 
   // Update active section based on scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      const position = window.scrollY;
-      setScrollY(position);
-      
-      // Calculate which section is currently visible
-      const sections = document.querySelectorAll('section[id]');
-      sections.forEach(section => {
-        const sectionTop = (section as HTMLElement).offsetTop - 100;
-        const sectionHeight = (section as HTMLElement).offsetHeight;
-        if (position >= sectionTop && position < sectionTop + sectionHeight) {
-          setActiveSection(section.id);
-        }
-      });
-    };
+  const handleScroll = useCallback(() => {
+    const position = window.scrollY;
+    setScrollY(position);
     
+    // Calculate which section is currently visible
+    const sections = document.querySelectorAll('section[id]');
+    sections.forEach(section => {
+      const sectionTop = (section as HTMLElement).offsetTop - 100;
+      const sectionHeight = (section as HTMLElement).offsetHeight;
+      if (position >= sectionTop && position < sectionTop + sectionHeight) {
+        setActiveSection(section.id);
+      }
+    });
+  }, []);
+  
+  useEffect(() => {
     window.addEventListener('scroll', handleScroll);
+    // Initial call to set the active section on mount
+    handleScroll();
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [handleScroll]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white relative">

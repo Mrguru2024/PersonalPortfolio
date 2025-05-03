@@ -1,14 +1,13 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { fileURLToPath } from "url";
+import path from "path";
+import { spawn } from "child_process";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { spawn } from 'child_process';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 // Logger function
 function log(message: string, source = "express") {
@@ -32,12 +31,12 @@ function startNextJsDev() {
     shell: true
   });
 
-  nextProcess.stdout?.on('data', (data) => {
+  nextProcess.stdout.on('data', (data) => {
     log(`${data.toString().trim()}`, "nextjs");
   });
 
-  nextProcess.stderr?.on('data', (data) => {
-    log(`Error: ${data.toString().trim()}`, "nextjs");
+  nextProcess.stderr.on('data', (data) => {
+    log(`${data.toString().trim()}`, "nextjs");
   });
 
   nextProcess.on('close', (code) => {
@@ -94,13 +93,12 @@ app.use((req, res, next) => {
     target: 'http://localhost:3000',
     changeOrigin: true,
     ws: true,
-    logLevel: 'silent',
     // Don't proxy API requests - those are handled by Express
-    filter: (pathname) => !pathname.startsWith('/api'),
-    onProxyReq: (proxyReq, req, res) => {
+    filter: (pathname: string) => !pathname.startsWith('/api'),
+    onProxyReq: (proxyReq: any, req: any, res: any) => {
       // Add any custom headers if needed
     },
-    onError: (err, req, res) => {
+    onError: (err: Error, req: any, res: any) => {
       log(`Proxy error: ${err}`, "proxy");
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Next.js server not ready yet, please try again in a moment.');
@@ -131,6 +129,11 @@ app.use((req, res, next) => {
   // Handle shutdown properly
   process.on('SIGINT', () => {
     log("Shutting down server...");
+    
+    if (nextProcess) {
+      nextProcess.kill();
+    }
+    
     process.exit();
   });
 })();

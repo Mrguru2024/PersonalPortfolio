@@ -87,7 +87,19 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
   }, [handleHover]);
 
   // Only render custom cursor on desktop
-  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  if (isMobile) {
     return null;
   }
 
