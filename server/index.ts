@@ -1,6 +1,17 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+
+// Logger function
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
 const app = express();
 app.use(express.json());
@@ -47,14 +58,57 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // In development, provide a basic route for the root path
+  // In production, Next.js will handle this
+  app.get('/', (_req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>MrGuru.dev API Server</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            h1 { color: #3B82F6; }
+            p { margin-bottom: 1em; }
+            code {
+              background: #f4f4f4;
+              padding: 2px 4px;
+              border-radius: 4px;
+            }
+            .endpoints {
+              background: #f8f8f8;
+              padding: 15px;
+              border-radius: 8px;
+              border-left: 4px solid #3B82F6;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>MrGuru.dev API Server</h1>
+          <p>This is the API server for MrGuru.dev portfolio website. The frontend is being migrated to Next.js.</p>
+          
+          <div class="endpoints">
+            <h2>Available API Endpoints:</h2>
+            <ul>
+              <li><code>GET /api/projects</code> - List all projects</li>
+              <li><code>GET /api/skills</code> - List all skills</li>
+              <li><code>GET /api/blog</code> - List all blog posts</li>
+              <li><code>GET /api/blog/:slug</code> - Get blog post by slug</li>
+            </ul>
+          </div>
+          
+          <p>For more information, visit <a href="https://mrguru.dev">mrguru.dev</a></p>
+        </body>
+      </html>
+    `);
+  });
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

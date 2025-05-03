@@ -38,17 +38,16 @@ async function build() {
     log('Type checking...');
     run('npm run check');
 
-    // Build frontend
-    log('Building frontend...');
-    run('vite build');
+    // Build Next.js app
+    log('Building Next.js application...');
+    run('next build');
+    
+    // No need to build backend separately with Next.js
+    log('Backend APIs are integrated into Next.js app routes');
 
-    // Build backend
-    log('Building backend...');
-    run('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
-
-    // Ensure output directory exists
-    if (!fs.existsSync(path.join(process.cwd(), 'dist'))) {
-      throw new Error('Build failed: dist directory not created');
+    // Ensure Next.js output directory exists
+    if (!fs.existsSync(path.join(process.cwd(), '.next'))) {
+      throw new Error('Build failed: .next directory not created');
     }
 
     log('Build completed successfully');
