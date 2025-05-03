@@ -189,8 +189,12 @@ export function setupAuth(app: Express) {
       '/api/auth/github/callback',
       passport.authenticate('github', { 
         failureRedirect: '/auth',
-        successRedirect: '/'
-      })
+      }),
+      (req, res) => {
+        // Successful authentication, redirect home
+        console.log("GitHub authentication successful");
+        res.redirect('/');
+      }
     );
   }
 }

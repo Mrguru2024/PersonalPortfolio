@@ -69,7 +69,7 @@ const BlogSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {blogPosts.map((post) => (
+            {blogPosts.map((post: BlogPost) => (
               <Card key={post.id} className="overflow-hidden flex flex-col h-full border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-300">
                 <div className="w-full h-48 overflow-hidden">
                   <img 
@@ -92,7 +92,7 @@ const BlogSection = () => {
                 </CardContent>
                 <CardFooter className="flex flex-col items-start space-y-3 pt-0">
                   <div className="flex flex-wrap gap-2">
-                    {post.tags.slice(0, 3).map((tag, i) => (
+                    {post.tags.slice(0, 3).map((tag: string, i: number) => (
                       <Badge key={i} variant="outline" className="text-xs font-normal">
                         <Tag className="h-3 w-3 mr-1" />
                         {tag}
