@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BlogPost } from '../shared/schema';
-import { formatDate, calculateReadingTime } from '@/lib/utils';
+import { formatDate, calculateReadingTime } from '../lib/utils';
 import { Loader2 } from 'lucide-react';
 
 export default function BlogPage() {

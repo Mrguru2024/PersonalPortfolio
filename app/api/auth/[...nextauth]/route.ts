@@ -1,11 +1,10 @@
-import NextAuth from 'next-auth';
-import type { NextAuthOptions } from 'next-auth';
+import NextAuth, { type NextAuthOptions } from 'next-auth';
+import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GitHubProvider from 'next-auth/providers/github';
-import { getDb } from '../../../db';
-import { users } from '../../../../shared/schema';
+import { getDb } from '@/app/db';
+import { users, type User } from '@/shared/schema';
 import { eq } from 'drizzle-orm';
-import { scrypt } from 'crypto';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 
 const scryptAsync = promisify(scrypt);
@@ -14,12 +13,12 @@ async function comparePasswords(supplied: string, stored: string) {
   const [hashed, salt] = stored.split('.');
   const hashedBuf = Buffer.from(hashed, 'hex');
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return Buffer.compare(hashedBuf, suppliedBuf) === 0;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GitHubProvider({
+    GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),
@@ -33,27 +32,32 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
-
+        
         try {
-          const { db } = getDb();
+          const db = getDb();
+          const [userRecord] = await db
+            .select()
+            .from(users)
+            .where(eq(users.username, credentials.username));
           
-          // Find the user
-          const user = await db.query.users.findFirst({
-            where: eq(users.username, credentials.username),
-          });
-
-          if (!user) return null;
-
-          // Verify password
-          const passwordValid = await comparePasswords(credentials.password, user.password);
-          if (!passwordValid) return null;
+          if (!userRecord) {
+            throw new Error('User not found');
+          }
+          
+          const isPasswordValid = await comparePasswords(
+            credentials.password,
+            userRecord.password
+          );
+          
+          if (!isPasswordValid) {
+            throw new Error('Invalid password');
+          }
           
           return {
-            id: user.id.toString(),
-            name: user.username,
-            email: user.email,
-            image: user.avatarUrl,
-            isAdmin: user.isAdmin,
+            id: String(userRecord.id),
+            name: userRecord.username,
+            email: userRecord.email,
+            isAdmin: userRecord.isAdmin,
           };
         } catch (error) {
           console.error('Auth error:', error);
@@ -63,75 +67,33 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, profile }) {
-      // Add custom user data to token
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.isAdmin = (user as any).isAdmin;
+        token.isAdmin = (user as any).isAdmin || false;
       }
-
-      // Handle GitHub sign-in
-      if (account?.provider === 'github' && profile) {
-        try {
-          const { db } = getDb();
-          // Check if user with this GitHub ID exists already
-          let dbUser = await db.query.users.findFirst({
-            where: eq(users.email, profile.email || ''),
-          });
-
-          if (!dbUser) {
-            // Create a new user
-            const [newUser] = await db.insert(users).values({
-              username: profile.login || profile.name?.replace(/\s+/g, '') || 'github_user',
-              email: profile.email || `${profile.id}@github.user`,
-              password: 'github_oauth_no_password',
-              avatarUrl: profile.avatar_url,
-              githubId: profile.id,
-              isAdmin: false,
-              createdAt: new Date(),
-            }).returning();
-            
-            dbUser = newUser;
-          } else if (!dbUser.githubId) {
-            // Update existing user with GitHub data
-            await db.update(users)
-              .set({ 
-                githubId: profile.id, 
-                avatarUrl: profile.avatar_url || dbUser.avatarUrl 
-              })
-              .where(eq(users.id, dbUser.id));
-          }
-
-          token.id = dbUser.id.toString();
-          token.isAdmin = dbUser.isAdmin;
-        } catch (error) {
-          console.error('GitHub auth error:', error);
-        }
-      }
-
       return token;
     },
     async session({ session, token }) {
-      if (token.id) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          isAdmin: token.isAdmin as boolean,
-        };
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },
   },
   pages: {
     signIn: '/auth',
+    signOut: '/',
     error: '/auth',
   },
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here',
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };
