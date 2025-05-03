@@ -72,6 +72,9 @@ const Header = () => {
               <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
                 Blog
               </Link>
+              <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+                Resume
+              </Link>
             </>
           )}
           
@@ -147,6 +150,9 @@ const Header = () => {
                 </Link>
                 <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
                   Blog
+                </Link>
+                <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                  Resume
                 </Link>
               </>
             )}
