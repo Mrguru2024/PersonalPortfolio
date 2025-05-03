@@ -54,11 +54,14 @@ const AuthPage = () => {
   });
 
   const onLogin = (values: LoginFormValues) => {
+    console.log("Login attempt with:", values);
     loginMutation.mutate(values);
   };
 
   const onRegister = (values: RegisterFormValues) => {
+    console.log("Register attempt with:", values);
     const { confirmPassword, ...registerData } = values;
+    console.log("Sending register data:", registerData);
     registerMutation.mutate(registerData);
   };
 
