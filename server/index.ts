@@ -1,9 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import path from 'path';
-import { spawn } from 'child_process';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { createServer as createViteServer } from 'vite';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -21,29 +22,28 @@ function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Start Vite dev server in a separate process
-function startViteDevServer() {
-  log("Starting Vite development server...", "vite");
+// Setup the Vite middleware
+async function setupVite(app: express.Express, server: any) {
+  log("Setting up Vite middleware...", "vite");
   
-  const viteProcess = spawn('npx', ['vite', '--port', '3000'], {
-    cwd: path.resolve(__dirname, '..'),
-    stdio: 'pipe',
-    shell: true
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'spa',
+    root: path.resolve(__dirname, '..', 'client'),
+    base: '/',
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '..', 'client', 'src'),
+        '@shared': path.resolve(__dirname, '..', 'shared'),
+      }
+    }
   });
 
-  viteProcess.stdout?.on('data', (data) => {
-    log(`${data.toString().trim()}`, "vite");
-  });
+  // Use Vite's middleware
+  app.use(vite.middlewares);
 
-  viteProcess.stderr?.on('data', (data) => {
-    log(`Error: ${data.toString().trim()}`, "vite");
-  });
-
-  viteProcess.on('close', (code) => {
-    log(`Vite process exited with code ${code}`, "vite");
-  });
-
-  return viteProcess;
+  log("Vite middleware setup complete", "vite");
+  return vite;
 }
 
 const app = express();
@@ -82,10 +82,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Start the Vite dev server for the React client
-  const viteProcess = startViteDevServer();
-
+  // Create an HTTP server
   const server = await registerRoutes(app);
+
+  // Set up the Vite middleware for development
+  const vite = await setupVite(app, server);
 
   // Add error handler middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -96,7 +97,7 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Set up a proxy for the Vite dev server
+  // Catch-all handler for serving the client-side app
   app.use('*', async (req, res, next) => {
     const url = req.originalUrl;
     
@@ -106,89 +107,22 @@ app.use((req, res, next) => {
     }
     
     try {
-      // Proxy the request to the Vite dev server
-      const proxyReq = await fetch(`http://localhost:3000${url}`, {
-        method: req.method,
-        headers: req.headers as any,
-        redirect: 'manual',
-        // Pass request body if the request has one
-        ...(req.method !== 'GET' && req.method !== 'HEAD' ? { body: req.body } : {})
-      });
+      // Read the index.html as a string
+      let template = await fs.readFile(
+        path.resolve(__dirname, '../client/index.html'),
+        'utf-8'
+      );
       
-      // Copy response headers from Vite
-      for (const [key, value] of proxyReq.headers.entries()) {
-        if (key !== 'content-encoding') { // Skip content-encoding as it might cause issues
-          res.setHeader(key, value);
-        }
-      }
+      // Apply Vite transformations
+      template = await vite.transformIndexHtml(url, template);
       
-      // Set the status code
-      res.status(proxyReq.status);
-      
-      // Send the response body
-      const body = await proxyReq.arrayBuffer();
-      res.send(Buffer.from(body));
-    } catch (error) {
-      log(`Error proxying to Vite server: ${error}`, "proxy");
-      // Serve a nice error page if Vite server isn't ready yet
-      res.writeHead(500, {
-        'Content-Type': 'text/html',
-      });
-      res.end(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>MrGuru.dev - Frontend Loading</title>
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 800px;
-                margin: 40px auto;
-                padding: 20px;
-                text-align: center;
-              }
-              h1 { color: #3B82F6; }
-              p { margin-bottom: 1em; }
-              .loader {
-                border: 5px solid #f3f3f3;
-                border-top: 5px solid #3B82F6;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1.5s linear infinite;
-                margin: 20px auto;
-              }
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            </style>
-            <script>
-              setTimeout(() => {
-                window.location.reload();
-              }, 5000);
-            </script>
-          </head>
-          <body>
-            <h1>MrGuru.dev</h1>
-            <p>The frontend is starting up. This page will automatically refresh.</p>
-            <div class="loader"></div>
-            <p>If this page doesn't load within a minute, please check the server logs.</p>
-            
-            <div>
-              <h2>Available API Endpoints:</h2>
-              <ul style="list-style: none; padding: 0;">
-                <li><code>GET /api/projects</code> - List all projects</li>
-                <li><code>GET /api/skills</code> - List all skills</li>
-                <li><code>GET /api/blog</code> - List all blog posts</li>
-                <li><code>GET /api/blog/:slug</code> - Get blog post by slug</li>
-              </ul>
-            </div>
-          </body>
-        </html>
-      `);
+      // Serve the transformed HTML
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+    } catch (e) {
+      log(`Error handling request: ${e}`, "express");
+      vite.ssrFixStacktrace(e as Error);
+      res.status(500).end('Internal Server Error');
+      next(e);
     }
   });
 
@@ -201,16 +135,12 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`API server serving on port ${port}`);
-    log(`Proxying frontend requests to Vite dev server on port 3000`);
+    log(`Server running at http://0.0.0.0:${port}`);
   });
 
   // Handle shutdown properly
   process.on('SIGINT', () => {
-    log("Shutting down servers...");
-    if (viteProcess) {
-      viteProcess.kill();
-    }
+    log("Shutting down server...");
     process.exit();
   });
 })();
