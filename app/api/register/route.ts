@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { z } from 'zod';
 import { getDb } from '../../db';
 import { users } from '../../../shared/schema';
-import { eq } from 'drizzle-orm';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
 
@@ -14,64 +13,64 @@ async function hashPassword(password: string) {
   return `${buf.toString('hex')}.${salt}`;
 }
 
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, email } = await request.json();
+    const body = await request.json();
+    const result = registerSchema.safeParse(body);
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { message: 'Username and password are required' },
-        { status: 400 }
-      );
+    if (!result.success) {
+      return NextResponse.json({ error: 'Invalid data', details: result.error.format() }, { status: 400 });
     }
 
+    const { username, email, password } = result.data;
     const { db } = getDb();
-    
-    // Check if username already exists
+
+    // Check if user already exists
     const existingUser = await db.query.users.findFirst({
-      where: eq(users.username, username)
+      where: (users, { eq, or }) => or(
+        eq(users.username, username),
+        eq(users.email, email)
+      ),
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: 'Username already exists' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        error: existingUser.username === username 
+          ? 'Username already taken' 
+          : 'Email already registered' 
+      }, { status: 400 });
     }
 
-    // Hash password and create user
+    // Hash password
     const hashedPassword = await hashPassword(password);
-    
-    // Insert new user
-    const [newUser] = await db.insert(users)
-      .values({
-        username,
-        password: hashedPassword,
-        email: email || null,
-        isAdmin: false,
-      })
-      .returning();
+
+    // Create user
+    const [newUser] = await db.insert(users).values({
+      username,
+      email,
+      password: hashedPassword,
+      avatarUrl: null,
+      isAdmin: false,
+      createdAt: new Date(),
+    }).returning();
 
     // Set session cookie
-    cookies().set({
-      name: 'sessionId',
-      value: newUser.id.toString(),
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    });
+    const response = NextResponse.json({
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      isAdmin: newUser.isAdmin,
+    }, { status: 201 });
 
-    // Don't return the password hash
-    const { password: _, ...userWithoutPassword } = newUser;
-    
-    return NextResponse.json(userWithoutPassword, { status: 201 });
-    
+    return response;
   } catch (error) {
-    console.error('Error during registration:', error);
-    return NextResponse.json(
-      { message: 'An error occurred during registration' },
-      { status: 500 }
-    );
+    console.error('Registration error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import AuthPage from '@/pages/auth-page';
+import AuthPageNext from '@/pages/AuthPageNext';
 
 export default function Auth() {
-  return <AuthPage />;
+  return <AuthPageNext />;
 }
