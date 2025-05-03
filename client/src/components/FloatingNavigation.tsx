@@ -142,11 +142,14 @@ const FloatingNavigation: React.FC = () => {
               whileTap={{ scale: 0.9 }}
             >
               {item.icon}
-              <span
+              <motion.span
                 className="absolute top-0 -mt-8 text-xs font-medium px-2 py-1 bg-primary text-white rounded-md opacity-0 group-hover:opacity-100 pointer-events-none"
+                initial={{ y: 10, opacity: 0 }}
+                whileHover={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.2 }}
               >
                 {item.label}
-              </span>
+              </motion.span>
               {activeSection === item.id && (
                 <motion.div
                   className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full"
@@ -166,11 +169,14 @@ const FloatingNavigation: React.FC = () => {
             whileTap={{ scale: 0.9 }}
           >
             <ChevronUp size={18} />
-            <span
+            <motion.span
               className="absolute top-0 -mt-8 text-xs font-medium px-2 py-1 bg-primary text-white rounded-md opacity-0 group-hover:opacity-100 pointer-events-none"
+              initial={{ y: 10, opacity: 0 }}
+              whileHover={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.2 }}
             >
               Top
-            </span>
+            </motion.span>
           </motion.button>
         </div>
       </motion.div>

@@ -106,7 +106,7 @@ function App() {
         window.clearTimeout(scrollTimeout);
       }
     };
-  }, [currentSection]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -568,15 +568,13 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                         transition={{ duration: 0.3 }}
                       >
                         {/* Close button */}
-                        <div 
+                        <button 
                           onClick={(e) => handleClosePopup(e, milestone.id)}
-                          className="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                          className="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                           aria-label="Close popup"
-                          role="button"
-                          tabIndex={0}
                         >
                           <X size={14} />
-                        </div>
+                        </button>
                         
                         <h3 className="font-bold text-primary dark:text-primary mb-1 pr-4">
                           {milestone.label}
