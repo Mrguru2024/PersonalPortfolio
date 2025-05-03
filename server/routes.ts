@@ -23,6 +23,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/blog/post/:postId/comments', blogController.addComment);
   app.get('/api/blog/:slug', blogController.getBlogPostBySlug);
   
+  // Blog moderation routes (these would be protected with auth middleware in production)
+  app.get('/api/blog/comments/pending', blogController.getPendingComments);
+  app.get('/api/blog/comments/pending/:postId', blogController.getPendingComments);
+  app.post('/api/blog/comments/:commentId/approve', blogController.approveComment);
+  app.post('/api/blog/comments/:commentId/mark-spam', blogController.markCommentAsSpam);
+  
+  // Blog contribution routes
+  app.post('/api/blog/contributions', blogController.submitBlogPostContribution);
+  app.get('/api/blog/contributions/pending', blogController.getPendingContributions);
+  app.post('/api/blog/contributions/:contributionId/review', blogController.reviewBlogPostContribution);
+  app.post('/api/blog/contributions/:contributionId/mark-spam', blogController.markContributionAsSpam);
+  
   // Upload API routes
   app.post('/api/upload', uploadController.uploadMedia);
   app.get('/uploads/:filename', uploadController.serveMedia);

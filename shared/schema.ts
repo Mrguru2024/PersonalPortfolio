@@ -112,7 +112,7 @@ export const blogComments = pgTable("blog_comments", {
   email: text("email").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull(),
-  ipAddress: text("ip_address").notNull(),
+  ipAddress: text("ip_address").default("0.0.0.0"),
   isApproved: boolean("is_approved").notNull().default(false),
   isSpam: boolean("is_spam").notNull().default(false),
   captchaToken: text("captcha_token"),
