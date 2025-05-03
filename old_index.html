@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthony MrGuru Feaster Full Stack Web Developer</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Gilroy:wght@400;700&family=Montserrat:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-D15LMWKQ8G"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-D15LMWKQ8G');
+    </script>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#name">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="top-sections">
+            <section id="name">
+                <img src="./assets/Assets/Photos/Copy of Web Designer Content Posts.jpg" alt="Anthony MrGuru">
+                <div>
+                    <hr />
+                    <div>
+                        <h1>Anthony MrGuru Feaster</h1>
+                        <h2>Full Stack Web Developer</h2>
+                    </div>
+                    <a href="mailto:5epmgllc@gmail.com" class="general-btn">Email me</a>
+                </div>
+            </section>
+            <section id="about">
+                <div id="about-me-content">
+                    <h3>About Me</h3>
+                    <hr />
+                    <p>
+                        Hello! I’m Anthony Feaster, an innovative entrepreneur and tech enthusiast based in Atlanta,
+                        Georgia. With a strong background in electronic repair and automotive locksmiths,
+                        I founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith
+                        industry. Currently, I’m expanding my skill set through Codenoobs WebDev Incubator.
+
+                        My passion lies in problem-solving and continuous learning. I thrive on creating solutions that
+                        improve customer experiences and streamline operations. Whether it’s developing new web
+                        applications or leading a team, I am committed to excellence and innovation. Outside of work, I
+                        enjoy exploring new tech trends, playing video games, and spending quality time with my family.
+
+                        Let’s connect and explore how we can collaborate on exciting tech projects!
+                    </p>
+                    <div id="button-container">
+                        <a href="https://www.linkedin.com/in/anthony-mrguru-feaster/" class="general-btn">LinkedIn &
+                            Resume</a>
+                        <a href="https://github.com/Mrguru2024" class="general-btn">GitHub</a>
+                    </div>
+                </div>
+                <ul class="social-icons">
+                    <li><a href="https://www.instagram.com/mrcampaigngang"><img
+                                src="./assets/Assets/Social logos/Instagram.png" alt="instagram"></a></li>
+                    <li><a href="https://www.linkedin.com/in/anthony-mrguru-feaster"><img
+                                src="./assets/Assets/Social logos/LinkedIn.png" alt="LinkedIn"></a></li>
+                </ul>
+            </section>
+        </div>
+        <section id="projects">
+            <div>
+                <h3>Projects</h3>
+                <hr />
+                <div class="project">
+                    <h4>Keycode Help</h4>
+                    <p>A SaaS business that provides VIN to KeyCode services and online resources for locksmiths. This
+                        platform is designed to support automotive professionals with key coding and programming needs.
+                    </p>
+                    <a href="https://github.com/Mrguru2024" class="general-btn">View Projects</a>
+                </div>
+                <div class="project">
+                    <h4>Work With Us</h4>
+                    <p>Are you looking to develop or redesign a website? Share your project details with us using the
+                        link below:</p>
+                    <a href="https://forms.gle/vu11jF1nixkoRxH86" class="general-btn" target="_blank">Web Development
+                        Inquiry Form</a>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="skills">
+            <div>
+                <h3>Skills</h3>
+                <hr />
+                <ul>
+                    <li>JavaScript</li>
+                    <li>HTML & CSS</li>
+                    <li>React</li>
+                    <li>Node.js</li>
+                    <li>Java</li>
+                    <li>GitHub</li>
+                    <!-- Add more skills as needed -->
+                </ul>
+            </div>
+        </section>
+        <section id="contact">
+            <div>
+                <h3>Contact</h3>
+                <hr />
+                <p>Fill out the form below to get in touch with us!</p>
+                <div class="form-container">
+                    <iframe
+                        src="https://docs.google.com/forms/d/e/1FAIpQLSc_WkngsqNoRt3G8qAZrLLivASz5ys3hmZL3bXU0DpKCmWRqw/viewform?embedded=true"
+                        frameborder="0" style="width: 100%; height: 100%; border: none; min-height: 700px;">
+                        Loading…
+                    </iframe>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            // Track interaction with the Google Form iframe
+            document.querySelector('iframe').addEventListener('focus', function () {
+                if (window.gtag) {
+                    gtag('event', 'form_interaction', {
+                        'event_category': 'Contact',
+                        'event_label': 'General Inquiry Form'
+                    });
+                }
+            });
+        </script>
+
+
+    </main>
+    <footer>
+        <p>&copy; 2024 Anthony MrGuru Feaster. All Rights Reserved.</p>
+    </footer>
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
