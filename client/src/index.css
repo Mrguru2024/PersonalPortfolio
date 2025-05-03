@@ -71,6 +71,77 @@
     0% { transform: translateX(-100%) rotate(30deg); }
     20%, 100% { transform: translateX(100%) rotate(30deg); }
   }
+  
+  /* Grid background pattern */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(127, 127, 127, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(127, 127, 127, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  
+  /* Scan lines effect for video */
+  .bg-scan-lines {
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.05) 1px,
+      rgba(0, 0, 0, 0.05) 2px
+    );
+    background-size: 100% 4px;
+  }
+  
+  /* Vignette effect */
+  .bg-radial-gradient-vignette {
+    background: radial-gradient(
+      circle at center,
+      transparent 30%,
+      rgba(0, 0, 0, 0.3) 100%
+    );
+  }
+  
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-white/20 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10;
+  }
+  
+  /* Text glow effect */
+  .text-glow {
+    text-shadow: 0 0 5px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  
+  /* Rotating animation */
+  .rotate-slow {
+    animation: rotate 20s linear infinite;
+  }
+  
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Floating animation for elements */
+  .float {
+    animation: floating 3s ease-in-out infinite;
+  }
+  
+  @keyframes floating {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  
+  /* Typing cursor animation */
+  .typing::after {
+    content: "|";
+    animation: blink-caret 0.75s step-end infinite;
+  }
+  
+  @keyframes blink-caret {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+  }
 }
 
 :root {

@@ -1,9 +1,13 @@
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowRight, MousePointer } from "lucide-react";
+import { ArrowRight, MousePointer, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialLinks from "@/components/SocialLinks";
 import { personalInfo } from "@/lib/data";
 import { useRef, useState } from "react";
+import ParticleAnimation from "@/components/ParticleAnimation";
+import ParallaxBackground from "@/components/ParallaxBackground";
+import TypewriterText from "@/components/TypewriterText";
+import AnimatedButton from "@/components/AnimatedButton";
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
