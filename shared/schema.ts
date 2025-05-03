@@ -39,6 +39,20 @@ export const projects = pgTable("projects", {
   githubUrl: text("github_url"),
   liveUrl: text("live_url"),
   details: text("details"),
+  demoType: text("demo_type"), // Types: iframe, video, github, custom
+  demoUrl: text("demo_url"), // URL for direct embed/iframe
+  demoConfig: json("demo_config").$type<{
+    width?: string;
+    height?: string;
+    allowFullscreen?: boolean;
+    isResponsive?: boolean;
+    showCode?: boolean;
+    theme?: string;
+    githubBranch?: string;
+  }>(),
+  repoOwner: text("repo_owner"), // GitHub username/organization
+  repoName: text("repo_name"), // Repository name
+  techStack: json("tech_stack").$type<string[]>(),
 });
 
 export const insertProjectSchema = createInsertSchema(projects);

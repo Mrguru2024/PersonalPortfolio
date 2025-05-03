@@ -8,6 +8,20 @@ export interface Project {
   githubUrl?: string;
   liveUrl?: string;
   details?: string;
+  demoType?: "iframe" | "video" | "github" | "custom";
+  demoUrl?: string;
+  demoConfig?: {
+    width?: string;
+    height?: string;
+    allowFullscreen?: boolean;
+    isResponsive?: boolean;
+    showCode?: boolean;
+    theme?: string;
+    githubBranch?: string;
+  };
+  repoOwner?: string;
+  repoName?: string;
+  techStack?: string[];
 }
 
 export interface Skill {
@@ -155,7 +169,16 @@ export const projects: Project[] = [
     category: "business",
     githubUrl: "https://github.com/Mrguru2024",
     liveUrl: "https://keycodehelp.com",
-    details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry."
+    details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
+    demoType: "iframe",
+    demoUrl: "https://keycodehelp.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
   },
   {
     id: "portfolio-website",
@@ -166,7 +189,75 @@ export const projects: Project[] = [
     category: "web",
     githubUrl: "https://github.com/Mrguru2024/My-Portfolio-Website",
     liveUrl: "https://mrguru2024.github.io/My-Portfolio-Website/",
-    details: "A personal portfolio website built using HTML, CSS, and JavaScript to showcase my projects, skills, and professional experience. The site features responsive design, theme customization, and interactive elements."
+    details: "A personal portfolio website built using HTML, CSS, and JavaScript to showcase my projects, skills, and professional experience. The site features responsive design, theme customization, and interactive elements.",
+    demoType: "github",
+    repoOwner: "Mrguru2024",
+    repoName: "My-Portfolio-Website",
+    demoConfig: {
+      showCode: true,
+      githubBranch: "main"
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "Bootstrap"]
+  },
+  {
+    id: "stackzen",
+    title: "Stackzen",
+    description: "A full-stack developer collaboration platform with code sharing and real-time chat.",
+    image: "https://images.unsplash.com/photo-1600132806608-231446b2e7af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React", "Node.js", "MongoDB", "WebSockets"],
+    category: "web",
+    githubUrl: "https://github.com/Mrguru2024/stackzen",
+    liveUrl: "https://stackzen.mrguru.dev",
+    details: "Stackzen is a developer collaboration platform that allows users to share code, collaborate in real-time, and chat with team members. The platform includes code highlighting, version history, and project management tools.",
+    demoType: "iframe",
+    demoUrl: "https://stackzen.mrguru.dev",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React", "Node.js", "Express", "MongoDB", "Socket.io"]
+  },
+  {
+    id: "inventory-management",
+    title: "Inventory Management System",
+    description: "A comprehensive inventory management solution for small businesses.",
+    image: "https://images.unsplash.com/photo-1579621970590-9d624316781b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React", "Firebase", "Cloud Functions"],
+    category: "business",
+    githubUrl: "https://github.com/Mrguru2024/inventory-system",
+    liveUrl: "https://inventory.mrguru.dev",
+    details: "A complete inventory management system designed for small businesses. Features include product tracking, barcode scanning, sales reporting, and low stock alerts.",
+    demoType: "iframe",
+    demoUrl: "https://inventory.mrguru.dev",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React", "Firebase", "Cloud Functions", "Material UI"]
+  },
+  {
+    id: "gatherly",
+    title: "Gatherly",
+    description: "A social event planning and coordination application.",
+    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React Native", "Firebase", "Google Maps API"],
+    category: "web",
+    githubUrl: "https://github.com/Mrguru2024/gatherly",
+    liveUrl: "https://gatherly.mrguru.dev",
+    details: "Gatherly is a social event planning application that helps users organize, discover, and RSVP to events. The app includes features like location mapping, real-time updates, and group messaging.",
+    demoType: "iframe",
+    demoUrl: "https://gatherly.mrguru.dev",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React Native", "Expo", "Firebase", "Google Maps API"]
   },
   {
     id: "ssi-met-repairs",
@@ -176,7 +267,16 @@ export const projects: Project[] = [
     tags: ["Business", "Service", "Automotive"],
     category: "business",
     liveUrl: "https://ssi-met-repairs.com",
-    details: "SSI-M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials."
+    details: "SSI-M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials.",
+    demoType: "iframe",
+    demoUrl: "https://ssi-met-repairs.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "WordPress"]
   },
   {
     id: "web-development-services",
@@ -187,6 +287,8 @@ export const projects: Project[] = [
     category: "service",
     githubUrl: "https://github.com/Mrguru2024",
     liveUrl: "https://forms.gle/vu11jF1nixkoRxH86",
-    details: "Professional web development and design services tailored for businesses and individuals. Services include website creation, redesign, maintenance, and custom web application development to meet client needs."
+    details: "Professional web development and design services tailored for businesses and individuals. Services include website creation, redesign, maintenance, and custom web application development to meet client needs.",
+    demoType: "custom",
+    techStack: ["React", "Next.js", "Tailwind CSS", "Node.js"]
   }
 ];
