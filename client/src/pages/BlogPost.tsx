@@ -16,19 +16,18 @@ const BlogPostPage = () => {
   
   const { data: post, isLoading: isPostLoading, error: postError } = useQuery({
     queryKey: [`/api/blog/${slug}`],
-    queryFn: async (): Promise<BlogPost> => {
-      const response = await apiRequest(`/api/blog/${slug}`);
-      return response as BlogPost;
+    queryFn: async () => {
+      return apiRequest<BlogPost>(`/api/blog/${slug}`);
     }
   });
   
   const { data: comments, isLoading: areCommentsLoading } = useQuery({
     queryKey: [`/api/blog/post/${post?.id}/comments`],
-    queryFn: async (): Promise<BlogComment[]> => {
-      const response = await apiRequest(`/api/blog/post/${post?.id}/comments`);
-      return response as BlogComment[];
+    queryFn: async () => {
+      return apiRequest<BlogComment[]>(`/api/blog/post/${post?.id}/comments`);
     },
-    enabled: !!post?.id
+    enabled: !!post?.id,
+    retry: false
   });
 
   if (isPostLoading) {
