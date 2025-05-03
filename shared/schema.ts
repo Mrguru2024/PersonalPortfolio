@@ -2,13 +2,17 @@ import { pgTable, text, serial, integer, boolean, json, timestamp } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User schema (existing)
+// User schema with GitHub auth support
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email"),
   isAdmin: boolean("is_admin").default(false),
+  // GitHub OAuth related fields
+  githubId: text("github_id"),
+  githubUsername: text("github_username"),
+  avatarUrl: text("avatar_url"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -16,6 +20,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   email: true,
   isAdmin: true,
+  githubId: true,
+  githubUsername: true,
+  avatarUrl: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

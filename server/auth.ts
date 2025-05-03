@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GitHubStrategy } from "passport-github2";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -60,6 +61,46 @@ export function setupAuth(app: Express) {
       }
     }),
   );
+  
+  // Set up GitHub authentication strategy
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    passport.use(
+      new GitHubStrategy(
+        {
+          clientID: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          callbackURL: process.env.NODE_ENV === 'production' 
+            ? "https://mrguru.dev/api/auth/github/callback"
+            : "http://localhost:5000/api/auth/github/callback"
+        },
+        async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+          try {
+            // Check if user already exists
+            let user = await storage.getUserByUsername(`github:${profile.id}`);
+            
+            if (!user) {
+              // Create new user if it doesn't exist
+              user = await storage.createUser({
+                username: `github:${profile.id}`,
+                password: await hashPassword(randomBytes(16).toString('hex')), // Random password since login is via GitHub
+                email: profile.emails?.[0]?.value || '',
+                isAdmin: false,
+                githubId: profile.id.toString(),
+                githubUsername: profile.username,
+                avatarUrl: profile.photos?.[0]?.value
+              });
+            }
+            
+            return done(null, user);
+          } catch (error) {
+            return done(error);
+          }
+        }
+      )
+    );
+  } else {
+    console.warn("GitHub OAuth credentials not found. GitHub login will not be available.");
+  }
 
   passport.serializeUser((user, done) => {
     done(null, user.id);
@@ -137,4 +178,19 @@ export function setupAuth(app: Express) {
     }
     res.json(req.user);
   });
+  
+  // GitHub authentication routes
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    // Route to initiate GitHub authentication
+    app.get('/api/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+    
+    // GitHub callback route
+    app.get(
+      '/api/auth/github/callback',
+      passport.authenticate('github', { 
+        failureRedirect: '/auth',
+        successRedirect: '/'
+      })
+    );
+  }
 }

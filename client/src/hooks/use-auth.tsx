@@ -32,18 +32,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
+        console.log("Fetching user data");
         const res = await fetch("/api/user", {
           credentials: "include",
         });
         if (res.status === 401) {
+          console.log("Not authenticated (401)");
           return null;
         }
-        return await res.json();
+        if (!res.ok) {
+          console.error(`Error fetching user data: ${res.status} ${res.statusText}`);
+          return null;
+        }
+        const userData = await res.json();
+        console.log("User data:", userData);
+        return userData;
       } catch (err) {
         console.error("Error fetching user:", err);
         return null;
       }
     },
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: false,
   });
 
   const loginMutation = useMutation({
