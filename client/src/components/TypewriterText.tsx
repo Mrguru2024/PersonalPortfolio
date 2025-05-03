@@ -11,7 +11,7 @@ interface TypewriterTextProps {
   once?: boolean;
 }
 
-const TypewriterText: React.FC<TypewriterTextProps> = ({
+const TypewriterText = ({
   phrases,
   typingSpeed = 100,
   deletingSpeed = 50,
@@ -19,90 +19,73 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
   className = '',
   cursorClassName = '',
   once = false
-}) => {
+}: TypewriterTextProps) => {
   const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isAnimatingRef = useRef(false);
   
-  // Store phrases in a ref to avoid dependency issues
-  const phrasesRef = useRef(phrases);
-  
-  // Handle animation state via imperative code to avoid infinite re-renders
+  // Simple implementation without complex state management
   useEffect(() => {
-    // Make sure to avoid multiple animation loops
-    if (isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
+    let timeout: NodeJS.Timeout;
+    let mounted = true;
     
-    let isMounted = true;
-    
-    const animateTyping = () => {
-      if (!isMounted) return;
+    const tick = () => {
+      if (!mounted) return;
       
-      const currentPhrase = phrasesRef.current[currentPhraseIndex];
+      // Get current phrase
+      const fullText = phrases[currentIndex];
       
+      // Update text based on whether we're deleting or typing
       if (!isDeleting) {
-        // Typing forward
-        if (displayText.length < currentPhrase.length) {
-          // Continue typing
-          const nextChar = currentPhrase.charAt(displayText.length);
-          setDisplayText(prev => prev + nextChar);
-          timeoutRef.current = setTimeout(animateTyping, typingSpeed);
-        } else {
-          // Complete, wait before deleting
-          timeoutRef.current = setTimeout(() => {
-            if (!isMounted) return;
-            
-            // Stop here if we're on the last phrase and once=true
-            if (once && currentPhraseIndex === phrasesRef.current.length - 1) return;
-            
-            setIsDeleting(true);
-            animateTyping();
+        setDisplayText((prev) => 
+          fullText.substring(0, prev.length + 1)
+        );
+        
+        // If we've fully typed the text, start deleting after a delay
+        if (displayText === fullText) {
+          // Don't delete if this is the last phrase and once is true
+          if (once && currentIndex === phrases.length - 1) {
+            return;
+          }
+          
+          timeout = setTimeout(() => {
+            if (mounted) setIsDeleting(true);
           }, delayAfterPhrase);
+          return;
         }
       } else {
-        // Deleting
-        if (displayText.length > 0) {
-          // Continue deleting
-          setDisplayText(prev => prev.slice(0, -1));
-          timeoutRef.current = setTimeout(animateTyping, deletingSpeed);
-        } else {
-          // Move to next phrase
+        setDisplayText((prev) => 
+          fullText.substring(0, prev.length - 1)
+        );
+        
+        // If we've deleted everything, move to next phrase
+        if (displayText === '') {
           setIsDeleting(false);
-          setCurrentPhraseIndex((prev) => (prev + 1) % phrasesRef.current.length);
-          timeoutRef.current = setTimeout(animateTyping, typingSpeed);
+          setCurrentIndex((prev) => (prev + 1) % phrases.length);
+          return;
         }
       }
+      
+      // Set the next timeout based on if we're typing or deleting
+      timeout = setTimeout(
+        tick, 
+        isDeleting ? deletingSpeed : typingSpeed
+      );
     };
     
-    // Start the animation
-    animateTyping();
+    timeout = setTimeout(tick, typingSpeed);
     
-    // Cleanup function
     return () => {
-      isMounted = false;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      mounted = false;
+      clearTimeout(timeout);
     };
-  }, []); // Empty dependency array - only run once on mount
-
-  // Ensure phrases ref is updated if phrases prop changes
-  useEffect(() => {
-    phrasesRef.current = phrases;
-  }, [phrases]);
-
+  }, [displayText, isDeleting, currentIndex, phrases, typingSpeed, deletingSpeed, delayAfterPhrase, once]);
+  
   return (
-    <motion.span 
-      className={`inline-block ${className} typing`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <span className={`${className}`}>
       {displayText}
-      <span className={`cursor ${cursorClassName}`}>|</span>
-    </motion.span>
+      <span className={`typing-cursor ${cursorClassName}`}>|</span>
+    </span>
   );
 };
 

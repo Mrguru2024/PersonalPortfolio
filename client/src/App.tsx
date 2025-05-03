@@ -13,6 +13,7 @@ import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
+import FloatingNavigation from "@/components/FloatingNavigation";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -43,6 +44,7 @@ function App() {
               <Router />
             </main>
             <Footer />
+            <FloatingNavigation />
           </div>
         </AuthProvider>
       </TooltipProvider>

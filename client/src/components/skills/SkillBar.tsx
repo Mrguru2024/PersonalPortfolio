@@ -43,9 +43,9 @@ const SkillBar = ({ skill, barColor = "bg-primary" }: SkillBarProps) => {
         >
           <motion.span 
             className="text-gray-800 dark:text-gray-200 font-medium relative"
-            animate={{ 
-              color: isHovered ? '#3b82f6' : '#1e293b',
-              textShadow: isHovered ? '0 0 8px rgba(59, 130, 246, 0.3)' : '0 0 0px rgba(59, 130, 246, 0)'
+            style={{
+              color: isHovered ? '#3b82f6' : 'var(--foreground)',
+              textShadow: isHovered ? '0 0 8px rgba(59, 130, 246, 0.3)' : 'none'
             }}
             transition={{ duration: 0.2 }}
           >
