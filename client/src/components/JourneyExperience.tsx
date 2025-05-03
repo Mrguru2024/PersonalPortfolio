@@ -86,14 +86,28 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
         </div>
       </div>
       
-      {/* Message bubble when active - adjusted for left positioning */}
+      {/* Message bubble when active - positioned for better visibility on all screens */}
       <AnimatePresence>
         {isActive && (
           <motion.div 
-            className="absolute right-8 top-0 bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-lg text-xs md:text-sm max-w-[150px] md:max-w-[200px] border border-primary/20"
-            initial={{ opacity: 0, scale: 0.8, x: 20 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: 20 }}
+            className="bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-lg text-xs md:text-sm max-w-[150px] md:max-w-[200px] border border-primary/20"
+            style={{
+              position: 'absolute',
+              ...(window.innerWidth < 640
+                ? {
+                    top: '-120%', // Above the character on small screens
+                    left: '50%',
+                    transform: 'translateX(-50%)'
+                  }
+                : {
+                    right: '8px',
+                    top: '0'
+                  }),
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08), 0 0 10px rgba(59, 130, 246, 0.08)'
+            }}
+            initial={{ opacity: 0, scale: 0.8, y: window.innerWidth < 640 ? 10 : 0, x: window.innerWidth < 640 ? 0 : 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: window.innerWidth < 640 ? 10 : 0, x: window.innerWidth < 640 ? 0 : 20 }}
             transition={{ duration: 0.3 }}
           >
             <div className="font-medium text-primary mb-1">MrGuru</div>
@@ -102,7 +116,27 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
                 ? "Follow me through this journey!" 
                 : "Follow me through this digital journey! I'll show you what I can create for you."}
             </div>
-            <div className="absolute -right-2 top-4 w-2 h-2 bg-white dark:bg-gray-800 transform rotate-45 border-r border-t border-primary/20"></div>
+            <div 
+              className="absolute w-2 h-2 bg-white dark:bg-gray-800 transform border-primary/20"
+              style={{
+                ...(window.innerWidth < 640
+                  ? {
+                      bottom: '-8px',
+                      left: '50%',
+                      marginLeft: '-4px',
+                      borderLeft: '1px solid',
+                      borderBottom: '1px solid',
+                      transform: 'rotate(-45deg)'
+                    }
+                  : {
+                      right: '-8px',
+                      top: '12px',
+                      borderRight: '1px solid',
+                      borderTop: '1px solid',
+                      transform: 'rotate(45deg)'
+                    })
+              }}
+            ></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -306,10 +340,10 @@ const JourneyExperience: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Main journey container - fixed to the center-left of the screen for better visibility */}
+      {/* Main journey container - fixed to the center-left with better spacing from page edge */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-4 md:left-8 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
+        className="fixed left-3 sm:left-6 md:left-12 lg:left-16 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
@@ -377,23 +411,51 @@ const JourneyExperience: React.FC = () => {
                   <AnimatePresence>
                     {(activeIndex === index || milestone.position === 90) && (
                       <motion.div 
-                        className={`absolute right-9 p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[200px] md:max-w-[250px] border border-primary/20 
+                        className={`absolute p-3 rounded-lg shadow-md min-w-[160px] md:min-w-[200px] max-w-[180px] md:max-w-[250px] border border-primary/20 
                         ${
                           activeIndex === index
                             ? 'bg-gradient-to-br from-white/95 to-blue-50/95 dark:from-gray-800/95 dark:to-gray-900/95'
                             : 'bg-white/95 dark:bg-gray-800/95'
                         }`}
                         style={{
-                          // Position to the right of the milestone
-                          right: '12px',
-                          // Ensure the popup is centered vertically relative to the milestone
-                          top: '50%',
-                          transform: 'translateY(-50%)',
+                          // Position dynamically based on screen size - for small screens, show above or below
+                          ...(window.innerWidth < 640 
+                            ? {
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                // Top positions for different milestones to prevent overlap
+                                ...(milestone.position > 50 
+                                  ? { bottom: '120%' } // Show above for milestones in top half
+                                  : { top: '120%' })  // Show below for milestones in bottom half
+                              } 
+                            : {
+                                // On larger screens, show to the right
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)'
+                              }),
                           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 10px rgba(59, 130, 246, 0.1)'
                         }}
-                        initial={{ opacity: 0, x: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -10, scale: 0.95 }}
+                        initial={{ 
+                          opacity: 0, 
+                          scale: 0.95,
+                          ...(window.innerWidth < 640 
+                            ? { y: milestone.position > 50 ? 10 : -10 } 
+                            : { x: -10 })
+                        }}
+                        animate={{ 
+                          opacity: 1, 
+                          scale: 1,
+                          y: 0,
+                          x: 0 
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          scale: 0.95,
+                          ...(window.innerWidth < 640 
+                            ? { y: milestone.position > 50 ? 10 : -10 } 
+                            : { x: -10 })
+                        }}
                         transition={{ duration: 0.3 }}
                       >
                         <h3 className="font-bold text-primary dark:text-primary mb-1">
