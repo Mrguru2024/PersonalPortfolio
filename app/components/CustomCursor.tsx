@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface CustomCursorProps {
@@ -12,26 +12,55 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [hoverText, setHoverText] = useState('');
+  const [isMobile, setIsMobile] = useState(true); // Start with true for SSR
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  // Colors based on section
-  const getCursorColors = () => {
+  // Use memorized colors to prevent re-renders
+  const getCursorColors = useCallback(() => {
     switch(currentSection) {
       case 'projects':
+      case 'projects-section':
         return { primary: '#818cf8', secondary: '#4f46e5' };
       case 'skills':
+      case 'skills-section':
         return { primary: '#34d399', secondary: '#059669' };
       case 'blog':
+      case 'blog-section':
         return { primary: '#f472b6', secondary: '#db2777' };
       case 'contact':
+      case 'contact-section':
         return { primary: '#fb923c', secondary: '#ea580c' };
       default:
         return { primary: '#a78bfa', secondary: '#7c3aed' };
     }
-  };
-
-  const { primary, secondary } = getCursorColors();
-
+  }, [currentSection]);
+  
+  // Use a ref to store the colors to avoid recalculation on every render
+  const colorsRef = useRef(getCursorColors());
+  
+  // Update the colors ref when the current section changes
+  useEffect(() => {
+    colorsRef.current = getCursorColors();
+  }, [getCursorColors]);
+  
+  // Only check for mobile after mounting
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth < 768);
+      setIsInitialized(true);
+      
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+  
   const handleHover = useCallback((e: MouseEvent) => {
+    if (!isInitialized) return;
+    
     const target = e.target as HTMLElement;
     
     // Check if target or its parents have data-cursor-text attribute
@@ -64,9 +93,13 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
         setHoverText('');
       }
     }
-  }, []);
+  }, [isInitialized]);
 
+  // Setup mouse event listeners
   useEffect(() => {
+    // Skip if mobile or not initialized yet
+    if (isMobile || !isInitialized) return;
+    
     const mouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
       handleHover(e);
@@ -84,24 +117,14 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
       window.removeEventListener('mousedown', mouseDown);
       window.removeEventListener('mouseup', mouseUp);
     };
-  }, [handleHover]);
+  }, [handleHover, isMobile, isInitialized]);
 
-  // Only render custom cursor on desktop
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
-  if (isMobile) {
+  // Don't render on mobile or before initialization
+  if (isMobile || !isInitialized) {
     return null;
   }
+
+  const { primary, secondary } = colorsRef.current;
 
   return (
     <div className="cursor-container">

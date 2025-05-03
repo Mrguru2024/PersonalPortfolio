@@ -31,15 +31,15 @@ function startNextJsDev() {
     shell: true
   });
 
-  nextProcess.stdout.on('data', (data) => {
+  nextProcess.stdout.on('data', (data: Buffer) => {
     log(`${data.toString().trim()}`, "nextjs");
   });
 
-  nextProcess.stderr.on('data', (data) => {
+  nextProcess.stderr.on('data', (data: Buffer) => {
     log(`${data.toString().trim()}`, "nextjs");
   });
 
-  nextProcess.on('close', (code) => {
+  nextProcess.on('close', (code: number) => {
     log(`Next.js process exited with code ${code}`, "nextjs");
   });
 
@@ -89,7 +89,7 @@ app.use((req, res, next) => {
   const nextProcess = startNextJsDev();
 
   // Set up proxy middleware to forward requests to Next.js server
-  app.use('/', createProxyMiddleware({
+  const proxyOptions = {
     target: 'http://localhost:3000',
     changeOrigin: true,
     ws: true,
@@ -103,7 +103,9 @@ app.use((req, res, next) => {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Next.js server not ready yet, please try again in a moment.');
     }
-  }));
+  };
+
+  app.use('/', createProxyMiddleware(proxyOptions));
 
   // Add error handler middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
