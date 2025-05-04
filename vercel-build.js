@@ -34,8 +34,9 @@ async function build() {
     log('Installing dependencies...');
     run('npm install');
 
-    // Skip TypeScript compilation on Vercel (due to vite.ts type issues)
-    log('Skipping type checking on Vercel deployment...');
+    // Run a modified TypeScript check that ignores the vite.ts file 
+    log('Running modified type checking for Vercel deployment...');
+    run('tsc --skipLibCheck --skipDefaultLibCheck --noEmit --noErrorTruncation server/vercel.ts');
 
     // Build frontend
     log('Building frontend...');
