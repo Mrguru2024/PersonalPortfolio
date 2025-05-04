@@ -18,6 +18,7 @@ import CustomCursor from "@/components/CustomCursor";
 import FloatingNavigation from "@/components/FloatingNavigation";
 import GuidedTour from "@/components/GuidedTour";
 import JourneyExperience from "@/components/JourneyExperience";
+import ViewModeToggle from "@/components/ViewModeToggle";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -39,9 +40,20 @@ function Router() {
 function App() {
   // State to track the current section of the website the user is viewing
   const [currentSection, setCurrentSection] = useState<string>('Home');
+  
+  // State to track whether the site is in immersive mode
+  const [isImmersive, setIsImmersive] = useState<boolean>(() => {
+    // Check if there's a saved preference in localStorage
+    const savedPreference = localStorage.getItem('isImmersiveMode');
+    // Default to true (immersive) if no preference is saved
+    return savedPreference ? savedPreference === 'true' : true;
+  });
 
   // Update current section based on scroll position
   useEffect(() => {
+    // Skip this functionality if not in immersive mode
+    if (!isImmersive) return;
+    
     // Debounced scroll handler to improve performance
     let scrollTimeout: number | null = null;
     
@@ -106,23 +118,47 @@ function App() {
         window.clearTimeout(scrollTimeout);
       }
     };
-  }, []);
+  }, [isImmersive]); // Added isImmersive dependency
+
+  // Add or remove custom cursor class based on immersive mode
+  useEffect(() => {
+    if (isImmersive) {
+      document.documentElement.classList.add('use-custom-cursor');
+    } else {
+      document.documentElement.classList.remove('use-custom-cursor');
+    }
+  }, [isImmersive]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <CustomCursor currentSection={currentSection} />
-          <div className="flex flex-col min-h-screen cursor-none md:cursor-none">
+          
+          {/* Only show immersive features when isImmersive is true */}
+          {isImmersive && <CustomCursor currentSection={currentSection} />}
+          
+          <div className={`flex flex-col min-h-screen ${isImmersive ? 'cursor-none md:cursor-none' : ''}`}>
             <Header />
             <main className="flex-grow">
               <Router />
             </main>
             <Footer />
-            <FloatingNavigation />
-            <GuidedTour />
-            <JourneyExperience activeSection={currentSection} />
+            
+            {/* Only show immersive features when isImmersive is true */}
+            {isImmersive && (
+              <>
+                <FloatingNavigation />
+                <GuidedTour />
+                <JourneyExperience activeSection={currentSection} />
+              </>
+            )}
+            
+            {/* Always show the view mode toggle */}
+            <ViewModeToggle 
+              isImmersive={isImmersive} 
+              setIsImmersive={setIsImmersive} 
+            />
           </div>
         </AuthProvider>
       </TooltipProvider>

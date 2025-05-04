@@ -104,3 +104,29 @@
     padding-left: 160px !important;
   }
 }
+
+/* Custom cursor styles */
+.use-custom-cursor * {
+  cursor: none !important;
+}
+
+/* Colorful skill bars */
+.skill-bar-frontend {
+  @apply bg-gradient-to-r from-blue-500 to-indigo-600;
+}
+
+.skill-bar-backend {
+  @apply bg-gradient-to-r from-green-500 to-teal-600;
+}
+
+.skill-bar-devops {
+  @apply bg-gradient-to-r from-purple-500 to-pink-600;
+}
+
+.skill-bar-database {
+  @apply bg-gradient-to-r from-orange-500 to-amber-600;
+}
+
+.skill-bar-other {
+  @apply bg-gradient-to-r from-gray-500 to-slate-600;
+}
