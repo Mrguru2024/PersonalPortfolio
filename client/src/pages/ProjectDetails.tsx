@@ -9,7 +9,7 @@ import ProjectDemo from "@/components/project/ProjectDemo";
 import { ProjectSynopsis } from "@/components/projects/ProjectSynopsis";
 import { projects } from "@/lib/data";
 import ParallaxBackground from "@/components/ParallaxBackground";
-import { PageSEO } from "@/components/SEO";
+import { PageSEO, StructuredData } from "@/components/SEO";
 
 const ProjectDetails = () => {
   const [match, params] = useRoute("/projects/:id");

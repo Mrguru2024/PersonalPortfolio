@@ -26,7 +26,7 @@ import { z } from "zod";
 import { BlogPost, BlogComment } from "@/lib/data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
-import { BlogPostSEO } from "@/components/SEO";
+import { BlogPostSEO, StructuredData } from "@/components/SEO";
 
 // Comment form with CAPTCHA
 interface CommentFormProps {
@@ -262,7 +262,42 @@ const BlogPostPage = () => {
   return (
     <div className="container mx-auto px-4 py-12">
       {/* Add SEO component */}
-      {post && <BlogPostSEO post={post} />}
+      {post && (
+        <>
+          <BlogPostSEO post={post} />
+          
+          {/* Add BlogPosting structured data */}
+          <StructuredData 
+            schema={{
+              type: 'BlogPosting',
+              data: {
+                headline: post.title,
+                description: post.excerpt || post.content?.slice(0, 160) || '',
+                image: post.coverImage || 'https://mrguru.dev/images/blog-default.jpg',
+                datePublished: post.publishedAt || post.createdAt || new Date().toISOString(),
+                dateModified: post.updatedAt || post.publishedAt || new Date().toISOString(),
+                author: {
+                  name: 'Anthony Feaster',
+                  url: 'https://mrguru.dev'
+                },
+                publisher: {
+                  name: 'MrGuru.dev',
+                  url: 'https://mrguru.dev',
+                  logo: {
+                    url: 'https://mrguru.dev/images/logo.png',
+                    width: 60,
+                    height: 60
+                  }
+                },
+                url: `https://mrguru.dev/blog/${post.slug}`,
+                mainEntityOfPage: `https://mrguru.dev/blog/${post.slug}`,
+                keywords: post.tags && Array.isArray(post.tags) ? post.tags : 
+                         (typeof post.tags === 'string' ? post.tags.split(',') : [])
+              }
+            }}
+          />
+        </>
+      )}
       
       <div className="max-w-4xl mx-auto">
         <Link href="/blog">

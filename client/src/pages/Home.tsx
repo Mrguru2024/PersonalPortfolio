@@ -5,7 +5,7 @@ import AboutSection from "@/sections/AboutSection";
 import SkillsSection from "@/sections/SkillsSection";
 import BlogSection from "@/sections/BlogSection";
 import ContactSection from "@/sections/ContactSection";
-import { PageSEO } from "@/components/SEO";
+import { PageSEO, StructuredData } from "@/components/SEO";
 
 interface HomeProps {
   onSectionChange?: (sectionId: string) => void;
@@ -62,6 +62,40 @@ const Home = ({ onSectionChange }: HomeProps) => {
         description="Anthony Feaster is a Full Stack Developer specializing in modern web technologies. Explore my portfolio of projects, skills, and expertise."
         keywords={["fullstack", "developer", "React", "Node.js", "JavaScript", "portfolio", "web development"]}
         schemaType="ProfilePage"
+      />
+      
+      {/* Add Person structured data */}
+      <StructuredData 
+        schema={{
+          type: 'Person',
+          data: {
+            name: 'Anthony Feaster',
+            jobTitle: 'Full Stack Developer',
+            image: 'https://mrguru.dev/images/profile.jpg',
+            url: 'https://mrguru.dev',
+            sameAs: [
+              'https://github.com/Mrguru2024',
+              'https://www.linkedin.com/in/anthony-feaster',
+            ],
+            description: 'Full Stack Developer specializing in React, Node.js, and modern web technologies.'
+          }
+        }}
+      />
+      
+      {/* Add Website structured data */}
+      <StructuredData 
+        schema={{
+          type: 'WebSite',
+          data: {
+            name: 'MrGuru.dev - Anthony Feaster\'s Portfolio',
+            description: 'Professional portfolio of Anthony Feaster, showcasing projects, skills, and services in full stack development.',
+            url: 'https://mrguru.dev',
+            author: {
+              name: 'Anthony Feaster',
+              url: 'https://mrguru.dev'
+            }
+          }
+        }}
       />
       <HeroSection />
       <ProjectsSection />
