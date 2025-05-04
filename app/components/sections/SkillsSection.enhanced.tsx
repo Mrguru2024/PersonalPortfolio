@@ -480,6 +480,16 @@ function SkillCard({
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   
+  // Map percentage to a rating description
+  const getRating = (percentage: number): string => {
+    if (percentage >= 90) return "Expert";
+    if (percentage >= 80) return "Advanced";
+    if (percentage >= 65) return "Proficient";
+    if (percentage >= 50) return "Intermediate";
+    if (percentage >= 30) return "Familiar";
+    return "Beginner";
+  };
+  
   // Animation for the progress bar
   const progressVariants = {
     initial: { width: 0 },
