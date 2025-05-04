@@ -6,7 +6,8 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/sections/HeroSection";
 import AboutSection from "@/components/sections/AboutSection";
 import ProjectsSection from "@/components/sections/ProjectsSection";
-import SkillsSection from "@/components/sections/SkillsSection.fixed";
+import SkillsSection from "@/components/sections/SkillsSection.enhanced";
+import QuotesSection from "@/components/sections/QuotesSection";
 import ContactSection from "@/components/sections/ContactSection";
 import QuickNav from "@/components/QuickNav";
 import JourneyExperience from "@/components/JourneyExperience";
@@ -79,6 +80,7 @@ export default function HomePage() {
         <AboutSection />
         <ProjectsSection />
         <SkillsSection />
+        <QuotesSection />
         <ContactSection />
       </main>
       
