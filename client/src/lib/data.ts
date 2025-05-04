@@ -263,7 +263,41 @@ export const projects: Project[] = [
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["React", "Vite", "TailwindCSS", "Express", "PostgreSQL", "Chart.js"]
+    techStack: ["React", "Vite", "TailwindCSS", "Express", "PostgreSQL", "Chart.js"],
+    synopsis: {
+      tagline: "Financial Intelligence. Visualized. Personalized.",
+      description: "Stackzen transforms how individuals and small businesses manage their finances through intuitive tracking and meaningful visualization. Born from my own need to make sense of complex financial data, this platform combines smart categorization with powerful analytics to help users take control of their financial future and make data-driven decisions with confidence.",
+      caseStudy: {
+        problem: "Traditional financial management tools were either too complex for everyday users or too simplistic to provide meaningful insights, creating a gap between basic expense tracking and actionable financial intelligence.",
+        role: [
+          "Full Stack Developer",
+          "UX/UI Designer",
+          "Financial Data Architect"
+        ],
+        stack: [
+          "React + Vite (Frontend)",
+          "Express + Node.js (Backend)",
+          "PostgreSQL (Database)",
+          "Chart.js (Visualizations)",
+          "TailwindCSS (Styling)",
+          "React Query (Data Fetching)"
+        ],
+        features: [
+          "Smart transaction categorization with AI-assisted tagging",
+          "Interactive dashboard with customizable data visualizations",
+          "Goal tracking with progress indicators and forecasting",
+          "Financial health score with personalized improvement suggestions",
+          "Export capabilities for tax preparation and financial planning"
+        ],
+        status: "✅ Beta Release 🚀 Actively Collecting User Feedback",
+        nextSteps: [
+          "Implementing subscription model with tiered access",
+          "Adding integration with banking APIs for real-time data",
+          "Developing mobile companion app for on-the-go tracking",
+          "Building investment portfolio tracking and analysis tools"
+        ]
+      }
+    }
   },
   {
     id: "inventory-management",
@@ -283,7 +317,43 @@ export const projects: Project[] = [
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["React", "Firebase", "Cloud Functions", "Material UI"]
+    techStack: ["React", "Firebase", "Cloud Functions", "Material UI"],
+    synopsis: {
+      tagline: "Stock. Sales. Simplified.",
+      description: "This inventory management system empowers small businesses to take control of their product lifecycle from purchase to sale. After witnessing small retail shops struggle with outdated inventory methods, I built this cloud-based solution to bring enterprise-level inventory capabilities to businesses of all sizes without the enterprise price tag or complexity. The system bridges physical products with digital tracking through barcode integration and real-time analytics.",
+      caseStudy: {
+        problem: "Small businesses were struggling with inventory management, either using pen-and-paper methods or expensive enterprise solutions that were too complex for their needs, leading to stockouts, overstocking, and lost sales opportunities.",
+        role: [
+          "Full Stack Developer",
+          "Database Architect",
+          "User Experience Researcher",
+          "Small Business Consultant"
+        ],
+        stack: [
+          "React (Frontend Framework)",
+          "Firebase (Authentication & Database)",
+          "Cloud Functions (Automated Tasks)",
+          "Material UI (Component Library)",
+          "Firestore (NoSQL Database)",
+          "Firebase Storage (Media Storage)"
+        ],
+        features: [
+          "Barcode scanning with mobile device camera integration",
+          "Purchase order management with supplier tracking",
+          "Sales forecasting based on historical data",
+          "Low stock alerts and automatic reorder suggestions",
+          "Multi-location inventory tracking for businesses with multiple stores",
+          "Batch operations for efficient inventory management"
+        ],
+        status: "✅ Production 🚀 Active Users: 12 small businesses",
+        nextSteps: [
+          "Implementing advanced analytics dashboard with ML-based insights",
+          "Adding QuickBooks and other accounting software integrations",
+          "Developing vendor portal for streamlined order processing",
+          "Building customer-facing API for online store integrations"
+        ]
+      }
+    }
   },
   {
     id: "gatherly",
@@ -303,7 +373,43 @@ export const projects: Project[] = [
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["React Native", "Expo", "Firebase", "Google Maps API"]
+    techStack: ["React Native", "Expo", "Firebase", "Google Maps API"],
+    synopsis: {
+      tagline: "Events. Connected. Simplified.",
+      description: "Gatherly brings people together through streamlined event planning and discovery. The mobile-first platform removes the typical friction of organizing get-togethers, making it easy to create, share, and join events with friends, family, or community members. Built with a focus on real-time collaboration and location awareness, Gatherly transforms how people coordinate activities in an increasingly busy and disconnected world.",
+      caseStudy: {
+        problem: "Existing event planning tools were either too complex for casual gatherings or too basic to handle coordination details, leading to fragmented communication across multiple apps and missed connections.",
+        role: [
+          "Mobile App Developer",
+          "UX Researcher",
+          "Product Designer",
+          "Backend Architect"
+        ],
+        stack: [
+          "React Native (Cross-platform mobile framework)",
+          "Expo (Development toolchain)",
+          "Firebase (Authentication, Database, Storage)",
+          "Google Maps API (Location services)",
+          "Firebase Cloud Messaging (Push notifications)",
+          "Cloud Functions (Serverless backend)"
+        ],
+        features: [
+          "Intelligent event suggestions based on user interests and location",
+          "Real-time attendance tracking and updates",
+          "In-app group messaging with media sharing",
+          "Interactive maps with navigation to event locations",
+          "Collaborative planning tools with task assignments",
+          "Weather integration for outdoor event planning"
+        ],
+        status: "✅ Public Beta 🚀 500+ Active Users in Atlanta Area",
+        nextSteps: [
+          "Implementing ticket sales and payment processing",
+          "Adding public event discovery with matching algorithm",
+          "Building business profiles for venue partnerships",
+          "Expanding to additional major metropolitan areas"
+        ]
+      }
+    }
   },
   {
     id: "ssi-met-repairs",
@@ -322,7 +428,43 @@ export const projects: Project[] = [
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["HTML", "CSS", "JavaScript", "WordPress"]
+    techStack: ["HTML", "CSS", "JavaScript", "WordPress"],
+    synopsis: {
+      tagline: "Electronics. Automotive. Fixed & Secured.",
+      description: "SSI-M.E.T Repairs represents the digital transformation of my brick-and-mortar repair business, bringing specialized electronic repair and automotive locksmith services online to reach more customers. This website serves as both a digital storefront and educational resource for customers looking to understand repair options before committing. The project exemplifies how traditional service businesses can leverage technology to improve customer acquisition and service delivery.",
+      caseStudy: {
+        problem: "Local repair businesses often struggle with digital presence, relying on word-of-mouth or costly advertising. Customers need to understand services and pricing before visiting, but most local repair shops lack informative, accessible online platforms.",
+        role: [
+          "Business Owner & Service Provider",
+          "Web Designer & Developer",
+          "Content Creator",
+          "SEO Specialist"
+        ],
+        stack: [
+          "WordPress (Content Management)",
+          "Elementor (Visual Page Builder)",
+          "WooCommerce (Appointment Booking)",
+          "Custom CSS & JavaScript",
+          "Google Business Integration",
+          "Schema.org Markup (for Local SEO)"
+        ],
+        features: [
+          "Service categorization with transparent pricing",
+          "Online appointment scheduling and confirmation system",
+          "Educational blog with repair guides and maintenance tips",
+          "Location-based service area mapping",
+          "Customer testimonials with media integration",
+          "Mobile-optimized experience for on-the-go service requests"
+        ],
+        status: "✅ Live Business 🚀 Generating 35% of new business leads",
+        nextSteps: [
+          "Implementing live chat for immediate customer assistance",
+          "Adding repair status tracking for current customers",
+          "Building video repository of common repair procedures",
+          "Developing customer loyalty program with digital rewards"
+        ]
+      }
+    }
   },
   {
     id: "web-development-services",
@@ -335,6 +477,42 @@ export const projects: Project[] = [
     liveUrl: "https://forms.gle/vu11jF1nixkoRxH86",
     details: "Professional web development and design services tailored for businesses and individuals. Services include website creation, redesign, maintenance, and custom web application development to meet client needs.",
     demoType: "custom",
-    techStack: ["React", "Next.js", "Tailwind CSS", "Node.js"]
+    techStack: ["React", "Next.js", "Tailwind CSS", "Node.js"],
+    synopsis: {
+      tagline: "Websites that Work. Solutions that Scale.",
+      description: "My web development services transform business objectives into engaging digital experiences. I've built this service offering to bridge the gap between high-end agency work and DIY website builders, providing professional-grade web solutions at accessible prices. Each project is approached as a unique business challenge, with solutions custom-tailored to meet specific goals rather than relying on templates or one-size-fits-all approaches.",
+      caseStudy: {
+        problem: "Many businesses find themselves caught between expensive agency services and limited DIY website platforms, neither of which fully meets their needs for custom functionality, design control, and technical expertise at a reasonable price point.",
+        role: [
+          "Full Stack Developer",
+          "UX/UI Designer",
+          "Project Manager",
+          "Digital Strategy Consultant"
+        ],
+        stack: [
+          "React & Next.js (Frontend)",
+          "Node.js & Express (Backend)",
+          "Tailwind CSS (Styling)",
+          "WordPress (CMS Solutions)",
+          "Vercel & Netlify (Deployment)",
+          "SQL & NoSQL Databases"
+        ],
+        features: [
+          "Custom website design and development aligned with brand identity",
+          "Responsive, mobile-first implementation for all device types",
+          "Content management system implementation and training",
+          "E-commerce integration with secure payment processing",
+          "SEO optimization and performance tuning",
+          "Ongoing maintenance and technical support"
+        ],
+        status: "✅ Active Service 🚀 12+ Completed Projects in 2024",
+        nextSteps: [
+          "Expanding service offerings to include SaaS product development",
+          "Creating productized service packages with clear pricing tiers",
+          "Building agency partnerships for larger project referrals",
+          "Developing client education resources and tutorials"
+        ]
+      }
+    }
   }
 ];
