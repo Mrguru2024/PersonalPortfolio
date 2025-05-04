@@ -19,14 +19,29 @@ import { githubService } from '../services/githubService';
 // Still import these for now as fallback until we populate the database
 import { 
   projects as staticProjects, 
-  frontendSkills,
-  backendSkills,
-  devopsSkills,
+  frontendSkills as staticFrontendSkills,
+  backendSkills as staticBackendSkills,
+  devopsSkills as staticDevopsSkills,
   additionalSkills,
   personalInfo,
   contactInfo,
-  socialLinks 
+  socialLinks,
+  type Skill as ClientSkill
 } from '../../client/src/lib/data';
+
+// Convert client-side skills to server-side skills with required fields
+const convertToServerSkill = (clientSkill: ClientSkill, category: string): Skill => ({
+  id: clientSkill.id || 0,
+  name: clientSkill.name,
+  percentage: clientSkill.percentage,
+  category: clientSkill.category || category,
+  endorsement_count: clientSkill.endorsement_count || 0
+});
+
+// Create strongly typed versions of the skills
+const frontendSkills: Skill[] = staticFrontendSkills.map(skill => convertToServerSkill(skill, 'frontend'));
+const backendSkills: Skill[] = staticBackendSkills.map(skill => convertToServerSkill(skill, 'backend'));
+const devopsSkills: Skill[] = staticDevopsSkills.map(skill => convertToServerSkill(skill, 'devops'));
 
 // For caching GitHub language stats
 let cachedSkills: Record<string, Skill[]> | null = null;
@@ -143,9 +158,9 @@ export const portfolioController = {
       }
       // Otherwise fallback to static data
       return {
-        frontend: frontendSkills as Skill[],
-        backend: backendSkills as Skill[],
-        devops: devopsSkills as Skill[]
+        frontend: frontendSkills,
+        backend: backendSkills,
+        devops: devopsSkills
       };
     }
   },
