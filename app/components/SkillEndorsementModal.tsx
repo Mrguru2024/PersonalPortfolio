@@ -163,15 +163,16 @@ export default function SkillEndorsementModal({
               <div className="flex justify-center my-4">
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((value) => (
-                    <button
+                    <div
                       key={value}
-                      type="button"
                       onClick={() => {
                         setRating(value);
                         form.setValue("rating", value);
                       }}
-                      className="focus:outline-none"
+                      className="focus:outline-none cursor-pointer"
                       aria-label={`Rate ${value} stars`}
+                      role="button"
+                      tabIndex={0}
                     >
                       <Star
                         className={`w-6 h-6 ${
@@ -180,7 +181,7 @@ export default function SkillEndorsementModal({
                             : "text-gray-300"
                         }`}
                       />
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
