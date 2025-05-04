@@ -289,13 +289,13 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                             exit={{ opacity: 0, x: -10 }}
                             style={{ zIndex: 100 }}
                           >
-                            <button 
+                            <div 
                               onClick={(e) => handleClosePopup(e, milestone.id)}
-                              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+                              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground cursor-pointer"
                             >
                               <span className="sr-only">Close</span>
                               &times;
-                            </button>
+                            </div>
                             
                             <h4 className="font-medium text-foreground text-sm">{milestone.label}</h4>
                             <p className="text-muted-foreground text-xs mt-1 mb-2">{milestone.description}</p>

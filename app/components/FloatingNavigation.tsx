@@ -79,8 +79,8 @@ export default function FloatingNavigation() {
   return (
     <>
       {/* Mobile Navigation Button */}
-      <motion.button
-        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
+      <motion.div
+        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg cursor-pointer md:hidden"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
@@ -90,7 +90,7 @@ export default function FloatingNavigation() {
           <span data-lucide="x" aria-hidden="true"><X size={20} /></span> : 
           <span data-lucide="menu" aria-hidden="true"><Menu size={20} /></span>
         }
-      </motion.button>
+      </motion.div>
       
       {/* Mobile Navigation Menu */}
       <AnimatePresence>
@@ -104,9 +104,9 @@ export default function FloatingNavigation() {
           >
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
-                <motion.button
+                <motion.div
                   key={item.id}
-                  className={`flex items-center gap-2 p-2 rounded-md ${
+                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${
                     activeSection === item.id
                       ? 'bg-primary/10 text-primary'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -117,7 +117,7 @@ export default function FloatingNavigation() {
                 >
                   {item.icon}
                   <span className="text-sm">{item.label}</span>
-                </motion.button>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -133,9 +133,9 @@ export default function FloatingNavigation() {
       >
         <div className="flex items-center gap-1">
           {navItems.map((item) => (
-            <motion.button
+            <motion.div
               key={item.id}
-              className={`relative flex items-center justify-center p-2 rounded-full group ${
+              className={`relative flex items-center justify-center p-2 rounded-full cursor-pointer group ${
                 activeSection === item.id
                   ? 'text-primary'
                   : 'text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
@@ -160,13 +160,13 @@ export default function FloatingNavigation() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-            </motion.button>
+            </motion.div>
           ))}
           
           <motion.div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
           
-          <motion.button
-            className="flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary group"
+          <motion.div
+            className="flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary cursor-pointer group"
             onClick={scrollToTop}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -180,20 +180,20 @@ export default function FloatingNavigation() {
             >
               Top
             </motion.span>
-          </motion.button>
+          </motion.div>
         </div>
       </motion.div>
       
       {/* Scroll to top button for mobile */}
-      <motion.button
-        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
+      <motion.div
+        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg cursor-pointer md:hidden"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={scrollToTop}
         whileTap={{ scale: 0.9 }}
       >
         <span data-lucide="chevron-up" aria-hidden="true"><ChevronUp size={20} /></span>
-      </motion.button>
+      </motion.div>
     </>
   );
 }
