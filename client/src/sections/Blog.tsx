@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BlogPost } from '@shared/schema';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'wouter';
 import AnimatedButton from '@/components/AnimatedButton';
 
 export default function Blog() {
