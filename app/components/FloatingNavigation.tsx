@@ -86,7 +86,10 @@ export default function FloatingNavigation() {
         onClick={() => setIsOpen(!isOpen)}
         whileTap={{ scale: 0.9 }}
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        {isOpen ? 
+          <span data-lucide="x" aria-hidden="true"><X size={20} /></span> : 
+          <span data-lucide="menu" aria-hidden="true"><Menu size={20} /></span>
+        }
       </motion.button>
       
       {/* Mobile Navigation Menu */}
@@ -168,7 +171,7 @@ export default function FloatingNavigation() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <ChevronUp size={18} />
+            <span data-lucide="chevron-up" aria-hidden="true"><ChevronUp size={18} /></span>
             <motion.span
               className="absolute top-0 -mt-8 text-xs font-medium px-2 py-1 bg-primary text-white rounded-md opacity-0 group-hover:opacity-100 pointer-events-none"
               initial={{ y: 10, opacity: 0 }}
@@ -189,7 +192,7 @@ export default function FloatingNavigation() {
         onClick={scrollToTop}
         whileTap={{ scale: 0.9 }}
       >
-        <ChevronUp size={20} />
+        <span data-lucide="chevron-up" aria-hidden="true"><ChevronUp size={20} /></span>
       </motion.button>
     </>
   );
