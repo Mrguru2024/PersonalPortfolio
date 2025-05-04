@@ -167,13 +167,31 @@ export const portfolioController = {
 
   getSkills: async (req: Request, res: Response) => {
     try {
-      // Try to fetch skills from GitHub first
+      // Use database as primary source for skills
+      const allSkills = await storage.getSkills();
+      
+      // If we have skills in the database, use them as the primary source
+      if (allSkills && allSkills.length > 0) {
+        // Group skills by category
+        const frontend = allSkills.filter(skill => skill.category === 'frontend');
+        const backend = allSkills.filter(skill => skill.category === 'backend');
+        const devops = allSkills.filter(skill => skill.category === 'devops');
+        
+        return res.json({
+          frontend,
+          backend,
+          devops,
+          additional: additionalSkills
+        });
+      }
+      
+      // If no skills in database, fall back to GitHub data
       try {
         if (process.env.GITHUB_TOKEN) {
-          console.log('Using GitHub token for skills data');
+          console.log('No skills in database. Using GitHub token for skills data.');
           const githubSkills = await portfolioController.fetchGitHubSkills();
           
-          // Also sync with database (for endorsements)
+          // Also sync with database (for future use)
           await portfolioController.syncGitHubSkillsWithDatabase(githubSkills);
           
           return res.json({
@@ -183,36 +201,19 @@ export const portfolioController = {
             additional: additionalSkills
           });
         } else {
-          console.log('No GitHub token found, using database/static skills');
+          console.log('No GitHub token found, using static skills');
         }
       } catch (githubError) {
         console.error('Error fetching GitHub skills:', githubError);
         // Continue to fallback options below
       }
       
-      // Try to get skills from database as fallback
-      const allSkills = await storage.getSkills();
-      
-      // If no skills in DB, return static skills
-      if (!allSkills || allSkills.length === 0) {
-        return res.json({
-          frontend: frontendSkills,
-          backend: backendSkills,
-          devops: devopsSkills,
-          additional: additionalSkills
-        });
-      }
-      
-      // Group skills by category
-      const frontend = allSkills.filter(skill => skill.category === 'frontend');
-      const backend = allSkills.filter(skill => skill.category === 'backend');
-      const devops = allSkills.filter(skill => skill.category === 'devops');
-      
-      res.json({
-        frontend,
-        backend,
-        devops,
-        additional: additionalSkills // Keep static additional skills for now
+      // If neither database nor GitHub has skills, use static data
+      return res.json({
+        frontend: frontendSkills,
+        backend: backendSkills,
+        devops: devopsSkills,
+        additional: additionalSkills
       });
     } catch (error) {
       console.error('Error fetching skills:', error);
