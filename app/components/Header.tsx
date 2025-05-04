@@ -110,7 +110,15 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
             className="p-2 rounded-full hover:bg-accent transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === "dark" ? (
+              <span data-lucide="sun" aria-hidden="true">
+                <Sun size={20} />
+              </span>
+            ) : (
+              <span data-lucide="moon" aria-hidden="true">
+                <Moon size={20} />
+              </span>
+            )}
           </button>
 
           {/* Quick Navigation Button */}
@@ -119,7 +127,9 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
             className="p-2 rounded-full hover:bg-accent transition-colors hidden md:flex"
             aria-label="Quick navigation"
           >
-            <Search size={20} />
+            <span data-lucide="search" aria-hidden="true">
+              <Search size={20} />
+            </span>
           </button>
 
           {/* GitHub Link */}
@@ -130,7 +140,9 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
             className="p-2 rounded-full hover:bg-accent transition-colors hidden md:flex"
             aria-label="GitHub"
           >
-            <Github size={20} />
+            <span data-lucide="github" aria-hidden="true">
+              <Github size={20} />
+            </span>
           </a>
 
           {/* Mobile Menu Toggle */}
@@ -139,7 +151,15 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
             className="p-2 rounded-full hover:bg-accent transition-colors md:hidden"
             aria-label="Toggle mobile menu"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? (
+              <span data-lucide="x" aria-hidden="true">
+                <X size={20} />
+              </span>
+            ) : (
+              <span data-lucide="menu" aria-hidden="true">
+                <Menu size={20} />
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -170,7 +190,9 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
               rel="noopener noreferrer"
               className="px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
             >
-              <Github size={16} /> GitHub
+              <span data-lucide="github" aria-hidden="true" className="mr-2">
+                <Github size={16} />
+              </span> GitHub
             </a>
           </nav>
         </div>
