@@ -162,6 +162,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                 <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
                   Resume
                 </Link>
+                <Link href="/generate-images" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition flex items-center">
+                  <Wand2 className="h-4 w-4 mr-2" /> AI Image Generator
+                </Link>
               </>
             )}
             
