@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../db";
 import { skills } from "@/shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -24,11 +24,8 @@ export async function GET(
         id: skills.id,
         name: skills.name,
         category: skills.category,
-        // Map proficiency to percentage for API compatibility
-        percentage: skills.proficiency,
-        // In Next.js app we don't have endorsement_count in the schema yet
-        // Use a literal 0 as fallback
-        endorsement_count: sql`COALESCE(0, 0)`.as('endorsement_count')
+        percentage: skills.percentage,
+        endorsement_count: skills.endorsement_count
       })
       .from(skills)
       .where(eq(skills.id, skillId));

@@ -62,7 +62,9 @@ export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(),
-  proficiency: integer("proficiency").notNull(), // 1-100
+  // Using percentage for compatibility with database
+  percentage: integer("percentage").notNull(), // 1-100
+  endorsement_count: integer("endorsement_count").default(0).notNull(),
   icon: text("icon"),
   color: text("color"),
   yearsOfExperience: integer("years_of_experience"),
