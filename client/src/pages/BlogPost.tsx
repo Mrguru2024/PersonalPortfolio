@@ -201,14 +201,17 @@ const BlogPostPage = () => {
   const { data: post, isLoading: isPostLoading, error: postError } = useQuery({
     queryKey: [`/api/blog/${slug}`],
     queryFn: async () => {
-      return apiRequest<BlogPost>(`/api/blog/${slug}`);
+      const response = await apiRequest<BlogPost>("GET", `/api/blog/${slug}`);
+      return response.json();
     }
   });
   
   const { data: comments, isLoading: areCommentsLoading } = useQuery({
     queryKey: [`/api/blog/post/${post?.id}/comments`],
     queryFn: async () => {
-      return apiRequest<BlogComment[]>(`/api/blog/post/${post?.id}/comments`);
+      if (!post?.id) return [];
+      const response = await apiRequest<BlogComment[]>("GET", `/api/blog/post/${post.id}/comments`);
+      return response.json();
     },
     enabled: !!post?.id,
     retry: false
@@ -295,7 +298,7 @@ const BlogPostPage = () => {
         </div>
         
         <div className="flex flex-wrap gap-2 mb-6">
-          {post.tags.map((tag, i) => (
+          {post.tags.map((tag: string, i: number) => (
             <Badge key={i} variant="secondary" className="text-xs">
               <Tag className="h-3 w-3 mr-1" />
               {tag}
@@ -304,7 +307,7 @@ const BlogPostPage = () => {
         </div>
         
         <div className="prose prose-lg dark:prose-invert max-w-none">
-          {post.content.split('\n').map((paragraph, i) => (
+          {post.content.split('\n').map((paragraph: string, i: number) => (
             paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
           ))}
         </div>
@@ -330,7 +333,7 @@ const BlogPostPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {comments.map((comment) => (
+              {comments.map((comment: BlogComment) => (
                 <Card key={comment.id}>
                   <CardHeader className="py-3 px-4 border-b border-gray-100 dark:border-gray-800 flex flex-row justify-between items-center">
                     <div>
