@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, X, Moon, Sun, Search, GitHub } from "lucide-react";
+import Menu from "lucide-react/dist/esm/icons/menu";
+import X from "lucide-react/dist/esm/icons/x";
+import Moon from "lucide-react/dist/esm/icons/moon";
+import Sun from "lucide-react/dist/esm/icons/sun";
+import Search from "lucide-react/dist/esm/icons/search";
+import Github from "lucide-react/dist/esm/icons/github";
 import { useTheme } from "next-themes";
 
 interface HeaderProps {
@@ -125,7 +130,7 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
             className="p-2 rounded-full hover:bg-accent transition-colors hidden md:flex"
             aria-label="GitHub"
           >
-            <GitHub size={20} />
+            <Github size={20} />
           </a>
 
           {/* Mobile Menu Toggle */}
@@ -165,7 +170,7 @@ export default function Header({ currentSection, onNavToggle }: HeaderProps) {
               rel="noopener noreferrer"
               className="px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
             >
-              <GitHub size={16} /> GitHub
+              <Github size={16} /> GitHub
             </a>
           </nav>
         </div>
