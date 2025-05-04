@@ -1,0 +1,1883 @@
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// server/index.ts
+import express2 from "express";
+
+// server/routes.ts
+import { createServer } from "http";
+
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  blogCommentFormSchema: () => blogCommentFormSchema,
+  blogComments: () => blogComments,
+  blogPostContributionFormSchema: () => blogPostContributionFormSchema,
+  blogPostContributions: () => blogPostContributions,
+  blogPosts: () => blogPosts,
+  contactFormSchema: () => contactFormSchema,
+  contacts: () => contacts,
+  insertBlogCommentSchema: () => insertBlogCommentSchema,
+  insertBlogPostContributionSchema: () => insertBlogPostContributionSchema,
+  insertBlogPostSchema: () => insertBlogPostSchema,
+  insertContactSchema: () => insertContactSchema,
+  insertProjectSchema: () => insertProjectSchema,
+  insertResumeRequestSchema: () => insertResumeRequestSchema,
+  insertSkillEndorsementSchema: () => insertSkillEndorsementSchema,
+  insertSkillSchema: () => insertSkillSchema,
+  insertUserSchema: () => insertUserSchema,
+  projects: () => projects,
+  resumeRequestFormSchema: () => resumeRequestFormSchema,
+  resumeRequests: () => resumeRequests,
+  skillEndorsementFormSchema: () => skillEndorsementFormSchema,
+  skillEndorsements: () => skillEndorsements,
+  skills: () => skills,
+  users: () => users
+});
+import { pgTable, text, serial, integer, boolean, json, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+var users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email"),
+  isAdmin: boolean("is_admin").default(false),
+  role: text("role").default("user").notNull(),
+  full_name: text("full_name"),
+  // GitHub OAuth related fields
+  githubId: text("github_id"),
+  githubUsername: text("github_username"),
+  avatarUrl: text("avatar_url"),
+  created_at: timestamp("created_at").defaultNow()
+});
+var insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+  email: true,
+  isAdmin: true,
+  role: true,
+  full_name: true,
+  githubId: true,
+  githubUsername: true,
+  avatarUrl: true,
+  created_at: true
+});
+var projects = pgTable("projects", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  image: text("image").notNull(),
+  tags: json("tags").$type().notNull(),
+  category: text("category").notNull(),
+  githubUrl: text("github_url"),
+  liveUrl: text("live_url"),
+  details: text("details"),
+  demoType: text("demo_type"),
+  // Types: iframe, video, github, custom
+  demoUrl: text("demo_url"),
+  // URL for direct embed/iframe
+  demoConfig: json("demo_config").$type(),
+  repoOwner: text("repo_owner"),
+  // GitHub username/organization
+  repoName: text("repo_name"),
+  // Repository name
+  techStack: json("tech_stack").$type()
+});
+var insertProjectSchema = createInsertSchema(projects);
+var skills = pgTable("skills", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  percentage: integer("percentage").notNull(),
+  endorsement_count: integer("endorsement_count").default(0).notNull()
+});
+var skillEndorsements = pgTable("skill_endorsements", {
+  id: serial("id").primaryKey(),
+  skillId: integer("skill_id").references(() => skills.id).notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  comment: text("comment"),
+  rating: integer("rating").default(5).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  ipAddress: text("ip_address")
+});
+var insertSkillSchema = createInsertSchema(skills);
+var insertSkillEndorsementSchema = createInsertSchema(skillEndorsements).omit({
+  id: true,
+  createdAt: true,
+  ipAddress: true
+});
+var skillEndorsementFormSchema = z.object({
+  skillId: z.number().positive("Skill ID is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email address is required"),
+  comment: z.string().optional(),
+  rating: z.number().min(1).max(5).default(5)
+});
+var contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  createdAt: text("created_at").notNull()
+});
+var insertContactSchema = createInsertSchema(contacts).omit({
+  id: true,
+  createdAt: true
+});
+var contactFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters")
+});
+var resumeRequests = pgTable("resume_requests", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  purpose: text("purpose").notNull(),
+  message: text("message"),
+  createdAt: text("created_at").notNull(),
+  accessToken: text("access_token").notNull().unique(),
+  accessed: boolean("accessed").default(false),
+  accessedAt: timestamp("accessed_at")
+});
+var insertResumeRequestSchema = createInsertSchema(resumeRequests).omit({
+  id: true,
+  createdAt: true,
+  accessToken: true,
+  accessed: true,
+  accessedAt: true
+});
+var resumeRequestFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  company: z.string().optional(),
+  purpose: z.string().min(1, "Purpose is required"),
+  message: z.string().optional()
+});
+var blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  content: text("content").notNull(),
+  coverImage: text("cover_image").notNull(),
+  tags: json("tags").$type().notNull(),
+  publishedAt: timestamp("published_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  authorId: integer("author_id").references(() => users.id),
+  isPublished: boolean("is_published").notNull().default(false)
+});
+var blogPostContributions = pgTable("blog_post_contributions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  content: text("content").notNull(),
+  coverImage: text("cover_image").notNull(),
+  tags: json("tags").$type().notNull(),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  ipAddress: text("ip_address").notNull(),
+  isReviewed: boolean("is_reviewed").notNull().default(false),
+  isApproved: boolean("is_approved").notNull().default(false),
+  isSpam: boolean("is_spam").notNull().default(false),
+  reviewNotes: text("review_notes")
+});
+var blogComments = pgTable("blog_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => blogPosts.id).notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  ipAddress: text("ip_address").default("0.0.0.0"),
+  isApproved: boolean("is_approved").notNull().default(false),
+  isSpam: boolean("is_spam").notNull().default(false),
+  captchaToken: text("captcha_token")
+});
+var insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  authorId: true,
+  isPublished: true
+});
+var insertBlogCommentSchema = createInsertSchema(blogComments).omit({
+  id: true,
+  isApproved: true,
+  isSpam: true
+});
+var insertBlogPostContributionSchema = createInsertSchema(blogPostContributions).omit({
+  id: true,
+  createdAt: true,
+  ipAddress: true,
+  isReviewed: true,
+  isApproved: true,
+  isSpam: true,
+  reviewNotes: true
+});
+var blogCommentFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  content: z.string().min(3, "Comment must be at least 3 characters"),
+  captchaToken: z.string().min(1, "CAPTCHA verification is required")
+});
+var blogPostContributionFormSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title cannot exceed 100 characters"),
+  summary: z.string().min(20, "Summary must be at least 20 characters").max(500, "Summary cannot exceed 500 characters"),
+  content: z.string().min(200, "Content must be at least 200 characters"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  authorName: z.string().min(2, "Author name is required"),
+  authorEmail: z.string().email("Valid email address is required"),
+  coverImage: z.string().min(1, "Cover image is required"),
+  captchaToken: z.string().min(1, "CAPTCHA verification is required")
+});
+
+// server/db.ts
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
+neonConfig.webSocketConstructor = ws;
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?"
+  );
+}
+var pool = new Pool({ connectionString: process.env.DATABASE_URL });
+var db = drizzle({ client: pool, schema: schema_exports });
+
+// server/storage.ts
+import { eq, desc, and } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import * as crypto from "crypto";
+var DatabaseStorage = class {
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+  }
+  // User operations
+  async getUser(id) {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || void 0;
+  }
+  async getUserByUsername(username) {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || void 0;
+  }
+  async createUser(insertUser) {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  // Project operations
+  async getProjects() {
+    return db.select().from(projects);
+  }
+  async getProjectById(id) {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || void 0;
+  }
+  async createProject(project) {
+    const [insertedProject] = await db.insert(projects).values(project).returning();
+    return insertedProject;
+  }
+  // Skill operations
+  async getSkills() {
+    return db.select().from(skills);
+  }
+  async getSkillsByCategory(category) {
+    return db.select().from(skills).where(eq(skills.category, category));
+  }
+  async createSkill(skill) {
+    const [insertedSkill] = await db.insert(skills).values(skill).returning();
+    return insertedSkill;
+  }
+  // Skill endorsement operations
+  async getSkillEndorsements(skillId) {
+    return db.select().from(skillEndorsements).where(eq(skillEndorsements.skillId, skillId)).orderBy(desc(skillEndorsements.createdAt));
+  }
+  async createSkillEndorsement(endorsement, ipAddress) {
+    const now = /* @__PURE__ */ new Date();
+    const [insertedEndorsement] = await db.insert(skillEndorsements).values({
+      ...endorsement,
+      ipAddress,
+      createdAt: now
+    }).returning();
+    return insertedEndorsement;
+  }
+  async incrementSkillEndorsementCount(skillId) {
+    const [currentSkill] = await db.select().from(skills).where(eq(skills.id, skillId));
+    if (!currentSkill) {
+      throw new Error(`Skill with ID ${skillId} not found`);
+    }
+    const [updatedSkill] = await db.update(skills).set({
+      endorsement_count: (currentSkill.endorsement_count || 0) + 1
+    }).where(eq(skills.id, skillId)).returning();
+    return updatedSkill;
+  }
+  // Contact operations
+  async createContact(contact) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const [insertedContact] = await db.insert(contacts).values({ ...contact, createdAt: now }).returning();
+    return insertedContact;
+  }
+  // Resume request operations
+  async createResumeRequest(request) {
+    const now = /* @__PURE__ */ new Date();
+    const accessToken = crypto.randomUUID().replace(/-/g, "");
+    const [insertedRequest] = await db.insert(resumeRequests).values({
+      ...request,
+      createdAt: now.toISOString(),
+      accessToken,
+      accessed: false
+    }).returning();
+    return insertedRequest;
+  }
+  async getResumeRequestByToken(token) {
+    const [request] = await db.select().from(resumeRequests).where(eq(resumeRequests.accessToken, token));
+    return request || void 0;
+  }
+  async markResumeRequestAsAccessed(id) {
+    const now = /* @__PURE__ */ new Date();
+    const [updatedRequest] = await db.update(resumeRequests).set({
+      accessed: true,
+      accessedAt: now
+    }).where(eq(resumeRequests.id, id)).returning();
+    return updatedRequest;
+  }
+  // Blog operations
+  async getBlogPosts() {
+    return db.select().from(blogPosts).orderBy(desc(blogPosts.publishedAt));
+  }
+  async getPublishedBlogPosts() {
+    return db.select().from(blogPosts).where(eq(blogPosts.isPublished, true)).orderBy(desc(blogPosts.publishedAt));
+  }
+  async getBlogPostBySlug(slug) {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug));
+    return post || void 0;
+  }
+  async getBlogPostById(id) {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+    return post || void 0;
+  }
+  async createBlogPost(post, authorId) {
+    const [insertedPost] = await db.insert(blogPosts).values({
+      ...post,
+      authorId,
+      isPublished: false
+    }).returning();
+    return insertedPost;
+  }
+  async updateBlogPost(id, post) {
+    const now = /* @__PURE__ */ new Date();
+    const [updatedPost] = await db.update(blogPosts).set({
+      ...post,
+      updatedAt: now
+    }).where(eq(blogPosts.id, id)).returning();
+    return updatedPost;
+  }
+  // Blog comment operations
+  async getCommentsByPostId(postId) {
+    return db.select().from(blogComments).where(eq(blogComments.postId, postId)).orderBy(desc(blogComments.createdAt));
+  }
+  async getApprovedCommentsByPostId(postId) {
+    return db.select().from(blogComments).where(and(
+      eq(blogComments.postId, postId),
+      eq(blogComments.isApproved, true)
+    )).orderBy(desc(blogComments.createdAt));
+  }
+  async createComment(comment, ipAddress) {
+    const now = /* @__PURE__ */ new Date();
+    const [insertedComment] = await db.insert(blogComments).values({
+      ...comment,
+      ipAddress,
+      createdAt: now,
+      isApproved: false,
+      isSpam: false
+    }).returning();
+    return insertedComment;
+  }
+  async approveComment(id) {
+    const [approvedComment] = await db.update(blogComments).set({ isApproved: true }).where(eq(blogComments.id, id)).returning();
+    return approvedComment;
+  }
+  async markCommentAsSpam(id) {
+    const [markedComment] = await db.update(blogComments).set({ isSpam: true, isApproved: false }).where(eq(blogComments.id, id)).returning();
+    return markedComment;
+  }
+  // Blog post contribution operations
+  async getBlogPostContributions(isReviewed) {
+    if (isReviewed !== void 0) {
+      return db.select().from(blogPostContributions).where(eq(blogPostContributions.isReviewed, isReviewed)).orderBy(desc(blogPostContributions.createdAt));
+    }
+    return db.select().from(blogPostContributions).orderBy(desc(blogPostContributions.createdAt));
+  }
+  async getBlogPostContributionById(id) {
+    const [contribution] = await db.select().from(blogPostContributions).where(eq(blogPostContributions.id, id));
+    return contribution || void 0;
+  }
+  async createBlogPostContribution(contribution, ipAddress) {
+    const now = /* @__PURE__ */ new Date();
+    const [insertedContribution] = await db.insert(blogPostContributions).values({
+      ...contribution,
+      ipAddress,
+      createdAt: now,
+      isReviewed: false,
+      isApproved: false,
+      isSpam: false
+    }).returning();
+    return insertedContribution;
+  }
+  async reviewBlogPostContribution(id, approve, notes) {
+    const [reviewedContribution] = await db.update(blogPostContributions).set({
+      isReviewed: true,
+      isApproved: approve,
+      reviewNotes: notes || null
+    }).where(eq(blogPostContributions.id, id)).returning();
+    return reviewedContribution;
+  }
+  async markBlogPostContributionAsSpam(id) {
+    const [markedContribution] = await db.update(blogPostContributions).set({
+      isSpam: true,
+      isReviewed: true,
+      isApproved: false
+    }).where(eq(blogPostContributions.id, id)).returning();
+    return markedContribution;
+  }
+};
+var storage = new DatabaseStorage();
+
+// server/controllers/portfolioController.ts
+import { ZodError } from "zod";
+
+// server/services/githubService.ts
+import { Octokit } from "octokit";
+import fs from "fs";
+import path from "path";
+var githubToken = process.env.GITHUB_TOKEN;
+var isValidToken = !!githubToken && githubToken.length >= 35;
+var octokit = new Octokit({
+  auth: isValidToken ? githubToken : void 0
+});
+if (!isValidToken) {
+  console.warn("Warning: No valid GitHub token found. Using unauthenticated requests which have lower rate limits.");
+}
+var GITHUB_USERNAME = process.env.GITHUB_USERNAME || "Mrguru2024";
+var CACHE_DIR = path.join(process.cwd(), ".cache");
+var SKILLS_CACHE_FILE = path.join(CACHE_DIR, "github-skills-cache.json");
+var REPO_CACHE_FILE = path.join(CACHE_DIR, "github-repos-cache.json");
+var CACHE_TTL = 60 * 60 * 1e3;
+try {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+} catch (error) {
+  console.warn("Warning: Could not create cache directory:", error);
+}
+var githubService = {
+  /**
+   * Check if cached data exists and is still valid
+   * @param cacheFile Path to the cache file
+   * @returns True if cache exists and is valid, false otherwise
+   */
+  isCacheValid(cacheFile) {
+    try {
+      if (!fs.existsSync(cacheFile)) {
+        return false;
+      }
+      const stats = fs.statSync(cacheFile);
+      const now = (/* @__PURE__ */ new Date()).getTime();
+      const fileTime = stats.mtime.getTime();
+      return now - fileTime < CACHE_TTL;
+    } catch (error) {
+      console.warn(`Warning: Could not check cache validity for ${cacheFile}:`, error);
+      return false;
+    }
+  },
+  /**
+   * Read data from cache file
+   * @param cacheFile Path to the cache file
+   * @returns Cached data or null if not available
+   */
+  readCache(cacheFile) {
+    try {
+      if (!this.isCacheValid(cacheFile)) {
+        return null;
+      }
+      const data = fs.readFileSync(cacheFile, "utf8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.warn(`Warning: Could not read cache from ${cacheFile}:`, error);
+      return null;
+    }
+  },
+  /**
+   * Write data to cache file
+   * @param cacheFile Path to the cache file
+   * @param data Data to cache
+   */
+  writeCache(cacheFile, data) {
+    try {
+      fs.writeFileSync(cacheFile, JSON.stringify(data), "utf8");
+    } catch (error) {
+      console.warn(`Warning: Could not write cache to ${cacheFile}:`, error);
+    }
+  },
+  /**
+   * Fetch language statistics from GitHub repositories with caching
+   * This aggregates language usage across all repos
+   */
+  async fetchLanguageStats() {
+    console.log("Using GitHub token for skills data");
+    const cachedStats = this.readCache(SKILLS_CACHE_FILE);
+    if (cachedStats) {
+      console.log("Using cached GitHub skills data");
+      return cachedStats;
+    }
+    console.log("Fetching GitHub language stats...");
+    try {
+      const { data: repos } = await octokit.request("GET /users/{username}/repos", {
+        username: GITHUB_USERNAME,
+        per_page: 100,
+        sort: "updated"
+      });
+      const languageStats = {};
+      const languagePromises = repos.map(async (repo) => {
+        if (repo.fork) return;
+        try {
+          const { data: languages } = await octokit.request("GET /repos/{owner}/{repo}/languages", {
+            owner: GITHUB_USERNAME,
+            repo: repo.name
+          });
+          Object.entries(languages).forEach(([language, bytes]) => {
+            languageStats[language] = (languageStats[language] || 0) + bytes;
+          });
+        } catch (error) {
+          console.error(`Error fetching languages for ${repo.name}:`, error);
+        }
+      });
+      await Promise.all(languagePromises);
+      const totalBytes = Object.values(languageStats).reduce((sum, bytes) => sum + bytes, 0);
+      const languagePercentages = {};
+      Object.entries(languageStats).forEach(([language, bytes]) => {
+        const percentage = Math.round(bytes / totalBytes * 100);
+        languagePercentages[language] = percentage;
+      });
+      this.writeCache(SKILLS_CACHE_FILE, languagePercentages);
+      return languagePercentages;
+    } catch (error) {
+      console.error("Error fetching GitHub language stats:", error);
+      throw new Error("Failed to fetch GitHub language stats");
+    }
+  },
+  /**
+   * Map GitHub languages to skill categories
+   * @param languageStats Object with language names and percentages
+   * @returns Object with categorized skills
+   */
+  mapLanguagesToSkills(languageStats) {
+    const languageCategories = {
+      // Frontend languages
+      JavaScript: "frontend",
+      TypeScript: "frontend",
+      HTML: "frontend",
+      CSS: "frontend",
+      Vue: "frontend",
+      React: "frontend",
+      Svelte: "frontend",
+      // Backend languages
+      PHP: "backend",
+      Python: "backend",
+      Java: "backend",
+      Ruby: "backend",
+      "C#": "backend",
+      Go: "backend",
+      Rust: "backend",
+      "C++": "backend",
+      C: "backend",
+      Kotlin: "backend",
+      Swift: "backend",
+      Perl: "backend",
+      Shell: "backend",
+      // DevOps and tools
+      Dockerfile: "devops",
+      YAML: "devops",
+      HCL: "devops",
+      PowerShell: "devops",
+      Bash: "devops"
+    };
+    if (languageStats.JavaScript) {
+      const jsPercentage = languageStats.JavaScript;
+      languageStats.JavaScript = Math.round(jsPercentage * 0.6);
+      languageStats["Node.js"] = Math.round(jsPercentage * 0.4);
+      languageCategories["Node.js"] = "backend";
+    }
+    if (languageStats.HTML && languageStats.CSS) {
+      languageStats["HTML & CSS"] = Math.round((languageStats.HTML + languageStats.CSS) / 2);
+      delete languageStats.HTML;
+      delete languageStats.CSS;
+      languageCategories["HTML & CSS"] = "frontend";
+    }
+    const categorizedSkills = {
+      frontend: [],
+      backend: [],
+      devops: []
+    };
+    Object.entries(languageStats).forEach(([language, percentage], index) => {
+      if (percentage < 5) return;
+      const category = languageCategories[language] || "devops";
+      categorizedSkills[category].push({
+        id: index + 1,
+        name: language,
+        percentage,
+        category,
+        endorsement_count: 0
+      });
+    });
+    return categorizedSkills;
+  },
+  /**
+   * Fetch repository information for a user with caching
+   */
+  async fetchRepositories() {
+    console.log("Checking for cached repository data");
+    const cachedRepos = this.readCache(REPO_CACHE_FILE);
+    if (cachedRepos) {
+      console.log("Using cached GitHub repository data");
+      return cachedRepos;
+    }
+    console.log("Fetching GitHub repositories...");
+    try {
+      const { data: repos } = await octokit.request("GET /users/{username}/repos", {
+        username: GITHUB_USERNAME,
+        per_page: 100,
+        sort: "updated"
+      });
+      const ownRepos = repos.filter((repo) => !repo.fork).sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
+      const formattedRepos = ownRepos.map((repo) => ({
+        name: repo.name,
+        description: repo.description,
+        url: repo.html_url,
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        language: repo.language,
+        updated: repo.updated_at
+      }));
+      this.writeCache(REPO_CACHE_FILE, formattedRepos);
+      return formattedRepos;
+    } catch (error) {
+      console.error("Error fetching GitHub repositories:", error);
+      if (process.env.NODE_ENV === "production") {
+        console.log("Production environment detected, using backup data if available");
+        try {
+          if (fs.existsSync(REPO_CACHE_FILE)) {
+            const staleData = fs.readFileSync(REPO_CACHE_FILE, "utf8");
+            return JSON.parse(staleData);
+          }
+        } catch (cacheError) {
+          console.error("Error reading backup repository data:", cacheError);
+        }
+      }
+      throw new Error("Failed to fetch GitHub repositories");
+    }
+  },
+  /**
+   * Get skills data with fallback for production environments
+   */
+  async getSkillsData() {
+    try {
+      const languageStats = await this.fetchLanguageStats();
+      return this.mapLanguagesToSkills(languageStats);
+    } catch (error) {
+      console.error("Error fetching GitHub skills:", error);
+      if (process.env.NODE_ENV === "production") {
+        try {
+          if (fs.existsSync(SKILLS_CACHE_FILE)) {
+            const staleData = fs.readFileSync(SKILLS_CACHE_FILE, "utf8");
+            const stats = JSON.parse(staleData);
+            return this.mapLanguagesToSkills(stats);
+          }
+        } catch (cacheError) {
+          console.error("Error reading backup skills data:", cacheError);
+        }
+        console.log("Falling back to default skills data for production");
+        return {
+          frontend: [
+            { id: 49, name: "JavaScript", percentage: 85, category: "frontend", endorsement_count: 0 },
+            { id: 50, name: "HTML & CSS", percentage: 90, category: "frontend", endorsement_count: 0 },
+            { id: 51, name: "React", percentage: 80, category: "frontend", endorsement_count: 0 },
+            { id: 52, name: "Responsive Design", percentage: 85, category: "frontend", endorsement_count: 0 }
+          ],
+          backend: [
+            { id: 53, name: "Node.js", percentage: 75, category: "backend", endorsement_count: 0 },
+            { id: 54, name: "Express", percentage: 70, category: "backend", endorsement_count: 0 },
+            { id: 55, name: "MongoDB", percentage: 65, category: "backend", endorsement_count: 0 },
+            { id: 56, name: "Java", percentage: 60, category: "backend", endorsement_count: 0 }
+          ],
+          devops: [
+            { id: 57, name: "Git/GitHub", percentage: 85, category: "devops", endorsement_count: 0 },
+            { id: 58, name: "Vercel", percentage: 75, category: "devops", endorsement_count: 0 },
+            { id: 59, name: "Netlify", percentage: 70, category: "devops", endorsement_count: 0 },
+            { id: 60, name: "VS Code", percentage: 90, category: "devops", endorsement_count: 0 }
+          ]
+        };
+      }
+      throw error;
+    }
+  }
+};
+
+// client/src/lib/data.ts
+var personalInfo = {
+  name: "Anthony Feaster (MrGuru.dev)",
+  title: "Full Stack Web Developer",
+  description: "Hello! I'm Anthony Feaster, also known as MrGuru.dev, an innovative entrepreneur and tech enthusiast based in Atlanta, Georgia. With a strong background in electronic repair and automotive locksmiths, I founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith industry. Currently, I'm expanding my skill set through Codenoobs WebDev Incubator. My passion lies in problem-solving and continuous learning. I thrive on creating solutions that improve customer experiences and streamline operations.",
+  education: [
+    "Codenoobs WebDev Incubator",
+    "Tech Entrepreneurship Training",
+    "Automotive Security Systems Specialist"
+  ],
+  experience: [
+    "Founder, SSI-M.E.T Repairs-KeyCode Help",
+    "Automotive Locksmith Specialist",
+    "Electronic Repair Technician"
+  ],
+  resumeUrl: "/api/resume",
+  image: "https://raw.githubusercontent.com/Mrguru2024/My-Portfolio-Website/main/assets/Assets/Photos/Copy%20of%20Web%20Designer%20Content%20Posts.jpg"
+};
+var socialLinks = [
+  {
+    platform: "GitHub",
+    url: "https://github.com/Mrguru2024",
+    icon: "github"
+  },
+  {
+    platform: "LinkedIn",
+    url: "https://www.linkedin.com/in/anthony-mrguru-feaster/",
+    icon: "linkedin"
+  },
+  {
+    platform: "Threads",
+    url: "https://www.threads.com/@therealmrguru",
+    icon: "threads"
+  },
+  {
+    platform: "MrGuru.dev",
+    url: "https://mrguru.dev",
+    icon: "globe"
+  },
+  {
+    platform: "Email",
+    url: "mailto:5epmgllc@gmail.com",
+    icon: "mail"
+  }
+];
+var contactInfo = {
+  email: "5epmgllc@gmail.com",
+  location: "Atlanta, Georgia",
+  phone: "+1 (678) 506-1143"
+};
+var frontendSkills = [
+  { name: "JavaScript", percentage: 85 },
+  { name: "HTML & CSS", percentage: 90 },
+  { name: "React", percentage: 80 },
+  { name: "Responsive Design", percentage: 85 }
+];
+var backendSkills = [
+  { name: "Node.js", percentage: 75 },
+  { name: "Express", percentage: 70 },
+  { name: "MongoDB", percentage: 65 },
+  { name: "Java", percentage: 60 }
+];
+var devopsSkills = [
+  { name: "Git/GitHub", percentage: 85 },
+  { name: "Vercel", percentage: 75 },
+  { name: "Netlify", percentage: 70 },
+  { name: "VS Code", percentage: 90 }
+];
+var additionalSkills = [
+  "Problem Solving",
+  "Customer Service",
+  "Automotive Security",
+  "Electronic Repair",
+  "Entrepreneurship",
+  "Business Development",
+  "Technical Documentation",
+  "Team Leadership"
+];
+var projects2 = [
+  {
+    id: "keycode-help",
+    title: "Keycode Help",
+    description: "A SaaS business that provides VIN to KeyCode services and online resources for locksmiths.",
+    image: "https://images.unsplash.com/photo-1586864387789-628af9feed72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["SaaS", "Automotive", "Security"],
+    category: "business",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://keycodehelp.com",
+    details: "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
+    demoType: "iframe",
+    demoUrl: "https://keycodehelp.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
+  },
+  {
+    id: "portfolio-website",
+    title: "Portfolio Website",
+    description: "A responsive portfolio website showcasing my skills, projects and professional information.",
+    image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["HTML", "CSS", "JavaScript", "Responsive"],
+    category: "web",
+    githubUrl: "https://github.com/Mrguru2024/My-Portfolio-Website",
+    liveUrl: "https://mrguru2024.github.io/My-Portfolio-Website/",
+    details: "A personal portfolio website built using HTML, CSS, and JavaScript to showcase my projects, skills, and professional experience. The site features responsive design, theme customization, and interactive elements.",
+    demoType: "github",
+    repoOwner: "Mrguru2024",
+    repoName: "My-Portfolio-Website",
+    demoConfig: {
+      showCode: true,
+      githubBranch: "main"
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "Bootstrap"]
+  },
+  {
+    id: "stackzen",
+    title: "Stackzen",
+    description: "An intelligent income and expense tracking platform with data visualization and financial insights.",
+    image: "https://images.unsplash.com/photo-1600132806608-231446b2e7af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React", "Vite", "Node.js", "Express", "PostgreSQL"],
+    category: "web",
+    githubUrl: "https://github.com/Mrguru2024/Stackzen",
+    liveUrl: "https://income-intelligence-mytech7.replit.app/",
+    details: "Stackzen is an advanced financial management platform designed to help users track income, expenses, and financial goals. It features interactive data visualizations, budget planning tools, and personalized insights to improve financial health.",
+    demoType: "iframe",
+    demoUrl: "https://income-intelligence-mytech7.replit.app/",
+    demoConfig: {
+      width: "100%",
+      height: "650px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React", "Vite", "TailwindCSS", "Express", "PostgreSQL", "Chart.js"]
+  },
+  {
+    id: "inventory-management",
+    title: "Inventory Management System",
+    description: "A comprehensive inventory management solution for small businesses.",
+    image: "https://images.unsplash.com/photo-1579621970590-9d624316781b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React", "Firebase", "Cloud Functions"],
+    category: "business",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://keycodehelp.com",
+    details: "A complete inventory management system designed for small businesses. Features include product tracking, barcode scanning, sales reporting, and low stock alerts.",
+    demoType: "iframe",
+    demoUrl: "https://keycodehelp.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React", "Firebase", "Cloud Functions", "Material UI"]
+  },
+  {
+    id: "gatherly",
+    title: "Gatherly",
+    description: "A social event planning and coordination application.",
+    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["React Native", "Firebase", "Google Maps API"],
+    category: "web",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://ssi-met-repairs.com",
+    details: "Gatherly is a social event planning application that helps users organize, discover, and RSVP to events. The app includes features like location mapping, real-time updates, and group messaging.",
+    demoType: "iframe",
+    demoUrl: "https://ssi-met-repairs.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["React Native", "Expo", "Firebase", "Google Maps API"]
+  },
+  {
+    id: "ssi-met-repairs",
+    title: "SSI-M.E.T Repairs",
+    description: "Business website for electronic repair and automotive locksmith services.",
+    image: "https://images.unsplash.com/photo-1635262945219-33df0944316a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["Business", "Service", "Automotive"],
+    category: "business",
+    liveUrl: "https://ssi-met-repairs.com",
+    details: "SSI-M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials.",
+    demoType: "iframe",
+    demoUrl: "https://ssi-met-repairs.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true
+    },
+    techStack: ["HTML", "CSS", "JavaScript", "WordPress"]
+  },
+  {
+    id: "web-development-services",
+    title: "Web Development Services",
+    description: "Professional web development and design services for businesses and individuals.",
+    image: "https://images.unsplash.com/photo-1559028012-481c04fa702d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    tags: ["Web Development", "Design", "Business"],
+    category: "service",
+    githubUrl: "https://github.com/Mrguru2024",
+    liveUrl: "https://forms.gle/vu11jF1nixkoRxH86",
+    details: "Professional web development and design services tailored for businesses and individuals. Services include website creation, redesign, maintenance, and custom web application development to meet client needs.",
+    demoType: "custom",
+    techStack: ["React", "Next.js", "Tailwind CSS", "Node.js"]
+  }
+];
+
+// server/controllers/portfolioController.ts
+var convertToServerSkill = (clientSkill, category) => ({
+  id: clientSkill.id || 0,
+  name: clientSkill.name,
+  percentage: clientSkill.percentage,
+  category: clientSkill.category || category,
+  endorsement_count: clientSkill.endorsement_count || 0
+});
+var frontendSkills2 = frontendSkills.map((skill) => convertToServerSkill(skill, "frontend"));
+var backendSkills2 = backendSkills.map((skill) => convertToServerSkill(skill, "backend"));
+var devopsSkills2 = devopsSkills.map((skill) => convertToServerSkill(skill, "devops"));
+var cachedSkills = null;
+var CACHE_DURATION = 1e3 * 60 * 60;
+var portfolioController = {
+  // Skill endorsement endpoints
+  getSkillEndorsements: async (req, res) => {
+    try {
+      const { skillId } = req.query;
+      if (!skillId || isNaN(Number(skillId))) {
+        return res.status(400).json({ error: "Valid skillId parameter is required" });
+      }
+      const endorsements = await storage.getSkillEndorsements(Number(skillId));
+      res.json(endorsements);
+    } catch (error) {
+      console.error("Error fetching skill endorsements:", error);
+      res.status(500).json({ error: "Failed to fetch skill endorsements" });
+    }
+  },
+  createSkillEndorsement: async (req, res) => {
+    try {
+      const validatedData = skillEndorsementFormSchema.parse(req.body);
+      const forwardedFor = req.headers["x-forwarded-for"];
+      const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : req.ip || "127.0.0.1";
+      const endorsementData = {
+        skillId: validatedData.skillId,
+        name: validatedData.name,
+        email: validatedData.email,
+        comment: validatedData.comment || null,
+        rating: validatedData.rating
+      };
+      const newEndorsement = await storage.createSkillEndorsement(endorsementData, ipAddress);
+      await storage.incrementSkillEndorsementCount(validatedData.skillId);
+      res.status(201).json(newEndorsement);
+    } catch (error) {
+      console.error("Error creating skill endorsement:", error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: error.errors
+        });
+      }
+      res.status(500).json({ error: "Failed to create skill endorsement" });
+    }
+  },
+  getProjects: async (req, res) => {
+    try {
+      const projects3 = await storage.getProjects();
+      if (!projects3 || projects3.length === 0) {
+        return res.json(projects2);
+      }
+      res.json(projects3);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ message: "Error fetching projects" });
+    }
+  },
+  getProjectById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        const staticProject = projects2.find((p) => p.id === id);
+        if (staticProject) {
+          return res.json(staticProject);
+        }
+        return res.status(404).json({ message: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).json({ message: "Error fetching project" });
+    }
+  },
+  // Updated method to fetch GitHub skills using enhanced service
+  fetchGitHubSkills: async () => {
+    try {
+      return await githubService.getSkillsData();
+    } catch (error) {
+      console.error("Error fetching GitHub skills:", error);
+      if (cachedSkills) {
+        console.log("Falling back to cached GitHub skills data due to error");
+        return cachedSkills;
+      }
+      return {
+        frontend: frontendSkills2,
+        backend: backendSkills2,
+        devops: devopsSkills2
+      };
+    }
+  },
+  getSkills: async (req, res) => {
+    try {
+      const allSkills = await storage.getSkills();
+      if (allSkills && allSkills.length > 0) {
+        const frontend = allSkills.filter((skill) => skill.category === "frontend");
+        const backend = allSkills.filter((skill) => skill.category === "backend");
+        const devops = allSkills.filter((skill) => skill.category === "devops");
+        return res.json({
+          frontend,
+          backend,
+          devops,
+          additional: additionalSkills
+        });
+      }
+      try {
+        if (process.env.GITHUB_TOKEN) {
+          console.log("No skills in database. Using GitHub token for skills data.");
+          const githubSkills = await portfolioController.fetchGitHubSkills();
+          await portfolioController.syncGitHubSkillsWithDatabase(githubSkills);
+          return res.json({
+            frontend: githubSkills.frontend,
+            backend: githubSkills.backend,
+            devops: githubSkills.devops,
+            additional: additionalSkills
+          });
+        } else {
+          console.log("No GitHub token found, using static skills");
+        }
+      } catch (githubError) {
+        console.error("Error fetching GitHub skills:", githubError);
+      }
+      return res.json({
+        frontend: frontendSkills2,
+        backend: backendSkills2,
+        devops: devopsSkills2,
+        additional: additionalSkills
+      });
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      res.status(500).json({ message: "Error fetching skills" });
+    }
+  },
+  // Sync GitHub skills with the database to persist endorsements
+  syncGitHubSkillsWithDatabase: async (githubSkills) => {
+    try {
+      const dbSkills = await storage.getSkills();
+      const dbSkillsMap = /* @__PURE__ */ new Map();
+      dbSkills.forEach((skill) => {
+        dbSkillsMap.set(skill.name, skill);
+      });
+      for (const category of ["frontend", "backend", "devops"]) {
+        for (const githubSkill of githubSkills[category]) {
+          const existingSkill = dbSkillsMap.get(githubSkill.name);
+          if (existingSkill) {
+            githubSkill.endorsement_count = existingSkill.endorsement_count;
+            githubSkill.id = existingSkill.id;
+          } else {
+            githubSkill.endorsement_count = 0;
+          }
+        }
+      }
+      return githubSkills;
+    } catch (error) {
+      console.error("Error syncing GitHub skills with database:", error);
+      throw error;
+    }
+  },
+  getPersonalInfo: (req, res) => {
+    try {
+      res.json({
+        ...personalInfo,
+        social: socialLinks
+      });
+    } catch (error) {
+      console.error("Error fetching personal info:", error);
+      res.status(500).json({ message: "Error fetching personal info" });
+    }
+  },
+  getContactInfo: (req, res) => {
+    try {
+      res.json({
+        ...contactInfo,
+        social: socialLinks
+      });
+    } catch (error) {
+      console.error("Error fetching contact info:", error);
+      res.status(500).json({ message: "Error fetching contact info" });
+    }
+  },
+  submitContactForm: async (req, res) => {
+    try {
+      const validatedData = contactFormSchema.parse(req.body);
+      const contactData = {
+        name: validatedData.name,
+        email: validatedData.email,
+        subject: validatedData.subject,
+        message: validatedData.message
+      };
+      const savedContact = await storage.createContact(contactData);
+      res.status(200).json({
+        message: "Contact form submitted successfully",
+        data: savedContact
+      });
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors
+        });
+      }
+      res.status(500).json({ message: "Error submitting contact form" });
+    }
+  },
+  requestResume: async (req, res) => {
+    try {
+      const validatedData = resumeRequestFormSchema.parse(req.body);
+      const requestData = {
+        name: validatedData.name,
+        email: validatedData.email,
+        company: validatedData.company || "",
+        purpose: validatedData.purpose,
+        message: validatedData.message || ""
+      };
+      const savedRequest = await storage.createResumeRequest(requestData);
+      res.status(200).json({
+        message: "Resume request submitted successfully",
+        accessToken: savedRequest.accessToken
+      });
+    } catch (error) {
+      console.error("Error submitting resume request:", error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors
+        });
+      }
+      res.status(500).json({ message: "Error submitting resume request" });
+    }
+  },
+  downloadResume: async (req, res) => {
+    try {
+      const { token } = req.params;
+      if (!token) {
+        return res.status(400).json({ message: "Access token is required" });
+      }
+      const request = await storage.getResumeRequestByToken(token);
+      if (!request) {
+        return res.status(404).json({ message: "Invalid access token" });
+      }
+      await storage.markResumeRequestAsAccessed(request.id);
+      res.json({
+        message: "Resume access granted",
+        resumeUrl: personalInfo.resumeUrl,
+        name: request.name
+      });
+    } catch (error) {
+      console.error("Error downloading resume:", error);
+      res.status(500).json({ message: "Error downloading resume" });
+    }
+  }
+};
+
+// server/controllers/blogController.ts
+import { eq as eq2, desc as desc2 } from "drizzle-orm";
+import { z as z2 } from "zod";
+var blogController = {
+  // Get all published blog posts
+  getBlogPosts: async (_req, res) => {
+    try {
+      const posts = await storage.getPublishedBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  },
+  // Get single blog post by slug
+  getBlogPostBySlug: async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const post = await storage.getBlogPostBySlug(slug);
+      if (!post) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      if (!post.isPublished) {
+        return res.status(403).json({ error: "This post is not published yet" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ error: "Failed to fetch blog post" });
+    }
+  },
+  // Create a new blog post (requires authentication)
+  createBlogPost: async (req, res) => {
+    try {
+      const authorId = 1;
+      const validatedData = insertBlogPostSchema.parse(req.body);
+      const now = /* @__PURE__ */ new Date();
+      const post = await storage.createBlogPost({
+        ...validatedData,
+        publishedAt: now,
+        updatedAt: now
+      }, authorId);
+      res.status(201).json(post);
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({
+          error: "Invalid blog post data",
+          details: error.errors
+        });
+      }
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ error: "Failed to create blog post" });
+    }
+  },
+  // Get comments for a blog post
+  getPostComments: async (req, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: "Invalid post ID" });
+      }
+      const comments = await storage.getApprovedCommentsByPostId(postId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  },
+  // Add a comment to a blog post
+  addComment: async (req, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      if (isNaN(postId)) {
+        return res.status(400).json({ error: "Invalid post ID" });
+      }
+      const post = await storage.getBlogPostById(postId);
+      if (!post) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      const validatedData = blogCommentFormSchema.parse(req.body);
+      const ipAddress = req.ip || req.socket.remoteAddress || "0.0.0.0";
+      const comment = await storage.createComment({
+        postId,
+        name: validatedData.name,
+        email: validatedData.email,
+        content: validatedData.content,
+        createdAt: /* @__PURE__ */ new Date(),
+        captchaToken: validatedData.captchaToken
+      }, ipAddress);
+      res.status(201).json({
+        ...comment,
+        message: "Your comment has been submitted and is awaiting moderation"
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({
+          error: "Invalid comment data",
+          details: error.errors
+        });
+      }
+      console.error("Error adding comment:", error);
+      res.status(500).json({ error: "Failed to add comment" });
+    }
+  },
+  // Get pending comments for moderation (admin only)
+  getPendingComments: async (req, res) => {
+    try {
+      const postId = req.params.postId ? parseInt(req.params.postId) : void 0;
+      const comments = postId ? await storage.getCommentsByPostId(postId) : await db.select().from(blogComments).where(eq2(blogComments.isApproved, false)).orderBy(desc2(blogComments.createdAt));
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching pending comments:", error);
+      res.status(500).json({ error: "Failed to fetch pending comments" });
+    }
+  },
+  // Approve a comment (admin only)
+  approveComment: async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.commentId);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      const comment = await storage.approveComment(commentId);
+      res.json({ message: "Comment approved successfully", comment });
+    } catch (error) {
+      console.error("Error approving comment:", error);
+      res.status(500).json({ error: "Failed to approve comment" });
+    }
+  },
+  // Mark a comment as spam (admin only)
+  markCommentAsSpam: async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.commentId);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+      const comment = await storage.markCommentAsSpam(commentId);
+      res.json({ message: "Comment marked as spam", comment });
+    } catch (error) {
+      console.error("Error marking comment as spam:", error);
+      res.status(500).json({ error: "Failed to mark comment as spam" });
+    }
+  },
+  // Submit a blog post contribution (public)
+  submitBlogPostContribution: async (req, res) => {
+    try {
+      const validatedData = blogPostContributionFormSchema.parse(req.body);
+      const ipAddress = req.ip || req.socket.remoteAddress || "0.0.0.0";
+      const contribution = await storage.createBlogPostContribution({
+        title: validatedData.title,
+        summary: validatedData.summary,
+        content: validatedData.content,
+        coverImage: validatedData.coverImage,
+        tags: validatedData.tags,
+        authorName: validatedData.authorName,
+        authorEmail: validatedData.authorEmail
+      }, ipAddress);
+      res.status(201).json({
+        ...contribution,
+        message: "Your blog post contribution has been submitted and is awaiting review"
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({
+          error: "Invalid blog post contribution data",
+          details: error.errors
+        });
+      }
+      console.error("Error submitting blog post contribution:", error);
+      res.status(500).json({ error: "Failed to submit blog post contribution" });
+    }
+  },
+  // Get pending blog post contributions (admin only)
+  getPendingContributions: async (_req, res) => {
+    try {
+      const contributions = await storage.getBlogPostContributions(false);
+      res.json(contributions);
+    } catch (error) {
+      console.error("Error fetching pending blog post contributions:", error);
+      res.status(500).json({ error: "Failed to fetch pending blog post contributions" });
+    }
+  },
+  // Review a blog post contribution (admin only)
+  reviewBlogPostContribution: async (req, res) => {
+    try {
+      const contributionId = parseInt(req.params.contributionId);
+      if (isNaN(contributionId)) {
+        return res.status(400).json({ error: "Invalid contribution ID" });
+      }
+      const { approve, notes } = req.body;
+      if (typeof approve !== "boolean") {
+        return res.status(400).json({ error: "Approval status is required" });
+      }
+      const contribution = await storage.reviewBlogPostContribution(contributionId, approve, notes);
+      if (approve) {
+        const authorId = 1;
+        const now = /* @__PURE__ */ new Date();
+        const slug = contribution.title.toLowerCase().replace(/[^\w\s]/gi, "").replace(/\s+/g, "-");
+        await storage.createBlogPost({
+          title: contribution.title,
+          slug,
+          summary: contribution.summary,
+          content: contribution.content,
+          coverImage: contribution.coverImage,
+          tags: contribution.tags,
+          publishedAt: now,
+          updatedAt: now
+        }, authorId);
+      }
+      res.json({
+        message: approve ? "Contribution approved and published" : "Contribution rejected",
+        contribution
+      });
+    } catch (error) {
+      console.error("Error reviewing blog post contribution:", error);
+      res.status(500).json({ error: "Failed to review blog post contribution" });
+    }
+  },
+  // Mark a blog post contribution as spam (admin only)
+  markContributionAsSpam: async (req, res) => {
+    try {
+      const contributionId = parseInt(req.params.contributionId);
+      if (isNaN(contributionId)) {
+        return res.status(400).json({ error: "Invalid contribution ID" });
+      }
+      const contribution = await storage.markBlogPostContributionAsSpam(contributionId);
+      res.json({ message: "Contribution marked as spam", contribution });
+    } catch (error) {
+      console.error("Error marking contribution as spam:", error);
+      res.status(500).json({ error: "Failed to mark contribution as spam" });
+    }
+  }
+};
+
+// server/controllers/uploadController.ts
+import multer from "multer";
+import path4 from "path";
+import fs3 from "fs";
+import { v4 as uuidv4 } from "uuid";
+
+// server/vite.ts
+import express from "express";
+import fs2 from "fs";
+import path3 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path2 from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default = defineConfig({
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+      await import("@replit/vite-plugin-cartographer").then(
+        (m) => m.cartographer()
+      )
+    ] : []
+  ],
+  resolve: {
+    alias: {
+      "@": path2.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path2.resolve(import.meta.dirname, "shared"),
+      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  root: path2.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path2.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  }
+});
+
+// server/vite.ts
+import { nanoid } from "nanoid";
+var viteLogger = createLogger();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path3.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path3.resolve(import.meta.dirname, "public");
+  if (!fs2.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path3.resolve(distPath, "index.html"));
+  });
+}
+
+// server/controllers/uploadController.ts
+var storage2 = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const uploadDir = path4.join(process.cwd(), "uploads");
+    if (!fs3.existsSync(uploadDir)) {
+      fs3.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const fileExt = path4.extname(file.originalname);
+    const fileName = `${uuidv4()}${fileExt}`;
+    cb(null, fileName);
+  }
+});
+var fileFilter = (req, file, cb) => {
+  const imageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const videoTypes = ["video/mp4", "video/webm", "video/ogg"];
+  const acceptedTypes = [...imageTypes, ...videoTypes];
+  if (acceptedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type not supported. Supported types: ${acceptedTypes.join(", ")}`));
+  }
+};
+var upload = multer({
+  storage: storage2,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+    // 10MB file size limit
+  },
+  fileFilter
+}).single("media");
+var uploadController = {
+  uploadMedia: (req, res) => {
+    upload(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+              error: "File too large. Maximum file size is 10MB."
+            });
+          }
+          return res.status(400).json({ error: err.message });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded." });
+      }
+      const isImage = req.file.mimetype.startsWith("image/");
+      const isVideo = req.file.mimetype.startsWith("video/");
+      const fileType = isImage ? "image" : isVideo ? "video" : "file";
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+      log(`Uploaded ${fileType}: ${fileUrl}`, "upload");
+      return res.status(200).json({
+        message: `${fileType} uploaded successfully`,
+        url: fileUrl,
+        filename: req.file.filename,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+    });
+  },
+  // Method to serve the uploaded files
+  serveMedia: (req, res) => {
+    const fileName = req.params.filename;
+    const filePath = path4.join(process.cwd(), "uploads", fileName);
+    if (!fs3.existsSync(filePath)) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    res.sendFile(filePath);
+  }
+};
+
+// server/auth.ts
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GitHubStrategy } from "passport-github2";
+import session2 from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+var scryptAsync = promisify(scrypt);
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${buf.toString("hex")}.${salt}`;
+}
+async function comparePasswords(supplied, stored) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = await scryptAsync(supplied, salt, 64);
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+function setupAuth(app2) {
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET || "mrguru-portfolio-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1e3,
+      // 30 days
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
+    }
+  };
+  app2.set("trust proxy", 1);
+  app2.use(session2(sessionSettings));
+  app2.use(passport.initialize());
+  app2.use(passport.session());
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !await comparePasswords(password, user.password)) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    })
+  );
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    passport.use(
+      new GitHubStrategy(
+        {
+          clientID: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          callbackURL: `https://workspace.mytech7.repl.co/api/auth/github/callback`
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            let user = await storage.getUserByUsername(`github:${profile.id}`);
+            if (!user) {
+              user = await storage.createUser({
+                username: `github:${profile.id}`,
+                password: await hashPassword(randomBytes(16).toString("hex")),
+                // Random password since login is via GitHub
+                email: profile.emails?.[0]?.value || "",
+                isAdmin: false,
+                githubId: profile.id.toString(),
+                githubUsername: profile.username,
+                avatarUrl: profile.photos?.[0]?.value
+              });
+            }
+            return done(null, user);
+          } catch (error) {
+            return done(error);
+          }
+        }
+      )
+    );
+  } else {
+    console.warn("GitHub OAuth credentials not found. GitHub login will not be available.");
+  }
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+  passport.deserializeUser(async (id, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error) {
+      done(error, null);
+    }
+  });
+  app2.post("/api/register", async (req, res) => {
+    try {
+      const { username, email, password } = req.body;
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      const user = await storage.createUser({
+        username,
+        email,
+        password: await hashPassword(password),
+        isAdmin: false
+        // By default, new users are not admins
+      });
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error during login after registration" });
+        }
+        return res.status(201).json(user);
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Error creating user" });
+    }
+  });
+  app2.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Invalid credentials" });
+      }
+      req.login(user, (err2) => {
+        if (err2) {
+          return next(err2);
+        }
+        return res.status(200).json(user);
+      });
+    })(req, res, next);
+  });
+  app2.post("/api/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error during logout" });
+      }
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  });
+  app2.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    res.json(req.user);
+  });
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    app2.get("/api/auth/github", passport.authenticate("github", { scope: ["user:email"] }));
+    app2.get(
+      "/api/auth/github/callback",
+      passport.authenticate("github", {
+        failureRedirect: "/auth"
+      }),
+      (req, res) => {
+        console.log("GitHub authentication successful");
+        res.redirect("/");
+      }
+    );
+  }
+}
+
+// server/routes.ts
+function isAdmin(req, res, next) {
+  if (req.isAuthenticated() && req.user.isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Admin access required" });
+}
+async function registerRoutes(app2) {
+  setupAuth(app2);
+  app2.get("/api/projects", portfolioController.getProjects);
+  app2.get("/api/projects/:id", portfolioController.getProjectById);
+  app2.get("/api/skills", portfolioController.getSkills);
+  app2.get("/api/info", portfolioController.getPersonalInfo);
+  app2.get("/api/contact", portfolioController.getContactInfo);
+  app2.post("/api/contact", portfolioController.submitContactForm);
+  app2.get("/api/skill-endorsements", portfolioController.getSkillEndorsements);
+  app2.post("/api/skill-endorsements", portfolioController.createSkillEndorsement);
+  app2.post("/api/resume/request", portfolioController.requestResume);
+  app2.get("/api/resume/download/:token", portfolioController.downloadResume);
+  app2.get("/api/blog", blogController.getBlogPosts);
+  app2.get("/api/blog/post/:postId/comments", blogController.getPostComments);
+  app2.post("/api/blog/post/:postId/comments", blogController.addComment);
+  app2.get("/api/blog/:slug", blogController.getBlogPostBySlug);
+  app2.post("/api/blog/contributions", blogController.submitBlogPostContribution);
+  app2.post("/api/blog", isAdmin, blogController.createBlogPost);
+  app2.get("/api/blog/comments/pending", isAdmin, blogController.getPendingComments);
+  app2.get("/api/blog/comments/pending/:postId", isAdmin, blogController.getPendingComments);
+  app2.post("/api/blog/comments/:commentId/approve", isAdmin, blogController.approveComment);
+  app2.post("/api/blog/comments/:commentId/mark-spam", isAdmin, blogController.markCommentAsSpam);
+  app2.get("/api/blog/contributions/pending", isAdmin, blogController.getPendingContributions);
+  app2.post("/api/blog/contributions/:contributionId/review", isAdmin, blogController.reviewBlogPostContribution);
+  app2.post("/api/blog/contributions/:contributionId/mark-spam", isAdmin, blogController.markContributionAsSpam);
+  app2.post("/api/upload", isAdmin, uploadController.uploadMedia);
+  app2.get("/uploads/:filename", uploadController.serveMedia);
+  const httpServer = createServer(app2);
+  return httpServer;
+}
+
+// server/index.ts
+var app = express2();
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path5 = req.path;
+  let capturedJsonResponse = void 0;
+  const originalResJson = res.json;
+  res.json = function(bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path5.startsWith("/api")) {
+      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "\u2026";
+      }
+      log(logLine);
+    }
+  });
+  next();
+});
+(async () => {
+  const server = await registerRoutes(app);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const port = 5e3;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();
