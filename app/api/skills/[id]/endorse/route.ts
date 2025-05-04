@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../../../../db";
 import { skillEndorsements, skills } from "@/shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { skillEndorsementFormSchema } from "@/shared/schema";
 
 export async function POST(
@@ -9,7 +9,6 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Convert ID to number
     const skillId = parseInt(params.id);
     
     if (isNaN(skillId)) {
@@ -18,65 +17,60 @@ export async function POST(
         { status: 400 }
       );
     }
-    
-    // Check if skill exists
-    const [existingSkill] = await db
+
+    // Get skill to make sure it exists
+    const [skill] = await db
       .select()
       .from(skills)
       .where(eq(skills.id, skillId));
-    
-    if (!existingSkill) {
+      
+    if (!skill) {
       return NextResponse.json(
         { error: "Skill not found" },
         { status: 404 }
       );
     }
     
-    // Parse and validate request body
+    // Get and validate request body
     const body = await request.json();
     
-    // Validate the input data
-    const validationResult = skillEndorsementFormSchema.safeParse(body);
-    
-    if (!validationResult.success) {
+    // Validate using Zod schema
+    const result = skillEndorsementFormSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { 
-          error: "Invalid input data", 
-          details: validationResult.error.format() 
-        },
+        { error: "Invalid endorsement data", issues: result.error.format() },
         { status: 400 }
       );
     }
     
-    // Get client IP address
-    const ip = request.headers.get('x-forwarded-for') || '0.0.0.0';
-    
-    // Insert endorsement
+    // Create the endorsement
+    const now = new Date();
     const [endorsement] = await db
       .insert(skillEndorsements)
       .values({
         skillId,
         name: body.name,
         email: body.email,
-        comment: body.comment,
+        comment: body.comment || null,
         rating: body.rating,
-        ipAddress: ip,
+        createdAt: now,
+        ipAddress: request.headers.get("x-forwarded-for") || request.ip || null
       })
       .returning();
-    
-    // Update endorsement count on the skill
+      
+    // Update the endorsement count on the skill
     await db
       .update(skills)
       .set({
-        endorsement_count: existingSkill.endorsement_count + 1
+        endorsement_count: sql`${skills.endorsement_count} + 1`
       })
       .where(eq(skills.id, skillId));
     
     return NextResponse.json(endorsement, { status: 201 });
   } catch (error) {
-    console.error("Error submitting endorsement:", error);
+    console.error("Error creating endorsement:", error);
     return NextResponse.json(
-      { error: "Failed to submit endorsement" },
+      { error: "Failed to create endorsement" },
       { status: 500 }
     );
   }
