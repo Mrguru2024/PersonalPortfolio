@@ -49,7 +49,8 @@ interface SkillEndorsementModalProps {
   skill: Skill;
   isOpen: boolean;
   onClose: () => void;
-  onEndorsementSubmitted: () => void;
+  onEndorsementSubmitted?: () => void;
+  onSubmitted?: () => void;
 }
 
 export default function SkillEndorsementModal({
@@ -57,6 +58,7 @@ export default function SkillEndorsementModal({
   isOpen,
   onClose,
   onEndorsementSubmitted,
+  onSubmitted,
 }: SkillEndorsementModalProps) {
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,7 +104,8 @@ export default function SkillEndorsementModal({
       
       // Reset form after a delay
       setTimeout(() => {
-        onEndorsementSubmitted();
+        if (onEndorsementSubmitted) onEndorsementSubmitted();
+        if (onSubmitted) onSubmitted();
         form.reset();
         setRating(5);
         setIsSuccess(false);

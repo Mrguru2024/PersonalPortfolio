@@ -254,12 +254,12 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                     className="absolute left-1/2 transform -translate-x-1/2 pointer-events-auto"
                     style={{ bottom: `${milestone.position}%` }}
                   >
-                    <motion.button
+                    <motion.div
                       className={`journey-milestone flex items-center gap-3 ${
                         activeIndex === index 
                           ? 'scale-110' 
                           : 'opacity-70 hover:opacity-100'
-                      }`}
+                      } cursor-pointer`}
                       data-section={milestone.label}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
@@ -312,7 +312,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.button>
+                    </motion.div>
                   </div>
                 ))}
                 
