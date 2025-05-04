@@ -23,32 +23,47 @@ const SkillsSection = () => {
   // Fetch skills from API
   const { data: skills, isLoading, error } = useQuery({
     queryKey: ['/api/skills'],
-    queryFn: async () => {
-      const response = await fetch('/api/skills');
-      if (!response.ok) {
-        throw new Error('Failed to fetch skills');
-      }
-      const data = await response.json();
-      return data;
-    },
   });
 
   // Process skills data when it's loaded
   useEffect(() => {
-    if (skills) {
-      // If skills is an object with frontend, backend, and devops properties
-      if (skills.frontend && skills.backend && skills.devops) {
+    if (!skills) {
+      // Default empty data
+      setSkillsData({
+        frontend: [],
+        backend: [],
+        devops: []
+      });
+      return;
+    }
+
+    try {
+      // Case 1: If skills is an object with frontend, backend, and devops properties
+      if (typeof skills === 'object' && !Array.isArray(skills)) {
+        const skillsObj = skills as Record<string, any>;
+        
+        // Make sure all categories are arrays, even if missing
         setSkillsData({
-          frontend: skills.frontend || [],
-          backend: skills.backend || [],
-          devops: skills.devops || []
+          frontend: Array.isArray(skillsObj.frontend) ? skillsObj.frontend : [],
+          backend: Array.isArray(skillsObj.backend) ? skillsObj.backend : [],
+          devops: Array.isArray(skillsObj.devops) ? skillsObj.devops : []
         });
       } 
-      // If skills is an array, filter by category
+      // Case 2: If skills is an array, filter by category
       else if (Array.isArray(skills)) {
-        const frontendSkills = skills.filter((skill: Skill) => skill.category === 'frontend');
-        const backendSkills = skills.filter((skill: Skill) => skill.category === 'backend');
-        const devopsSkills = skills.filter((skill: Skill) => skill.category === 'devops');
+        // Ensure each skill has all required properties
+        const validatedSkills = skills.map(skill => ({
+          ...skill,
+          id: skill.id || 0,
+          name: skill.name || 'Unknown Skill',
+          category: skill.category || 'frontend',
+          percentage: skill.percentage || 50,
+          endorsement_count: skill.endorsement_count || 0
+        }));
+        
+        const frontendSkills = validatedSkills.filter(skill => skill.category === 'frontend');
+        const backendSkills = validatedSkills.filter(skill => skill.category === 'backend');
+        const devopsSkills = validatedSkills.filter(skill => skill.category === 'devops');
         
         setSkillsData({
           frontend: frontendSkills,
@@ -56,8 +71,26 @@ const SkillsSection = () => {
           devops: devopsSkills
         });
       }
+      // Case 3: Unexpected data format
+      else {
+        console.warn('Unexpected skills data format:', skills);
+        // Fall back to empty data
+        setSkillsData({
+          frontend: [],
+          backend: [],
+          devops: []
+        });
+      }
       
       console.log('Skills data processed:', skills);
+    } catch (error) {
+      console.error('Error processing skills data:', error);
+      // Fall back to empty data
+      setSkillsData({
+        frontend: [],
+        backend: [],
+        devops: []
+      });
     }
   }, [skills]);
   

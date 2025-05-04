@@ -48,6 +48,67 @@ export async function apiRequest<T = any>(
             }));
           }
           
+          // Fix missing properties in skills data
+          else if (endpoint === 'skills') {
+            // Case 1: Skills already in categorized format
+            if (typeof parsedData === 'object' && !Array.isArray(parsedData)) {
+              const skillsObj = parsedData as Record<string, any>;
+              
+              // Ensure each category exists and is an array
+              parsedData = {
+                frontend: Array.isArray(skillsObj.frontend) 
+                  ? skillsObj.frontend.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'frontend',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : [],
+                backend: Array.isArray(skillsObj.backend)
+                  ? skillsObj.backend.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'backend',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : [],
+                devops: Array.isArray(skillsObj.devops)
+                  ? skillsObj.devops.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'devops',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : []
+              };
+            }
+            // Case 2: Skills in flat array format
+            else if (Array.isArray(parsedData)) {
+              parsedData = parsedData.map((skill) => ({
+                ...skill,
+                id: skill.id || 0,
+                name: skill.name || 'Unknown Skill',
+                category: skill.category || 'frontend',
+                percentage: skill.percentage || 50,
+                endorsement_count: skill.endorsement_count || 0
+              }));
+            }
+            // Case 3: Invalid format - create empty structure
+            else {
+              parsedData = {
+                frontend: [],
+                backend: [],
+                devops: []
+              };
+            }
+          }
+          
           // Create a mock response with the cleaned data
           const mockResponse = new Response(JSON.stringify(parsedData), {
             status: 200,
@@ -138,6 +199,66 @@ export const getQueryFn: <T>(options: {
               publishedAt: post.publishedAt || new Date().toISOString()
             }));
           }
+          // Fix missing properties in skills data
+          else if (endpoint === 'skills') {
+            // Case 1: Skills already in categorized format
+            if (typeof parsedData === 'object' && !Array.isArray(parsedData)) {
+              const skillsObj = parsedData as Record<string, any>;
+              
+              // Ensure each category exists and is an array
+              parsedData = {
+                frontend: Array.isArray(skillsObj.frontend) 
+                  ? skillsObj.frontend.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'frontend',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : [],
+                backend: Array.isArray(skillsObj.backend)
+                  ? skillsObj.backend.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'backend',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : [],
+                devops: Array.isArray(skillsObj.devops)
+                  ? skillsObj.devops.map((skill: any) => ({
+                      ...skill,
+                      id: skill.id || 0,
+                      name: skill.name || 'Unknown Skill',
+                      category: 'devops',
+                      percentage: skill.percentage || 50,
+                      endorsement_count: skill.endorsement_count || 0
+                    }))
+                  : []
+              };
+            }
+            // Case 2: Skills in flat array format
+            else if (Array.isArray(parsedData)) {
+              parsedData = parsedData.map((skill) => ({
+                ...skill,
+                id: skill.id || 0,
+                name: skill.name || 'Unknown Skill',
+                category: skill.category || 'frontend',
+                percentage: skill.percentage || 50,
+                endorsement_count: skill.endorsement_count || 0
+              }));
+            }
+            // Case 3: Invalid format - create empty structure
+            else {
+              parsedData = {
+                frontend: [],
+                backend: [],
+                devops: []
+              };
+            }
+          }
           
           return parsedData;
         } else {
@@ -176,6 +297,58 @@ export const getQueryFn: <T>(options: {
                 coverImage: post.coverImage || '',
                 publishedAt: post.publishedAt || new Date().toISOString()
               }));
+            }
+            // Fix missing properties in skills data
+            else if (endpoint === 'skills') {
+              // Case 1: Skills already in categorized format
+              if (typeof data === 'object' && !Array.isArray(data)) {
+                const skillsObj = data as Record<string, any>;
+                
+                // Ensure each category exists and is an array
+                return {
+                  frontend: Array.isArray(skillsObj.frontend) 
+                    ? skillsObj.frontend.map((skill: any) => ({
+                        ...skill,
+                        id: skill.id || 0,
+                        name: skill.name || 'Unknown Skill',
+                        category: 'frontend',
+                        percentage: skill.percentage || 50,
+                        endorsement_count: skill.endorsement_count || 0
+                      }))
+                    : [],
+                  backend: Array.isArray(skillsObj.backend)
+                    ? skillsObj.backend.map((skill: any) => ({
+                        ...skill,
+                        id: skill.id || 0,
+                        name: skill.name || 'Unknown Skill',
+                        category: 'backend',
+                        percentage: skill.percentage || 50,
+                        endorsement_count: skill.endorsement_count || 0
+                      }))
+                    : [],
+                  devops: Array.isArray(skillsObj.devops)
+                    ? skillsObj.devops.map((skill: any) => ({
+                        ...skill,
+                        id: skill.id || 0,
+                        name: skill.name || 'Unknown Skill',
+                        category: 'devops',
+                        percentage: skill.percentage || 50,
+                        endorsement_count: skill.endorsement_count || 0
+                      }))
+                    : []
+                };
+              }
+              // Case 2: Skills in flat array format
+              else if (Array.isArray(data)) {
+                return data.map((skill) => ({
+                  ...skill,
+                  id: skill.id || 0,
+                  name: skill.name || 'Unknown Skill',
+                  category: skill.category || 'frontend',
+                  percentage: skill.percentage || 50,
+                  endorsement_count: skill.endorsement_count || 0
+                }));
+              }
             }
             
             return data;

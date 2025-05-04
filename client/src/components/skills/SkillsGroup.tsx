@@ -18,13 +18,6 @@ const SkillsGroup: React.FC<SkillsGroupProps> = ({
   // We'll refetch skills when endorsements are submitted
   const { refetch: refetchSkills } = useQuery({
     queryKey: ['/api/skills'],
-    queryFn: async () => {
-      const response = await fetch('/api/skills');
-      if (!response.ok) {
-        throw new Error('Failed to fetch skills');
-      }
-      return response.json();
-    },
     // We're only using this for refetch capabilities, so don't load initially
     enabled: false,
   });
