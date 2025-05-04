@@ -2,16 +2,51 @@ import { motion } from "framer-motion";
 import { CheckCircle, Brain, Laptop, Database, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SkillsGroup from "@/components/skills/SkillsGroup";
-import { 
-  frontendSkills, 
-  backendSkills, 
-  devopsSkills, 
-  additionalSkills 
-} from "@/lib/data";
-import { useRef } from "react";
+import { additionalSkills } from "@/lib/data";
+import { useRef, useState, useEffect } from "react";
+import { Skill } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from 'lucide-react';
 
 const SkillsSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const [skillsData, setSkillsData] = useState<{
+    frontend: Skill[];
+    backend: Skill[];
+    devops: Skill[];
+  }>({
+    frontend: [],
+    backend: [],
+    devops: []
+  });
+  
+  // Fetch skills from API
+  const { data: skills, isLoading, error } = useQuery({
+    queryKey: ['/api/skills'],
+    queryFn: async () => {
+      const response = await fetch('/api/skills');
+      if (!response.ok) {
+        throw new Error('Failed to fetch skills');
+      }
+      const data = await response.json();
+      return data;
+    },
+  });
+
+  // Process skills data when it's loaded
+  useEffect(() => {
+    if (skills && skills.length > 0) {
+      const frontendSkills = skills.filter((skill: Skill) => skill.category === 'frontend');
+      const backendSkills = skills.filter((skill: Skill) => skill.category === 'backend');
+      const devopsSkills = skills.filter((skill: Skill) => skill.category === 'devops');
+      
+      setSkillsData({
+        frontend: frontendSkills,
+        backend: backendSkills,
+        devops: devopsSkills
+      });
+    }
+  }, [skills]);
   
   // Animation variants for the additional skills
   const container = {
@@ -41,6 +76,28 @@ const SkillsSection = () => {
       scale: 0.95
     }
   };
+  
+  if (isLoading) {
+    return (
+      <section id="skills" className="py-20 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading skills data from GitHub...</p>
+        </div>
+      </section>
+    );
+  }
+  
+  if (error) {
+    return (
+      <section id="skills" className="py-20 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load skills data</p>
+          <p className="text-muted-foreground text-sm max-w-md">{(error as Error).message}</p>
+        </div>
+      </section>
+    );
+  }
   
   return (
     <section 
@@ -158,7 +215,7 @@ const SkillsSection = () => {
           >
             <SkillsGroup
               title="Frontend Development"
-              skills={frontendSkills}
+              skills={skillsData.frontend}
               icon={
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
@@ -181,7 +238,7 @@ const SkillsSection = () => {
           >
             <SkillsGroup
               title="Backend Development"
-              skills={backendSkills}
+              skills={skillsData.backend}
               icon={
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
@@ -203,8 +260,8 @@ const SkillsSection = () => {
             className="group"
           >
             <SkillsGroup
-              title="Tools & Frameworks"
-              skills={devopsSkills}
+              title="Tools & DevOps"
+              skills={skillsData.devops}
               icon={
                 <motion.div
                   animate={{ rotate: [0, 360] }}
