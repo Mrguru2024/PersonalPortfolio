@@ -668,7 +668,7 @@ export default function SkillsSection() {
             skill={selectedSkill}
             isOpen={isEndorsementModalOpen}
             onClose={closeEndorsementModal}
-            onSubmitted={handleEndorsementSubmitted}
+            onEndorsementSubmitted={handleEndorsementSubmitted}
           />
         )}
       </AnimatePresence>
