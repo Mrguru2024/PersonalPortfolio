@@ -413,25 +413,25 @@ export const projects: Project[] = [
   },
   {
     id: "ssi-met-repairs",
-    title: "SSI-M.E.T Repairs",
+    title: "M.E.T Repairs",
     description: "Business website for electronic repair and automotive locksmith services.",
     image: "https://images.unsplash.com/photo-1635262945219-33df0944316a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
     tags: ["Business", "Service", "Automotive"],
     category: "business",
-    liveUrl: "https://ssi-met-repairs.com",
-    details: "SSI-M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials.",
+    liveUrl: "https://metrepairs.com",
+    details: "M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials.",
     demoType: "iframe",
-    demoUrl: "https://ssi-met-repairs.com",
+    demoUrl: "https://metrepairs.com",
     demoConfig: {
       width: "100%",
       height: "600px",
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["HTML", "CSS", "JavaScript", "WordPress"],
+    techStack: ["HTML", "CSS", "JavaScript", "Wix", "Velo"],
     synopsis: {
       tagline: "Electronics. Automotive. Fixed & Secured.",
-      description: "SSI-M.E.T Repairs represents the digital transformation of my brick-and-mortar repair business, bringing specialized electronic repair and automotive locksmith services online to reach more customers. This website serves as both a digital storefront and educational resource for customers looking to understand repair options before committing. The project exemplifies how traditional service businesses can leverage technology to improve customer acquisition and service delivery.",
+      description: "M.E.T Repairs represents the digital transformation of my brick-and-mortar repair business, bringing specialized electronic repair and automotive locksmith services online to reach more customers. This website, developed with Wix and now being redeveloped, serves as both a digital storefront and educational resource for customers looking to understand repair options before committing. The project exemplifies how traditional service businesses can leverage technology to improve customer acquisition and service delivery.",
       caseStudy: {
         problem: "Local repair businesses often struggle with digital presence, relying on word-of-mouth or costly advertising. Customers need to understand services and pricing before visiting, but most local repair shops lack informative, accessible online platforms.",
         role: [
@@ -441,9 +441,9 @@ export const projects: Project[] = [
           "SEO Specialist"
         ],
         stack: [
-          "WordPress (Content Management)",
-          "Elementor (Visual Page Builder)",
-          "WooCommerce (Appointment Booking)",
+          "Wix (Platform)",
+          "Velo by Wix (JavaScript Development)",
+          "Wix Bookings (Appointment System)",
           "Custom CSS & JavaScript",
           "Google Business Integration",
           "Schema.org Markup (for Local SEO)"
@@ -458,6 +458,7 @@ export const projects: Project[] = [
         ],
         status: "✅ Live Business 🚀 Generating 35% of new business leads",
         nextSteps: [
+          "Complete redevelopment using Next.js for improved performance",
           "Implementing live chat for immediate customer assistance",
           "Adding repair status tracking for current customers",
           "Building video repository of common repair procedures",
