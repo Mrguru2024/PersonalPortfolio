@@ -135,7 +135,9 @@ export default function HeroSection() {
               animate={{ y: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
             >
-              <ArrowDown size={20} />
+              <span data-lucide="arrow-down" aria-hidden="true">
+                <ArrowDown size={20} />
+              </span>
             </motion.div>
           </div>
         </motion.div>

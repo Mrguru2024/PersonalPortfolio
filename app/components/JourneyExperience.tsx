@@ -74,7 +74,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
       id: 'intro',
       label: 'Start Your Journey',
       position: 90,
-      icon: <Sparkles className="text-yellow-400" size={20} />,
+      icon: <span data-lucide="sparkles" aria-hidden="true"><Sparkles className="text-yellow-400" size={20} /></span>,
       description: "Welcome! I'm MrGuru, your guide to my digital portfolio. Ready to see what I can create?",
       cta: "Begin Journey",
     },
@@ -82,7 +82,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
       id: 'projects',
       label: 'Browse Projects',
       position: 70,
-      icon: <Briefcase className="text-blue-400" size={20} />,
+      icon: <span data-lucide="briefcase" aria-hidden="true"><Briefcase className="text-blue-400" size={20} /></span>,
       description: "Check out my showcase of innovative web applications and digital experiences.",
       cta: "View Projects",
       elementId: "projects",
@@ -91,7 +91,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
       id: 'skills',
       label: 'Discover Skills',
       position: 50,
-      icon: <Code className="text-green-400" size={20} />,
+      icon: <span data-lucide="code" aria-hidden="true"><Code className="text-green-400" size={20} /></span>,
       description: "Explore my technical skills and expertise across frontend, backend, and more.",
       cta: "See Skills",
       elementId: "skills",
@@ -207,7 +207,9 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                 whileTap={{ scale: 0.95 }}
               >
                 <span>Start Your Journey</span>
-                <ChevronDown size={18} />
+                <span data-lucide="chevron-down" aria-hidden="true">
+                  <ChevronDown size={18} />
+                </span>
               </motion.button>
             </motion.div>
           </motion.div>
