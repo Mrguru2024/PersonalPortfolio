@@ -4,35 +4,14 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Star from "lucide-react/dist/esm/icons/star";
-import ThumbsUp from "lucide-react/dist/esm/icons/thumbs-up";
-import Send from "lucide-react/dist/esm/icons/send";
-import Loader2 from "lucide-react/dist/esm/icons/loader-2";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import Star from "lucide-react/dist/esm/icons/star";
 import { useToast } from "@/hooks/use-toast";
 
-// Define the DB skill type based on the real DB schema
 type DBSkill = {
   id: number;
   name: string;
@@ -41,7 +20,7 @@ type DBSkill = {
   endorsement_count: number;
 };
 
-// Define the form schema for skill endorsements
+// Create schema for form validation
 const skillEndorsementFormSchema = z.object({
   skillId: z.number().positive("Skill ID is required"),
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -65,12 +44,11 @@ export default function SkillEndorsementModal({
   onClose,
   onEndorsementSubmitted,
 }: SkillEndorsementModalProps) {
-  const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(5);
   const { toast } = useToast();
   
-  // Initialize form
+  // Initialize form with default values
   const form = useForm<SkillEndorsementFormValues>({
     resolver: zodResolver(skillEndorsementFormSchema),
     defaultValues: {
@@ -82,15 +60,18 @@ export default function SkillEndorsementModal({
     },
   });
   
-  // Form submission handler
+  // Handler for star rating interaction
+  const handleStarClick = (rating: number) => {
+    setSelectedRating(rating);
+    form.setValue("rating", rating);
+  };
+  
+  // Submit handler
   const onSubmit = async (data: SkillEndorsementFormValues) => {
-    setIsSubmitting(true);
-    
     try {
-      // Update the rating based on the state
-      data.rating = rating;
+      setIsSubmitting(true);
       
-      const response = await fetch("/api/skill-endorsements", {
+      const response = await fetch(`/api/skills/${skill.id}/endorse`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,181 +79,143 @@ export default function SkillEndorsementModal({
         body: JSON.stringify(data),
       });
       
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.error || "Failed to submit endorsement");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit endorsement");
       }
       
       // Show success message
-      setIsSuccess(true);
-      
-      // Reset form after a delay
-      setTimeout(() => {
-        onEndorsementSubmitted();
-        form.reset();
-        setRating(5);
-        setIsSuccess(false);
-        onClose();
-      }, 2000);
-      
-    } catch (error) {
-      console.error("Endorsement submission error:", error);
       toast({
-        title: "Endorsement Failed",
-        description: error instanceof Error ? error.message : "Please try again later",
+        title: "Endorsement submitted",
+        description: `Thank you for endorsing ${skill.name}!`,
+      });
+      
+      // Reset form and close modal
+      form.reset();
+      onEndorsementSubmitted();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting endorsement:", error);
+      
+      // Show error message
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit endorsement",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            Endorse Skill: <span className="text-primary">{skill.name}</span>
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            Share your experience with {skill.name} to endorse this skill
+          <DialogTitle>Endorse Skill: {skill.name}</DialogTitle>
+          <DialogDescription>
+            Share your experience with my {skill.name} skills. Your endorsement helps others understand my capabilities.
           </DialogDescription>
         </DialogHeader>
         
-        <AnimatePresence mode="wait">
-          {isSuccess ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex flex-col items-center justify-center py-6"
-            >
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <ThumbsUp className="w-8 h-8 text-primary" />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Rating selection */}
+            <div className="space-y-2">
+              <FormLabel>Rating</FormLabel>
+              <div className="flex items-center space-x-1">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => handleStarClick(rating)}
+                    className="focus:outline-none"
+                  >
+                    <Star 
+                      size={24}
+                      className={rating <= selectedRating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground"} 
+                    />
+                  </button>
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
-              <p className="text-muted-foreground text-center">
-                Your endorsement has been submitted successfully.
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="flex justify-center my-4">
-                <div className="flex space-x-1">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <motion.div
-                      key={value}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        setRating(value);
-                        form.setValue("rating", value);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <Star
-                        className={`w-6 h-6 ${
-                          value <= rating
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Your email" 
-                            type="email" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Your email will not be displayed publicly
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="comment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Comment (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Share your experience with this skill..."
-                            className="min-h-20 resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <DialogFooter className="mt-6">
-                    <DialogClose asChild>
-                      <Button type="button" variant="outline">
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="gap-2"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          Submit Endorsement
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+            
+            {/* Hidden rating field */}
+            <FormField
+              control={form.control}
+              name="rating"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <Input type="hidden" {...field} value={selectedRating} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {/* Name field */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Email field */}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="Your email" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Your email won't be displayed publicly.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Comment field */}
+            <FormField
+              control={form.control}
+              name="comment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Comment (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Share your experience or feedback" 
+                      className="resize-none" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Endorsement"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

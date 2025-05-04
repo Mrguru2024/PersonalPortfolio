@@ -1,16 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import Star from "lucide-react/dist/esm/icons/star";
-import MessageCircle from "lucide-react/dist/esm/icons/message-circle";
-import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
-import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
-import { formatDistanceToNow } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import MessageSquare from "lucide-react/dist/esm/icons/message-square";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 
-// Define the DB skill type based on the real DB schema
 type DBSkill = {
   id: number;
   name: string;
@@ -19,7 +16,6 @@ type DBSkill = {
   endorsement_count: number;
 };
 
-// Define the type for skill endorsements based on the database schema
 type SkillEndorsement = {
   id: number;
   skillId: number;
@@ -38,15 +34,20 @@ interface SkillEndorsementCardProps {
 export default function SkillEndorsementCard({ skill }: SkillEndorsementCardProps) {
   const [endorsements, setEndorsements] = useState<SkillEndorsement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showMore, setShowMore] = useState(false);
+  const [displayedEndorsement, setDisplayedEndorsement] = useState<SkillEndorsement | null>(null);
   
-  // Fetch endorsements for this skill
   useEffect(() => {
     async function fetchEndorsements() {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/skill-endorsements?skillId=${skill.id}`);
+        
+        // If the skill has no endorsements, don't make the request
+        if (skill.endorsement_count === 0) {
+          setIsLoading(false);
+          return;
+        }
+        
+        const response = await fetch(`/api/skills/${skill.id}/endorsements`);
         
         if (!response.ok) {
           throw new Error("Failed to fetch endorsements");
@@ -54,138 +55,123 @@ export default function SkillEndorsementCard({ skill }: SkillEndorsementCardProp
         
         const data = await response.json();
         setEndorsements(data);
-      } catch (err) {
-        console.error("Error fetching endorsements:", err);
-        setError("Failed to load endorsements");
+        
+        // Select a random endorsement to display
+        if (data.length > 0) {
+          const randomIndex = Math.floor(Math.random() * data.length);
+          setDisplayedEndorsement(data[randomIndex]);
+        }
+      } catch (error) {
+        console.error("Error fetching endorsements:", error);
       } finally {
         setIsLoading(false);
       }
     }
     
-    if (skill.id) {
-      fetchEndorsements();
-    }
-  }, [skill.id]);
+    fetchEndorsements();
+  }, [skill.id, skill.endorsement_count]);
   
-  // Get the initials for the avatar
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
-  
-  // Format the date
-  const formatDate = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (error) {
-      return "recently";
-    }
-  };
-  
-  if (isLoading) {
+  // If there are no endorsements, show a placeholder
+  if (skill.endorsement_count === 0) {
     return (
-      <div className="mt-6 text-center py-8">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-8 w-40 bg-muted rounded-md mb-4"></div>
-          <div className="h-4 w-60 bg-muted rounded-md"></div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="mt-6 text-center py-8">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
-    );
-  }
-  
-  if (endorsements.length === 0) {
-    return (
-      <div className="mt-6 text-center py-8">
-        <p className="text-muted-foreground">No endorsements yet. Be the first to endorse!</p>
-      </div>
-    );
-  }
-  
-  // Display a limited number of endorsements by default
-  const visibleEndorsements = showMore ? endorsements : endorsements.slice(0, 3);
-  
-  return (
-    <div className="mt-6 space-y-4">
-      <h4 className="font-medium flex items-center gap-2">
-        <MessageCircle size={18} />
-        Recent Endorsements <span className="text-muted-foreground">({endorsements.length})</span>
-      </h4>
-      
-      {visibleEndorsements.map((endorsement) => (
-        <motion.div
-          key={endorsement.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card/50 p-4 rounded-lg border border-border"
-        >
-          <div className="flex justify-between items-start">
-            <div className="flex gap-3">
-              <Avatar className="h-10 w-10 border border-border">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {getInitials(endorsement.name)}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div>
-                <h5 className="font-medium">{endorsement.name}</h5>
-                <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                  <div className="flex mr-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        size={14}
-                        className={`${
-                          i < endorsement.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs">
-                    {formatDate(endorsement.createdAt)}
-                  </span>
-                </div>
-              </div>
-            </div>
+      <Card className="bg-background/80 backdrop-blur-sm">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-medium text-primary">{skill.name}</h3>
+            <Badge variant="outline">{skill.category}</Badge>
           </div>
           
-          {endorsement.comment && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {endorsement.comment}
-            </p>
-          )}
-        </motion.div>
-      ))}
-      
-      {endorsements.length > 3 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-2"
-          onClick={() => setShowMore(!showMore)}
-        >
-          {showMore ? (
-            <span className="flex items-center">
-              Show Less <ChevronUp className="ml-1 h-4 w-4" />
-            </span>
-          ) : (
-            <span className="flex items-center">
-              Show More <ChevronDown className="ml-1 h-4 w-4" />
-            </span>
-          )}
-        </Button>
-      )}
-    </div>
-  );
+          <div className="text-center py-6 text-muted-foreground">
+            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No endorsements yet</p>
+            <p className="text-xs mt-1">Be the first to endorse this skill!</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // If loading, show a skeleton
+  if (isLoading) {
+    return (
+      <Card className="bg-background/80 backdrop-blur-sm">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center mb-3">
+            <div className="h-5 w-24 bg-muted rounded animate-pulse"></div>
+            <div className="h-5 w-16 bg-muted rounded animate-pulse"></div>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-muted animate-pulse mr-2"></div>
+              <div className="h-4 w-36 bg-muted rounded animate-pulse"></div>
+            </div>
+            
+            <div className="h-3 w-full bg-muted rounded animate-pulse my-2"></div>
+            <div className="h-3 w-4/5 bg-muted rounded animate-pulse my-2"></div>
+            
+            <div className="flex mt-3">
+              {[1, 2, 3, 4, 5].map(index => (
+                <div key={index} className="w-4 h-4 mr-1 bg-muted rounded-full animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // If there's a displayed endorsement, show it
+  if (displayedEndorsement) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="bg-background/80 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium text-primary">{skill.name}</h3>
+              <Badge variant="outline">{skill.category}</Badge>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center mb-2">
+                <Avatar className="h-8 w-8 mr-2">
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {displayedEndorsement.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-medium text-sm">{displayedEndorsement.name}</span>
+              </div>
+              
+              {displayedEndorsement.comment && (
+                <p className="text-sm text-muted-foreground italic">
+                  "{displayedEndorsement.comment}"
+                </p>
+              )}
+              
+              <div className="flex mt-3">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Star 
+                    key={star}
+                    size={16}
+                    className={star <= displayedEndorsement.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="text-xs text-muted-foreground text-right">
+              {skill.endorsement_count} endorsement{skill.endorsement_count !== 1 ? 's' : ''}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+  
+  // Fallback (although this should not happen)
+  return null;
 }
