@@ -442,21 +442,21 @@ export default function SkillsSection() {
             <TabsList className="bg-background/50 backdrop-blur-sm">
               <TabsTrigger 
                 value="frontend"
-                className="data-[state=active]:text-primary data-[state=active]:font-medium"
+                className="px-4 py-2"
               >
                 Frontend
               </TabsTrigger>
               <TabsTrigger 
                 value="backend"
-                className="data-[state=active]:text-primary data-[state=active]:font-medium"
+                className="px-4 py-2"
               >
                 Backend
               </TabsTrigger>
               <TabsTrigger 
                 value="other"
-                className="data-[state=active]:text-primary data-[state=active]:font-medium"
+                className="px-4 py-2"
               >
-                DevOps & Tools
+                Other Skills
               </TabsTrigger>
             </TabsList>
           </div>
@@ -478,25 +478,16 @@ export default function SkillsSection() {
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-medium flex items-center">
                       {skill.name}
-                      {skill.endorsementCount > 0 && (
+                      {skill.endorsement_count > 0 && (
                         <div className="ml-2 flex items-center text-xs text-primary">
                           <Award size={14} className="mr-1" />
-                          <span>{skill.endorsementCount}</span>
+                          <span>{skill.endorsement_count}</span>
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
-                  </div>
-                  
-                  <Progress 
-                    value={skill.proficiency} 
-                    className="h-2 bg-muted"
-                  />
-                  
-                  <div className="mt-4 flex justify-between items-center">
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="sm" 
                       className="text-xs gap-1"
                       onClick={() => openEndorsementModal(skill)}
                     >
@@ -510,14 +501,25 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
                     </div>
                   </div>
                   
-                  {skill.endorsementCount > 0 && activeCategory === "frontend" && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium">{skill.name}</span>
+                      <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    </div>
+                    <Progress 
+                      value={skill.percentage} 
+                      className="h-2" 
+                    />
+                  </div>
+                  
+                  {skill.endorsement_count > 0 && activeCategory === "frontend" && (
                     <SkillEndorsementCard skill={skill} />
                   )}
                 </motion.div>
@@ -542,25 +544,16 @@ export default function SkillsSection() {
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-medium flex items-center">
                       {skill.name}
-                      {skill.endorsementCount > 0 && (
+                      {skill.endorsement_count > 0 && (
                         <div className="ml-2 flex items-center text-xs text-primary">
                           <Award size={14} className="mr-1" />
-                          <span>{skill.endorsementCount}</span>
+                          <span>{skill.endorsement_count}</span>
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
-                  </div>
-                  
-                  <Progress 
-                    value={skill.proficiency} 
-                    className="h-2 bg-muted"
-                  />
-                  
-                  <div className="mt-4 flex justify-between items-center">
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="sm" 
                       className="text-xs gap-1"
                       onClick={() => openEndorsementModal(skill)}
                     >
@@ -574,14 +567,25 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
                     </div>
                   </div>
                   
-                  {skill.endorsementCount > 0 && activeCategory === "backend" && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium">{skill.name}</span>
+                      <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    </div>
+                    <Progress 
+                      value={skill.percentage} 
+                      className="h-2" 
+                    />
+                  </div>
+                  
+                  {skill.endorsement_count > 0 && activeCategory === "backend" && (
                     <SkillEndorsementCard skill={skill} />
                   )}
                 </motion.div>
@@ -606,25 +610,16 @@ export default function SkillsSection() {
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-medium flex items-center">
                       {skill.name}
-                      {skill.endorsementCount > 0 && (
+                      {skill.endorsement_count > 0 && (
                         <div className="ml-2 flex items-center text-xs text-primary">
                           <Award size={14} className="mr-1" />
-                          <span>{skill.endorsementCount}</span>
+                          <span>{skill.endorsement_count}</span>
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
-                  </div>
-                  
-                  <Progress 
-                    value={skill.proficiency} 
-                    className="h-2 bg-muted"
-                  />
-                  
-                  <div className="mt-4 flex justify-between items-center">
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="sm" 
                       className="text-xs gap-1"
                       onClick={() => openEndorsementModal(skill)}
                     >
@@ -638,14 +633,25 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
                     </div>
                   </div>
                   
-                  {skill.endorsementCount > 0 && activeCategory === "other" && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium">{skill.name}</span>
+                      <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    </div>
+                    <Progress 
+                      value={skill.percentage} 
+                      className="h-2" 
+                    />
+                  </div>
+                  
+                  {skill.endorsement_count > 0 && activeCategory === "other" && (
                     <SkillEndorsementCard skill={skill} />
                   )}
                 </motion.div>
@@ -653,48 +659,22 @@ export default function SkillsSection() {
             </motion.div>
           </TabsContent>
         </Tabs>
-        
-        {/* Additional skills / interests */}
-        <motion.div 
-          className="mt-16 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h3 className="heading-sm mb-6">Additional Skills & Interests</h3>
-          
-          <div className="flex flex-wrap justify-center gap-2">
-            {[
-              "Web Accessibility", "PWA Development", "Serverless", 
-              "WebSockets", "SEO", "Web Performance", "Micro Frontends",
-              "JAMstack", "Headless CMS", "Data Visualization"
-            ].map((skill) => (
-              <span 
-                key={skill}
-                className="px-4 py-2 bg-accent/20 text-accent-foreground rounded-full text-sm"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </motion.div>
       </div>
       
-      {/* Endorsement Modal */}
+      {/* Endorsement modal */}
       <AnimatePresence>
-        {selectedSkill && (
+        {isEndorsementModalOpen && selectedSkill && (
           <SkillEndorsementModal
             skill={selectedSkill}
             isOpen={isEndorsementModalOpen}
             onClose={closeEndorsementModal}
-            onEndorsementSubmitted={handleEndorsementSubmitted}
+            onSubmitted={handleEndorsementSubmitted}
           />
         )}
       </AnimatePresence>
       
       {/* Background decoration */}
-      <div className="absolute -z-10 -right-40 -top-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute -z-10 -right-40 -bottom-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
     </section>
   );
 }
