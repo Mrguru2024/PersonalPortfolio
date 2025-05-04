@@ -79,15 +79,23 @@ const FloatingNavigation: React.FC = () => {
   return (
     <>
       {/* Mobile Navigation Button */}
-      <motion.button
-        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
+      <motion.div
+        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
         whileTap={{ scale: 0.9 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </motion.button>
+      </motion.div>
       
       {/* Mobile Navigation Menu */}
       <AnimatePresence>

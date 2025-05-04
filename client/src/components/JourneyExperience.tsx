@@ -420,8 +420,8 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
               >
                 Prepare for an immersive journey through my skills, projects and expertise
               </motion.p>
-              <motion.button
-                className="bg-white text-primary font-medium py-2 px-6 rounded-full shadow-lg flex items-center gap-2 mx-auto hover:bg-gray-100 transition-colors"
+              <motion.div
+                className="bg-white text-primary font-medium py-2 px-6 rounded-full shadow-lg flex items-center gap-2 mx-auto hover:bg-gray-100 transition-colors cursor-pointer"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.5, duration: 0.5 }}
@@ -431,10 +431,19 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowInitialAnimation(false);
+                    setHasStartedJourney(true);
+                  }
+                }}
               >
                 <span>Start Your Journey</span>
                 <ChevronDown size={18} />
-              </motion.button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
@@ -477,8 +486,8 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                 className="absolute left-1/2 transform -translate-x-1/2 pointer-events-auto"
                 style={{ bottom: `${milestone.position}%` }}
               >
-                <motion.button
-                  className={`journey-milestone flex items-center gap-3 ${
+                <motion.div
+                  className={`journey-milestone flex items-center gap-3 cursor-pointer ${
                     activeIndex === index 
                       ? 'scale-110' 
                       : 'opacity-70 hover:opacity-100'
@@ -488,6 +497,14 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleMilestoneClick(milestone)}
                   title={`${milestone.label}: ${milestone.description}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleMilestoneClick(milestone);
+                    }
+                  }}
                 >
                   {/* Milestone node - larger and more prominent */}
                   <motion.div 
@@ -590,7 +607,7 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.button>
+                </motion.div>
               </div>
             ))}
             
@@ -613,8 +630,8 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <motion.button
-            className="bg-primary text-white font-medium py-2 md:py-3 px-4 md:px-6 rounded-full shadow-lg flex items-center gap-2 text-xs md:text-sm"
+          <motion.div
+            className="bg-primary text-white font-medium py-2 md:py-3 px-4 md:px-6 rounded-full shadow-lg flex items-center gap-2 text-xs md:text-sm cursor-pointer"
             onClick={startJourney}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -627,13 +644,21 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
               ]
             }}
             transition={{ duration: 2, repeat: Infinity }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                startJourney();
+              }
+            }}
           >
             <Bot size={16} className="flex-shrink-0" />
             <span className="whitespace-nowrap">
               {window.innerWidth < 480 ? 'Start Tour' : 'Begin Interactive Tour'}
             </span>
             <ChevronDown size={16} className="flex-shrink-0" />
-          </motion.button>
+          </motion.div>
         </motion.div>
       )}
     </>
