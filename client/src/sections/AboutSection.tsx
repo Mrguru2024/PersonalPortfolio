@@ -44,12 +44,8 @@ const AboutSection = () => {
               </div>
             </div>
             
-            <a 
-              href={personalInfo.resumeUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              <Button className="inline-flex items-center shadow-md hover:shadow-lg">
+            <a href="/resume">
+              <Button className="inline-flex items-center shadow-md hover:shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 <FileText className="mr-2 h-4 w-4" />
                 Download Resume
               </Button>
