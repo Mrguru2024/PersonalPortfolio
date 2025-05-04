@@ -19,7 +19,9 @@ export default function JourneyToggleButton({ onClick, isActive }: JourneyToggle
       onClick={onClick}
       aria-label={isActive ? "Hide journey guide" : "Show journey guide"}
     >
-      <Sparkles size={20} />
+      <span data-lucide="sparkles" aria-hidden="true">
+        <Sparkles size={20} />
+      </span>
     </motion.button>
   );
 }

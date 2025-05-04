@@ -23,11 +23,11 @@ export default function FloatingNavigation() {
   const [hasScrolled, setHasScrolled] = useState<boolean>(false);
   
   const navItems: NavItem[] = [
-    { id: 'home', icon: <Home size={18} />, label: 'Home' },
-    { id: 'about', icon: <User size={18} />, label: 'About' },
-    { id: 'projects', icon: <Briefcase size={18} />, label: 'Projects' },
-    { id: 'skills', icon: <Code size={18} />, label: 'Skills' },
-    { id: 'contact', icon: <Mail size={18} />, label: 'Contact' },
+    { id: 'home', icon: <span data-lucide="home" aria-hidden="true"><Home size={18} /></span>, label: 'Home' },
+    { id: 'about', icon: <span data-lucide="user" aria-hidden="true"><User size={18} /></span>, label: 'About' },
+    { id: 'projects', icon: <span data-lucide="briefcase" aria-hidden="true"><Briefcase size={18} /></span>, label: 'Projects' },
+    { id: 'skills', icon: <span data-lucide="code" aria-hidden="true"><Code size={18} /></span>, label: 'Skills' },
+    { id: 'contact', icon: <span data-lucide="mail" aria-hidden="true"><Mail size={18} /></span>, label: 'Contact' },
   ];
   
   useEffect(() => {
