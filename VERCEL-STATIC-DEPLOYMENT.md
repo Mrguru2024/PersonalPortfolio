@@ -21,11 +21,7 @@ Ensure all your changes are committed and pushed to your GitHub repository.
 1. Go to [vercel.com](https://vercel.com) and log in
 2. Click "Add New..." → "Project"
 3. Import your repository
-4. On the configuration page:
-   - Framework Preset: Leave as "Other"
-   - Build Command: Will use `node vercel-build-static.js` from vercel.json
-   - Output Directory: `dist` (already set in vercel.json)
-   - Install Command: `npm install` (already set in vercel.json)
+4. Vercel should automatically detect the Vite framework and use the correct settings
 
 ### 3. Environment Variables
 
@@ -40,22 +36,17 @@ Click "Deploy" to start the static deployment process.
 The static deployment process works as follows:
 
 1. `vercel.json` - Configures the build process and static asset serving:
-   - Uses `vercel-build-static.js` for the build command
-   - Sets proper caching headers for assets
+   - Sets Vite as the framework
+   - Uses a custom build command that generates static API files
    - Configures SPA routing with the `rewrites` section
 
-2. `vercel-build-static.js` - The custom build script that:
-   - Builds only the frontend with `vite build`
-   - Creates static API JSON files in `/api/` directory
-   - Sets up proper SPA routing with 404.html
-
-3. `vercel-static-api.js` - Creates JSON files with static data for:
+2. `scripts/generate-static-api.cjs` - Creates JSON files with static data for:
    - Skills
    - Projects
    - Blog posts
    - Other needed API endpoints
 
-4. `client/src/lib/queryClient.ts` - Modified to:
+3. `client/src/lib/queryClient.ts` - Modified to:
    - Detect when running on Vercel production
    - Use `.json` files instead of API endpoints in production
    - Fall back gracefully when endpoints don't exist
@@ -79,7 +70,7 @@ The static deployment has some limitations:
 To update your static deployment:
 
 1. Make your changes locally
-2. Update the static data in `vercel-static-api.js` if needed
+2. Update the static data in `scripts/generate-static-api.cjs` if needed
 3. Commit and push to GitHub
 4. Vercel will automatically redeploy
 
@@ -90,7 +81,6 @@ To update your static deployment:
 ```
 dist/
 ├── index.html      # Main SPA entry point
-├── 404.html        # Copy of index.html for client-side routing
 ├── assets/         # Static assets
 └── api/            # Static API JSON files
     ├── skills.json
@@ -103,9 +93,9 @@ dist/
 
 The static deployment uses client-side routing through:
 
-1. Vercel's `rewrites` config in vercel.json
-2. A custom 404.html that serves the SPA for all routes
+1. Vercel's `rewrites` config in vercel.json that redirects all paths to index.html
+2. The React router handles client-side routing for all paths
 
 ### Static API Endpoints
 
-The React app attempts to fetch from real API endpoints, but when deployed to Vercel static hosting, the `queryClient.ts` redirects these requests to static JSON files.
+The React app attempts to fetch from real API endpoints, but when deployed to Vercel static hosting, the `queryClient.ts` redirects these requests to static JSON files in the `/api/` directory.
