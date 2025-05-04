@@ -38,13 +38,21 @@ async function build() {
     log('Running modified type checking for Vercel deployment...');
     run('tsc --skipLibCheck --skipDefaultLibCheck --noEmit --noErrorTruncation server/vercel.ts');
 
-    // Build frontend
-    log('Building frontend...');
-    run('vite build');
+    // Build frontend with production optimizations
+    log('Building frontend with production optimizations...');
+    run('VITE_APP_ENV=production vite build --mode production');
+
+    // Ensure static asset optimization
+    log('Optimizing static assets...');
+    // Create a .vercel/output/static directory if needed for static asset optimization
+    const staticOutputDir = path.join(process.cwd(), '.vercel', 'output', 'static');
+    if (!fs.existsSync(staticOutputDir)) {
+      fs.mkdirSync(staticOutputDir, { recursive: true });
+    }
 
     // Build backend (with special handling for vite.ts)
-    log('Building backend...');
-    run('esbuild server/vercel.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
+    log('Building backend with optimizations...');
+    run('esbuild server/vercel.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --minify');
     
     // Create a special type-check workaround for vite.ts
     log('Creating server/vite.d.ts for type compatibility...');

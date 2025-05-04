@@ -1,13 +1,26 @@
 /**
  * Vercel-specific production middleware
  * This middleware adds optimization for Vercel's production environment
+ * and handles Vite-related configurations
  */
 
 import { Request, Response, NextFunction } from 'express';
+import path from 'path';
+import fs from 'fs';
 
 const VERCEL_DEPLOYMENT = process.env.VERCEL === '1';
 const VERCEL_ENV = process.env.VERCEL_ENV;
 const VERCEL_URL = process.env.VERCEL_URL;
+
+// Helper to determine if a request is for a Vite asset
+function isViteAsset(url: string): boolean {
+  return (
+    url.startsWith('/@vite/') || 
+    url.startsWith('/@fs/') || 
+    url.endsWith('.hot-update.json') ||
+    url.endsWith('.hot-update.js')
+  );
+}
 
 // Production-only middleware for Vercel deployments
 export function vercelProductionMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -30,14 +43,25 @@ export function vercelProductionMiddleware(req: Request, res: Response, next: Ne
     }
     
     // Set cache control headers appropriate for Vercel
-    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    if (isViteAsset(req.path)) {
+      // Skip caching for Vite development assets (in case HMR WebSockets are used)
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
       // Cache static assets for 1 year
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (req.path.match(/\.(chunk\.js|chunk\.css)$/)) {
+      // Special handling for chunked Vite assets
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     } else if (req.path.startsWith('/api/')) {
       // Don't cache API responses
       res.setHeader('Cache-Control', 'no-store, max-age=0');
+    } else if (req.path === '/') {
+      // Cache HTML root for a short time but allow revalidation
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=3600');
     } else {
-      // Cache HTML for a short time
+      // Cache other HTML pages for a short time
       res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate=59');
     }
     
@@ -60,12 +84,44 @@ export function vercelProductionMiddleware(req: Request, res: Response, next: Ne
 
 // Export a function to register the middleware
 export function setupVercelMiddleware(app: any) {
+  // Apply the Vercel-specific middleware
   app.use(vercelProductionMiddleware);
   
   if (VERCEL_DEPLOYMENT) {
     console.log(`[vercel] Running in ${VERCEL_ENV || 'unknown'} environment`);
     if (VERCEL_URL) {
       console.log(`[vercel] URL: ${VERCEL_URL}`);
+    }
+    
+    // Apply additional Vercel-specific settings
+    if (VERCEL_ENV === 'production') {
+      // Set trust proxy for correct client IP behind Vercel proxy
+      app.set('trust proxy', true);
+      
+      // Add optimized compression for production
+      try {
+        const compression = require('compression');
+        app.use(compression({
+          level: 6, // Higher compression level for production
+          threshold: 0, // Compress all responses
+          filter: (req: Request) => {
+            // Don't compress already compressed assets
+            if (req.path.match(/\.(jpg|jpeg|png|gif|webp|mp4|pdf|ico)$/)) {
+              return false;
+            }
+            return true;
+          }
+        }));
+        console.log('[vercel] Compression middleware enabled');
+      } catch (err) {
+        console.warn('[vercel] Compression middleware not available, skipping');
+      }
+      
+      // Handle asset access during build-time
+      const publicDir = path.join(process.cwd(), 'dist', 'public');
+      if (fs.existsSync(publicDir)) {
+        console.log(`[vercel] Serving static assets from: ${publicDir}`);
+      }
     }
   }
 }
