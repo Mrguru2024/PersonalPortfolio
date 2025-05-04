@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../db';
-import { contacts, contactFormSchema } from '../../../shared/schema';
+import { db } from '../../db';
+import { contacts, contactFormSchema } from '@/shared/schema';
 import { MailService } from '@sendgrid/mail';
 
 export async function POST(request: NextRequest) {
@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid data', details: result.error.format() }, { status: 400 });
     }
 
-    const { db } = getDb();
     const contactData = {
       ...result.data,
       createdAt: new Date(),
