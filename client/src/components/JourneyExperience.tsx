@@ -345,6 +345,9 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
         });
         
         setManuallyClosedMilestones(newManuallyClosedMilestones);
+        
+        // Reset forceClosed flag to allow popups to show again
+        setForceClosed(false);
       }
     }
   }, [activeSection, milestones]);
