@@ -6,6 +6,7 @@ import { portfolioController } from "./controllers/portfolioController";
 import { blogController } from "./controllers/blogController";
 import { uploadController } from "./controllers/uploadController";
 import { imageController } from "./controllers/imageController";
+import { recommendationController } from "./controllers/recommendationController";
 import { setupAuth } from "./auth";
 
 // Authentication middleware
@@ -72,6 +73,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Image generation API routes
   app.post('/api/images/generate', isAuthenticated, imageController.generateImage); // Requires authentication to prevent abuse
+  
+  // Project recommendation API routes
+  app.post('/api/recommendations', recommendationController.getRecommendations);
 
   const httpServer = createServer(app);
 
