@@ -40,12 +40,6 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "functions": {
-    "server/vercel.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
   "headers": [
     {
       "source": "/(.*).js",
