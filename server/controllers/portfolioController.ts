@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
-import { contactFormSchema, InsertContact, resumeRequestFormSchema, InsertResumeRequest } from '@shared/schema';
+import { 
+  contactFormSchema, 
+  InsertContact, 
+  resumeRequestFormSchema, 
+  InsertResumeRequest,
+  skillEndorsementFormSchema,
+  InsertSkillEndorsement 
+} from '@shared/schema';
 import { storage } from '../storage';
 import { ZodError } from 'zod';
 import { format } from 'date-fns';

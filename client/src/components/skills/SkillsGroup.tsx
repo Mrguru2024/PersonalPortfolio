@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Skill } from "@/lib/data";
 import SkillBar from "./SkillBar";
 import { motion } from "framer-motion";
+import SkillEndorsementCard from "./SkillEndorsementCard";
 
 interface SkillsGroupProps {
   title: string;
@@ -10,7 +11,66 @@ interface SkillsGroupProps {
   barColor?: string;
 }
 
+interface SkillWithEndorsements extends Skill {
+  id?: number;
+  endorsement_count?: number;
+}
+
 const SkillsGroup = ({ title, skills, icon, barColor }: SkillsGroupProps) => {
+  const [skillsWithEndorsements, setSkillsWithEndorsements] = useState<SkillWithEndorsements[]>([]);
+  const [selectedSkill, setSelectedSkill] = useState<SkillWithEndorsements | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch skills data from the API
+  const fetchSkills = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/skills?category=${encodeURIComponent(title)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Merge API data with our local data
+        const mergedSkills = skills.map(localSkill => {
+          const apiSkill = data.find((s: any) => s.name === localSkill.name);
+          return {
+            ...localSkill,
+            id: apiSkill?.id,
+            endorsement_count: apiSkill?.endorsement_count || 0
+          };
+        });
+        
+        setSkillsWithEndorsements(mergedSkills);
+      } else {
+        // If API fails, use local skills with no endorsements
+        const fallbackSkills = skills.map(skill => ({
+          ...skill,
+          endorsement_count: 0
+        }));
+        setSkillsWithEndorsements(fallbackSkills);
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      // Use local skills with no endorsements on error
+      const fallbackSkills = skills.map(skill => ({
+        ...skill,
+        endorsement_count: 0
+      }));
+      setSkillsWithEndorsements(fallbackSkills);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Initial data fetch
+  useEffect(() => {
+    fetchSkills();
+  }, []);
+  
+  const handleSkillClick = (skill: SkillWithEndorsements) => {
+    setSelectedSkill(skill);
+  };
+  
   return (
     <motion.div 
       className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 transition-all hover:shadow-xl h-full relative overflow-hidden"
@@ -60,14 +120,21 @@ const SkillsGroup = ({ title, skills, icon, barColor }: SkillsGroupProps) => {
       </motion.h3>
       
       <div className="space-y-2">
-        {skills.map((skill, index) => (
-          <SkillBar 
-            key={skill.name} 
-            skill={skill} 
-            barColor={barColor} 
-          />
+        {skillsWithEndorsements.map((skill, index) => (
+          <div key={skill.name} onClick={() => handleSkillClick(skill)}>
+            <SkillBar 
+              skill={skill} 
+              barColor={barColor} 
+              fetchSkills={fetchSkills}
+            />
+          </div>
         ))}
       </div>
+      
+      {/* Show endorsements for selected skill */}
+      {selectedSkill && selectedSkill.id && (
+        <SkillEndorsementCard skill={selectedSkill} />
+      )}
     </motion.div>
   );
 };

@@ -27,6 +27,9 @@ export interface Project {
 export interface Skill {
   name: string;
   percentage: number;
+  id?: number;
+  endorsement_count?: number;
+  category?: string;
 }
 
 export interface SocialLink {
