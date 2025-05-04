@@ -1,110 +1,133 @@
 # Vercel Deployment Guide for MrGuru.dev Portfolio
 
-This guide will help you deploy your portfolio application to Vercel, ensuring that all features work correctly in production.
+This guide provides step-by-step instructions for deploying your portfolio website to Vercel for production.
 
 ## Prerequisites
 
-Before deploying to Vercel, make sure you have:
+Before starting the deployment process, ensure you have:
 
-1. A Vercel account (sign up at [vercel.com](https://vercel.com))
-2. A GitHub account (for repo hosting and OAuth authentication)
-3. A PostgreSQL database (Vercel Postgres, Neon, Supabase, etc.)
-4. Required API keys (GitHub, SendGrid, etc.)
+1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com) if you don't have an account
+2. **GitHub Account**: Connected to your Vercel account
+3. **Required Environment Variables**: As listed in `.env.example`
 
-## Step 1: Set Up Your Database
+## Environment Variables
 
-The application requires a PostgreSQL database. You have several options:
+Add these environment variables in the Vercel project settings:
 
-### Option A: Vercel Postgres (Recommended for Vercel deployments)
+| Variable Name | Description |
+|---------------|-------------|
+| `GITHUB_TOKEN` | Personal access token for GitHub API integration |
+| `GITHUB_USERNAME` | Your GitHub username (default: Mrguru2024) |
+| `GITHUB_CLIENT_ID` | OAuth App Client ID for GitHub login |
+| `GITHUB_CLIENT_SECRET` | OAuth App Secret for GitHub login |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SESSION_SECRET` | Random string for session encryption |
+| `NODE_ENV` | Set to "production" |
 
-1. In your Vercel dashboard, go to the Storage tab
-2. Click "Create Database" and select PostgreSQL
-3. Follow the setup instructions
-4. Vercel will automatically add the `DATABASE_URL` to your environment variables
+## Deployment Steps
 
-### Option B: Neon Database (Free tier available)
+### Option 1: Deploy from GitHub
 
-1. Sign up at [neon.tech](https://neon.tech)
-2. Create a new project
-3. Get your connection string from the dashboard
-4. Add it as `DATABASE_URL` in your Vercel environment variables
+1. Push your code to GitHub
+2. Log in to Vercel Dashboard
+3. Click "Import Project"
+4. Select "Import Git Repository"
+5. Choose your portfolio repository
+6. Configure project:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+7. Add environment variables from above
+8. Click "Deploy"
 
-## Step 2: Set Up Environment Variables
+### Option 2: Deploy with Vercel CLI
 
-In your Vercel project settings, add the following environment variables:
-
-```
-DATABASE_URL=your_postgresql_connection_string
-SESSION_SECRET=random_secure_string
-GITHUB_CLIENT_ID=your_github_oauth_app_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_app_client_secret
-GITHUB_TOKEN=your_github_personal_access_token
-FRONTEND_URL=https://your-vercel-domain.com
-FROM_EMAIL=your-email@example.com
-CONTACT_EMAIL=contact@example.com
-```
-
-## Step 3: GitHub OAuth Configuration
-
-For GitHub authentication to work:
-
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Create or update your OAuth App
-3. Set the Authorization callback URL to:
+1. Install Vercel CLI:
    ```
-   https://your-vercel-domain.com/api/auth/github/callback
+   npm install -g vercel
    ```
-4. Copy the Client ID and Client Secret to your Vercel environment variables
 
-## Step 4: GitHub Skills Integration
-
-For GitHub skills tracking:
-
-1. Create a personal access token with `repo` and `user` scopes
-2. Add this token as `GITHUB_TOKEN` in your Vercel environment variables
-
-## Step 5: Deploy to Vercel
-
-1. Connect your GitHub repository to Vercel
-2. Vercel will automatically detect the configuration
-3. Use the following settings:
-   - Build Command: `node vercel-build.js` (already configured in vercel.json)
-   - Output Directory: `dist` (already configured in vercel.json)
-   - Install Command: `npm install` (already configured in vercel.json)
-
-## Step 6: Run Database Migrations
-
-After your first deployment:
-
-1. You need to run the database migrations to create the tables
-2. Use Vercel CLI or the Vercel dashboard to run:
+2. Log in to Vercel:
    ```
-   npm run db:push
+   vercel login
    ```
+
+3. Deploy:
+   ```
+   vercel
+   ```
+
+4. Follow the prompts to configure your project
+5. For subsequent deployments use:
+   ```
+   vercel --prod
+   ```
+
+## Post-Deployment Configuration
+
+### 1. Custom Domain Setup
+
+1. Go to Project Settings > Domains
+2. Add your domain (e.g., mrguru.dev)
+3. Follow DNS configuration instructions
+
+### 2. GitHub OAuth Configuration
+
+1. Update your GitHub OAuth App settings with your production callback URL:
+   - Go to GitHub Developer Settings > OAuth Apps
+   - Update Authorization callback URL to `https://yourdomain.com/api/auth/github/callback`
+
+### 3. Database Setup
+
+Ensure your database is properly migrated:
+
+1. Make sure your PostgreSQL database is accessible from Vercel
+2. Run migrations on first deployment
 
 ## Troubleshooting
 
-If you encounter issues after deployment:
+### Common Issues
 
-1. **Database Connection Issues**:
-   - Check that your `DATABASE_URL` is correct
+1. **GitHub API Rate Limiting**
+   - Check that your GitHub token has sufficient permissions
+   - Verify the token is correctly configured in environment variables
+
+2. **Database Connection Errors**
    - Ensure your database allows connections from Vercel's IP ranges
+   - Check your DATABASE_URL format and credentials
 
-2. **GitHub Authentication Issues**:
-   - Verify the OAuth callback URL is correct
-   - Check that GitHub OAuth credentials are correctly configured
+3. **Build Failures**
+   - Review build logs in Vercel dashboard
+   - Make sure dependencies are properly installed
 
-3. **GitHub Skills Data Issues**:
-   - Verify your GitHub token has the required permissions
-   - Check logs for any API rate limiting messages
+### Helpful Commands
 
-4. **General Deployment Issues**:
-   - Review the Vercel build logs
-   - Try redeploying after fixing any environment variable issues
-   - Check that all required environment variables are set
+To test your production build locally before deploying:
 
-## Additional Information
+```bash
+# Build the project
+npm run build
 
-- The application uses a custom server setup for Vercel via `server/vercel.ts`
-- The build process is customized using `vercel-build.js` to ensure proper bundling
-- All API routes are properly configured to work in the Vercel serverless environment
+# Serve the production build
+npx serve -s dist
+```
+
+## Monitoring and Analytics
+
+After deployment, consider setting up:
+
+1. **Vercel Analytics**: Enable in Project Settings
+2. **Google Analytics**: Add your tracking ID
+3. **Error Monitoring**: Configure Sentry or similar service
+
+## Security Best Practices
+
+1. Never commit sensitive environment variables
+2. Regularly rotate your secrets and tokens
+3. Enable GitHub branch protection for production branches
+4. Set up automatic HTTPS redirects (default with Vercel)
+
+---
+
+For additional support, contact Anthony Feaster at [your contact information]

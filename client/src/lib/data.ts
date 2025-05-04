@@ -205,21 +205,22 @@ export const projects: Project[] = [
   {
     id: "stackzen",
     title: "Stackzen",
-    description: "A full-stack developer collaboration platform with code sharing and real-time chat.",
+    description: "An intelligent income and expense tracking platform with data visualization and financial insights.",
     image: "https://images.unsplash.com/photo-1600132806608-231446b2e7af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
-    tags: ["React", "Node.js", "MongoDB", "WebSockets"],
+    tags: ["React", "Vite", "Node.js", "Express", "PostgreSQL"],
     category: "web",
-    githubUrl: "https://github.com/Mrguru2024",
-    liveUrl: "https://mrguru2024.github.io/My-Portfolio-Website/",
-    details: "Stackzen is a developer collaboration platform that allows users to share code, collaborate in real-time, and chat with team members. The platform includes code highlighting, version history, and project management tools.",
-    demoType: "github",
-    repoOwner: "Mrguru2024",
-    repoName: "My-Portfolio-Website",
+    githubUrl: "https://github.com/Mrguru2024/Stackzen",
+    liveUrl: "https://income-intelligence-mytech7.replit.app/",
+    details: "Stackzen is an advanced financial management platform designed to help users track income, expenses, and financial goals. It features interactive data visualizations, budget planning tools, and personalized insights to improve financial health.",
+    demoType: "iframe",
+    demoUrl: "https://income-intelligence-mytech7.replit.app/",
     demoConfig: {
-      showCode: true,
-      githubBranch: "main"
+      width: "100%",
+      height: "650px",
+      allowFullscreen: true,
+      isResponsive: true
     },
-    techStack: ["React", "Node.js", "Express", "MongoDB", "Socket.io"]
+    techStack: ["React", "Vite", "TailwindCSS", "Express", "PostgreSQL", "Chart.js"]
   },
   {
     id: "inventory-management",
