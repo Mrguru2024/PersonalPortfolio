@@ -6,7 +6,13 @@ import { eq, asc } from "drizzle-orm";
 export async function GET(request: NextRequest) {
   try {
     // Fetch all skills from the database
-    const allSkills = await db.select().from(skills).orderBy(asc(skills.id));
+    const allSkills = await db.select({
+      id: skills.id,
+      name: skills.name,
+      category: skills.category,
+      percentage: skills.percentage,
+      endorsement_count: skills.endorsement_count
+    }).from(skills).orderBy(asc(skills.id));
     
     return NextResponse.json(allSkills);
   } catch (error) {

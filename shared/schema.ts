@@ -63,14 +63,8 @@ export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(),
-  proficiency: integer("proficiency").notNull(),
-  percentage: integer("percentage").notNull(), // For backward compatibility
-  endorsementCount: integer("endorsement_count").default(0).notNull(), // For backward compatibility
-  icon: text("icon"),
-  color: text("color"),
-  yearsOfExperience: integer("years_of_experience"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  percentage: integer("percentage").notNull(),
+  endorsement_count: integer("endorsement_count").default(0).notNull(),
 });
 
 // Skill Endorsements Table
