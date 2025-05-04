@@ -1,12 +1,9 @@
 {
   "include": [
-    "app/**/*", 
     "client/src/**/*", 
     "shared/**/*", 
     "server/**/*",
-    "components/**/*",
-    "next-env.d.ts",
-    ".next/types/**/*.ts"
+    "components/**/*"
   ],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts", "server/vite.ts"],
   "compilerOptions": {
