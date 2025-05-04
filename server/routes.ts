@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { portfolioController } from "./controllers/portfolioController";
 import { blogController } from "./controllers/blogController";
 import { uploadController } from "./controllers/uploadController";
+import { imageController } from "./controllers/imageController";
 import { setupAuth } from "./auth";
 
 // Authentication middleware
@@ -68,6 +69,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload API routes
   app.post('/api/upload', isAdmin, uploadController.uploadMedia); // Only admins can upload
   app.get('/uploads/:filename', uploadController.serveMedia); // But everyone can view uploaded files
+  
+  // Image generation API routes
+  app.post('/api/images/generate', isAuthenticated, imageController.generateImage); // Requires authentication to prevent abuse
 
   const httpServer = createServer(app);
 
