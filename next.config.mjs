@@ -1,76 +1,62 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable React strict mode for better development experience
   reactStrictMode: true,
-  
-  // Configure image domains that are allowed for optimization 
+  swcMinify: true,
   images: {
-    domains: [
-      'localhost',
-      'mrguru.dev',
-      'images.unsplash.com',
-      'source.unsplash.com',
-      'via.placeholder.com',
-    ],
+    domains: ['github.com', 'avatars.githubusercontent.com', 'images.unsplash.com'],
   },
-  
-  // Disable Next.js server-side build-time linting
-  // (we'll use our own lint process)
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Use server components by default
+  compiler: {
+    // Enables the styled-components SWC transform
+    styledComponents: true,
   },
-  
-  // Configure custom output directory for build files
-  distDir: '.next',
-  
-  // Configure redirects if needed
-  async redirects() {
-    return [
-      // Example redirect for legacy URLs
-      // {
-      //   source: '/old-blog/:slug',
-      //   destination: '/blog/:slug',
-      //   permanent: true,
-      // },
-    ];
+  webpack(config) {
+    // Support for svg imports
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
+    return config;
   },
-  
-  // Configure headers
   async headers() {
     return [
       {
-        // Apply these headers to all routes
-        source: '/:path*',
+        source: "/(.*)",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            key: "X-Frame-Options",
+            value: "DENY",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
           },
         ],
       },
     ];
   },
-  
-  // Configure webpack if needed
-  webpack: (config, { isServer }) => {
-    // Add custom webpack configuration if needed
-    return config;
+  async redirects() {
+    return [
+      {
+        source: '/github',
+        destination: 'https://github.com/Mrguru2024',
+        permanent: false,
+      },
+      {
+        source: '/twitter',
+        destination: 'https://twitter.com/MrGuru2024',
+        permanent: false,
+      },
+      {
+        source: '/linkedin',
+        destination: 'https://linkedin.com/in/anthony-feaster',
+        permanent: false,
+      }
+    ];
   },
 };
 

@@ -1,74 +1,59 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-/**
- * Combine class names with tailwind-merge for optimal class handling
- */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 /**
- * Format a date using Intl.DateTimeFormat
+ * Format a date to a readable string
  */
-export function formatDate(date: Date | string, options: Intl.DateTimeFormatOptions = {}) {
-  const dateToFormat = typeof date === "string" ? new Date(date) : date;
-  
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    ...options,
-  };
-  
-  return new Intl.DateTimeFormat("en-US", defaultOptions).format(dateToFormat);
+export function formatDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 /**
- * Format a date for datetime attribute (ISO format)
+ * Generate a random string (used for IDs)
  */
-export function formatDateISO(date: Date | string) {
-  const dateToFormat = typeof date === "string" ? new Date(date) : date;
-  return dateToFormat.toISOString();
+export function generateId(length = 8): string {
+  return Math.random().toString(36).substring(2, 2 + length);
 }
 
 /**
- * Delay execution for specified milliseconds
+ * Validate an email address format
+ */
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/**
+ * Truncate a string to a certain length with ellipsis
+ */
+export function truncateString(str: string, num: number): string {
+  if (str.length <= num) {
+    return str;
+  }
+  return str.slice(0, num) + '...';
+}
+
+/**
+ * Delay for a certain amount of time
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Generate a random string (for IDs, tokens, etc.)
+ * Check if we're running on the server
  */
-export function generateRandomString(length = 8): string {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  
-  return result;
-}
+export const isServer = typeof window === 'undefined';
 
 /**
- * Truncate text to specified length with ellipsis
+ * Check if we're running on the client
  */
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + '...';
-}
-
-/**
- * Convert string to slug format (lowercase, hyphens)
- */
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+export const isClient = !isServer;

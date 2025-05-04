@@ -31,6 +31,12 @@ fi
 echo "🧹 Cleaning up build artifacts..."
 rm -rf .next node_modules/.cache 2>/dev/null || true
 
+# Fix imports in UI components
+echo "🔧 Fixing component import paths..."
+find app/components/ui -type f -name "*.tsx" -exec sed -i 's|@/app/lib/utils|@/lib/utils|g' {} \;
+find app/components -type f -name "*.tsx" -exec sed -i 's|from "lucide-react"|from "lucide-react/dist/esm/index"|g' {} \;
+echo "✅ Import paths fixed"
+
 # Check for environment variables
 echo "🔍 Checking environment variables..."
 if [ -z "$DATABASE_URL" ]; then
