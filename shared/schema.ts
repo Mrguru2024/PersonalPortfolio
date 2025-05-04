@@ -9,10 +9,13 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email"),
   isAdmin: boolean("is_admin").default(false),
+  role: text("role").default("user").notNull(),
+  full_name: text("full_name"),
   // GitHub OAuth related fields
   githubId: text("github_id"),
   githubUsername: text("github_username"),
   avatarUrl: text("avatar_url"),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -20,9 +23,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   email: true,
   isAdmin: true,
+  role: true,
+  full_name: true,
   githubId: true,
   githubUsername: true,
   avatarUrl: true,
+  created_at: true
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
