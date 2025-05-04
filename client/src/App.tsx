@@ -140,6 +140,44 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
+          {/* Global SEO settings - these will be overridden by page-specific SEO */}
+          <Helmet>
+            <meta charSet="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="theme-color" content="#6366f1" />
+            <link rel="icon" href="/favicon.ico" />
+            <link rel="apple-touch-icon" href="/logo192.png" />
+            <meta name="author" content="Anthony Feaster" />
+            <meta name="robots" content="index, follow" />
+            
+            {/* Default title and description (will be overridden by page-specific SEO) */}
+            <title>MrGuru.dev | Anthony Feaster | Full Stack Developer</title>
+            <meta 
+              name="description" 
+              content="Anthony Feaster is a Full Stack Developer specializing in modern web technologies, custom applications, and innovative solutions."
+            />
+            
+            {/* Default Open Graph / Facebook metadata */}
+            <meta property="og:type" content="website" />
+            <meta property="og:url" content="https://mrguru.dev/" />
+            <meta property="og:title" content="MrGuru.dev | Anthony Feaster | Full Stack Developer" />
+            <meta 
+              property="og:description" 
+              content="Explore my portfolio of projects, skills, and expertise in web development."
+            />
+            <meta property="og:image" content="https://mrguru.dev/images/mrguru-og-image.jpg" />
+            
+            {/* Default Twitter metadata */}
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:url" content="https://mrguru.dev/" />
+            <meta name="twitter:title" content="MrGuru.dev | Anthony Feaster | Full Stack Developer" />
+            <meta 
+              name="twitter:description" 
+              content="Explore my portfolio of projects, skills, and expertise in web development."
+            />
+            <meta name="twitter:image" content="https://mrguru.dev/images/mrguru-og-image.jpg" />
+          </Helmet>
+          
           <Toaster />
           
           {/* Only show immersive features when isImmersive is true */}

@@ -4,6 +4,7 @@ import { ArrowLeft, Lightbulb } from 'lucide-react';
 import { Link } from 'wouter';
 import ProjectRecommendationForm from '@/components/recommendations/ProjectRecommendationForm';
 import ProjectRecommendationResults from '@/components/recommendations/ProjectRecommendationResults';
+import { PageSEO } from '@/components/SEO';
 
 interface RecommendationData {
   recommendations: Array<{
@@ -39,6 +40,16 @@ const ProjectRecommendationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20">
+      {/* Add SEO for Project Recommendations */}
+      <PageSEO 
+        title="AI Project Recommendations | Find Your Perfect Project | MrGuru.dev"
+        description="Get personalized project recommendations tailored to your interests, skills, and learning goals using our AI-powered recommendation engine."
+        canonicalPath="/recommendations"
+        keywords={["AI recommendations", "project finder", "personalized projects", "web development", "recommendation engine", "GPT-4o"]}
+        ogType="website"
+        schemaType="WebPage"
+      />
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-blue-900 to-indigo-800 text-white py-16 px-4 sm:px-6">
         <div className="container mx-auto max-w-5xl">

@@ -9,6 +9,7 @@ import ProjectDemo from "@/components/project/ProjectDemo";
 import { ProjectSynopsis } from "@/components/projects/ProjectSynopsis";
 import { projects } from "@/lib/data";
 import ParallaxBackground from "@/components/ParallaxBackground";
+import { PageSEO } from "@/components/SEO";
 
 const ProjectDetails = () => {
   const [match, params] = useRoute("/projects/:id");
@@ -46,6 +47,20 @@ const ProjectDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
+      {/* Add SEO for Project Details */}
+      {project && (
+        <PageSEO 
+          title={`${project.title} | Project Details | MrGuru.dev`}
+          description={project.description}
+          canonicalPath={`/projects/${projectId}`}
+          keywords={[...project.tags, ...project.techStack || [], project.category]}
+          ogType="article"
+          ogImage={project.image}
+          ogImageAlt={`${project.title} project screenshot`}
+          schemaType="WebPage"
+        />
+      )}
+      
       <ParallaxBackground />
 
       <div className="container mx-auto px-4 py-16 relative z-10">

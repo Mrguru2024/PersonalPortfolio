@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { Wand2 } from 'lucide-react';
+import { PageSEO } from '@/components/SEO';
 
 export default function ImageGeneratorPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -72,6 +73,16 @@ export default function ImageGeneratorPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {/* Add SEO for Image Generator Page */}
+      <PageSEO 
+        title="AI Image Generator | Create Custom Images | MrGuru.dev"
+        description="Generate custom images for your projects, blogs, and portfolio using OpenAI's DALL-E 3 model. Create professional visuals with simple text prompts."
+        canonicalPath="/generate-images"
+        keywords={["AI image generator", "DALL-E 3", "custom images", "OpenAI", "blog images", "project visuals", "portfolio graphics"]}
+        ogType="website"
+        schemaType="WebPage"
+      />
+      
       <div className="flex flex-col items-center justify-center mb-8 text-center">
         <div className="bg-primary/10 p-3 rounded-full mb-4">
           <Wand2 className="h-10 w-10 text-primary" />
