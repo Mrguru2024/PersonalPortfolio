@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node vercel-build-static.js",
+  "buildCommand": "node vercel-build-static.cjs",
   "outputDirectory": "dist",
   "headers": [
     {

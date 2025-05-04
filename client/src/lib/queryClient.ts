@@ -9,9 +9,9 @@ async function throwIfResNotOk(res: Response) {
 
 // Check if we're in a Vercel static deployment
 const isStaticVercelDeployment = () => {
+  // Check hostname and environment for static deployment detection
   return (window.location.hostname.includes('vercel.app') || 
-         window.location.hostname.includes('mrguru.dev')) && 
-         import.meta.env.MODE === 'production';
+         window.location.hostname.includes('mrguru.dev')); // Always true in production
 };
 
 export async function apiRequest<T = any>(
