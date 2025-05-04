@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 10% 99%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 242 83% 45%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 71.4% 4.1%;
+    --radius: 0.75rem;
   }
-
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 220 100% 50%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -57,131 +57,92 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  h1, h2, h3 {
+    @apply tracking-tight;
+  }
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold;
+  }
+  h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold;
+  }
+  h3 {
+    @apply text-xl md:text-2xl font-semibold;
+  }
+  p {
+    @apply leading-7;
+  }
 }
 
 @layer components {
-  /* Container styles */
-  .container-custom {
-    @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+  .gradient-heading {
+    @apply bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent;
   }
   
-  /* Typography styles */
-  .heading-xl {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  .gradient-border {
+    @apply border-2 border-transparent relative;
+    background-image: linear-gradient(var(--background), var(--background)), 
+                      linear-gradient(to right, #4f46e5, #3b82f6);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
   }
   
-  .heading-lg {
-    @apply text-3xl md:text-4xl font-bold tracking-tight;
+  .animated-gradient-bg {
+    @apply absolute z-0 w-full h-full opacity-50 dark:opacity-30;
+    background: linear-gradient(
+      -45deg,
+      rgba(79, 70, 229, 0.2),
+      rgba(59, 130, 246, 0.2),
+      rgba(147, 51, 234, 0.2)
+    );
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
   }
   
-  .heading-md {
-    @apply text-2xl md:text-3xl font-bold;
+  .journey-milestone .journey-popup {
+    @apply invisible opacity-0 origin-left transition-all duration-200;
   }
   
-  .heading-sm {
-    @apply text-xl md:text-2xl font-semibold;
+  .journey-milestone:hover .journey-popup,
+  .journey-milestone:focus .journey-popup {
+    @apply visible opacity-100;
   }
   
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+  /* Hero section diagonal split design */
+  .hero-diagonal-split {
+    @apply relative overflow-hidden z-0;
   }
   
-  /* Button styles */
-  .btn-primary {
-    @apply inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:pointer-events-none disabled:opacity-50;
+  .hero-diagonal-split::after {
+    content: '';
+    @apply absolute top-0 right-0 w-full h-full -z-10 bg-background;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 80%);
+    transform: translateY(-1px);
   }
   
-  .btn-secondary {
-    @apply inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-6 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none disabled:opacity-50;
-  }
-  
-  .btn-ghost {
-    @apply inline-flex h-10 items-center justify-center rounded-md px-6 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none disabled:opacity-50;
-  }
-  
-  /* Section styles */
-  .section {
-    @apply py-16 md:py-24;
-  }
-  
-  /* Card styles */
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
-  }
-  
-  /* Custom cursor styles */
+  /* Interactive cursor styling */
   .custom-cursor {
-    @apply fixed rounded-full pointer-events-none z-50 mix-blend-difference;
-    height: 20px;
-    width: 20px;
-    transform: translate(-50%, -50%);
-    transition: width 0.2s, height 0.2s, background-color 0.2s;
+    @apply fixed h-8 w-8 rounded-full pointer-events-none z-[1000] backdrop-blur-sm backdrop-brightness-125 border flex justify-center items-center text-sm font-medium transform -translate-x-1/2 -translate-y-1/2 overflow-hidden hidden md:flex;
+    transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease, transform 0.1s ease;
   }
   
-  .custom-cursor.hovering {
-    height: 40px;
-    width: 40px;
-    background-color: white;
+  .section-info {
+    @apply absolute top-full left-1/2 transform -translate-x-1/2 mt-2 whitespace-nowrap px-2 py-1 rounded text-xs opacity-0 transition-opacity duration-200;
   }
   
-  .custom-cursor.clicking {
-    height: 16px;
-    width: 16px;
-  }
-  
-  .cursor-tooltip {
-    @apply fixed bg-black text-white rounded-md px-3 py-1 text-xs whitespace-nowrap opacity-0 transition-opacity duration-300 pointer-events-none;
-    transform: translate(-50%, 30px);
-  }
-  
-  .cursor-tooltip.visible {
+  .custom-cursor:hover .section-info {
     @apply opacity-100;
   }
-  
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
   }
-  
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+  50% {
+    background-position: 100% 50%;
   }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in-out forwards;
-  }
-  
-  .animate-slide-up {
-    animation: slideUp 0.5s ease-out forwards;
-  }
-  
-  /* Journey Experience styles */
-  @media (min-width: 1025px) {
-    main {
-      padding-left: 160px !important;
-    }
-  }
-  
-  .journey-milestone {
-    transition: all 0.2s ease-out;
-  }
-  
-  /* Ensure the journey component is not covered by the header at various screen sizes */
-  .top-32 {
-    top: 8rem !important; /* For mobile screens */
-  }
-  
-  @media (min-width: 640px) {
-    .sm\:top-28 {
-      top: 7rem !important; /* For small screens */
-    }
-  }
-  
-  @media (min-width: 768px) {
-    .md\:top-24 {
-      top: 6rem !important; /* For medium and larger screens */
-    }
+  100% {
+    background-position: 0% 50%;
   }
 }

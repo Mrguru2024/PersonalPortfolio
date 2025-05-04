@@ -56,14 +56,15 @@ export async function POST(request: NextRequest) {
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : null;
     
     // Create the endorsement
+    const now = new Date();
     const newEndorsement = await db.insert(skillEndorsements).values({
       skillId: data.skillId,
       name: data.name,
       email: data.email,
       comment: data.comment || null,
       rating: data.rating,
-      ipAddress,
-      createdAt: new Date().toISOString(),
+      ipAddress: ipAddress || undefined,
+      // Don't specify createdAt - it has a defaultNow() in the schema
     }).returning();
     
     return NextResponse.json(newEndorsement[0], { status: 201 });

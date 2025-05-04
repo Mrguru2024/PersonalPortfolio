@@ -1,131 +1,86 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import QuickNav from "@/components/QuickNav";
-import CustomCursor from "@/components/CustomCursor";
-import JourneyExperience from "@/components/JourneyExperience";
 
 export default function Template({ children }: { children: React.ReactNode }) {
-  const [currentSection, setCurrentSection] = useState("home");
+  const [isNavigating, setIsNavigating] = useState(false);
   const [quickNavOpen, setQuickNavOpen] = useState(false);
   
-  // Handle section visibility detection
-  useEffect(() => {
-    // Only run on the client side
-    if (typeof window === "undefined") return;
-    
-    // Function to determine the current visible section
-    const handleScroll = () => {
-      const sections = document.querySelectorAll("section[id]");
-      let currentSectionId = currentSection;
-      
-      sections.forEach((section) => {
-        const sectionTop = section.getBoundingClientRect().top;
-        const sectionId = section.getAttribute("id") || "";
-        
-        // If the section is in view
-        if (sectionTop <= 100 && sectionTop >= -section.clientHeight + 100) {
-          currentSectionId = sectionId;
-        }
-      });
-      
-      if (currentSectionId !== currentSection) {
-        setCurrentSection(currentSectionId);
-      }
-    };
-    
-    // Listen for scroll events
-    window.addEventListener("scroll", handleScroll);
-    
-    // Initial check
-    handleScroll();
-    
-    // Clean up the event listener
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [currentSection]);
-  
-  // Handle keyboard shortcuts
+  // Handle keyboard events for navigation and accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only if Alt key is pressed
-      if (e.altKey) {
-        switch (e.key) {
-          case "1":
-            navigateToSection("home");
-            break;
-          case "2":
-            navigateToSection("about");
-            break;
-          case "3":
-            navigateToSection("projects");
-            break;
-          case "4":
-            navigateToSection("skills");
-            break;
-          case "5":
-            navigateToSection("contact");
-            break;
-          case "b":
-          case "B":
-            window.location.href = "/blog";
-            break;
-          case "r":
-          case "R":
-            window.location.href = "/resume";
-            break;
-        }
-      }
-      
-      // Ctrl+K to open quick navigation
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      // Cmd/Ctrl + K to open quick navigation
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setQuickNavOpen(true);
+      }
+      
+      // Escape key to close quick navigation
+      if (e.key === "Escape" && quickNavOpen) {
+        e.preventDefault();
+        setQuickNavOpen(false);
       }
     };
     
     window.addEventListener("keydown", handleKeyDown);
-    
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-  
-  // Function to navigate to a section on the home page
-  const navigateToSection = (sectionId: string) => {
-    // If not on home page, navigate to home page with hash
-    if (window.location.pathname !== "/") {
-      window.location.href = `/#${sectionId}`;
-      return;
-    }
-    
-    // Otherwise, scroll to the section
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-      setCurrentSection(sectionId);
-    }
-  };
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [quickNavOpen]);
   
   return (
     <>
-      {/* Main content with children */}
-      {children}
-      
-      {/* Interactive journey experience with dedicated positioning wrapper */}
-      <div className="fixed left-0 top-0 w-full h-full pointer-events-none" style={{ zIndex: 30 }}>
-        <JourneyExperience activeSection={currentSection} />
-      </div>
-      
-      {/* Quick navigation overlay */}
-      <QuickNav
-        isOpen={quickNavOpen}
+      {/* Quick navigation panel */}
+      <QuickNav 
+        isOpen={quickNavOpen} 
         onClose={() => setQuickNavOpen(false)}
-        currentSection={currentSection}
-        onSectionClick={navigateToSection}
+        currentSection={""}
+        onSectionClick={() => {}}
       />
       
-      {/* Custom cursor */}
-      <CustomCursor currentSection={currentSection} />
+      {/* Page transition animation */}
+      <AnimatePresence mode="wait">
+        <motion.main
+          key="main-content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ 
+            type: "tween", 
+            ease: "easeInOut", 
+            duration: 0.3 
+          }}
+          className="flex flex-col min-h-screen"
+        >
+          {children}
+        </motion.main>
+      </AnimatePresence>
+      
+      {/* Full page preloader - shown during navigation */}
+      <AnimatePresence>
+        {isNavigating && (
+          <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex flex-col items-center">
+              <motion.div 
+                className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ 
+                  duration: 1, 
+                  repeat: Infinity, 
+                  ease: "linear" 
+                }}
+              />
+              <p className="mt-4 text-lg font-medium">Loading...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
