@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, ThumbsUp } from 'lucide-react';
-import { SkillEndorsement } from '@shared/schema';
+import { type SkillEndorsement } from '@shared/schema';
 import { format } from 'date-fns';
 
 interface SkillEndorsementCardProps {

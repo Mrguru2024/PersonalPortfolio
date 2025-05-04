@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Skill, SkillEndorsement, skillEndorsementFormSchema } from '@shared/schema';
+import { type Skill, type SkillEndorsement, skillEndorsementFormSchema } from '@shared/schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';

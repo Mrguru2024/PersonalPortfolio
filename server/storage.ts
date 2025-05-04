@@ -152,7 +152,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...endorsement,
         ipAddress,
-        createdAt: now.toISOString()
+        createdAt: now
       })
       .returning();
     return insertedEndorsement;
