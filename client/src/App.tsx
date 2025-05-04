@@ -13,6 +13,7 @@ import AdminBlog from "@/pages/AdminBlog";
 import AuthPage from "@/pages/auth-page";
 import ResumePage from "@/pages/ResumePage";
 import ImageGeneratorPage from "@/pages/ImageGeneratorPage";
+import ProjectRecommendationPage from "@/pages/ProjectRecommendationPage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/resume" component={ResumePage} />
       <Route path="/generate-images" component={ImageGeneratorPage} />
+      <Route path="/recommendations" component={ProjectRecommendationPage} />
       <ProtectedRoute path="/admin/blog" component={AdminBlog} />
       <Route component={NotFound} />
     </Switch>

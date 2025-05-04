@@ -327,6 +327,48 @@ const ProjectsSection = () => {
             }}
           />
           
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto mb-10 bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800"
+          >
+            <h3 className="text-xl font-bold mb-2 text-primary">Discover Your Perfect Project Match</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Not sure which project fits your needs? Our AI-powered recommendation engine can suggest the perfect projects based on your interests and requirements.
+            </p>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="text-center"
+            >
+              <a href="/recommendations">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300"
+                >
+                  <span className="flex items-center gap-2">
+                    Get AI Project Recommendations
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 180, 360],
+                      }}
+                      transition={{ 
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "linear" 
+                      }}
+                    >
+                      <Code className="h-4 w-4" />
+                    </motion.div>
+                  </span>
+                </Button>
+              </a>
+            </motion.div>
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
