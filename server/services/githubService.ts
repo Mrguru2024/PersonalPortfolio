@@ -3,10 +3,21 @@ import { Skill } from '@shared/schema';
 import fs from 'fs';
 import path from 'path';
 
-// Initialize the Octokit client with the GitHub token from environment variables
+// Get the GitHub token from environment variables
+const githubToken = process.env.GITHUB_TOKEN;
+
+// Check if token is present and valid (a valid token is at least 35 chars)
+const isValidToken = !!githubToken && githubToken.length >= 35;
+
+// Only initialize Octokit with auth if token is valid
 const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN
+  auth: isValidToken ? githubToken : undefined
 });
+
+// Log warning if no valid token
+if (!isValidToken) {
+  console.warn('Warning: No valid GitHub token found. Using unauthenticated requests which have lower rate limits.');
+}
 
 // The GitHub username to fetch data for (from env or default)
 const GITHUB_USERNAME = process.env.GITHUB_USERNAME || 'Mrguru2024';

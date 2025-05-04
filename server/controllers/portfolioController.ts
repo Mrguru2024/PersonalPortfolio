@@ -143,9 +143,9 @@ export const portfolioController = {
       }
       // Otherwise fallback to static data
       return {
-        frontend: frontendSkills,
-        backend: backendSkills,
-        devops: devopsSkills
+        frontend: frontendSkills as Skill[],
+        backend: backendSkills as Skill[],
+        devops: devopsSkills as Skill[]
       };
     }
   },
