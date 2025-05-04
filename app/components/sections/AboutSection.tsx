@@ -1,7 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Code, Briefcase, Award, Coffee } from "lucide-react";
+import Code from "lucide-react/dist/esm/icons/code";
+import Briefcase from "lucide-react/dist/esm/icons/briefcase";
+import Award from "lucide-react/dist/esm/icons/award";
+import Coffee from "lucide-react/dist/esm/icons/coffee";
 
 export default function AboutSection() {
   // Animation variants for staggered animation

@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Github, Linkedin, Mail, Phone } from "lucide-react";
+import Github from "lucide-react/dist/esm/icons/github";
+import Linkedin from "lucide-react/dist/esm/icons/linkedin";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();

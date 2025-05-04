@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Github, ExternalLink, Code, PlayCircle } from "lucide-react";
+import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right";
+import Github from "lucide-react/dist/esm/icons/github";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
+import Code from "lucide-react/dist/esm/icons/code";
+import PlayCircle from "lucide-react/dist/esm/icons/play-circle";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
