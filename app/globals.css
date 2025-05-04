@@ -243,3 +243,27 @@
     padding-left: 160px !important;
   }
 }
+
+/* Journey popup styles to match Vite version */
+.journey-popup {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: absolute;
+  z-index: 100;
+}
+
+.journey-milestone {
+  position: relative;
+  z-index: 60;
+}
+
+/* Fix for button inside button error */
+.journey-milestone button {
+  all: unset;
+  cursor: pointer;
+}
+
+/* More prominent journey indicator */
+.journey-milestone .active {
+  transform: scale(1.2);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+}

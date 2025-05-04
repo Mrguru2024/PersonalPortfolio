@@ -11,7 +11,7 @@ interface JourneyToggleButtonProps {
 export default function JourneyToggleButton({ onClick, isActive }: JourneyToggleButtonProps) {
   return (
     <motion.button 
-      className={`fixed right-6 bottom-6 w-12 h-12 rounded-full flex items-center justify-center z-50 shadow-lg ${
+      className={`fixed left-6 bottom-6 w-12 h-12 rounded-full flex items-center justify-center z-50 shadow-lg ${
         isActive ? 'bg-blue-600 text-white' : 'bg-primary text-white'
       }`}
       whileHover={{ scale: 1.1 }}

@@ -31,7 +31,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [guruPosition, setGuruPosition] = useState<number>(95);
   const [isGuruActive, setIsGuruActive] = useState<boolean>(true);
-  // Modified defaults to make journey more visible by default in Next.js version
+  // Match the Vite version's settings for initial animation and visibility
   const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(false);
   const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(true);
   const [forceClosed, setForceClosed] = useState<boolean>(false);
@@ -281,7 +281,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                       <AnimatePresence>
                         {shouldShowPopup(milestone, index) && (
                           <motion.div 
-                            className="absolute left-full ml-4 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left"
+                            className="absolute left-full ml-4 w-60 bg-card rounded-lg shadow-lg border border-border p-3 text-left journey-popup"
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -10 }}
