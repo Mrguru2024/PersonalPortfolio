@@ -1,99 +1,43 @@
-import NextAuth, { type NextAuthOptions } from 'next-auth';
-import GithubProvider from 'next-auth/providers/github';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { getDb } from '@/app/db';
-import { users, type User } from '@/shared/schema';
-import { eq } from 'drizzle-orm';
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
+import NextAuth, { AuthOptions } from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { db } from "@/db";
 
-const scryptAsync = promisify(scrypt);
-
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split('.');
-  const hashedBuf = Buffer.from(hashed, 'hex');
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+  throw new Error("GitHub OAuth credentials missing");
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
+  adapter: DrizzleAdapter(db),
   providers: [
     GithubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          return null;
-        }
-        
-        try {
-          const db = getDb();
-          const [userRecord] = await db
-            .select()
-            .from(users)
-            .where(eq(users.username, credentials.username));
-          
-          if (!userRecord) {
-            throw new Error('User not found');
-          }
-          
-          const isPasswordValid = await comparePasswords(
-            credentials.password,
-            userRecord.password
-          );
-          
-          if (!isPasswordValid) {
-            throw new Error('Invalid password');
-          }
-          
-          return {
-            id: String(userRecord.id),
-            name: userRecord.username,
-            email: userRecord.email,
-            isAdmin: userRecord.isAdmin,
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
-        }
-      },
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      // Use the appropriate callback URL for your environment
+      callbackUrl: "https://workspace.mytech7.repl.co/api/auth/github/callback",
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.isAdmin = (user as any).isAdmin || false;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.isAdmin = token.isAdmin as boolean;
+    async session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+        // Check if user is admin (typically based on email or user ID)
+        session.user.isAdmin = user.email === "mrguru.dev@gmail.com" || 
+                              user.id === "1"; // Adjust this condition as needed
       }
       return session;
     },
   },
   pages: {
-    signIn: '/auth',
-    signOut: '/',
-    error: '/auth',
+    signIn: "/auth",
+    error: "/auth",
   },
+  secret: process.env.NEXTAUTH_SECRET || "your-fallback-secret-for-development-only",
   session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };
