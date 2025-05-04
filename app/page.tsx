@@ -12,6 +12,7 @@ import ContactSection from "@/components/sections/ContactSection";
 import QuickNav from "@/components/QuickNav";
 import JourneyExperience from "@/components/JourneyExperience";
 import CustomCursor from "@/components/CustomCursor";
+import FloatingNavigation from "@/components/FloatingNavigation";
 
 export default function HomePage() {
   const [quickNavOpen, setQuickNavOpen] = useState(false);
@@ -87,6 +88,7 @@ export default function HomePage() {
       <Footer />
       
       {/* Interactive components */}
+      <FloatingNavigation />
       <JourneyExperience activeSection={currentSection} />
       {!isMobile && <CustomCursor currentSection={currentSection} />}
     </>
