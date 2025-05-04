@@ -59,10 +59,12 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
           <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-primary/50 to-primary-hover/50 opacity-0 blur group-hover:opacity-75 transition-all duration-500" />
         )}
 
-        <motion.button
-          ref={ref}
+        <motion.div
+          ref={ref as any}
+          role="button"
+          tabIndex={0}
           className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background relative',
+            'inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background relative cursor-pointer',
             variantClasses[variant],
             sizeClasses[size],
             withGlowEffect && 'relative',
@@ -70,10 +72,16 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
           )}
           {...hoverMotion}
           {...pressMotion}
-          {...props}
+          onClick={props.onClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              props.onClick?.(e as any);
+            }
+          }}
         >
           {children}
-        </motion.button>
+        </motion.div>
       </div>
     );
   }
