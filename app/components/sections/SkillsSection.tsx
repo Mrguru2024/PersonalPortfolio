@@ -63,7 +63,6 @@ export default function SkillsSection() {
             { 
               id: 1, 
               name: "React / Next.js", 
-              percentage: 95, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 95,
@@ -76,7 +75,7 @@ export default function SkillsSection() {
             { 
               id: 2, 
               name: "TypeScript", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -89,7 +88,7 @@ export default function SkillsSection() {
             { 
               id: 3, 
               name: "TailwindCSS", 
-              percentage: 95, 
+              proficiency: 95, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 95,
@@ -102,7 +101,7 @@ export default function SkillsSection() {
             { 
               id: 4, 
               name: "Framer Motion", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 85,
@@ -115,7 +114,7 @@ export default function SkillsSection() {
             { 
               id: 5, 
               name: "HTML5 / CSS3", 
-              percentage: 95, 
+              proficiency: 95, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 95,
@@ -128,7 +127,7 @@ export default function SkillsSection() {
             { 
               id: 6, 
               name: "JavaScript", 
-              percentage: 95, 
+              proficiency: 95, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 95,
@@ -141,7 +140,7 @@ export default function SkillsSection() {
             { 
               id: 7, 
               name: "Redux / Context API", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -154,7 +153,7 @@ export default function SkillsSection() {
             { 
               id: 8, 
               name: "Responsive Design", 
-              percentage: 95, 
+              proficiency: 95, 
               category: "frontend", 
               endorsementCount: 0,
               proficiency: 95,
@@ -169,7 +168,7 @@ export default function SkillsSection() {
             { 
               id: 9, 
               name: "Node.js", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -182,7 +181,7 @@ export default function SkillsSection() {
             { 
               id: 10, 
               name: "Express", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -195,7 +194,7 @@ export default function SkillsSection() {
             { 
               id: 11, 
               name: "Next.js API Routes", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 85,
@@ -208,7 +207,7 @@ export default function SkillsSection() {
             { 
               id: 12, 
               name: "PostgreSQL", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 85,
@@ -221,7 +220,7 @@ export default function SkillsSection() {
             { 
               id: 13, 
               name: "MongoDB", 
-              percentage: 80, 
+              proficiency: 80, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 80,
@@ -234,7 +233,7 @@ export default function SkillsSection() {
             { 
               id: 14, 
               name: "RESTful APIs", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -247,7 +246,7 @@ export default function SkillsSection() {
             { 
               id: 15, 
               name: "GraphQL", 
-              percentage: 75, 
+              proficiency: 75, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 75,
@@ -260,7 +259,7 @@ export default function SkillsSection() {
             { 
               id: 16, 
               name: "Authentication", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "backend", 
               endorsementCount: 0,
               proficiency: 90,
@@ -275,7 +274,7 @@ export default function SkillsSection() {
             { 
               id: 17, 
               name: "Git / GitHub", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 90,
@@ -288,7 +287,7 @@ export default function SkillsSection() {
             { 
               id: 18, 
               name: "Docker", 
-              percentage: 75, 
+              proficiency: 75, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 75,
@@ -301,7 +300,7 @@ export default function SkillsSection() {
             { 
               id: 19, 
               name: "CI/CD", 
-              percentage: 80, 
+              proficiency: 80, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 80,
@@ -314,7 +313,7 @@ export default function SkillsSection() {
             { 
               id: 20, 
               name: "Testing (Jest, RTL)", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 85,
@@ -327,7 +326,7 @@ export default function SkillsSection() {
             { 
               id: 21, 
               name: "AWS Basics", 
-              percentage: 75, 
+              proficiency: 75, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 75,
@@ -340,7 +339,7 @@ export default function SkillsSection() {
             { 
               id: 22, 
               name: "Agile / Scrum", 
-              percentage: 90, 
+              proficiency: 90, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 90,
@@ -353,7 +352,7 @@ export default function SkillsSection() {
             { 
               id: 23, 
               name: "UI/UX Principles", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 85,
@@ -366,7 +365,7 @@ export default function SkillsSection() {
             { 
               id: 24, 
               name: "Performance Optimization", 
-              percentage: 85, 
+              proficiency: 85, 
               category: "other", 
               endorsementCount: 0,
               proficiency: 85,
