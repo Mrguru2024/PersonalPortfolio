@@ -12,6 +12,7 @@ import {
   blogPostContributions
 } from "@shared/schema";
 import { z } from "zod";
+import { generateBlogPostImage } from "../services/autoImageService";
 
 export const blogController = {
   // Get all published blog posts
@@ -56,13 +57,41 @@ export const blogController = {
       const validatedData = insertBlogPostSchema.parse(req.body);
       const now = new Date();
       
+      // Check if a cover image was provided, if not, generate one using AI
+      let coverImage = validatedData.coverImage;
+      if (!coverImage || coverImage.trim() === '') {
+        console.log("No cover image provided for blog post, generating one with AI...");
+        try {
+          // Generate an image based on the blog post content
+          coverImage = await generateBlogPostImage(
+            validatedData.title,
+            validatedData.content,
+            Array.isArray(validatedData.tags) ? validatedData.tags : []
+          );
+          console.log("Successfully generated AI cover image for blog post");
+        } catch (imageError) {
+          console.error("Failed to generate AI cover image:", imageError);
+          // If we can't generate an image, we'll need to use a fallback
+          // This assumes the database schema allows empty coverImage strings
+          coverImage = "https://placehold.co/1024x1024/0078D7/FFFFFF/png?text=Blog+Post";
+        }
+      }
+      
       const post = await storage.createBlogPost({
         ...validatedData,
+        coverImage, // Use the provided or AI-generated image
         publishedAt: now,
         updatedAt: now
       }, authorId);
       
-      res.status(201).json(post);
+      // Include info about image generation in the response
+      const wasImageGenerated = validatedData.coverImage !== coverImage;
+      
+      res.status(201).json({
+        ...post,
+        imageGenerated: wasImageGenerated,
+        message: wasImageGenerated ? "Cover image was automatically generated" : undefined
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -204,20 +233,45 @@ export const blogController = {
       // Get IP address
       const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
       
+      // Check if a cover image was provided, if not, generate one using AI
+      let coverImage = validatedData.coverImage;
+      if (!coverImage || coverImage.trim() === '') {
+        console.log("No cover image provided for blog contribution, generating one with AI...");
+        try {
+          // Generate an image based on the blog post content
+          coverImage = await generateBlogPostImage(
+            validatedData.title,
+            validatedData.content,
+            Array.isArray(validatedData.tags) ? validatedData.tags : []
+          );
+          console.log("Successfully generated AI cover image for blog contribution");
+        } catch (imageError) {
+          console.error("Failed to generate AI cover image:", imageError);
+          // If we can't generate an image, we'll need to use a fallback
+          coverImage = "https://placehold.co/1024x1024/0078D7/FFFFFF/png?text=Blog+Contribution";
+        }
+      }
+      
       // Create contribution
       const contribution = await storage.createBlogPostContribution({
         title: validatedData.title,
         summary: validatedData.summary,
         content: validatedData.content,
-        coverImage: validatedData.coverImage,
+        coverImage: coverImage, // Use the provided or AI-generated image
         tags: validatedData.tags,
         authorName: validatedData.authorName,
         authorEmail: validatedData.authorEmail
       }, ipAddress);
       
+      // Include info about image generation in the response
+      const wasImageGenerated = validatedData.coverImage !== coverImage;
+      
       res.status(201).json({ 
         ...contribution,
-        message: "Your blog post contribution has been submitted and is awaiting review" 
+        imageGenerated: wasImageGenerated,
+        message: wasImageGenerated 
+          ? "Your blog post contribution has been submitted with an AI-generated cover image and is awaiting review" 
+          : "Your blog post contribution has been submitted and is awaiting review" 
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -139,7 +139,7 @@ const FloatingNavigation: React.FC = () => {
       
       {/* Desktop Navigation */}
       <motion.div
-        className="fixed left-1/2 transform -translate-x-1/2 bottom-6 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
+        className="fixed left-[40%] transform -translate-x-1/2 bottom-6 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}

@@ -306,6 +306,9 @@ const AdminBlog = () => {
                         <FormControl>
                           <Input placeholder="https://example.com/my-image.jpg" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Optional: If left empty, an AI-generated image will be automatically created based on your blog post content.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

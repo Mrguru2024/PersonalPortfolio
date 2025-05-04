@@ -244,7 +244,7 @@ export const blogPostContributionFormSchema = z.object({
   tags: z.array(z.string()).min(1, "At least one tag is required"),
   authorName: z.string().min(2, "Author name is required"),
   authorEmail: z.string().email("Valid email address is required"),
-  coverImage: z.string().min(1, "Cover image is required"),
+  coverImage: z.string().optional().default(""), // Made optional to support AI generation
   captchaToken: z.string().min(1, "CAPTCHA verification is required"),
 });
 
