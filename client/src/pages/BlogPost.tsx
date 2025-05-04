@@ -26,6 +26,7 @@ import { z } from "zod";
 import { BlogPost, BlogComment } from "@/lib/data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
+import { BlogPostSEO } from "@/components/SEO";
 
 // Comment form with CAPTCHA
 interface CommentFormProps {
@@ -260,6 +261,9 @@ const BlogPostPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {/* Add SEO component */}
+      {post && <BlogPostSEO post={post} />}
+      
       <div className="max-w-4xl mx-auto">
         <Link href="/blog">
           <Button variant="ghost" className="mb-6 flex items-center gap-2">

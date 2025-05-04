@@ -5,6 +5,7 @@ import AboutSection from "@/sections/AboutSection";
 import SkillsSection from "@/sections/SkillsSection";
 import BlogSection from "@/sections/BlogSection";
 import ContactSection from "@/sections/ContactSection";
+import { PageSEO } from "@/components/SEO";
 
 interface HomeProps {
   onSectionChange?: (sectionId: string) => void;
@@ -55,6 +56,13 @@ const Home = ({ onSectionChange }: HomeProps) => {
 
   return (
     <>
+      {/* Add SEO for Homepage */}
+      <PageSEO 
+        title="Anthony Feaster | Full Stack Developer | MrGuru.dev"
+        description="Anthony Feaster is a Full Stack Developer specializing in modern web technologies. Explore my portfolio of projects, skills, and expertise."
+        keywords={["fullstack", "developer", "React", "Node.js", "JavaScript", "portfolio", "web development"]}
+        schemaType="ProfilePage"
+      />
       <HeroSection />
       <ProjectsSection />
       <AboutSection />

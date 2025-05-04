@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BlogPost } from "@/lib/data";
 import { apiRequest } from "@/lib/queryClient";
+import { PageSEO } from "@/components/SEO";
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +42,16 @@ const Blog = () => {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {/* Add SEO for Blog page */}
+      <PageSEO 
+        title="Blog | MrGuru.dev"
+        description="Insights, tutorials, and updates from Anthony Feaster - Full Stack Developer. Explore articles on web development, programming, and technology."
+        canonicalPath="/blog"
+        keywords={allTags}
+        ogType="blog"
+        schemaType="CollectionPage"
+      />
+      
       <div className="max-w-5xl mx-auto">
         <div className="mb-12">
           <div className="text-center">
