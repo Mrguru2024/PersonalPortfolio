@@ -85,6 +85,24 @@ Ensure your database is properly migrated:
 1. Make sure your PostgreSQL database is accessible from Vercel
 2. Run migrations on first deployment
 
+### 4. Vite Optimization for Vercel
+
+To ensure optimal performance with Vite on Vercel:
+
+1. **Static Asset Caching**
+   - All static assets (JS, CSS, images) are configured with long-term caching
+   - Dynamic API routes are set with no-cache to ensure fresh data
+
+2. **Production Performance**
+   - Compression middleware is enabled for text-based responses
+   - Production builds are minified and optimized
+   - Unnecessary console logs are removed in production
+
+3. **Special TypeScript Handling**
+   - A declaration file (server/vite.d.ts) provides simplified types
+   - The tsconfig.json excludes problematic files from type checking 
+   - vercel-build.js uses targeted type checking
+
 ## Troubleshooting
 
 ### Common Issues
@@ -105,6 +123,8 @@ Ensure your database is properly migrated:
      - Created a declaration file (server/vite.d.ts) with simpler types
      - Modified tsconfig.json to exclude the file from type checking
      - Updated vercel-build.js to use a more targeted type check
+     - Enhanced vercel-production.ts middleware to handle Vite assets properly
+     - Added production-specific compression and caching strategies
 
 4. **Build Failures**
    - Review build logs in Vercel dashboard
