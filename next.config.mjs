@@ -1,31 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: [],
   swcMinify: true,
-  experimental: {
-    serverComponentsExternalPackages: ["pg"],
-    esmExternals: "loose",
-  },
   images: {
-    domains: [],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
+    domains: ['avatars.githubusercontent.com', 'github.com', 'mrguru.dev'],
   },
-  webpack: (config) => {
-    // Support importing files from src directory
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': './client/src',
-      '@shared': './shared',
-      '@app': './app',
-      '@assets': './public/assets',
-    };
-    return config;
+  // Preserve paths from the old Vite setup
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ];
+  },
+  // Environment variables
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    BASE_URL: process.env.BASE_URL || 'http://localhost:3000',
   },
 };
 
