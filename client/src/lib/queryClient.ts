@@ -7,6 +7,13 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Check if we're in a Vercel static deployment
+const isStaticVercelDeployment = () => {
+  return (window.location.hostname.includes('vercel.app') || 
+         window.location.hostname.includes('mrguru.dev')) && 
+         import.meta.env.MODE === 'production';
+};
+
 export async function apiRequest<T = any>(
   method: string = "GET",
   path: string,
@@ -14,6 +21,26 @@ export async function apiRequest<T = any>(
 ): Promise<Response> {
   console.log(`API request: ${method} ${path}`, data);
   try {
+    // For static Vercel deployment, use .json files instead of API endpoints
+    if (isStaticVercelDeployment() && method === "GET" && path.startsWith('/api/')) {
+      // Transform /api/skills to /api/skills.json
+      const staticPath = `${path}.json`;
+      console.log(`Static deployment: Using ${staticPath} instead of API endpoint`);
+      
+      const res = await fetch(staticPath, {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        console.error(`Static API error (${res.status}):`, res.statusText);
+        throw new Error(res.statusText);
+      }
+      
+      return res;
+    }
+    
+    // Regular API request for development or non-GET methods
     const res = await fetch(path, {
       method: method,
       headers: data ? { "Content-Type": "application/json" } : {},
@@ -40,7 +67,37 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const path = queryKey[0] as string;
+    
+    // For static Vercel deployment, use .json files instead of API endpoints
+    if (isStaticVercelDeployment() && path.startsWith('/api/')) {
+      const staticPath = `${path}.json`;
+      console.log(`Static deployment query: Using ${staticPath} instead of API endpoint`);
+      
+      try {
+        const res = await fetch(staticPath, {
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+            return null;
+          }
+          throw new Error(`Static API error: ${res.status} ${res.statusText}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Static API query failed:", error);
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        }
+        throw error;
+      }
+    }
+    
+    // Regular API request for development
+    const res = await fetch(path, {
       credentials: "include",
     });
 
