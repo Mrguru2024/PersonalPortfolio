@@ -285,31 +285,46 @@ const BlogPostPage = () => {
           
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-1" />
-            {Math.ceil(post.content.split(' ').length / 200)} min read
+            {post.content ? Math.ceil(post.content.split(' ').length / 200) : 1} min read
           </div>
         </div>
         
-        <div className="mb-8 h-[300px] overflow-hidden rounded-lg">
-          <img 
-            src={post.coverImage} 
-            alt={post.title} 
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {post.coverImage ? (
+          <div className="mb-8 h-[300px] overflow-hidden rounded-lg">
+            <img 
+              src={post.coverImage} 
+              alt={post.title || 'Blog post'} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="mb-8 h-[300px] bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg">
+            <span className="text-gray-500 dark:text-gray-400">No cover image available</span>
+          </div>
+        )}
         
         <div className="flex flex-wrap gap-2 mb-6">
-          {post.tags.map((tag: string, i: number) => (
-            <Badge key={i} variant="secondary" className="text-xs">
+          {post.tags && post.tags.length > 0 ? 
+            post.tags.map((tag: string, i: number) => (
+              <Badge key={i} variant="secondary" className="text-xs">
+                <Tag className="h-3 w-3 mr-1" />
+                {tag}
+              </Badge>
+            )) : 
+            <Badge variant="secondary" className="text-xs">
               <Tag className="h-3 w-3 mr-1" />
-              {tag}
+              General
             </Badge>
-          ))}
+          }
         </div>
         
         <div className="prose prose-lg dark:prose-invert max-w-none">
-          {post.content.split('\n').map((paragraph: string, i: number) => (
-            paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
-          ))}
+          {post.content ? 
+            post.content.split('\n').map((paragraph: string, i: number) => (
+              paragraph ? <p key={i}>{paragraph}</p> : <br key={i} />
+            )) : 
+            <p>No content available for this post.</p>
+          }
         </div>
         
         <Separator className="my-12" />

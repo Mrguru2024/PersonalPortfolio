@@ -71,13 +71,19 @@ const BlogSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogPosts.map((post: BlogPost) => (
               <Card key={post.id} className="overflow-hidden flex flex-col h-full border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-300">
-                <div className="w-full h-48 overflow-hidden">
-                  <img 
-                    src={post.coverImage} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+                {post.coverImage ? (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img 
+                      src={post.coverImage} 
+                      alt={post.title || 'Blog post'} 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    <span className="text-gray-500 dark:text-gray-400">No image</span>
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="text-xl">{post.title}</CardTitle>
                   <CardDescription className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -92,12 +98,18 @@ const BlogSection = () => {
                 </CardContent>
                 <CardFooter className="flex flex-col items-start space-y-3 pt-0">
                   <div className="flex flex-wrap gap-2">
-                    {post.tags.slice(0, 3).map((tag: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-xs font-normal">
+                    {post.tags && post.tags.length > 0 ? 
+                      post.tags.slice(0, 3).map((tag: string, i: number) => (
+                        <Badge key={i} variant="outline" className="text-xs font-normal">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {tag}
+                        </Badge>
+                      )) : 
+                      <Badge variant="outline" className="text-xs font-normal">
                         <Tag className="h-3 w-3 mr-1" />
-                        {tag}
+                        General
                       </Badge>
-                    ))}
+                    }
                   </div>
                   <Link href={`/blog/${post.slug}`}>
                     <Button variant="link" className="h-auto p-0 font-normal text-primary hover:text-primary/80">
