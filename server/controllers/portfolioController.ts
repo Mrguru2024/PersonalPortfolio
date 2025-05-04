@@ -128,29 +128,12 @@ export const portfolioController = {
     }
   },
 
-  // New method to fetch GitHub skills
+  // Updated method to fetch GitHub skills using enhanced service
   fetchGitHubSkills: async (): Promise<Record<string, Skill[]>> => {
     try {
-      console.log('Fetching GitHub language stats...');
-      // Check if we have cached skills that are still valid
-      const now = Date.now();
-      if (cachedSkills && now - lastFetched < CACHE_DURATION) {
-        console.log('Using cached GitHub skills data');
-        return cachedSkills;
-      }
-
-      // Fetch fresh language stats from GitHub
-      const languageStats = await githubService.fetchLanguageStats();
-      
-      // Map languages to skill categories
-      const githubSkills = githubService.mapLanguagesToSkills(languageStats);
-      
-      // Save to cache
-      cachedSkills = githubSkills;
-      lastFetched = now;
-      
-      console.log('GitHub skills data refreshed');
-      return githubSkills;
+      // Use the enhanced getSkillsData method from githubService
+      // which handles caching, production fallbacks, etc.
+      return await githubService.getSkillsData();
     } catch (error) {
       console.error('Error fetching GitHub skills:', error);
       // If we have cached data, return it even if expired
