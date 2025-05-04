@@ -1,0 +1,63 @@
+[10:30:31.777] Running build in Washington, D.C., USA (East) – iad1
+[10:30:31.794] Cloning github.com/Mrguru2024/PersonalPortfolio (Branch: main, Commit: ecfd98d)
+[10:30:32.234] Cloning completed: 440.000ms
+[10:30:34.275] Restored build cache from previous deployment (GKsyYLeUCmBUe1d8RyM8hB2evhQy)
+[10:30:34.993] Running "vercel build"
+[10:30:36.010] Vercel CLI 41.7.0
+[10:30:36.205] WARN! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+[10:30:37.287] Installing dependencies...
+[10:30:40.922] npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+[10:30:41.009] npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+[10:30:42.930] 
+[10:30:42.931] added 86 packages, and removed 38 packages in 5s
+[10:30:42.931] 
+[10:30:42.931] 81 packages are looking for funding
+[10:30:42.932]   run `npm fund` for details
+[10:30:42.969] Running "npm run build"
+[10:30:43.109] 
+[10:30:43.110] > rest-express@1.0.0 build
+[10:30:43.110] > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+[10:30:43.110] 
+[10:30:43.899] [36mvite v5.4.14 [32mbuilding for production...[36m[39m
+[10:30:43.951] transforming...
+[10:30:44.268] Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+[10:30:44.269]   npx update-browserslist-db@latest
+[10:30:44.270]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[10:30:51.694] [32m✓[39m 2538 modules transformed.
+[10:30:53.012] rendering chunks...
+[10:30:53.035] computing gzip size...
+[10:30:53.059] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m  2.51 kB[22m[1m[22m[2m │ gzip:   0.92 kB[22m
+[10:30:53.060] [2m../dist/public/[22m[2massets/[22m[35mindex-DkQwHPzN.css  [39m[1m[2m116.73 kB[22m[1m[22m[2m │ gzip:  17.89 kB[22m
+[10:30:53.060] [2m../dist/public/[22m[2massets/[22m[36mindex-qCvWvdL2.js   [39m[1m[33m827.50 kB[39m[22m[2m │ gzip: 245.06 kB[22m
+[10:30:53.073] [33m
+[10:30:53.073] (!) Some chunks are larger than 500 kB after minification. Consider:
+[10:30:53.074] - Using dynamic import() to code-split the application
+[10:30:53.074] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[10:30:53.074] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[10:30:53.076] [32m✓ built in 9.14s[39m
+[10:30:53.164] 
+[10:30:53.164]   dist/index.js  67.6kb
+[10:30:53.164] 
+[10:30:53.164] ⚡ Done in 16ms
+[10:30:53.445] Using TypeScript 5.6.3 (local user-provided)
+[10:31:01.060] api/index.ts(6,26): error TS7016: Could not find a declaration file for module 'cookie-parser'. '/vercel/path0/node_modules/cookie-parser/index.js' implicitly has an 'any' type.
+[10:31:01.060]   Try `npm i --save-dev @types/cookie-parser` if it exists or add a new declaration (.d.ts) file containing `declare module 'cookie-parser';`
+[10:31:01.060] api/index.ts(7,18): error TS7016: Could not find a declaration file for module 'cors'. '/vercel/path0/node_modules/cors/lib/index.js' implicitly has an 'any' type.
+[10:31:01.061]   Try `npm i --save-dev @types/cors` if it exists or add a new declaration (.d.ts) file containing `declare module 'cors';`
+[10:31:01.061] api/index.ts(89,14): error TS7006: Parameter 'accessToken' implicitly has an 'any' type.
+[10:31:01.061] api/index.ts(89,27): error TS7006: Parameter 'refreshToken' implicitly has an 'any' type.
+[10:31:01.061] api/index.ts(89,41): error TS7006: Parameter 'profile' implicitly has an 'any' type.
+[10:31:01.061] api/index.ts(89,50): error TS7006: Parameter 'done' implicitly has an 'any' type.
+[10:31:01.062] api/index.ts(102,15): error TS2561: Object literal may only specify known properties, but 'github_id' does not exist in type '{ username: string; password: string; email?: string | null | undefined; isAdmin?: boolean | null | undefined; role?: string | undefined; full_name?: string | null | undefined; githubId?: string | ... 1 more ... | undefined; githubUsername?: string | ... 1 more ... | undefined; avatarUrl?: string | ... 1 more ... | ...'. Did you mean to write 'githubId'?
+[10:31:01.064] 
+[10:31:02.418] server/vite.ts(39,5): error TS2322: Type '{ middlewareMode: boolean; hmr: { server: Server<typeof IncomingMessage, typeof ServerResponse>; }; allowedHosts: boolean; }' is not assignable to type 'ServerOptions'.
+[10:31:02.419]   Types of property 'allowedHosts' are incompatible.
+[10:31:02.419]     Type 'boolean' is not assignable to type 'true | string[] | undefined'.
+[10:31:02.419] 
+[10:31:31.115] Build Completed in /vercel/output [54s]
+[10:31:31.473] Deploying outputs...
+[10:31:38.469] 
+[10:31:38.771] Deployment completed
+[10:32:01.693] Uploading build cache [109.36 MB]...
+[10:32:03.715] Build cache uploaded: 2.026s
+[10:32:05.975] Exiting build container

@@ -86,7 +86,17 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
           ? 'https://mrguru.dev/api/auth/github/callback'
           : 'http://localhost:5000/api/auth/github/callback',
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (
+        accessToken: string, 
+        refreshToken: string, 
+        profile: { 
+          id: string; 
+          username?: string; 
+          displayName?: string; 
+          emails?: Array<{ value: string }> 
+        }, 
+        done: (err: Error | null, user?: any) => void
+      ) => {
         try {
           // Check if user exists
           let user = await storage.getUserByUsername(profile.username || '');
@@ -99,7 +109,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               email: profile.emails?.[0]?.value || '',
               full_name: profile.displayName || '',
               role: 'user',
-              github_id: profile.id,
+              githubId: profile.id,
               created_at: new Date(),
             });
           }
