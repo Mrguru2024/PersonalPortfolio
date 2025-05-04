@@ -133,6 +133,28 @@
   .custom-cursor:hover .section-info {
     @apply opacity-100;
   }
+  
+  /* Custom cursor states */
+  .custom-cursor.hovering {
+    @apply h-12 w-12 bg-primary/10 border-primary mix-blend-difference;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+  
+  .custom-cursor.clicking {
+    transform: translate(-50%, -50%) scale(0.8);
+    @apply bg-primary/70;
+  }
+  
+  /* Tooltip for cursor */
+  .cursor-tooltip {
+    @apply absolute top-full left-1/2 transform -translate-x-1/2 whitespace-nowrap px-2 py-1 
+           text-xs bg-primary text-white rounded-md opacity-0 pointer-events-none transition-all duration-300;
+    margin-top: 8px;
+  }
+  
+  .cursor-tooltip.visible {
+    @apply opacity-100;
+  }
 }
 
 @keyframes gradient {

@@ -30,13 +30,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   
   return (
     <>
-      {/* Quick navigation panel */}
-      <QuickNav 
-        isOpen={quickNavOpen} 
-        onClose={() => setQuickNavOpen(false)}
-        currentSection={""}
-        onSectionClick={() => {}}
-      />
+      {/* Quick navigation panel (moved to page.tsx to avoid duplication) */}
       
       {/* Page transition animation */}
       <AnimatePresence mode="wait">

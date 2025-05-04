@@ -31,11 +31,12 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [guruPosition, setGuruPosition] = useState<number>(95);
   const [isGuruActive, setIsGuruActive] = useState<boolean>(true);
-  const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(true);
-  const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(false);
+  // Modified defaults to make journey more visible by default in Next.js version
+  const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(false);
+  const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(true);
   const [forceClosed, setForceClosed] = useState<boolean>(false);
   const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<string[]>([]);
-  const [journeyVisible, setJourneyVisible] = useState<boolean>(false);
+  const [journeyVisible, setJourneyVisible] = useState<boolean>(true);
   
   // Toggle journey visibility
   const toggleJourneyVisibility = () => {
@@ -44,6 +45,28 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
   
   // Track scroll position to update guru's position
   const { scrollYProgress } = useScroll();
+  
+  // Update guru position based on scroll progress
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (progress) => {
+      // Map the scroll progress (0-1) to guru position (95-5)
+      const newPosition = 95 - (progress * 90);
+      setGuruPosition(newPosition);
+      
+      // Determine which milestone is closest to the guru
+      const closestIndex = milestones.reduce((closest, milestone, index) => {
+        const distance = Math.abs(milestone.position - newPosition);
+        if (distance < Math.abs(milestones[closest].position - newPosition)) {
+          return index;
+        }
+        return closest;
+      }, 0);
+      
+      setActiveIndex(closestIndex);
+    });
+    
+    return () => unsubscribe();
+  }, [scrollYProgress]);
   
   // Milestones along the journey
   const milestones: Milestone[] = [

@@ -1268,6 +1268,10 @@ video {
   transition-duration: 200ms;
   animation-duration: 200ms;
 }
+.cursor-tooltip.journey-milestone:hover .journey-popup,.cursor-tooltip
+  .journey-milestone:focus .journey-popup {
+  opacity: 1;
+}
 .journey-milestone:hover .journey-popup,
   .journey-milestone:focus .journey-popup {
   visibility: visible;
@@ -1275,6 +1279,19 @@ video {
 }
 /* Hero section diagonal split design */
 /* Interactive cursor styling */
+/* Custom cursor states */
+.custom-cursor.hovering {
+  height: 3rem;
+  width: 3rem;
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.1);
+  mix-blend-mode: difference;
+    transform: translate(-50%, -50%) scale(1.5);
+}
+/* Tooltip for cursor */
+.cursor-tooltip.visible {
+  opacity: 1;
+}
 .sr-only {
   position: absolute;
   width: 1px;
