@@ -99,9 +99,9 @@ export default function QuickNav({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded-full">
+          <div onClick={onClose} className="p-1 hover:bg-muted rounded-full cursor-pointer">
             <X className="h-5 w-5" />
-          </button>
+          </div>
         </div>
         
         {/* Navigation items */}
@@ -110,10 +110,10 @@ export default function QuickNav({
             <ul>
               {filteredItems.map((item) => (
                 <li key={item.id}>
-                  <button
+                  <div
                     onClick={() => handleItemClick(item)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-md text-left",
+                      "w-full flex items-center gap-3 p-3 rounded-md text-left cursor-pointer",
                       "hover:bg-accent transition-colors",
                       item.id === currentSection && "bg-primary/10 text-primary"
                     )}
@@ -129,7 +129,7 @@ export default function QuickNav({
                       {item.id === "blog" && "Alt+B"}
                       {item.id === "resume" && "Alt+R"}
                     </span>
-                  </button>
+                  </div>
                 </li>
               ))}
             </ul>
