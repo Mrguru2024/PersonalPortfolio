@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import ThumbsUp from "lucide-react/dist/esm/icons/thumbs-up";
 import Award from "lucide-react/dist/esm/icons/award";
 import Star from "lucide-react/dist/esm/icons/star";
-import SkillEndorsementModal from "@/components/SkillEndorsementModal";
-import SkillEndorsementCard from "@/components/SkillEndorsementCard";
 import { useToast } from "@/hooks/use-toast";
+import SkillEndorsementModal from "@/components/SkillEndorsementModal.fixed";
+import SkillEndorsementCard from "@/components/SkillEndorsementCard.fixed";
 
-// Define the database skill type based on the real DB schema
+// Define the DB skill type based on the real DB schema
 type DBSkill = {
   id: number;
   name: string;
@@ -68,7 +68,6 @@ export default function SkillsSection() {
         setSkills(groupedSkills);
       } catch (error) {
         console.error("Error fetching skills:", error);
-        // Don't set mock data - leave the state empty if the fetch fails
       } finally {
         setIsLoading(false);
       }
@@ -176,176 +175,201 @@ export default function SkillsSection() {
             </TabsList>
           </div>
           
-          {/* Frontend skills */}
-          <TabsContent value="frontend">
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate={activeCategory === "frontend" ? "visible" : "hidden"}
-            >
-              {skills.frontend.map((skill) => (
-                <motion.div 
-                  key={skill.id}
-                  className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
-                  variants={itemVariants}
-                >
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border animate-pulse">
                   <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium flex items-center">
-                      {skill.name}
-                      {skill.endorsement_count > 0 && (
-                        <div className="ml-2 flex items-center text-xs text-primary">
-                          <Award size={14} className="mr-1" />
-                          <span>{skill.endorsement_count}</span>
-                        </div>
-                      )}
-                    </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    <div className="h-5 w-32 bg-muted rounded"></div>
+                    <div className="h-4 w-8 bg-muted rounded"></div>
                   </div>
-                  
-                  <Progress 
-                    value={skill.percentage} 
-                    className="h-2 bg-muted"
-                  />
-                  
+                  <div className="h-2 bg-muted rounded w-full"></div>
                   <div className="mt-4 flex justify-between items-center">
-                    <div className="flex items-center">
+                    <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star}
-                          size={16}
-                          className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
-                        />
+                        <div key={star} className="w-4 h-4 bg-muted rounded-full"></div>
                       ))}
                     </div>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex items-center gap-1 text-xs"
-                      onClick={() => openEndorsementModal(skill)}
-                    >
-                      <ThumbsUp size={14} /> Endorse
-                    </Button>
+                    <div className="h-8 w-20 bg-muted rounded"></div>
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
-          </TabsContent>
-          
-          {/* Backend skills */}
-          <TabsContent value="backend">
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate={activeCategory === "backend" ? "visible" : "hidden"}
-            >
-              {skills.backend.map((skill) => (
+            </div>
+          ) : (
+            <>
+              {/* Frontend skills */}
+              <TabsContent value="frontend">
                 <motion.div 
-                  key={skill.id}
-                  className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
-                  variants={itemVariants}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate={activeCategory === "frontend" ? "visible" : "hidden"}
                 >
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium flex items-center">
-                      {skill.name}
-                      {skill.endorsement_count > 0 && (
-                        <div className="ml-2 flex items-center text-xs text-primary">
-                          <Award size={14} className="mr-1" />
-                          <span>{skill.endorsement_count}</span>
-                        </div>
-                      )}
-                    </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
-                  </div>
-                  
-                  <Progress 
-                    value={skill.percentage} 
-                    className="h-2 bg-muted"
-                  />
-                  
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star}
-                          size={16}
-                          className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
-                        />
-                      ))}
-                    </div>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex items-center gap-1 text-xs"
-                      onClick={() => openEndorsementModal(skill)}
+                  {skills.frontend.map((skill) => (
+                    <motion.div 
+                      key={skill.id}
+                      className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
+                      variants={itemVariants}
                     >
-                      <ThumbsUp size={14} /> Endorse
-                    </Button>
-                  </div>
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-medium flex items-center">
+                          {skill.name}
+                          {skill.endorsement_count > 0 && (
+                            <div className="ml-2 flex items-center text-xs text-primary">
+                              <Award size={14} className="mr-1" />
+                              <span>{skill.endorsement_count}</span>
+                            </div>
+                          )}
+                        </h3>
+                        <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                      </div>
+                      
+                      <Progress 
+                        value={skill.percentage} 
+                        className="h-2 bg-muted"
+                      />
+                      
+                      <div className="mt-4 flex justify-between items-center">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star}
+                              size={16}
+                              className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-1 text-xs"
+                          onClick={() => openEndorsementModal(skill)}
+                        >
+                          <ThumbsUp size={14} /> Endorse
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
-          </TabsContent>
-          
-          {/* Other skills */}
-          <TabsContent value="other">
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate={activeCategory === "other" ? "visible" : "hidden"}
-            >
-              {skills.other.map((skill) => (
+              </TabsContent>
+              
+              {/* Backend skills */}
+              <TabsContent value="backend">
                 <motion.div 
-                  key={skill.id}
-                  className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
-                  variants={itemVariants}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate={activeCategory === "backend" ? "visible" : "hidden"}
                 >
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium flex items-center">
-                      {skill.name}
-                      {skill.endorsement_count > 0 && (
-                        <div className="ml-2 flex items-center text-xs text-primary">
-                          <Award size={14} className="mr-1" />
-                          <span>{skill.endorsement_count}</span>
-                        </div>
-                      )}
-                    </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
-                  </div>
-                  
-                  <Progress 
-                    value={skill.percentage} 
-                    className="h-2 bg-muted"
-                  />
-                  
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star}
-                          size={16}
-                          className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
-                        />
-                      ))}
-                    </div>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex items-center gap-1 text-xs"
-                      onClick={() => openEndorsementModal(skill)}
+                  {skills.backend.map((skill) => (
+                    <motion.div 
+                      key={skill.id}
+                      className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
+                      variants={itemVariants}
                     >
-                      <ThumbsUp size={14} /> Endorse
-                    </Button>
-                  </div>
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-medium flex items-center">
+                          {skill.name}
+                          {skill.endorsement_count > 0 && (
+                            <div className="ml-2 flex items-center text-xs text-primary">
+                              <Award size={14} className="mr-1" />
+                              <span>{skill.endorsement_count}</span>
+                            </div>
+                          )}
+                        </h3>
+                        <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                      </div>
+                      
+                      <Progress 
+                        value={skill.percentage} 
+                        className="h-2 bg-muted"
+                      />
+                      
+                      <div className="mt-4 flex justify-between items-center">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star}
+                              size={16}
+                              className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-1 text-xs"
+                          onClick={() => openEndorsementModal(skill)}
+                        >
+                          <ThumbsUp size={14} /> Endorse
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
-          </TabsContent>
+              </TabsContent>
+              
+              {/* Other skills */}
+              <TabsContent value="other">
+                <motion.div 
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate={activeCategory === "other" ? "visible" : "hidden"}
+                >
+                  {skills.other.map((skill) => (
+                    <motion.div 
+                      key={skill.id}
+                      className="bg-background/80 backdrop-blur-sm p-6 rounded-lg border border-border"
+                      variants={itemVariants}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-medium flex items-center">
+                          {skill.name}
+                          {skill.endorsement_count > 0 && (
+                            <div className="ml-2 flex items-center text-xs text-primary">
+                              <Award size={14} className="mr-1" />
+                              <span>{skill.endorsement_count}</span>
+                            </div>
+                          )}
+                        </h3>
+                        <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                      </div>
+                      
+                      <Progress 
+                        value={skill.percentage} 
+                        className="h-2 bg-muted"
+                      />
+                      
+                      <div className="mt-4 flex justify-between items-center">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star 
+                              key={star}
+                              size={16}
+                              className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            />
+                          ))}
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex items-center gap-1 text-xs"
+                          onClick={() => openEndorsementModal(skill)}
+                        >
+                          <ThumbsUp size={14} /> Endorse
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
       
@@ -359,39 +383,37 @@ export default function SkillsSection() {
         />
       )}
       
-      {/* Featured endorsements */}
-      <div className="mt-16">
-        <motion.h3 
-          className="text-xl font-medium text-center mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          Featured Skill Endorsements
-        </motion.h3>
-        
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {/* Display featured endorsements when frontend skills are loaded */}
-          {skills.frontend.length > 0 && (
-            <>
-              <SkillEndorsementCard skill={skills.frontend[0]} />
-              {skills.backend.length > 0 && (
-                <SkillEndorsementCard skill={skills.backend[0]} />
-              )}
-              {skills.frontend.length > 1 && (
-                <SkillEndorsementCard skill={skills.frontend[1]} />
-              )}
-            </>
-          )}
-        </motion.div>
-      </div>
+      {/* Featured endorsements - only show when we have data */}
+      {!isLoading && skills.frontend.length > 0 && (
+        <div className="mt-16 container-custom">
+          <motion.h3 
+            className="text-xl font-medium text-center mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            Featured Skill Endorsements
+          </motion.h3>
+          
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            {/* Display featured endorsements */}
+            <SkillEndorsementCard skill={skills.frontend[0]} />
+            {skills.backend.length > 0 && (
+              <SkillEndorsementCard skill={skills.backend[0]} />
+            )}
+            {skills.frontend.length > 1 && (
+              <SkillEndorsementCard skill={skills.frontend[1]} />
+            )}
+          </motion.div>
+        </div>
+      )}
       
       {/* Background elements */}
       <div className="absolute -z-10 -bottom-40 -left-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />

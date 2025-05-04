@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/sections/HeroSection";
 import AboutSection from "@/components/sections/AboutSection";
 import ProjectsSection from "@/components/sections/ProjectsSection";
-import SkillsSection from "@/components/sections/SkillsSection";
+import SkillsSection from "@/components/sections/SkillsSection.fixed";
 import ContactSection from "@/components/sections/ContactSection";
 import QuickNav from "@/components/QuickNav";
 import JourneyExperience from "@/components/JourneyExperience";
