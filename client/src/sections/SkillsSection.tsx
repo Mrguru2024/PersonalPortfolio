@@ -35,16 +35,29 @@ const SkillsSection = () => {
 
   // Process skills data when it's loaded
   useEffect(() => {
-    if (skills && skills.length > 0) {
-      const frontendSkills = skills.filter((skill: Skill) => skill.category === 'frontend');
-      const backendSkills = skills.filter((skill: Skill) => skill.category === 'backend');
-      const devopsSkills = skills.filter((skill: Skill) => skill.category === 'devops');
+    if (skills) {
+      // If skills is an object with frontend, backend, and devops properties
+      if (skills.frontend && skills.backend && skills.devops) {
+        setSkillsData({
+          frontend: skills.frontend || [],
+          backend: skills.backend || [],
+          devops: skills.devops || []
+        });
+      } 
+      // If skills is an array, filter by category
+      else if (Array.isArray(skills)) {
+        const frontendSkills = skills.filter((skill: Skill) => skill.category === 'frontend');
+        const backendSkills = skills.filter((skill: Skill) => skill.category === 'backend');
+        const devopsSkills = skills.filter((skill: Skill) => skill.category === 'devops');
+        
+        setSkillsData({
+          frontend: frontendSkills,
+          backend: backendSkills,
+          devops: devopsSkills
+        });
+      }
       
-      setSkillsData({
-        frontend: frontendSkills,
-        backend: backendSkills,
-        devops: devopsSkills
-      });
+      console.log('Skills data processed:', skills);
     }
   }, [skills]);
   

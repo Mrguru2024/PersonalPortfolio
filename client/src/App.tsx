@@ -25,7 +25,9 @@ import { ProtectedRoute } from "@/lib/protected-route";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/">
+        {(params) => <Home onSectionChange={() => {}} />}
+      </Route>
       <Route path="/projects/:id" component={ProjectDetails} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
@@ -139,7 +141,7 @@ function App() {
           {isImmersive && <CustomCursor currentSection={currentSection} />}
           
           <div className={`flex flex-col min-h-screen ${isImmersive ? 'cursor-none md:cursor-none' : ''}`}>
-            <Header />
+            <Header currentSection={currentSection} onNavToggle={() => {}} />
             <main className="flex-grow">
               <Router />
             </main>
