@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Code, Menu, X, LogIn, LogOut, User } from "lucide-react";
+import { Code, Menu, X, LogIn, LogOut, User, Wand2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { personalInfo } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
@@ -79,6 +79,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
               </Link>
               <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
                 Resume
+              </Link>
+              <Link href="/generate-images" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition flex items-center">
+                <Wand2 className="h-4 w-4 mr-1" /> AI Images
               </Link>
             </>
           )}

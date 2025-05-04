@@ -12,6 +12,7 @@ import BlogPost from "@/pages/BlogPost";
 import AdminBlog from "@/pages/AdminBlog";
 import AuthPage from "@/pages/auth-page";
 import ResumePage from "@/pages/ResumePage";
+import ImageGeneratorPage from "@/pages/ImageGeneratorPage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/resume" component={ResumePage} />
+      <Route path="/generate-images" component={ImageGeneratorPage} />
       <ProtectedRoute path="/admin/blog" component={AdminBlog} />
       <Route component={NotFound} />
     </Switch>
