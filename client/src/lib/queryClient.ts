@@ -25,39 +25,62 @@ export async function apiRequest<T = any>(
     if (isStaticVercelDeployment() && method === "GET" && path.startsWith('/api/')) {
       console.log(`Static deployment: Using localStorage for ${path}`);
       
-      // Extract endpoint name from path (e.g., '/api/skills' -> 'skills')
-      const endpoint = path.split('/').pop() || '';
-      const localStorageKey = `api_${endpoint}`;
-      
-      // Get data from localStorage
-      const storedData = localStorage.getItem(localStorageKey);
-      
-      if (storedData) {
-        // Create a mock response with the stored data
-        const mockResponse = new Response(storedData, {
+      try {
+        // Extract endpoint name from path (e.g., '/api/skills' -> 'skills')
+        const endpoint = path.split('/').pop() || '';
+        const localStorageKey = `api_${endpoint}`;
+        
+        // Get data from localStorage
+        const storedData = localStorage.getItem(localStorageKey);
+        
+        if (storedData) {
+          // Parse and validate data
+          let parsedData = JSON.parse(storedData);
+          
+          // Fix missing properties in blog posts
+          if (endpoint === 'blog' && Array.isArray(parsedData)) {
+            parsedData = parsedData.map((post) => ({
+              ...post,
+              tags: post.tags || [],
+              content: post.content || '',
+              coverImage: post.coverImage || '',
+              publishedAt: post.publishedAt || new Date().toISOString()
+            }));
+          }
+          
+          // Create a mock response with the cleaned data
+          const mockResponse = new Response(JSON.stringify(parsedData), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          return mockResponse;
+        } else {
+          console.warn(`Static API error: No data found for ${path}`);
+          
+          // Provide default empty data structure
+          let defaultData;
+          if (endpoint === 'blog') {
+            defaultData = [];
+          } else if (endpoint === 'skills') {
+            defaultData = { frontend: [], backend: [], devops: [] };
+          } else {
+            defaultData = {};
+          }
+          
+          return new Response(JSON.stringify(defaultData), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      } catch (error) {
+        console.error(`Static API error processing data:`, error);
+        
+        // Return empty data on error
+        return new Response('[]', {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
-        
-        return mockResponse;
-      } else {
-        console.error(`Static API error: No data found for ${path}`);
-        
-        // If localStorage fails, attempt to fetch from static JSON file
-        const staticPath = `${path}.json`;
-        console.log(`Trying static file: ${staticPath}`);
-        
-        const res = await fetch(staticPath, {
-          method: "GET",
-          credentials: "include",
-        });
-        
-        if (!res.ok) {
-          console.error(`Static API error (${res.status}):`, res.statusText);
-          throw new Error(`No data available for ${path}`);
-        }
-        
-        return res;
       }
     }
     
@@ -103,31 +126,86 @@ export const getQueryFn: <T>(options: {
         const storedData = localStorage.getItem(localStorageKey);
         
         if (storedData) {
-          return JSON.parse(storedData);
+          let parsedData = JSON.parse(storedData);
+          
+          // Fix missing properties in blog posts
+          if (endpoint === 'blog' && Array.isArray(parsedData)) {
+            parsedData = parsedData.map((post) => ({
+              ...post,
+              tags: post.tags || [],
+              content: post.content || '',
+              coverImage: post.coverImage || '',
+              publishedAt: post.publishedAt || new Date().toISOString()
+            }));
+          }
+          
+          return parsedData;
         } else {
           console.warn(`No localStorage data for ${path}, trying static JSON file`);
           
-          // Fallback to static JSON file
-          const staticPath = `${path}.json`;
-          const res = await fetch(staticPath, {
-            credentials: "include",
-          });
-          
-          if (!res.ok) {
-            if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-              return null;
+          try {
+            // Fallback to static JSON file
+            const staticPath = `${path}.json`;
+            const res = await fetch(staticPath, {
+              credentials: "include",
+            });
+            
+            if (!res.ok) {
+              if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+                return null;
+              }
+              
+              // Return safe default data structures
+              if (endpoint === 'blog') {
+                return [];
+              } else if (endpoint === 'skills') {
+                return { frontend: [], backend: [], devops: [] };
+              } else {
+                return {};
+              }
             }
-            throw new Error(`Static API error: ${res.status} ${res.statusText}`);
+            
+            const data = await res.json();
+            
+            // Fix missing properties in returned data
+            if (endpoint === 'blog' && Array.isArray(data)) {
+              return data.map((post) => ({
+                ...post,
+                tags: post.tags || [],
+                content: post.content || '',
+                coverImage: post.coverImage || '',
+                publishedAt: post.publishedAt || new Date().toISOString()
+              }));
+            }
+            
+            return data;
+          } catch (fetchError) {
+            console.error("Static file fetch error:", fetchError);
+            // Return safe default data structures
+            if (endpoint === 'blog') {
+              return [];
+            } else if (endpoint === 'skills') {
+              return { frontend: [], backend: [], devops: [] };
+            } else {
+              return {};
+            }
           }
-          
-          return await res.json();
         }
       } catch (error) {
         console.error("Static API query failed:", error);
         if (unauthorizedBehavior === "returnNull") {
           return null;
         }
-        throw error;
+        
+        // Return safe default data structures on error
+        const endpoint = path.split('/').pop() || '';
+        if (endpoint === 'blog') {
+          return [];
+        } else if (endpoint === 'skills') {
+          return { frontend: [], backend: [], devops: [] };
+        } else {
+          return {};
+        }
       }
     }
     
