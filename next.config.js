@@ -73,11 +73,8 @@ const nextConfig = {
     return config;
   },
   
-  // Enable experimental features if needed
-  experimental: {
-    // Enable the App Router
-    appDir: true,
-  },
+  // The App Router is now the default in Next.js 14+
+  // No experimental config needed
 };
 
 module.exports = nextConfig;
