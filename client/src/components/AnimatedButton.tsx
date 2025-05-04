@@ -1,6 +1,6 @@
-'use client';
 
-import React, { ButtonHTMLAttributes, forwardRef } from 'react';
+
+import React, { ButtonHTMLAttributes, forwardRef, MouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -72,7 +72,9 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
           )}
           {...hoverMotion}
           {...pressMotion}
-          onClick={props.onClick}
+          onClick={(e: MouseEvent<HTMLDivElement>) => {
+            if (props.onClick) props.onClick(e as unknown as MouseEvent<HTMLButtonElement>);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
