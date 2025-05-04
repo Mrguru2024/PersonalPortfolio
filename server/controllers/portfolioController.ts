@@ -5,13 +5,16 @@ import {
   resumeRequestFormSchema, 
   InsertResumeRequest,
   skillEndorsementFormSchema,
-  InsertSkillEndorsement 
+  InsertSkillEndorsement,
+  InsertSkill,
+  Skill
 } from '@shared/schema';
 import { storage } from '../storage';
 import { ZodError } from 'zod';
 import { format } from 'date-fns';
 import path from 'path';
 import fs from 'fs';
+import { githubService } from '../services/githubService';
 
 // Still import these for now as fallback until we populate the database
 import { 
@@ -24,6 +27,11 @@ import {
   contactInfo,
   socialLinks 
 } from '../../client/src/lib/data';
+
+// For caching GitHub language stats
+let cachedSkills: Record<string, Skill[]> | null = null;
+let lastFetched: number = 0;
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour in milliseconds
 
 export const portfolioController = {
   // Skill endorsement endpoints
@@ -120,9 +128,71 @@ export const portfolioController = {
     }
   },
 
+  // New method to fetch GitHub skills
+  fetchGitHubSkills: async (): Promise<Record<string, Skill[]>> => {
+    try {
+      console.log('Fetching GitHub language stats...');
+      // Check if we have cached skills that are still valid
+      const now = Date.now();
+      if (cachedSkills && now - lastFetched < CACHE_DURATION) {
+        console.log('Using cached GitHub skills data');
+        return cachedSkills;
+      }
+
+      // Fetch fresh language stats from GitHub
+      const languageStats = await githubService.fetchLanguageStats();
+      
+      // Map languages to skill categories
+      const githubSkills = githubService.mapLanguagesToSkills(languageStats);
+      
+      // Save to cache
+      cachedSkills = githubSkills;
+      lastFetched = now;
+      
+      console.log('GitHub skills data refreshed');
+      return githubSkills;
+    } catch (error) {
+      console.error('Error fetching GitHub skills:', error);
+      // If we have cached data, return it even if expired
+      if (cachedSkills) {
+        console.log('Falling back to cached GitHub skills data due to error');
+        return cachedSkills;
+      }
+      // Otherwise fallback to static data
+      return {
+        frontend: frontendSkills,
+        backend: backendSkills,
+        devops: devopsSkills
+      };
+    }
+  },
+
   getSkills: async (req: Request, res: Response) => {
     try {
-      // Try to get skills from database
+      // Try to fetch skills from GitHub first
+      try {
+        if (process.env.GITHUB_TOKEN) {
+          console.log('Using GitHub token for skills data');
+          const githubSkills = await portfolioController.fetchGitHubSkills();
+          
+          // Also sync with database (for endorsements)
+          await portfolioController.syncGitHubSkillsWithDatabase(githubSkills);
+          
+          return res.json({
+            frontend: githubSkills.frontend,
+            backend: githubSkills.backend,
+            devops: githubSkills.devops,
+            additional: additionalSkills
+          });
+        } else {
+          console.log('No GitHub token found, using database/static skills');
+        }
+      } catch (githubError) {
+        console.error('Error fetching GitHub skills:', githubError);
+        // Continue to fallback options below
+      }
+      
+      // Try to get skills from database as fallback
       const allSkills = await storage.getSkills();
       
       // If no skills in DB, return static skills
@@ -149,6 +219,44 @@ export const portfolioController = {
     } catch (error) {
       console.error('Error fetching skills:', error);
       res.status(500).json({ message: 'Error fetching skills' });
+    }
+  },
+
+  // Sync GitHub skills with the database to persist endorsements
+  syncGitHubSkillsWithDatabase: async (githubSkills: Record<string, Skill[]>) => {
+    try {
+      // Get all skills from database
+      const dbSkills = await storage.getSkills();
+      
+      // Create a map of existing skill names to their database records
+      const dbSkillsMap = new Map<string, Skill>();
+      dbSkills.forEach(skill => {
+        dbSkillsMap.set(skill.name, skill);
+      });
+      
+      // Process each category of skills
+      for (const category of ['frontend', 'backend', 'devops'] as const) {
+        for (const githubSkill of githubSkills[category]) {
+          const existingSkill = dbSkillsMap.get(githubSkill.name);
+          
+          if (existingSkill) {
+            // Update existing skill with new percentage but keep endorsement count
+            githubSkill.endorsement_count = existingSkill.endorsement_count;
+            githubSkill.id = existingSkill.id;
+          } else {
+            // This is a new skill discovered from GitHub, will be inserted with 0 endorsements
+            githubSkill.endorsement_count = 0;
+          }
+        }
+      }
+      
+      // For simplicity, we're not removing skills that are no longer in GitHub data
+      // This would require more complex synchronization logic
+      
+      return githubSkills;
+    } catch (error) {
+      console.error('Error syncing GitHub skills with database:', error);
+      throw error;
     }
   },
 
