@@ -1,6 +1,7 @@
 import { users, type User, type InsertUser, 
   projects, type Project, type InsertProject,
   skills, type Skill, type InsertSkill,
+  skillEndorsements, type SkillEndorsement, type InsertSkillEndorsement,
   contacts, type Contact, type InsertContact,
   blogPosts, type BlogPost, type InsertBlogPost,
   blogComments, type BlogComment, type InsertBlogComment,
@@ -33,6 +34,11 @@ export interface IStorage {
   getSkills(): Promise<Skill[]>;
   getSkillsByCategory(category: string): Promise<Skill[]>;
   createSkill(skill: InsertSkill): Promise<Skill>;
+  
+  // Skill endorsement operations
+  getSkillEndorsements(skillId: number): Promise<SkillEndorsement[]>;
+  createSkillEndorsement(endorsement: InsertSkillEndorsement, ipAddress: string): Promise<SkillEndorsement>;
+  incrementSkillEndorsementCount(skillId: number): Promise<Skill>;
   
   // Contact operations
   createContact(contact: InsertContact): Promise<Contact>;
@@ -128,6 +134,51 @@ export class DatabaseStorage implements IStorage {
       .values(skill)
       .returning();
     return insertedSkill;
+  }
+  
+  // Skill endorsement operations
+  async getSkillEndorsements(skillId: number): Promise<SkillEndorsement[]> {
+    return db
+      .select()
+      .from(skillEndorsements)
+      .where(eq(skillEndorsements.skillId, skillId))
+      .orderBy(desc(skillEndorsements.createdAt));
+  }
+  
+  async createSkillEndorsement(endorsement: InsertSkillEndorsement, ipAddress: string): Promise<SkillEndorsement> {
+    const now = new Date();
+    const [insertedEndorsement] = await db
+      .insert(skillEndorsements)
+      .values({
+        ...endorsement,
+        ipAddress,
+        createdAt: now.toISOString()
+      })
+      .returning();
+    return insertedEndorsement;
+  }
+  
+  async incrementSkillEndorsementCount(skillId: number): Promise<Skill> {
+    // First get the current skill to check the current endorsement count
+    const [currentSkill] = await db
+      .select()
+      .from(skills)
+      .where(eq(skills.id, skillId));
+    
+    if (!currentSkill) {
+      throw new Error(`Skill with ID ${skillId} not found`);
+    }
+    
+    // Increment the endorsement count
+    const [updatedSkill] = await db
+      .update(skills)
+      .set({
+        endorsement_count: (currentSkill.endorsement_count || 0) + 1
+      })
+      .where(eq(skills.id, skillId))
+      .returning();
+    
+    return updatedSkill;
   }
   
   // Contact operations

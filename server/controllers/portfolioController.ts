@@ -26,6 +26,60 @@ import {
 } from '../../client/src/lib/data';
 
 export const portfolioController = {
+  // Skill endorsement endpoints
+  getSkillEndorsements: async (req: Request, res: Response) => {
+    try {
+      const { skillId } = req.query;
+      
+      if (!skillId || isNaN(Number(skillId))) {
+        return res.status(400).json({ error: "Valid skillId parameter is required" });
+      }
+      
+      // Get endorsements for the specified skill
+      const endorsements = await storage.getSkillEndorsements(Number(skillId));
+      res.json(endorsements);
+    } catch (error) {
+      console.error("Error fetching skill endorsements:", error);
+      res.status(500).json({ error: "Failed to fetch skill endorsements" });
+    }
+  },
+  
+  createSkillEndorsement: async (req: Request, res: Response) => {
+    try {
+      // Validate request data
+      const validatedData = skillEndorsementFormSchema.parse(req.body);
+      
+      // Get the IP address for spam prevention
+      const forwardedFor = req.headers['x-forwarded-for'] as string;
+      const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : req.ip;
+      
+      // Create endorsement
+      const endorsementData: InsertSkillEndorsement = {
+        skillId: validatedData.skillId,
+        name: validatedData.name,
+        email: validatedData.email,
+        comment: validatedData.comment || null,
+        rating: validatedData.rating
+      };
+      
+      const newEndorsement = await storage.createSkillEndorsement(endorsementData, ipAddress);
+      
+      // Increment the endorsement count for the skill
+      await storage.incrementSkillEndorsementCount(validatedData.skillId);
+      
+      res.status(201).json(newEndorsement);
+    } catch (error) {
+      console.error("Error creating skill endorsement:", error);
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          error: "Validation error", 
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ error: "Failed to create skill endorsement" });
+    }
+  },
+  
   getProjects: async (req: Request, res: Response) => {
     try {
       // Try to get projects from database

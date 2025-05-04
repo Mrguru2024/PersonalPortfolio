@@ -34,6 +34,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/contact', portfolioController.getContactInfo);
   app.post('/api/contact', portfolioController.submitContactForm);
   
+  // Skill endorsement routes
+  app.get('/api/skill-endorsements', portfolioController.getSkillEndorsements);
+  app.post('/api/skill-endorsements', portfolioController.createSkillEndorsement);
+  
   // Resume request and download routes
   app.post('/api/resume/request', portfolioController.requestResume);
   app.get('/api/resume/download/:token', portfolioController.downloadResume);
