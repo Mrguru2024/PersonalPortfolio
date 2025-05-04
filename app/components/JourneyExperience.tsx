@@ -2,7 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, useScroll, AnimatePresence } from "framer-motion";
-import { ChevronDown, Sparkles, Briefcase, Code, Send, Cpu } from "lucide-react/dist/esm/index";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import Briefcase from "lucide-react/dist/esm/icons/briefcase";
+import Code from "lucide-react/dist/esm/icons/code";
+import Send from "lucide-react/dist/esm/icons/send";
+import Cpu from "lucide-react/dist/esm/icons/cpu";
 import JourneyToggleButton from "./JourneyToggleButton";
 
 // Define milestone interface

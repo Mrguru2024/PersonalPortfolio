@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Search, Home, Info, Briefcase, Code, Mail, BookOpen, FileText } from "lucide-react/dist/esm/index";
+import X from "lucide-react/dist/esm/icons/x";
+import Search from "lucide-react/dist/esm/icons/search";
+import Home from "lucide-react/dist/esm/icons/home";
+import Info from "lucide-react/dist/esm/icons/info";
+import Briefcase from "lucide-react/dist/esm/icons/briefcase";
+import Code from "lucide-react/dist/esm/icons/code";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import BookOpen from "lucide-react/dist/esm/icons/book-open";
+import FileText from "lucide-react/dist/esm/icons/file-text";
 import { cn } from "@/lib/utils";
 
 interface QuickNavProps {

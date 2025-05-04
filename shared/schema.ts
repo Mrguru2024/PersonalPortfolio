@@ -62,9 +62,15 @@ export type Project = typeof projects.$inferSelect;
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  percentage: integer("percentage").notNull(),
   category: text("category").notNull(),
-  endorsementCount: integer("endorsement_count").default(0).notNull(),
+  proficiency: integer("proficiency").notNull(),
+  percentage: integer("percentage").notNull(), // For backward compatibility
+  endorsementCount: integer("endorsement_count").default(0).notNull(), // For backward compatibility
+  icon: text("icon"),
+  color: text("color"),
+  yearsOfExperience: integer("years_of_experience"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Skill Endorsements Table

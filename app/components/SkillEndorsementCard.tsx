@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, MessageCircle, Heart, ChevronDown, ChevronUp } from "lucide-react/dist/esm/index";
+import Star from "lucide-react/dist/esm/icons/star";
+import MessageCircle from "lucide-react/dist/esm/icons/message-circle";
+import Heart from "lucide-react/dist/esm/icons/heart";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
+import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
 import { Skill } from "@/shared/schema";
 
 // Define the type for skill endorsements since we don't have direct access from the schema

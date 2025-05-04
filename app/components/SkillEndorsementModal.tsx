@@ -4,7 +4,11 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Star, X, ThumbsUp, Send, Loader2 } from "lucide-react/dist/esm/index";
+import Star from "lucide-react/dist/esm/icons/star";
+import X from "lucide-react/dist/esm/icons/x";
+import ThumbsUp from "lucide-react/dist/esm/icons/thumbs-up";
+import Send from "lucide-react/dist/esm/icons/send";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
