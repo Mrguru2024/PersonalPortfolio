@@ -272,7 +272,7 @@ const BlogPostPage = () => {
         <div className="flex flex-wrap gap-3 mb-6 text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-1" />
-            {format(new Date(post.publishedAt), 'MMMM d, yyyy')}
+            {post.publishedAt ? format(new Date(post.publishedAt), 'MMMM d, yyyy') : 'Publication date unavailable'}
           </div>
           
           <div className="flex items-center">
@@ -336,7 +336,7 @@ const BlogPostPage = () => {
                     <div>
                       <p className="font-medium">{comment.name}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {format(new Date(comment.createdAt), 'MMMM d, yyyy')}
+                        {comment.createdAt ? format(new Date(comment.createdAt), 'MMMM d, yyyy') : 'Date unavailable'}
                       </p>
                     </div>
                   </CardHeader>

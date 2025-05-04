@@ -82,7 +82,7 @@ const BlogSection = () => {
                   <CardTitle className="text-xl">{post.title}</CardTitle>
                   <CardDescription className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <Clock className="h-3 w-3 mr-1" />
-                    {formatDistance(new Date(post.publishedAt), new Date(), { addSuffix: true })}
+                    {post.publishedAt ? formatDistance(new Date(post.publishedAt), new Date(), { addSuffix: true }) : "Recently"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
