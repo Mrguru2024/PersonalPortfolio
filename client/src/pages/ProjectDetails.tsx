@@ -49,16 +49,37 @@ const ProjectDetails = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
       {/* Add SEO for Project Details */}
       {project && (
-        <PageSEO 
-          title={`${project.title} | Project Details | MrGuru.dev`}
-          description={project.description}
-          canonicalPath={`/projects/${projectId}`}
-          keywords={[...project.tags, ...project.techStack || [], project.category]}
-          ogType="article"
-          ogImage={project.image}
-          ogImageAlt={`${project.title} project screenshot`}
-          schemaType="WebPage"
-        />
+        <>
+          <PageSEO 
+            title={`${project.title} | Project Details | MrGuru.dev`}
+            description={project.description}
+            canonicalPath={`/projects/${projectId}`}
+            keywords={[...project.tags, ...project.techStack || [], project.category]}
+            ogType="article"
+            ogImage={project.image}
+            ogImageAlt={`${project.title} project screenshot`}
+            schemaType="WebPage"
+          />
+          
+          {/* Add Project structured data */}
+          <StructuredData
+            schema={{
+              type: 'Project',
+              data: {
+                name: project.title,
+                description: project.description,
+                url: `https://mrguru.dev/projects/${project.id}`,
+                image: project.image,
+                author: {
+                  name: 'Anthony Feaster',
+                  url: 'https://mrguru.dev'
+                },
+                datePublished: new Date().toISOString().split('T')[0],
+                technologies: project.techStack || []
+              }
+            }}
+          />
+        </>
       )}
       
       <ParallaxBackground />

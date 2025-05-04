@@ -4,7 +4,7 @@ import { ArrowLeft, Lightbulb } from 'lucide-react';
 import { Link } from 'wouter';
 import ProjectRecommendationForm from '@/components/recommendations/ProjectRecommendationForm';
 import ProjectRecommendationResults from '@/components/recommendations/ProjectRecommendationResults';
-import { PageSEO } from '@/components/SEO';
+import { PageSEO, StructuredData } from '@/components/SEO';
 
 interface RecommendationData {
   recommendations: Array<{
@@ -48,6 +48,37 @@ const ProjectRecommendationPage: React.FC = () => {
         keywords={["AI recommendations", "project finder", "personalized projects", "web development", "recommendation engine", "GPT-4o"]}
         ogType="website"
         schemaType="WebPage"
+      />
+      
+      {/* Add FAQ structured data */}
+      <StructuredData
+        schema={{
+          type: 'FAQPage',
+          data: {
+            questions: [
+              {
+                question: "How does the project recommendation engine work?",
+                answer: "Our AI-powered recommendation engine analyzes your interests, skills, and learning goals to match you with relevant projects. It uses GPT-4o technology to understand your preferences and provide personalized project suggestions with explanations for why each project is recommended."
+              },
+              {
+                question: "What kind of projects can be recommended?",
+                answer: "The system can recommend various web development, mobile app, data science, game development, and other software projects based on your specific interests and skill level."
+              },
+              {
+                question: "How accurate are the project recommendations?",
+                answer: "The recommendations are highly personalized and based on the information you provide. The more specific you are about your interests and goals, the more accurate the recommendations will be."
+              },
+              {
+                question: "Can I get recommendations for projects outside of web development?",
+                answer: "Yes, our system can recommend projects across various domains including web development, mobile apps, data science, machine learning, game development, and more."
+              },
+              {
+                question: "How many projects will be recommended?",
+                answer: "Typically, the system recommends 3-5 projects, ranked by how well they match your interests and skill level."
+              }
+            ]
+          }
+        }}
       />
       
       {/* Hero Section */}
