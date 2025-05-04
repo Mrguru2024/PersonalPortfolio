@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300" fill="none">
+  <rect width="300" height="300" rx="20" fill="#1f2937"/>
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f2937" />
+      <stop offset="100%" stop-color="#374151" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background rectangle -->
+  <rect width="300" height="300" rx="20" fill="url(#bg-gradient)" />
+  
+  <!-- Boxes/Package grid -->
+  <rect x="50" y="70" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.9" />
+  <rect x="125" y="70" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.7" />
+  <rect x="200" y="70" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.9" />
+  
+  <rect x="50" y="130" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.7" />
+  <rect x="125" y="130" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.9" />
+  <rect x="200" y="130" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.7" />
+  
+  <rect x="50" y="190" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.8" />
+  <rect x="125" y="190" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.6" />
+  <rect x="200" y="190" width="50" height="50" rx="5" fill="#4f46e5" opacity="0.8" />
+  
+  <!-- Icon elements -->
+  <rect x="65" y="85" width="20" height="20" fill="#ffffff" />
+  <rect x="140" y="85" width="20" height="20" fill="#ffffff" />
+  <rect x="215" y="85" width="20" height="20" fill="#ffffff" />
+  
+  <rect x="65" y="145" width="20" height="20" fill="#ffffff" />
+  <rect x="140" y="145" width="20" height="20" fill="#ffffff" />
+  <rect x="215" y="145" width="20" height="20" fill="#ffffff" />
+  
+  <rect x="65" y="205" width="20" height="20" fill="#ffffff" />
+  <rect x="140" y="205" width="20" height="20" fill="#ffffff" />
+  <rect x="215" y="205" width="20" height="20" fill="#ffffff" />
+  
+  <!-- Barcode lines -->
+  <rect x="85" y="35" width="4" height="25" fill="#ffffff" />
+  <rect x="95" y="35" width="2" height="25" fill="#ffffff" />
+  <rect x="100" y="35" width="6" height="25" fill="#ffffff" />
+  <rect x="110" y="35" width="3" height="25" fill="#ffffff" />
+  <rect x="115" y="35" width="5" height="25" fill="#ffffff" />
+  <rect x="125" y="35" width="2" height="25" fill="#ffffff" />
+  <rect x="130" y="35" width="4" height="25" fill="#ffffff" />
+  <rect x="140" y="35" width="6" height="25" fill="#ffffff" />
+  <rect x="150" y="35" width="3" height="25" fill="#ffffff" />
+  <rect x="155" y="35" width="4" height="25" fill="#ffffff" />
+  <rect x="165" y="35" width="2" height="25" fill="#ffffff" />
+  <rect x="170" y="35" width="5" height="25" fill="#ffffff" />
+  <rect x="180" y="35" width="3" height="25" fill="#ffffff" />
+  <rect x="185" y="35" width="6" height="25" fill="#ffffff" />
+  <rect x="195" y="35" width="2" height="25" fill="#ffffff" />
+  <rect x="200" y="35" width="4" height="25" fill="#ffffff" />
+  <rect x="210" y="35" width="3" height="25" fill="#ffffff" />
+  
+  <!-- Title -->
+  <text x="150" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="18" fill="#ffffff">INVENTORY MANAGEMENT</text>
+  
+  <!-- Scanner animation effect -->
+  <line x1="30" y1="120" x2="270" y2="120" stroke="#10b981" stroke-width="2" stroke-dasharray="5,5">
+    <animate attributeName="y1" from="70" to="240" dur="3s" repeatCount="indefinite" />
+    <animate attributeName="y2" from="70" to="240" dur="3s" repeatCount="indefinite" />
+  </line>
+</svg>

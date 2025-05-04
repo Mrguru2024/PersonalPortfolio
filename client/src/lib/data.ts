@@ -226,7 +226,7 @@ export const projects: Project[] = [
     id: "inventory-management",
     title: "Inventory Management System",
     description: "A comprehensive inventory management solution for small businesses.",
-    image: "https://images.unsplash.com/photo-1579621970590-9d624316781b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    image: "/inventory-logo.svg",
     tags: ["React", "Firebase", "Cloud Functions"],
     category: "business",
     githubUrl: "https://github.com/Mrguru2024",
