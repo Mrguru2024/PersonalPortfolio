@@ -206,7 +206,7 @@ export const projects: Project[] = [
     id: "stackzen",
     title: "Stackzen",
     description: "An intelligent income and expense tracking platform with data visualization and financial insights.",
-    image: "https://images.unsplash.com/photo-1600132806608-231446b2e7af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    image: "/stackzen-logo.svg",
     tags: ["React", "Vite", "Node.js", "Express", "PostgreSQL"],
     category: "web",
     githubUrl: "https://github.com/Mrguru2024/Stackzen",

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" rx="20" fill="#111827"/>
+  <path d="M40 65H160M40 100H160M40 135H160" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M60 50L60 150" stroke="#3B82F6" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100 50L100 150" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+  <path d="M140 50L140 150" stroke="#1D4ED8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M50 40H150" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M50 160H150" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="100" cy="100" r="25" fill="#111827" stroke="#60A5FA" stroke-width="3"/>
+  <path d="M90 90L110 110M110 90L90 110" stroke="#60A5FA" stroke-width="4" stroke-linecap="round"/>
+  <path d="M70 47C70 47 70 47 70 47C70 47 75 53 80 53C85 53 90 47 90 47" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+  <path d="M110 47C110 47 110 47 110 47C110 47 115 53 120 53C125 53 130 47 130 47" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+  <text x="100" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="16" fill="#60A5FA">STACKZEN</text>
+</svg>
