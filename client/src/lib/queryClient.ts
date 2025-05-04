@@ -9,9 +9,9 @@ async function throwIfResNotOk(res: Response) {
 
 // Check if we're in a Vercel static deployment
 const isStaticVercelDeployment = () => {
-  // Check hostname and environment for static deployment detection
-  return (window.location.hostname.includes('vercel.app') || 
-         window.location.hostname.includes('mrguru.dev')); // Always true in production
+  // Check hostname for static deployment detection
+  return window.location.hostname.includes('vercel.app') || 
+         window.location.hostname.includes('mrguru.dev');
 };
 
 export async function apiRequest<T = any>(
@@ -21,23 +21,44 @@ export async function apiRequest<T = any>(
 ): Promise<Response> {
   console.log(`API request: ${method} ${path}`, data);
   try {
-    // For static Vercel deployment, use .json files instead of API endpoints
+    // For static Vercel deployment, use localStorage for API data
     if (isStaticVercelDeployment() && method === "GET" && path.startsWith('/api/')) {
-      // Transform /api/skills to /api/skills.json
-      const staticPath = `${path}.json`;
-      console.log(`Static deployment: Using ${staticPath} instead of API endpoint`);
+      console.log(`Static deployment: Using localStorage for ${path}`);
       
-      const res = await fetch(staticPath, {
-        method: "GET",
-        credentials: "include",
-      });
+      // Extract endpoint name from path (e.g., '/api/skills' -> 'skills')
+      const endpoint = path.split('/').pop() || '';
+      const localStorageKey = `api_${endpoint}`;
       
-      if (!res.ok) {
-        console.error(`Static API error (${res.status}):`, res.statusText);
-        throw new Error(res.statusText);
+      // Get data from localStorage
+      const storedData = localStorage.getItem(localStorageKey);
+      
+      if (storedData) {
+        // Create a mock response with the stored data
+        const mockResponse = new Response(storedData, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        return mockResponse;
+      } else {
+        console.error(`Static API error: No data found for ${path}`);
+        
+        // If localStorage fails, attempt to fetch from static JSON file
+        const staticPath = `${path}.json`;
+        console.log(`Trying static file: ${staticPath}`);
+        
+        const res = await fetch(staticPath, {
+          method: "GET",
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          console.error(`Static API error (${res.status}):`, res.statusText);
+          throw new Error(`No data available for ${path}`);
+        }
+        
+        return res;
       }
-      
-      return res;
     }
     
     // Regular API request for development or non-GET methods
@@ -69,24 +90,38 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const path = queryKey[0] as string;
     
-    // For static Vercel deployment, use .json files instead of API endpoints
+    // For static Vercel deployment, use localStorage for API data
     if (isStaticVercelDeployment() && path.startsWith('/api/')) {
-      const staticPath = `${path}.json`;
-      console.log(`Static deployment query: Using ${staticPath} instead of API endpoint`);
+      console.log(`Static deployment query: Using localStorage for ${path}`);
       
       try {
-        const res = await fetch(staticPath, {
-          credentials: "include",
-        });
+        // Extract endpoint name from path (e.g., '/api/skills' -> 'skills')
+        const endpoint = path.split('/').pop() || '';
+        const localStorageKey = `api_${endpoint}`;
         
-        if (!res.ok) {
-          if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-            return null;
+        // Get data from localStorage
+        const storedData = localStorage.getItem(localStorageKey);
+        
+        if (storedData) {
+          return JSON.parse(storedData);
+        } else {
+          console.warn(`No localStorage data for ${path}, trying static JSON file`);
+          
+          // Fallback to static JSON file
+          const staticPath = `${path}.json`;
+          const res = await fetch(staticPath, {
+            credentials: "include",
+          });
+          
+          if (!res.ok) {
+            if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+              return null;
+            }
+            throw new Error(`Static API error: ${res.status} ${res.statusText}`);
           }
-          throw new Error(`Static API error: ${res.status} ${res.statusText}`);
+          
+          return await res.json();
         }
-        
-        return await res.json();
       } catch (error) {
         console.error("Static API query failed:", error);
         if (unauthorizedBehavior === "returnNull") {
