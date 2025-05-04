@@ -28,6 +28,8 @@ export default function SkillsSection() {
     backend: [],
     other: [],
   });
+  
+  console.log("Skills component initialized");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState<DBSkill | null>(null);
   const [isEndorsementModalOpen, setIsEndorsementModalOpen] = useState(false);
