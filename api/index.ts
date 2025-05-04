@@ -5,7 +5,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { json, urlencoded } from 'body-parser';
+// Import body parser no longer needed as we use express built-in parsers
 import { db } from '../server/db';
 import { storage } from '../server/storage';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -38,8 +38,8 @@ const app = express();
 
 // Configure middleware
 app.use(cookieParser());
-app.use(json());
-app.use(urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? 'https://mrguru.dev' 
