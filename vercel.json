@@ -10,7 +10,7 @@
       "config": {
         "includeFiles": ["dist/**"],
         "bundle": true,
-        "nodeVersion": "18.x"
+        "nodeVersion": "22.x"
       }
     }
   ],

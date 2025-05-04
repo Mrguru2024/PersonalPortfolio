@@ -9,6 +9,7 @@ Before starting the deployment process, ensure you have:
 1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com) if you don't have an account
 2. **GitHub Account**: Connected to your Vercel account
 3. **Required Environment Variables**: As listed in `.env.example`
+4. **Node.js Version**: Vercel requires Node.js 22.x for this project
 
 ## Environment Variables
 
@@ -115,7 +116,11 @@ To ensure optimal performance with Vite on Vercel:
    - Ensure your database allows connections from Vercel's IP ranges
    - Check your DATABASE_URL format and credentials
 
-3. **TypeScript Error with server/vite.ts**
+3. **Node.js Version Error**
+   - Vercel requires Node.js 22.x for this project
+   - If you see "Found invalid Node.js Version" error, check that nodeVersion is set to "22.x" in vercel.json
+
+4. **TypeScript Error with server/vite.ts**
    - This is a known issue related to type compatibility in the vite.ts file
    - The error message will look like: `Type '{ middlewareMode: boolean; hmr: { server: Server<typeof IncomingMessage, typeof ServerResponse>; }; allowedHosts: boolean; }' is not assignable to type 'ServerOptions'`
    - The application still works correctly despite this error
