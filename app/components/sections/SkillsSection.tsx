@@ -509,11 +509,11 @@ export default function SkillsSection() {
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
                   </div>
                   
                   <Progress 
-                    value={skill.percentage} 
+                    value={skill.proficiency} 
                     className="h-2 bg-muted"
                   />
                   
@@ -534,7 +534,7 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
@@ -573,11 +573,11 @@ export default function SkillsSection() {
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
                   </div>
                   
                   <Progress 
-                    value={skill.percentage} 
+                    value={skill.proficiency} 
                     className="h-2 bg-muted"
                   />
                   
@@ -598,7 +598,7 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
@@ -637,11 +637,11 @@ export default function SkillsSection() {
                         </div>
                       )}
                     </h3>
-                    <span className="text-sm text-muted-foreground">{skill.percentage}%</span>
+                    <span className="text-sm text-muted-foreground">{skill.proficiency}%</span>
                   </div>
                   
                   <Progress 
-                    value={skill.percentage} 
+                    value={skill.proficiency} 
                     className="h-2 bg-muted"
                   />
                   
@@ -662,7 +662,7 @@ export default function SkillsSection() {
                           <Star 
                             key={star} 
                             size={12} 
-                            className={star <= Math.min(5, Math.ceil(skill.percentage / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                            className={star <= Math.min(5, Math.ceil(skill.proficiency / 20)) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
                           />
                         ))}
                       </div>
