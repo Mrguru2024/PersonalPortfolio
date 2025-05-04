@@ -32,10 +32,9 @@ The `vercel.json` file configures both the static frontend and serverless backen
 
 ```json
 {
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
+  "version": 2,
   "builds": [
-    { "src": "vite.config.ts", "use": "@vercel/static-build" },
+    { "src": "package.json", "use": "@vercel/static-build", "config": { "buildCommand": "vite build", "outputDirectory": "dist" } },
     { "src": "api/**/*.ts", "use": "@vercel/node" }
   ],
   "routes": [
