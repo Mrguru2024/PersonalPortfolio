@@ -22,6 +22,18 @@ export interface Project {
   repoOwner?: string;
   repoName?: string;
   techStack?: string[];
+  synopsis?: {
+    tagline: string;
+    description: string;
+    caseStudy: {
+      problem: string;
+      role: string[];
+      stack: string[];
+      features: string[];
+      status: string;
+      nextSteps: string[];
+    };
+  };
 }
 
 export interface Skill {
@@ -181,7 +193,38 @@ export const projects: Project[] = [
       allowFullscreen: true,
       isResponsive: true
     },
-    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"]
+    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"],
+    synopsis: {
+      tagline: "Automotive keycodes. Verified. Secured. Delivered.",
+      description: "Born out of real-world locksmith frustrations and the need for ethical, secure access to automotive key codes, Keycode Help is a professional-grade SaaS solution for automotive locksmiths, tow drivers, and security technicians. This platform bridges the gap between hard-to-access OEM keycode databases and vetted technicians, offering tools for quick lookups, guided resources, and secure usage tracking. This isn't just a tool—it's an ecosystem built to support licensed professionals with integrity, while keeping compliance and customer safety at its core.",
+      caseStudy: {
+        problem: "No centralized, trustworthy, and secure platform existed for independent pros to access keycodes or track VIN-to-key workflows legally and efficiently.",
+        role: [
+          "Founder / Full Stack Developer",
+          "UI/UX Designer (Wix + Velo & migrating to Next.js)",
+          "Market Researcher & Industry Liaison"
+        ],
+        stack: [
+          "Next.js 15.3 (App Router)",
+          "TypeScript, Tailwind CSS, Prisma ORM",
+          "MySQL (Dev) → Firebase (Prod)",
+          "Stripe (payments), Storybook (components), Sanity (CMS)"
+        ],
+        features: [
+          "Role-based dashboards (Technician, Admin, Reseller)",
+          "Pro Membership checkout system",
+          "VIN-to-keycode workflow + Request history",
+          "Research toolkits, API documentation access",
+          "Survey incentive & onboarding systems for research"
+        ],
+        status: "✅ MVP Build Phase 🚀 Target Launch: Q1 2026",
+        nextSteps: [
+          "API integration with OEMs & NASTF approval",
+          "Data licensing agreements",
+          "Expanding member benefits & pro community board"
+        ]
+      }
+    }
   },
   {
     id: "portfolio-website",

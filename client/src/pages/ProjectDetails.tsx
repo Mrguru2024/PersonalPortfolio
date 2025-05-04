@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import ProjectDemo from "@/components/project/ProjectDemo";
+import { ProjectSynopsis } from "@/components/projects/ProjectSynopsis";
 import { projects } from "@/lib/data";
 import ParallaxBackground from "@/components/ParallaxBackground";
 
@@ -120,6 +121,9 @@ const ProjectDetails = () => {
                   </a>
                 )}
               </div>
+              
+              {/* Project Synopsis */}
+              <ProjectSynopsis project={project} />
             </div>
 
             <div className="space-y-6">
