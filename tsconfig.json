@@ -20,18 +20,13 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*", "./client/src/*"],
+      "@/*": ["./client/src/*"],
       "@shared/*": ["./shared/*"],
-      "@app/*": ["./app/*"],
-      "@assets/*": ["./public/assets/*"],
-      "@components/*": ["./app/components/*", "./components/*"]
+      "@assets/*": ["./client/public/assets/*"],
+      "@components/*": ["./components/*"]
     }
   }
 }
