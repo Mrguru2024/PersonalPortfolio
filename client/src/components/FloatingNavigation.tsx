@@ -109,9 +109,9 @@ const FloatingNavigation: React.FC = () => {
           >
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
-                <motion.button
+                <motion.div
                   key={item.id}
-                  className={`flex items-center gap-2 p-2 rounded-md ${
+                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${
                     activeSection === item.id
                       ? 'bg-primary/10 text-primary'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -119,10 +119,18 @@ const FloatingNavigation: React.FC = () => {
                   onClick={() => scrollToSection(item.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      scrollToSection(item.id);
+                    }
+                  }}
                 >
                   {item.icon}
                   <span className="text-sm">{item.label}</span>
-                </motion.button>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -138,9 +146,9 @@ const FloatingNavigation: React.FC = () => {
       >
         <div className="flex items-center gap-1">
           {navItems.map((item) => (
-            <motion.button
+            <motion.div
               key={item.id}
-              className={`relative flex items-center justify-center p-2 rounded-full group ${
+              className={`relative flex items-center justify-center p-2 rounded-full group cursor-pointer ${
                 activeSection === item.id
                   ? 'text-primary'
                   : 'text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
@@ -148,6 +156,14 @@ const FloatingNavigation: React.FC = () => {
               onClick={() => scrollToSection(item.id)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  scrollToSection(item.id);
+                }
+              }}
             >
               {item.icon}
               <motion.span
@@ -165,16 +181,24 @@ const FloatingNavigation: React.FC = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-            </motion.button>
+            </motion.div>
           ))}
           
           <motion.div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
           
-          <motion.button
-            className="flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary group"
+          <motion.div
+            className="flex items-center justify-center p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary group cursor-pointer"
             onClick={scrollToTop}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                scrollToTop();
+              }
+            }}
           >
             <ChevronUp size={18} />
             <motion.span
@@ -185,20 +209,28 @@ const FloatingNavigation: React.FC = () => {
             >
               Top
             </motion.span>
-          </motion.button>
+          </motion.div>
         </div>
       </motion.div>
       
       {/* Scroll to top button for mobile */}
-      <motion.button
-        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden"
+      <motion.div
+        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={scrollToTop}
         whileTap={{ scale: 0.9 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            scrollToTop();
+          }
+        }}
       >
         <ChevronUp size={20} />
-      </motion.button>
+      </motion.div>
     </>
   );
 };

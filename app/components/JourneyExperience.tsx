@@ -193,8 +193,8 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                 innovative digital experiences. Let me guide you through my portfolio journey!
               </motion.p>
               
-              <motion.button
-                className="px-6 py-3 rounded-full bg-primary text-white hover:bg-primary/90 font-medium flex items-center justify-center gap-2"
+              <motion.div
+                className="px-6 py-3 rounded-full bg-primary text-white hover:bg-primary/90 font-medium flex items-center justify-center gap-2 cursor-pointer"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.5, duration: 0.5 }}
@@ -205,12 +205,22 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowInitialAnimation(false);
+                    setHasStartedJourney(true);
+                    setJourneyVisible(true);
+                  }
+                }}
               >
                 <span>Start Your Journey</span>
                 <span data-lucide="chevron-down" aria-hidden="true">
                   <ChevronDown size={18} />
                 </span>
-              </motion.button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
