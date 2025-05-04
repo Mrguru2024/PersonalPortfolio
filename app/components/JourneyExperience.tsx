@@ -219,7 +219,7 @@ export default function JourneyExperience({ activeSection }: JourneyExperiencePr
         {journeyVisible && (
           <motion.div 
             ref={containerRef}
-            className="fixed right-24 bottom-24 w-14 md:w-20 h-[500px] pointer-events-none z-40"
+            className="fixed left-10 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-14 md:w-20 h-[500px] pointer-events-none z-40"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

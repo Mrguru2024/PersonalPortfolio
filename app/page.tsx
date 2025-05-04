@@ -7,7 +7,6 @@ import HeroSection from "@/components/sections/HeroSection";
 import AboutSection from "@/components/sections/AboutSection";
 import ProjectsSection from "@/components/sections/ProjectsSection";
 import SkillsSection from "@/components/sections/SkillsSection.enhanced";
-import QuotesSection from "@/components/sections/QuotesSection";
 import ContactSection from "@/components/sections/ContactSection";
 import QuickNav from "@/components/QuickNav";
 import JourneyExperience from "@/components/JourneyExperience";
@@ -76,12 +75,11 @@ export default function HomePage() {
         onSectionClick={handleSectionClick}
       />
       
-      <main className="flex flex-col min-h-screen">
+      <main className="flex flex-col min-h-screen relative">
         <HeroSection />
         <AboutSection />
         <ProjectsSection />
         <SkillsSection />
-        <QuotesSection />
         <ContactSection />
       </main>
       

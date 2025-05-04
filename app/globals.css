@@ -214,3 +214,32 @@
     background-position: 0% 50%;
   }
 }
+
+/* Add space for journey component on smaller screens */
+@media (max-width: 640px) {
+  /* Add extra padding to the main content on smaller screens to make room for journey */
+  main {
+    padding-left: 45px !important;
+  }
+}
+
+/* Add space for journey component on small tablets */
+@media (min-width: 641px) and (max-width: 768px) {
+  main {
+    padding-left: 85px !important;
+  }
+}
+
+/* Add space for journey component on medium screens */
+@media (min-width: 769px) and (max-width: 1024px) {
+  main {
+    padding-left: 120px !important;
+  }
+}
+
+/* Add space for journey component on larger screens */
+@media (min-width: 1025px) {
+  main {
+    padding-left: 160px !important;
+  }
+}
