@@ -7,10 +7,14 @@ import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
 import { registerRoutes } from "./routes";
+import { setupVercelMiddleware } from "./middleware/vercel-production";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply Vercel-specific production optimizations
+setupVercelMiddleware(app);
 
 // Production logging middleware
 app.use((req, res, next) => {
