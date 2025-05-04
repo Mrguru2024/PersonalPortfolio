@@ -179,7 +179,7 @@ export const projects: Project[] = [
     id: "keycode-help",
     title: "Keycode Help",
     description: "A SaaS business that provides VIN to KeyCode services and online resources for locksmiths.",
-    image: "https://images.unsplash.com/photo-1586864387789-628af9feed72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    image: "/keycode-logo.png",
     tags: ["SaaS", "Automotive", "Security"],
     category: "business",
     githubUrl: "https://github.com/Mrguru2024",
