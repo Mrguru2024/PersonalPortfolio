@@ -185,7 +185,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
     {
       id: 'intro',
       label: 'Start Your Journey',
-      position: 95, // Top position
+      position: 80, // Lowered from 95 to 80 to avoid header
       icon: <Sparkles className="text-yellow-400" size={20} />,
       description: "Welcome! I'm MrGuru, your guide to my digital portfolio. Ready to see what I can create?",
       cta: "Begin Journey",
@@ -193,7 +193,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
     {
       id: 'about',
       label: 'About Me',
-      position: 85,
+      position: 70,
       icon: <Sparkles className="text-blue-400" size={20} />,
       description: "Learn about my background, expertise, and the value I can bring to your project.",
       cta: "Explore About",
@@ -202,7 +202,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
     {
       id: 'projects',
       label: 'Browse Projects',
-      position: 70,
+      position: 60,
       icon: <Briefcase className="text-blue-400" size={20} />,
       description: "Check out my showcase of innovative web applications and digital experiences.",
       cta: "View Projects",
@@ -211,7 +211,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
     {
       id: 'moreProjects',
       label: 'Project Gallery',
-      position: 60,
+      position: 55,
       icon: <Briefcase className="text-green-400" size={20} />,
       description: "Explore more of my projects and see the range of my development abilities.",
       cta: "View Gallery",
