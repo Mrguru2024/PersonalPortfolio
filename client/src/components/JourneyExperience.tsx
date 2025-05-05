@@ -162,13 +162,16 @@ interface JourneyExperienceProps {
 const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) => {
   const pathRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [guruPosition, setGuruPosition] = useState<number>(95);
   const [isGuruActive, setIsGuruActive] = useState<boolean>(true);
   const [showInitialAnimation, setShowInitialAnimation] = useState<boolean>(true);
   const [hasStartedJourney, setHasStartedJourney] = useState<boolean>(false);
-  const [forceClosed, setForceClosed] = useState<boolean>(false);
-  const [manuallyClosedMilestones, setManuallyClosedMilestones] = useState<Set<string>>(new Set());
+  
+  // Single state to control which popup is visible - simpler approach
+  const [activePopupId, setActivePopupId] = useState<string | null>(null);
+  
+  // We'll still track active index for styling the milestone icon
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
   
   // Track scroll position to update guru's position
   const { scrollYProgress } = useScroll();
@@ -271,19 +274,15 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
       // Only update if the closest index has changed
       if (closestIndex !== -1) {
         if (closestIndex !== prevIndexRef.current) {
-          // Close the previous milestone by resetting manually closed milestones
-          if (prevIndexRef.current !== -1) {
-            setManuallyClosedMilestones(new Set());
-          }
-          
           prevIndexRef.current = closestIndex;
-          setActiveIndex(closestIndex);
+          
+          // Set the active popup to this milestone's ID
+          setActivePopupId(milestones[closestIndex].id);
           setIsGuruActive(true);
-          setForceClosed(false); // Reset forceClosed to allow the new popup to show
         }
       } else if (closestIndex === -1 && prevIndexRef.current !== -1) {
         prevIndexRef.current = -1;
-        setActiveIndex(-1);
+        setActivePopupId(null);
         setIsGuruActive(false);
       }
     };

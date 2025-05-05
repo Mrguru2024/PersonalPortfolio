@@ -21,7 +21,7 @@ import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
 import FloatingNavigation from "@/components/FloatingNavigation";
 import GuidedTour from "@/components/GuidedTour";
-import JourneyExperience from "@/components/JourneyExperience";
+import JourneyExperience from "@/components/JourneyExperienceNew";
 import ViewModeToggle from "@/components/ViewModeToggle";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
