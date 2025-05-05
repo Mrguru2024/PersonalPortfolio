@@ -178,7 +178,7 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
     {
       id: 'intro',
       label: 'Start Your Journey',
-      position: 90,
+      position: 80, // Moved down to 80% instead of 90% to avoid header overlap
       icon: <Sparkles className="text-yellow-400" size={20} />,
       description: "Welcome! I'm MrGuru, your guide to my digital portfolio. Ready to see what I can create?",
       cta: "Begin Journey",
@@ -532,10 +532,10 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                   {/* Label + description + CTA - now positioned on the right side for better visibility */}
                   <AnimatePresence>
                     {/* Only show popups that: 
-                        1. Are active or intro (position 90) 
+                        1. Are active or intro (position 80) 
                         2. Haven't been manually closed
                         3. Match the current section if we're in a section */}
-                    {(activeIndex === index || milestone.position === 90) && 
+                    {(activeIndex === index || milestone.position === 80) && 
                      !manuallyClosedMilestones.has(milestone.id) && 
                      !forceClosed && (
                       <motion.div 
@@ -546,22 +546,32 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                             : 'bg-white/95 dark:bg-gray-800/95'
                         }`}
                         style={{
-                          // Position dynamically based on screen size - for small screens, show above or below
+                          // Position dynamically based on screen size and milestone position
                           ...(window.innerWidth < 640 
                             ? {
                                 left: '50%',
                                 transform: 'translateX(-50%)',
-                                // Top positions for different milestones to prevent overlap
-                                ...(milestone.position > 50 
-                                  ? { bottom: '120%' } // Show above for milestones in top half
-                                  : { top: '120%' })  // Show below for milestones in bottom half
+                                // Special handling for intro milestone (position 80) to avoid header overlap
+                                ...(milestone.position === 80
+                                  ? { top: '120%' } // Show below for intro to avoid header
+                                  : milestone.position > 50 
+                                    ? { bottom: '120%' } // Show above for other milestones in top half
+                                    : { top: '120%' })  // Show below for milestones in bottom half
                               } 
                             : {
                                 // On larger screens, show in front of the path for better visibility
                                 left: '100%', 
                                 marginLeft: '15px',
-                                top: '50%',
-                                transform: 'translateY(-50%)'
+                                // Adjust vertical position for intro milestone to avoid header
+                                ...(milestone.position === 80
+                                  ? { 
+                                      top: '80%', // Position it lower to avoid header
+                                      transform: 'translateY(-80%)' 
+                                    }
+                                  : { 
+                                      top: '50%', 
+                                      transform: 'translateY(-50%)' 
+                                    }),
                               }),
                           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 10px rgba(59, 130, 246, 0.1)'
                         }}
