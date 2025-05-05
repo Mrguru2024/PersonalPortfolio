@@ -529,6 +529,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
               return (
                 <div 
                   key={milestone.id}
+                  id={`milestone-${milestone.id}`}
                   className="absolute left-1/2 transform -translate-x-1/2 pointer-events-auto"
                   style={{ bottom: `${milestone.position}%` }}
                 >
@@ -580,33 +581,141 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
                               : 'bg-white/95 dark:bg-gray-800/95'
                             }`}
                           style={{
-                            // Position based on screen size and milestone position
-                            ...(window.innerWidth < 640 
-                              ? {
-                                  left: '50%',
-                                  transform: 'translateX(-50%)',
-                                  // Special handling for top intro milestone
+                            // Position based on screen size and milestone position with smart positioning
+                            ...((() => {
+                              // Get milestone element's position
+                              const milestoneEl = document.getElementById(`milestone-${milestone.id}`);
+                              const milestoneRect = milestoneEl?.getBoundingClientRect();
+                              
+                              // Get viewport dimensions
+                              const viewportHeight = window.innerHeight;
+                              const viewportWidth = window.innerWidth;
+                              const viewportPadding = 20;
+                              
+                              // Estimate popup dimensions
+                              const popupHeight = 150; // reasonable estimate
+                              const popupWidth = viewportWidth < 640 ? 180 : 250;
+                              
+                              // Default positions based on screen size
+                              const mobileStyle = {
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                              };
+                              
+                              const desktopStyle = {
+                                left: '100%',
+                                marginLeft: '15px',
+                                top: '50%',
+                                transform: 'translateY(-50%)'
+                              };
+                              
+                              // Smart positioning to avoid viewport edges
+                              if (milestoneRect) {
+                                // Calculate potential positions
+                                const posTop = milestoneRect.top;
+                                const posBottom = viewportHeight - milestoneRect.bottom;
+                                const posLeft = milestoneRect.left;
+                                const posRight = viewportWidth - milestoneRect.right;
+                                
+                                if (viewportWidth < 640) {
+                                  // Mobile positioning
+                                  // Check if there's more space above or below
+                                  if (posTop > posBottom && posTop > popupHeight + viewportPadding) {
+                                    // More space above and enough to fit
+                                    return {
+                                      ...mobileStyle,
+                                      bottom: '120%'
+                                    };
+                                  } else if (posBottom > popupHeight + viewportPadding) {
+                                    // More space below and enough to fit
+                                    return {
+                                      ...mobileStyle,
+                                      top: '120%'
+                                    };
+                                  } else {
+                                    // Default mobile position with adjusted transform
+                                    return {
+                                      ...mobileStyle,
+                                      top: '50%',
+                                      transform: 'translate(-50%, -50%)',
+                                      margin: '0 auto'
+                                    };
+                                  }
+                                } else {
+                                  // Desktop positioning
+                                  // Prioritize right side positioning if there's enough space
+                                  if (posRight > popupWidth + viewportPadding) {
+                                    // Enough space to the right
+                                    // Position vertically to avoid going off-screen
+                                    const verticalCenter = milestoneRect.top + (milestoneRect.height / 2);
+                                    const topSpace = verticalCenter;
+                                    const bottomSpace = viewportHeight - verticalCenter;
+                                    const halfPopupHeight = popupHeight / 2;
+                                    
+                                    let verticalPosition = {};
+                                    
+                                    if (topSpace < halfPopupHeight + viewportPadding) {
+                                      // Too close to top
+                                      verticalPosition = { top: viewportPadding };
+                                    } else if (bottomSpace < halfPopupHeight + viewportPadding) {
+                                      // Too close to bottom
+                                      verticalPosition = { bottom: viewportPadding };
+                                    } else {
+                                      // Center vertically
+                                      verticalPosition = {
+                                        top: '50%',
+                                        transform: 'translateY(-50%)'
+                                      };
+                                    }
+                                    
+                                    return {
+                                      left: '100%',
+                                      marginLeft: '15px',
+                                      ...verticalPosition
+                                    };
+                                  } else {
+                                    // Not enough space to the right, try above/below
+                                    if (posTop > posBottom && posTop > popupHeight + viewportPadding) {
+                                      // Position above
+                                      return {
+                                        bottom: '120%',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)'
+                                      };
+                                    } else {
+                                      // Position below
+                                      return {
+                                        top: '120%',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)'
+                                      };
+                                    }
+                                  }
+                                }
+                              }
+                              
+                              // Fallback to defaults if we can't calculate positions
+                              return viewportWidth < 640 ? 
+                                {
+                                  ...mobileStyle,
                                   ...(milestone.position === 80
                                     ? { top: '120%' } // Below for intro
                                     : milestone.position > 50 
                                       ? { bottom: '120%' } // Above for top half
                                       : { top: '120%' })  // Below for bottom half
-                                } 
-                              : {
-                                  // On larger screens, show to the right
-                                  left: '100%', 
-                                  marginLeft: '15px',
-                                  // Adjust vertical position for intro
+                                } : 
+                                {
+                                  ...desktopStyle,
                                   ...(milestone.position === 80
                                     ? { 
                                         top: '80%', // Lower for intro
                                         transform: 'translateY(-80%)' 
-                                      }
-                                    : { 
-                                        top: '50%', 
-                                        transform: 'translateY(-50%)' 
-                                      }),
-                                }),
+                                      } : {})
+                                };
+                            })()),
+                            // Add max-height to ensure scrollable if too large
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
                             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 10px rgba(59, 130, 246, 0.1)'
                           }}
                           initial={{ 
@@ -674,10 +783,10 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
         </div>
       </motion.div>
       
-      {/* Start journey prompt button */}
+      {/* Start journey prompt button - positioned to ensure visibility */}
       {!hasStartedJourney && !showInitialAnimation && (
         <motion.div 
-          className="fixed right-4 md:right-24 bottom-20 z-40"
+          className="fixed right-4 md:right-24 bottom-28 md:bottom-32 z-[45]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
