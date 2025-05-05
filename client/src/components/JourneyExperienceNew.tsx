@@ -283,30 +283,44 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
         setHasStartedJourney(true);
       }
       
-      // Find closest milestone - make sure we check ALL milestones
-      let closestMilestone: Milestone | null = null;
-      let smallestDistance = Infinity;
+      // Map scroll progress directly to page sections
+      // This improves the relationship between page scroll and journey position
+      const pageProgress = progress * 100;
       
-      milestones.forEach(milestone => {
-        const distance = Math.abs(milestone.position - newPosition);
-        // Increased the threshold from 8 to 15 for better detection
-        if (distance < 15 && distance < smallestDistance) {
-          smallestDistance = distance;
-          closestMilestone = milestone;
-        }
-      });
+      // Identify which section of the page we're in based on page scroll
+      // These thresholds should roughly correspond to where sections appear on the page
+      let sectionId: string;
       
-      // Always update active milestone if one is found, regardless if it's changed
-      if (closestMilestone) {
-        console.log("Detected milestone:", closestMilestone.id, "at position", closestMilestone.position);
-        prevMilestoneIdRef.current = closestMilestone.id;
-        setActiveMilestoneId(closestMilestone.id);
+      if (pageProgress < 10) {
+        sectionId = 'intro';
+      } else if (pageProgress < 25) {
+        sectionId = 'about';
+      } else if (pageProgress < 40) {
+        sectionId = 'projects';
+      } else if (pageProgress < 55) {
+        sectionId = 'moreProjects';
+      } else if (pageProgress < 70) {
+        sectionId = 'skills';
+      } else if (pageProgress < 80) {
+        sectionId = 'moreSkills';
+      } else if (pageProgress < 90) {
+        sectionId = 'contact';
+      } else {
+        sectionId = 'destination';
+      }
+      
+      // Find the milestone that corresponds to the current section
+      const currentMilestone = milestones.find(m => m.id === sectionId);
+      
+      // Update active milestone if found and changed
+      if (currentMilestone && currentMilestone.id !== prevMilestoneIdRef.current) {
+        console.log("Page progress:", pageProgress, "Section:", sectionId, "Milestone:", currentMilestone.id);
+        prevMilestoneIdRef.current = currentMilestone.id;
+        setActiveMilestoneId(currentMilestone.id);
         setIsGuruActive(true);
-      } else if (!closestMilestone && prevMilestoneIdRef.current) {
-        console.log("No milestone detected, clearing previous milestone");
-        prevMilestoneIdRef.current = null;
-        setActiveMilestoneId(null);
-        setIsGuruActive(false);
+        
+        // Smoothly move guru to the milestone position
+        setGuruPosition(currentMilestone.position);
       }
     };
     
