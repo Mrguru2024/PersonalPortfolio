@@ -3,7 +3,11 @@ import { motion, useScroll, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Sparkles, Code, Briefcase, Send, Bot, Cpu, X } from 'lucide-react';
 
 // Guru Character component - follows user through journey
-const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ position, isActive }) => {
+const GuruCharacter: React.FC<{ 
+  position: number; 
+  isActive: boolean;
+  onClosePopup: () => void;
+}> = ({ position, isActive, onClosePopup }) => {
   const isMobile = window.innerWidth < 768;
   const headSize = isMobile ? 8 : 12;
   const iconSize = isMobile ? 16 : 24;
@@ -78,7 +82,7 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
       <AnimatePresence>
         {isActive && (
           <motion.div 
-            className="absolute p-3 rounded-lg bg-white/95 dark:bg-gray-800/95 w-44 md:w-48 z-10 text-xs md:text-sm border border-primary/20 pointer-events-auto"
+            className="absolute p-3 rounded-lg bg-white/95 dark:bg-gray-800/95 w-44 md:w-48 z-10 text-xs md:text-sm border border-primary/20 pointer-events-auto cursor-pointer"
             style={{
               ...(window.innerWidth < 640
                 ? {
@@ -96,8 +100,21 @@ const GuruCharacter: React.FC<{ position: number; isActive: boolean }> = ({ posi
             animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: window.innerWidth < 640 ? 10 : 0, x: window.innerWidth < 640 ? 0 : 20 }}
             transition={{ duration: 0.3 }}
+            onClick={onClosePopup}
           >
-            <div className="font-medium text-primary mb-1">MrGuru</div>
+            {/* Close button */}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClosePopup();
+              }}
+              className="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              aria-label="Close popup"
+            >
+              <X size={14} />
+            </button>
+            
+            <div className="font-medium text-primary mb-1 pr-4">MrGuru</div>
             <div className="text-gray-700 dark:text-gray-300">
               {isMobile 
                 ? "Follow me through this journey!" 
@@ -632,7 +649,11 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
             {(hasStartedJourney || !showInitialAnimation) && (
               <GuruCharacter 
                 position={guruPosition} 
-                isActive={isGuruActive} 
+                isActive={isGuruActive}
+                onClosePopup={() => {
+                  setIsGuruActive(false);
+                  setActiveMilestoneId(null);
+                }}
               />
             )}
           </div>
