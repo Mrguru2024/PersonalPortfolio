@@ -163,15 +163,24 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
   // Track scroll position
   const { scrollYProgress } = useScroll();
   
-  // Milestones definition
+  // Milestones definition - adding more milestones for better coverage and detection
   const milestones: Milestone[] = [
     {
       id: 'intro',
       label: 'Start Your Journey',
-      position: 80, // Using 80 instead of 90 to avoid header overlap
+      position: 95, // Top position
       icon: <Sparkles className="text-yellow-400" size={20} />,
       description: "Welcome! I'm MrGuru, your guide to my digital portfolio. Ready to see what I can create?",
       cta: "Begin Journey",
+    },
+    {
+      id: 'about',
+      label: 'About Me',
+      position: 85,
+      icon: <Sparkles className="text-blue-400" size={20} />,
+      description: "Learn about my background, expertise, and the value I can bring to your project.",
+      cta: "Explore About",
+      elementId: "about",
     },
     {
       id: 'projects',
@@ -183,6 +192,15 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
       elementId: "projects",
     },
     {
+      id: 'moreProjects',
+      label: 'Project Gallery',
+      position: 60,
+      icon: <Briefcase className="text-green-400" size={20} />,
+      description: "Explore more of my projects and see the range of my development abilities.",
+      cta: "View Gallery",
+      elementId: "projects",
+    },
+    {
       id: 'skills',
       label: 'Discover Skills',
       position: 50,
@@ -190,6 +208,24 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
       description: "Explore my technical skills and expertise across frontend, backend, and more.",
       cta: "See Skills",
       elementId: "skills",
+    },
+    {
+      id: 'moreSkills',
+      label: 'Technical Expertise',
+      position: 40,
+      icon: <Code className="text-purple-400" size={20} />,
+      description: "See how my skills translate into real-world solutions for businesses.",
+      cta: "Learn More",
+      elementId: "skills",
+    },
+    {
+      id: 'testimonials',
+      label: 'Testimonials',
+      position: 30,
+      icon: <Sparkles className="text-yellow-400" size={20} />,
+      description: "See what clients and colleagues say about working with me.",
+      cta: "Read Reviews",
+      elementId: "testimonials",
     },
     {
       id: 'contact',
@@ -217,39 +253,59 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
   // Handle scroll to update guru position and active milestone
   useEffect(() => {
     const handleScroll = (progress: number) => {
-      if (!hasStartedJourney) return;
+      // Only return if we haven't started journey AND we're still showing animation
+      // This way, we can still track scrolling even if "Start Journey" hasn't been clicked
+      if (!hasStartedJourney && showInitialAnimation) return;
       
       // Update guru position (inversely proportional to scroll)
       const newPosition = 95 - (progress * 90);
       setGuruPosition(newPosition);
       
-      // Find closest milestone
+      // Force the journey to start if they scroll down past a certain point
+      if (!hasStartedJourney && progress > 0.1) {
+        setHasStartedJourney(true);
+      }
+      
+      // Find closest milestone - make sure we check ALL milestones
       let closestMilestone: Milestone | null = null;
       let smallestDistance = Infinity;
       
       milestones.forEach(milestone => {
         const distance = Math.abs(milestone.position - newPosition);
-        if (distance < 8 && distance < smallestDistance) { // 8 is threshold of closeness
+        // Increased the threshold from 8 to 15 for better detection
+        if (distance < 15 && distance < smallestDistance) {
           smallestDistance = distance;
           closestMilestone = milestone;
         }
       });
       
-      // Update active milestone if changed
-      if (closestMilestone && closestMilestone.id !== prevMilestoneIdRef.current) {
+      // Always update active milestone if one is found, regardless if it's changed
+      if (closestMilestone) {
+        console.log("Detected milestone:", closestMilestone.id, "at position", closestMilestone.position);
         prevMilestoneIdRef.current = closestMilestone.id;
         setActiveMilestoneId(closestMilestone.id);
         setIsGuruActive(true);
       } else if (!closestMilestone && prevMilestoneIdRef.current) {
+        console.log("No milestone detected, clearing previous milestone");
         prevMilestoneIdRef.current = null;
         setActiveMilestoneId(null);
         setIsGuruActive(false);
       }
     };
     
+    // Debug info
+    console.log("Current scroll progress tracking status:", 
+                "hasStartedJourney:", hasStartedJourney, 
+                "showInitialAnimation:", showInitialAnimation,
+                "activePopupId:", activeMilestoneId);
+    
     const unsubscribe = scrollYProgress.on("change", handleScroll);
+    
+    // Initial call to handle scroll on mount
+    handleScroll(scrollYProgress.get());
+    
     return () => unsubscribe();
-  }, [scrollYProgress, hasStartedJourney, milestones]);
+  }, [scrollYProgress, hasStartedJourney, showInitialAnimation, milestones, activeMilestoneId]);
   
   // Show intro milestone when journey not started
   useEffect(() => {
@@ -270,15 +326,25 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
   
   // Start journey function
   const startJourney = () => {
+    console.log("Starting journey!");
     setHasStartedJourney(true);
     setActiveMilestoneId('intro'); // Start with intro milestone
     setIsGuruActive(true);
     
-    // Scroll slightly to begin
+    // First milestone should be initially visible
+    // Scroll to top to ensure we're at the start
     window.scrollTo({
-      top: window.innerHeight * 0.1,
+      top: 0,
       behavior: 'smooth'
     });
+    
+    // After a short delay, scroll down slightly to trigger the scroll events
+    setTimeout(() => {
+      window.scrollTo({
+        top: window.innerHeight * 0.15,
+        behavior: 'smooth'
+      });
+    }, 500);
   };
   
   // Update based on activeSection
