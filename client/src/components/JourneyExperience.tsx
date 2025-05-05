@@ -455,7 +455,7 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
       {/* Main journey container - positioned with enough space for popups */}
       <motion.div 
         ref={containerRef}
-        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 inset-y-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
+        className="fixed left-4 sm:left-16 md:left-24 lg:left-32 top-20 bottom-0 w-14 md:w-20 z-40 pointer-events-none flex items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: hasStartedJourney || !showInitialAnimation ? 1 : 0 }}
         transition={{ duration: 0.5 }}
