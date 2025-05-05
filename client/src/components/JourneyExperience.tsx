@@ -263,15 +263,24 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
       setGuruPosition(newPosition);
       
       // Find which milestone the guru is closest to
+      // Make the detection more precise with smaller threshold (8 instead of 10)
       const closestIndex = milestones.findIndex(milestone => 
-        Math.abs(milestone.position - newPosition) < 10
+        Math.abs(milestone.position - newPosition) < 8
       );
       
       // Only update if the closest index has changed
-      if (closestIndex !== -1 && closestIndex !== prevIndexRef.current) {
-        prevIndexRef.current = closestIndex;
-        setActiveIndex(closestIndex);
-        setIsGuruActive(true);
+      if (closestIndex !== -1) {
+        if (closestIndex !== prevIndexRef.current) {
+          // Close the previous milestone by resetting manually closed milestones
+          if (prevIndexRef.current !== -1) {
+            setManuallyClosedMilestones(new Set());
+          }
+          
+          prevIndexRef.current = closestIndex;
+          setActiveIndex(closestIndex);
+          setIsGuruActive(true);
+          setForceClosed(false); // Reset forceClosed to allow the new popup to show
+        }
       } else if (closestIndex === -1 && prevIndexRef.current !== -1) {
         prevIndexRef.current = -1;
         setActiveIndex(-1);
@@ -300,8 +309,14 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
   
   // Start journey function - appears on first load
   const startJourney = () => {
+    // Reset any previously closed milestones
+    setManuallyClosedMilestones(new Set());
+    setForceClosed(false);
+    
+    // Start journey with the first milestone
     setHasStartedJourney(true);
     setActiveIndex(0);
+    setIsGuruActive(true);
     
     // Scroll slightly to begin journey
     window.scrollTo({
@@ -430,7 +445,7 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                 transition={{ delay: 1.5, duration: 0.5 }}
                 onClick={() => {
                   setShowInitialAnimation(false);
-                  setHasStartedJourney(true);
+                  startJourney(); // Use the startJourney function to ensure consistency
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -440,7 +455,7 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     setShowInitialAnimation(false);
-                    setHasStartedJourney(true);
+                    startJourney(); // Use the startJourney function to ensure consistency
                   }
                 }}
               >
@@ -531,11 +546,12 @@ const JourneyExperience: React.FC<JourneyExperienceProps> = ({ activeSection }) 
                   
                   {/* Label + description + CTA - now positioned on the right side for better visibility */}
                   <AnimatePresence>
-                    {/* Only show popups that: 
-                        1. Are active or intro (position 80) 
+                    {/* Only show popups that:
+                        1. Are the active milestone (or intro before journey starts)
                         2. Haven't been manually closed
                         3. Match the current section if we're in a section */}
-                    {(activeIndex === index || milestone.position === 80) && 
+                    {((hasStartedJourney && activeIndex === index) || 
+                      (!hasStartedJourney && milestone.position === 80)) && 
                      !manuallyClosedMilestones.has(milestone.id) && 
                      !forceClosed && (
                       <motion.div 
