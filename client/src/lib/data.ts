@@ -105,7 +105,7 @@ export const personalInfo: PersonalInfo = {
     "Electronic Repair Technician"
   ],
   resumeUrl: "/api/resume",
-  image: "https://raw.githubusercontent.com/Mrguru2024/My-Portfolio-Website/main/assets/Assets/Photos/Copy%20of%20Web%20Designer%20Content%20Posts.jpg"
+  image: "https://github.com/Mrguru2024.png"
 };
 
 export const socialLinks: SocialLink[] = [

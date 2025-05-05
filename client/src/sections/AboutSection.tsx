@@ -59,15 +59,20 @@ const AboutSection = () => {
             viewport={{ once: true }}
             className="order-1 lg:order-2 relative"
           >
-            <div className="aspect-square max-w-md mx-auto relative z-10 rounded-xl overflow-hidden shadow-xl">
+            <div className="aspect-square max-w-md mx-auto relative z-10 rounded-xl overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 mix-blend-overlay z-10"></div>
               <img 
                 src={personalInfo.image} 
-                alt="Profile" 
-                className="w-full h-full object-cover" 
+                alt="Anthony Feaster - MrGuru.dev" 
+                className="w-full h-full object-cover relative z-0" 
               />
+              <div className="absolute bottom-0 left-0 right-0 text-center bg-gradient-to-t from-black/70 to-transparent py-4 z-20">
+                <h3 className="text-white font-bold text-xl">Anthony Feaster</h3>
+                <p className="text-white/90 text-sm">@MrGuru</p>
+              </div>
             </div>
-            <div className="absolute top-6 -right-6 w-24 h-24 bg-primary rounded-lg -z-10 hidden lg:block"></div>
-            <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-secondary rounded-lg -z-10 hidden lg:block"></div>
+            <div className="absolute top-6 -right-6 w-24 h-24 bg-gradient-to-br from-primary to-primary/70 rounded-lg -z-10 hidden lg:block"></div>
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-gradient-to-br from-secondary to-secondary/70 rounded-lg -z-10 hidden lg:block"></div>
           </motion.div>
         </div>
       </div>
