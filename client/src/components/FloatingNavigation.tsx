@@ -80,7 +80,7 @@ const FloatingNavigation: React.FC = () => {
     <>
       {/* Mobile Navigation Button */}
       <motion.div
-        className="fixed bottom-4 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
+        className="fixed bottom-14 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
@@ -101,7 +101,7 @@ const FloatingNavigation: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-20 right-4 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
+            className="fixed bottom-28 right-4 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
@@ -139,7 +139,7 @@ const FloatingNavigation: React.FC = () => {
       
       {/* Desktop Navigation */}
       <motion.div
-        className="fixed left-[40%] transform -translate-x-1/2 bottom-6 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
+        className="fixed left-[40%] transform -translate-x-1/2 bottom-14 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -215,7 +215,7 @@ const FloatingNavigation: React.FC = () => {
       
       {/* Scroll to top button for mobile */}
       <motion.div
-        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
+        className="fixed bottom-14 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={scrollToTop}
