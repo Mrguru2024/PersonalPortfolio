@@ -1,6 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Force NODE_ENV to development for local dev server (unless explicitly set to production)
+// This ensures Vite is used instead of static file serving
+// NODE_ENV is read-only in newer Node.js versions, so we don't set it here
+// It should be set via environment variables or build scripts
+
+// Load environment variables from .env.local for local development
+// Note: This will load other vars but NODE_ENV is already set above
+if (process.env.NODE_ENV === "development") {
+  config({ path: resolve(process.cwd(), ".env.local") });
+  // NODE_ENV is read-only in newer Node.js versions
+}
 
 const app = express();
 app.use(express.json());
@@ -50,8 +64,15 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
+  if (process.env.NODE_ENV === "development") {
+    try {
+      await setupVite(app, server);
+      log("Vite development server initialized");
+    } catch (error: any) {
+      log(`Warning: Could not setup Vite: ${error.message}. API will still work, but frontend may not be available.`);
+      log("To fix: npm install @vitejs/plugin-react");
+      // Continue without Vite - API routes will still work
+    }
   } else {
     serveStatic(app);
   }
@@ -60,11 +81,9 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // Use localhost on Windows, 0.0.0.0 on Unix-like systems
+  const host = process.platform === "win32" ? "localhost" : "0.0.0.0";
+  server.listen(port, host, () => {
+    log(`serving on ${host}:${port}`);
   });
 })();

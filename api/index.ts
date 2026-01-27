@@ -5,6 +5,14 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load environment variables from .env.local for local development
+if (process.env.NODE_ENV !== "production") {
+  config({ path: resolve(process.cwd(), ".env.local") });
+}
+
 // Import body parser no longer needed as we use express built-in parsers
 import { db } from '../server/db';
 import { storage } from '../server/storage';
@@ -238,4 +246,5 @@ app.get("/api/health", (_req, res) => {
 });
 
 // Export the Express API as a Vercel API handler
+// Vercel expects the Express app to be exported directly
 export default app;

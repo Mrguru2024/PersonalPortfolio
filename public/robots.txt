@@ -1,0 +1,11 @@
+# Robots.txt for MrGuru.dev Portfolio
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+
+# Sitemaps
+Sitemap: https://mrguru.dev/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 10

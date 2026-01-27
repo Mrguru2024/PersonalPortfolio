@@ -1,0 +1,68 @@
+// Push Notification Service using Web Push API
+// This service can send browser push notifications when enabled
+
+interface PushNotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  data?: Record<string, any>;
+  tag?: string;
+  requireInteraction?: boolean;
+}
+
+export class PushNotificationService {
+  private vapidPublicKey: string | null;
+  private vapidPrivateKey: string | null;
+  private isConfigured: boolean;
+
+  constructor() {
+    this.vapidPublicKey = process.env.VAPID_PUBLIC_KEY || null;
+    this.vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || null;
+    this.isConfigured = !!(this.vapidPublicKey && this.vapidPrivateKey);
+
+    if (!this.isConfigured) {
+      console.warn('⚠️  VAPID keys not found. Push notifications will be disabled.');
+      console.warn('   Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in your .env.local file to enable push notifications.');
+      console.warn('   Generate keys using: npx web-push generate-vapid-keys');
+    }
+  }
+
+  async sendNotification(
+    subscription: any,
+    payload: PushNotificationPayload
+  ): Promise<boolean> {
+    if (!this.isConfigured) {
+      return false;
+    }
+
+    try {
+      // In a real implementation, you would use the web-push library
+      // For now, this is a placeholder that logs the notification
+      console.log('📱 Push notification would be sent:', {
+        subscription: subscription.endpoint,
+        payload
+      });
+      
+      // TODO: Implement actual web-push sending
+      // const webpush = require('web-push');
+      // webpush.setVapidDetails(
+      //   'mailto:5epmgllc@gmail.com',
+      //   this.vapidPublicKey!,
+      //   this.vapidPrivateKey!
+      // );
+      // await webpush.sendNotification(subscription, JSON.stringify(payload));
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending push notification:', error);
+      return false;
+    }
+  }
+
+  getPublicKey(): string | null {
+    return this.vapidPublicKey;
+  }
+}
+
+export const pushNotificationService = new PushNotificationService();

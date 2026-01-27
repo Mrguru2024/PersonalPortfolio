@@ -1,12 +1,30 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+// Try to import react plugin, but handle if it's not installed
+let reactPlugin: any = null;
+try {
+  const reactModule = await import("@vitejs/plugin-react");
+  reactPlugin = reactModule.default;
+} catch (error) {
+  // Plugin not installed - Vite will work but React features may be limited
+  console.warn("[Vite] @vitejs/plugin-react not found. React support may be limited.");
+}
+
+// Try to import runtime error overlay, but handle if it's not installed
+let runtimeErrorOverlay: any = null;
+try {
+  const overlayModule = await import("@replit/vite-plugin-runtime-error-modal");
+  runtimeErrorOverlay = overlayModule.default;
+} catch (error) {
+  // Plugin not installed - Vite will work without error overlay
+  console.warn("[Vite] @replit/vite-plugin-runtime-error-modal not found. Error overlay will not be available.");
+}
 
 export default defineConfig({
   plugins: [
-    react(),
-    runtimeErrorOverlay(),
+    ...(reactPlugin ? [reactPlugin()] : []),
+    ...(runtimeErrorOverlay ? [runtimeErrorOverlay()] : []),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import path from 'path';
 import fs from 'fs';
 import { githubService } from '../services/githubService';
+import { emailService } from '../services/emailService';
 
 // Still import these for now as fallback until we populate the database
 import { 
@@ -27,7 +28,7 @@ import {
   contactInfo,
   socialLinks,
   type Skill as ClientSkill
-} from '../../client/src/lib/data';
+} from '../../app/lib/data';
 
 // Convert client-side skills to server-side skills with required fields
 const convertToServerSkill = (clientSkill: ClientSkill, category: string): Skill => ({
@@ -89,6 +90,18 @@ export const portfolioController = {
       
       // Increment the endorsement count for the skill
       await storage.incrementSkillEndorsementCount(validatedData.skillId);
+      
+      // Send email notification for skill endorsement
+      await emailService.sendNotification({
+        type: 'skill-endorsement',
+        data: {
+          skillId: validatedData.skillId,
+          name: validatedData.name,
+          email: validatedData.email,
+          comment: validatedData.comment,
+          rating: validatedData.rating
+        }
+      });
       
       res.status(201).json(newEndorsement);
     } catch (error) {
@@ -287,21 +300,96 @@ export const portfolioController = {
 
   submitContactForm: async (req: Request, res: Response) => {
     try {
-      // Validate request with Zod schema
-      const validatedData = contactFormSchema.parse(req.body);
+      const body = req.body;
+      
+      // Check if this is a quote request (has projectType, budget, timeframe)
+      const isQuoteRequest = body.projectType || body.budget || body.timeframe;
+      
+      // For quote requests, we'll use a more flexible validation
+      let validatedData;
+      if (isQuoteRequest) {
+        // Quote request validation
+        validatedData = {
+          name: body.name,
+          email: body.email,
+          phone: body.phone || '',
+          company: body.company || '',
+          projectType: body.projectType || '',
+          budget: body.budget || '',
+          timeframe: body.timeframe || '',
+          message: body.message || '',
+          newsletter: body.newsletter || false,
+          subject: `Quote Request: ${body.projectType || 'Project'}`,
+        };
+      } else {
+        // Regular contact form validation
+        validatedData = contactFormSchema.parse(req.body);
+      }
       
       // Create contact record in database
       const contactData: InsertContact = {
         name: validatedData.name,
         email: validatedData.email,
-        subject: validatedData.subject,
-        message: validatedData.message,
+        subject: validatedData.subject || 'Contact Form Submission',
+        message: validatedData.message || '',
       };
       
       const savedContact = await storage.createContact(contactData);
       
+      // For quote requests, calculate pricing estimate using AI-enhanced analysis
+      let pricingEstimate = null;
+      if (isQuoteRequest && 'projectType' in validatedData && validatedData.projectType && 'message' in validatedData && validatedData.message) {
+        try {
+          const { pricingService } = await import("@server/services/pricingService");
+          const { aiAssistanceService } = await import("@server/services/aiAssistanceService");
+          
+          // Use AI to enhance project description for better pricing accuracy
+          const enhancedDescription = await aiAssistanceService.improveDescription(
+            validatedData.message,
+            validatedData.projectType
+          );
+          
+          // Create assessment-like object for pricing calculation
+          const assessmentData = {
+            projectType: validatedData.projectType,
+            projectDescription: enhancedDescription || validatedData.message,
+            budgetRange: validatedData.budget,
+            preferredTimeline: validatedData.timeframe,
+            // Map budget ranges to assessment format
+            budget: validatedData.budget === '1-2k' ? 'under-5k' :
+                   validatedData.budget === '2-5k' ? '5k-10k' :
+                   validatedData.budget === '5-10k' ? '10k-25k' :
+                   validatedData.budget === '10k+' ? '25k-50k' : 'flexible',
+          };
+          
+          pricingEstimate = pricingService.calculatePricing(assessmentData);
+        } catch (error) {
+          console.error("Error calculating pricing estimate:", error);
+          // Continue without pricing estimate if calculation fails
+        }
+      }
+      
+      // Send email notification
+      if (isQuoteRequest) {
+        await emailService.sendNotification({
+          type: 'quote',
+          data: {
+            ...validatedData,
+            pricingEstimate: pricingEstimate ? {
+              estimatedRange: pricingEstimate.estimatedRange,
+              marketComparison: pricingEstimate.marketComparison
+            } : null
+          }
+        });
+      } else {
+        await emailService.sendNotification({
+          type: 'contact',
+          data: validatedData
+        });
+      }
+      
       res.status(200).json({ 
-        message: 'Contact form submitted successfully',
+        message: isQuoteRequest ? 'Quote request submitted successfully' : 'Contact form submitted successfully',
         data: savedContact
       });
     } catch (error) {
@@ -331,6 +419,15 @@ export const portfolioController = {
       };
       
       const savedRequest = await storage.createResumeRequest(requestData);
+      
+      // Send email notification
+      await emailService.sendNotification({
+        type: 'resume',
+        data: {
+          ...validatedData,
+          accessToken: savedRequest.accessToken
+        }
+      });
       
       // Return only the token to the client - we'll use this to validate the download
       res.status(200).json({ 

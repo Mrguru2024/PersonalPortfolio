@@ -2,8 +2,18 @@ import OpenAI from "openai";
 import { Project } from "@shared/schema";
 import { storage } from "../storage";
 
-// Initialize the OpenAI client with the API key from environment variables
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy initialization of OpenAI client - only create when actually needed
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY environment variable is not set. Recommendations are disabled.");
+    }
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 // Define interface for recommendation criteria
 export interface RecommendationCriteria {
@@ -77,7 +87,8 @@ Please recommend up to ${maxResults} projects, ranked by relevance score.
 `;
 
     // Step 3: Get recommendations from OpenAI
-    const response = await openai.chat.completions.create({
+    const client = getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         { role: "system", content: "You are a project recommendation specialist that helps match users with relevant projects based on their interests." },
@@ -140,7 +151,8 @@ export async function generateRecommendationExplanation(
     ).join("\n\n");
     
     // Generate an explanation using OpenAI
-    const response = await openai.chat.completions.create({
+    const client = getOpenAIClient();
+    const response = await client.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         { 

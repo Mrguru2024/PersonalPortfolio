@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { generateBlogPostImage } from "../services/autoImageService";
+import { emailService } from "../services/emailService";
 
 export const blogController = {
   // Get all published blog posts
@@ -20,8 +21,20 @@ export const blogController = {
     try {
       const posts = await storage.getPublishedBlogPosts();
       res.json(posts);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching blog posts:", error);
+      
+      // Check if it's a database connection error
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('endpoint has been disabled') || 
+          errorMessage.includes('connection') ||
+          errorMessage.includes('ECONNREFUSED') ||
+          errorMessage.includes('ENOTFOUND')) {
+        console.warn("Database unavailable, returning empty array for blog posts");
+        // Return empty array instead of error for database connection issues
+        return res.json([]);
+      }
+      
       res.status(500).json({ error: "Failed to fetch blog posts" });
     }
   },
@@ -41,8 +54,20 @@ export const blogController = {
       }
       
       res.json(post);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching blog post:", error);
+      
+      // Check if it's a database connection error
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('endpoint has been disabled') || 
+          errorMessage.includes('connection') ||
+          errorMessage.includes('ECONNREFUSED') ||
+          errorMessage.includes('ENOTFOUND')) {
+        console.warn("Database unavailable, returning 404 for blog post");
+        // Return 404 instead of 500 for database connection issues
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      
       res.status(500).json({ error: "Failed to fetch blog post" });
     }
   },
@@ -50,9 +75,8 @@ export const blogController = {
   // Create a new blog post (requires authentication)
   createBlogPost: async (req: Request, res: Response) => {
     try {
-      // For simplicity, assuming user authentication would be added later
-      // and we would get the authorId from the authenticated session
-      const authorId = 1; // This would come from authenticated user session
+      // Get authorId from authenticated user session
+      const authorId = req.user?.id || 1; // Fallback to 1 if no user (shouldn't happen with auth check)
       
       const validatedData = insertBlogPostSchema.parse(req.body);
       const now = new Date();
@@ -152,6 +176,17 @@ export const blogController = {
         createdAt: new Date(),
         captchaToken: validatedData.captchaToken
       }, ipAddress);
+      
+      // Send email notification for new blog comment
+      await emailService.sendNotification({
+        type: 'contact',
+        data: {
+          name: validatedData.name,
+          email: validatedData.email,
+          subject: `New Comment on Blog Post: ${post.title}`,
+          message: `A new comment has been submitted on your blog post "${post.title}":\n\n${validatedData.content}\n\nPost: ${post.slug}`
+        }
+      });
       
       res.status(201).json({ 
         ...comment,

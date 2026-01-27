@@ -2,11 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["./app/components/*"],
-      "@/lib/*": ["./app/lib/*"],
-      "@/styles/*": ["./app/styles/*"],
-      "@/assets/*": ["./app/assets/*"]
+      "@/*": ["./app/*"],
+      "@shared/*": ["./shared/*"],
+      "@server/*": ["./server/*"]
     },
     "jsx": "react-jsx"
   },

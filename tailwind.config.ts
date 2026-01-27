@@ -1,10 +1,43 @@
 import type { Config } from "tailwindcss";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+// Load plugins - only include tailwindcss-animate for now
+// Typography plugin can be added later if needed
+function getPlugins() {
+  return [require("tailwindcss-animate")];
+}
 
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
   theme: {
     extend: {
+      screens: {
+        // Standard breakpoints
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        // Foldable device support (Samsung Z Fold, Surface Duo, etc.)
+        'fold': '280px', // Folded state (narrow)
+        'fold-open': '512px', // Unfolded state (wide)
+        'fold-landscape': { 'raw': '(min-width: 280px) and (max-width: 512px) and (orientation: landscape)' },
+        // Tablet and larger
+        'tablet': '768px',
+        'tablet-lg': '1024px',
+        // Desktop
+        'desktop': '1280px',
+        'desktop-lg': '1536px',
+        // Ultra-wide
+        'ultrawide': '1920px',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -86,5 +119,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: getPlugins(),
 } satisfies Config;

@@ -65,6 +65,25 @@ export const insertProjectSchema = createInsertSchema(projects);
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
 
+// Project Assessment schema
+export const projectAssessments = pgTable("project_assessments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  role: text("role"),
+  assessmentData: json("assessment_data").$type<any>().notNull(),
+  pricingBreakdown: json("pricing_breakdown").$type<any>(),
+  status: text("status").default("pending"), // pending, reviewed, contacted, archived
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProjectAssessmentSchema = createInsertSchema(projectAssessments);
+export type InsertProjectAssessment = z.infer<typeof insertProjectAssessmentSchema>;
+export type ProjectAssessment = typeof projectAssessments.$inferSelect;
+
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -176,6 +195,22 @@ export const blogPosts = pgTable("blog_posts", {
   updatedAt: timestamp("updated_at").notNull(),
   authorId: integer("author_id").references(() => users.id),
   isPublished: boolean("is_published").notNull().default(false),
+  // SEO fields
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  keywords: json("keywords").$type<string[]>(),
+  canonicalUrl: text("canonical_url"),
+  // Backlinking fields
+  internalLinks: json("internal_links").$type<Array<{ text: string; url: string; postId?: number }>>(),
+  externalLinks: json("external_links").$type<Array<{ text: string; url: string; nofollow?: boolean }>>(),
+  // Social sharing
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
+  twitterCard: text("twitter_card").default("summary_large_image"),
+  // Authority building
+  relatedPosts: json("related_posts").$type<number[]>(),
+  readingTime: integer("reading_time"),
 });
 
 export const blogPostContributions = pgTable("blog_post_contributions", {
@@ -212,6 +247,28 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   id: true,
   authorId: true,
   isPublished: true,
+}).extend({
+  coverImage: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  keywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  internalLinks: z.array(z.object({
+    text: z.string(),
+    url: z.string(),
+    postId: z.number().optional()
+  })).optional(),
+  externalLinks: z.array(z.object({
+    text: z.string(),
+    url: z.string(),
+    nofollow: z.boolean().optional()
+  })).optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterCard: z.string().optional(),
+  relatedPosts: z.array(z.number()).optional(),
+  readingTime: z.number().optional(),
 });
 
 export const insertBlogCommentSchema = createInsertSchema(blogComments).omit({

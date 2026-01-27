@@ -1,6 +1,67 @@
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Next.js
+.next/
+out/
+build
 dist
-.DS_Store
-server/public
-vite.config.ts.*
+
+# Production
 *.tar.gz
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files (CRITICAL - contains sensitive credentials)
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Public folders (Next.js uses root public/)
+app/public
+client/public
+server/public
+
+# Legacy files
+old_index.html
+vite.config.ts.*
+
+# Unused build scripts (deleted)
+# vercel-build.js
+# vercel-build-static.cjs
+# vercel-static-api.cjs
+
+# Backups (should not be in repo)
+backups/
+
+# Temporary files
+attached_assets/*.txt
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

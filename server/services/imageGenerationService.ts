@@ -1,7 +1,17 @@
 import OpenAI from "openai";
 
-// Initialize the OpenAI client with the API key from environment variables
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy initialization of OpenAI client - only create when actually needed
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY environment variable is not set. Image generation is disabled.");
+    }
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 export interface GeneratedImage {
   url: string;
@@ -26,7 +36,8 @@ export async function generateImage(
     const enhancedPrompt = `Create a high-quality, professional image for a developer portfolio: ${prompt}. Make it visually striking with detailed textures, good lighting, and an appealing color scheme. Style: modern, digital, professional.`;
 
     // Generate the image using DALL-E 3
-    const response = await openai.images.generate({
+    const client = getOpenAIClient();
+    const response = await client.images.generate({
       model: "dall-e-3", // the newest OpenAI model is "dall-e-3" which was released after gpt-4's knowledge cutoff
       prompt: enhancedPrompt,
       n: 1,

@@ -6,7 +6,8 @@ import { users, type User, type InsertUser,
   blogPosts, type BlogPost, type InsertBlogPost,
   blogComments, type BlogComment, type InsertBlogComment,
   blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution,
-  resumeRequests, type ResumeRequest, type InsertResumeRequest
+  resumeRequests, type ResumeRequest, type InsertResumeRequest,
+  projectAssessments, type ProjectAssessment, type InsertProjectAssessment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -42,9 +43,17 @@ export interface IStorage {
   
   // Contact operations
   createContact(contact: InsertContact): Promise<Contact>;
+  getAllContacts(): Promise<Contact[]>;
+  getContactById(id: number): Promise<Contact | undefined>;
+  
+  // Project Assessment operations
+  getAllAssessments(): Promise<ProjectAssessment[]>;
+  getAssessmentById(id: number): Promise<ProjectAssessment | undefined>;
+  updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment>;
   
   // Resume request operations
   createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest>;
+  getAllResumeRequests(): Promise<ResumeRequest[]>;
   getResumeRequestByToken(token: string): Promise<ResumeRequest | undefined>;
   markResumeRequestAsAccessed(id: number): Promise<ResumeRequest>;
   
@@ -191,6 +200,21 @@ export class DatabaseStorage implements IStorage {
     return insertedContact;
   }
   
+  async getAllContacts(): Promise<Contact[]> {
+    return db
+      .select()
+      .from(contacts)
+      .orderBy(desc(contacts.createdAt));
+  }
+  
+  async getContactById(id: number): Promise<Contact | undefined> {
+    const [contact] = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.id, id));
+    return contact || undefined;
+  }
+  
   // Resume request operations
   async createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest> {
     const now = new Date();
@@ -217,6 +241,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resumeRequests.accessToken, token));
       
     return request || undefined;
+  }
+  
+  async getAllResumeRequests(): Promise<ResumeRequest[]> {
+    return db
+      .select()
+      .from(resumeRequests)
+      .orderBy(desc(resumeRequests.createdAt));
   }
   
   async markResumeRequestAsAccessed(id: number): Promise<ResumeRequest> {
@@ -266,6 +297,7 @@ export class DatabaseStorage implements IStorage {
       .insert(blogPosts)
       .values({
         ...post,
+        coverImage: post.coverImage || '',
         authorId,
         isPublished: false
       })
