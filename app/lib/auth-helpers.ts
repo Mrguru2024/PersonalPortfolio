@@ -5,6 +5,9 @@ import { storage } from "@server/storage";
 // Session management for Next.js App Router
 // Optimized for serverless environments with fast timeouts
 export async function getSessionUser(req?: NextRequest): Promise<any | null> {
+  const userAgent = req?.headers.get("user-agent") || "unknown";
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+  
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("sessionId") || cookieStore.get("connect.sid");
@@ -18,35 +21,51 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
     return new Promise((resolve) => {
       // connect-pg-simple stores sessions with the session ID as-is
       const sessionId = sessionCookie.value;
+      const storeStartTime = Date.now();
       
       // Increased timeout slightly for mobile/network latency (2 seconds)
       const timeout = setTimeout(() => {
+        const storeDuration = Date.now() - storeStartTime;
+        if (isMobile) {
+          console.log(`[getSessionUser] Session store get timeout after ${storeDuration}ms (Mobile)`);
+        }
         resolve(null);
       }, 2000);
       
       storage.sessionStore.get(sessionId, async (err, session) => {
         clearTimeout(timeout);
+        const storeDuration = Date.now() - storeStartTime;
         
         if (err) {
           // Ignore ENOENT errors for table.sql - this is a known connect-pg-simple issue
           if (err.code === 'ENOENT' && (err.path?.includes('table.sql') || err.path?.includes('connect-pg-simple'))) {
+            if (isMobile) {
+              console.log(`[getSessionUser] ENOENT error (table.sql) after ${storeDuration}ms (Mobile)`);
+            }
             resolve(null);
             return;
           }
           
           // Handle database connection errors gracefully in serverless
           if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
+            if (isMobile) {
+              console.log(`[getSessionUser] DB connection error: ${err.code} after ${storeDuration}ms (Mobile)`);
+            }
             resolve(null);
             return;
           }
           
-          // Silently fail - session not found or error
+          // Log other errors for mobile debugging
+          if (isMobile) {
+            console.error(`[getSessionUser] Session store error: ${err.message || err.code} after ${storeDuration}ms (Mobile)`);
+          }
           resolve(null);
           return;
         }
 
         if (!session) {
           // Session doesn't exist or expired
+          console.log(`[getSessionUser] Session not found in store for sessionId ${sessionId.substring(0, 16)}... after ${storeDuration}ms${isMobile ? ' (Mobile)' : ''}`);
           resolve(null);
           return;
         }
@@ -57,9 +76,12 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
         
         if (!userId) {
           // No userId in session
+          console.log(`[getSessionUser] No userId in session data. Session keys: ${Object.keys(session || {}).join(', ')} after ${storeDuration}ms${isMobile ? ' (Mobile)' : ''}`);
           resolve(null);
           return;
         }
+        
+        console.log(`[getSessionUser] Found userId ${userId} in session after ${storeDuration}ms${isMobile ? ' (Mobile)' : ''}`);
 
         try {
           // Get user from database with timeout for serverless
@@ -70,8 +92,9 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           const userPromise = storage.getUser(userIdNum);
           const timeoutPromise = new Promise<null>((resolve) => 
             setTimeout(() => {
+              const dbDuration = Date.now() - dbStartTime;
               if (isMobile) {
-                console.log(`[getSessionUser] DB query timeout for userId ${userIdNum} after ${Date.now() - dbStartTime}ms (Mobile)`);
+                console.log(`[getSessionUser] DB query timeout for userId ${userIdNum} after ${dbDuration}ms (Mobile)`);
               }
               resolve(null);
             }, 1500)
@@ -81,16 +104,12 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           const dbDuration = Date.now() - dbStartTime;
           
           if (!user) {
-            if (isMobile) {
-              console.log(`[getSessionUser] User ${userIdNum} not found in database after ${dbDuration}ms (Mobile)`);
-            }
+            console.log(`[getSessionUser] User ${userIdNum} not found in database after ${dbDuration}ms${isMobile ? ' (Mobile)' : ''}`);
             resolve(null);
             return;
           }
 
-          if (isMobile) {
-            console.log(`[getSessionUser] Success: Found user ${user.id} (${user.username}) after ${dbDuration}ms (Mobile)`);
-          }
+          console.log(`[getSessionUser] Success: Found user ${user.id} (${user.username}) after ${dbDuration}ms${isMobile ? ' (Mobile)' : ''}`);
 
           // Don't send password
           const { password, ...userWithoutPassword } = user;
@@ -126,29 +145,35 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
   };
 
   // Set session with callback and return a promise
-  // Optimized for serverless - fast timeout, minimal logging
-  return new Promise((resolve) => {
-    // Fast timeout for serverless (1 second max)
+  // Increased timeout for mobile/serverless environments
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+    // Increased timeout to 3 seconds for serverless/mobile
     const timeout = setTimeout(() => {
-      // Don't reject - allow login to continue even if session storage fails
-      // The cookie is set, so the session can be stored on next request
+      const duration = Date.now() - startTime;
+      console.warn(`[setSession] Timeout after ${duration}ms for userId ${userId} - session may not be stored`);
+      // Don't reject - allow login to continue, but log the issue
       resolve();
-    }, 1000);
+    }, 3000);
     
     try {
       storage.sessionStore.set(sessionId, sessionData, (err) => {
         clearTimeout(timeout);
+        const duration = Date.now() - startTime;
         
         if (err) {
-          // Handle all errors gracefully - don't block login
+          console.error(`[setSession] Error storing session for userId ${userId} after ${duration}ms:`, err.message || err.code);
+          // Don't reject - allow login to continue
           // The cookie is set, so the session can be stored on next request
           resolve();
         } else {
+          console.log(`[setSession] Successfully stored session for userId ${userId} in ${duration}ms`);
           resolve();
         }
       });
     } catch (error: any) {
       clearTimeout(timeout);
+      console.error(`[setSession] Exception storing session for userId ${userId}:`, error?.message);
       // Don't reject - allow login to continue
       resolve();
     }

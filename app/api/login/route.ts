@@ -155,12 +155,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 5: Store session in database (non-fatal)
+    // Step 5: Store session in database (non-fatal but important)
     try {
+      console.log(`[Login] Storing session for user ${user.id} with sessionId ${sessionId.substring(0, 16)}...`);
       await setSession(sessionId, user.id);
+      console.log(`[Login] Session storage completed for user ${user.id}`);
     } catch (sessionError: any) {
       // Log session storage error but don't fail login
-      console.error("Warning: Failed to store session in database:", sessionError);
+      console.error(`[Login] Warning: Failed to store session in database for user ${user.id}:`, sessionError);
       console.error("Session storage error details:", {
         message: sessionError?.message,
         code: sessionError?.code,
