@@ -19,10 +19,10 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
       // connect-pg-simple stores sessions with the session ID as-is
       const sessionId = sessionCookie.value;
       
-      // Fast timeout for serverless (1.5 seconds max)
+      // Increased timeout slightly for mobile/network latency (2 seconds)
       const timeout = setTimeout(() => {
         resolve(null);
-      }, 1500);
+      }, 2000);
       
       storage.sessionStore.get(sessionId, async (err, session) => {
         clearTimeout(timeout);
@@ -65,32 +65,24 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           // Get user from database with timeout for serverless
           const userIdNum = typeof userId === 'number' ? userId : Number.parseInt(String(userId), 10);
           
-          // Add timeout for database query in serverless environments
+          // Increased timeout for database query (1.5 seconds for mobile/network latency)
           const userPromise = storage.getUser(userIdNum);
           const timeoutPromise = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 3000)
+            setTimeout(() => resolve(null), 1500)
           );
           
           const user = await Promise.race([userPromise, timeoutPromise]);
           
           if (!user) {
-            console.log("getSessionUser: User not found in database for ID:", userIdNum);
             resolve(null);
             return;
           }
 
-          console.log("getSessionUser: User found:", user.id, user.username);
           // Don't send password
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
         } catch (error: any) {
-          // Handle database connection errors gracefully
-          if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT' || error?.message?.includes('timeout')) {
-            console.warn("getSessionUser: Database connection error (serverless?), returning null:", error.code);
-          } else {
-            console.error("getSessionUser: Error fetching user from database:", error);
-          }
-          // Silently fail - not authenticated
+          // Silently fail - not authenticated (don't log in production)
           resolve(null);
         }
       });

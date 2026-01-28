@@ -192,10 +192,10 @@ export class DatabaseStorage implements IStorage {
     // Wrap the get method to handle ENOENT errors and timeouts gracefully
     const originalGet = this.sessionStore.get.bind(this.sessionStore);
     this.sessionStore.get = function(sid: string, callback: (err?: any, session?: any) => void) {
-      // Fast timeout for serverless environments (1 second max)
+      // Increased timeout for mobile/network latency (1.5 seconds)
       const timeout = setTimeout(() => {
         callback(undefined, null);
-      }, 1000);
+      }, 1500);
       
       try {
         originalGet(sid, (err, session) => {

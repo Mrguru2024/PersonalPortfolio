@@ -134,13 +134,15 @@ export async function POST(req: NextRequest) {
     const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined;
     
     try {
-      cookieStore.set("sessionId", sessionId, {
+      // Cookie settings optimized for mobile browsers and serverless
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production", // Required for HTTPS
+        sameSite: "lax" as const, // Works for most mobile browsers
         path: "/",
         ...(maxAge && { maxAge }),
-      });
+      };
+      cookieStore.set("sessionId", sessionId, cookieOptions);
       console.log("Login: Session cookie set successfully");
     } catch (setCookieError: any) {
       console.error("Error setting cookie:", setCookieError);

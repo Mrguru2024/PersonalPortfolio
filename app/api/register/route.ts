@@ -45,10 +45,11 @@ export async function POST(req: NextRequest) {
     // Create session
     const sessionId = randomBytes(32).toString("hex");
     const cookieStore = await cookies();
+    // Cookie settings optimized for mobile browsers and serverless
     cookieStore.set("sessionId", sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // Required for HTTPS
+      sameSite: "lax" as const, // Works for most mobile browsers
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
