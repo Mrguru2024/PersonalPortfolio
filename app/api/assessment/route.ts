@@ -3,8 +3,10 @@ import { projectAssessmentSchema } from "@shared/assessmentSchema";
 import { pricingService } from "@server/services/pricingService";
 import { proposalService } from "@server/services/proposalService";
 import { db } from "@server/db";
-import { projectAssessments } from "@shared/schema";
+import { projectAssessments, clientQuotes } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
+import { storage } from "@server/storage";
+import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,6 +55,51 @@ export async function POST(req: NextRequest) {
       // Don't fail the request if proposal generation fails
     }
 
+    // Try to link assessment to user if they're logged in
+    let userId: number | null = null;
+    try {
+      const user = await getSessionUser(req);
+      if (user) {
+        userId = user.id;
+      } else {
+        // Try to find user by email
+        const userByEmail = await storage.getUserByEmail(validatedData.email);
+        if (userByEmail) {
+          userId = userByEmail.id;
+        }
+      }
+    } catch (error) {
+      // User might not be logged in, that's okay
+      console.log("No user found for assessment, quote will be created without user link");
+    }
+
+    // Create quote from assessment if proposal was generated
+    let quote = null;
+    if (proposal) {
+      try {
+        const quoteNumber = `QT-${Date.now()}-${assessment.id}`;
+        const finalTotal = proposal.pricing.finalTotal;
+        const validUntil = new Date();
+        validUntil.setDate(validUntil.getDate() + 30); // Valid for 30 days
+
+        const [createdQuote] = await db.insert(clientQuotes).values({
+          assessmentId: assessment.id,
+          userId: userId || null,
+          quoteNumber,
+          title: `Quote for ${validatedData.projectName}`,
+          proposalData: proposal,
+          totalAmount: finalTotal,
+          status: 'pending',
+          validUntil,
+        }).returning();
+        
+        quote = createdQuote;
+      } catch (error) {
+        console.error("Error creating quote:", error);
+        // Don't fail the request if quote creation fails
+      }
+    }
+
     // Store in response for client-side access
     const response = NextResponse.json({
       success: true,
@@ -60,11 +107,10 @@ export async function POST(req: NextRequest) {
         id: assessment.id,
         pricingBreakdown,
         proposalGenerated: !!proposal,
+        quoteId: quote?.id,
+        requiresAccount: !userId,
       },
     });
-
-    // Also store in a way the client can access immediately
-    // (In production, you might want to use a session or token-based approach)
     
     return response;
   } catch (error: any) {

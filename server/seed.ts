@@ -114,15 +114,37 @@ async function seedBlogPosts() {
   const existingUser = await db.select().from(users).where(eq(users.username, 'admin')).limit(1);
   
   if (existingUser.length === 0) {
-    const [user] = await db.insert(users).values({
-      username: 'admin',
-      password: 'admin123', // In a real app, this would be properly hashed
-      email: 'admin@example.com',
-      isAdmin: true,
-      adminApproved: true
-    }).returning();
+    // Use environment variables for seed admin user, or skip if not provided
+    const seedAdminEmail = process.env.SEED_ADMIN_EMAIL;
+    const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
     
-    userId = user.id;
+    if (!seedAdminEmail || !seedAdminPassword) {
+      console.log('⚠️  Skipping admin user creation - SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD not set');
+      console.log('   To create a seed admin user, set these environment variables in .env.local');
+    } else {
+      // Import hashPassword function
+      const { scrypt, randomBytes } = await import('crypto');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(scrypt);
+      
+      async function hashPassword(password: string) {
+        const salt = randomBytes(16).toString("hex");
+        const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+        return `${buf.toString("hex")}.${salt}`;
+      }
+      
+      const hashedPassword = await hashPassword(seedAdminPassword);
+      const [user] = await db.insert(users).values({
+        username: seedAdminEmail.split('@')[0] || 'admin',
+        password: hashedPassword,
+        email: seedAdminEmail,
+        isAdmin: true,
+        adminApproved: true
+      }).returning();
+      
+      userId = user.id;
+      console.log('✅ Seed admin user created');
+    }
   }
   
   // Seed blog posts with relevant content for a portfolio site

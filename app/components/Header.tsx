@@ -109,6 +109,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">My Dashboard</Link>
+                  </DropdownMenuItem>
                   {((user.isAdmin && user.adminApproved) || user.role === "writer" || user.role === "admin") && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin/blog">Create Blog Post</Link>
@@ -127,6 +130,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href="/admin/newsletters">Newsletters</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/feedback">Feedback Management</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href="/admin/newsletters/subscribers">Subscribers</Link>

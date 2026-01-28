@@ -208,8 +208,9 @@ export async function apiRequest<T = any>(
       const isLogin401 = res.status === 401 && path === '/api/login';
       const isBlog404 = res.status === 404 && path.includes('/api/blog/');
       const isComments404 = res.status === 404 && path.includes('/comments');
+      const isAdmin403 = res.status === 403 && path.includes('/api/admin/');
       
-      if (!isLogin401 && !isBlog404 && !isComments404) {
+      if (!isLogin401 && !isBlog404 && !isComments404 && !isAdmin403) {
         // Log other errors (truncate long HTML responses)
         const logText = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
         console.error(`API error (${res.status}):`, logText);
@@ -238,7 +239,7 @@ export const getQueryFn: <T>(options: {
     const path = queryKey[0] as string;
     
     // For static Vercel deployment, use localStorage for API data
-    if (typeof window !== 'undefined' && isStaticVercelDeployment() && path.startsWith('/api/')) {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && isStaticVercelDeployment() && path.startsWith('/api/')) {
       console.log(`Static deployment query: Using localStorage for ${path}`);
       
       try {

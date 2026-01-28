@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -86,7 +87,7 @@ export default function AdminDashboardPage() {
       const response = await apiRequest("GET", "/api/admin/assessments");
       return await response.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   // Fetch contacts
@@ -96,7 +97,7 @@ export default function AdminDashboardPage() {
       const response = await apiRequest("GET", "/api/admin/contacts");
       return await response.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   // Fetch resume requests
@@ -106,7 +107,7 @@ export default function AdminDashboardPage() {
       const response = await apiRequest("GET", "/api/admin/resume-requests");
       return await response.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   // Update assessment status mutation

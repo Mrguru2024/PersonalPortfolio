@@ -39,8 +39,20 @@ async function hashPassword(password: string) {
 
 async function createAdminUser() {
   try {
-    const email = '5epmgllc@gmail.com';
-    const password = 'Destiny@2028';
+    // Get credentials from environment variables or prompt
+    const email = process.env.ADMIN_EMAIL || process.argv[2];
+    const password = process.env.ADMIN_PASSWORD || process.argv[3];
+    
+    if (!email || !password) {
+      console.error('❌ Error: Email and password are required!');
+      console.error('\nUsage:');
+      console.error('  ADMIN_EMAIL=email@example.com ADMIN_PASSWORD=password npx tsx scripts/create-admin.ts');
+      console.error('  OR');
+      console.error('  npx tsx scripts/create-admin.ts <email> <password>');
+      console.error('\n⚠️  Never commit credentials to the repository!');
+      process.exit(1);
+    }
+    
     const username = email.split('@')[0]; // Use email prefix as username
 
     console.log('Creating/updating admin user...');
@@ -105,7 +117,7 @@ async function createAdminUser() {
     console.log('You can now login with:');
     console.log(`  Username: ${username}`);
     console.log(`  Email: ${email}`);
-    console.log(`  Password: ${password}`);
+    console.log(`  Password: [hidden]`);
   } catch (error) {
     console.error('❌ Error creating admin user:', error);
     throw error;

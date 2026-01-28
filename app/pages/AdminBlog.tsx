@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, Image as ImageIcon, Sparkles, Wand2, Zap, FileText, Tags, Search } from "lucide-react";
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,21 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { SEOPanel } from "@/components/SEOPanel";
 import ParallaxBackground from "@/components/ParallaxBackground";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -67,6 +82,13 @@ type FormValues = z.infer<typeof formSchema>;
 const AdminBlog = () => {
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiStyle, setAiStyle] = useState<"professional" | "casual" | "technical" | "storytelling">("professional");
+  const [aiLength, setAiLength] = useState<"short" | "medium" | "long">("medium");
+  const [showTitleDialog, setShowTitleDialog] = useState(false);
+  const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const { user } = useAuth();
   
   const { toast } = useToast();
@@ -261,7 +283,61 @@ const AdminBlog = () => {
                     name="tags"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tags</FormLabel>
+                        <div className="flex items-center justify-between mb-1">
+                          <FormLabel>Tags</FormLabel>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const title = form.getValues('title');
+                              const content = form.getValues('content');
+                              if (!title.trim()) {
+                                toast({
+                                  title: "Title required",
+                                  description: "Please enter a title first",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setIsGenerating(true);
+                              try {
+                                const response = await apiRequest("POST", "/api/admin/blog/ai/generate-tags", {
+                                  title,
+                                  content: content.substring(0, 1500),
+                                });
+                                const data = await response.json();
+                                const tags = data.tags || [];
+                                field.onChange(tags);
+                                toast({
+                                  title: "Tags generated",
+                                  description: `${tags.length} tags have been generated`,
+                                });
+                              } catch (error: any) {
+                                toast({
+                                  title: "Generation failed",
+                                  description: error.message || "Failed to generate tags",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setIsGenerating(false);
+                              }
+                            }}
+                            disabled={isGenerating || !form.getValues('title')?.trim()}
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Tags className="h-4 w-4 mr-2" />
+                                AI Generate
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         <FormControl>
                           <Input placeholder="react, javascript, webdev" {...field} value={Array.isArray(field.value) ? field.value.join(', ') : (field.value || "")} />
                         </FormControl>
@@ -339,25 +415,91 @@ const AdminBlog = () => {
                     )}
                   </div>
                   
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
                     <label className="cursor-pointer">
                       <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors rounded-md px-4 py-2">
                         <Upload className="h-4 w-4" />
-                        <span>Upload cover image</span>
+                        <span>Upload</span>
                       </div>
                       <input 
                         type="file" 
                         accept="image/*"
                         className="hidden" 
                         onChange={handleCoverImageUpload}
-                        disabled={uploadingCover}
+                        disabled={uploadingCover || generatingImage}
                       />
                     </label>
                     
-                    {uploadingCover && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        const title = form.getValues('title');
+                        const content = form.getValues('content');
+                        if (!title.trim()) {
+                          toast({
+                            title: "Title required",
+                            description: "Please enter a title first to generate an image",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        setGeneratingImage(true);
+                        try {
+                          // First, generate an image prompt
+                          const promptResponse = await apiRequest("POST", "/api/admin/blog/ai/generate-image-prompt", {
+                            title,
+                            content: content.substring(0, 1000),
+                          });
+                          const promptData = await promptResponse.json();
+                          
+                          // Then generate the image
+                          const imageResponse = await apiRequest("POST", "/api/images/generate", {
+                            prompt: promptData.prompt,
+                            size: "1792x1024", // Blog cover image size
+                            quality: "hd",
+                          });
+                          const imageData = await imageResponse.json();
+                          
+                          if (imageData.success && imageData.data?.url) {
+                            form.setValue('coverImage', imageData.data.url);
+                            setCoverImageUrl(imageData.data.url);
+                            toast({
+                              title: "Image generated",
+                              description: "AI-generated cover image has been added",
+                            });
+                          } else {
+                            throw new Error(imageData.message || "Failed to generate image");
+                          }
+                        } catch (error: any) {
+                          toast({
+                            title: "Generation failed",
+                            description: error.message || "Failed to generate cover image",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setGeneratingImage(false);
+                        }
+                      }}
+                      disabled={generatingImage || uploadingCover || !form.getValues('title')?.trim()}
+                    >
+                      {generatingImage ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          AI Generate
+                        </>
+                      )}
+                    </Button>
+                    
+                    {(uploadingCover || generatingImage) && (
                       <div className="ml-2 flex items-center">
                         <Loader2 className="animate-spin h-4 w-4 mr-1" />
-                        <span className="text-sm">Uploading...</span>
+                        <span className="text-sm">{uploadingCover ? "Uploading..." : "Generating..."}</span>
                       </div>
                     )}
                   </div>
@@ -367,16 +509,231 @@ const AdminBlog = () => {
             
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Content</CardTitle>
-                <CardDescription>Write your blog post content</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Content</CardTitle>
+                    <CardDescription>Write your blog post content</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isGenerating}
+                        >
+                          <Wand2 className="h-4 w-4 mr-2" />
+                          AI Generate
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>AI Content Generation</DialogTitle>
+                          <DialogDescription>
+                            Generate blog post content using AI
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium">Topic *</label>
+                            <Input
+                              value={aiTopic}
+                              onChange={(e) => setAiTopic(e.target.value)}
+                              placeholder="e.g., Building modern web applications with React"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium">Style</label>
+                              <Select value={aiStyle} onValueChange={(value: any) => setAiStyle(value)}>
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="professional">Professional</SelectItem>
+                                  <SelectItem value="casual">Casual</SelectItem>
+                                  <SelectItem value="technical">Technical</SelectItem>
+                                  <SelectItem value="storytelling">Storytelling</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Length</label>
+                              <Select value={aiLength} onValueChange={(value: any) => setAiLength(value)}>
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="short">Short (800-1200 words)</SelectItem>
+                                  <SelectItem value="medium">Medium (1500-2000 words)</SelectItem>
+                                  <SelectItem value="long">Long (2500-3500 words)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setAiTopic("")}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={async () => {
+                                if (!aiTopic.trim()) {
+                                  toast({
+                                    title: "Topic required",
+                                    description: "Please enter a topic",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                setIsGenerating(true);
+                                try {
+                                  const response = await apiRequest("POST", "/api/admin/blog/ai/generate-content", {
+                                    topic: aiTopic,
+                                    length: aiLength,
+                                    style: aiStyle,
+                                  });
+                                  const data = await response.json();
+                                  form.setValue('content', data.content || "");
+                                  toast({
+                                    title: "Content generated",
+                                    description: "AI content has been added to the editor",
+                                  });
+                                } catch (error: any) {
+                                  toast({
+                                    title: "Generation failed",
+                                    description: error.message || "Failed to generate content",
+                                    variant: "destructive",
+                                  });
+                                } finally {
+                                  setIsGenerating(false);
+                                }
+                              }}
+                              disabled={isGenerating || !aiTopic.trim()}
+                            >
+                              {isGenerating ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="h-4 w-4 mr-2" />
+                                  Generate
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    {form.watch('content') && (
+                      <Select
+                        onValueChange={async (value) => {
+                          const content = form.getValues('content');
+                          if (!content.trim()) return;
+                          setIsGenerating(true);
+                          try {
+                            const response = await apiRequest("POST", "/api/admin/blog/ai/improve-content", {
+                              content,
+                              instruction: value,
+                            });
+                            const data = await response.json();
+                            form.setValue('content', data.content || "");
+                            toast({
+                              title: "Content improved",
+                              description: `Content has been ${value === "make-more-engaging" ? "made more engaging" : value}d`,
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Improvement failed",
+                              description: error.message || "Failed to improve content",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsGenerating(false);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Improve content" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="improve">Improve</SelectItem>
+                          <SelectItem value="expand">Expand</SelectItem>
+                          <SelectItem value="make-more-engaging">Make Engaging</SelectItem>
+                          <SelectItem value="add-seo">Add SEO</SelectItem>
+                          <SelectItem value="summarize">Summarize</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+                <CardContent>
                 <FormField
                   control={form.control}
                   name="summary"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Summary</FormLabel>
+                      <div className="flex items-center justify-between mb-1">
+                        <FormLabel>Summary</FormLabel>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const title = form.getValues('title');
+                            const content = form.getValues('content');
+                            if (!title.trim()) {
+                              toast({
+                                title: "Title required",
+                                description: "Please enter a title first",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            setIsGenerating(true);
+                            try {
+                              const response = await apiRequest("POST", "/api/admin/blog/ai/generate-summary", {
+                                title,
+                                content: content.substring(0, 1000),
+                              });
+                              const data = await response.json();
+                              field.onChange(data.summary || "");
+                              toast({
+                                title: "Summary generated",
+                                description: "AI-generated summary has been added",
+                              });
+                            } catch (error: any) {
+                              toast({
+                                title: "Generation failed",
+                                description: error.message || "Failed to generate summary",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setIsGenerating(false);
+                            }
+                          }}
+                          disabled={isGenerating || !form.getValues('title')?.trim()}
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              AI Generate
+                            </>
+                          )}
+                        </Button>
+                      </div>
                       <FormControl>
                         <Textarea 
                           placeholder="A brief summary of your blog post..."

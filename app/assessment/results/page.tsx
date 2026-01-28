@@ -10,6 +10,7 @@ import {
   Code, 
   Mail,
   ArrowLeft,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,15 @@ import { ProposalDocument } from "@/components/assessment/ProposalDocument";
 import { BudgetComparison } from "@/components/assessment/BudgetComparison";
 import { DragDropFeatureSelector } from "@/components/assessment/DragDropFeatureSelector";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface AssessmentResult {
   id: number;
@@ -44,16 +54,29 @@ function AssessmentResultsContent() {
         .then((data) => {
           if (data.success) {
             setAssessment(data.assessment);
+            setRequiresAccount(data.requiresAccount || false);
             // Store in localStorage for reference
-            localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
+            try {
+              if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+                localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
+              }
+            } catch (error) {
+              console.warn("Failed to save to localStorage:", error);
+            }
           }
         })
         .catch((error) => {
           console.error("Error fetching assessment:", error);
           // Try to get from localStorage as fallback
-          const stored = localStorage.getItem(`assessment_${assessmentId}`);
-          if (stored) {
-            setAssessment(JSON.parse(stored));
+          try {
+            if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+              const stored = localStorage.getItem(`assessment_${assessmentId}`);
+              if (stored) {
+                setAssessment(JSON.parse(stored));
+              }
+            }
+          } catch (storageError) {
+            console.warn("Failed to read from localStorage:", storageError);
           }
         });
     }
@@ -92,6 +115,28 @@ function AssessmentResultsContent() {
           <p className="text-gray-600 dark:text-gray-400">
             Thank you for completing the assessment! Your professional proposal with detailed cost breakdown, timeline, and project scope is ready below. You can view it in your browser and download it as PDF, TXT, or DOCX.
           </p>
+          {!user && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <UserPlus className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    Create an account to access your dashboard
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                    Set up your account to view all your quotes, track project progress, receive announcements, and manage invoices in one place.
+                  </p>
+                  <Button
+                    onClick={() => router.push("/auth?redirect=/dashboard")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create Account
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Pricing Summary Card */}
@@ -374,11 +419,18 @@ function AssessmentResultsContent() {
             Back to Home
           </Button>
           <Button
-            onClick={() => router.push("/#contact")}
+            onClick={() => router.push("/dashboard")}
             className="bg-gradient-to-r from-primary to-purple-600"
           >
             <Mail className="h-4 w-4 mr-2" />
-            Contact Us Directly
+            Go to Dashboard
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/#contact")}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Contact Us
           </Button>
         </div>
       </div>

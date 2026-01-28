@@ -68,6 +68,7 @@ export function RichTextEditor({
         class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl dark:prose-invert max-w-none focus:outline-none min-h-[300px] px-4 py-3",
       },
     },
+    immediatelyRender: false,
   });
 
   if (!editor) {

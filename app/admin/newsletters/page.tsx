@@ -40,6 +40,14 @@ export default function NewslettersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  
+  // Force refresh user data to ensure we have the latest adminApproved status
+  useEffect(() => {
+    if (user && user.isAdmin) {
+      // Invalidate user query to force refresh
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    }
+  }, [user?.isAdmin, queryClient]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -49,13 +57,34 @@ export default function NewslettersPage() {
     }
   }, [user, authLoading, router]);
 
-  const { data: newsletters = [], isLoading } = useQuery<Newsletter[]>({
+  const { data: newsletters = [], isLoading, error } = useQuery<Newsletter[]>({
     queryKey: ["/api/admin/newsletters"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/newsletters");
-      return await response.json();
+      try {
+        const response = await apiRequest("GET", "/api/admin/newsletters");
+        if (!response.ok) {
+          // Handle 403 gracefully - user might not be approved yet
+          if (response.status === 403) {
+            return [];
+          }
+          const errorData = await response.json().catch(() => ({ message: "Failed to fetch newsletters" }));
+          throw new Error(errorData.message || "Failed to fetch newsletters");
+        }
+        return await response.json();
+      } catch (err: any) {
+        // If it's a 403 error or admin access error, return empty array instead of throwing
+        const errorMessage = err?.message || "";
+        if (errorMessage.includes("Admin access required") || 
+            errorMessage.includes("403") ||
+            errorMessage.includes('"message":"Admin access required"')) {
+          return [];
+        }
+        throw err;
+      }
     },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
+    enabled: !authLoading && !!user && user.isAdmin === true && user.adminApproved === true,
+    retry: false,
+    throwOnError: false,
   });
 
   const deleteMutation = useMutation({
@@ -110,6 +139,32 @@ export default function NewslettersPage() {
 
   if (!user || !user.isAdmin || !user.adminApproved) {
     return null;
+  }
+
+  // Debug: Log user status to help diagnose issues
+  if (user && user.isAdmin && !user.adminApproved) {
+    console.warn("User is admin but not approved. Please run 'npm run approve-admin' and log out/in.");
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>Failed to load newsletters</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600 dark:text-red-400">
+              {error instanceof Error ? error.message : "An unknown error occurred"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Please ensure you have admin approval and try again.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const getStatusBadge = (status: string) => {

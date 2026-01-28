@@ -17,6 +17,7 @@ import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { NoSSR } from "@/components/NoSSR";
 import { Code } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const [currentSection, setCurrentSection] = useState<string>("Home");
@@ -101,68 +102,78 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [isImmersive, currentSection, mounted]);
 
   useEffect(() => {
-    if (isImmersive) {
-      document.documentElement.classList.add("use-custom-cursor");
-    } else {
-      document.documentElement.classList.remove("use-custom-cursor");
+    if (typeof document === "undefined") return;
+    
+    try {
+      if (isImmersive) {
+        document.documentElement.classList.add("use-custom-cursor");
+      } else {
+        document.documentElement.classList.remove("use-custom-cursor");
+      }
+    } catch (error) {
+      console.warn("Error updating document classes:", error);
     }
   }, [isImmersive]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
-            <Toaster />
-            {mounted && isImmersive && <CustomCursor currentSection={currentSection} />}
-            <div
-              className={`flex flex-col min-h-screen ${
-                mounted && isImmersive ? "cursor-none md:cursor-none" : ""
-              }`}
-            >
-              <NoSSR
-                fallback={
-                  <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm transition-colors duration-300">
-                    <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                      <div className="text-xl font-bold text-primary flex items-center">
-                        <Code className="h-6 w-6" />
-                        <span className="ml-2 hidden sm:inline">MrGuru.dev</span>
-                      </div>
-                    </div>
-                  </header>
-                }
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
+              <Toaster />
+              {mounted && isImmersive && <CustomCursor currentSection={currentSection} />}
+              <div
+                className={`flex flex-col min-h-screen ${
+                  mounted && isImmersive ? "cursor-none md:cursor-none" : ""
+                }`}
               >
-                <Header
-                  currentSection={currentSection}
-                  onNavToggle={() => {}}
-                />
-              </NoSSR>
-              <main className="flex-grow">{children}</main>
-              <Footer />
-              {mounted && isImmersive && (
-                <>
-                  <NoSSR>
-                    <FloatingNavigation />
-                  </NoSSR>
-                  <NoSSR>
-                    <GuidedTour />
-                  </NoSSR>
-                  <NoSSR>
-                    <JourneyExperience activeSection={currentSection} />
-                  </NoSSR>
-                </>
-              )}
-              {mounted && (
-                <ViewModeToggle
-                  isImmersive={isImmersive}
-                  setIsImmersive={setIsImmersive}
-                />
-              )}
-            </div>
-            <Analytics />
-          </ThemeProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+                <NoSSR
+                  fallback={
+                    <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm transition-colors duration-300">
+                      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                        <div className="text-xl font-bold text-primary flex items-center">
+                          <Code className="h-6 w-6" />
+                          <span className="ml-2 hidden sm:inline">MrGuru.dev</span>
+                        </div>
+                      </div>
+                    </header>
+                  }
+                >
+                  <Header
+                    currentSection={currentSection}
+                    onNavToggle={() => {}}
+                  />
+                </NoSSR>
+                <main className="flex-grow">
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </main>
+                <Footer />
+                {mounted && isImmersive && (
+                  <>
+                    <NoSSR>
+                      <FloatingNavigation />
+                    </NoSSR>
+                    <NoSSR>
+                      <GuidedTour />
+                    </NoSSR>
+                    <NoSSR>
+                      <JourneyExperience activeSection={currentSection} />
+                    </NoSSR>
+                  </>
+                )}
+                {mounted && (
+                  <ViewModeToggle
+                    isImmersive={isImmersive}
+                    setIsImmersive={setIsImmersive}
+                  />
+                )}
+              </div>
+              <Analytics />
+            </ThemeProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

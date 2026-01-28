@@ -319,3 +319,96 @@ export type InsertBlogComment = z.infer<typeof insertBlogCommentSchema>;
 export type BlogComment = typeof blogComments.$inferSelect;
 export type InsertBlogPostContribution = z.infer<typeof insertBlogPostContributionSchema>;
 export type BlogPostContribution = typeof blogPostContributions.$inferSelect;
+
+// Client Quotes schema (from assessments/proposals)
+export const clientQuotes = pgTable("client_quotes", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").references(() => projectAssessments.id),
+  userId: integer("user_id").references(() => users.id),
+  quoteNumber: text("quote_number").notNull().unique(),
+  title: text("title").notNull(),
+  proposalData: json("proposal_data").$type<any>().notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  status: text("status").default("pending"), // pending, sent, accepted, rejected, expired
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Client Invoices schema
+export const clientInvoices = pgTable("client_invoices", {
+  id: serial("id").primaryKey(),
+  quoteId: integer("quote_id").references(() => clientQuotes.id),
+  userId: integer("user_id").references(() => users.id),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  title: text("title").notNull(),
+  amount: integer("amount").notNull(),
+  status: text("status").default("draft"), // draft, sent, paid, overdue, cancelled
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Client Announcements schema
+export const clientAnnouncements = pgTable("client_announcements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").default("info"), // info, warning, success, update
+  isActive: boolean("is_active").default(true),
+  targetAudience: text("target_audience").default("all"), // all, specific_users, specific_projects
+  targetUserIds: json("target_user_ids").$type<number[]>(),
+  targetProjectIds: json("target_project_ids").$type<number[]>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Client Feedback schema
+export const clientFeedback = pgTable("client_feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  assessmentId: integer("assessment_id").references(() => projectAssessments.id),
+  quoteId: integer("quote_id").references(() => clientQuotes.id),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  category: text("category").default("general"), // general, quote, project, invoice, support
+  status: text("status").default("new"), // new, read, responded, resolved, archived
+  adminResponse: text("admin_response"),
+  respondedAt: timestamp("responded_at"),
+  respondedBy: integer("responded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertClientQuoteSchema = createInsertSchema(clientQuotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientInvoiceSchema = createInsertSchema(clientInvoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientAnnouncementSchema = createInsertSchema(clientAnnouncements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertClientFeedbackSchema = createInsertSchema(clientFeedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertClientQuote = z.infer<typeof insertClientQuoteSchema>;
+export type ClientQuote = typeof clientQuotes.$inferSelect;
+export type InsertClientInvoice = z.infer<typeof insertClientInvoiceSchema>;
+export type ClientInvoice = typeof clientInvoices.$inferSelect;
+export type InsertClientAnnouncement = z.infer<typeof insertClientAnnouncementSchema>;
+export type ClientAnnouncement = typeof clientAnnouncements.$inferSelect;
+export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
+export type ClientFeedback = typeof clientFeedback.$inferSelect;

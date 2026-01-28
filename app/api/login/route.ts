@@ -37,10 +37,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 2: Get user from database
+    // Step 2: Get user from database (try username first, then email)
     let user;
     try {
       user = await storage.getUserByUsername(username);
+      // If not found by username, try email
+      if (!user && username.includes('@')) {
+        console.log("User not found by username, trying email:", username);
+        user = await storage.getUserByEmail(username);
+      }
+      if (!user) {
+        console.log("User not found by username or email:", username);
+      } else {
+        console.log("User found:", user.id, user.username, user.email);
+      }
     } catch (dbError: any) {
       console.error("Database error fetching user:", dbError);
       return NextResponse.json(
@@ -54,6 +64,7 @@ export async function POST(req: NextRequest) {
     
     // Step 3: Verify password
     if (!user) {
+      console.log("Login failed: User not found");
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 }
@@ -62,9 +73,15 @@ export async function POST(req: NextRequest) {
 
     let passwordMatch;
     try {
+      console.log("Comparing password for user:", user.id);
       passwordMatch = await comparePasswords(password, user.password);
+      console.log("Password match result:", passwordMatch);
     } catch (compareError: any) {
       console.error("Error comparing passwords:", compareError);
+      console.error("Compare error details:", {
+        message: compareError?.message,
+        stack: compareError?.stack,
+      });
       return NextResponse.json(
         { 
           message: "Error verifying password",
@@ -75,11 +92,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!passwordMatch) {
+      console.log("Login failed: Password does not match");
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 }
       );
     }
+    
+    console.log("Login successful for user:", user.id, user.username);
 
     // Step 4: Create session ID and set cookie
     let sessionId: string;

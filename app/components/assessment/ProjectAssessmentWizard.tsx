@@ -226,15 +226,22 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
     onSuccess: (data) => {
       // Store assessment data for results page
       if (data.assessment?.id) {
-        const fullAssessment = {
-          id: data.assessment.id,
-          name: form.getValues("name"),
-          email: form.getValues("email"),
-          assessmentData: form.getValues(),
-          pricingBreakdown: data.assessment.pricingBreakdown,
-          createdAt: new Date().toISOString(),
-        };
-        localStorage.setItem(`assessment_${data.assessment.id}`, JSON.stringify(fullAssessment));
+        try {
+          if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+            const fullAssessment = {
+              id: data.assessment.id,
+              name: form.getValues("name"),
+              email: form.getValues("email"),
+              assessmentData: form.getValues(),
+              pricingBreakdown: data.assessment.pricingBreakdown,
+              createdAt: new Date().toISOString(),
+            };
+            localStorage.setItem(`assessment_${data.assessment.id}`, JSON.stringify(fullAssessment));
+          }
+        } catch (error) {
+          console.warn("Failed to save assessment to localStorage:", error);
+          // Continue anyway - the data is still available from the API
+        }
       }
       
       const budgetRange = form.getValues("budgetRange");
@@ -264,7 +271,13 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
     if (isValid) {
       if (currentStep < STEPS.length) {
         setCurrentStep(currentStep + 1);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (typeof window !== "undefined") {
+          try {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          } catch (error) {
+            console.warn("Error scrolling:", error);
+          }
+        }
       }
     }
   };
@@ -272,7 +285,13 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof window !== "undefined") {
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (error) {
+          console.warn("Error scrolling:", error);
+        }
+      }
     }
   };
 

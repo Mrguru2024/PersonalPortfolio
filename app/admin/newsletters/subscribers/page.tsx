@@ -62,13 +62,34 @@ export default function SubscribersPage() {
     }
   }, [user, authLoading, router]);
 
-  const { data: subscribers = [], isLoading } = useQuery<Subscriber[]>({
+  const { data: subscribers = [], isLoading, error } = useQuery<Subscriber[]>({
     queryKey: ["/api/admin/subscribers"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/subscribers?includeUnsubscribed=true");
-      return await response.json();
+      try {
+        const response = await apiRequest("GET", "/api/admin/subscribers?includeUnsubscribed=true");
+        if (!response.ok) {
+          // Handle 403 gracefully - user might not be approved yet
+          if (response.status === 403) {
+            return [];
+          }
+          const errorData = await response.json().catch(() => ({ message: "Failed to fetch subscribers" }));
+          throw new Error(errorData.message || "Failed to fetch subscribers");
+        }
+        return await response.json();
+      } catch (err: any) {
+        // If it's a 403 error or admin access error, return empty array instead of throwing
+        const errorMessage = err?.message || "";
+        if (errorMessage.includes("Admin access required") || 
+            errorMessage.includes("403") ||
+            errorMessage.includes('"message":"Admin access required"')) {
+          return [];
+        }
+        throw err;
+      }
     },
-    enabled: !!user?.isAdmin,
+    enabled: !authLoading && !!user && user.isAdmin === true && user.adminApproved === true,
+    retry: false,
+    throwOnError: false,
   });
 
   const addMutation = useMutation({

@@ -17,7 +17,7 @@ import { personalInfo } from "@/lib/data";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  username: z.string().min(3, "Username or email must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   rememberMe: z.boolean().default(false),
 });
@@ -37,8 +37,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot-password">("login");
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, isLoading } = useAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -77,6 +78,13 @@ const AuthPage = () => {
     }
   }, [activeTab, loginForm]);
 
+  // Redirect if user is already logged in (must be in useEffect, not during render)
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
+
   const onLogin = async (values: LoginFormValues) => {
     console.log("Login attempt with:", values);
     try {
@@ -92,6 +100,13 @@ const AuthPage = () => {
         password: values.password,
         rememberMe: values.rememberMe,
       });
+      
+      // Handle redirect after successful login
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get("redirect");
+      if (redirect) {
+        router.push(redirect);
+      }
     } catch (error) {
       console.error("Login error:", error);
     }
@@ -108,9 +123,8 @@ const AuthPage = () => {
     }
   };
 
-  // Check if user is already logged in
-  if (user) {
-    router.push("/");
+  // Don't render if user is already logged in or redirecting (redirect handled in useEffect)
+  if (!isLoading && (user || isRedirecting)) {
     return null;
   }
 
@@ -181,9 +195,9 @@ const AuthPage = () => {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Username or Email</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your username" {...field} />
+                              <Input placeholder="Enter your username or email" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

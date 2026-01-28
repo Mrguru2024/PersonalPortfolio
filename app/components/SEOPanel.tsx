@@ -101,6 +101,7 @@ export function SEOPanel({
   const [externalLinkUrl, setExternalLinkUrl] = useState("");
   const [showInternalLinkForm, setShowInternalLinkForm] = useState(false);
   const [showExternalLinkForm, setShowExternalLinkForm] = useState(false);
+  const [isGeneratingSEO, setIsGeneratingSEO] = useState(false);
 
   // Fetch all blog posts for internal linking
   const { data: allPosts } = useQuery<BlogPost[]>({
@@ -344,11 +345,55 @@ export function SEOPanel({
       {/* Meta Tags */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Meta Tags
-          </CardTitle>
-          <CardDescription>Optimize your meta tags for search engines</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Meta Tags
+              </CardTitle>
+              <CardDescription>Optimize your meta tags for search engines</CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (!title.trim()) {
+                  return;
+                }
+                setIsGeneratingSEO(true);
+                try {
+                  const response = await apiRequest("POST", "/api/admin/blog/ai/generate-seo", {
+                    title,
+                    content: content.substring(0, 2000),
+                  });
+                  const data = await response.json();
+                  if (data.metaTitle) onMetaTitleChange(data.metaTitle);
+                  if (data.metaDescription) onMetaDescriptionChange(data.metaDescription);
+                  if (data.keywords && data.keywords.length > 0) onKeywordsChange(data.keywords);
+                  if (data.ogTitle) onOgTitleChange(data.ogTitle);
+                  if (data.ogDescription) onOgDescriptionChange(data.ogDescription);
+                } catch (error: any) {
+                  console.error("Error generating SEO meta:", error);
+                } finally {
+                  setIsGeneratingSEO(false);
+                }
+              }}
+              disabled={isGeneratingSEO || !title.trim()}
+            >
+              {isGeneratingSEO ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Generate All
+                </>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>

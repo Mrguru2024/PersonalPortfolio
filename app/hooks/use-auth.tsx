@@ -93,6 +93,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
       });
+      // Handle redirect if present in URL
+      if (typeof window !== "undefined") {
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get("redirect");
+        if (redirect) {
+          window.location.href = redirect;
+        }
+      }
     },
     onError: (error: Error) => {
       // Don't log login errors to console - they're expected for wrong credentials
@@ -135,6 +143,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${user.username}!`,
       });
+      // Handle redirect if present in URL
+      if (typeof window !== "undefined") {
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirect = searchParams.get("redirect");
+        if (redirect) {
+          window.location.href = redirect;
+        }
+      }
     },
     onError: (error: Error) => {
       console.error("Registration mutation error:", error);

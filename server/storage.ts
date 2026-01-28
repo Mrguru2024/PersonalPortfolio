@@ -7,7 +7,11 @@ import { users, type User, type InsertUser,
   blogComments, type BlogComment, type InsertBlogComment,
   blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution,
   resumeRequests, type ResumeRequest, type InsertResumeRequest,
-  projectAssessments, type ProjectAssessment, type InsertProjectAssessment
+  projectAssessments, type ProjectAssessment, type InsertProjectAssessment,
+  clientQuotes, type ClientQuote, type InsertClientQuote,
+  clientInvoices, type ClientInvoice, type InsertClientInvoice,
+  clientAnnouncements, type ClientAnnouncement, type InsertClientAnnouncement,
+  clientFeedback, type ClientFeedback, type InsertClientFeedback
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -119,6 +123,17 @@ export interface IStorage {
   updateNewsletterSend(id: number, updates: Partial<InsertNewsletterSend> & { sentAt?: Date; deliveredAt?: Date; openedAt?: Date; clickedAt?: Date; failedAt?: Date }): Promise<NewsletterSend>;
   getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]>;
   getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]>;
+  
+  // Client dashboard operations
+  getClientQuotes(userId: number): Promise<ClientQuote[]>;
+  getClientInvoices(userId: number): Promise<ClientInvoice[]>;
+  getClientAnnouncements(userId: number): Promise<ClientAnnouncement[]>;
+  getClientFeedback(userId: number): Promise<ClientFeedback[]>;
+  createClientFeedback(feedback: InsertClientFeedback): Promise<ClientFeedback>;
+  getClientProjects(userId: number): Promise<ProjectAssessment[]>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getAllClientFeedback(): Promise<ClientFeedback[]>;
+  updateClientFeedback(id: number, updates: Partial<InsertClientFeedback> & { respondedBy?: number; respondedAt?: Date }): Promise<ClientFeedback>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -145,12 +160,30 @@ export class DatabaseStorage implements IStorage {
         } catch (error: any) {
           // Ignore ENOENT errors for table.sql - the table may already exist
           // The prune operation will succeed once the table is created
-          if (error?.code === 'ENOENT' && error?.path?.includes('table.sql')) {
+          if (error?.code === 'ENOENT' && (error?.path?.includes('table.sql') || error?.path?.includes('connect-pg-simple'))) {
             // Silently ignore - table will be created by createTableIfMissing
+            // Don't log these errors as they're expected in some environments
             return;
           }
           // Log other errors but don't crash the application
           console.error('Session prune error:', error);
+          return;
+        }
+      };
+    }
+    
+    // Also wrap the startPruning method if it exists
+    if (typeof storeWithPrune.startPruning === 'function') {
+      const originalStartPruning = storeWithPrune.startPruning.bind(this.sessionStore);
+      storeWithPrune.startPruning = function() {
+        try {
+          return originalStartPruning();
+        } catch (error: any) {
+          // Ignore ENOENT errors during pruning initialization
+          if (error?.code === 'ENOENT' && (error?.path?.includes('table.sql') || error?.path?.includes('connect-pg-simple'))) {
+            return;
+          }
+          console.error('Session startPruning error:', error);
           return;
         }
       };
@@ -779,6 +812,69 @@ export class DatabaseStorage implements IStorage {
       .from(newsletterSends)
       .where(eq(newsletterSends.subscriberId, subscriberId))
       .orderBy(desc(newsletterSends.sentAt));
+  }
+}
+
+export const storage = new DatabaseStorage();
+  }
+  
+  async getClientInvoices(userId: number): Promise<ClientInvoice[]> {
+    return db
+      .select()
+      .from(clientInvoices)
+      .where(eq(clientInvoices.userId, userId))
+      .orderBy(desc(clientInvoices.createdAt));
+  }
+  
+  async getClientAnnouncements(userId: number): Promise<ClientAnnouncement[]> {
+    const now = new Date();
+    return db
+      .select()
+      .from(clientAnnouncements)
+      .where(
+        and(
+          eq(clientAnnouncements.isActive, true),
+          sql`(expires_at IS NULL OR expires_at > ${now})`,
+          sql`(target_audience = 'all' OR target_user_ids @> ${JSON.stringify([userId])}::jsonb)`
+        )
+      )
+      .orderBy(desc(clientAnnouncements.createdAt));
+  }
+  
+  async getClientFeedback(userId: number): Promise<ClientFeedback[]> {
+    return db
+      .select()
+      .from(clientFeedback)
+      .where(eq(clientFeedback.userId, userId))
+      .orderBy(desc(clientFeedback.createdAt));
+  }
+  
+  async createClientFeedback(feedback: InsertClientFeedback): Promise<ClientFeedback> {
+    const [inserted] = await db
+      .insert(clientFeedback)
+      .values(feedback)
+      .returning();
+    return inserted;
+  }
+  
+  async getClientProjects(userId: number): Promise<ProjectAssessment[]> {
+    // Get user by ID first to get email
+    const user = await this.getUser(userId);
+    if (!user || !user.email) {
+      return [];
+    }
+    
+    // Get assessments by email
+    return db
+      .select()
+      .from(projectAssessments)
+      .where(eq(projectAssessments.email, user.email))
+      .orderBy(desc(projectAssessments.createdAt));
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 }
 

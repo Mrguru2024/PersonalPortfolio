@@ -22,6 +22,9 @@
     "db:add-blog-analytics": "tsx scripts/add-blog-analytics-columns.ts",
     "db:add-newsletter-tables": "tsx scripts/add-newsletter-tables.ts",
     "db:add-password-reset": "tsx scripts/add-password-reset-columns.ts",
+    "db:add-admin-approved": "tsx scripts/add-admin-approved-column.ts",
+    "db:add-customer-dashboard": "tsx scripts/add-customer-dashboard-tables.ts",
+    "approve-admin": "tsx scripts/approve-admin.ts",
     "test:email": "tsx scripts/test-email.ts",
     "lint": "next lint"
   },

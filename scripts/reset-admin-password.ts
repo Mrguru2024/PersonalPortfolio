@@ -19,8 +19,19 @@ async function hashPassword(password: string) {
 
 async function resetAdminPassword() {
   try {
-    const email = "5epmgllc@gmail.com";
-    const newPassword = "Destiny@2028";
+    // Get credentials from environment variables or command line arguments
+    const email = process.env.ADMIN_EMAIL || process.argv[2];
+    const newPassword = process.env.ADMIN_PASSWORD || process.argv[3];
+    
+    if (!email || !newPassword) {
+      console.error('❌ Error: Email and password are required!');
+      console.error('\nUsage:');
+      console.error('  ADMIN_EMAIL=email@example.com ADMIN_PASSWORD=password npx tsx scripts/reset-admin-password.ts');
+      console.error('  OR');
+      console.error('  npx tsx scripts/reset-admin-password.ts <email> <password>');
+      console.error('\n⚠️  Never commit credentials to the repository!');
+      process.exit(1);
+    }
 
     console.log(`Resetting password for admin account: ${email}...`);
 

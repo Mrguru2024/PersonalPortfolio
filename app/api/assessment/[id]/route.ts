@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@server/db";
 import { projectAssessments } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { getSessionUser } from "@/lib/auth-helpers";
+import { storage } from "@server/storage";
 
 export async function GET(
   req: NextRequest,
@@ -31,9 +33,27 @@ export async function GET(
       );
     }
 
+    // Check if user is logged in or if user exists with this email
+    const user = await getSessionUser(req);
+    let userId: number | null = null;
+    let requiresAccount = false;
+
+    if (user) {
+      userId = user.id;
+    } else {
+      // Check if user exists with this email
+      const userByEmail = await storage.getUserByEmail(assessment.email);
+      if (userByEmail) {
+        userId = userByEmail.id;
+      } else {
+        requiresAccount = true;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       assessment,
+      requiresAccount,
     });
   } catch (error: any) {
     console.error("Error fetching assessment:", error);
