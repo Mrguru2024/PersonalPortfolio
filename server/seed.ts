@@ -118,7 +118,8 @@ async function seedBlogPosts() {
       username: 'admin',
       password: 'admin123', // In a real app, this would be properly hashed
       email: 'admin@example.com',
-      isAdmin: true
+      isAdmin: true,
+      adminApproved: true
     }).returning();
     
     userId = user.id;

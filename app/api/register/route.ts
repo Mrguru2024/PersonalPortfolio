@@ -33,12 +33,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create new user
+    // Create new user (adminApproved is always false by default)
     const user = await storage.createUser({
       username,
       email,
       password: await hashPassword(password),
       isAdmin: false,
+      adminApproved: false,
     });
 
     // Create session

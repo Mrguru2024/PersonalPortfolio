@@ -194,12 +194,13 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      // Create new user
+      // Create new user (adminApproved is always false by default)
       const user = await storage.createUser({
         username,
         email,
         password: await hashPassword(password),
-        isAdmin: false // By default, new users are not admins
+        isAdmin: false,
+        adminApproved: false
       });
       
       // Log the user in

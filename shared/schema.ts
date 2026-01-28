@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email"),
   isAdmin: boolean("is_admin").default(false),
+  adminApproved: boolean("admin_approved").default(false), // Must be manually approved by admin
   role: text("role").default("user").notNull(),
   full_name: text("full_name"),
   // GitHub OAuth related fields
@@ -26,6 +27,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   email: true,
   isAdmin: true,
+  adminApproved: true,
   role: true,
   full_name: true,
   githubId: true,

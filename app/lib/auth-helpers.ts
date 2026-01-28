@@ -9,8 +9,11 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
     const sessionCookie = cookieStore.get("sessionId") || cookieStore.get("connect.sid");
     
     if (!sessionCookie) {
+      console.log("getSessionUser: No session cookie found");
       return null;
     }
+
+    console.log("getSessionUser: Found session cookie:", sessionCookie.name, "value length:", sessionCookie.value?.length);
 
     // Get session from session store directly (avoid circular dependency)
     return new Promise((resolve) => {
@@ -19,26 +22,33 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
       
       storage.sessionStore.get(sessionId, async (err, session) => {
         if (err) {
+          console.error("getSessionUser: Error retrieving session:", err);
           // Silently fail - session not found or error
           resolve(null);
           return;
         }
 
         if (!session) {
+          console.log("getSessionUser: Session not found in store for ID:", sessionId);
           // Session doesn't exist or expired
           resolve(null);
           return;
         }
+
+        console.log("getSessionUser: Session found, structure:", Object.keys(session || {}));
 
         // Session data structure: connect-pg-simple stores the session object as-is
         // Check various possible structures for userId
         const userId = (session as any).userId || (session as any).passport?.user || (session as any).user?.id;
         
         if (!userId) {
+          console.log("getSessionUser: No userId found in session. Session data:", JSON.stringify(session, null, 2));
           // No userId in session
           resolve(null);
           return;
         }
+
+        console.log("getSessionUser: Found userId:", userId);
 
         try {
           // Get user from database
@@ -46,20 +56,24 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           const user = await storage.getUser(userIdNum);
           
           if (!user) {
+            console.log("getSessionUser: User not found in database for ID:", userIdNum);
             resolve(null);
             return;
           }
 
+          console.log("getSessionUser: User found:", user.id, user.username);
           // Don't send password
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
         } catch (error) {
+          console.error("getSessionUser: Error fetching user from database:", error);
           // Silently fail - not authenticated
           resolve(null);
         }
       });
     });
   } catch (error) {
+    console.error("getSessionUser: Exception:", error);
     // Silently fail - not authenticated
     return null;
   }
@@ -80,12 +94,14 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
     },
   };
 
+  console.log("setSession: Storing session, sessionId:", sessionId, "userId:", userId, "sessionData keys:", Object.keys(sessionData));
+
   // Set session with callback and return a promise
   return new Promise((resolve, reject) => {
     try {
       storage.sessionStore.set(sessionId, sessionData, (err) => {
         if (err) {
-          console.error("Error storing session:", err);
+          console.error("setSession: Error storing session:", err);
           console.error("Session store error details:", {
             message: err?.message,
             code: err?.code,
@@ -94,11 +110,12 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
           });
           reject(err);
         } else {
+          console.log("setSession: Session stored successfully");
           resolve();
         }
       });
     } catch (error: any) {
-      console.error("Error calling sessionStore.set:", error);
+      console.error("setSession: Error calling sessionStore.set:", error);
       reject(error);
     }
   });
@@ -113,10 +130,10 @@ export function deleteSession(sessionId: string): void {
   });
 }
 
-// Check if user is admin
+// Check if user is admin (requires both isAdmin flag AND admin approval)
 export async function isAdmin(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);
-  return user !== null && user.isAdmin === true;
+  return user !== null && user.isAdmin === true && user.adminApproved === true;
 }
 
 // Check if user is admin or approved writer
@@ -133,7 +150,8 @@ export async function hasRole(req: NextRequest | undefined, role: string): Promi
   const user = await getSessionUser(req);
   if (!user) return false;
   
-  return user.role === role || user.isAdmin === true; // Admins have all roles
+  // Admins (with approval) have all roles
+  return user.role === role || (user.isAdmin === true && user.adminApproved === true);
 }
 
 // Get IP address from request

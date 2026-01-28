@@ -19,20 +19,24 @@ async function hashPassword(password: string) {
  */
 export async function GET(req: NextRequest) {
   try {
+    // Build base URL for redirects
+    const isProduction = process.env.NODE_ENV === 'production';
+    const baseUrl = isProduction ? 'https://mrguru.dev' : (req.headers.get('origin') || 'http://localhost:3000');
+    
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
     if (error) {
-      return NextResponse.redirect(`/auth?error=github_auth_failed&message=${encodeURIComponent(error)}`);
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
-      return NextResponse.redirect("/auth?error=github_auth_failed&message=No authorization code");
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=No authorization code`);
     }
 
     if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
-      return NextResponse.redirect("/auth?error=github_auth_failed&message=OAuth not configured");
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=OAuth not configured`);
     }
 
     // Exchange authorization code for access token
@@ -52,13 +56,13 @@ export async function GET(req: NextRequest) {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("GitHub token exchange error:", errorText);
-      return NextResponse.redirect("/auth?error=github_auth_failed&message=Token exchange failed");
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=Token exchange failed`);
     }
 
     const tokenData = await tokenResponse.json();
     
     if (tokenData.error) {
-      return NextResponse.redirect(`/auth?error=github_auth_failed&message=${encodeURIComponent(tokenData.error_description || tokenData.error)}`);
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=${encodeURIComponent(tokenData.error_description || tokenData.error)}`);
     }
 
     const accessToken = tokenData.access_token;
@@ -72,7 +76,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userInfoResponse.ok) {
-      return NextResponse.redirect("/auth?error=github_auth_failed&message=Failed to get user info");
+      const errorText = await userInfoResponse.text();
+      console.error("GitHub user info error:", errorText);
+      return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=Failed to get user info`);
     }
 
     const profile = await userInfoResponse.json();
@@ -111,6 +117,7 @@ export async function GET(req: NextRequest) {
         email: email || '',
         full_name: profile.name || profile.login || '',
         isAdmin: false,
+        adminApproved: false,
         githubId: profile.id.toString(),
         githubUsername: profile.login,
         avatarUrl: profile.avatar_url,
@@ -147,9 +154,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Redirect to home page
-    return NextResponse.redirect("/");
+    return NextResponse.redirect(baseUrl);
   } catch (error: any) {
     console.error("GitHub OAuth callback error:", error);
-    return NextResponse.redirect(`/auth?error=github_auth_failed&message=${encodeURIComponent(error?.message || "Unknown error")}`);
+    const errorBaseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://mrguru.dev' 
+      : (req.headers.get('origin') || 'http://localhost:3000');
+    return NextResponse.redirect(`${errorBaseUrl}/auth?error=github_auth_failed&message=${encodeURIComponent(error?.message || "Unknown error")}`);
   }
 }

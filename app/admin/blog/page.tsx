@@ -31,7 +31,7 @@ export default function AdminBlogPage() {
   }
 
   // Check if user can create blogs (admin or writer)
-  const canCreate = user.isAdmin === true || user.role === "writer" || user.role === "admin";
+  const canCreate = (user.isAdmin === true && user.adminApproved === true) || user.role === "writer" || user.role === "admin";
 
   if (!canCreate) {
     return (

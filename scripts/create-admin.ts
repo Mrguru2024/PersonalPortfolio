@@ -67,6 +67,7 @@ async function createAdminUser() {
           username: username,
           password: hashedPassword,
           isAdmin: true,
+          adminApproved: true,
           role: 'admin'
         })
         .where(eq(users.id, existingUser.id))
@@ -87,6 +88,7 @@ async function createAdminUser() {
           email: email,
           password: hashedPassword,
           isAdmin: true,
+          adminApproved: true,
           role: 'admin'
         })
         .returning();

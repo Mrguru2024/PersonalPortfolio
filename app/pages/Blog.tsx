@@ -22,7 +22,7 @@ const Blog = () => {
   const { user } = useAuth();
   
   // Check if user can create blogs
-  const canCreate = user && (user.isAdmin === true || user.role === "writer" || user.role === "admin");
+  const canCreate = user && ((user.isAdmin === true && user.adminApproved === true) || user.role === "writer" || user.role === "admin");
   
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ["/api/blog"],

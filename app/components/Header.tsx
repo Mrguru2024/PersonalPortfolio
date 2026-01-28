@@ -109,12 +109,12 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {(user.isAdmin || user.role === "writer" || user.role === "admin") && (
+                  {((user.isAdmin && user.adminApproved) || user.role === "writer" || user.role === "admin") && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin/blog">Create Blog Post</Link>
                     </DropdownMenuItem>
                   )}
-                  {user.isAdmin && (
+                  {user.isAdmin && user.adminApproved && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/admin/dashboard">Admin Dashboard</Link>
@@ -198,7 +198,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Logged in as @{user.username}</span>
                   </div>
-                  {user.isAdmin && (
+                  {user.isAdmin && user.adminApproved && (
                     <Link href="/admin/blog" className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
                       Admin Dashboard
                     </Link>

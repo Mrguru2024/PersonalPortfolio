@@ -19,7 +19,7 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 
 // Admin middleware
 function isAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user.isAdmin) {
+  if (req.isAuthenticated() && req.user.isAdmin && req.user.adminApproved) {
     return next();
   }
   res.status(403).json({ message: "Admin access required" });

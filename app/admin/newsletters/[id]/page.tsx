@@ -37,7 +37,7 @@ export default function NewsletterViewPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/auth");
-    } else if (!authLoading && user && !user.isAdmin) {
+    } else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) {
       router.push("/");
     }
   }, [user, authLoading, router]);
@@ -81,7 +81,7 @@ export default function NewsletterViewPage() {
     );
   }
 
-  if (!user || !user.isAdmin || !newsletter) {
+  if (!user || !user.isAdmin || !user.adminApproved || !newsletter) {
     return null;
   }
 

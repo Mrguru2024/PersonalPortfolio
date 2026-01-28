@@ -56,7 +56,7 @@ export default function BlogAnalyticsPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/auth");
-    } else if (!authLoading && user && !user.isAdmin) {
+    } else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) {
       router.push("/");
     }
   }, [user, authLoading, router]);
@@ -90,7 +90,7 @@ export default function BlogAnalyticsPage() {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!user?.isAdmin || !user?.adminApproved) {
     return null;
   }
 

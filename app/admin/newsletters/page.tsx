@@ -44,7 +44,7 @@ export default function NewslettersPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/auth");
-    } else if (!authLoading && user && !user.isAdmin) {
+    } else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) {
       router.push("/");
     }
   }, [user, authLoading, router]);
@@ -55,7 +55,7 @@ export default function NewslettersPage() {
       const response = await apiRequest("GET", "/api/admin/newsletters");
       return await response.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   const deleteMutation = useMutation({
@@ -108,7 +108,7 @@ export default function NewslettersPage() {
     );
   }
 
-  if (!user || !user.isAdmin) {
+  if (!user || !user.isAdmin || !user.adminApproved) {
     return null;
   }
 
