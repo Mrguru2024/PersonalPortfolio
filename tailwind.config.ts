@@ -2,10 +2,12 @@ import type { Config } from "tailwindcss";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-// Load plugins - only include tailwindcss-animate for now
-// Typography plugin can be added later if needed
+// Load plugins
 function getPlugins() {
-  return [require("tailwindcss-animate")];
+  return [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography")
+  ];
 }
 
 export default {

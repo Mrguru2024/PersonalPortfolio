@@ -5,15 +5,17 @@ import { deleteSession } from "@/lib/auth-helpers";
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get("sessionId")?.value;
+    const sessionId = cookieStore.get("sessionId")?.value || cookieStore.get("connect.sid")?.value;
     
     if (sessionId) {
       deleteSession(sessionId);
     }
     
-    cookieStore.delete("sessionId");
+    const response = NextResponse.json({ message: "Logged out successfully" });
+    response.cookies.delete("sessionId");
+    response.cookies.delete("connect.sid");
     
-    return NextResponse.json({ message: "Logged out successfully" });
+    return response;
   } catch (error: any) {
     console.error("Logout error:", error);
     return NextResponse.json(

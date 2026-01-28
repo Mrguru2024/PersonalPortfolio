@@ -88,11 +88,9 @@ export class ProposalService {
   async generateProposal(assessment: ProjectAssessment, assessmentId: number): Promise<ProposalDocument> {
     const pricingBreakdown = pricingService.calculatePricing(assessment);
     const budgetRange = this.getBudgetRange(assessment.budgetRange);
-    // Check if budget is under $5000 (including "under-5k", "1-2k", "2-5k" from contact form)
+    // Check if budget is under $5000
     const isLowBudget = budgetRange.max < 5000 || 
-                        assessment.budgetRange === "under-5k" || 
-                        assessment.budgetRange === "1-2k" || 
-                        assessment.budgetRange === "2-5k";
+                        assessment.budgetRange === "under-5k";
     
     // Calculate precise total based on pricing breakdown
     const finalTotal = this.calculatePreciseTotal(pricingBreakdown, assessment);

@@ -16,7 +16,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password } = await req.json();
+    const { username, password, rememberMe } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json(
@@ -37,11 +37,16 @@ export async function POST(req: NextRequest) {
     // Create session
     const sessionId = randomBytes(32).toString("hex");
     const cookieStore = await cookies();
+    
+    // Set cookie expiration based on remember me
+    // If remember me is checked, use 30 days, otherwise use session cookie (expires when browser closes)
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined; // 30 days if remember me, otherwise session cookie
+    
     cookieStore.set("sessionId", sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      ...(maxAge && { maxAge }), // Only set maxAge if rememberMe is true
     });
 
     // Store session

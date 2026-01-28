@@ -12,20 +12,33 @@ import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 const ProjectsSection = () => {
   const [filter, setFilter] = useState("all");
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const controls = useAnimation();
 
   const filteredProjects = filter === "all" 
     ? projects 
     : projects.filter(project => project.category === filter);
 
-  // Animate section on filter change
+  // Ensure component is mounted before using controls
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Animate section on filter change (only after mount)
+  useEffect(() => {
+    if (!isMounted) return;
+    
     const animate = async () => {
-      await controls.start({ opacity: 0, y: 20, transition: { duration: 0.2 } });
-      await controls.start({ opacity: 1, y: 0, transition: { duration: 0.3, staggerChildren: 0.1 } });
+      try {
+        await controls.start({ opacity: 0, y: 20, transition: { duration: 0.2 } });
+        await controls.start({ opacity: 1, y: 0, transition: { duration: 0.3, staggerChildren: 0.1 } });
+      } catch (error) {
+        // Ignore animation errors (component might be unmounting)
+        console.debug("Animation error (ignored):", error);
+      }
     };
     animate();
-  }, [filter, controls]);
+  }, [filter, controls, isMounted]);
 
   // Find featured project (Stackzen or Keycode Help or first project)
   const featuredProject = projects.find(p => 

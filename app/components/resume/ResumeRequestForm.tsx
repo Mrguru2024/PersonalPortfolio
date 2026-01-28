@@ -231,9 +231,9 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            disabled={isSubmitting}
+            disabled={resumeRequestMutation.isPending}
           >
-            {isSubmitting ? (
+            {resumeRequestMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing Request...

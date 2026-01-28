@@ -17,7 +17,9 @@ type AuthContextType = {
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+type LoginData = Pick<InsertUser, "username" | "password"> & {
+  rememberMe?: boolean;
+};
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -72,11 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       try {
-        const res = await apiRequest("POST", "/api/login", credentials);
+        // Only send username and password to API, rememberMe is handled separately
+        const { rememberMe, ...loginCredentials } = credentials;
+        const res = await apiRequest("POST", "/api/login", {
+          ...loginCredentials,
+          rememberMe, // Include rememberMe for cookie expiration
+        });
         const userData = await res.json();
         return userData;
       } catch (error) {
-        console.error("Login error:", error);
+        // Don't log login errors - they're expected for wrong credentials
         throw error;
       }
     },
@@ -88,10 +95,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
-      console.error("Login mutation error:", error);
+      // Don't log login errors to console - they're expected for wrong credentials
+      // Only show user-friendly toast notification
+      const errorMessage = error.message || "Please check your credentials and try again";
+      let displayMessage = errorMessage;
+      
+      // Parse JSON error messages if present
+      try {
+        const parsed = JSON.parse(errorMessage);
+        if (parsed.message) {
+          displayMessage = parsed.message;
+        }
+      } catch {
+        // Not JSON, use as-is
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        description: displayMessage,
         variant: "destructive",
       });
     },

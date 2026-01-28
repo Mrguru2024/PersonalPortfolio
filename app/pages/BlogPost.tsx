@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { 
   Form, 
   FormControl, 
@@ -29,7 +28,16 @@ import { z } from "zod";
 import { BlogPost, BlogComment } from "@/lib/data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
-import { BlogPostSEO, StructuredData } from "@/components/SEO";
+import { BlogPostSEO } from "@/components/SEO";
+import { BlogPostAnalytics } from "@/components/blog/BlogPostAnalytics";
+import { ClickTracker } from "@/components/blog/ClickTracker";
+import { AudioReader } from "@/components/blog/AudioReader";
+import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
+import { ShareArticle } from "@/components/blog/ShareArticle";
+import { EnhancedStructuredData } from "@/components/blog/EnhancedStructuredData";
+import { Breadcrumbs } from "@/components/blog/Breadcrumbs";
+import { RelatedPosts } from "@/components/blog/RelatedPosts";
+import { LinkDisplay } from "@/components/blog/LinkDisplay";
 
 // Comment form with CAPTCHA
 interface CommentFormProps {
@@ -206,17 +214,51 @@ const BlogPostPage = () => {
   const { data: post, isLoading: isPostLoading, error: postError } = useQuery({
     queryKey: [`/api/blog/${slug}`],
     queryFn: async () => {
-      const response = await apiRequest<BlogPost>("GET", `/api/blog/${slug}`);
-      return response.json();
-    }
+      try {
+        const response = await apiRequest<BlogPost>("GET", `/api/blog/${slug}`);
+        if (!response.ok) {
+          // For 404, return null to trigger "not found" UI
+          if (response.status === 404) {
+            return null;
+          }
+          throw new Error(`Failed to fetch blog post: ${response.status}`);
+        }
+        return response.json();
+      } catch (error: any) {
+        // Don't log 404 errors - they're expected for missing posts
+        if (error?.message?.includes('404') || error?.message?.includes('not found')) {
+          return null;
+        }
+        console.error("Error fetching blog post:", error);
+        throw error;
+      }
+    },
+    retry: false, // Don't retry 404s
+    retryDelay: 1000,
   });
   
   const { data: comments, isLoading: areCommentsLoading } = useQuery({
     queryKey: [`/api/blog/post/${post?.id}/comments`],
     queryFn: async () => {
       if (!post?.id) return [];
-      const response = await apiRequest<BlogComment[]>("GET", `/api/blog/post/${post.id}/comments`);
-      return response.json();
+      try {
+        const response = await apiRequest<BlogComment[]>("GET", `/api/blog/post/${post.id}/comments`);
+        if (!response.ok) {
+          // Return empty array for 404s (no comments yet)
+          if (response.status === 404) {
+            return [];
+          }
+          throw new Error(`Failed to fetch comments: ${response.status}`);
+        }
+        return response.json();
+      } catch (error: any) {
+        // Don't log 404 errors - they're expected when no comments exist
+        if (error?.message?.includes('404') || error?.message?.includes('not found')) {
+          return [];
+        }
+        console.error("Error fetching comments:", error);
+        return []; // Return empty array on error to prevent UI issues
+      }
     },
     enabled: !!post?.id,
     retry: false
@@ -264,46 +306,27 @@ const BlogPostPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <>
+      <BlogPostAnalytics />
+      <ClickTracker />
+      <div className="container mx-auto px-4 py-12">
       {/* Add SEO component */}
       {post && (
         <>
           <BlogPostSEO post={post} />
-          
-          {/* Add BlogPosting structured data */}
-          <StructuredData 
-            schema={{
-              type: 'BlogPosting',
-              data: {
-                headline: post.title,
-                description: post.excerpt || post.content?.slice(0, 160) || '',
-                image: post.coverImage || 'https://mrguru.dev/images/blog-default.jpg',
-                datePublished: post.publishedAt || post.createdAt || new Date().toISOString(),
-                dateModified: post.updatedAt || post.publishedAt || new Date().toISOString(),
-                author: {
-                  name: 'Anthony Feaster',
-                  url: 'https://mrguru.dev'
-                },
-                publisher: {
-                  name: 'MrGuru.dev',
-                  url: 'https://mrguru.dev',
-                  logo: {
-                    url: 'https://mrguru.dev/images/logo.png',
-                    width: 60,
-                    height: 60
-                  }
-                },
-                url: `https://mrguru.dev/blog/${post.slug}`,
-                mainEntityOfPage: `https://mrguru.dev/blog/${post.slug}`,
-                keywords: post.tags && Array.isArray(post.tags) ? post.tags : 
-                         (typeof post.tags === 'string' ? post.tags.split(',') : [])
-              }
-            }}
-          />
+          <EnhancedStructuredData post={post} />
         </>
       )}
       
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumbs for SEO */}
+        <Breadcrumbs
+          items={[
+            { label: "Blog", href: "/blog" },
+            { label: post.title, href: `/blog/${post.slug}` },
+          ]}
+        />
+        
         <Link href="/blog">
           <Button variant="ghost" className="mb-6 flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -361,9 +384,27 @@ const BlogPostPage = () => {
           }
         </div>
         
-        <div 
-          className="prose prose-lg dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content || '<p>No content available for this post.</p>' }}
+        {/* Audio Reader */}
+        <AudioReader content={post.content || ""} title={post.title} />
+        
+        {/* Share Article */}
+        <ShareArticle
+          title={post.title}
+          url={`https://mrguru.dev/blog/${post.slug}`}
+          summary={post.summary || ""}
+        />
+        
+        {/* Blog Content with Auto-Formatting */}
+        <BlogPostFormatter
+          content={post.content || '<p>No content available for this post.</p>'}
+          internalLinks={post.internalLinks || []}
+          externalLinks={post.externalLinks || []}
+        />
+        
+        {/* Display Links Section */}
+        <LinkDisplay
+          internalLinks={post.internalLinks || []}
+          externalLinks={post.externalLinks || []}
         />
         
         <Separator className="my-12" />
@@ -412,6 +453,7 @@ const BlogPostPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

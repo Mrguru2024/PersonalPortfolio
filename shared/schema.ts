@@ -15,6 +15,9 @@ export const users = pgTable("users", {
   githubId: text("github_id"),
   githubUsername: text("github_username"),
   avatarUrl: text("avatar_url"),
+  // Password reset fields
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -211,6 +214,9 @@ export const blogPosts = pgTable("blog_posts", {
   // Authority building
   relatedPosts: json("related_posts").$type<number[]>(),
   readingTime: integer("reading_time"),
+  // Analytics
+  viewCount: integer("view_count").default(0),
+  uniqueViewCount: integer("unique_view_count").default(0),
 });
 
 export const blogPostContributions = pgTable("blog_post_contributions", {

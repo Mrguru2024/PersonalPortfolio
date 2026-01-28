@@ -273,7 +273,7 @@ export class BudgetComparisonService {
           costSavings: 2500,
         });
       }
-      if (assessment.platform?.includes('iOS') && assessment.platform?.includes('Android')) {
+      if (assessment.platform?.includes('ios') && assessment.platform?.includes('android')) {
         budgetFriendlyAlternatives.push({
           feature: 'Native iOS + Android Apps',
           alternative: 'Progressive Web App (PWA)',

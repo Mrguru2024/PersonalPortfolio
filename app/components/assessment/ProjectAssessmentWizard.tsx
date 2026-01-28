@@ -13,6 +13,7 @@ import {
   Lightbulb,
   DollarSign,
   Loader2,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { AIAssistant } from "./AIAssistant";
+import { getServiceMapping, getServiceEducationalContent, getServiceBenefits } from "@/lib/serviceMapping";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const STEPS = [
   { id: 1, title: "Basic Info", description: "Tell us about yourself" },
@@ -69,7 +72,11 @@ interface PricingPreview {
   };
 }
 
-export function ProjectAssessmentWizard() {
+interface ProjectAssessmentWizardProps {
+  serviceId?: string | null;
+}
+
+export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [pricingPreview, setPricingPreview] = useState<PricingPreview | null>(null);
   const [isCalculatingPricing, setIsCalculatingPricing] = useState(false);
@@ -77,10 +84,12 @@ export function ProjectAssessmentWizard() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const form = useForm<ProjectAssessment>({
-    resolver: zodResolver(projectAssessmentSchema),
-    mode: "onChange",
-    defaultValues: {
+  // Get service mapping if serviceId is provided
+  const serviceMapping = serviceId ? getServiceMapping(serviceId) : null;
+  
+  // Pre-populate default values based on service
+  const getDefaultValues = () => {
+    const baseDefaults = {
       // Step 1: Basic Information - all string fields need empty string defaults
       name: "",
       email: "",
@@ -134,9 +143,29 @@ export function ProjectAssessmentWizard() {
       
       // Additional Information
       additionalNotes: "",
-      referralSource: "",
+      referralSource: serviceId || "",
       newsletter: false,
-    },
+    };
+
+    // Merge with service-specific pre-populated fields
+    if (serviceMapping?.prePopulatedFields) {
+      return {
+        ...baseDefaults,
+        ...serviceMapping.prePopulatedFields,
+        // Ensure arrays are properly merged
+        platform: serviceMapping.prePopulatedFields.platform || baseDefaults.platform,
+        preferredTechStack: serviceMapping.prePopulatedFields.preferredTechStack || baseDefaults.preferredTechStack,
+        mustHaveFeatures: serviceMapping.suggestedFeatures || baseDefaults.mustHaveFeatures,
+      };
+    }
+
+    return baseDefaults;
+  };
+
+  const form = useForm<ProjectAssessment>({
+    resolver: zodResolver(projectAssessmentSchema),
+    mode: "onChange",
+    defaultValues: getDefaultValues(),
   });
 
   const watchedValues = form.watch();
@@ -209,7 +238,7 @@ export function ProjectAssessmentWizard() {
       }
       
       const budgetRange = form.getValues("budgetRange");
-      const isLowBudget = budgetRange === "under-5k" || budgetRange === "1-2k" || budgetRange === "2-5k";
+      const isLowBudget = budgetRange === "under-5k";
       
       toast({
         title: "Assessment Submitted!",
@@ -350,7 +379,7 @@ export function ProjectAssessmentWizard() {
                     <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {renderStep(currentStep, form, watchedValues)}
+                    {renderStep(currentStep, form, watchedValues, serviceId, handlePriceUpdate)}
                   </CardContent>
                 </Card>
 
@@ -470,32 +499,73 @@ function getFieldsForStep(step: number): (keyof ProjectAssessment)[] {
 function renderStep(
   step: number,
   form: any,
-  watchedValues: Partial<ProjectAssessment>
+  watchedValues: Partial<ProjectAssessment>,
+  serviceId?: string | null,
+  handlePriceUpdate?: (newPrice: number) => void
 ) {
   switch (step) {
     case 1:
-      return <Step1BasicInfo form={form} />;
+      return <Step1BasicInfo form={form} serviceId={serviceId} />;
     case 2:
       return <Step2ProjectVision form={form} watchedValues={watchedValues} />;
       case 3:
-        return <Step3TechnicalNeeds form={form} onPriceUpdate={handlePriceUpdate} />;
+        return <Step3TechnicalNeeds form={form} onPriceUpdate={handlePriceUpdate} serviceId={serviceId} />;
       case 4:
         return <Step4DesignUX form={form} watchedValues={watchedValues} />;
       case 5:
-        return <Step5BusinessGoals form={form} watchedValues={watchedValues} />;
+        return <Step5BusinessGoals form={form} watchedValues={watchedValues} serviceId={serviceId} />;
     case 6:
       return <Step6TimelineBudget form={form} />;
     case 7:
-      return <Step7Review form={form} watchedValues={watchedValues} />;
+      return <Step7Review form={form} watchedValues={watchedValues} serviceId={serviceId} />;
     default:
       return null;
   }
 }
 
+// Service Educational Content Component
+function ServiceEducationalContent({ serviceId, step }: { serviceId?: string | null; step: number }) {
+  if (!serviceId) return null;
+  
+  const content = getServiceEducationalContent(serviceId, step);
+  const benefits = getServiceBenefits(serviceId);
+  const mapping = getServiceMapping(serviceId);
+  
+  if (!content && benefits.length === 0) return null;
+  
+  return (
+    <Alert className="mb-6 border-primary/20 bg-primary/5">
+      <Info className="h-4 w-4" />
+      <AlertTitle className="flex items-center gap-2">
+        {mapping?.title || 'Service Information'}
+      </AlertTitle>
+      <AlertDescription className="mt-2 space-y-3">
+        {content && (
+          <p className="text-sm leading-relaxed">{content}</p>
+        )}
+        {benefits.length > 0 && (
+          <div className="mt-3">
+            <p className="text-sm font-semibold mb-2">Key Benefits:</p>
+            <ul className="space-y-1.5">
+              {benefits.map((benefit, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  <span>{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 // Step 1: Basic Information
-function Step1BasicInfo({ form }: { form: any }) {
+function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | null }) {
   return (
     <div className="space-y-6">
+      <ServiceEducationalContent serviceId={serviceId} step={1} />
       <FormField
         control={form.control}
         name="name"
@@ -782,10 +852,11 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
 }
 
 // Step 3: Technical Needs (continuing in next part due to length)
-function Step3TechnicalNeeds({ form, onPriceUpdate }: { form: any; onPriceUpdate?: (price: number) => void }) {
+function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; onPriceUpdate?: (price: number) => void; serviceId?: string | null }) {
   const [featureSuggestions, setFeatureSuggestions] = useState<string[]>([]);
   const projectType = form.watch("projectType");
   const mustHaveFeatures = form.watch("mustHaveFeatures") || [];
+  const serviceMapping = serviceId ? getServiceMapping(serviceId) : null;
 
   useEffect(() => {
     if (projectType) {
@@ -806,6 +877,7 @@ function Step3TechnicalNeeds({ form, onPriceUpdate }: { form: any; onPriceUpdate
 
   return (
     <div className="space-y-6">
+      <ServiceEducationalContent serviceId={serviceId} step={3} />
       <FormField
         control={form.control}
         name="platform"
@@ -1002,6 +1074,7 @@ function Step3TechnicalNeeds({ form, onPriceUpdate }: { form: any; onPriceUpdate
               "Analytics dashboard",
               "Multi-language support",
               "Export/Import data",
+              ...(serviceMapping?.suggestedFeatures || []),
               ...featureSuggestions,
             ])).map((feature) => (
               <FormField
@@ -1279,9 +1352,10 @@ function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any 
 }
 
 // Step 5: Business Goals
-function Step5BusinessGoals({ form, watchedValues }: { form: any; watchedValues: any }) {
+function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; watchedValues: any; serviceId?: string | null }) {
   return (
     <div className="space-y-6">
+      <ServiceEducationalContent serviceId={serviceId} step={5} />
       <AIAssistant
         type="clarify-requirements"
         context="business goals and success metrics"
@@ -1412,7 +1486,7 @@ function Step5BusinessGoals({ form, watchedValues }: { form: any; watchedValues:
 // Step 6: Timeline & Budget
 function Step6TimelineBudget({ form }: { form: any }) {
   const budgetRange = form.watch("budgetRange");
-  const isLowBudget = budgetRange === "under-5k" || budgetRange === "1-2k" || budgetRange === "2-5k";
+  const isLowBudget = budgetRange === "under-5k";
   
   return (
     <div className="space-y-6">
@@ -1613,7 +1687,7 @@ function Step6TimelineBudget({ form }: { form: any }) {
 }
 
 // Step 7: Review
-function Step7Review({ form, watchedValues }: { form: any; watchedValues: any }) {
+function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedValues: any; serviceId?: string | null }) {
   return (
     <div className="space-y-6">
       <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">

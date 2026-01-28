@@ -307,7 +307,7 @@ export const projects: Project[] = [
     id: "ssi-met-repairs",
     title: "M.E.T Repairs",
     description: "Business website for electronic repair and automotive locksmith services.",
-    image: "https://images.unsplash.com/photo-1635262945219-33df0944316a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80",
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
     tags: ["Business", "Service", "Automotive"],
     category: "business",
     liveUrl: "https://metrepairs.com",

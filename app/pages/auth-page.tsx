@@ -1,23 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { personalInfo } from "@/lib/data";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  rememberMe: z.boolean().default(false),
 });
 
 const registerSchema = z.object({
@@ -34,7 +36,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthPage = () => {
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot-password">("login");
   const { user, loginMutation, registerMutation } = useAuth();
   const router = useRouter();
 
@@ -43,6 +45,7 @@ const AuthPage = () => {
     defaultValues: {
       username: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -56,10 +59,39 @@ const AuthPage = () => {
     },
   });
 
+  // Track if component is mounted to avoid hydration mismatch
+  // Load saved credentials from localStorage after mount (client-side only)
+  useEffect(() => {
+    if (activeTab === "login") {
+      try {
+        const savedUsername = localStorage.getItem("rememberedUsername");
+        if (savedUsername) {
+          // Set values after mount to avoid hydration mismatch
+          loginForm.setValue("username", savedUsername, { shouldValidate: false });
+          loginForm.setValue("rememberMe", true, { shouldValidate: false });
+        }
+      } catch (error) {
+        // localStorage might not be available in some environments
+        console.error("Error reading from localStorage:", error);
+      }
+    }
+  }, [activeTab, loginForm]);
+
   const onLogin = async (values: LoginFormValues) => {
     console.log("Login attempt with:", values);
     try {
-      await loginMutation.mutateAsync(values);
+      // Save or clear credentials based on remember me
+      if (values.rememberMe) {
+        localStorage.setItem("rememberedUsername", values.username);
+      } else {
+        localStorage.removeItem("rememberedUsername");
+      }
+      
+      await loginMutation.mutateAsync({
+        username: values.username,
+        password: values.password,
+        rememberMe: values.rememberMe,
+      });
     } catch (error) {
       console.error("Login error:", error);
     }
@@ -170,6 +202,36 @@ const AuthPage = () => {
                           </FormItem>
                         )}
                       />
+                      <div className="flex items-center justify-between">
+                        <FormField
+                          control={loginForm.control}
+                          name="rememberMe"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  suppressHydrationWarning
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="cursor-pointer">
+                                  Remember me
+                                </FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="px-0 text-sm h-auto"
+                          asChild
+                        >
+                          <Link href="/auth/forgot-password">Forgot password?</Link>
+                        </Button>
+                      </div>
                       <Button 
                         type="submit" 
                         className="w-full mt-2"

@@ -12,18 +12,19 @@ import {
   AlertCircle,
   Plus,
   X,
-  Eye
+  Eye,
+  HelpCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SEOPanelProps {
   title: string;
@@ -281,7 +282,8 @@ export function SEOPanel({
   }, [coverImage, ogImage, onOgImageChange]);
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       {/* SEO Score Card */}
       <Card>
         <CardHeader>
@@ -293,6 +295,16 @@ export function SEOPanel({
               </CardTitle>
               <CardDescription>Overall SEO optimization score</CardDescription>
             </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Your SEO score is calculated based on best practices: meta tags, content length, internal/external links, images, and social sharing tags. Aim for 80+ for optimal search engine visibility.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="text-right">
               <div className={cn(
                 "text-3xl font-bold",
@@ -340,7 +352,19 @@ export function SEOPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="meta-title">Meta Title</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="meta-title">Meta Title</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>The title that appears in search engine results. Keep it between 30-60 characters for optimal display. Include your main keyword near the beginning.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="meta-title"
               value={metaTitle}
@@ -369,7 +393,19 @@ export function SEOPanel({
           </div>
 
           <div>
-            <Label>Keywords</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Keywords</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Add relevant keywords that describe your content. These help search engines understand your post&apos;s topic. Use 5-10 relevant keywords. Focus on terms your target audience would search for.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex flex-wrap gap-2 mt-2 mb-2">
               {keywords.map((keyword, i) => (
                 <Badge key={i} variant="secondary" className="flex items-center gap-1">
@@ -426,11 +462,25 @@ export function SEOPanel({
       {/* Internal Linking */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Link2 className="h-5 w-5" />
-            Internal Links
-          </CardTitle>
-          <CardDescription>Link to other posts on your site to improve SEO and user engagement</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5" />
+                Internal Links
+              </CardTitle>
+              <CardDescription>Link to other posts on your site to improve SEO and user engagement</CardDescription>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Internal links help search engines understand your site structure and keep readers engaged. Aim for 2-5 internal links per post. Link to related, high-quality content.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {internalLinks.map((link, index) => (
@@ -468,22 +518,37 @@ export function SEOPanel({
               </div>
               {allPosts && allPosts.length > 0 && (
                 <div className="mt-2 max-h-32 overflow-y-auto">
-                  <p className="text-xs text-muted-foreground mb-1">Quick select:</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-muted-foreground">Quick select:</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Click on a post title to quickly add it as an internal link. This helps with SEO by creating a network of related content.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <div className="flex flex-wrap gap-1">
-                    {allPosts.slice(0, 5).map((post) => (
-                      <Button
-                        key={post.id}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setInternalLinkUrl(`/blog/${post.slug}`);
-                          setInternalLinkText(post.title);
-                        }}
-                      >
-                        {post.title.substring(0, 30)}
-                      </Button>
-                    ))}
+                    {allPosts
+                      .filter((p) => p.slug !== slug) // Exclude current post
+                      .slice(0, 5)
+                      .map((post) => (
+                        <Button
+                          key={post.id}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setInternalLinkUrl(`/blog/${post.slug}`);
+                            setInternalLinkText(post.title);
+                          }}
+                        >
+                          {post.title.substring(0, 30)}
+                        </Button>
+                      ))}
                   </div>
                 </div>
               )}
@@ -504,11 +569,25 @@ export function SEOPanel({
       {/* External Links / Backlinks */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5" />
-            External Links & Backlinks
-          </CardTitle>
-          <CardDescription>Add external links to authoritative sources. Use nofollow for paid/sponsored links.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <ExternalLink className="h-5 w-5" />
+                External Links & Backlinks
+              </CardTitle>
+              <CardDescription>Add external links to authoritative sources. Use nofollow for paid/sponsored links.</CardDescription>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>External links to authoritative sources build trust with search engines. Use &quot;nofollow&quot; for paid links, sponsored content, or untrusted sources. Regular links pass SEO value to the linked site.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {externalLinks.map((link, index) => (
@@ -523,11 +602,23 @@ export function SEOPanel({
                 <p className="text-xs text-muted-foreground">{link.url}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={link.nofollow}
-                  onCheckedChange={() => toggleNofollow(index)}
-                />
-                <Label className="text-xs">Nofollow</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={link.nofollow}
+                          onCheckedChange={() => toggleNofollow(index)}
+                        />
+                        <Label className="text-xs">Nofollow</Label>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Nofollow tells search engines not to pass SEO value to the linked site. Use for paid links, sponsored content, or untrusted sources. Regular links pass &quot;link juice&quot; which helps the linked site&apos;s SEO.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <Button
                   type="button"
                   variant="ghost"
@@ -573,15 +664,41 @@ export function SEOPanel({
       {/* Social Sharing */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5" />
-            Social Sharing (Open Graph)
-          </CardTitle>
-          <CardDescription>Optimize how your post appears when shared on social media</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Share2 className="h-5 w-5" />
+                Social Sharing (Open Graph)
+              </CardTitle>
+              <CardDescription>Optimize how your post appears when shared on social media</CardDescription>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Open Graph tags control how your post appears when shared on Facebook, LinkedIn, Twitter, etc. Use a 1200x630px image for best results. These tags don&apos;t directly affect SEO but improve click-through rates.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="og-title">OG Title</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="og-title">OG Title</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>The title that appears when your post is shared on social media. If left empty, the meta title will be used.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="og-title"
               value={ogTitle}
@@ -591,7 +708,19 @@ export function SEOPanel({
           </div>
 
           <div>
-            <Label htmlFor="og-description">OG Description</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="og-description">OG Description</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>The description that appears when your post is shared. Write something compelling to encourage clicks. If left empty, the meta description will be used.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Textarea
               id="og-description"
               value={ogDescription}
@@ -602,7 +731,19 @@ export function SEOPanel({
           </div>
 
           <div>
-            <Label htmlFor="og-image">OG Image URL</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="og-image">OG Image URL</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>The image that appears when your post is shared. Use 1200x630px for best results. If left empty, the cover image will be used.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="og-image"
               value={ogImage}
@@ -612,12 +753,25 @@ export function SEOPanel({
           </div>
 
           <div>
-            <Label htmlFor="twitter-card">Twitter Card Type</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="twitter-card">Twitter Card Type</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Choose how your post appears on Twitter. &quot;Summary Large Image&quot; shows a large preview image (1200x630px recommended). &quot;Summary&quot; shows a smaller card without a large image.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <select
               id="twitter-card"
               value={twitterCard}
               onChange={(e) => onTwitterCardChange(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              aria-label="Select Twitter card type"
             >
               <option value="summary_large_image">Summary Large Image</option>
               <option value="summary">Summary</option>
@@ -665,6 +819,7 @@ export function SEOPanel({
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

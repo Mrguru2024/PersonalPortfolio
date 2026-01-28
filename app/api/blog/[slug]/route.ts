@@ -8,18 +8,46 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    
+    if (!slug) {
+      return NextResponse.json(
+        { error: "Blog post slug is required" },
+        { status: 400 }
+      );
+    }
+    
     const mockReq = {
       params: { slug },
     } as any;
     
     const { mockRes, getResponse } = createMockResponse();
-    await blogController.getBlogPostBySlug(mockReq, mockRes);
+    
+    try {
+      await blogController.getBlogPostBySlug(mockReq, mockRes);
+    } catch (controllerError: any) {
+      // If controller throws an error, check if it's a database error
+      const errorMessage = controllerError?.message || String(controllerError) || "";
+      if (errorMessage.includes('endpoint has been disabled') || 
+          errorMessage.includes('connection') ||
+          errorMessage.includes('ECONNREFUSED') ||
+          errorMessage.includes('column') ||
+          errorMessage.includes('does not exist')) {
+        console.warn("Database error in controller, returning 404 for blog post:", errorMessage);
+        return NextResponse.json(
+          { error: "Blog post not found" },
+          { status: 404 }
+        );
+      }
+      // Re-throw if it's not a database error
+      throw controllerError;
+    }
     
     const response = getResponse();
     if (!response) {
+      // If no response was set, the post likely doesn't exist
       return NextResponse.json(
-        { error: "No response from controller" },
-        { status: 500 }
+        { error: "Blog post not found" },
+        { status: 404 }
       );
     }
     
@@ -27,12 +55,13 @@ export async function GET(
   } catch (error: any) {
     console.error("Error in GET /api/blog/[slug]:", error);
     
-    // Check if it's a database connection error
-    const errorMessage = error?.message || String(error);
+    // Always return JSON, never HTML
+    const errorMessage = error?.message || String(error) || "";
     if (errorMessage.includes('endpoint has been disabled') || 
         errorMessage.includes('connection') ||
-        errorMessage.includes('ECONNREFUSED')) {
-      console.warn("Database unavailable, returning 404 for blog post");
+        errorMessage.includes('ECONNREFUSED') ||
+        errorMessage.includes('column') ||
+        errorMessage.includes('does not exist')) {
       return NextResponse.json(
         { error: "Blog post not found" },
         { status: 404 }

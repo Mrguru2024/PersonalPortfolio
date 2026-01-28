@@ -4,7 +4,7 @@ import { storage } from "@server/storage";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin access
@@ -16,7 +16,8 @@ export async function PATCH(
     }
 
     const { status } = await req.json();
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = Number.parseInt(idParam, 10);
 
     if (!status || !["pending", "reviewed", "contacted", "archived"].includes(status)) {
       return NextResponse.json(

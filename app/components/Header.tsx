@@ -122,6 +122,15 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       <DropdownMenuItem asChild>
                         <Link href="/admin/blog">Blog Management</Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/blog/analytics">Blog Analytics</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/newsletters">Newsletters</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/newsletters/subscribers">Subscribers</Link>
+                      </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>

@@ -9,8 +9,14 @@ import { users, type User, type InsertUser,
   resumeRequests, type ResumeRequest, type InsertResumeRequest,
   projectAssessments, type ProjectAssessment, type InsertProjectAssessment
 } from "@shared/schema";
+import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
+import {
+  newsletterSubscribers, type NewsletterSubscriber, type InsertNewsletterSubscriber,
+  newsletters, type Newsletter, type InsertNewsletter,
+  newsletterSends, type NewsletterSend, type InsertNewsletterSend
+} from "@shared/newsletterSchema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -25,6 +31,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<InsertUser> & { resetToken?: string | null; resetTokenExpiry?: Date | null }): Promise<User>;
   
   // Project operations
   getProjects(): Promise<Project[]>;
@@ -69,6 +76,19 @@ export interface IStorage {
   getCommentsByPostId(postId: number): Promise<BlogComment[]>;
   getApprovedCommentsByPostId(postId: number): Promise<BlogComment[]>;
   createComment(comment: InsertBlogComment, ipAddress: string): Promise<BlogComment>;
+  
+  // Blog analytics operations
+  trackBlogPostView(view: InsertBlogPostView): Promise<BlogPostView>;
+  updateBlogPostView(id: number, updates: Partial<InsertBlogPostView> & { lastActivityAt?: Date }): Promise<BlogPostView>;
+  getBlogPostViews(postId: number): Promise<BlogPostView[]>;
+  getBlogPostAnalytics(postId: number): Promise<{
+    totalViews: number;
+    uniqueViews: number;
+    averageScrollDepth: number;
+    averageTimeSpent: number;
+    completionRate: number;
+  }>;
+  incrementBlogPostViewCount(postId: number): Promise<BlogPost>;
   approveComment(id: number): Promise<BlogComment>;
   markCommentAsSpam(id: number): Promise<BlogComment>;
   
@@ -78,6 +98,27 @@ export interface IStorage {
   createBlogPostContribution(contribution: InsertBlogPostContribution, ipAddress: string): Promise<BlogPostContribution>;
   reviewBlogPostContribution(id: number, approve: boolean, notes?: string): Promise<BlogPostContribution>;
   markBlogPostContributionAsSpam(id: number): Promise<BlogPostContribution>;
+  
+  // Newsletter subscriber operations
+  createSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
+  getSubscriberByEmail(email: string): Promise<NewsletterSubscriber | undefined>;
+  getAllSubscribers(includeUnsubscribed?: boolean): Promise<NewsletterSubscriber[]>;
+  updateSubscriber(id: number, updates: Partial<InsertNewsletterSubscriber> & { unsubscribedAt?: Date | null; subscribedAt?: Date | null }): Promise<NewsletterSubscriber>;
+  unsubscribeSubscriber(id: number): Promise<NewsletterSubscriber>;
+  deleteSubscriber(id: number): Promise<void>;
+  
+  // Newsletter operations
+  createNewsletter(newsletter: InsertNewsletter): Promise<Newsletter>;
+  getNewsletterById(id: number): Promise<Newsletter | undefined>;
+  getAllNewsletters(): Promise<Newsletter[]>;
+  updateNewsletter(id: number, updates: Partial<InsertNewsletter> & { sentAt?: Date; scheduledAt?: Date; updatedAt?: Date; sentCount?: number; failedCount?: number; deliveredCount?: number; openedCount?: number; clickedCount?: number; totalRecipients?: number }): Promise<Newsletter>;
+  deleteNewsletter(id: number): Promise<void>;
+  
+  // Newsletter send operations
+  createNewsletterSend(send: InsertNewsletterSend): Promise<NewsletterSend>;
+  updateNewsletterSend(id: number, updates: Partial<InsertNewsletterSend> & { sentAt?: Date; deliveredAt?: Date; openedAt?: Date; clickedAt?: Date; failedAt?: Date }): Promise<NewsletterSend>;
+  getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]>;
+  getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -102,12 +143,30 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser> & { resetToken?: string | null; resetTokenExpiry?: Date | null }): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
   }
   
   // Project operations
@@ -213,6 +272,31 @@ export class DatabaseStorage implements IStorage {
       .from(contacts)
       .where(eq(contacts.id, id));
     return contact || undefined;
+  }
+  
+  // Project Assessment operations
+  async getAllAssessments(): Promise<ProjectAssessment[]> {
+    return db
+      .select()
+      .from(projectAssessments)
+      .orderBy(desc(projectAssessments.id));
+  }
+  
+  async getAssessmentById(id: number): Promise<ProjectAssessment | undefined> {
+    const [assessment] = await db
+      .select()
+      .from(projectAssessments)
+      .where(eq(projectAssessments.id, id));
+    return assessment || undefined;
+  }
+  
+  async updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment> {
+    const [updated] = await db
+      .update(projectAssessments)
+      .set({ status })
+      .where(eq(projectAssessments.id, id))
+      .returning();
+    return updated;
   }
   
   // Resume request operations
@@ -434,6 +518,242 @@ export class DatabaseStorage implements IStorage {
       .where(eq(blogPostContributions.id, id))
       .returning();
     return markedContribution;
+  }
+  
+  // Blog analytics operations
+  async trackBlogPostView(view: InsertBlogPostView): Promise<BlogPostView> {
+    const now = new Date();
+    const [insertedView] = await db
+      .insert(blogPostViews)
+      .values({
+        ...view,
+        viewedAt: now,
+        lastActivityAt: now,
+      })
+      .returning();
+    return insertedView;
+  }
+  
+  async updateBlogPostView(id: number, updates: Partial<InsertBlogPostView> & { lastActivityAt?: Date }): Promise<BlogPostView> {
+    const now = new Date();
+    const [updatedView] = await db
+      .update(blogPostViews)
+      .set({
+        ...updates,
+        lastActivityAt: now,
+      })
+      .where(eq(blogPostViews.id, id))
+      .returning();
+    return updatedView;
+  }
+  
+  async getBlogPostViews(postId: number): Promise<BlogPostView[]> {
+    return db
+      .select()
+      .from(blogPostViews)
+      .where(eq(blogPostViews.postId, postId))
+      .orderBy(desc(blogPostViews.viewedAt));
+  }
+  
+  async getBlogPostAnalytics(postId: number): Promise<{
+    totalViews: number;
+    uniqueViews: number;
+    averageScrollDepth: number;
+    averageTimeSpent: number;
+    completionRate: number;
+  }> {
+    const views = await this.getBlogPostViews(postId);
+    
+    const uniqueSessions = new Set(views.map(v => v.sessionId));
+    const completedViews = views.filter(v => v.readComplete);
+    
+    const totalScrollDepth = views.reduce((sum, v) => sum + (v.maxScrollDepth || 0), 0);
+    const totalTimeSpent = views.reduce((sum, v) => sum + (v.timeSpent || 0), 0);
+    
+    return {
+      totalViews: views.length,
+      uniqueViews: uniqueSessions.size,
+      averageScrollDepth: views.length > 0 ? Math.round(totalScrollDepth / views.length) : 0,
+      averageTimeSpent: views.length > 0 ? Math.round(totalTimeSpent / views.length) : 0,
+      completionRate: views.length > 0 ? Math.round((completedViews.length / views.length) * 100) : 0,
+    };
+  }
+  
+  async incrementBlogPostViewCount(postId: number): Promise<BlogPost> {
+    const [post] = await db
+      .select()
+      .from(blogPosts)
+      .where(eq(blogPosts.id, postId));
+    
+    if (!post) {
+      throw new Error(`Blog post with id ${postId} not found`);
+    }
+    
+    const [updatedPost] = await db
+      .update(blogPosts)
+      .set({
+        viewCount: (post.viewCount || 0) + 1,
+      })
+      .where(eq(blogPosts.id, postId))
+      .returning();
+    
+    return updatedPost;
+  }
+  
+  // Newsletter subscriber operations
+  async createSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [inserted] = await db
+      .insert(newsletterSubscribers)
+      .values({
+        ...subscriber,
+        subscribed: subscriber.subscribed ?? true,
+        subscribedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: newsletterSubscribers.email,
+        set: {
+          subscribed: true,
+          subscribedAt: new Date(),
+          unsubscribedAt: null,
+        },
+      })
+      .returning();
+    return inserted;
+  }
+  
+  async getSubscriberByEmail(email: string): Promise<NewsletterSubscriber | undefined> {
+    const [subscriber] = await db
+      .select()
+      .from(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.email, email))
+      .limit(1);
+    return subscriber || undefined;
+  }
+  
+  async getAllSubscribers(includeUnsubscribed: boolean = false): Promise<NewsletterSubscriber[]> {
+    if (includeUnsubscribed) {
+      return db
+        .select()
+        .from(newsletterSubscribers)
+        .orderBy(desc(newsletterSubscribers.subscribedAt));
+    }
+    return db
+      .select()
+      .from(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.subscribed, true))
+      .orderBy(desc(newsletterSubscribers.subscribedAt));
+  }
+  
+  async updateSubscriber(id: number, updates: Partial<InsertNewsletterSubscriber> & { unsubscribedAt?: Date | null; subscribedAt?: Date | null }): Promise<NewsletterSubscriber> {
+    const updateData: any = { ...updates };
+    if (updates.subscribed === false && !updates.unsubscribedAt) {
+      updateData.unsubscribedAt = new Date();
+    } else if (updates.subscribed === true) {
+      updateData.unsubscribedAt = null;
+      updateData.subscribedAt = new Date();
+    }
+    
+    const [updated] = await db
+      .update(newsletterSubscribers)
+      .set(updateData)
+      .where(eq(newsletterSubscribers.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async unsubscribeSubscriber(id: number): Promise<NewsletterSubscriber> {
+    return this.updateSubscriber(id, {
+      subscribed: false,
+      unsubscribedAt: new Date(),
+    });
+  }
+  
+  async deleteSubscriber(id: number): Promise<void> {
+    await db
+      .delete(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.id, id));
+  }
+  
+  // Newsletter operations
+  async createNewsletter(newsletter: InsertNewsletter): Promise<Newsletter> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(newsletters)
+      .values({
+        ...newsletter,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return inserted;
+  }
+  
+  async getNewsletterById(id: number): Promise<Newsletter | undefined> {
+    const [newsletter] = await db
+      .select()
+      .from(newsletters)
+      .where(eq(newsletters.id, id))
+      .limit(1);
+    return newsletter || undefined;
+  }
+  
+  async getAllNewsletters(): Promise<Newsletter[]> {
+    return db
+      .select()
+      .from(newsletters)
+      .orderBy(desc(newsletters.createdAt));
+  }
+  
+  async updateNewsletter(id: number, updates: Partial<InsertNewsletter> & { sentAt?: Date; scheduledAt?: Date; updatedAt?: Date; sentCount?: number; failedCount?: number; deliveredCount?: number; openedCount?: number; clickedCount?: number; totalRecipients?: number }): Promise<Newsletter> {
+    const [updated] = await db
+      .update(newsletters)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(newsletters.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteNewsletter(id: number): Promise<void> {
+    await db
+      .delete(newsletters)
+      .where(eq(newsletters.id, id));
+  }
+  
+  // Newsletter send operations
+  async createNewsletterSend(send: InsertNewsletterSend): Promise<NewsletterSend> {
+    const [inserted] = await db
+      .insert(newsletterSends)
+      .values(send)
+      .returning();
+    return inserted;
+  }
+  
+  async updateNewsletterSend(id: number, updates: Partial<InsertNewsletterSend> & { sentAt?: Date; deliveredAt?: Date; openedAt?: Date; clickedAt?: Date; failedAt?: Date }): Promise<NewsletterSend> {
+    const [updated] = await db
+      .update(newsletterSends)
+      .set(updates)
+      .where(eq(newsletterSends.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]> {
+    return db
+      .select()
+      .from(newsletterSends)
+      .where(eq(newsletterSends.newsletterId, newsletterId))
+      .orderBy(desc(newsletterSends.sentAt));
+  }
+  
+  async getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]> {
+    return db
+      .select()
+      .from(newsletterSends)
+      .where(eq(newsletterSends.subscriberId, subscriberId))
+      .orderBy(desc(newsletterSends.sentAt));
   }
 }
 

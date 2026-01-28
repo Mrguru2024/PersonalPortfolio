@@ -155,7 +155,7 @@ export async function apiRequest<T = any>(
     });
     
     if (!res.ok) {
-      const errorText = await res.text();
+      let errorText = await res.text();
       
       // Don't log 401 errors for /api/user - it's expected when not authenticated
       // Silently handle 401s for authentication endpoints
@@ -167,24 +167,52 @@ export async function apiRequest<T = any>(
         });
       }
       
-      // Log other errors
-      console.error(`API error (${res.status}):`, errorText);
-      
       // For blog endpoints, if we get a 500 error, try to parse and return empty array
+      // This should be checked BEFORE logging to avoid unnecessary error logs
       if (res.status === 500 && path.includes('/api/blog')) {
         try {
           const errorData = JSON.parse(errorText);
-          // If it's a database error, return empty array instead of throwing
-          if (errorData.error && errorData.error.includes('Failed to fetch blog posts')) {
-            console.warn("Database error detected, returning empty array for blog posts");
+          // If it's a database error or any blog-related error, return empty array instead of throwing
+          if (errorData?.error && (
+            errorData.error.includes('Failed to fetch blog posts') ||
+            errorData.error.includes('Failed to') ||
+            errorData.error.toLowerCase().includes('blog')
+          )) {
+            // Silently return empty array - don't log or throw
             return new Response(JSON.stringify([]), {
               status: 200,
               headers: { 'Content-Type': 'application/json' }
             });
           }
         } catch {
-          // If parsing fails, continue with normal error handling
+          // If parsing fails, still return empty array for blog endpoints to prevent errors
+          if (path.includes('/api/blog')) {
+            return new Response(JSON.stringify([]), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
         }
+      }
+      
+      // Check if response is HTML (error page)
+      const contentType = res.headers.get("content-type");
+      if (contentType?.includes("text/html")) {
+        // Try to extract meaningful error from HTML
+        const errorMatch = errorText.match(/<title[^>]*>([^<]+)<\/title>/i) || 
+                          errorText.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        errorText = errorMatch ? errorMatch[1] : `Server returned HTML error page (${res.status})`;
+      }
+      
+      // Don't log expected errors
+      const isLogin401 = res.status === 401 && path === '/api/login';
+      const isBlog404 = res.status === 404 && path.includes('/api/blog/');
+      const isComments404 = res.status === 404 && path.includes('/comments');
+      
+      if (!isLogin401 && !isBlog404 && !isComments404) {
+        // Log other errors (truncate long HTML responses)
+        const logText = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+        console.error(`API error (${res.status}):`, logText);
       }
       
       throw new Error(errorText || res.statusText);
@@ -192,7 +220,11 @@ export async function apiRequest<T = any>(
     
     return res;
   } catch (error) {
-    console.error("API request failed:", error);
+    // Don't log errors for login 401s - they're expected
+    const isLoginError = error instanceof Error && error.message.includes('Invalid username or password');
+    if (!isLoginError) {
+      console.error("API request failed:", error);
+    }
     throw error;
   }
 }

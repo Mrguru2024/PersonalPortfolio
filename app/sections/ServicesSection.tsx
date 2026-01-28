@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
 import {
   Code,
   Palette,
@@ -32,7 +32,7 @@ interface Service {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement;
   features: string[];
   pricing: string;
   category: 'development' | 'design' | 'consulting' | 'maintenance';
@@ -333,8 +333,8 @@ const categories = [
   { id: 'maintenance', label: 'Maintenance', icon: <Settings className="h-4 w-4" /> },
 ];
 
-export function ServicesSection() {
-  const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+function ServicesSection() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const filteredServices = selectedCategory === 'all'
     ? services
@@ -436,7 +436,7 @@ export function ServicesSection() {
                     ))}
                   </ul>
                   <Button asChild className="w-full" variant={service.popular ? 'default' : 'outline'}>
-                    <Link href="/assessment">
+                    <Link href={`/assessment?service=${service.id}`}>
                       Get Started
                     </Link>
                   </Button>
@@ -481,4 +481,4 @@ export function ServicesSection() {
   );
 }
 
-import React from "react";
+export default ServicesSection;
