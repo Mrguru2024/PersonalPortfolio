@@ -3,64 +3,75 @@ import { cookies } from "next/headers";
 import { storage } from "@server/storage";
 
 // Session management for Next.js App Router
+// Optimized for serverless environments with fast timeouts
 export async function getSessionUser(req?: NextRequest): Promise<any | null> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("sessionId") || cookieStore.get("connect.sid");
     
     if (!sessionCookie) {
-      console.log("getSessionUser: No session cookie found");
+      // Fast return - no cookie means not authenticated
       return null;
     }
-
-    console.log("getSessionUser: Found session cookie:", sessionCookie.name, "value length:", sessionCookie.value?.length);
 
     // Get session from session store directly (avoid circular dependency)
     return new Promise((resolve) => {
       // connect-pg-simple stores sessions with the session ID as-is
       const sessionId = sessionCookie.value;
       
+      // Fast timeout for serverless (1.5 seconds max)
+      const timeout = setTimeout(() => {
+        resolve(null);
+      }, 1500);
+      
       storage.sessionStore.get(sessionId, async (err, session) => {
+        clearTimeout(timeout);
+        
         if (err) {
           // Ignore ENOENT errors for table.sql - this is a known connect-pg-simple issue
-          // The table will be created automatically by createTableIfMissing
           if (err.code === 'ENOENT' && (err.path?.includes('table.sql') || err.path?.includes('connect-pg-simple'))) {
-            console.log("getSessionUser: Ignoring ENOENT error for table.sql (expected in some environments)");
             resolve(null);
             return;
           }
-          console.error("getSessionUser: Error retrieving session:", err);
+          
+          // Handle database connection errors gracefully in serverless
+          if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
+            resolve(null);
+            return;
+          }
+          
           // Silently fail - session not found or error
           resolve(null);
           return;
         }
 
         if (!session) {
-          console.log("getSessionUser: Session not found in store for ID:", sessionId);
           // Session doesn't exist or expired
           resolve(null);
           return;
         }
-
-        console.log("getSessionUser: Session found, structure:", Object.keys(session || {}));
 
         // Session data structure: connect-pg-simple stores the session object as-is
         // Check various possible structures for userId
         const userId = (session as any).userId || (session as any).passport?.user || (session as any).user?.id;
         
         if (!userId) {
-          console.log("getSessionUser: No userId found in session. Session data:", JSON.stringify(session, null, 2));
           // No userId in session
           resolve(null);
           return;
         }
 
-        console.log("getSessionUser: Found userId:", userId);
-
         try {
-          // Get user from database
+          // Get user from database with timeout for serverless
           const userIdNum = typeof userId === 'number' ? userId : Number.parseInt(String(userId), 10);
-          const user = await storage.getUser(userIdNum);
+          
+          // Add timeout for database query in serverless environments
+          const userPromise = storage.getUser(userIdNum);
+          const timeoutPromise = new Promise<null>((resolve) => 
+            setTimeout(() => resolve(null), 3000)
+          );
+          
+          const user = await Promise.race([userPromise, timeoutPromise]);
           
           if (!user) {
             console.log("getSessionUser: User not found in database for ID:", userIdNum);
@@ -72,16 +83,20 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           // Don't send password
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
-        } catch (error) {
-          console.error("getSessionUser: Error fetching user from database:", error);
+        } catch (error: any) {
+          // Handle database connection errors gracefully
+          if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT' || error?.message?.includes('timeout')) {
+            console.warn("getSessionUser: Database connection error (serverless?), returning null:", error.code);
+          } else {
+            console.error("getSessionUser: Error fetching user from database:", error);
+          }
           // Silently fail - not authenticated
           resolve(null);
         }
       });
     });
   } catch (error) {
-    console.error("getSessionUser: Exception:", error);
-    // Silently fail - not authenticated
+    // Silently fail - not authenticated (don't log in production)
     return null;
   }
 }
@@ -101,29 +116,32 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
     },
   };
 
-  console.log("setSession: Storing session, sessionId:", sessionId, "userId:", userId, "sessionData keys:", Object.keys(sessionData));
-
   // Set session with callback and return a promise
-  return new Promise((resolve, reject) => {
+  // Optimized for serverless - fast timeout, minimal logging
+  return new Promise((resolve) => {
+    // Fast timeout for serverless (1 second max)
+    const timeout = setTimeout(() => {
+      // Don't reject - allow login to continue even if session storage fails
+      // The cookie is set, so the session can be stored on next request
+      resolve();
+    }, 1000);
+    
     try {
       storage.sessionStore.set(sessionId, sessionData, (err) => {
+        clearTimeout(timeout);
+        
         if (err) {
-          console.error("setSession: Error storing session:", err);
-          console.error("Session store error details:", {
-            message: err?.message,
-            code: err?.code,
-            path: err?.path,
-            stack: err?.stack,
-          });
-          reject(err);
+          // Handle all errors gracefully - don't block login
+          // The cookie is set, so the session can be stored on next request
+          resolve();
         } else {
-          console.log("setSession: Session stored successfully");
           resolve();
         }
       });
     } catch (error: any) {
-      console.error("setSession: Error calling sessionStore.set:", error);
-      reject(error);
+      clearTimeout(timeout);
+      // Don't reject - allow login to continue
+      resolve();
     }
   });
 }

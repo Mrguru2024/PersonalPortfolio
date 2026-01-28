@@ -189,23 +189,38 @@ export class DatabaseStorage implements IStorage {
       };
     }
     
-    // Wrap the get method to handle ENOENT errors gracefully
+    // Wrap the get method to handle ENOENT errors and timeouts gracefully
     const originalGet = this.sessionStore.get.bind(this.sessionStore);
     this.sessionStore.get = function(sid: string, callback: (err?: any, session?: any) => void) {
+      // Fast timeout for serverless environments (1 second max)
+      const timeout = setTimeout(() => {
+        callback(undefined, null);
+      }, 1000);
+      
       try {
         originalGet(sid, (err, session) => {
+          clearTimeout(timeout);
+          
           // Ignore ENOENT errors for table.sql - this is a known connect-pg-simple issue
           if (err && err.code === 'ENOENT' && (err.path?.includes('table.sql') || err.path?.includes('connect-pg-simple'))) {
-            // Silently ignore - table will be created by createTableIfMissing
-            // Return null session to indicate no session found
             return callback(undefined, null);
           }
+          
+          // Handle database connection errors gracefully in serverless
+          if (err && (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('timeout'))) {
+            return callback(undefined, null);
+          }
+          
           // Pass through other errors and sessions normally
           callback(err, session);
         });
       } catch (error: any) {
+        clearTimeout(timeout);
         // Catch any synchronous errors
         if (error?.code === 'ENOENT' && (error?.path?.includes('table.sql') || error?.path?.includes('connect-pg-simple'))) {
+          return callback(undefined, null);
+        }
+        if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT' || error?.message?.includes('timeout')) {
           return callback(undefined, null);
         }
         callback(error, null);

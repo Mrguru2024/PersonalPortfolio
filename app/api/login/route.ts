@@ -138,8 +138,10 @@ export async function POST(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        path: "/",
         ...(maxAge && { maxAge }),
       });
+      console.log("Login: Session cookie set successfully");
     } catch (setCookieError: any) {
       console.error("Error setting cookie:", setCookieError);
       return NextResponse.json(

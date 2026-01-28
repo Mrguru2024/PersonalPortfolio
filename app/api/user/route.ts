@@ -1,28 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth-helpers";
 
+// Optimized for serverless - fast response, minimal logging
 export async function GET(req: NextRequest) {
   try {
-    console.log("GET /api/user - Checking authentication");
-    const user = await getSessionUser(req);
+    // Fast timeout for serverless (2 seconds max)
+    const userPromise = getSessionUser(req);
+    const timeoutPromise = new Promise<null>((resolve) => 
+      setTimeout(() => resolve(null), 2000)
+    );
+    
+    const user = await Promise.race([userPromise, timeoutPromise]);
     
     if (!user) {
-      console.log("GET /api/user - No user found, returning 401");
+      // Return 401 quickly - this is expected for unauthenticated users
       return NextResponse.json(
         { message: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    console.log("GET /api/user - User authenticated:", user.id, user.username);
     // Don't send password
     const { password, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword);
   } catch (error: any) {
-    console.error("Error in GET /api/user:", error);
+    // Handle all errors gracefully - return 401 instead of 500
+    // This prevents error logs for expected authentication failures
     return NextResponse.json(
-      { error: "Failed to fetch user" },
-      { status: 500 }
+      { message: "Not authenticated" },
+      { status: 401 }
     );
   }
 }
