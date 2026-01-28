@@ -5,6 +5,9 @@ import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!username || !email || !password) {
       return NextResponse.json(
         { message: "Username, email, and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -29,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { message: "Username already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
     console.error("Registration error:", error);
     return NextResponse.json(
       { message: "Error creating user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
