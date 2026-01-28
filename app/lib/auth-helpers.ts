@@ -22,6 +22,13 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
       
       storage.sessionStore.get(sessionId, async (err, session) => {
         if (err) {
+          // Ignore ENOENT errors for table.sql - this is a known connect-pg-simple issue
+          // The table will be created automatically by createTableIfMissing
+          if (err.code === 'ENOENT' && (err.path?.includes('table.sql') || err.path?.includes('connect-pg-simple'))) {
+            console.log("getSessionUser: Ignoring ENOENT error for table.sql (expected in some environments)");
+            resolve(null);
+            return;
+          }
           console.error("getSessionUser: Error retrieving session:", err);
           // Silently fail - session not found or error
           resolve(null);

@@ -13,7 +13,9 @@ import {
   Plus,
   X,
   Eye,
-  HelpCircle
+  HelpCircle,
+  Loader2,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

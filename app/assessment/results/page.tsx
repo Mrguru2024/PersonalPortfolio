@@ -42,9 +42,11 @@ interface AssessmentResult {
 function AssessmentResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const assessmentId = searchParams.get("id");
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [requiresAccount, setRequiresAccount] = useState(false);
 
   useEffect(() => {
     if (assessmentId) {
