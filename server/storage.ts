@@ -128,8 +128,31 @@ export class DatabaseStorage implements IStorage {
     const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({ 
       pool, 
-      createTableIfMissing: true 
+      createTableIfMissing: true,
+      tableName: 'session'
     });
+    
+    // Wrap prune method to handle ENOENT errors gracefully
+    // connect-pg-simple may try to read table.sql during pruning, which can fail
+    // This is a known issue when the module can't find the SQL file
+    if (this.sessionStore.prune) {
+      const originalPrune = this.sessionStore.prune.bind(this.sessionStore);
+      this.sessionStore.prune = function() {
+        try {
+          return originalPrune();
+        } catch (error: any) {
+          // Ignore ENOENT errors for table.sql - the table may already exist
+          // The prune operation will succeed once the table is created
+          if (error?.code === 'ENOENT' && error?.path?.includes('table.sql')) {
+            // Silently ignore - table will be created by createTableIfMissing
+            return;
+          }
+          // Log other errors but don't crash the application
+          console.error('Session prune error:', error);
+          return;
+        }
+      };
+    }
   }
 
   // User operations
