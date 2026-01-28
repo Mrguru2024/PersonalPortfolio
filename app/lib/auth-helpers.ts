@@ -64,25 +64,42 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
         try {
           // Get user from database with timeout for serverless
           const userIdNum = typeof userId === 'number' ? userId : Number.parseInt(String(userId), 10);
+          const dbStartTime = Date.now();
           
           // Increased timeout for database query (1.5 seconds for mobile/network latency)
           const userPromise = storage.getUser(userIdNum);
           const timeoutPromise = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 1500)
+            setTimeout(() => {
+              if (isMobile) {
+                console.log(`[getSessionUser] DB query timeout for userId ${userIdNum} after ${Date.now() - dbStartTime}ms (Mobile)`);
+              }
+              resolve(null);
+            }, 1500)
           );
           
           const user = await Promise.race([userPromise, timeoutPromise]);
+          const dbDuration = Date.now() - dbStartTime;
           
           if (!user) {
+            if (isMobile) {
+              console.log(`[getSessionUser] User ${userIdNum} not found in database after ${dbDuration}ms (Mobile)`);
+            }
             resolve(null);
             return;
+          }
+
+          if (isMobile) {
+            console.log(`[getSessionUser] Success: Found user ${user.id} (${user.username}) after ${dbDuration}ms (Mobile)`);
           }
 
           // Don't send password
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
         } catch (error: any) {
-          // Silently fail - not authenticated (don't log in production)
+          // Log errors for mobile debugging
+          if (isMobile) {
+            console.error(`[getSessionUser] DB query error: ${error?.message || 'Unknown'} (Mobile)`);
+          }
           resolve(null);
         }
       });
