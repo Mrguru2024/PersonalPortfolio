@@ -80,21 +80,22 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-muted-foreground text-center">
               The link will expire in 1 hour. Please check your spam folder if you don't see it.
             </p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/auth">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" size="lg" className="w-full sm:flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3" asChild>
+                <Link href="/auth" className="flex items-center justify-center gap-2">
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">Back to Login</span>
                 </Link>
               </Button>
               <Button
-                className="w-full"
+                size="lg"
+                className="w-full sm:flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 onClick={() => {
                   setIsSubmitted(false);
                   form.reset();
                 }}
               >
-                Send another email
+                <span className="whitespace-nowrap">Send another email</span>
               </Button>
             </div>
           </CardContent>
@@ -160,30 +161,32 @@ export default function ForgotPasswordPage() {
               />
               <Button
                 type="submit"
-                className="w-full"
+                size="lg"
+                className="w-full text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                    <span className="whitespace-nowrap">Sending...</span>
                   </>
                 ) : (
                   <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Reset Link
+                    <Mail className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Send Reset Link</span>
                   </>
                 )}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full"
+                size="lg"
+                className="w-full text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 asChild
               >
-                <Link href="/auth">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
+                <Link href="/auth" className="flex items-center justify-center gap-2">
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">Back to Login</span>
                 </Link>
               </Button>
             </form>

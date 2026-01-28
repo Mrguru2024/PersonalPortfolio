@@ -542,9 +542,12 @@ const ContactSection = () => {
                               size="sm"
                               onClick={() => handleEnhanceWithAI(field)}
                               disabled={isLoadingAI || !field.value}
+                              className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 min-h-[44px] touch-target"
                             >
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              {isLoadingAI ? "Enhancing..." : "Enhance with AI"}
+                              <span className="flex items-center justify-center gap-2">
+                                <Sparkles className="h-4 w-4 shrink-0" />
+                                <span className="whitespace-nowrap">{isLoadingAI ? "Enhancing..." : "Enhance with AI"}</span>
+                              </span>
                             </Button>
                           </div>
                           {aiSuggestions.length > 0 && (

@@ -89,9 +89,9 @@ const ProjectDetails = () => {
 
       <div className="container mx-auto px-4 py-16 relative z-10">
         <Link href="/#projects" className="inline-block mb-8">
-          <Button variant="outline" className="flex items-center">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Projects
+          <Button variant="outline" size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+            <ChevronLeft className="h-4 w-4 shrink-0" />
+            <span className="whitespace-nowrap">Back to Projects</span>
           </Button>
         </Link>
 
@@ -133,16 +133,17 @@ const ProjectDetails = () => {
                 <p>{project.details}</p>
               </div>
               
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3 sm:gap-4">
                 {project.githubUrl && (
                   <a
                     href={project.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="w-full sm:w-auto"
                   >
-                    <Button variant="outline" className="flex items-center">
-                      <Github className="mr-2 h-4 w-4" />
-                      View on GitHub
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                      <Github className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">View on GitHub</span>
                     </Button>
                   </a>
                 )}
@@ -152,10 +153,11 @@ const ProjectDetails = () => {
                     href={project.liveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="w-full sm:w-auto"
                   >
-                    <Button className="flex items-center">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Live Website
+                    <Button size="lg" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                      <ExternalLink className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">Live Website</span>
                     </Button>
                   </a>
                 )}

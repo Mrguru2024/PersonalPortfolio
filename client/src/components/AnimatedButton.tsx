@@ -1,12 +1,10 @@
-
-
-import React, { ButtonHTMLAttributes, forwardRef, MouseEvent } from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { ButtonHTMLAttributes, forwardRef, MouseEvent } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'gradient' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg' | 'icon';
+  variant?: "default" | "gradient" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg" | "icon";
   withHoverEffect?: boolean;
   withPressEffect?: boolean;
   withGlowEffect?: boolean;
@@ -16,29 +14,31 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
   (
     {
       className,
-      variant = 'default',
-      size = 'md',
+      variant = "default",
+      size = "md",
       withHoverEffect = false,
       withPressEffect = true,
       withGlowEffect = false,
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     // Compute variant and size classes
     const variantClasses = {
-      default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-      gradient: 'bg-gradient-to-r from-primary to-primary-hover text-primary-foreground',
-      outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      default: "bg-primary text-primary-foreground hover:bg-primary/90",
+      gradient:
+        "bg-gradient-to-r from-primary to-primary-hover text-primary-foreground",
+      outline:
+        "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+      ghost: "hover:bg-accent hover:text-accent-foreground",
     };
 
     const sizeClasses = {
-      sm: 'h-9 px-3 rounded-md text-sm',
-      md: 'h-10 px-4 py-2 rounded-md',
-      lg: 'h-12 px-6 py-3 rounded-lg text-lg',
-      icon: 'h-10 w-10 rounded-full',
+      sm: "h-9 min-h-[44px] sm:min-h-[36px] px-3 rounded-md text-sm",
+      md: "h-10 px-4 py-2 rounded-md text-sm sm:text-base",
+      lg: "h-11 sm:h-12 min-h-[44px] px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg leading-tight",
+      icon: "h-10 w-10 min-h-[44px] min-w-[44px] rounded-full",
     };
 
     const hoverMotion = withHoverEffect
@@ -54,7 +54,7 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
       : {};
 
     return (
-      <div className={withGlowEffect ? 'group relative' : ''}>
+      <div className={withGlowEffect ? "group relative" : ""}>
         {withGlowEffect && (
           <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-primary/50 to-primary-hover/50 opacity-0 blur group-hover:opacity-75 transition-all duration-500" />
         )}
@@ -64,19 +64,20 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
           role="button"
           tabIndex={0}
           className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background relative cursor-pointer',
+            "inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background relative cursor-pointer",
             variantClasses[variant],
             sizeClasses[size],
-            withGlowEffect && 'relative',
-            className
+            withGlowEffect && "relative",
+            className,
           )}
           {...hoverMotion}
           {...pressMotion}
           onClick={(e: MouseEvent<HTMLDivElement>) => {
-            if (props.onClick) props.onClick(e as unknown as MouseEvent<HTMLButtonElement>);
+            if (props.onClick)
+              props.onClick(e as unknown as MouseEvent<HTMLButtonElement>);
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               props.onClick?.(e as any);
             }
@@ -86,9 +87,9 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
         </motion.div>
       </div>
     );
-  }
+  },
 );
 
-AnimatedButton.displayName = 'AnimatedButton';
+AnimatedButton.displayName = "AnimatedButton";
 
 export default AnimatedButton;

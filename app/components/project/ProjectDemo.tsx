@@ -118,9 +118,9 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
               rel="noopener noreferrer"
               className="inline-flex"
             >
-              <Button className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
-                Visit Live Site
+              <Button size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                <ExternalLink className="h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">Visit Live Site</span>
               </Button>
             </a>
           )}
@@ -181,18 +181,20 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 px-2"
+                  className="h-8 w-8 p-0 min-h-[32px] min-w-[32px] touch-target"
                   onClick={handleRefresh}
                   title="Refresh Demo"
+                  aria-label="Refresh Demo"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 px-2"
+                  className="h-8 w-8 p-0 min-h-[32px] min-w-[32px] touch-target"
                   onClick={handleFullscreenToggle}
                   title="Toggle Fullscreen"
+                  aria-label="Toggle Fullscreen"
                 >
                   <Maximize className="h-4 w-4" />
                 </Button>
@@ -317,9 +319,11 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                   rel="noopener noreferrer"
                   className="w-full"
                 >
-                  <Button variant="outline" className="w-full justify-center">
-                    <Github className="mr-2 h-4 w-4" />
-                    Source Code
+                  <Button variant="outline" size="lg" className="w-full justify-center text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                    <span className="flex items-center justify-center gap-2">
+                      <Github className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">Source Code</span>
+                    </span>
                   </Button>
                 </a>
               </div>
@@ -433,9 +437,9 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button variant="outline" className="flex items-center">
-                  <Github className="mr-2 h-4 w-4" />
-                  View on GitHub
+                <Button variant="outline" size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                  <Github className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">View on GitHub</span>
                 </Button>
               </a>
             )}
@@ -662,9 +666,9 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Button variant="outline" className="flex items-center">
-                          <FileCode className="mr-2 h-4 w-4" />
-                          Download Source
+                        <Button variant="outline" size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                          <FileCode className="h-4 w-4 shrink-0" />
+                          <span className="whitespace-nowrap">Download Source</span>
                         </Button>
                       </a>
                     )}
@@ -684,6 +688,17 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+            >
+              {renderTechStack()}
+            </motion.div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ProjectDemo;={{ duration: 0.3 }}
             >
               {renderTechStack()}
             </motion.div>

@@ -99,14 +99,16 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={this.handleReset} className="flex-1">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                <Button onClick={this.handleReset} size="lg" className="flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                  <span className="flex items-center justify-center gap-2">
+                    <RefreshCw className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Try Again</span>
+                  </span>
                 </Button>
-                <Button variant="outline" asChild className="flex-1">
-                  <Link href="/">
-                    <Home className="h-4 w-4 mr-2" />
-                    Go Home
+                <Button variant="outline" asChild size="lg" className="flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                  <Link href="/" className="flex items-center justify-center gap-2">
+                    <Home className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Go Home</span>
                   </Link>
                 </Button>
               </div>

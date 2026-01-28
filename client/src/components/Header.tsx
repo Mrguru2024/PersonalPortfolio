@@ -5,11 +5,11 @@ import { ThemeToggle } from "./ThemeToggle";
 import { personalInfo } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
@@ -49,7 +49,10 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm transition-colors duration-300">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-primary flex items-center">
+        <Link
+          href="/"
+          className="text-xl font-bold text-primary flex items-center"
+        >
           <span className="sr-only">{personalInfo.name}</span>
           <span className="flex items-center">
             <Code className="h-6 w-6" />
@@ -71,26 +74,42 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
             ))
           ) : (
             <>
-              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+              <Link
+                href="/"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition"
+              >
                 Home
               </Link>
-              <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+              <Link
+                href="/blog"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition"
+              >
                 Blog
               </Link>
-              <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition">
+              <Link
+                href="/resume"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition"
+              >
                 Resume
               </Link>
-              <Link href="/generate-images" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition flex items-center">
+              <Link
+                href="/generate-images"
+                className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition flex items-center"
+              >
                 <Wand2 className="h-4 w-4 mr-1" /> AI Images
               </Link>
             </>
           )}
-          
+
           {/* Auth */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full"
+                >
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-white">
                     <User className="h-4 w-4" />
                   </div>
@@ -102,10 +121,15 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                 </DropdownMenuItem>
                 {user.isAdmin && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin/blog" className="cursor-pointer">Admin Dashboard</Link>
+                    <Link href="/admin/blog" className="cursor-pointer">
+                      Admin Dashboard
+                    </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => logoutMutation.mutate()}
+                  className="cursor-pointer"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -113,13 +137,17 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
             </DropdownMenu>
           ) : (
             <Link href="/auth">
-              <Button size="sm" variant="default" className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" />
+              <Button
+                size="sm"
+                variant="default"
+                className="flex items-center gap-2 text-sm sm:text-base min-h-[44px] sm:min-h-[36px]"
+              >
+                <LogIn className="h-4 w-4 shrink-0" />
                 <span>Login</span>
               </Button>
             </Link>
           )}
-          
+
           {/* Dark Mode Toggle */}
           <ThemeToggle />
         </nav>
@@ -132,7 +160,11 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
             className="ml-2 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
             aria-label="Open menu"
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
@@ -153,30 +185,47 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
               ))
             ) : (
               <>
-                <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link
+                  href="/"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                >
                   Home
                 </Link>
-                <Link href="/blog" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link
+                  href="/blog"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                >
                   Blog
                 </Link>
-                <Link href="/resume" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link
+                  href="/resume"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                >
                   Resume
                 </Link>
-                <Link href="/generate-images" className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition flex items-center">
+                <Link
+                  href="/generate-images"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition flex items-center"
+                >
                   <Wand2 className="h-4 w-4 mr-2" /> AI Image Generator
                 </Link>
               </>
             )}
-            
+
             {/* Mobile Login/Logout */}
             <div className="py-2 border-t border-gray-200 dark:border-gray-700 mt-2">
               {user ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Logged in as @{user.username}</span>
+                    <span className="text-sm font-medium">
+                      Logged in as @{user.username}
+                    </span>
                   </div>
                   {user.isAdmin && (
-                    <Link href="/admin/blog" className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                    <Link
+                      href="/admin/blog"
+                      className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                    >
                       Admin Dashboard
                     </Link>
                   )}
@@ -188,7 +237,10 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </button>
                 </div>
               ) : (
-                <Link href="/auth" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link
+                  href="/auth"
+                  className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                >
                   <LogIn className="h-4 w-4 mr-2" /> Login / Register
                 </Link>
               )}

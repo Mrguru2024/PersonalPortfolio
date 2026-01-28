@@ -72,9 +72,9 @@ const Blog = () => {
           {canCreate && (
             <div className="flex justify-end mb-4">
               <Link href="/admin/blog">
-                <Button className="flex items-center gap-2">
-                  <PlusCircle className="h-4 w-4" />
-                  Create New Post
+                <Button size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                  <PlusCircle className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">Create New Post</span>
                 </Button>
               </Link>
             </div>
@@ -137,13 +137,14 @@ const Blog = () => {
                 {(searchQuery || selectedTag) && (
                   <Button 
                     variant="outline" 
-                    className="mt-4"
+                    size="lg"
+                    className="mt-4 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] touch-target"
                     onClick={() => {
                       setSearchQuery("");
                       setSelectedTag(null);
                     }}
                   >
-                    Clear Filters
+                    <span className="whitespace-nowrap">Clear Filters</span>
                   </Button>
                 )}
               </div>
@@ -251,8 +252,8 @@ const Blog = () => {
                   My goal is to share knowledge and inspire others on their tech journey.
                 </p>
                 <Link href="/#contact">
-                  <Button variant="outline" className="mt-4 w-full">
-                    Get in Touch
+                  <Button variant="outline" size="lg" className="mt-4 w-full text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                    <span className="whitespace-nowrap">Get in Touch</span>
                   </Button>
                 </Link>
               </CardContent>

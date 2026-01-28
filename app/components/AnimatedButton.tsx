@@ -35,9 +35,9 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
     };
 
     const sizeClasses = {
-      sm: 'h-9 px-3 rounded-md text-sm',
-      md: 'h-10 px-4 py-2 rounded-md',
-      lg: 'h-12 px-6 py-3 rounded-lg text-lg',
+      sm: 'h-9 px-3 rounded-md text-xs sm:text-sm',
+      md: 'h-10 px-4 py-2 rounded-md text-sm sm:text-base',
+      lg: 'h-11 sm:h-12 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg',
       icon: 'h-10 w-10 rounded-full',
     };
 

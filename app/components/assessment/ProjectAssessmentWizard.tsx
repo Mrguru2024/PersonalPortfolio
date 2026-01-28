@@ -898,9 +898,12 @@ function Step2ProjectVision({
                 size="sm"
                 onClick={handleAIGenerate}
                 disabled={isLoadingAI}
+                className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 min-h-[44px] touch-target"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
-                {isLoadingAI ? "Generating..." : "Get AI Ideas"}
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">{isLoadingAI ? "Generating..." : "Get AI Ideas"}</span>
+                </span>
               </Button>
             </div>
             {aiSuggestions.length > 0 && (

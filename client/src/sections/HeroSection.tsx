@@ -1,6 +1,10 @@
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
 import { ArrowRight, MousePointer, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import SocialLinks from "@/components/SocialLinks";
 import { personalInfo } from "@/lib/data";
 import { useRef, useState } from "react";
@@ -13,14 +17,14 @@ const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start start", "end start"]
+    offset: ["start start", "end start"],
   });
-  
+
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const y = useTransform(scrollYProgress, [0, 0.5], [0, 50]);
   const [hoverWorkBtn, setHoverWorkBtn] = useState(false);
   const [hoverContactBtn, setHoverContactBtn] = useState(false);
-  
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -29,9 +33,13 @@ const HeroSection = () => {
   };
 
   return (
-    <section ref={sectionRef} id="home" className="py-20 md:py-32 relative overflow-hidden min-h-[90vh] flex items-center">
+    <section
+      ref={sectionRef}
+      id="home"
+      className="py-20 md:py-32 relative overflow-hidden min-h-[90vh] flex items-center"
+    >
       {/* Interactive particle background */}
-      <ParticleAnimation 
+      <ParticleAnimation
         count={80}
         minSize={1}
         maxSize={4}
@@ -40,22 +48,22 @@ const HeroSection = () => {
         linkDistance={150}
         className="opacity-40 dark:opacity-30"
       />
-      
+
       {/* Parallax mouse-moving background */}
       <ParallaxBackground className="z-0" />
-      
+
       {/* Grid overlay */}
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
-      
+
       {/* Background gradient */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5 }}
       />
-      
-      <motion.div 
+
+      <motion.div
         className="container mx-auto px-4 relative"
         style={{ opacity, y }}
       >
@@ -63,14 +71,16 @@ const HeroSection = () => {
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.7, 
+            transition={{
+              duration: 0.7,
               type: "spring",
-              stiffness: 100 
+              stiffness: 100,
             }}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">Hello, I'm</span>{" "}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
+              Hello, I'm
+            </span>{" "}
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -80,33 +90,33 @@ const HeroSection = () => {
               {personalInfo.name}
             </motion.span>
           </motion.h1>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.6, 
+            transition={{
+              duration: 0.6,
               delay: 0.4,
               type: "spring",
-              stiffness: 50
+              stiffness: 50,
             }}
             className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4"
           >
             <span className="font-medium">{personalInfo.title}</span>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mb-10 text-lg md:text-xl text-gray-600 dark:text-gray-400"
           >
-            <TypewriterText 
+            <TypewriterText
               phrases={[
                 "specializing in creating elegant solutions to complex problems.",
                 "turning innovative ideas into exceptional digital experiences.",
                 "building modern, responsive web applications that convert.",
-                "helping businesses succeed in the digital landscape."
+                "helping businesses succeed in the digital landscape.",
               ]}
               typingSpeed={50}
               deletingSpeed={20}
@@ -114,7 +124,7 @@ const HeroSection = () => {
               className="inline-block font-light"
             />
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -130,15 +140,15 @@ const HeroSection = () => {
                 variant="gradient"
                 size="lg"
                 onClick={() => scrollToSection("projects")}
-                className="px-8 py-6 text-lg font-medium tracking-wide"
+                className="px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium tracking-wide w-full sm:w-auto"
                 withGlowEffect={true}
               >
                 <span className="flex items-center gap-2">
                   View My Work
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4 shrink-0" />
                 </span>
               </AnimatedButton>
-              
+
               <AnimatePresence>
                 {hoverWorkBtn && (
                   <motion.div
@@ -152,7 +162,7 @@ const HeroSection = () => {
                 )}
               </AnimatePresence>
             </div>
-            
+
             <div
               onMouseEnter={() => setHoverContactBtn(true)}
               onMouseLeave={() => setHoverContactBtn(false)}
@@ -161,16 +171,17 @@ const HeroSection = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => scrollToSection("contact")}
-                className="px-8 py-6 text-lg font-medium tracking-wide"
+                className="px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium tracking-wide w-full sm:w-auto"
                 withPressEffect={true}
               >
                 <span className="flex items-center gap-2">
                   Get In Touch
                   <motion.div
                     animate={{
-                      x: hoverContactBtn ? 5 : 0
+                      x: hoverContactBtn ? 5 : 0,
                     }}
                     transition={{ type: "spring", stiffness: 400 }}
+                    className="shrink-0"
                   >
                     <ArrowRight className="h-4 w-4 group-hover:text-primary transition-colors" />
                   </motion.div>
@@ -178,7 +189,7 @@ const HeroSection = () => {
               </AnimatedButton>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -192,7 +203,7 @@ const HeroSection = () => {
                 duration: 1,
                 repeat: Infinity,
                 repeatType: "reverse",
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
               className="mb-6 text-gray-500 dark:text-gray-400 text-sm"
             >

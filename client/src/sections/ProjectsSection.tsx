@@ -1,6 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, useAnimation, useInView, AnimatePresence } from "framer-motion";
-import { ExternalLink, Rocket, Code, CheckCircle2, Eye, ArrowRight } from "lucide-react";
+import {
+  motion,
+  useAnimation,
+  useInView,
+  AnimatePresence,
+} from "framer-motion";
+import {
+  ExternalLink,
+  Rocket,
+  Code,
+  CheckCircle2,
+  Eye,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ProjectCard from "@/components/project/ProjectCard";
@@ -14,26 +26,39 @@ const ProjectsSection = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const controls = useAnimation();
 
-  const filteredProjects = filter === "all" 
-    ? projects 
-    : projects.filter(project => project.category === filter);
+  const filteredProjects =
+    filter === "all"
+      ? projects
+      : projects.filter((project) => project.category === filter);
 
   // Animate section on filter change
   useEffect(() => {
     const animate = async () => {
-      await controls.start({ opacity: 0, y: 20, transition: { duration: 0.2 } });
-      await controls.start({ opacity: 1, y: 0, transition: { duration: 0.3, staggerChildren: 0.1 } });
+      await controls.start({
+        opacity: 0,
+        y: 20,
+        transition: { duration: 0.2 },
+      });
+      await controls.start({
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, staggerChildren: 0.1 },
+      });
     };
     animate();
   }, [filter, controls]);
 
   // Find featured project (Stackzen or Keycode Help or first project)
-  const featuredProject = projects.find(p => 
-    p.title.includes("Stackzen") || p.title.includes("Keycode Help")
-  ) || projects[0];
+  const featuredProject =
+    projects.find(
+      (p) => p.title.includes("Stackzen") || p.title.includes("Keycode Help"),
+    ) || projects[0];
 
   return (
-    <section id="projects" className="py-20 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <section
+      id="projects"
+      className="py-20 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
+    >
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -42,17 +67,20 @@ const ProjectsSection = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <Badge variant="outline" className="text-primary border-primary mb-3 px-3 py-1">
+          <Badge
+            variant="outline"
+            className="text-primary border-primary mb-3 px-3 py-1"
+          >
             FEATURED PROJECTS
           </Badge>
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             See My Work in Action
           </h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8">
-            Browse through my portfolio of live applications and projects. 
-            Each one demonstrates my ability to solve real-world problems with code.
+            Browse through my portfolio of live applications and projects. Each
+            one demonstrates my ability to solve real-world problems with code.
           </p>
-          
+
           <ProjectFilter onFilterChange={setFilter} />
         </motion.div>
 
@@ -78,7 +106,7 @@ const ProjectsSection = () => {
                     FEATURED PROJECT
                   </Badge>
                 </motion.div>
-                
+
                 <motion.h3
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -88,7 +116,7 @@ const ProjectsSection = () => {
                 >
                   {featuredProject.title}
                 </motion.h3>
-                
+
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -98,7 +126,7 @@ const ProjectsSection = () => {
                 >
                   {featuredProject.description}
                 </motion.p>
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -111,7 +139,7 @@ const ProjectsSection = () => {
                       key={tag}
                       initial={{ opacity: 0, scale: 0.8 }}
                       whileInView={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 0.5 + (index * 0.1) }}
+                      transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
                       viewport={{ once: true }}
                       whileHover={{ scale: 1.1, y: -2 }}
                     >
@@ -124,7 +152,7 @@ const ProjectsSection = () => {
                     </motion.div>
                   ))}
                 </motion.div>
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -136,34 +164,36 @@ const ProjectsSection = () => {
                     "Fully responsive design across all devices",
                     "Intuitive and engaging user experience",
                     "High-performance optimized codebase",
-                    "Secure data handling and storage"
+                    "Secure data handling and storage",
                   ].map((feature, index) => (
-                    <motion.div 
+                    <motion.div
                       key={index}
                       className="flex items-start"
                       initial={{ opacity: 0, x: -10 }}
                       whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: 0.6 + (index * 0.1) }}
+                      transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
                       viewport={{ once: true }}
                       whileHover={{ x: 5 }}
                     >
                       <motion.div
                         animate={{ rotate: [0, 10, 0] }}
-                        transition={{ 
-                          duration: 0.5, 
-                          repeat: Infinity, 
+                        transition={{
+                          duration: 0.5,
+                          repeat: Infinity,
                           repeatType: "reverse",
                           ease: "easeInOut",
-                          repeatDelay: Math.random() * 2 + 2 
+                          repeatDelay: Math.random() * 2 + 2,
                         }}
                       >
                         <CheckCircle2 className="h-5 w-5 text-green-500 mt-1 mr-2" />
                       </motion.div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{feature}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {feature}
+                      </p>
                     </motion.div>
                   ))}
                 </motion.div>
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -172,7 +202,7 @@ const ProjectsSection = () => {
                   className="flex flex-col sm:flex-row gap-4"
                 >
                   {featuredProject.liveUrl && (
-                    <motion.a 
+                    <motion.a
                       href={featuredProject.liveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -180,18 +210,22 @@ const ProjectsSection = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 flex items-center gap-2 group">
+                      <Button
+                        size="lg"
+                        className="w-full sm:w-auto bg-primary hover:bg-primary/90 flex items-center gap-2 group text-sm sm:text-base"
+                      >
                         <motion.div
-                          animate={{ 
+                          animate={{
                             y: [0, -3, 0],
-                            rotate: [0, 15, 0] 
+                            rotate: [0, 15, 0],
                           }}
-                          transition={{ 
-                            duration: 1.5, 
+                          transition={{
+                            duration: 1.5,
                             repeat: Infinity,
                             repeatType: "loop",
-                            ease: "easeInOut"
+                            ease: "easeInOut",
                           }}
+                          className="shrink-0"
                         >
                           <Rocket className="h-4 w-4 group-hover:text-yellow-300 transition-colors" />
                         </motion.div>
@@ -199,9 +233,9 @@ const ProjectsSection = () => {
                       </Button>
                     </motion.a>
                   )}
-                  
+
                   {featuredProject.githubUrl && (
-                    <motion.a 
+                    <motion.a
                       href={featuredProject.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -209,11 +243,19 @@ const ProjectsSection = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Button variant="outline" className="w-full sm:w-auto flex items-center gap-2 group">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full sm:w-auto flex items-center gap-2 group text-sm sm:text-base"
+                      >
                         <motion.div
                           animate={{ rotate: [0, 360] }}
-                          transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                          className="group-hover:text-primary"
+                          transition={{
+                            duration: 5,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                          className="group-hover:text-primary shrink-0"
                         >
                           <Code className="h-4 w-4" />
                         </motion.div>
@@ -223,8 +265,11 @@ const ProjectsSection = () => {
                   )}
                 </motion.div>
               </div>
-              
-              <div className="lg:w-1/2 relative overflow-hidden" style={{ minHeight: "400px" }}>
+
+              <div
+                className="lg:w-1/2 relative overflow-hidden"
+                style={{ minHeight: "400px" }}
+              >
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.3 }}
@@ -240,26 +285,24 @@ const ProjectsSection = () => {
                     className="w-full h-full object-cover object-center transition-all duration-500"
                   />
                 </motion.div>
-                
+
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/40 to-transparent mix-blend-multiply" />
-                
-                <motion.div 
+
+                <motion.div
                   className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2"
                   initial={{ opacity: 0, y: -10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                   viewport={{ once: true }}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.1, y: -2 }}
-                  >
+                  <motion.div whileHover={{ scale: 1.1, y: -2 }}>
                     <Badge className="bg-black/70 text-white border-none px-3 py-1 flex items-center gap-1">
                       <Eye className="h-3 w-3" />
                       {featuredProject.category}
                     </Badge>
                   </motion.div>
                 </motion.div>
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -267,32 +310,32 @@ const ProjectsSection = () => {
                   viewport={{ once: true }}
                   className="absolute bottom-4 left-4 md:bottom-6 md:left-6"
                 >
-                  <Badge variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1">
+                  <Badge
+                    variant="outline"
+                    className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1"
+                  >
                     View details
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Badge>
                 </motion.div>
               </div>
             </div>
-            
+
             {/* Background pattern */}
             <div className="absolute -bottom-20 -right-20 h-60 w-60 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
             <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full bg-purple-500/5 blur-3xl pointer-events-none" />
           </motion.div>
         )}
-        
+
         <motion.div
           animate={controls}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {filteredProjects.map((project) => (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
-            />
+            <ProjectCard key={project.id} project={project} />
           ))}
         </motion.div>
-        
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -301,32 +344,32 @@ const ProjectsSection = () => {
           className="text-center mt-20 relative"
         >
           {/* Decorative elements */}
-          <motion.div 
+          <motion.div
             className="absolute left-1/4 -top-10 h-16 w-16 rounded-full bg-primary/10 blur-xl"
-            animate={{ 
+            animate={{
               scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3]
+              opacity: [0.3, 0.5, 0.3],
             }}
-            transition={{ 
+            transition={{
               duration: 5,
               repeat: Infinity,
-              repeatType: "reverse"
+              repeatType: "reverse",
             }}
           />
-          <motion.div 
+          <motion.div
             className="absolute right-1/4 -bottom-10 h-16 w-16 rounded-full bg-purple-500/10 blur-xl"
-            animate={{ 
+            animate={{
               scale: [1, 1.3, 1],
-              opacity: [0.3, 0.5, 0.3]
+              opacity: [0.3, 0.5, 0.3],
             }}
-            transition={{ 
+            transition={{
               duration: 4,
               repeat: Infinity,
               repeatType: "reverse",
-              delay: 1
+              delay: 1,
             }}
           />
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -334,9 +377,13 @@ const ProjectsSection = () => {
             viewport={{ once: true }}
             className="max-w-3xl mx-auto mb-10 bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800"
           >
-            <h3 className="text-xl font-bold mb-2 text-primary">Discover Your Perfect Project Match</h3>
+            <h3 className="text-xl font-bold mb-2 text-primary">
+              Discover Your Perfect Project Match
+            </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Not sure which project fits your needs? Our AI-powered recommendation engine can suggest the perfect projects based on your interests and requirements.
+              Not sure which project fits your needs? Our AI-powered
+              recommendation engine can suggest the perfect projects based on
+              your interests and requirements.
             </p>
             <motion.div
               whileHover={{ scale: 1.02 }}
@@ -344,21 +391,21 @@ const ProjectsSection = () => {
               className="text-center"
             >
               <a href="/recommendations">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   className="border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300"
                 >
                   <span className="flex items-center gap-2">
                     Get AI Project Recommendations
                     <motion.div
-                      animate={{ 
+                      animate={{
                         rotate: [0, 180, 360],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 4,
                         repeat: Infinity,
-                        ease: "linear" 
+                        ease: "linear",
                       }}
                     >
                       <Code className="h-4 w-4" />
@@ -376,64 +423,66 @@ const ProjectsSection = () => {
             viewport={{ once: true }}
             className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 text-lg"
           >
-            Interested in working together? Let's build something amazing for your business!
+            Interested in working together? Let's build something amazing for
+            your business!
           </motion.p>
-          
+
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
           >
             <motion.div
-              animate={{ 
+              animate={{
                 y: [0, -5, 0],
-                scale: [1, 1.02, 1] 
+                scale: [1, 1.02, 1],
               }}
-              transition={{ 
+              transition={{
                 duration: 2,
                 repeat: Infinity,
                 repeatType: "reverse",
-                ease: "easeInOut" 
+                ease: "easeInOut",
               }}
             >
-              <a href="#contact">
-                <Button 
-                  size="lg" 
-                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white px-8 py-6 shadow-lg hover:shadow-primary/20 hover:shadow-xl relative group overflow-hidden"
+              <a href="#contact" className="inline-block w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white px-4 sm:px-8 py-3 sm:py-4 shadow-lg hover:shadow-primary/20 hover:shadow-xl relative group overflow-hidden w-full sm:w-auto text-base sm:text-lg"
                 >
-                  <span className="relative z-10 flex items-center gap-2 text-lg">
+                  <span className="relative z-10 flex items-center gap-2">
                     Get a Quote for Your Project
                     <motion.div
                       animate={{ x: [0, 5, 0] }}
-                      transition={{ 
+                      transition={{
                         duration: 1.5,
                         repeat: Infinity,
                         repeatType: "reverse",
-                        ease: "easeInOut"
+                        ease: "easeInOut",
                       }}
+                      className="shrink-0"
                     >
-                      <ArrowRight className="h-5 w-5 group-hover:animate-pulse" />
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:animate-pulse" />
                     </motion.div>
                   </span>
-                  
+
                   {/* Button shine effect */}
-                  <motion.div 
+                  <motion.div
                     className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-                    animate={{ 
-                      x: ['-100%', '100%'],
+                    animate={{
+                      x: ["-100%", "100%"],
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 3,
                       repeat: Infinity,
                       repeatDelay: 5,
-                      ease: "easeInOut"
+                      ease: "easeInOut",
                     }}
                   />
                 </Button>
               </a>
             </motion.div>
           </motion.div>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}

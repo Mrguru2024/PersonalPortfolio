@@ -143,8 +143,10 @@ export default function ImageGeneratorPage() {
                 <p className="text-muted-foreground max-w-md mx-auto">
                   You need to be logged in to generate images. Login to access the AI image generation features.
                 </p>
-                <Button asChild className="mt-4">
-                  <Link href="/auth">Login / Register</Link>
+                <Button asChild size="lg" className="mt-4 w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                  <Link href="/auth" className="flex items-center justify-center">
+                    <span className="whitespace-nowrap">Login / Register</span>
+                  </Link>
                 </Button>
               </div>
             )}
@@ -158,8 +160,10 @@ export default function ImageGeneratorPage() {
           <p className="text-sm text-muted-foreground mb-4">
             Uses OpenAI's DALL-E 3 model to generate high-quality, professional images from text descriptions.
           </p>
-          <Button asChild variant="outline">
-            <Link href="/">Back to Home</Link>
+          <Button asChild variant="outline" size="lg" className="text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+            <Link href="/" className="flex items-center justify-center">
+              <span className="whitespace-nowrap">Back to Home</span>
+            </Link>
           </Button>
         </div>
       </div>

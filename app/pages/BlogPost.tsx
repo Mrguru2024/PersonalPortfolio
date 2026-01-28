@@ -295,9 +295,9 @@ const BlogPostPage = () => {
             </AlertDescription>
           </Alert>
           <Link href="/blog">
-            <Button variant="outline" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Blog
+            <Button variant="outline" size="lg" className="flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+              <ArrowLeft className="h-4 w-4 shrink-0" />
+              <span className="whitespace-nowrap">Back to Blog</span>
             </Button>
           </Link>
         </div>
@@ -328,9 +328,9 @@ const BlogPostPage = () => {
         />
         
         <Link href="/blog">
-          <Button variant="ghost" className="mb-6 flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Blog
+          <Button variant="ghost" size="lg" className="mb-6 flex items-center justify-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="whitespace-nowrap">Back to Blog</span>
           </Button>
         </Link>
         

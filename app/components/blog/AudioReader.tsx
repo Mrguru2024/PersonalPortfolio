@@ -187,23 +187,29 @@ export function AudioReader({ content, title }: AudioReaderProps) {
               )}
               
               {isPlaying && !isPaused && (
-                <Button onClick={handlePause} size="sm" variant="outline">
-                  <Pause className="h-4 w-4 mr-2" />
-                  Pause
+                <Button onClick={handlePause} size="sm" variant="outline" className="min-h-[44px] touch-target text-xs sm:text-sm px-3 sm:px-4">
+                  <span className="flex items-center justify-center gap-2">
+                    <Pause className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Pause</span>
+                  </span>
                 </Button>
               )}
               
               {isPaused && (
-                <Button onClick={handlePlay} size="sm" variant="outline">
-                  <Play className="h-4 w-4 mr-2" />
-                  Resume
+                <Button onClick={handlePlay} size="sm" variant="outline" className="min-h-[44px] touch-target text-xs sm:text-sm px-3 sm:px-4">
+                  <span className="flex items-center justify-center gap-2">
+                    <Play className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Resume</span>
+                  </span>
                 </Button>
               )}
               
               {(isPlaying || isPaused) && (
-                <Button onClick={handleStop} size="sm" variant="outline">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Stop
+                <Button onClick={handleStop} size="sm" variant="outline" className="min-h-[44px] touch-target text-xs sm:text-sm px-3 sm:px-4">
+                  <span className="flex items-center justify-center gap-2">
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                    <span className="whitespace-nowrap">Stop</span>
+                  </span>
                 </Button>
               )}
             </div>
