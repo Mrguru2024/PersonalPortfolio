@@ -124,8 +124,8 @@ const BlogSection = () => {
 
         <div className="mt-12 text-center">
           <Link href="/blog">
-            <Button variant="outline" className="rounded-full">
-              View All Posts
+            <Button variant="outline" size="lg" className="rounded-full text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+              <span className="whitespace-nowrap">View All Posts</span>
             </Button>
           </Link>
         </div>

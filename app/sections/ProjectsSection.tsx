@@ -253,8 +253,9 @@ const ProjectsSection = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Button
+                        size="lg"
                         variant="outline"
-                        className="w-full sm:w-auto flex items-center gap-2 group"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 group text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                       >
                         <motion.div
                           animate={{ rotate: [0, 360] }}
@@ -263,11 +264,11 @@ const ProjectsSection = () => {
                             repeat: Infinity,
                             ease: "linear",
                           }}
-                          className="group-hover:text-primary"
+                          className="group-hover:text-primary shrink-0"
                         >
                           <Code className="h-4 w-4" />
                         </motion.div>
-                        <span>View Source Code</span>
+                        <span className="whitespace-nowrap">View Source Code</span>
                       </Button>
                     </motion.a>
                   )}

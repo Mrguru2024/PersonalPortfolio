@@ -166,16 +166,17 @@ const HeroSection = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => scrollToSection("contact")}
-                className="px-8 py-6 text-lg font-medium tracking-wide"
+                className="px-4 py-3 fold:px-6 fold:py-4 sm:px-6 sm:py-4 md:px-8 md:py-6 text-sm fold:text-base sm:text-base md:text-lg font-medium tracking-wide"
                 withPressEffect={true}
               >
-                <span className="flex items-center gap-2">
-                  Get In Touch
+                <span className="flex items-center justify-center gap-2">
+                  <span className="whitespace-nowrap">Get In Touch</span>
                   <motion.div
                     animate={{
                       x: hoverContactBtn ? 5 : 0
                     }}
                     transition={{ type: "spring", stiffness: 400 }}
+                    className="shrink-0"
                   >
                     <ArrowRight className="h-4 w-4 group-hover:text-primary transition-colors" />
                   </motion.div>

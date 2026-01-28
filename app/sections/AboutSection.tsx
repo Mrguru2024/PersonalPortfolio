@@ -44,10 +44,10 @@ const AboutSection = () => {
               </div>
             </div>
             
-            <a href="/resume">
-              <Button className="inline-flex items-center shadow-md hover:shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                <FileText className="mr-2 h-4 w-4" />
-                Download Resume
+            <a href="/resume" className="inline-block">
+              <Button size="lg" className="inline-flex items-center justify-center shadow-md hover:shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                <FileText className="mr-2 h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">Download Resume</span>
               </Button>
             </a>
           </motion.div>

@@ -75,7 +75,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 group">
+                <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2 group text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                   <motion.div
                     animate={{ 
                       rotate: [0, 15, 0],
@@ -86,10 +86,11 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                       repeat: Infinity,
                       repeatType: "loop" 
                     }}
+                    className="shrink-0"
                   >
-                    <Rocket className="h-5 w-5 group-hover:text-yellow-300 transition-colors" />
+                    <Rocket className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-yellow-300 transition-colors" />
                   </motion.div>
-                  Try Live Demo
+                  <span className="whitespace-nowrap">Try Live Demo</span>
                 </Button>
               </motion.a>
             </motion.div>
@@ -213,11 +214,12 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             whileTap={{ scale: 0.95 }}
           >
             <Link href={`/projects/${project.id}`}>
-              <Button variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-2 group">
-                <span>View Details</span>
+              <Button variant="outline" size="lg" className="w-full sm:w-auto flex items-center justify-center gap-2 group text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                <span className="whitespace-nowrap">View Details</span>
                 <motion.div
                   animate={isHovered ? { x: 5 } : { x: 0 }}
                   transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                  className="shrink-0"
                 >
                   <ArrowRight className="h-4 w-4 group-hover:text-primary" />
                 </motion.div>
