@@ -4,6 +4,8 @@
   "description": "Anthony 'MrGuru' Feaster's developer portfolio showcasing projects, skills, and blog",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
   "icons": [

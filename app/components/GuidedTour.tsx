@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Lightbulb, Target, Sparkles } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TourStep {
   id: string;
@@ -14,6 +15,7 @@ interface TourStep {
 }
 
 const GuidedTour: React.FC = () => {
+  const isMobile = useIsMobile();
   const [showTour, setShowTour] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [visited, setVisited] = useState<string[]>([]);
@@ -62,18 +64,20 @@ const GuidedTour: React.FC = () => {
     },
   ];
   
-  // Handle initial appearance after a slight delay
+  // Handle initial appearance: on desktop only, after a delay; on mobile don't auto-show (user taps "Guide me")
   useEffect(() => {
-    // Only show intro after 1.5 seconds
+    if (isMobile) {
+      setHasSeenIntro(true);
+      return;
+    }
     const timer = setTimeout(() => {
       if (!hasSeenIntro) {
         setShowTour(true);
         setHasSeenIntro(true);
       }
     }, 1500);
-    
     return () => clearTimeout(timer);
-  }, [hasSeenIntro]);
+  }, [hasSeenIntro, isMobile]);
   
   // Handle scroll position to dynamically show guides
   useEffect(() => {
@@ -167,17 +171,17 @@ const GuidedTour: React.FC = () => {
     }
   };
   
-  // Get the target element's position on the page
+  // Get the target element's position on the page; on mobile use higher anchor so popup fits on screen
   const getTargetPosition = (id: string) => {
+    if (typeof window === 'undefined') return { top: 200, left: 200 };
     if (id === 'intro') {
-      return { top: window.innerHeight / 2, left: window.innerWidth / 2 };
+      const top = isMobile ? window.innerHeight * 0.35 : window.innerHeight / 2;
+      return { top, left: window.innerWidth / 2 };
     }
-    
     const element = document.getElementById(id);
     if (!element) {
       return { top: window.innerHeight / 2, left: window.innerWidth / 2 };
     }
-    
     const rect = element.getBoundingClientRect();
     return {
       top: rect.top + window.scrollY + rect.height / 2,
@@ -203,10 +207,12 @@ const GuidedTour: React.FC = () => {
       <AnimatePresence>
         {showTour && (
           <motion.div
-            className="fixed z-50 max-w-md pointer-events-auto"
+            className="fixed z-50 w-[min(90vw,28rem)] max-w-md pointer-events-auto mx-auto left-0 right-0 sm:left-auto sm:right-auto sm:mx-0 sm:w-auto"
             style={{
               top: getTargetPosition(currentTourStep.id).top,
-              left: getTargetPosition(currentTourStep.id).left,
+              left: isMobile ? undefined : getTargetPosition(currentTourStep.id).left,
+              right: isMobile ? undefined : undefined,
+              transform: isMobile ? 'translateY(-50%)' : undefined,
             }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -217,14 +223,16 @@ const GuidedTour: React.FC = () => {
               {/* Arrow pointing to element */}
               <div className={getArrowPosition(currentTourStep.position)}></div>
               
-              {/* Content box - responsive padding */}
+              {/* Content box - responsive padding, smaller on mobile; max-height so it doesn't dominate small screens */}
               <div 
-                className={`rounded-lg shadow-xl backdrop-blur-md border border-white/20 p-3 md:p-5 ${getEmphasisStyle(currentTourStep.emphasis)}`}
+                className={`rounded-lg shadow-xl backdrop-blur-md border border-white/20 p-3 sm:p-4 md:p-5 max-h-[70vh] overflow-y-auto ${getEmphasisStyle(currentTourStep.emphasis)}`}
               >
                 {/* Close button */}
                 <button 
                   onClick={handleClose}
                   className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white"
+                  aria-label="Close tour"
+                  type="button"
                 >
                   <X size={18} />
                 </button>
@@ -254,14 +262,17 @@ const GuidedTour: React.FC = () => {
                       <button
                         onClick={handlePrevStep}
                         className="bg-white/20 hover:bg-white/30 p-1 rounded-full"
+                        aria-label="Previous step"
+                        type="button"
                       >
                         <ChevronLeft size={18} />
                       </button>
                     )}
-                    
                     <button
                       onClick={handleNextStep}
                       className="bg-white/20 hover:bg-white/30 p-1 rounded-full"
+                      aria-label={currentStep === tourSteps.length - 1 ? 'Finish tour' : 'Next step'}
+                      type="button"
                     >
                       {currentStep === tourSteps.length - 1 ? 'Done' : <ChevronRight size={18} />}
                     </button>
@@ -273,11 +284,16 @@ const GuidedTour: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Floating guide prompt (only shows when tour is not active) */}
+      {/* Floating guide prompt (only shows when tour is not active); on mobile left side to avoid overlapping nav/toggle */}
       {!showTour && (
         <motion.div
           ref={promptRef}
-          className="fixed bottom-20 right-5 z-40 cursor-pointer"
+          className="fixed z-40 cursor-pointer touch-target min-h-[44px] min-w-[44px] flex items-center justify-center md:min-h-0 md:min-w-0"
+          style={{
+            bottom: 'max(5.5rem, env(safe-area-inset-bottom, 0px))',
+            left: isMobile ? 'max(1rem, env(safe-area-inset-left, 0px))' : undefined,
+            right: isMobile ? undefined : 'max(1.25rem, env(safe-area-inset-right, 0px))',
+          }}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ 
             opacity: 1, 
@@ -288,12 +304,14 @@ const GuidedTour: React.FC = () => {
           onClick={restartTour}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
+          aria-label="Start guided tour"
         >
-          <div className="bg-primary text-white p-3 rounded-full shadow-lg flex items-center justify-center">
-            <Lightbulb size={20} />
+          <div className="bg-primary text-white p-2.5 md:p-3 rounded-full shadow-lg flex items-center justify-center">
+            <Lightbulb size={isMobile ? 18 : 20} />
           </div>
           <motion.div
-            className="absolute -top-8 right-0 bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs whitespace-nowrap font-medium shadow-md"
+            className="absolute -top-8 bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs whitespace-nowrap font-medium shadow-md hidden sm:block"
+            style={{ [isMobile ? 'left' : 'right']: 0 }}
             initial={{ opacity: 0, scale: 0 }}
             whileHover={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}

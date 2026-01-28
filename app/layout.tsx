@@ -63,8 +63,9 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "screen-orientation": "portrait",
-    "x5-orientation": "portrait",
+    "apple-mobile-web-app-capable": "yes",
+    "screen-orientation": "any",
+    "x5-orientation": "any",
   },
 };
 

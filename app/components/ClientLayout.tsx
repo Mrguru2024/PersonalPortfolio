@@ -145,7 +145,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     onNavToggle={() => {}}
                   />
                 </NoSSR>
-                <main className="flex-grow">
+                <main className="flex-grow pb-28 md:pb-32 safe-area-bottom">
                   <ErrorBoundary>{children}</ErrorBoundary>
                 </main>
                 <Footer />

@@ -104,11 +104,11 @@ const GuruCharacter: React.FC<{
         </div>
       </div>
       
-      {/* Dialog bubble */}
+      {/* Dialog bubble - smaller and less intrusive on mobile */}
       <AnimatePresence>
         {isActive && (
           <motion.div 
-            className="absolute p-3 rounded-lg bg-white/95 dark:bg-gray-800/95 w-44 md:w-48 z-10 text-xs md:text-sm border border-primary/20 pointer-events-auto cursor-pointer"
+            className="absolute p-2 sm:p-3 rounded-lg bg-white/95 dark:bg-gray-800/95 w-36 sm:w-44 md:w-48 z-10 text-xs md:text-sm border border-primary/20 pointer-events-auto cursor-pointer shadow-lg"
             style={{
               ...(isSmall
                 ? {
@@ -542,15 +542,16 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
     }
   }, [hasStartedJourney, showInitialAnimation]);
   
-  // Fade out initial animation after delay
+  // Fade out initial animation after delay; shorter on small screens so it's less intrusive
   useEffect(() => {
     if (showInitialAnimation) {
+      const delay = isSmall ? 2000 : isMobile ? 3000 : 4000;
       const timer = setTimeout(() => {
         setShowInitialAnimation(false);
-      }, 4000);
+      }, delay);
       return () => clearTimeout(timer);
     }
-  }, [showInitialAnimation]);
+  }, [showInitialAnimation, isSmall, isMobile]);
   
   // Start journey function
   const startJourney = () => {
@@ -635,18 +636,18 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
   
   return (
     <>
-      {/* Initial welcome animation */}
+      {/* Initial welcome animation - compact on small screens */}
       <AnimatePresence>
         {showInitialAnimation && !hasStartedJourney && (
           <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-primary/90 to-blue-600/90 text-white"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-primary/90 to-blue-600/90 text-white p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
             <motion.div 
-              className="text-center max-w-md px-6"
+              className="text-center max-w-md px-4 sm:px-6 w-full"
               initial={{ scale: 0.8, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -659,7 +660,7 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
                 <Bot size={isMobile ? 60 : 80} />
               </motion.div>
               <motion.h1 
-                className="text-xl md:text-3xl font-bold mb-2 md:mb-4"
+                className="text-lg sm:text-xl md:text-3xl font-bold mb-2 md:mb-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
@@ -667,12 +668,12 @@ const JourneyExperienceNew: React.FC<JourneyExperienceProps> = ({ activeSection 
                 Welcome to MrGuru's Digital Universe
               </motion.h1>
               <motion.p
-                className="text-sm md:text-lg mb-4 md:mb-6"
+                className="text-xs sm:text-sm md:text-lg mb-3 md:mb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.5 }}
               >
-                Prepare for an immersive journey through my skills, projects and expertise
+                {isSmall ? 'Journey through my skills & projects' : 'Prepare for an immersive journey through my skills, projects and expertise'}
               </motion.p>
               <motion.div
                 className="bg-white text-primary font-medium py-2 px-6 rounded-full shadow-lg flex items-center gap-2 mx-auto hover:bg-gray-100 transition-colors cursor-pointer"

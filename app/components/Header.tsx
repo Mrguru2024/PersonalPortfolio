@@ -155,11 +155,11 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
         </nav>
 
         {/* Mobile Menu Button */}
-        <div className="md:hidden flex items-center space-x-2">
+        <div className="lg:hidden flex items-center space-x-2">
           <ThemeToggle />
           <button
             onClick={toggleMobileMenu}
-            className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+            className="touch-target text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary rounded-md"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -169,56 +169,56 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-700">
-          <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="lg:hidden border-t border-gray-200 dark:border-gray-700 safe-area-insets">
+          <div className="container mx-auto px-4 py-4 space-y-1">
             {isHomePage ? (
               navItems.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => scrollToSection(item.href)}
-                  className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                  className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                 >
                   {item.name}
                 </button>
               ))
             ) : (
               <>
-                <Link href="/" className="block text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link href="/" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
                   Home
                 </Link>
-                <Link href="/blog" className="block text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link href="/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
                   Blog
                 </Link>
-                <Link href="/resume" className="block text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                <Link href="/resume" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
                   Resume
                 </Link>
-                <Link href="/generate-images" className="block text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition flex items-center">
-                  <Wand2 className="h-4 w-4 mr-2" /> AI Images
+                <Link href="/generate-images" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition flex items-center">
+                  <Wand2 className="h-4 w-4 mr-2 shrink-0" /> AI Images
                 </Link>
               </>
             )}
 
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
               {user ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Logged in as @{user.username}</span>
+                <div className="space-y-1">
+                  <div className="px-4 py-2">
+                    <span className="text-sm font-medium text-muted-foreground">Logged in as @{user.username}</span>
                   </div>
                   {user.isAdmin && user.adminApproved && (
-                    <Link href="/admin/blog" className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
+                    <Link href="/admin/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
                       Admin Dashboard
                     </Link>
                   )}
                   <button
                     onClick={() => logoutMutation.mutate()}
-                    className="flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                    className="touch-target flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                   >
-                    <LogOut className="h-4 w-4 mr-2" /> Log out
+                    <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
                   </button>
                 </div>
               ) : (
-                <Link href="/auth" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition">
-                  <LogIn className="h-4 w-4 mr-2" /> Login / Register
+                <Link href="/auth" className="touch-target flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
+                  <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login / Register
                 </Link>
               )}
             </div>

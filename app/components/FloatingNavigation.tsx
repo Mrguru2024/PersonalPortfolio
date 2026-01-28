@@ -76,11 +76,16 @@ const FloatingNavigation: React.FC = () => {
     return null;
   }
   
+  const safeBottom = "max(3.5rem, env(safe-area-inset-bottom, 0px))";
+  const safeRight = "max(1rem, env(safe-area-inset-right, 0px))";
+  const safeLeft = "max(1rem, env(safe-area-inset-left, 0px))";
+
   return (
     <>
       {/* Mobile Navigation Button */}
       <motion.div
-        className="fixed bottom-14 right-4 z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
+        className="fixed z-40 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer touch-target min-w-[48px] min-h-[48px] flex items-center justify-center"
+        style={{ bottom: safeBottom, right: safeRight }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
@@ -101,24 +106,25 @@ const FloatingNavigation: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-28 right-4 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
+            className="fixed z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 md:hidden"
+            style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))", right: safeRight }}
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               {navItems.map((item) => (
                 <motion.div
                   key={item.id}
-                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${
+                  className={`touch-target flex items-center gap-2 p-3 rounded-md cursor-pointer min-h-[44px] ${
                     activeSection === item.id
                       ? 'bg-primary/10 text-primary'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                   onClick={() => scrollToSection(item.id)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -139,7 +145,8 @@ const FloatingNavigation: React.FC = () => {
       
       {/* Desktop Navigation */}
       <motion.div
-        className="fixed left-[40%] transform -translate-x-1/2 bottom-14 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
+        className="fixed left-[40%] transform -translate-x-1/2 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-full shadow-lg p-1.5 hidden md:flex"
+        style={{ bottom: safeBottom }}
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -215,7 +222,8 @@ const FloatingNavigation: React.FC = () => {
       
       {/* Scroll to top button for mobile */}
       <motion.div
-        className="fixed bottom-14 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer"
+        className="fixed z-50 bg-primary text-white p-3 rounded-full shadow-lg md:hidden cursor-pointer touch-target min-w-[48px] min-h-[48px] flex items-center justify-center"
+        style={{ bottom: safeBottom, left: safeLeft }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={scrollToTop}

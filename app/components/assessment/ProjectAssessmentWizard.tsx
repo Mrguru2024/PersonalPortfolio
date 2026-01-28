@@ -5,18 +5,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
-import { 
-  ArrowRight, 
-  ArrowLeft, 
-  CheckCircle2, 
-  Sparkles, 
+import {
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Sparkles,
   Lightbulb,
   DollarSign,
   Loader2,
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -31,8 +37,7 @@ import {
 } from "@/components/ui/form";
 import { FormLabelWithTooltip } from "@/components/ui/FormLabelWithTooltip";
 import { DragDropFeatureSelector } from "./DragDropFeatureSelector";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { VoiceToTextInput } from "./VoiceToTextInput";
 import {
   Select,
   SelectContent,
@@ -41,12 +46,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { projectAssessmentSchema, type ProjectAssessment } from "@shared/assessmentSchema";
+import {
+  projectAssessmentSchema,
+  type ProjectAssessment,
+} from "@shared/assessmentSchema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { AIAssistant } from "./AIAssistant";
-import { getServiceMapping, getServiceEducationalContent, getServiceBenefits } from "@/lib/serviceMapping";
+import {
+  getServiceMapping,
+  getServiceEducationalContent,
+  getServiceBenefits,
+} from "@/lib/serviceMapping";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const STEPS = [
@@ -76,9 +88,13 @@ interface ProjectAssessmentWizardProps {
   serviceId?: string | null;
 }
 
-export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardProps = {}) {
+export function ProjectAssessmentWizard({
+  serviceId,
+}: ProjectAssessmentWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [pricingPreview, setPricingPreview] = useState<PricingPreview | null>(null);
+  const [pricingPreview, setPricingPreview] = useState<PricingPreview | null>(
+    null,
+  );
   const [isCalculatingPricing, setIsCalculatingPricing] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const { toast } = useToast();
@@ -86,7 +102,7 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
 
   // Get service mapping if serviceId is provided
   const serviceMapping = serviceId ? getServiceMapping(serviceId) : null;
-  
+
   // Pre-populate default values based on service
   const getDefaultValues = () => {
     const baseDefaults = {
@@ -96,7 +112,7 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
       phone: "",
       company: "",
       role: "",
-      
+
       // Step 2: Project Vision & Goals
       projectName: "",
       projectType: undefined,
@@ -104,7 +120,7 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
       targetAudience: "",
       mainGoals: [],
       successMetrics: "",
-      
+
       // Step 3: Technical Requirements
       platform: [],
       preferredTechStack: [],
@@ -117,7 +133,7 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
       paymentProcessing: false,
       realTimeFeatures: false,
       apiRequirements: undefined,
-      
+
       // Step 4: Design & UX Requirements
       designStyle: undefined,
       hasBrandGuidelines: false,
@@ -126,21 +142,21 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
       accessibilityRequirements: undefined,
       userExperiencePriority: undefined,
       contentManagement: undefined,
-      
+
       // Step 5: Business Goals & Metrics
       businessStage: undefined,
       primaryBusinessGoal: undefined,
       expectedUsers: undefined,
       revenueModel: undefined,
       competitiveAdvantage: "",
-      
+
       // Step 6: Timeline & Budget
       preferredTimeline: undefined,
       budgetRange: undefined,
       budgetFlexibility: undefined,
       ongoingMaintenance: false,
       hostingPreferences: undefined,
-      
+
       // Additional Information
       additionalNotes: "",
       referralSource: serviceId || "",
@@ -153,9 +169,13 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
         ...baseDefaults,
         ...serviceMapping.prePopulatedFields,
         // Ensure arrays are properly merged
-        platform: serviceMapping.prePopulatedFields.platform || baseDefaults.platform,
-        preferredTechStack: serviceMapping.prePopulatedFields.preferredTechStack || baseDefaults.preferredTechStack,
-        mustHaveFeatures: serviceMapping.suggestedFeatures || baseDefaults.mustHaveFeatures,
+        platform:
+          serviceMapping.prePopulatedFields.platform || baseDefaults.platform,
+        preferredTechStack:
+          serviceMapping.prePopulatedFields.preferredTechStack ||
+          baseDefaults.preferredTechStack,
+        mustHaveFeatures:
+          serviceMapping.suggestedFeatures || baseDefaults.mustHaveFeatures,
       };
     }
 
@@ -172,9 +192,9 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
 
   // Calculate pricing preview when relevant fields change
   useEffect(() => {
-    const hasEnoughData = 
-      watchedValues.projectType && 
-      watchedValues.platform && 
+    const hasEnoughData =
+      watchedValues.projectType &&
+      watchedValues.platform &&
       watchedValues.platform.length > 0;
 
     if (hasEnoughData && currentStep >= 3) {
@@ -227,7 +247,10 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
       // Store assessment data for results page
       if (data.assessment?.id) {
         try {
-          if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+          if (
+            typeof window !== "undefined" &&
+            typeof localStorage !== "undefined"
+          ) {
             const fullAssessment = {
               id: data.assessment.id,
               name: form.getValues("name"),
@@ -236,20 +259,23 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
               pricingBreakdown: data.assessment.pricingBreakdown,
               createdAt: new Date().toISOString(),
             };
-            localStorage.setItem(`assessment_${data.assessment.id}`, JSON.stringify(fullAssessment));
+            localStorage.setItem(
+              `assessment_${data.assessment.id}`,
+              JSON.stringify(fullAssessment),
+            );
           }
         } catch (error) {
           console.warn("Failed to save assessment to localStorage:", error);
           // Continue anyway - the data is still available from the API
         }
       }
-      
+
       const budgetRange = form.getValues("budgetRange");
       const isLowBudget = budgetRange === "under-5k";
-      
+
       toast({
         title: "Assessment Submitted!",
-        description: isLowBudget 
+        description: isLowBudget
           ? "Your professional proposal with realistic budget options will be generated. Check the results page to view and download it."
           : "Your professional proposal will be generated. Check the results page to view and download it.",
       });
@@ -329,7 +355,12 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
             Let's Build Your Vision
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Answer a few questions and receive a personalized quote tailored to your project
+            Answer a few questions and receive a personalized quote tailored to
+            your project
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Tip: Use the microphone on any text field to speak your answers
+            instead of typing.
           </p>
         </div>
 
@@ -339,7 +370,9 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
             <span className="text-sm font-medium">
               Step {currentStep} of {STEPS.length}
             </span>
-            <span className="text-sm text-gray-500">{Math.round(progress)}% Complete</span>
+            <span className="text-sm text-gray-500">
+              {Math.round(progress)}% Complete
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -358,8 +391,8 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
                   step.id < currentStep
                     ? "bg-primary text-primary-foreground"
                     : step.id === currentStep
-                    ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                    : "bg-gray-200 dark:bg-gray-800 text-gray-500"
+                      ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                      : "bg-gray-200 dark:bg-gray-800 text-gray-500"
                 }`}
               >
                 {step.id < currentStep ? (
@@ -368,7 +401,9 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
                   step.id
                 )}
               </div>
-              <span className="text-xs text-center font-medium">{step.title}</span>
+              <span className="text-xs text-center font-medium">
+                {step.title}
+              </span>
             </div>
           ))}
         </div>
@@ -395,10 +430,18 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
                         />
                       )}
                     </CardTitle>
-                    <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
+                    <CardDescription>
+                      {STEPS[currentStep - 1].description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {renderStep(currentStep, form, watchedValues, serviceId, handlePriceUpdate)}
+                    {renderStep(
+                      currentStep,
+                      form,
+                      watchedValues,
+                      serviceId,
+                      handlePriceUpdate,
+                    )}
                   </CardContent>
                 </Card>
 
@@ -408,41 +451,61 @@ export function ProjectAssessmentWizard({ serviceId }: ProjectAssessmentWizardPr
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-2 mb-4">
                         <DollarSign className="h-5 w-5 text-primary" />
-                        <h3 className="font-semibold">Market Price Reference</h3>
+                        <h3 className="font-semibold">
+                          Market Price Reference
+                        </h3>
                         {isCalculatingPricing && (
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                         )}
                       </div>
                       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                          ⚠️ Important: These are market average prices for reference only
+                          ⚠️ Important: These are market average prices for
+                          reference only
                         </p>
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                          Your custom quote will be sent to you after completing this assessment. Our pricing is tailored to your specific project needs and budget.
+                          Your custom quote will be sent to you after completing
+                          this assessment. Our pricing is tailored to your
+                          specific project needs and budget.
                         </p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Market Average Range</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            Market Average Range
+                          </p>
                           <p className="text-2xl font-bold text-primary">
-                            ${pricingPreview.estimatedRange.min.toLocaleString()} - ${pricingPreview.estimatedRange.max.toLocaleString()}
+                            $
+                            {pricingPreview.estimatedRange.min.toLocaleString()}{" "}
+                            - $
+                            {pricingPreview.estimatedRange.max.toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Industry Average</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            Industry Average
+                          </p>
                           <p className="text-2xl font-bold">
-                            ${pricingPreview.marketComparison.average.toLocaleString()}
+                            $
+                            {pricingPreview.marketComparison.average.toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Market Range</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            Market Range
+                          </p>
                           <p className="text-lg">
-                            ${pricingPreview.marketComparison.lowEnd.toLocaleString()} - ${pricingPreview.marketComparison.highEnd.toLocaleString()}
+                            $
+                            {pricingPreview.marketComparison.lowEnd.toLocaleString()}{" "}
+                            - $
+                            {pricingPreview.marketComparison.highEnd.toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic">
-                        💡 These prices are based on industry averages. Your personalized quote will be delivered via email after you complete and submit this assessment.
+                        💡 These prices are based on industry averages. Your
+                        personalized quote will be delivered via email after you
+                        complete and submit this assessment.
                       </p>
                     </CardContent>
                   </Card>
@@ -500,7 +563,13 @@ function getFieldsForStep(step: number): (keyof ProjectAssessment)[] {
     case 1:
       return ["name", "email"];
     case 2:
-      return ["projectName", "projectType", "projectDescription", "targetAudience", "mainGoals"];
+      return [
+        "projectName",
+        "projectType",
+        "projectDescription",
+        "targetAudience",
+        "mainGoals",
+      ];
     case 3:
       return ["platform", "mustHaveFeatures"];
     case 4:
@@ -520,48 +589,70 @@ function renderStep(
   form: any,
   watchedValues: Partial<ProjectAssessment>,
   serviceId?: string | null,
-  handlePriceUpdate?: (newPrice: number) => void
+  handlePriceUpdate?: (newPrice: number) => void,
 ) {
   switch (step) {
     case 1:
       return <Step1BasicInfo form={form} serviceId={serviceId} />;
     case 2:
       return <Step2ProjectVision form={form} watchedValues={watchedValues} />;
-      case 3:
-        return <Step3TechnicalNeeds form={form} onPriceUpdate={handlePriceUpdate} serviceId={serviceId} />;
-      case 4:
-        return <Step4DesignUX form={form} watchedValues={watchedValues} />;
-      case 5:
-        return <Step5BusinessGoals form={form} watchedValues={watchedValues} serviceId={serviceId} />;
+    case 3:
+      return (
+        <Step3TechnicalNeeds
+          form={form}
+          onPriceUpdate={handlePriceUpdate}
+          serviceId={serviceId}
+        />
+      );
+    case 4:
+      return <Step4DesignUX form={form} watchedValues={watchedValues} />;
+    case 5:
+      return (
+        <Step5BusinessGoals
+          form={form}
+          watchedValues={watchedValues}
+          serviceId={serviceId}
+        />
+      );
     case 6:
       return <Step6TimelineBudget form={form} />;
     case 7:
-      return <Step7Review form={form} watchedValues={watchedValues} serviceId={serviceId} />;
+      return (
+        <Step7Review
+          form={form}
+          watchedValues={watchedValues}
+          serviceId={serviceId}
+        />
+      );
     default:
       return null;
   }
 }
 
 // Service Educational Content Component
-function ServiceEducationalContent({ serviceId, step }: { serviceId?: string | null; step: number }) {
+function ServiceEducationalContent({
+  serviceId,
+  step,
+}: {
+  serviceId?: string | null;
+  step: number;
+}) {
   if (!serviceId) return null;
-  
+
   const content = getServiceEducationalContent(serviceId, step);
   const benefits = getServiceBenefits(serviceId);
   const mapping = getServiceMapping(serviceId);
-  
+
   if (!content && benefits.length === 0) return null;
-  
+
   return (
     <Alert className="mb-6 border-primary/20 bg-primary/5">
       <Info className="h-4 w-4" />
       <AlertTitle className="flex items-center gap-2">
-        {mapping?.title || 'Service Information'}
+        {mapping?.title || "Service Information"}
       </AlertTitle>
       <AlertDescription className="mt-2 space-y-3">
-        {content && (
-          <p className="text-sm leading-relaxed">{content}</p>
-        )}
+        {content && <p className="text-sm leading-relaxed">{content}</p>}
         {benefits.length > 0 && (
           <div className="mt-3">
             <p className="text-sm font-semibold mb-2">Key Benefits:</p>
@@ -581,7 +672,13 @@ function ServiceEducationalContent({ serviceId, step }: { serviceId?: string | n
 }
 
 // Step 1: Basic Information
-function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | null }) {
+function Step1BasicInfo({
+  form,
+  serviceId,
+}: {
+  form: any;
+  serviceId?: string | null;
+}) {
   return (
     <div className="space-y-6">
       <ServiceEducationalContent serviceId={serviceId} step={1} />
@@ -592,7 +689,13 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
           <FormItem>
             <FormLabel>Full Name *</FormLabel>
             <FormControl>
-              <Input placeholder="John Doe" {...field} value={field.value || ""} />
+              <VoiceToTextInput
+                variant="input"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="John Doe"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -606,7 +709,14 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
           <FormItem>
             <FormLabel>Email Address *</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="john@example.com" {...field} value={field.value || ""} />
+              <VoiceToTextInput
+                variant="input"
+                type="email"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="john@example.com"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -621,7 +731,14 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="+1 (555) 123-4567" {...field} value={field.value || ""} />
+                <VoiceToTextInput
+                  variant="input"
+                  type="tel"
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="+1 (555) 123-4567"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -635,7 +752,13 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
             <FormItem>
               <FormLabel>Company Name</FormLabel>
               <FormControl>
-                <Input placeholder="Acme Inc." {...field} value={field.value || ""} />
+                <VoiceToTextInput
+                  variant="input"
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Acme Inc."
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -650,7 +773,13 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
           <FormItem>
             <FormLabel>Your Role</FormLabel>
             <FormControl>
-              <Input placeholder="CEO, Product Manager, etc." {...field} />
+              <VoiceToTextInput
+                variant="input"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="CEO, Product Manager, etc."
+              />
             </FormControl>
             <FormDescription>What's your role in this project?</FormDescription>
             <FormMessage />
@@ -662,7 +791,13 @@ function Step1BasicInfo({ form, serviceId }: { form: any; serviceId?: string | n
 }
 
 // Step 2: Project Vision
-function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues: any }) {
+function Step2ProjectVision({
+  form,
+  watchedValues,
+}: {
+  form: any;
+  watchedValues: any;
+}) {
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
@@ -695,9 +830,15 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
         render={({ field }) => (
           <FormItem>
             <FormLabel>Project Name *</FormLabel>
-              <FormControl>
-                <Input placeholder="My Awesome Project" {...field} value={field.value || ""} />
-              </FormControl>
+            <FormControl>
+              <VoiceToTextInput
+                variant="input"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="My Awesome Project"
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -737,11 +878,13 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
           <FormItem>
             <FormLabel>Project Description *</FormLabel>
             <FormControl>
-              <Textarea
-                placeholder="Describe your project vision, what problem it solves, and what makes it unique..."
-                className="min-h-[120px]"
-                {...field}
+              <VoiceToTextInput
+                variant="textarea"
                 value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Describe your project vision, what problem it solves, and what makes it unique..."
+                inputClassName="min-h-[120px]"
               />
             </FormControl>
             <FormDescription>
@@ -784,11 +927,13 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
           <FormItem>
             <FormLabel>Target Audience *</FormLabel>
             <FormControl>
-              <Textarea
-                placeholder="Who will use this product? (e.g., small business owners, tech-savvy millennials, enterprise teams...)"
-                className="min-h-[80px]"
-                {...field}
+              <VoiceToTextInput
+                variant="textarea"
                 value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Who will use this product? (e.g., small business owners, tech-savvy millennials, enterprise teams...)"
+                inputClassName="min-h-[80px]"
               />
             </FormControl>
             <FormMessage />
@@ -821,9 +966,7 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
                 name="mainGoals"
                 render={({ field }) => {
                   return (
-                    <FormItem
-                      className="flex flex-row items-start space-x-3 space-y-0"
-                    >
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
                           checked={field.value?.includes(goal)}
@@ -831,7 +974,9 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
                             return checked
                               ? field.onChange([...field.value, goal])
                               : field.onChange(
-                                  field.value?.filter((value: string) => value !== goal)
+                                  field.value?.filter(
+                                    (value: string) => value !== goal,
+                                  ),
                                 );
                           }}
                         />
@@ -856,10 +1001,13 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
           <FormItem>
             <FormLabel>Success Metrics</FormLabel>
             <FormControl>
-              <Textarea
+              <VoiceToTextInput
+                variant="textarea"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
                 placeholder="How will you measure success? (e.g., user signups, revenue, engagement metrics...)"
-                className="min-h-[80px]"
-                {...field}
+                inputClassName="min-h-[80px]"
               />
             </FormControl>
             <FormMessage />
@@ -871,7 +1019,15 @@ function Step2ProjectVision({ form, watchedValues }: { form: any; watchedValues:
 }
 
 // Step 3: Technical Needs (continuing in next part due to length)
-function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; onPriceUpdate?: (price: number) => void; serviceId?: string | null }) {
+function Step3TechnicalNeeds({
+  form,
+  onPriceUpdate,
+  serviceId,
+}: {
+  form: any;
+  onPriceUpdate?: (price: number) => void;
+  serviceId?: string | null;
+}) {
   const [featureSuggestions, setFeatureSuggestions] = useState<string[]>([]);
   const projectType = form.watch("projectType");
   const mustHaveFeatures = form.watch("mustHaveFeatures") || [];
@@ -903,44 +1059,48 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
         render={() => (
           <FormItem>
             <div className="mb-4">
-              <FormLabelWithTooltip 
-                label="Platform(s)" 
+              <FormLabelWithTooltip
+                label="Platform(s)"
                 term="platform"
                 definition="The devices or systems where your project will be available - like websites (computers/phones), mobile apps (iPhone/Android), or desktop applications."
-                required 
+                required
               />
-              <FormDescription>Where will your project be available?</FormDescription>
+              <FormDescription>
+                Where will your project be available?
+              </FormDescription>
             </div>
-            {["web", "ios", "android", "desktop", "api-only"].map((platform) => (
-              <FormField
-                key={platform}
-                control={form.control}
-                name="platform"
-                render={({ field }) => {
-                  return (
-                    <FormItem
-                      className="flex flex-row items-start space-x-3 space-y-0"
-                    >
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value?.includes(platform)}
-                          onCheckedChange={(checked) => {
-                            return checked
-                              ? field.onChange([...field.value, platform])
-                              : field.onChange(
-                                  field.value?.filter((value: string) => value !== platform)
-                                );
-                          }}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer capitalize">
-                        {platform.replace("-", " ")}
-                      </FormLabel>
-                    </FormItem>
-                  );
-                }}
-              />
-            ))}
+            {["web", "ios", "android", "desktop", "api-only"].map(
+              (platform) => (
+                <FormField
+                  key={platform}
+                  control={form.control}
+                  name="platform"
+                  render={({ field }) => {
+                    return (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(platform)}
+                            onCheckedChange={(checked) => {
+                              return checked
+                                ? field.onChange([...field.value, platform])
+                                : field.onChange(
+                                    field.value?.filter(
+                                      (value: string) => value !== platform,
+                                    ),
+                                  );
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer capitalize">
+                          {platform.replace("-", " ")}
+                        </FormLabel>
+                      </FormItem>
+                    );
+                  }}
+                />
+              ),
+            )}
             <FormMessage />
           </FormItem>
         )}
@@ -961,10 +1121,18 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="simple">Simple (Basic data, few tables)</SelectItem>
-                <SelectItem value="moderate">Moderate (Standard database structure)</SelectItem>
-                <SelectItem value="complex">Complex (Advanced relationships, multiple data sources)</SelectItem>
-                <SelectItem value="enterprise">Enterprise (Large scale, complex architecture)</SelectItem>
+                <SelectItem value="simple">
+                  Simple (Basic data, few tables)
+                </SelectItem>
+                <SelectItem value="moderate">
+                  Moderate (Standard database structure)
+                </SelectItem>
+                <SelectItem value="complex">
+                  Complex (Advanced relationships, multiple data sources)
+                </SelectItem>
+                <SelectItem value="enterprise">
+                  Enterprise (Large scale, complex architecture)
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -977,8 +1145,8 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
         name="userAuthentication"
         render={({ field }) => (
           <FormItem>
-            <FormLabelWithTooltip 
-              label="User Authentication" 
+            <FormLabelWithTooltip
+              label="User Authentication"
               term="authentication"
             />
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -990,7 +1158,9 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
               <SelectContent>
                 <SelectItem value="none">None Required</SelectItem>
                 <SelectItem value="basic">Basic (Email/Password)</SelectItem>
-                <SelectItem value="social-login">Social Login (Google, Facebook, etc.)</SelectItem>
+                <SelectItem value="social-login">
+                  Social Login (Google, Facebook, etc.)
+                </SelectItem>
                 <SelectItem value="enterprise-sso">Enterprise SSO</SelectItem>
                 <SelectItem value="custom">Custom Authentication</SelectItem>
               </SelectContent>
@@ -1012,8 +1182,8 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
               />
             </FormControl>
             <div className="space-y-1 leading-none">
-              <FormLabelWithTooltip 
-                label="Payment Processing" 
+              <FormLabelWithTooltip
+                label="Payment Processing"
                 term="payment-processing"
               />
               <FormDescription>
@@ -1036,8 +1206,8 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
               />
             </FormControl>
             <div className="space-y-1 leading-none">
-              <FormLabelWithTooltip 
-                label="Real-time Features" 
+              <FormLabelWithTooltip
+                label="Real-time Features"
                 term="real-time-chat"
                 definition="Features that update instantly without refreshing the page, like live chat, notifications, or collaborative editing."
               />
@@ -1081,38 +1251,44 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
             <div className="mb-4">
               <FormLabel>Must-Have Features *</FormLabel>
               <FormDescription>
-                Select all essential features. After selecting, you can drag and drop to remove optional features and adjust your budget.
+                Select all essential features. After selecting, you can drag and
+                drop to remove optional features and adjust your budget.
               </FormDescription>
             </div>
-            {Array.from(new Set([
-              "User dashboard",
-              "Admin panel",
-              "Search functionality",
-              "File upload/download",
-              "Email notifications",
-              "Analytics dashboard",
-              "Multi-language support",
-              "Export/Import data",
-              ...(serviceMapping?.suggestedFeatures || []),
-              ...featureSuggestions,
-            ])).map((feature) => (
+            {Array.from(
+              new Set([
+                "User dashboard",
+                "Admin panel",
+                "Search functionality",
+                "File upload/download",
+                "Email notifications",
+                "Analytics dashboard",
+                "Multi-language support",
+                "Export/Import data",
+                ...(serviceMapping?.suggestedFeatures || []),
+                ...featureSuggestions,
+              ]),
+            ).map((feature) => (
               <FormField
                 key={feature}
                 control={form.control}
                 name="mustHaveFeatures"
                 render={({ field: nestedField }) => {
                   return (
-                    <FormItem
-                      className="flex flex-row items-start space-x-3 space-y-0"
-                    >
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
                           checked={nestedField.value?.includes(feature)}
                           onCheckedChange={(checked) => {
                             return checked
-                              ? nestedField.onChange([...nestedField.value, feature])
+                              ? nestedField.onChange([
+                                  ...nestedField.value,
+                                  feature,
+                                ])
                               : nestedField.onChange(
-                                  nestedField.value?.filter((value: string) => value !== feature)
+                                  nestedField.value?.filter(
+                                    (value: string) => value !== feature,
+                                  ),
                                 );
                           }}
                         />
@@ -1160,7 +1336,9 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
               <SelectContent>
                 <SelectItem value="static">Static Content (No CMS)</SelectItem>
                 <SelectItem value="basic-cms">Basic CMS</SelectItem>
-                <SelectItem value="headless-cms">Headless CMS (Contentful, Strapi, etc.)</SelectItem>
+                <SelectItem value="headless-cms">
+                  Headless CMS (Contentful, Strapi, etc.)
+                </SelectItem>
                 <SelectItem value="custom-cms">Custom CMS</SelectItem>
               </SelectContent>
             </Select>
@@ -1176,7 +1354,9 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
           <FormItem>
             <div className="mb-4">
               <FormLabel>Third-party Integrations</FormLabel>
-              <FormDescription>Select any integrations you need</FormDescription>
+              <FormDescription>
+                Select any integrations you need
+              </FormDescription>
             </div>
             {[
               "Stripe/Payment Gateway",
@@ -1194,9 +1374,7 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
                 name="integrations"
                 render={({ field }) => {
                   return (
-                    <FormItem
-                      className="flex flex-row items-start space-x-3 space-y-0"
-                    >
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
                           checked={field.value?.includes(integration)}
@@ -1204,7 +1382,9 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
                             return checked
                               ? field.onChange([...field.value, integration])
                               : field.onChange(
-                                  field.value?.filter((value: string) => value !== integration)
+                                  field.value?.filter(
+                                    (value: string) => value !== integration,
+                                  ),
                                 );
                           }}
                         />
@@ -1226,7 +1406,13 @@ function Step3TechnicalNeeds({ form, onPriceUpdate, serviceId }: { form: any; on
 }
 
 // Step 4: Design & UX
-function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any }) {
+function Step4DesignUX({
+  form,
+  watchedValues,
+}: {
+  form: any;
+  watchedValues: any;
+}) {
   return (
     <div className="space-y-6">
       <FormField
@@ -1244,10 +1430,14 @@ function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any 
               <SelectContent>
                 <SelectItem value="minimalist">Minimalist & Clean</SelectItem>
                 <SelectItem value="modern">Modern & Trendy</SelectItem>
-                <SelectItem value="corporate">Corporate & Professional</SelectItem>
+                <SelectItem value="corporate">
+                  Corporate & Professional
+                </SelectItem>
                 <SelectItem value="creative">Creative & Bold</SelectItem>
                 <SelectItem value="custom">Fully Custom Design</SelectItem>
-                <SelectItem value="not-sure">Not Sure / Open to Suggestions</SelectItem>
+                <SelectItem value="not-sure">
+                  Not Sure / Open to Suggestions
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1284,11 +1474,13 @@ function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any 
             <FormItem>
               <FormLabel>Brand Guidelines Details</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Describe your brand guidelines, colors, fonts, or provide links to style guides..."
-                  className="min-h-[100px]"
-                  {...field}
+                <VoiceToTextInput
+                  variant="textarea"
                   value={field.value || ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Describe your brand guidelines, colors, fonts, or provide links to style guides..."
+                  inputClassName="min-h-[100px]"
                 />
               </FormControl>
               <FormMessage />
@@ -1331,7 +1523,9 @@ function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any 
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="basic">Basic (Standard web accessibility)</SelectItem>
+                <SelectItem value="basic">
+                  Basic (Standard web accessibility)
+                </SelectItem>
                 <SelectItem value="wcag-aa">WCAG AA Compliance</SelectItem>
                 <SelectItem value="wcag-aaa">WCAG AAA Compliance</SelectItem>
                 <SelectItem value="custom">Custom Requirements</SelectItem>
@@ -1371,7 +1565,15 @@ function Step4DesignUX({ form, watchedValues }: { form: any; watchedValues: any 
 }
 
 // Step 5: Business Goals
-function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; watchedValues: any; serviceId?: string | null }) {
+function Step5BusinessGoals({
+  form,
+  watchedValues,
+  serviceId,
+}: {
+  form: any;
+  watchedValues: any;
+  serviceId?: string | null;
+}) {
   return (
     <div className="space-y-6">
       <ServiceEducationalContent serviceId={serviceId} step={5} />
@@ -1395,8 +1597,12 @@ function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; wat
               <SelectContent>
                 <SelectItem value="idea">Just an Idea</SelectItem>
                 <SelectItem value="mvp">Building MVP</SelectItem>
-                <SelectItem value="existing-product">Existing Product (Improvement/Redesign)</SelectItem>
-                <SelectItem value="scaling">Scaling Existing Product</SelectItem>
+                <SelectItem value="existing-product">
+                  Existing Product (Improvement/Redesign)
+                </SelectItem>
+                <SelectItem value="scaling">
+                  Scaling Existing Product
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1417,11 +1623,19 @@ function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; wat
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="increase-revenue">Increase Revenue</SelectItem>
+                <SelectItem value="increase-revenue">
+                  Increase Revenue
+                </SelectItem>
                 <SelectItem value="reduce-costs">Reduce Costs</SelectItem>
-                <SelectItem value="improve-efficiency">Improve Efficiency</SelectItem>
-                <SelectItem value="expand-market">Expand to New Markets</SelectItem>
-                <SelectItem value="enhance-brand">Enhance Brand Presence</SelectItem>
+                <SelectItem value="improve-efficiency">
+                  Improve Efficiency
+                </SelectItem>
+                <SelectItem value="expand-market">
+                  Expand to New Markets
+                </SelectItem>
+                <SelectItem value="enhance-brand">
+                  Enhance Brand Presence
+                </SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
@@ -1468,11 +1682,17 @@ function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; wat
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="subscription">Subscription/Monthly Recurring</SelectItem>
+                <SelectItem value="subscription">
+                  Subscription/Monthly Recurring
+                </SelectItem>
                 <SelectItem value="one-time">One-time Purchase</SelectItem>
-                <SelectItem value="freemium">Freemium (Free + Paid Tiers)</SelectItem>
+                <SelectItem value="freemium">
+                  Freemium (Free + Paid Tiers)
+                </SelectItem>
                 <SelectItem value="advertising">Advertising Revenue</SelectItem>
-                <SelectItem value="marketplace">Marketplace/Commission</SelectItem>
+                <SelectItem value="marketplace">
+                  Marketplace/Commission
+                </SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
@@ -1488,10 +1708,13 @@ function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; wat
           <FormItem>
             <FormLabel>Competitive Advantage</FormLabel>
             <FormControl>
-              <Textarea
+              <VoiceToTextInput
+                variant="textarea"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
                 placeholder="What makes your project unique? What's your competitive advantage?"
                 className="min-h-[100px]"
-                {...field}
               />
             </FormControl>
             <FormMessage />
@@ -1506,7 +1729,7 @@ function Step5BusinessGoals({ form, watchedValues, serviceId }: { form: any; wat
 function Step6TimelineBudget({ form }: { form: any }) {
   const budgetRange = form.watch("budgetRange");
   const isLowBudget = budgetRange === "under-5k";
-  
+
   return (
     <div className="space-y-6">
       {isLowBudget && (
@@ -1515,14 +1738,15 @@ function Step6TimelineBudget({ form }: { form: any }) {
             💡 Realistic Proposal for Your Budget
           </h3>
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            We understand your budget is under $5,000. After you complete this assessment, 
-            you'll receive a professional proposal with realistic options tailored to your budget, 
-            including phased development approaches and scope adjustments to deliver maximum value 
-            within your budget constraints.
+            We understand your budget is under $5,000. After you complete this
+            assessment, you'll receive a professional proposal with realistic
+            options tailored to your budget, including phased development
+            approaches and scope adjustments to deliver maximum value within
+            your budget constraints.
           </p>
         </div>
       )}
-      
+
       <FormField
         control={form.control}
         name="preferredTimeline"
@@ -1594,9 +1818,15 @@ function Step6TimelineBudget({ form }: { form: any }) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="strict">Strict Budget (Cannot exceed)</SelectItem>
-                <SelectItem value="some-flexibility">Some Flexibility (±10-20%)</SelectItem>
-                <SelectItem value="flexible">Flexible (Quality over cost)</SelectItem>
+                <SelectItem value="strict">
+                  Strict Budget (Cannot exceed)
+                </SelectItem>
+                <SelectItem value="some-flexibility">
+                  Some Flexibility (±10-20%)
+                </SelectItem>
+                <SelectItem value="flexible">
+                  Flexible (Quality over cost)
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -1638,7 +1868,9 @@ function Step6TimelineBudget({ form }: { form: any }) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="cloud">Cloud Hosting (Recommended)</SelectItem>
+                <SelectItem value="cloud">
+                  Cloud Hosting (Recommended)
+                </SelectItem>
                 <SelectItem value="dedicated">Dedicated Server</SelectItem>
                 <SelectItem value="no-preference">No Preference</SelectItem>
               </SelectContent>
@@ -1655,11 +1887,13 @@ function Step6TimelineBudget({ form }: { form: any }) {
           <FormItem>
             <FormLabel>Additional Notes or Requirements</FormLabel>
             <FormControl>
-              <Textarea
-                placeholder="Anything else we should know? Special requirements, concerns, or questions..."
-                className="min-h-[100px]"
-                {...field}
+              <VoiceToTextInput
+                variant="textarea"
                 value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Anything else we should know? Special requirements, concerns, or questions..."
+                inputClassName="min-h-[100px]"
               />
             </FormControl>
             <FormMessage />
@@ -1674,7 +1908,13 @@ function Step6TimelineBudget({ form }: { form: any }) {
           <FormItem>
             <FormLabel>How did you hear about us?</FormLabel>
             <FormControl>
-              <Input placeholder="Google, LinkedIn, Referral, etc." {...field} />
+              <VoiceToTextInput
+                variant="input"
+                value={field.value || ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Google, LinkedIn, Referral, etc."
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -1695,7 +1935,8 @@ function Step6TimelineBudget({ form }: { form: any }) {
             <div className="space-y-1 leading-none">
               <FormLabel>Subscribe to Newsletter</FormLabel>
               <FormDescription>
-                Get updates on web development tips, case studies, and special offers
+                Get updates on web development tips, case studies, and special
+                offers
               </FormDescription>
             </div>
           </FormItem>
@@ -1706,7 +1947,15 @@ function Step6TimelineBudget({ form }: { form: any }) {
 }
 
 // Step 7: Review
-function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedValues: any; serviceId?: string | null }) {
+function Step7Review({
+  form,
+  watchedValues,
+  serviceId,
+}: {
+  form: any;
+  watchedValues: any;
+  serviceId?: string | null;
+}) {
   return (
     <div className="space-y-6">
       <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
@@ -1715,7 +1964,8 @@ function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedVal
           Review Your Assessment
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Please review your answers before submitting. You can go back to make changes.
+          Please review your answers before submitting. You can go back to make
+          changes.
         </p>
       </div>
 
@@ -1723,10 +1973,22 @@ function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedVal
         <div>
           <h4 className="font-semibold mb-2">Contact Information</h4>
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-            <p><strong>Name:</strong> {watchedValues.name}</p>
-            <p><strong>Email:</strong> {watchedValues.email}</p>
-            {watchedValues.phone && <p><strong>Phone:</strong> {watchedValues.phone}</p>}
-            {watchedValues.company && <p><strong>Company:</strong> {watchedValues.company}</p>}
+            <p>
+              <strong>Name:</strong> {watchedValues.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {watchedValues.email}
+            </p>
+            {watchedValues.phone && (
+              <p>
+                <strong>Phone:</strong> {watchedValues.phone}
+              </p>
+            )}
+            {watchedValues.company && (
+              <p>
+                <strong>Company:</strong> {watchedValues.company}
+              </p>
+            )}
           </div>
         </div>
 
@@ -1735,10 +1997,19 @@ function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedVal
         <div>
           <h4 className="font-semibold mb-2">Project Details</h4>
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-            <p><strong>Project Name:</strong> {watchedValues.projectName}</p>
-            <p><strong>Type:</strong> {watchedValues.projectType?.replace("-", " ")}</p>
-            <p><strong>Description:</strong> {watchedValues.projectDescription}</p>
-            <p><strong>Target Audience:</strong> {watchedValues.targetAudience}</p>
+            <p>
+              <strong>Project Name:</strong> {watchedValues.projectName}
+            </p>
+            <p>
+              <strong>Type:</strong>{" "}
+              {watchedValues.projectType?.replace("-", " ")}
+            </p>
+            <p>
+              <strong>Description:</strong> {watchedValues.projectDescription}
+            </p>
+            <p>
+              <strong>Target Audience:</strong> {watchedValues.targetAudience}
+            </p>
           </div>
         </div>
 
@@ -1747,10 +2018,18 @@ function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedVal
         <div>
           <h4 className="font-semibold mb-2">Technical Requirements</h4>
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-            <p><strong>Platforms:</strong> {watchedValues.platform?.join(", ")}</p>
-            <p><strong>Must-Have Features:</strong> {watchedValues.mustHaveFeatures?.join(", ")}</p>
+            <p>
+              <strong>Platforms:</strong> {watchedValues.platform?.join(", ")}
+            </p>
+            <p>
+              <strong>Must-Have Features:</strong>{" "}
+              {watchedValues.mustHaveFeatures?.join(", ")}
+            </p>
             {watchedValues.userAuthentication && (
-              <p><strong>Authentication:</strong> {watchedValues.userAuthentication}</p>
+              <p>
+                <strong>Authentication:</strong>{" "}
+                {watchedValues.userAuthentication}
+              </p>
             )}
             {watchedValues.paymentProcessing && <p>✓ Payment Processing</p>}
             {watchedValues.realTimeFeatures && <p>✓ Real-time Features</p>}
@@ -1762,8 +2041,18 @@ function Step7Review({ form, watchedValues, serviceId }: { form: any; watchedVal
         <div>
           <h4 className="font-semibold mb-2">Timeline & Budget</h4>
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-            <p><strong>Timeline:</strong> {watchedValues.preferredTimeline?.replace(/-/g, " ")}</p>
-            <p><strong>Budget Range:</strong> {watchedValues.budgetRange?.replace(/-/g, " - $").replace("under", "Under $").replace("k", "k").replace("discuss", "Prefer to Discuss")}</p>
+            <p>
+              <strong>Timeline:</strong>{" "}
+              {watchedValues.preferredTimeline?.replace(/-/g, " ")}
+            </p>
+            <p>
+              <strong>Budget Range:</strong>{" "}
+              {watchedValues.budgetRange
+                ?.replace(/-/g, " - $")
+                .replace("under", "Under $")
+                .replace("k", "k")
+                .replace("discuss", "Prefer to Discuss")}
+            </p>
           </div>
         </div>
       </div>
