@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
-    // Store session
-    setSession(sessionId, user.id);
+    // Store session and wait for it to be saved
+    await setSession(sessionId, user.id);
 
     // Don't send password
     const { password: _, ...userWithoutPassword } = user;

@@ -1,6 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GitHubStrategy } from "passport-github2";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -64,24 +65,42 @@ export function setupAuth(app: Express) {
   
   // Set up GitHub authentication strategy
   if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    const githubCallbackURL = process.env.NODE_ENV === 'production'
+      ? 'https://mrguru.dev/api/auth/github/callback'
+      : 'http://localhost:3000/api/auth/github/callback';
+    
     passport.use(
       new GitHubStrategy(
         {
           clientID: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
-          callbackURL: `https://workspace.mytech7.repl.co/api/auth/github/callback`
+          callbackURL: githubCallbackURL
         },
         async (accessToken: string, refreshToken: string, profile: any, done: any) => {
           try {
-            // Check if user already exists
+            // Check if user already exists by GitHub ID or username
             let user = await storage.getUserByUsername(`github:${profile.id}`);
+            
+            // Also check by email if available
+            if (!user && profile.emails?.[0]?.value) {
+              const userByEmail = await storage.getUserByEmail(profile.emails[0].value);
+              if (userByEmail) {
+                // Update existing user with GitHub info
+                user = await storage.updateUser(userByEmail.id, {
+                  githubId: profile.id.toString(),
+                  githubUsername: profile.username,
+                  avatarUrl: profile.photos?.[0]?.value
+                });
+              }
+            }
             
             if (!user) {
               // Create new user if it doesn't exist
               user = await storage.createUser({
-                username: `github:${profile.id}`,
+                username: profile.username || `github:${profile.id}`,
                 password: await hashPassword(randomBytes(16).toString('hex')), // Random password since login is via GitHub
                 email: profile.emails?.[0]?.value || '',
+                full_name: profile.displayName || profile.username || '',
                 isAdmin: false,
                 githubId: profile.id.toString(),
                 githubUsername: profile.username,
@@ -98,6 +117,58 @@ export function setupAuth(app: Express) {
     );
   } else {
     console.warn("GitHub OAuth credentials not found. GitHub login will not be available.");
+  }
+
+  // Set up Google authentication strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    const googleCallbackURL = process.env.NODE_ENV === 'production'
+      ? 'https://mrguru.dev/api/auth/google/callback'
+      : 'http://localhost:3000/api/auth/google/callback';
+    
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: googleCallbackURL
+        },
+        async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+          try {
+            // Check if user already exists by email
+            let user;
+            if (profile.emails?.[0]?.value) {
+              user = await storage.getUserByEmail(profile.emails[0].value);
+            }
+            
+            if (!user) {
+              // Create new user if it doesn't exist
+              const username = profile.emails?.[0]?.value?.split('@')[0] || `google:${profile.id}`;
+              user = await storage.createUser({
+                username: username,
+                password: await hashPassword(randomBytes(16).toString('hex')), // Random password since login is via Google
+                email: profile.emails?.[0]?.value || '',
+                full_name: profile.displayName || profile.name?.givenName || '',
+                isAdmin: false,
+                avatarUrl: profile.photos?.[0]?.value
+              });
+            } else {
+              // Update existing user with Google info if needed
+              if (!user.avatarUrl && profile.photos?.[0]?.value) {
+                user = await storage.updateUser(user.id, {
+                  avatarUrl: profile.photos[0].value
+                });
+              }
+            }
+            
+            return done(null, user);
+          } catch (error) {
+            return done(error);
+          }
+        }
+      )
+    );
+  } else {
+    console.warn("Google OAuth credentials not found. Google login will not be available.");
   }
 
   passport.serializeUser((user, done) => {
@@ -186,11 +257,30 @@ export function setupAuth(app: Express) {
     app.get(
       '/api/auth/github/callback',
       passport.authenticate('github', { 
-        failureRedirect: '/auth',
+        failureRedirect: '/auth?error=github_auth_failed',
       }),
       (req, res) => {
         // Successful authentication, redirect home
         console.log("GitHub authentication successful");
+        res.redirect('/');
+      }
+    );
+  }
+
+  // Google authentication routes
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    // Route to initiate Google authentication
+    app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+    
+    // Google callback route
+    app.get(
+      '/api/auth/google/callback',
+      passport.authenticate('google', { 
+        failureRedirect: '/auth?error=google_auth_failed',
+      }),
+      (req, res) => {
+        // Successful authentication, redirect home
+        console.log("Google authentication successful");
         res.redirect('/');
       }
     );

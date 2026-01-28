@@ -16,7 +16,19 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password, rememberMe } = await req.json();
+    // Step 1: Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError: any) {
+      console.error("Error parsing request body:", parseError);
+      return NextResponse.json(
+        { message: "Invalid request body", error: parseError?.message },
+        { status: 400 }
+      );
+    }
+
+    const { username, password, rememberMe } = body;
 
     if (!username || !password) {
       return NextResponse.json(
@@ -25,40 +37,146 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await storage.getUserByUsername(username);
+    // Step 2: Get user from database
+    let user;
+    try {
+      user = await storage.getUserByUsername(username);
+    } catch (dbError: any) {
+      console.error("Database error fetching user:", dbError);
+      return NextResponse.json(
+        { 
+          message: "Database error",
+          ...(process.env.NODE_ENV === "development" && { error: dbError?.message })
+        },
+        { status: 500 }
+      );
+    }
     
-    if (!user || !(await comparePasswords(password, user.password))) {
+    // Step 3: Verify password
+    if (!user) {
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 }
       );
     }
 
-    // Create session
-    const sessionId = randomBytes(32).toString("hex");
-    const cookieStore = await cookies();
+    let passwordMatch;
+    try {
+      passwordMatch = await comparePasswords(password, user.password);
+    } catch (compareError: any) {
+      console.error("Error comparing passwords:", compareError);
+      return NextResponse.json(
+        { 
+          message: "Error verifying password",
+          ...(process.env.NODE_ENV === "development" && { error: compareError?.message })
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { message: "Invalid username or password" },
+        { status: 401 }
+      );
+    }
+
+    // Step 4: Create session ID and set cookie
+    let sessionId: string;
+    try {
+      sessionId = randomBytes(32).toString("hex");
+    } catch (cryptoError: any) {
+      console.error("Error generating session ID:", cryptoError);
+      return NextResponse.json(
+        { 
+          message: "Error creating session",
+          ...(process.env.NODE_ENV === "development" && { error: cryptoError?.message })
+        },
+        { status: 500 }
+      );
+    }
+
+    let cookieStore;
+    try {
+      cookieStore = await cookies();
+    } catch (cookieError: any) {
+      console.error("Error getting cookie store:", cookieError);
+      return NextResponse.json(
+        { 
+          message: "Error setting up session",
+          ...(process.env.NODE_ENV === "development" && { error: cookieError?.message })
+        },
+        { status: 500 }
+      );
+    }
     
     // Set cookie expiration based on remember me
-    // If remember me is checked, use 30 days, otherwise use session cookie (expires when browser closes)
-    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined; // 30 days if remember me, otherwise session cookie
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined;
     
-    cookieStore.set("sessionId", sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      ...(maxAge && { maxAge }), // Only set maxAge if rememberMe is true
-    });
+    try {
+      cookieStore.set("sessionId", sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        ...(maxAge && { maxAge }),
+      });
+    } catch (setCookieError: any) {
+      console.error("Error setting cookie:", setCookieError);
+      return NextResponse.json(
+        { 
+          message: "Error setting session cookie",
+          ...(process.env.NODE_ENV === "development" && { error: setCookieError?.message })
+        },
+        { status: 500 }
+      );
+    }
 
-    // Store session
-    setSession(sessionId, user.id);
+    // Step 5: Store session in database (non-fatal)
+    try {
+      await setSession(sessionId, user.id);
+    } catch (sessionError: any) {
+      // Log session storage error but don't fail login
+      console.error("Warning: Failed to store session in database:", sessionError);
+      console.error("Session storage error details:", {
+        message: sessionError?.message,
+        code: sessionError?.code,
+        path: sessionError?.path,
+        stack: sessionError?.stack,
+      });
+      // Continue with login - the cookie is set, session can be stored on next request
+    }
 
-    // Don't send password
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword);
+    // Step 6: Return user data
+    try {
+      const { password: _, ...userWithoutPassword } = user;
+      return NextResponse.json(userWithoutPassword);
+    } catch (responseError: any) {
+      console.error("Error creating response:", responseError);
+      return NextResponse.json(
+        { 
+          message: "Error preparing response",
+          ...(process.env.NODE_ENV === "development" && { error: responseError?.message })
+        },
+        { status: 500 }
+      );
+    }
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.error("Unexpected login error:", error);
+    console.error("Error stack:", error?.stack);
+    console.error("Error details:", {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      cause: error?.cause,
+    });
     return NextResponse.json(
-      { message: "Error during login" },
+      { 
+        message: "Error during login",
+        ...(process.env.NODE_ENV === "development" && { 
+          error: error?.message || "Unknown error",
+          stack: error?.stack,
+        })
+      },
       { status: 500 }
     );
   }

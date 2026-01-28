@@ -135,9 +135,11 @@ export class DatabaseStorage implements IStorage {
     // Wrap prune method to handle ENOENT errors gracefully
     // connect-pg-simple may try to read table.sql during pruning, which can fail
     // This is a known issue when the module can't find the SQL file
-    if (this.sessionStore.prune) {
-      const originalPrune = this.sessionStore.prune.bind(this.sessionStore);
-      this.sessionStore.prune = function() {
+    // Type assertion needed because prune is specific to connect-pg-simple's store
+    const storeWithPrune = this.sessionStore as any;
+    if (typeof storeWithPrune.prune === 'function') {
+      const originalPrune = storeWithPrune.prune.bind(this.sessionStore);
+      storeWithPrune.prune = function() {
         try {
           return originalPrune();
         } catch (error: any) {

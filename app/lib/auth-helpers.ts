@@ -65,7 +65,7 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
   }
 }
 
-export function setSession(sessionId: string, userId: number): void {
+export function setSession(sessionId: string, userId: number): Promise<void> {
   // Store session in session store
   // connect-pg-simple expects the session data to match express-session format
   const sessionData = {
@@ -80,10 +80,26 @@ export function setSession(sessionId: string, userId: number): void {
     },
   };
 
-  // Set session with callback
-  storage.sessionStore.set(sessionId, sessionData, (err) => {
-    if (err) {
-      console.error("Error storing session:", err);
+  // Set session with callback and return a promise
+  return new Promise((resolve, reject) => {
+    try {
+      storage.sessionStore.set(sessionId, sessionData, (err) => {
+        if (err) {
+          console.error("Error storing session:", err);
+          console.error("Session store error details:", {
+            message: err?.message,
+            code: err?.code,
+            path: err?.path,
+            stack: err?.stack,
+          });
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    } catch (error: any) {
+      console.error("Error calling sessionStore.set:", error);
+      reject(error);
     }
   });
 }
