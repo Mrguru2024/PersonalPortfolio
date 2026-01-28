@@ -9,23 +9,46 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
 
   try {
+    const cookieHeader = req?.headers.get("cookie") || "";
     const cookieStore = await cookies();
     let sessionId: string | undefined =
       cookieStore.get("sessionId")?.value ??
       cookieStore.get("connect.sid")?.value;
 
+    // Log cookie detection for debugging
+    if (!sessionId) {
+      console.log(
+        `[getSessionUser] cookies() returned no sessionId. Cookie header: ${cookieHeader ? cookieHeader.substring(0, 80) + "..." : "NONE"}`,
+      );
+    }
+
     // Fallback: read Cookie header from request (fixes 401 when cookies() context is missing in serverless)
-    if (!sessionId && req?.headers.get("cookie")) {
-      const cookieHeader = req.headers.get("cookie") ?? "";
+    if (!sessionId && cookieHeader) {
       const match = cookieHeader.match(
         /(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/,
       );
-      if (match) sessionId = match[1].trim();
+      if (match) {
+        sessionId = match[1].trim();
+        console.log(
+          `[getSessionUser] ✅ Found sessionId in Cookie header fallback: ${sessionId.substring(0, 16)}...`,
+        );
+      } else {
+        console.log(
+          `[getSessionUser] ❌ Cookie header exists but no sessionId/connect.sid found. Header: ${cookieHeader.substring(0, 100)}...`,
+        );
+      }
     }
 
     if (!sessionId) {
+      console.log(
+        `[getSessionUser] ❌ No sessionId found anywhere - returning null`,
+      );
       return null;
     }
+
+    console.log(
+      `[getSessionUser] ✅ SessionId found: ${sessionId.substring(0, 16)}...`,
+    );
 
     // Get session from session store directly (avoid circular dependency)
     return new Promise((resolve) => {

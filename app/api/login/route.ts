@@ -154,7 +154,16 @@ export async function POST(req: NextRequest) {
         ...(maxAge && { maxAge }),
       };
       cookieStore.set("sessionId", sessionId, cookieOptions);
-      console.log("Login: Session cookie set successfully");
+      console.log(
+        `[Login] ✅ Session cookie set - sessionId: ${sessionId.substring(0, 16)}..., options:`,
+        {
+          httpOnly: cookieOptions.httpOnly,
+          secure: cookieOptions.secure,
+          sameSite: cookieOptions.sameSite,
+          path: cookieOptions.path,
+          maxAge: cookieOptions.maxAge || "session",
+        },
+      );
     } catch (setCookieError: any) {
       console.error("Error setting cookie:", setCookieError);
       return NextResponse.json(

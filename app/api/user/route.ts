@@ -10,6 +10,17 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const userAgent = req.headers.get("user-agent") || "unknown";
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+  const cookieHeader = req.headers.get("cookie") || "";
+  const origin =
+    req.headers.get("origin") || req.headers.get("referer") || "unknown";
+
+  // Always log request details for debugging
+  console.log(
+    `[GET /api/user] Request received from ${origin}${isMobile ? " (Mobile)" : ""}`,
+  );
+  console.log(
+    `[GET /api/user] Cookie header: ${cookieHeader ? cookieHeader.substring(0, 100) + "..." : "NONE"}`,
+  );
 
   try {
     // Check for session cookie first (fast check) – use same source as getSessionUser
@@ -17,16 +28,29 @@ export async function GET(req: NextRequest) {
     let sessionId: string | undefined =
       cookieStore.get("sessionId")?.value ??
       cookieStore.get("connect.sid")?.value;
-    if (!sessionId && req.headers.get("cookie")) {
-      const match = req.headers
-        .get("cookie")
-        ?.match(/(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/);
-      if (match) sessionId = match[1].trim();
+
+    // Log what cookies() found
+    const sessionCookie = cookieStore.get("sessionId");
+    const connectCookie = cookieStore.get("connect.sid");
+    console.log(
+      `[GET /api/user] cookies() found - sessionId: ${sessionCookie ? "YES" : "NO"}, connect.sid: ${connectCookie ? "YES" : "NO"}`,
+    );
+
+    if (!sessionId && cookieHeader) {
+      const match = cookieHeader.match(
+        /(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/,
+      );
+      if (match) {
+        sessionId = match[1].trim();
+        console.log(
+          `[GET /api/user] Found sessionId in Cookie header: ${sessionId.substring(0, 16)}...`,
+        );
+      }
     }
 
     if (!sessionId) {
       console.log(
-        `[GET /api/user] No session cookie found${isMobile ? ` (Mobile: ${userAgent.substring(0, 50)})` : ""}`,
+        `[GET /api/user] ❌ No session cookie found - Cookie header: "${cookieHeader.substring(0, 50)}..."${isMobile ? ` (Mobile: ${userAgent.substring(0, 50)})` : ""}`,
       );
       return NextResponse.json(
         { message: "Not authenticated" },
