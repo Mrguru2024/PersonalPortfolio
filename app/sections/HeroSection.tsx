@@ -1,4 +1,9 @@
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
 import { ArrowRight, MousePointer, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialLinks from "@/components/SocialLinks";
@@ -14,14 +19,14 @@ const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start start", "end start"]
+    offset: ["start start", "end start"],
   });
-  
+
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const y = useTransform(scrollYProgress, [0, 0.5], [0, 50]);
   const [hoverWorkBtn, setHoverWorkBtn] = useState(false);
   const [hoverContactBtn, setHoverContactBtn] = useState(false);
-  
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -30,10 +35,14 @@ const HeroSection = () => {
   };
 
   return (
-    <section ref={sectionRef} id="home" className="py-20 md:py-32 relative overflow-hidden min-h-[90vh] flex items-center">
+    <section
+      ref={sectionRef}
+      id="home"
+      className="py-20 md:py-32 relative overflow-hidden min-h-[90vh] flex items-center"
+    >
       {/* Interactive particle background */}
       <NoSSR>
-        <ParticleAnimation 
+        <ParticleAnimation
           count={80}
           minSize={1}
           maxSize={4}
@@ -43,24 +52,24 @@ const HeroSection = () => {
           className="opacity-40 dark:opacity-30"
         />
       </NoSSR>
-      
+
       {/* Parallax mouse-moving background */}
       <NoSSR>
         <ParallaxBackground className="z-0" />
       </NoSSR>
-      
+
       {/* Grid overlay */}
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
-      
+
       {/* Background gradient */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5 }}
       />
-      
-      <motion.div 
+
+      <motion.div
         className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative"
         style={{ opacity, y }}
       >
@@ -68,14 +77,16 @@ const HeroSection = () => {
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.7, 
+            transition={{
+              duration: 0.7,
               type: "spring",
-              stiffness: 100 
+              stiffness: 100,
             }}
             className="text-3xl fold:text-4xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
           >
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">Hello, I'm</span>{" "}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
+              Hello, I'm
+            </span>{" "}
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -85,33 +96,35 @@ const HeroSection = () => {
               {personalInfo.name}
             </motion.span>
           </motion.h1>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.6, 
+            transition={{
+              duration: 0.6,
               delay: 0.4,
               type: "spring",
-              stiffness: 50
+              stiffness: 50,
             }}
             className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4"
           >
-            <span className="font-medium">Full Stack Next.js React Developer & UX/UI Designer</span>
+            <span className="font-medium">
+              Full Stack Next.js React Developer & UX/UI Designer
+            </span>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mb-6 sm:mb-8 md:mb-10 text-base fold:text-lg xs:text-lg sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 px-2"
           >
-            <TypewriterText 
+            <TypewriterText
               phrases={[
                 "specializing in creating elegant solutions to complex problems.",
                 "turning innovative ideas into exceptional digital experiences.",
                 "building modern, responsive web applications that convert.",
-                "helping businesses succeed in the digital landscape."
+                "helping businesses succeed in the digital landscape.",
               ]}
               typingSpeed={50}
               deletingSpeed={20}
@@ -119,7 +132,7 @@ const HeroSection = () => {
               className="inline-block font-light"
             />
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -143,7 +156,7 @@ const HeroSection = () => {
                   <Sparkles className="h-4 w-4" />
                 </span>
               </AnimatedButton>
-              
+
               <AnimatePresence>
                 {hoverWorkBtn && (
                   <motion.div
@@ -157,7 +170,7 @@ const HeroSection = () => {
                 )}
               </AnimatePresence>
             </div>
-            
+
             <div
               onMouseEnter={() => setHoverContactBtn(true)}
               onMouseLeave={() => setHoverContactBtn(false)}
@@ -173,7 +186,7 @@ const HeroSection = () => {
                   <span className="whitespace-nowrap">Get In Touch</span>
                   <motion.div
                     animate={{
-                      x: hoverContactBtn ? 5 : 0
+                      x: hoverContactBtn ? 5 : 0,
                     }}
                     transition={{ type: "spring", stiffness: 400 }}
                     className="shrink-0"
@@ -184,12 +197,12 @@ const HeroSection = () => {
               </AnimatedButton>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.8 }}
-            className="mt-8 sm:mt-10 md:mt-14"
+            className="mt-6 fold:mt-8 sm:mt-10 md:mt-14 w-full max-w-full overflow-hidden px-1"
           >
             <motion.div
               initial={{ y: 20 }}
@@ -198,15 +211,15 @@ const HeroSection = () => {
                 duration: 1,
                 repeat: Infinity,
                 repeatType: "reverse",
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
-              className="mb-6 text-gray-500 dark:text-gray-400 text-sm"
+              className="mb-3 fold:mb-4 sm:mb-6 text-gray-500 dark:text-gray-400 text-xs fold:text-sm sm:text-base text-center"
             >
               Connect with me
             </motion.div>
             <SocialLinks
-              className="flex justify-center space-x-4 sm:space-x-6 md:space-x-8"
-              iconClassName="text-lg sm:text-xl text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:scale-125 transition-all"
+              className="flex flex-wrap justify-center gap-2 fold:gap-3 sm:gap-4 md:gap-6"
+              iconClassName="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-full p-2 fold:p-2.5 sm:p-3 text-base fold:text-lg sm:text-xl text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:scale-110 active:scale-95 transition-all touch-manipulation"
             />
           </motion.div>
         </div>

@@ -605,54 +605,56 @@ const ContactSection = () => {
           )}
 
           {/* Contact Information */}
-          <div>
+          <div className="min-w-0">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 mb-8"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 fold:p-5 sm:p-6 md:p-8 mb-4 fold:mb-6 sm:mb-8"
             >
-              <h3 className="text-xl font-bold mb-6">Contact Information</h3>
+              <h3 className="text-base fold:text-lg sm:text-xl font-bold mb-4 fold:mb-5 sm:mb-6">
+                Contact Information
+              </h3>
 
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1">
-                    <Mail className="text-primary" />
+              <div className="space-y-3 fold:space-y-4">
+                <div className="flex items-start gap-3 fold:gap-4 min-w-0">
+                  <div className="flex-shrink-0 mt-0.5 fold:mt-1 w-5 h-5 fold:w-6 fold:h-6 flex items-center justify-center">
+                    <Mail className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
                       Email
                     </p>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-all">
                       {contactInfo.email}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1">
-                    <MapPin className="text-primary" />
+                <div className="flex items-start gap-3 fold:gap-4 min-w-0">
+                  <div className="flex-shrink-0 mt-0.5 fold:mt-1 w-5 h-5 fold:w-6 fold:h-6 flex items-center justify-center">
+                    <MapPin className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
                       Location
                     </p>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-words">
                       {contactInfo.location}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1">
-                    <Phone className="text-primary" />
+                <div className="flex items-start gap-3 fold:gap-4 min-w-0">
+                  <div className="flex-shrink-0 mt-0.5 fold:mt-1 w-5 h-5 fold:w-6 fold:h-6 flex items-center justify-center">
+                    <Phone className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
                       Phone
                     </p>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-all">
                       {contactInfo.phone}
                     </p>
                   </div>
@@ -660,29 +662,31 @@ const ContactSection = () => {
               </div>
             </motion.div>
 
-            {/* Social Links */}
+            {/* Social Links - Connect With Me */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 fold:p-5 sm:p-6 md:p-8"
             >
-              <h3 className="text-xl font-bold mb-6">Connect With Me</h3>
+              <h3 className="text-base fold:text-lg sm:text-xl font-bold mb-4 fold:mb-5 sm:mb-6">
+                Connect With Me
+              </h3>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 fold-open:grid-cols-2 gap-3 fold:gap-4">
                 {socialLinks.map((link) => (
                   <a
                     key={link.platform}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition group"
+                    className="flex items-center gap-3 fold:gap-4 min-h-[44px] p-3 fold:p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition group min-w-0 touch-manipulation"
                   >
-                    <span className="text-gray-600 dark:text-gray-400 group-hover:text-primary">
+                    <span className="flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-primary">
                       {getSocialIcon(link.platform)}
                     </span>
-                    <span className="ml-4 text-gray-700 dark:text-gray-300 group-hover:text-primary">
+                    <span className="text-sm fold:text-base text-gray-700 dark:text-gray-300 group-hover:text-primary truncate min-w-0">
                       {link.platform}
                     </span>
                   </a>
