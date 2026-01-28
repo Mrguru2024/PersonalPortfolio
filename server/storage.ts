@@ -813,9 +813,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(newsletterSends.subscriberId, subscriberId))
       .orderBy(desc(newsletterSends.sentAt));
   }
-}
-
-export const storage = new DatabaseStorage();
+  
+  // Client dashboard operations
+  async getClientQuotes(userId: number): Promise<ClientQuote[]> {
+    return db
+      .select()
+      .from(clientQuotes)
+      .where(eq(clientQuotes.userId, userId))
+      .orderBy(desc(clientQuotes.createdAt));
   }
   
   async getClientInvoices(userId: number): Promise<ClientInvoice[]> {
@@ -872,9 +877,23 @@ export const storage = new DatabaseStorage();
       .orderBy(desc(projectAssessments.createdAt));
   }
   
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+  async getAllClientFeedback(): Promise<ClientFeedback[]> {
+    return db
+      .select()
+      .from(clientFeedback)
+      .orderBy(desc(clientFeedback.createdAt));
+  }
+  
+  async updateClientFeedback(id: number, updates: Partial<InsertClientFeedback> & { respondedBy?: number; respondedAt?: Date }): Promise<ClientFeedback> {
+    const [updated] = await db
+      .update(clientFeedback)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(clientFeedback.id, id))
+      .returning();
+    return updated;
   }
 }
 
