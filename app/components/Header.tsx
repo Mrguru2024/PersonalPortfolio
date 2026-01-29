@@ -22,6 +22,10 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
+  const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
+  const canCreateBlog =
+    user !== null &&
+    (isApprovedAdmin || user?.role === "writer" || user?.role === "admin");
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -112,12 +116,12 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">My Dashboard</Link>
                   </DropdownMenuItem>
-                  {((user.isAdmin && user.adminApproved) || user.role === "writer" || user.role === "admin") && (
+                  {canCreateBlog && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin/blog">Create Blog Post</Link>
                     </DropdownMenuItem>
                   )}
-                  {user.isAdmin && user.adminApproved && (
+                  {isApprovedAdmin && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/admin/dashboard">Admin Dashboard</Link>
@@ -204,10 +208,62 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   <div className="px-4 py-2">
                     <span className="text-sm font-medium text-muted-foreground">Logged in as @{user.username}</span>
                   </div>
-                  {user.isAdmin && user.adminApproved && (
-                    <Link href="/admin/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                      Admin Dashboard
+                  <Link
+                    href="/dashboard"
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                  >
+                    My Dashboard
+                  </Link>
+                  {canCreateBlog && (
+                    <Link
+                      href="/admin/blog"
+                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                    >
+                      Create Blog Post
                     </Link>
+                  )}
+                  {isApprovedAdmin && (
+                    <div className="space-y-1">
+                      <div className="px-4 pt-2 text-xs font-semibold uppercase text-muted-foreground">
+                        Admin
+                      </div>
+                      <Link
+                        href="/admin/dashboard"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Admin Dashboard
+                      </Link>
+                      <Link
+                        href="/admin/blog"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Blog Management
+                      </Link>
+                      <Link
+                        href="/admin/blog/analytics"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Blog Analytics
+                      </Link>
+                      <Link
+                        href="/admin/newsletters"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Newsletters
+                      </Link>
+                      <Link
+                        href="/admin/feedback"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Feedback Management
+                      </Link>
+                      <Link
+                        href="/admin/newsletters/subscribers"
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Subscribers
+                      </Link>
+                    </div>
                   )}
                   <button
                     onClick={() => logoutMutation.mutate()}
