@@ -33,6 +33,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
   const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
+  const isAdminUser = user?.isAdmin === true || user?.role === "admin";
   const canCreateBlog =
     user !== null &&
     (isApprovedAdmin || user?.role === "writer" || user?.role === "admin");
@@ -72,8 +73,11 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       highlight: true,
     },
   ];
+  const adminDashboardLink: PageLink = {
+    name: "Admin Dashboard",
+    href: "/admin/dashboard",
+  };
   const adminLinks: PageLink[] = [
-    { name: "Admin Dashboard", href: "/admin/dashboard" },
     { name: "Blog Management", href: "/admin/blog" },
     { name: "Blog Analytics", href: "/admin/blog/analytics" },
     { name: "Newsletters", href: "/admin/newsletters" },
@@ -237,6 +241,13 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       <Link href="/admin/blog">Create Blog Post</Link>
                     </DropdownMenuItem>
                   )}
+                  {isAdminUser && (
+                    <DropdownMenuItem asChild>
+                      <Link href={adminDashboardLink.href}>
+                        {adminDashboardLink.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {isApprovedAdmin &&
                     adminLinks.map((link) => (
                       <DropdownMenuItem asChild key={link.href}>
@@ -319,21 +330,34 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
               ))}
             </div>
 
-            {isApprovedAdmin && (
+            {isAdminUser && (
               <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
                 <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Admin
                 </div>
-                {adminLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={closeMobileMenu}
-                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                  >
-                    {link.name}
-                  </Link>
-                ))}
+                <Link
+                  href={adminDashboardLink.href}
+                  onClick={closeMobileMenu}
+                  className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                >
+                  {adminDashboardLink.name}
+                </Link>
+                {isApprovedAdmin &&
+                  adminLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobileMenu}
+                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+                {!isApprovedAdmin && (
+                  <div className="px-4 pb-2 text-xs text-muted-foreground">
+                    Admin access pending approval.
+                  </div>
+                )}
               </div>
             )}
 
