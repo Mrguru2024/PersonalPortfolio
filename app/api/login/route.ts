@@ -3,7 +3,7 @@ import { storage } from "@server/storage";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { ensurePrimaryAdminUser, setSession } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -106,7 +106,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("Login successful for user:", user.id, user.username);
+    const ensuredUser = await ensurePrimaryAdminUser(user);
+    const sessionUser = ensuredUser || user;
+
+    console.log("Login successful for user:", sessionUser.id, sessionUser.username);
 
     // Step 4: Create session ID and set cookie
     let sessionId: string;
@@ -182,8 +185,8 @@ export async function POST(req: NextRequest) {
       console.log(
         `[Login] Storing session for user ${user.id} with sessionId ${sessionId.substring(0, 16)}...`,
       );
-      await setSession(sessionId, user.id);
-      console.log(`[Login] Session storage completed for user ${user.id}`);
+      await setSession(sessionId, sessionUser.id);
+      console.log(`[Login] Session storage completed for user ${sessionUser.id}`);
     } catch (sessionError: any) {
       // Log session storage error but don't fail login
       console.error(
@@ -201,7 +204,7 @@ export async function POST(req: NextRequest) {
 
     // Step 6: Return user data
     try {
-      const { password: _, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = sessionUser;
       return NextResponse.json(userWithoutPassword);
     } catch (responseError: any) {
       console.error("Error creating response:", responseError);

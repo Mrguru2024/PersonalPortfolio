@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { storage } from "@server/storage";
 
+const primaryAdminEmail =
+  process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
+
 // Session management for Next.js App Router
 // Optimized for serverless environments with fast timeouts
 export async function getSessionUser(req?: NextRequest): Promise<any | null> {
@@ -194,6 +197,36 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
   } catch (error) {
     // Silently fail - not authenticated (don't log in production)
     return null;
+  }
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+export async function ensurePrimaryAdminUser(user: any | null) {
+  if (!user) {
+    return user;
+  }
+
+  const userEmail = normalizeEmail(user.email);
+  if (!userEmail || userEmail !== normalizeEmail(primaryAdminEmail)) {
+    return user;
+  }
+
+  if (user.isAdmin && user.adminApproved && user.role === "admin") {
+    return user;
+  }
+
+  try {
+    return await storage.updateUser(user.id, {
+      isAdmin: true,
+      adminApproved: true,
+      role: "admin",
+    });
+  } catch (error) {
+    console.error("Failed to auto-approve primary admin:", error);
+    return user;
   }
 }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth-helpers";
+import { ensurePrimaryAdminUser, getSessionUser } from "@/lib/auth-helpers";
 import { cookies } from "next/headers";
 
 // Ensure this route is always dynamic so cookies are read from the request (fixes 401 on mobile/Vercel)
@@ -94,8 +94,10 @@ export async function GET(req: NextRequest) {
       `[GET /api/user] Success: User ${user.id} (${user.username}) authenticated in ${duration}ms${isMobile ? " (Mobile)" : ""}`,
     );
 
+    const ensuredUser = await ensurePrimaryAdminUser(user);
+
     // Don't send password
-    const { password, ...userWithoutPassword } = user;
+    const { password, ...userWithoutPassword } = ensuredUser || user;
     return NextResponse.json(userWithoutPassword);
   } catch (error: unknown) {
     const err = error as { message?: string };

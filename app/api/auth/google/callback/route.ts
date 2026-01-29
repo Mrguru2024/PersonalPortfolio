@@ -3,7 +3,7 @@ import { storage } from "@server/storage";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { ensurePrimaryAdminUser, setSession } from "@/lib/auth-helpers";
 
 const scryptAsync = promisify(scrypt);
 
@@ -139,8 +139,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${baseUrl}/auth?error=google_auth_failed&message=${encodeURIComponent(dbError?.message || "Database error")}`);
     }
 
+    const ensuredUser = await ensurePrimaryAdminUser(user);
+    const sessionUser = ensuredUser || user;
+
     // Create session
-    console.log("Google OAuth - Creating session for user:", user.id);
+    console.log("Google OAuth - Creating session for user:", sessionUser.id);
     let sessionId: string;
     try {
       sessionId = randomBytes(32).toString("hex");
@@ -176,7 +179,7 @@ export async function GET(req: NextRequest) {
     // Store session in database
     try {
       console.log("Google OAuth - Storing session in database, sessionId:", sessionId, "userId:", user.id);
-      await setSession(sessionId, user.id);
+      await setSession(sessionId, sessionUser.id);
       console.log("Google OAuth - Session stored in database successfully");
       
       // Verify session was stored
