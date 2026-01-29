@@ -134,6 +134,19 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllClientFeedback(): Promise<ClientFeedback[]>;
   updateClientFeedback(id: number, updates: Partial<InsertClientFeedback> & { respondedBy?: number; respondedAt?: Date }): Promise<ClientFeedback>;
+  // Invoice admin operations
+  getAllInvoices(): Promise<ClientInvoice[]>;
+  getInvoiceById(id: number): Promise<ClientInvoice | undefined>;
+  createInvoice(invoice: InsertClientInvoice): Promise<ClientInvoice>;
+  updateInvoice(id: number, updates: Partial<InsertClientInvoice> & { paidAt?: Date | null; lastReminderAt?: Date | null }): Promise<ClientInvoice>;
+  deleteInvoice(id: number): Promise<void>;
+  getInvoiceByStripeId(stripeInvoiceId: string): Promise<ClientInvoice | undefined>;
+  // Announcements admin operations
+  getAllAnnouncements(): Promise<ClientAnnouncement[]>;
+  getAnnouncementById(id: number): Promise<ClientAnnouncement | undefined>;
+  createAnnouncement(announcement: Omit<InsertClientAnnouncement, "id">): Promise<ClientAnnouncement>;
+  updateAnnouncement(id: number, updates: Partial<InsertClientAnnouncement>): Promise<ClientAnnouncement>;
+  deleteAnnouncement(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -932,6 +945,71 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clientFeedback.id, id))
       .returning();
     return updated;
+  }
+
+  async getAllInvoices(): Promise<ClientInvoice[]> {
+    return db
+      .select()
+      .from(clientInvoices)
+      .orderBy(desc(clientInvoices.createdAt));
+  }
+
+  async getInvoiceById(id: number): Promise<ClientInvoice | undefined> {
+    const [row] = await db.select().from(clientInvoices).where(eq(clientInvoices.id, id));
+    return row || undefined;
+  }
+
+  async getInvoiceByStripeId(stripeInvoiceId: string): Promise<ClientInvoice | undefined> {
+    const [row] = await db.select().from(clientInvoices).where(eq(clientInvoices.stripeInvoiceId, stripeInvoiceId));
+    return row || undefined;
+  }
+
+  async createInvoice(invoice: InsertClientInvoice): Promise<ClientInvoice> {
+    const [inserted] = await db.insert(clientInvoices).values(invoice).returning();
+    return inserted;
+  }
+
+  async updateInvoice(id: number, updates: Partial<InsertClientInvoice> & { paidAt?: Date | null; lastReminderAt?: Date | null }): Promise<ClientInvoice> {
+    const [updated] = await db
+      .update(clientInvoices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(clientInvoices.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteInvoice(id: number): Promise<void> {
+    await db.delete(clientInvoices).where(eq(clientInvoices.id, id));
+  }
+
+  async getAllAnnouncements(): Promise<ClientAnnouncement[]> {
+    return db
+      .select()
+      .from(clientAnnouncements)
+      .orderBy(desc(clientAnnouncements.createdAt));
+  }
+
+  async getAnnouncementById(id: number): Promise<ClientAnnouncement | undefined> {
+    const [row] = await db.select().from(clientAnnouncements).where(eq(clientAnnouncements.id, id));
+    return row || undefined;
+  }
+
+  async createAnnouncement(announcement: Omit<InsertClientAnnouncement, "id">): Promise<ClientAnnouncement> {
+    const [inserted] = await db.insert(clientAnnouncements).values(announcement).returning();
+    return inserted;
+  }
+
+  async updateAnnouncement(id: number, updates: Partial<InsertClientAnnouncement>): Promise<ClientAnnouncement> {
+    const [updated] = await db
+      .update(clientAnnouncements)
+      .set(updates)
+      .where(eq(clientAnnouncements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAnnouncement(id: number): Promise<void> {
+    await db.delete(clientAnnouncements).where(eq(clientAnnouncements.id, id));
   }
 }
 

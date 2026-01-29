@@ -461,6 +461,73 @@ This endorsement was submitted from your portfolio website.
       return false;
     }
   }
+
+  /** Send invoice reminder to the recipient (customer) */
+  async sendInvoiceReminder(data: {
+    to: string;
+    invoiceNumber: string;
+    title: string;
+    amountFormatted: string;
+    dueDate?: string;
+    payUrl: string;
+  }): Promise<boolean> {
+    if (!this.isConfigured) {
+      console.warn('Email service not configured. Skipping invoice reminder.');
+      return false;
+    }
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `Reminder: Invoice ${data.invoiceNumber} – ${data.title}`;
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0; }
+            .content { background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; }
+            .amount { font-size: 1.5rem; font-weight: bold; color: #4f46e5; }
+            .button { display: inline-block; padding: 14px 28px; background: #6366f1; color: white !important; text-decoration: none; border-radius: 8px; margin: 16px 0; font-weight: 600; }
+            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">Invoice reminder</h2>
+              <p style="margin: 8px 0 0 0; opacity: 0.9;">${data.invoiceNumber}</p>
+            </div>
+            <div class="content">
+              <p>This is a friendly reminder that the following invoice is pending payment:</p>
+              <p><strong>${data.title}</strong></p>
+              <p class="amount">${data.amountFormatted}</p>
+              ${data.dueDate ? `<p>Due date: <strong>${data.dueDate}</strong></p>` : ''}
+              <p><a href="${data.payUrl}" class="button">Pay invoice</a></p>
+              <div class="footer">
+                <p>If you have already paid, please disregard this message.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Invoice reminder: ${data.invoiceNumber} - ${data.title}. Amount: ${data.amountFormatted}. Pay at: ${data.payUrl}`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Invoice reminder sent to ${data.to} for ${data.invoiceNumber}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending invoice reminder:', error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

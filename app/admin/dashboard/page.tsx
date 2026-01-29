@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, AlertCircle, FileText, MessageSquare, FileCheck, CheckCircle, XCircle, Clock, Archive } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -179,155 +179,163 @@ export default function AdminDashboardPage() {
   }
 
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
-  const pendingContacts = contacts.length; // All contacts are considered pending for review
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+    <div className="min-h-screen w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
+          Admin Dashboard
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Manage assessments, quotes, and responses
         </p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <Card className="border bg-card shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-sm font-medium">Assessments</CardTitle>
-            <FileCheck className="h-4 w-4 text-muted-foreground" />
+            <FileCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assessments.length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-xl sm:text-2xl font-bold">{assessments.length}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {pendingAssessments} pending review
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="border bg-card shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-sm font-medium">Quotes/Contacts</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contacts.length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-xl sm:text-2xl font-bold">{contacts.length}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Contact form submissions
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-sm font-medium">Resume Requests</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{resumeRequests.length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-xl sm:text-2xl font-bold">{resumeRequests.length}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {resumeRequests.filter((r) => !r.accessed).length} unaccessed
             </p>
           </CardContent>
         </Card>
       </div>
 
+      <div className="mb-6 flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href="/admin/invoices">
+            <Receipt className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Invoices</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href="/admin/announcements">
+            <span className="truncate">Project updates</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href="/admin/feedback">
+            <span className="truncate">Feedback</span>
+          </Link>
+        </Button>
+      </div>
+
       {/* Tabs */}
       <Tabs defaultValue="assessments" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full sm:w-auto flex h-10 sm:h-10 overflow-x-auto overflow-y-hidden gap-0.5 p-1 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
           <TabsTrigger value="assessments">
             Assessments ({assessments.length})
           </TabsTrigger>
           <TabsTrigger value="contacts">
-            Quotes/Contacts ({contacts.length})
+            Contacts ({contacts.length})
           </TabsTrigger>
           <TabsTrigger value="resume-requests">
-            Resume Requests ({resumeRequests.length})
+            Resume ({resumeRequests.length})
           </TabsTrigger>
         </TabsList>
 
         {/* Assessments Tab */}
-        <TabsContent value="assessments" className="space-y-4">
+        <TabsContent value="assessments" className="space-y-4 mt-4">
           {assessmentsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : assessments.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">No assessments found</p>
+            <Card className="overflow-hidden">
+              <CardContent className="py-12 px-4 sm:px-6 text-center">
+                <p className="text-sm text-muted-foreground">No assessments found</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {assessments.map((assessment) => (
-                <Card key={assessment.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{assessment.name}</CardTitle>
-                        <CardDescription>
+                <Card key={assessment.id} className="overflow-hidden">
+                  <CardHeader className="px-4 sm:px-6 pb-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg truncate">{assessment.name}</CardTitle>
+                        <CardDescription className="break-all">
                           {assessment.email} {assessment.phone && `• ${assessment.phone}`}
                         </CardDescription>
                         {assessment.company && (
-                          <CardDescription>{assessment.company}</CardDescription>
+                          <CardDescription className="truncate">{assessment.company}</CardDescription>
                         )}
                       </div>
-                      {getStatusBadge(assessment.status)}
+                      <div className="shrink-0">{getStatusBadge(assessment.status)}</div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium">Project:</p>
-                        <p className="text-sm text-muted-foreground">
-                          {assessment.assessmentData?.projectName || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Estimated Price:</p>
-                        <p className="text-sm font-semibold">
-                          {getTotalPrice(assessment.pricingBreakdown)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={assessment.status}
-                          onValueChange={(value) =>
-                            updateStatusMutation.mutate({ id: assessment.id, status: value })
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="reviewed">Reviewed</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedAssessment(assessment)}
-                        >
+                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">Project</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {assessment.assessmentData?.projectName || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Estimated Price</p>
+                      <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                      <Select
+                        value={assessment.status}
+                        onValueChange={(value) =>
+                          updateStatusMutation.mutate({ id: assessment.id, status: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="reviewed">Reviewed</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
                           View Details
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            router.push(`/assessment/results?id=${assessment.id}`)
-                          }
-                        >
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
                           View Results
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Submitted: {format(new Date(assessment.createdAt), "PPp")}
-                      </p>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -336,52 +344,40 @@ export default function AdminDashboardPage() {
         </TabsContent>
 
         {/* Contacts Tab */}
-        <TabsContent value="contacts" className="space-y-4">
+        <TabsContent value="contacts" className="space-y-4 mt-4">
           {contactsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : contacts.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">No contacts found</p>
+            <Card className="overflow-hidden">
+              <CardContent className="py-12 px-4 sm:px-6 text-center">
+                <p className="text-sm text-muted-foreground">No contacts found</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {contacts.map((contact) => (
-                <Card key={contact.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{contact.name}</CardTitle>
-                        <CardDescription>{contact.email}</CardDescription>
-                      </div>
-                    </div>
+                <Card key={contact.id} className="overflow-hidden">
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg truncate">{contact.name}</CardTitle>
+                    <CardDescription className="break-all">{contact.email}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium">Subject:</p>
-                        <p className="text-sm text-muted-foreground">{contact.subject}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Message:</p>
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {contact.message}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedContact(contact)}
-                      >
-                        View Full Message
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Submitted: {contact.createdAt ? format(new Date(contact.createdAt), "PPp") : "N/A"}
-                      </p>
+                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">Subject</p>
+                      <p className="text-sm text-muted-foreground truncate">{contact.subject}</p>
                     </div>
+                    <div>
+                      <p className="text-sm font-medium">Message</p>
+                      <p className="text-sm text-muted-foreground line-clamp-3">{contact.message}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedContact(contact)}>
+                      View Full Message
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Submitted: {contact.createdAt ? format(new Date(contact.createdAt), "PPp") : "N/A"}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -390,65 +386,60 @@ export default function AdminDashboardPage() {
         </TabsContent>
 
         {/* Resume Requests Tab */}
-        <TabsContent value="resume-requests" className="space-y-4">
+        <TabsContent value="resume-requests" className="space-y-4 mt-4">
           {resumeLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : resumeRequests.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">No resume requests found</p>
+            <Card className="overflow-hidden">
+              <CardContent className="py-12 px-4 sm:px-6 text-center">
+                <p className="text-sm text-muted-foreground">No resume requests found</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {resumeRequests.map((request) => (
-                <Card key={request.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{request.name}</CardTitle>
-                        <CardDescription>{request.email}</CardDescription>
+                <Card key={request.id} className="overflow-hidden">
+                  <CardHeader className="px-4 sm:px-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg truncate">{request.name}</CardTitle>
+                        <CardDescription className="break-all">{request.email}</CardDescription>
                         {request.company && (
-                          <CardDescription>{request.company}</CardDescription>
+                          <CardDescription className="truncate">{request.company}</CardDescription>
                         )}
                       </div>
                       {request.accessed ? (
-                        <Badge variant="default" className="flex items-center gap-1">
+                        <Badge variant="default" className="flex items-center gap-1 shrink-0">
                           <CheckCircle className="h-3 w-3" />
                           Accessed
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="flex items-center gap-1">
+                        <Badge variant="outline" className="flex items-center gap-1 shrink-0">
                           <Clock className="h-3 w-3" />
                           Pending
                         </Badge>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {request.position && (
-                        <div>
-                          <p className="text-sm font-medium">Position:</p>
-                          <p className="text-sm text-muted-foreground">{request.position}</p>
-                        </div>
-                      )}
-                      {request.message && (
-                        <div>
-                          <p className="text-sm font-medium">Message:</p>
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {request.message}
-                          </p>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Requested: {format(new Date(request.createdAt), "PPp")}
-                        {request.accessedAt &&
-                          ` • Accessed: ${format(new Date(request.accessedAt), "PPp")}`}
-                      </p>
-                    </div>
+                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                    {request.position && (
+                      <div>
+                        <p className="text-sm font-medium">Position</p>
+                        <p className="text-sm text-muted-foreground">{request.position}</p>
+                      </div>
+                    )}
+                    {request.message && (
+                      <div>
+                        <p className="text-sm font-medium">Message</p>
+                        <p className="text-sm text-muted-foreground line-clamp-3">{request.message}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Requested: {format(new Date(request.createdAt), "PPp")}
+                      {request.accessedAt && ` • Accessed: ${format(new Date(request.accessedAt), "PPp")}`}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -459,9 +450,9 @@ export default function AdminDashboardPage() {
 
       {/* Assessment Detail Dialog */}
       <Dialog open={!!selectedAssessment} onOpenChange={() => setSelectedAssessment(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Assessment Details</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Assessment Details</DialogTitle>
             <DialogDescription>
               Full assessment information for {selectedAssessment?.name}
             </DialogDescription>
@@ -501,9 +492,9 @@ export default function AdminDashboardPage() {
 
       {/* Contact Detail Dialog */}
       <Dialog open={!!selectedContact} onOpenChange={() => setSelectedContact(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Contact Details</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Contact Details</DialogTitle>
             <DialogDescription>
               Full message from {selectedContact?.name}
             </DialogDescription>
@@ -512,14 +503,14 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Contact Information</h4>
-                <p>Name: {selectedContact.name}</p>
-                <p>Email: {selectedContact.email}</p>
-                <p>Subject: {selectedContact.subject}</p>
+                <p className="break-words">Name: {selectedContact.name}</p>
+                <p className="break-all">Email: {selectedContact.email}</p>
+                <p className="break-words">Subject: {selectedContact.subject}</p>
               </div>
               <Separator />
               <div>
                 <h4 className="font-semibold mb-2">Message</h4>
-                <p className="whitespace-pre-wrap">{selectedContact.message}</p>
+                <p className="whitespace-pre-wrap break-words">{selectedContact.message}</p>
               </div>
             </div>
           )}

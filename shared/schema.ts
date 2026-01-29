@@ -335,17 +335,26 @@ export const clientQuotes = pgTable("client_quotes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Client Invoices schema
+// Line item shape for invoice items (Stripe uses amount in cents)
+export type InvoiceLineItem = { description: string; amount: number; quantity?: number };
+
+// Client Invoices schema (Stripe-backed)
 export const clientInvoices = pgTable("client_invoices", {
   id: serial("id").primaryKey(),
   quoteId: integer("quote_id").references(() => clientQuotes.id),
   userId: integer("user_id").references(() => users.id),
   invoiceNumber: text("invoice_number").notNull().unique(),
   title: text("title").notNull(),
-  amount: integer("amount").notNull(),
+  amount: integer("amount").notNull(), // total in cents
   status: text("status").default("draft"), // draft, sent, paid, overdue, cancelled
   dueDate: timestamp("due_date"),
   paidAt: timestamp("paid_at"),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  stripeCustomerId: text("stripe_customer_id"),
+  recipientEmail: text("recipient_email"),
+  hostInvoiceUrl: text("host_invoice_url"),
+  lineItems: json("line_items").$type<InvoiceLineItem[]>(),
+  lastReminderAt: timestamp("last_reminder_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
