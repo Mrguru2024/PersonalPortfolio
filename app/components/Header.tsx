@@ -236,11 +236,6 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {!isAdminUser && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard">My Dashboard</Link>
-                    </DropdownMenuItem>
-                  )}
                   {isAdminUser &&
                     adminMenuLinks.map((link) => (
                       <DropdownMenuItem asChild key={link.href}>
@@ -359,15 +354,6 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       Logged in as @{user.username}
                     </span>
                   </div>
-                  {!isAdminUser && (
-                    <Link
-                      href="/dashboard"
-                      onClick={closeMobileMenu}
-                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                    >
-                      My Dashboard
-                    </Link>
-                  )}
                   {showCreateBlogLink && (
                     <Link
                       href="/admin/blog"
