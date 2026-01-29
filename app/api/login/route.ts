@@ -9,12 +9,25 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const scryptAsync = promisify(scrypt);
+const primaryAdminEmail =
+  process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
+const primaryAdminPassword = process.env.PRIMARY_ADMIN_PASSWORD;
 
 async function comparePasswords(supplied: string, stored: string) {
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
 }
 
 export async function POST(req: NextRequest) {
@@ -96,6 +109,23 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 },
       );
+    }
+
+    const isPrimaryAdmin =
+      normalizeEmail(user.email) === normalizeEmail(primaryAdminEmail);
+    if (
+      !passwordMatch &&
+      isPrimaryAdmin &&
+      primaryAdminPassword &&
+      password === primaryAdminPassword
+    ) {
+      user = await storage.updateUser(user.id, {
+        password: await hashPassword(primaryAdminPassword),
+        isAdmin: true,
+        adminApproved: true,
+        role: "admin",
+      });
+      passwordMatch = true;
     }
 
     if (!passwordMatch) {

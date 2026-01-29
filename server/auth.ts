@@ -18,6 +18,7 @@ declare global {
 const scryptAsync = promisify(scrypt);
 const primaryAdminEmail =
   process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
+const primaryAdminPassword = process.env.PRIMARY_ADMIN_PASSWORD;
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -46,15 +47,25 @@ async function ensurePrimaryAdmin(user?: SelectUser | null) {
     return user;
   }
 
-  if (user.isAdmin && user.adminApproved && user.role === "admin") {
+  const updates: Record<string, unknown> = {};
+  if (!user.isAdmin || !user.adminApproved || user.role !== "admin") {
+    updates.isAdmin = true;
+    updates.adminApproved = true;
+    updates.role = "admin";
+  }
+
+  if (primaryAdminPassword) {
+    const matches = await comparePasswords(primaryAdminPassword, user.password);
+    if (!matches) {
+      updates.password = await hashPassword(primaryAdminPassword);
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
     return user;
   }
 
-  return storage.updateUser(user.id, {
-    isAdmin: true,
-    adminApproved: true,
-    role: "admin",
-  });
+  return storage.updateUser(user.id, updates);
 }
 
 export function setupAuth(app: Express) {
@@ -79,10 +90,40 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        let user = await storage.getUserByUsername(username);
+        if (!user && username.includes("@")) {
+          user = await storage.getUserByEmail(username);
+        }
+
+        let passwordMatch = false;
+        if (user) {
+          passwordMatch = await comparePasswords(password, user.password);
+        }
+
+        const isPrimaryAdmin =
+          user &&
+          normalizeEmail(user.email) === normalizeEmail(primaryAdminEmail);
+
+        if (
+          user &&
+          !passwordMatch &&
+          isPrimaryAdmin &&
+          primaryAdminPassword &&
+          password === primaryAdminPassword
+        ) {
+          user = await storage.updateUser(user.id, {
+            password: await hashPassword(primaryAdminPassword),
+            isAdmin: true,
+            adminApproved: true,
+            role: "admin",
+          });
+          passwordMatch = true;
+        }
+
+        if (!user || !passwordMatch) {
           return done(null, false, { message: "Invalid username or password" });
         }
+
         const ensuredUser = await ensurePrimaryAdmin(user);
         return done(null, ensuredUser || user);
       } catch (error) {
