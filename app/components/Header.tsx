@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Code, Menu, X, LogIn, LogOut, User, Wand2, ClipboardCheck } from "lucide-react";
@@ -21,7 +21,7 @@ interface HeaderProps {
 interface PageLink {
   name: string;
   href: string;
-  icon?: JSX.Element;
+  icon?: ReactNode;
   highlight?: boolean;
 }
 
