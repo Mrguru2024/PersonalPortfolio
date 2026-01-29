@@ -146,6 +146,23 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     };
 
     readLatestAssessment();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) {
+        return;
+      }
+      if (event.key === "assessment:lastId") {
+        setRecentAssessmentId(event.newValue);
+        return;
+      }
+      if (event.key?.startsWith("assessment_")) {
+        readLatestAssessment();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, [pathname]);
 
   const isHomePage = pathname === "/";
