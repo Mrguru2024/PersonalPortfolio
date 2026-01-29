@@ -18,6 +18,13 @@ interface HeaderProps {
   onNavToggle?: () => void;
 }
 
+interface PageLink {
+  name: string;
+  href: string;
+  icon?: JSX.Element;
+  highlight?: boolean;
+}
+
 const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -40,6 +47,24 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     { name: "Blog", href: "#blog" },
     { name: "Contact", href: "#contact" },
   ];
+  const pageLinks: PageLink[] = [
+    { name: "Home", href: "/" },
+    { name: "Blog", href: "/blog" },
+    { name: "Resume", href: "/resume" },
+    {
+      name: "AI Images",
+      href: "/generate-images",
+      icon: <Wand2 className="h-4 w-4 mr-2 shrink-0" />,
+    },
+    { name: "Recommendations", href: "/recommendations" },
+    { name: "FAQ", href: "/faq" },
+    {
+      name: "Get Quote",
+      href: "/assessment",
+      icon: <ClipboardCheck className="h-4 w-4 mr-2 shrink-0" />,
+      highlight: true,
+    },
+  ];
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -47,6 +72,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       element.scrollIntoView({ behavior: "smooth" });
       setMobileMenuOpen(false);
     }
+  };
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
   };
 
   const isHomePage = pathname === "/";
@@ -187,19 +215,45 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
               ))
             ) : (
               <>
-                <Link href="/" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Home
-                </Link>
-                <Link href="/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Blog
-                </Link>
-                <Link href="/resume" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Resume
-                </Link>
-                <Link href="/generate-images" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition flex items-center">
-                  <Wand2 className="h-4 w-4 mr-2 shrink-0" /> AI Images
-                </Link>
+                {pageLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMobileMenu}
+                    className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
+                      link.highlight
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+                    } ${link.icon ? "flex items-center" : ""}`}
+                  >
+                    {link.icon}
+                    {link.name}
+                  </Link>
+                ))}
               </>
+            )}
+
+            {isHomePage && (
+              <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Pages
+                </div>
+                {pageLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMobileMenu}
+                    className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
+                      link.highlight
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+                    } ${link.icon ? "flex items-center" : ""}`}
+                  >
+                    {link.icon}
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
             )}
 
             <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
@@ -210,6 +264,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </div>
                   <Link
                     href="/dashboard"
+                    onClick={closeMobileMenu}
                     className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                   >
                     My Dashboard
@@ -217,6 +272,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   {canCreateBlog && (
                     <Link
                       href="/admin/blog"
+                      onClick={closeMobileMenu}
                       className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                     >
                       Create Blog Post
@@ -229,36 +285,49 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       </div>
                       <Link
                         href="/admin/dashboard"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Admin Dashboard
                       </Link>
                       <Link
                         href="/admin/blog"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Blog Management
                       </Link>
                       <Link
                         href="/admin/blog/analytics"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Blog Analytics
                       </Link>
                       <Link
                         href="/admin/newsletters"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Newsletters
                       </Link>
                       <Link
+                        href="/admin/newsletters/create"
+                        onClick={closeMobileMenu}
+                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                      >
+                        Create Newsletter
+                      </Link>
+                      <Link
                         href="/admin/feedback"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Feedback Management
                       </Link>
                       <Link
                         href="/admin/newsletters/subscribers"
+                        onClick={closeMobileMenu}
                         className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                       >
                         Subscribers
