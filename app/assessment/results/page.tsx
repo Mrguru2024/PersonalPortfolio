@@ -49,6 +49,22 @@ function AssessmentResultsContent() {
   const [requiresAccount, setRequiresAccount] = useState(false);
 
   useEffect(() => {
+    if (!assessmentId) {
+      return;
+    }
+    try {
+      if (
+        typeof window !== "undefined" &&
+        typeof localStorage !== "undefined"
+      ) {
+        localStorage.setItem("assessment:lastId", assessmentId);
+      }
+    } catch (error) {
+      console.warn("Failed to store latest assessment ID:", error);
+    }
+  }, [assessmentId]);
+
+  useEffect(() => {
     if (assessmentId) {
       // Fetch assessment from API
       fetch(`/api/assessment/${assessmentId}`)

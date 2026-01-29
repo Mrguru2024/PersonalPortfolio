@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Code, Menu, X, LogIn, LogOut, User, Wand2, ClipboardCheck } from "lucide-react";
@@ -27,6 +27,9 @@ interface PageLink {
 
 const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentAssessmentId, setRecentAssessmentId] = useState<string | null>(
+    null,
+  );
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
   const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
@@ -47,6 +50,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     { name: "Blog", href: "#blog" },
     { name: "Contact", href: "#contact" },
   ];
+  const assessmentResultsHref = recentAssessmentId
+    ? `/assessment/results?id=${recentAssessmentId}`
+    : "/assessment/results";
   const pageLinks: PageLink[] = [
     { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
@@ -58,7 +64,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     },
     { name: "Recommendations", href: "/recommendations" },
     { name: "FAQ", href: "/faq" },
-    { name: "Assessment Results", href: "/assessment/results" },
+    { name: "Assessment Results", href: assessmentResultsHref },
     {
       name: "Get Quote",
       href: "/assessment",
@@ -86,6 +92,61 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
+    const readLatestAssessment = () => {
+      try {
+        const storedLatest = localStorage.getItem("assessment:lastId");
+        if (storedLatest) {
+          setRecentAssessmentId(storedLatest);
+          return;
+        }
+
+        let latestId: string | null = null;
+        let latestTimestamp = 0;
+
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith("assessment_")) {
+            continue;
+          }
+          const raw = localStorage.getItem(key);
+          if (!raw) {
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(raw) as { id?: number; createdAt?: string };
+            const createdAt = parsed.createdAt
+              ? Date.parse(parsed.createdAt)
+              : Number.NaN;
+            if (!Number.isNaN(createdAt) && createdAt > latestTimestamp) {
+              latestTimestamp = createdAt;
+              if (parsed.id !== undefined && parsed.id !== null) {
+                latestId = String(parsed.id);
+              }
+            } else if (!latestId && parsed.id !== undefined && parsed.id !== null) {
+              latestId = String(parsed.id);
+            }
+          } catch (error) {
+            console.warn("Failed to parse assessment cache:", error);
+          }
+        }
+
+        if (latestId) {
+          localStorage.setItem("assessment:lastId", latestId);
+          setRecentAssessmentId(latestId);
+        }
+      } catch (error) {
+        console.warn("Failed to read latest assessment ID:", error);
+      }
+    };
+
+    readLatestAssessment();
+  }, [pathname]);
 
   const isHomePage = pathname === "/";
 
