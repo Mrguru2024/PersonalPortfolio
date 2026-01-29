@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { Code, Menu, X, LogIn, LogOut, User, Wand2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -17,10 +17,23 @@ interface HeaderProps {
   onNavToggle?: () => void;
 }
 
+interface MenuLink {
+  name: string;
+  href: string;
+  icon?: ReactNode;
+  highlight?: boolean;
+}
+
 const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
+  const isAdminUser = user?.isAdmin === true || user?.role === "admin";
+  const canCreateBlog =
+    user !== null &&
+    (isApprovedAdmin || user?.role === "writer" || user?.role === "admin");
+  const showCreateBlogLink = canCreateBlog && !isApprovedAdmin;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -34,6 +47,27 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     { name: "Blog", href: "#blog" },
     { name: "Contact", href: "#contact" },
   ];
+  const pageLinks: MenuLink[] = [
+    { name: "Home", href: "/" },
+    { name: "Blog", href: "/blog" },
+    { name: "Resume", href: "/resume" },
+    {
+      name: "AI Images",
+      href: "/generate-images",
+      icon: <Wand2 className="h-4 w-4 mr-2 shrink-0" />,
+    },
+    { name: "Recommendations", href: "/recommendations" },
+  ];
+  const adminLinks: MenuLink[] = [
+    { name: "Admin Dashboard", href: "/admin/dashboard" },
+    { name: "Blog Management", href: "/admin/blog" },
+    { name: "Blog Analytics", href: "/admin/blog/analytics" },
+    { name: "Newsletters", href: "/admin/newsletters" },
+    { name: "Create Newsletter", href: "/admin/newsletters/create" },
+    { name: "Subscribers", href: "/admin/newsletters/subscribers" },
+    { name: "Feedback Management", href: "/admin/feedback" },
+  ];
+  const adminMenuLinks = isApprovedAdmin ? adminLinks : adminLinks.slice(0, 1);
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -41,6 +75,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       element.scrollIntoView({ behavior: "smooth" });
       setMobileMenuOpen(false);
     }
+  };
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
   };
 
   const isHomePage = location === "/";
@@ -119,10 +156,18 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                 <DropdownMenuItem className="cursor-default">
                   <span className="text-sm font-medium">@{user.username}</span>
                 </DropdownMenuItem>
-                {user.isAdmin && (
+                {isAdminUser &&
+                  adminMenuLinks.map((link) => (
+                    <DropdownMenuItem asChild key={link.href}>
+                      <Link href={link.href} className="cursor-pointer">
+                        {link.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                {showCreateBlogLink && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin/blog" className="cursor-pointer">
-                      Admin Dashboard
+                      Create Blog Post
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -172,44 +217,79 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 shadow-md">
-          <div className="container mx-auto px-4 py-3 flex flex-col space-y-3">
-            {isHomePage ? (
-              navItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => scrollToSection(item.href)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition text-left"
-                >
-                  {item.name}
-                </button>
-              ))
-            ) : (
-              <>
+          <div className="container mx-auto px-4 py-3 flex flex-col space-y-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            {isHomePage && (
+              <div className="space-y-1">
+                <div className="px-1 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Sections
+                </div>
+                {navItems.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => scrollToSection(item.href)}
+                    className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition text-left"
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div
+              className={`space-y-1 ${
+                isHomePage ? "pt-4 border-t border-gray-200 dark:border-gray-700" : ""
+              }`}
+            >
+              <div className="px-1 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Pages
+              </div>
+              {pageLinks.map((link) => (
                 <Link
-                  href="/"
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobileMenu}
+                  className={`block w-full text-left font-medium py-2 transition ${
+                    link.highlight
+                      ? "text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+                  } ${link.icon ? "flex items-center" : ""}`}
                 >
-                  Home
+                  {link.icon}
+                  {link.name}
                 </Link>
-                <Link
-                  href="/blog"
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
-                >
-                  Blog
-                </Link>
-                <Link
-                  href="/resume"
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
-                >
-                  Resume
-                </Link>
-                <Link
-                  href="/generate-images"
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition flex items-center"
-                >
-                  <Wand2 className="h-4 w-4 mr-2" /> AI Image Generator
-                </Link>
-              </>
+              ))}
+            </div>
+
+            {isAdminUser && (
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                <div className="px-1 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Admin
+                </div>
+                {adminMenuLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMobileMenu}
+                    className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                {showCreateBlogLink && (
+                  <Link
+                    href="/admin/blog"
+                    onClick={closeMobileMenu}
+                    className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
+                  >
+                    Create Blog Post
+                  </Link>
+                )}
+                {!isApprovedAdmin && (
+                  <div className="text-xs text-muted-foreground">
+                    Admin access pending approval.
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Mobile Login/Logout */}
@@ -221,14 +301,6 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       Logged in as @{user.username}
                     </span>
                   </div>
-                  {user.isAdmin && (
-                    <Link
-                      href="/admin/blog"
-                      className="block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
                   <button
                     onClick={() => logoutMutation.mutate()}
                     className="flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-2 transition"

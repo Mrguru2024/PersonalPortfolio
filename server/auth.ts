@@ -16,6 +16,9 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
+const primaryAdminEmail =
+  process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
+const primaryAdminPassword = process.env.PRIMARY_ADMIN_PASSWORD;
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -28,6 +31,41 @@ async function comparePasswords(supplied: string, stored: string) {
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+async function ensurePrimaryAdmin(user?: SelectUser | null) {
+  if (!user) {
+    return user;
+  }
+
+  const userEmail = normalizeEmail(user.email);
+  if (!userEmail || userEmail !== normalizeEmail(primaryAdminEmail)) {
+    return user;
+  }
+
+  const updates: Record<string, unknown> = {};
+  if (!user.isAdmin || !user.adminApproved || user.role !== "admin") {
+    updates.isAdmin = true;
+    updates.adminApproved = true;
+    updates.role = "admin";
+  }
+
+  if (primaryAdminPassword) {
+    const matches = await comparePasswords(primaryAdminPassword, user.password);
+    if (!matches) {
+      updates.password = await hashPassword(primaryAdminPassword);
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return user;
+  }
+
+  return storage.updateUser(user.id, updates);
 }
 
 export function setupAuth(app: Express) {
@@ -52,11 +90,42 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        let user = await storage.getUserByUsername(username);
+        if (!user && username.includes("@")) {
+          user = await storage.getUserByEmail(username);
+        }
+
+        let passwordMatch = false;
+        if (user) {
+          passwordMatch = await comparePasswords(password, user.password);
+        }
+
+        const isPrimaryAdmin =
+          user &&
+          normalizeEmail(user.email) === normalizeEmail(primaryAdminEmail);
+
+        if (
+          user &&
+          !passwordMatch &&
+          isPrimaryAdmin &&
+          primaryAdminPassword &&
+          password === primaryAdminPassword
+        ) {
+          user = await storage.updateUser(user.id, {
+            password: await hashPassword(primaryAdminPassword),
+            isAdmin: true,
+            adminApproved: true,
+            role: "admin",
+          });
+          passwordMatch = true;
+        }
+
+        if (!user || !passwordMatch) {
           return done(null, false, { message: "Invalid username or password" });
         }
-        return done(null, user);
+
+        const ensuredUser = await ensurePrimaryAdmin(user);
+        return done(null, ensuredUser || user);
       } catch (error) {
         return done(error);
       }
@@ -107,8 +176,9 @@ export function setupAuth(app: Express) {
                 avatarUrl: profile.photos?.[0]?.value
               });
             }
-            
-            return done(null, user);
+
+            const ensuredUser = await ensurePrimaryAdmin(user);
+            return done(null, ensuredUser || user);
           } catch (error) {
             return done(error);
           }
@@ -159,8 +229,9 @@ export function setupAuth(app: Express) {
                 });
               }
             }
-            
-            return done(null, user);
+
+            const ensuredUser = await ensurePrimaryAdmin(user);
+            return done(null, ensuredUser || user);
           } catch (error) {
             return done(error);
           }
@@ -195,13 +266,15 @@ export function setupAuth(app: Express) {
       }
       
       // Create new user (adminApproved is always false by default)
-      const user = await storage.createUser({
+      let user = await storage.createUser({
         username,
         email,
         password: await hashPassword(password),
         isAdmin: false,
         adminApproved: false
       });
+
+      user = (await ensurePrimaryAdmin(user)) || user;
       
       // Log the user in
       req.login(user, (err) => {
@@ -246,7 +319,16 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    res.json(req.user);
+    ensurePrimaryAdmin(req.user)
+      .then((ensuredUser) => {
+        if (ensuredUser) {
+          req.user = ensuredUser;
+        }
+        res.json(req.user);
+      })
+      .catch(() => {
+        res.json(req.user);
+      });
   });
   
   // GitHub authentication routes

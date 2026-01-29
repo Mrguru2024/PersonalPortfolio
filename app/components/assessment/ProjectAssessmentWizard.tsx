@@ -263,6 +263,10 @@ export function ProjectAssessmentWizard({
               `assessment_${data.assessment.id}`,
               JSON.stringify(fullAssessment),
             );
+            localStorage.setItem(
+              "assessment:lastId",
+              String(data.assessment.id),
+            );
           }
         } catch (error) {
           console.warn("Failed to save assessment to localStorage:", error);

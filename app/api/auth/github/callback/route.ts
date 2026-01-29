@@ -3,7 +3,7 @@ import { storage } from "@server/storage";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { ensurePrimaryAdminUser, setSession } from "@/lib/auth-helpers";
 
 const scryptAsync = promisify(scrypt);
 
@@ -134,6 +134,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const ensuredUser = await ensurePrimaryAdminUser(user);
+    const sessionUser = ensuredUser || user;
+
     // Create session
     const sessionId = randomBytes(32).toString("hex");
     const cookieStore = await cookies();
@@ -147,7 +150,7 @@ export async function GET(req: NextRequest) {
 
     // Store session in database
     try {
-      await setSession(sessionId, user.id);
+      await setSession(sessionId, sessionUser.id);
     } catch (sessionError) {
       console.error("Warning: Failed to store session:", sessionError);
       // Continue anyway - cookie is set

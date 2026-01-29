@@ -3,7 +3,7 @@ import { storage } from "@server/storage";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { ensurePrimaryAdminUser, setSession } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -37,13 +37,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Create new user (adminApproved is always false by default)
-    const user = await storage.createUser({
+    let user = await storage.createUser({
       username,
       email,
       password: await hashPassword(password),
       isAdmin: false,
       adminApproved: false,
     });
+    user = (await ensurePrimaryAdminUser(user)) || user;
 
     // Create session
     const sessionId = randomBytes(32).toString("hex");

@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { storage } from "@server/storage";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const primaryAdminEmail =
+  process.env.PRIMARY_ADMIN_EMAIL || "5epmgllc@gmail.com";
+const primaryAdminPassword = process.env.PRIMARY_ADMIN_PASSWORD;
+const scryptAsync = promisify(scrypt);
 
 // Session management for Next.js App Router
 // Optimized for serverless environments with fast timeouts
@@ -194,6 +201,67 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
   } catch (error) {
     // Silently fail - not authenticated (don't log in production)
     return null;
+  }
+}
+
+function normalizeEmail(email?: string | null) {
+  return (email || "").trim().toLowerCase();
+}
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+export async function ensurePrimaryAdminUser(user: any | null) {
+  if (!user) {
+    return user;
+  }
+
+  const userEmail = normalizeEmail(user.email);
+  if (!userEmail || userEmail !== normalizeEmail(primaryAdminEmail)) {
+    return user;
+  }
+
+  try {
+    const fullUser = user.password ? user : await storage.getUser(user.id);
+    if (!fullUser) {
+      return user;
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (!fullUser.isAdmin || !fullUser.adminApproved || fullUser.role !== "admin") {
+      updates.isAdmin = true;
+      updates.adminApproved = true;
+      updates.role = "admin";
+    }
+
+    if (primaryAdminPassword) {
+      const matches = await comparePasswords(
+        primaryAdminPassword,
+        fullUser.password,
+      );
+      if (!matches) {
+        updates.password = await hashPassword(primaryAdminPassword);
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return fullUser;
+    }
+
+    return await storage.updateUser(fullUser.id, updates);
+  } catch (error) {
+    console.error("Failed to auto-approve primary admin:", error);
+    return user;
   }
 }
 

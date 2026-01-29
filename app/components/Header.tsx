@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Code, Menu, X, LogIn, LogOut, User, Wand2, ClipboardCheck } from "lucide-react";
@@ -18,10 +18,26 @@ interface HeaderProps {
   onNavToggle?: () => void;
 }
 
+interface PageLink {
+  name: string;
+  href: string;
+  icon?: ReactNode;
+  highlight?: boolean;
+}
+
 const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentAssessmentId, setRecentAssessmentId] = useState<string | null>(
+    null,
+  );
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
+  const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
+  const isAdminUser = user?.isAdmin === true || user?.role === "admin";
+  const canCreateBlog =
+    user !== null &&
+    (isApprovedAdmin || user?.role === "writer" || user?.role === "admin");
+  const showCreateBlogLink = canCreateBlog && !isApprovedAdmin;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -36,6 +52,42 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     { name: "Blog", href: "#blog" },
     { name: "Contact", href: "#contact" },
   ];
+  const assessmentResultsHref = recentAssessmentId
+    ? `/assessment/results?id=${recentAssessmentId}`
+    : "/assessment/results";
+  const pageLinks: PageLink[] = [
+    { name: "Home", href: "/" },
+    { name: "Blog", href: "/blog" },
+    { name: "Resume", href: "/resume" },
+    {
+      name: "AI Images",
+      href: "/generate-images",
+      icon: <Wand2 className="h-4 w-4 mr-2 shrink-0" />,
+    },
+    { name: "Recommendations", href: "/recommendations" },
+    { name: "FAQ", href: "/faq" },
+    { name: "Assessment Results", href: assessmentResultsHref },
+    {
+      name: "Get Quote",
+      href: "/assessment",
+      icon: <ClipboardCheck className="h-4 w-4 mr-2 shrink-0" />,
+      highlight: true,
+    },
+  ];
+  const adminDashboardLink: PageLink = {
+    name: "Admin Dashboard",
+    href: "/admin/dashboard",
+  };
+  const adminLinks: PageLink[] = [
+    adminDashboardLink,
+    { name: "Blog Management", href: "/admin/blog" },
+    { name: "Blog Analytics", href: "/admin/blog/analytics" },
+    { name: "Newsletters", href: "/admin/newsletters" },
+    { name: "Create Newsletter", href: "/admin/newsletters/create" },
+    { name: "Subscribers", href: "/admin/newsletters/subscribers" },
+    { name: "Feedback Management", href: "/admin/feedback" },
+  ];
+  const adminMenuLinks = isApprovedAdmin ? adminLinks : [adminDashboardLink];
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -44,6 +96,81 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       setMobileMenuOpen(false);
     }
   };
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
+    const readLatestAssessment = () => {
+      try {
+        const storedLatest = localStorage.getItem("assessment:lastId");
+        if (storedLatest) {
+          setRecentAssessmentId(storedLatest);
+          return;
+        }
+
+        let latestId: string | null = null;
+        let latestTimestamp = 0;
+
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith("assessment_")) {
+            continue;
+          }
+          const raw = localStorage.getItem(key);
+          if (!raw) {
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(raw) as { id?: number; createdAt?: string };
+            const createdAt = parsed.createdAt
+              ? Date.parse(parsed.createdAt)
+              : Number.NaN;
+            if (!Number.isNaN(createdAt) && createdAt > latestTimestamp) {
+              latestTimestamp = createdAt;
+              if (parsed.id !== undefined && parsed.id !== null) {
+                latestId = String(parsed.id);
+              }
+            } else if (!latestId && parsed.id !== undefined && parsed.id !== null) {
+              latestId = String(parsed.id);
+            }
+          } catch (error) {
+            console.warn("Failed to parse assessment cache:", error);
+          }
+        }
+
+        if (latestId) {
+          localStorage.setItem("assessment:lastId", latestId);
+          setRecentAssessmentId(latestId);
+        }
+      } catch (error) {
+        console.warn("Failed to read latest assessment ID:", error);
+      }
+    };
+
+    readLatestAssessment();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) {
+        return;
+      }
+      if (event.key === "assessment:lastId") {
+        setRecentAssessmentId(event.newValue);
+        return;
+      }
+      if (event.key?.startsWith("assessment_")) {
+        readLatestAssessment();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [pathname]);
 
   const isHomePage = pathname === "/";
 
@@ -109,35 +236,16 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
-                  </DropdownMenuItem>
-                  {((user.isAdmin && user.adminApproved) || user.role === "writer" || user.role === "admin") && (
+                  {isAdminUser &&
+                    adminMenuLinks.map((link) => (
+                      <DropdownMenuItem asChild key={link.href}>
+                        <Link href={link.href}>{link.name}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  {showCreateBlogLink && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin/blog">Create Blog Post</Link>
                     </DropdownMenuItem>
-                  )}
-                  {user.isAdmin && user.adminApproved && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/dashboard">Admin Dashboard</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/blog">Blog Management</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/blog/analytics">Blog Analytics</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/newsletters">Newsletters</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/feedback">Feedback Management</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/newsletters/subscribers">Subscribers</Link>
-                      </DropdownMenuItem>
-                    </>
                   )}
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                     <LogOut className="h-4 w-4 mr-2" /> Log out
@@ -170,43 +278,89 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-200 dark:border-gray-700 safe-area-insets">
-          <div className="container mx-auto px-4 py-4 space-y-1">
-            {isHomePage ? (
-              navItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => scrollToSection(item.href)}
-                  className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+          <div className="container mx-auto px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            {isHomePage && (
+              <div className="space-y-1">
+                <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Sections
+                </div>
+                {navItems.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => scrollToSection(item.href)}
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div
+              className={`space-y-1 ${
+                isHomePage
+                  ? "pt-4 mt-2 border-t border-gray-200 dark:border-gray-700"
+                  : ""
+              }`}
+            >
+              <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Pages
+              </div>
+              {pageLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobileMenu}
+                  className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
+                    link.highlight
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+                  } ${link.icon ? "flex items-center" : ""}`}
                 >
-                  {item.name}
-                </button>
-              ))
-            ) : (
-              <>
-                <Link href="/" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Home
+                  {link.icon}
+                  {link.name}
                 </Link>
-                <Link href="/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Blog
-                </Link>
-                <Link href="/resume" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                  Resume
-                </Link>
-                <Link href="/generate-images" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition flex items-center">
-                  <Wand2 className="h-4 w-4 mr-2 shrink-0" /> AI Images
-                </Link>
-              </>
+              ))}
+            </div>
+
+            {isAdminUser && (
+              <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Admin
+                </div>
+                {adminMenuLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMobileMenu}
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                {!isApprovedAdmin && (
+                  <div className="px-4 pb-2 text-xs text-muted-foreground">
+                    Admin access pending approval.
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
               {user ? (
                 <div className="space-y-1">
                   <div className="px-4 py-2">
-                    <span className="text-sm font-medium text-muted-foreground">Logged in as @{user.username}</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Logged in as @{user.username}
+                    </span>
                   </div>
-                  {user.isAdmin && user.adminApproved && (
-                    <Link href="/admin/blog" className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
-                      Admin Dashboard
+                  {showCreateBlogLink && (
+                    <Link
+                      href="/admin/blog"
+                      onClick={closeMobileMenu}
+                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                    >
+                      Create Blog Post
                     </Link>
                   )}
                   <button
@@ -217,7 +371,10 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </button>
                 </div>
               ) : (
-                <Link href="/auth" className="touch-target flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
+                <Link
+                  href="/auth"
+                  className="touch-target flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                >
                   <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login / Register
                 </Link>
               )}
