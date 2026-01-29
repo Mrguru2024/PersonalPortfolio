@@ -37,6 +37,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
   const canCreateBlog =
     user !== null &&
     (isApprovedAdmin || user?.role === "writer" || user?.role === "admin");
+  const showCreateBlogLink = canCreateBlog && !isApprovedAdmin;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -78,6 +79,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     href: "/admin/dashboard",
   };
   const adminLinks: PageLink[] = [
+    adminDashboardLink,
     { name: "Blog Management", href: "/admin/blog" },
     { name: "Blog Analytics", href: "/admin/blog/analytics" },
     { name: "Newsletters", href: "/admin/newsletters" },
@@ -85,6 +87,7 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     { name: "Subscribers", href: "/admin/newsletters/subscribers" },
     { name: "Feedback Management", href: "/admin/feedback" },
   ];
+  const adminMenuLinks = isApprovedAdmin ? adminLinks : [adminDashboardLink];
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -233,27 +236,22 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">My Dashboard</Link>
-                  </DropdownMenuItem>
-                  {canCreateBlog && (
+                  {!isAdminUser && (
                     <DropdownMenuItem asChild>
-                      <Link href="/admin/blog">Create Blog Post</Link>
+                      <Link href="/dashboard">My Dashboard</Link>
                     </DropdownMenuItem>
                   )}
-                  {isAdminUser && (
-                    <DropdownMenuItem asChild>
-                      <Link href={adminDashboardLink.href}>
-                        {adminDashboardLink.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {isApprovedAdmin &&
-                    adminLinks.map((link) => (
+                  {isAdminUser &&
+                    adminMenuLinks.map((link) => (
                       <DropdownMenuItem asChild key={link.href}>
                         <Link href={link.href}>{link.name}</Link>
                       </DropdownMenuItem>
                     ))}
+                  {showCreateBlogLink && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/blog">Create Blog Post</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                     <LogOut className="h-4 w-4 mr-2" /> Log out
                   </DropdownMenuItem>
@@ -335,24 +333,16 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                 <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Admin
                 </div>
-                <Link
-                  href={adminDashboardLink.href}
-                  onClick={closeMobileMenu}
-                  className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                >
-                  {adminDashboardLink.name}
-                </Link>
-                {isApprovedAdmin &&
-                  adminLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMobileMenu}
-                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
+                {adminMenuLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMobileMenu}
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
                 {!isApprovedAdmin && (
                   <div className="px-4 pb-2 text-xs text-muted-foreground">
                     Admin access pending approval.
@@ -369,14 +359,16 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       Logged in as @{user.username}
                     </span>
                   </div>
-                  <Link
-                    href="/dashboard"
-                    onClick={closeMobileMenu}
-                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                  >
-                    My Dashboard
-                  </Link>
-                  {canCreateBlog && (
+                  {!isAdminUser && (
+                    <Link
+                      href="/dashboard"
+                      onClick={closeMobileMenu}
+                      className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                    >
+                      My Dashboard
+                    </Link>
+                  )}
+                  {showCreateBlogLink && (
                     <Link
                       href="/admin/blog"
                       onClick={closeMobileMenu}
