@@ -58,12 +58,22 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
     },
     { name: "Recommendations", href: "/recommendations" },
     { name: "FAQ", href: "/faq" },
+    { name: "Assessment Results", href: "/assessment/results" },
     {
       name: "Get Quote",
       href: "/assessment",
       icon: <ClipboardCheck className="h-4 w-4 mr-2 shrink-0" />,
       highlight: true,
     },
+  ];
+  const adminLinks: PageLink[] = [
+    { name: "Admin Dashboard", href: "/admin/dashboard" },
+    { name: "Blog Management", href: "/admin/blog" },
+    { name: "Blog Analytics", href: "/admin/blog/analytics" },
+    { name: "Newsletters", href: "/admin/newsletters" },
+    { name: "Create Newsletter", href: "/admin/newsletters/create" },
+    { name: "Subscribers", href: "/admin/newsletters/subscribers" },
+    { name: "Feedback Management", href: "/admin/feedback" },
   ];
 
   const scrollToSection = (href: string) => {
@@ -149,28 +159,12 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       <Link href="/admin/blog">Create Blog Post</Link>
                     </DropdownMenuItem>
                   )}
-                  {isApprovedAdmin && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/dashboard">Admin Dashboard</Link>
+                  {isApprovedAdmin &&
+                    adminLinks.map((link) => (
+                      <DropdownMenuItem asChild key={link.href}>
+                        <Link href={link.href}>{link.name}</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/blog">Blog Management</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/blog/analytics">Blog Analytics</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/newsletters">Newsletters</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/feedback">Feedback Management</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/newsletters/subscribers">Subscribers</Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                    ))}
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                     <LogOut className="h-4 w-4 mr-2" /> Log out
                   </DropdownMenuItem>
@@ -283,55 +277,16 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       <div className="px-4 pt-2 text-xs font-semibold uppercase text-muted-foreground">
                         Admin
                       </div>
-                      <Link
-                        href="/admin/dashboard"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Admin Dashboard
-                      </Link>
-                      <Link
-                        href="/admin/blog"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Blog Management
-                      </Link>
-                      <Link
-                        href="/admin/blog/analytics"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Blog Analytics
-                      </Link>
-                      <Link
-                        href="/admin/newsletters"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Newsletters
-                      </Link>
-                      <Link
-                        href="/admin/newsletters/create"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Create Newsletter
-                      </Link>
-                      <Link
-                        href="/admin/feedback"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Feedback Management
-                      </Link>
-                      <Link
-                        href="/admin/newsletters/subscribers"
-                        onClick={closeMobileMenu}
-                        className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                      >
-                        Subscribers
-                      </Link>
+                      {adminLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeMobileMenu}
+                          className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                        >
+                          {link.name}
+                        </Link>
+                      ))}
                     </div>
                   )}
                   <button
