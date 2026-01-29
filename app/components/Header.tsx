@@ -274,54 +274,63 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-200 dark:border-gray-700 safe-area-insets">
-          <div className="container mx-auto px-4 py-4 space-y-1">
-            {isHomePage ? (
-              navItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => scrollToSection(item.href)}
-                  className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                >
-                  {item.name}
-                </button>
-              ))
-            ) : (
-              <>
-                {pageLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={closeMobileMenu}
-                    className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
-                      link.highlight
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
-                    } ${link.icon ? "flex items-center" : ""}`}
+          <div className="container mx-auto px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            {isHomePage && (
+              <div className="space-y-1">
+                <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                  Sections
+                </div>
+                {navItems.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => scrollToSection(item.href)}
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                   >
-                    {link.icon}
-                    {link.name}
-                  </Link>
+                    {item.name}
+                  </button>
                 ))}
-              </>
+              </div>
             )}
 
-            {isHomePage && (
+            <div
+              className={`space-y-1 ${
+                isHomePage
+                  ? "pt-4 mt-2 border-t border-gray-200 dark:border-gray-700"
+                  : ""
+              }`}
+            >
+              <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Pages
+              </div>
+              {pageLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobileMenu}
+                  className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
+                    link.highlight
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
+                  } ${link.icon ? "flex items-center" : ""}`}
+                >
+                  {link.icon}
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+
+            {isApprovedAdmin && (
               <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
                 <div className="px-4 pb-2 text-xs font-semibold uppercase text-muted-foreground">
-                  Pages
+                  Admin
                 </div>
-                {pageLinks.map((link) => (
+                {adminLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={closeMobileMenu}
-                    className={`touch-target block w-full text-left font-medium py-3 px-4 rounded-md transition ${
-                      link.highlight
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary"
-                    } ${link.icon ? "flex items-center" : ""}`}
+                    className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
                   >
-                    {link.icon}
                     {link.name}
                   </Link>
                 ))}
@@ -332,7 +341,9 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
               {user ? (
                 <div className="space-y-1">
                   <div className="px-4 py-2">
-                    <span className="text-sm font-medium text-muted-foreground">Logged in as @{user.username}</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Logged in as @{user.username}
+                    </span>
                   </div>
                   <Link
                     href="/dashboard"
@@ -350,23 +361,6 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                       Create Blog Post
                     </Link>
                   )}
-                  {isApprovedAdmin && (
-                    <div className="space-y-1">
-                      <div className="px-4 pt-2 text-xs font-semibold uppercase text-muted-foreground">
-                        Admin
-                      </div>
-                      {adminLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={closeMobileMenu}
-                          className="touch-target block w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
-                        >
-                          {link.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
                   <button
                     onClick={() => logoutMutation.mutate()}
                     className="touch-target flex items-center w-full text-left text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
@@ -375,7 +369,10 @@ const Header = ({ currentSection, onNavToggle }: HeaderProps) => {
                   </button>
                 </div>
               ) : (
-                <Link href="/auth" className="touch-target flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition">
+                <Link
+                  href="/auth"
+                  className="touch-target flex items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium py-3 px-4 rounded-md transition"
+                >
                   <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login / Register
                 </Link>
               )}
