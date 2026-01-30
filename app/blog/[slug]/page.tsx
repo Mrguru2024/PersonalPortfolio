@@ -9,5 +9,5 @@ export default function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  return <BlogPost />;
+  return <BlogPost slug={slug} />;
 }

@@ -48,21 +48,29 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
     });
   };
 
-  const buildPayload = (): ProjectAssessment => ({
-    name: form.name,
-    email: form.email,
-    phone: form.phone || undefined,
-    company: form.company || undefined,
-    role: form.role || undefined,
-    projectName: form.projectName,
-    projectType: form.projectType,
-    projectDescription: form.projectDescription,
-    targetAudience: form.targetAudience,
-    mainGoals: form.mainGoals,
-    platform: form.platform,
-    mustHaveFeatures: form.mustHaveFeatures,
-    newsletter: form.newsletter,
-  });
+  function buildPayload(): ProjectAssessment {
+    const payload = {
+      name: form.name,
+      email: form.email,
+      phone: form.phone || undefined,
+      company: form.company || undefined,
+      role: form.role || undefined,
+      projectName: form.projectName,
+      projectType: form.projectType,
+      projectDescription: form.projectDescription,
+      targetAudience: form.targetAudience,
+      mainGoals: form.mainGoals,
+      platform: form.platform,
+      mustHaveFeatures: form.mustHaveFeatures,
+      newsletter: form.newsletter,
+      paymentProcessing: false,
+      realTimeFeatures: false,
+      hasBrandGuidelines: false,
+      responsiveDesign: true,
+      ongoingMaintenance: false,
+    };
+    return payload as ProjectAssessment;
+  }
 
   const handleSubmit = async () => {
     setError(null);
