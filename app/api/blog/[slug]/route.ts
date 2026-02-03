@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { blogController } from "@server/controllers/blogController";
+import { blogSeedPosts } from "@server/blogSeedData";
 import { createMockResponse } from "@/lib/api-helpers";
 
 export async function GET(
@@ -8,31 +9,56 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    
+
     if (!slug) {
       return NextResponse.json(
         { error: "Blog post slug is required" },
         { status: 400 }
       );
     }
-    
+
+    if (!process.env.DATABASE_URL) {
+      const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
+      if (!fallbackPost) {
+        return NextResponse.json(
+          { error: "Blog post not found" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(fallbackPost);
+    }
+
     const mockReq = {
       params: { slug },
     } as any;
-    
+
     const { mockRes, getResponse } = createMockResponse();
-    
+
     try {
       await blogController.getBlogPostBySlug(mockReq, mockRes);
     } catch (controllerError: any) {
       // If controller throws an error, check if it's a database error
-      const errorMessage = controllerError?.message || String(controllerError) || "";
-      if (errorMessage.includes('endpoint has been disabled') || 
-          errorMessage.includes('connection') ||
-          errorMessage.includes('ECONNREFUSED') ||
-          errorMessage.includes('column') ||
-          errorMessage.includes('does not exist')) {
-        console.warn("Database error in controller, returning 404 for blog post:", errorMessage);
+      const errorMessage =
+        controllerError?.message || String(controllerError) || "";
+      if (
+        errorMessage.includes("endpoint has been disabled") ||
+        errorMessage.includes("connection") ||
+        errorMessage.includes("ECONNREFUSED") ||
+        errorMessage.includes("column") ||
+        errorMessage.includes("does not exist")
+      ) {
+        const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
+        if (fallbackPost) {
+          console.warn(
+            "Database error in controller, returning seed post:",
+            errorMessage
+          );
+          return NextResponse.json(fallbackPost);
+        }
+        console.warn(
+          "Database error in controller, returning 404 for blog post:",
+          errorMessage
+        );
         return NextResponse.json(
           { error: "Blog post not found" },
           { status: 404 }
@@ -41,33 +67,43 @@ export async function GET(
       // Re-throw if it's not a database error
       throw controllerError;
     }
-    
+
     const response = getResponse();
     if (!response) {
+      const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
+      if (fallbackPost) {
+        return NextResponse.json(fallbackPost);
+      }
       // If no response was set, the post likely doesn't exist
       return NextResponse.json(
         { error: "Blog post not found" },
         { status: 404 }
       );
     }
-    
+
     return response;
   } catch (error: any) {
     console.error("Error in GET /api/blog/[slug]:", error);
-    
+
     // Always return JSON, never HTML
     const errorMessage = error?.message || String(error) || "";
-    if (errorMessage.includes('endpoint has been disabled') || 
-        errorMessage.includes('connection') ||
-        errorMessage.includes('ECONNREFUSED') ||
-        errorMessage.includes('column') ||
-        errorMessage.includes('does not exist')) {
+    if (
+      errorMessage.includes("endpoint has been disabled") ||
+      errorMessage.includes("connection") ||
+      errorMessage.includes("ECONNREFUSED") ||
+      errorMessage.includes("column") ||
+      errorMessage.includes("does not exist")
+    ) {
+      const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
+      if (fallbackPost) {
+        return NextResponse.json(fallbackPost);
+      }
       return NextResponse.json(
         { error: "Blog post not found" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Failed to fetch blog post" },
       { status: 500 }
