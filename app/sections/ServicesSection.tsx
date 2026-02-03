@@ -40,7 +40,6 @@ interface Service {
   description: string;
   icon: React.ReactElement;
   features: string[];
-  pricing: string;
   category: "development" | "design" | "consulting" | "maintenance";
   popular?: boolean;
 }
@@ -61,7 +60,6 @@ const services: Service[] = [
       "Real-time features",
       "Authentication & authorization",
     ],
-    pricing: "$10,000 - $100,000+",
     category: "development",
     popular: true,
   },
@@ -79,7 +77,6 @@ const services: Service[] = [
       "Customer accounts",
       "Product management CMS",
     ],
-    pricing: "$5,000 - $50,000+",
     category: "development",
     popular: true,
   },
@@ -97,7 +94,6 @@ const services: Service[] = [
       "Offline functionality",
       "App store deployment",
     ],
-    pricing: "$15,000 - $150,000+",
     category: "development",
   },
   {
@@ -114,7 +110,6 @@ const services: Service[] = [
       "Analytics dashboard",
       "White-label options",
     ],
-    pricing: "$25,000 - $200,000+",
     category: "development",
   },
   {
@@ -131,7 +126,6 @@ const services: Service[] = [
       "Rate limiting & security",
       "Microservices architecture",
     ],
-    pricing: "$3,000 - $50,000+",
     category: "development",
   },
   {
@@ -148,7 +142,6 @@ const services: Service[] = [
       "Performance tuning",
       "Scalability planning",
     ],
-    pricing: "$2,000 - $30,000+",
     category: "development",
   },
 
@@ -167,7 +160,6 @@ const services: Service[] = [
       "Usability testing",
       "Design handoff",
     ],
-    pricing: "$3,000 - $40,000+",
     category: "design",
     popular: true,
   },
@@ -185,7 +177,6 @@ const services: Service[] = [
       "Accessibility compliance",
       "Progressive enhancement",
     ],
-    pricing: "$2,000 - $25,000+",
     category: "design",
   },
   {
@@ -202,7 +193,6 @@ const services: Service[] = [
       "Brand guidelines",
       "Design tool integration",
     ],
-    pricing: "$5,000 - $50,000+",
     category: "design",
   },
 
@@ -221,7 +211,6 @@ const services: Service[] = [
       "Scalability planning",
       "Best practices guidance",
     ],
-    pricing: "$150 - $300/hour",
     category: "consulting",
   },
   {
@@ -238,7 +227,6 @@ const services: Service[] = [
       "Schema markup",
       "Analytics setup",
     ],
-    pricing: "$1,500 - $15,000+",
     category: "consulting",
   },
   {
@@ -255,7 +243,6 @@ const services: Service[] = [
       "Data encryption",
       "Compliance (GDPR, CCPA)",
     ],
-    pricing: "$2,000 - $25,000+",
     category: "consulting",
   },
   {
@@ -272,7 +259,6 @@ const services: Service[] = [
       "Data visualization",
       "Reporting automation",
     ],
-    pricing: "$1,000 - $10,000+",
     category: "consulting",
   },
 
@@ -291,7 +277,6 @@ const services: Service[] = [
       "Feature enhancements",
       "Priority support",
     ],
-    pricing: "$500 - $5,000/month",
     category: "maintenance",
     popular: true,
   },
@@ -309,7 +294,6 @@ const services: Service[] = [
       "SSL certificates",
       "CDN configuration",
     ],
-    pricing: "$100 - $1,000/month",
     category: "maintenance",
   },
   {
@@ -326,7 +310,6 @@ const services: Service[] = [
       "Custom fields",
       "Plugin integration",
     ],
-    pricing: "$2,000 - $20,000+",
     category: "maintenance",
   },
   {
@@ -343,7 +326,6 @@ const services: Service[] = [
       "Bundle optimization",
       "Performance monitoring",
     ],
-    pricing: "$1,500 - $15,000+",
     category: "maintenance",
   },
 ];
@@ -456,13 +438,8 @@ function ServicesSection() {
                   </div>
                 )}
                 <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                      {service.icon}
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {service.pricing}
-                    </Badge>
+                  <div className="p-3 rounded-lg bg-primary/10 text-primary w-fit mb-2">
+                    {service.icon}
                   </div>
                   <CardTitle className="text-xl">{service.title}</CardTitle>
                   <CardDescription className="mt-2">

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { type Skill } from '@shared/schema';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { ThumbsUp } from 'lucide-react';
-import SkillEndorsementModal from './SkillEndorsementModal';
+import React, { useState } from "react";
+import { type Skill } from "@shared/schema";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ThumbsUp } from "lucide-react";
+import SkillEndorsementModal from "./SkillEndorsementModal";
 
 interface SkillBarProps {
   skill: Skill;
@@ -11,10 +11,10 @@ interface SkillBarProps {
   onEndorsementSubmitted?: () => void;
 }
 
-const SkillBar: React.FC<SkillBarProps> = ({ 
-  skill, 
-  barColor = "bg-gradient-to-r from-primary to-blue-400", 
-  onEndorsementSubmitted 
+const SkillBar: React.FC<SkillBarProps> = ({
+  skill,
+  barColor = "bg-gradient-to-r from-primary to-blue-400",
+  onEndorsementSubmitted,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -37,17 +37,19 @@ const SkillBar: React.FC<SkillBarProps> = ({
         <div className="text-sm font-medium">{skill.name}</div>
         <div className="flex items-center">
           {skill.endorsement_count > 0 && (
-            <div 
+            <div
               className="flex items-center text-xs text-muted-foreground mr-2"
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
               <ThumbsUp className="h-3 w-3 mr-1" />
               <span>{skill.endorsement_count}</span>
-              
+
               {showTooltip && (
                 <div className="absolute -top-8 right-12 bg-popover text-popover-foreground shadow-md rounded-md px-2 py-1 text-xs z-50">
-                  {skill.endorsement_count} {skill.endorsement_count === 1 ? 'person has' : 'people have'} endorsed this skill
+                  {skill.endorsement_count}{" "}
+                  {skill.endorsement_count === 1 ? "person has" : "people have"}{" "}
+                  endorsed this skill
                 </div>
               )}
             </div>
@@ -63,14 +65,19 @@ const SkillBar: React.FC<SkillBarProps> = ({
           </Button>
         </div>
       </div>
-      
+
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-        <div 
-          className={`skill-bar-${skill.category} h-2.5 rounded-full`}
-          style={{ width: `${skill.percentage}%` }}
+        <div
+          className={`h-2.5 rounded-full transition-[width] duration-500 ${barColor}`}
+          style={{
+            width: `${Math.min(
+              100,
+              Math.max(0, Number(skill.percentage) || 0)
+            )}%`,
+          }}
         />
       </div>
-      
+
       {isModalOpen && (
         <SkillEndorsementModal
           skill={skill}
