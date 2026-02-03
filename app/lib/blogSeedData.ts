@@ -2,6 +2,9 @@ const baseUrl = "https://mrguru.dev";
 
 export const blogSeedPosts = [
   {
+    id: 1,
+    authorId: 1,
+    isPublished: true,
     title: "Migrating from Vite to Next.js: A Complete Guide",
     slug: "migrating-vite-to-nextjs-complete-guide",
     summary:
@@ -79,6 +82,9 @@ export const blogSeedPosts = [
     readingTime: 8,
   },
   {
+    id: 2,
+    authorId: 1,
+    isPublished: true,
     title: "Building a Modern Portfolio with Next.js 15 and Tailwind CSS",
     slug: "building-modern-portfolio-nextjs-tailwind",
     summary:
@@ -155,6 +161,9 @@ export const blogSeedPosts = [
     readingTime: 6,
   },
   {
+    id: 3,
+    authorId: 1,
+    isPublished: true,
     title: "5 Essential Skills Every Modern Web Developer Should Master",
     slug: "5-essential-skills-modern-web-developer",
     summary:
@@ -238,6 +247,9 @@ export const blogSeedPosts = [
     readingTime: 7,
   },
   {
+    id: 4,
+    authorId: 1,
+    isPublished: true,
     title: "Embracing the Power of TypeScript in React Applications",
     slug: "embracing-power-typescript-react",
     summary:
@@ -311,6 +323,9 @@ export const blogSeedPosts = [
     readingTime: 6,
   },
   {
+    id: 5,
+    authorId: 1,
+    isPublished: true,
     title: "The Future of Web Development: Trends to Watch in 2025",
     slug: "future-web-development-trends-2025",
     summary:
@@ -384,6 +399,9 @@ export const blogSeedPosts = [
     readingTime: 6,
   },
   {
+    id: 6,
+    authorId: 1,
+    isPublished: true,
     title: "Best Practices for API Design in Next.js Applications",
     slug: "best-practices-api-design-nextjs",
     summary:
