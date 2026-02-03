@@ -69,15 +69,19 @@ export async function GET(
     }
 
     const response = getResponse();
-    if (!response) {
+    if (!response || response.status === 404) {
       const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
       if (fallbackPost) {
+        if (!response) {
+          console.warn("No response from blog controller, returning seed post");
+        } else {
+          console.warn("Blog post 404 from controller, returning seed post");
+        }
         return NextResponse.json(fallbackPost);
       }
-      // If no response was set, the post likely doesn't exist
-      return NextResponse.json(
-        { error: "Blog post not found" },
-        { status: 404 }
+      return (
+        response ||
+        NextResponse.json({ error: "Blog post not found" }, { status: 404 })
       );
     }
 

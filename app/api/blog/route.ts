@@ -19,8 +19,12 @@ export async function GET(req: NextRequest) {
 
     const response = getResponse();
     if (!response) {
-      // Return seed posts if no response (database might be unavailable)
       console.warn("No response from blog controller, returning seed posts");
+      return NextResponse.json(blogSeedPosts);
+    }
+
+    if (response.status === 404) {
+      console.warn("Blog posts 404 from controller, returning seed posts");
       return NextResponse.json(blogSeedPosts);
     }
 
