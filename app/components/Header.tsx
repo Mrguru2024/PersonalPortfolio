@@ -3,7 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Code, Menu, X, LogIn, LogOut, User, Wand2 } from "lucide-react";
+import {
+  Code,
+  Menu,
+  X,
+  LogIn,
+  LogOut,
+  User,
+  Wand2,
+  LayoutDashboard,
+  FileText,
+  Receipt,
+  Megaphone,
+  MessageSquare,
+  Mail,
+  BarChart3,
+  Users,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { personalInfo } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +29,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
@@ -38,6 +58,24 @@ export default function Header(_props: HeaderProps) {
     { name: "Contact", href: "#contact" },
   ];
 
+  const adminPages = [
+    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Blog", href: "/admin/blog", icon: FileText },
+    { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3 },
+    { name: "Invoices", href: "/admin/invoices", icon: Receipt },
+    { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
+    { name: "Feedback", href: "/admin/feedback", icon: MessageSquare },
+    { name: "Newsletters", href: "/admin/newsletters", icon: Mail },
+    {
+      name: "Newsletter Subscribers",
+      href: "/admin/newsletters/subscribers",
+      icon: Users,
+    },
+  ];
+
+  const isApprovedAdmin =
+    user?.isAdmin === true && user?.adminApproved === true;
+
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
@@ -49,7 +87,7 @@ export default function Header(_props: HeaderProps) {
   const isHomePage = pathname === "/";
 
   return (
-    <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border shadow-sm transition-colors duration-300">
+    <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border shadow-sm transition-colors duration-300 pt-[env(safe-area-inset-top)]">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
         <Link
@@ -119,16 +157,37 @@ export default function Header(_props: HeaderProps) {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="min-w-[200px]">
                 <DropdownMenuItem className="cursor-default">
                   <span className="text-sm font-medium">@{user.username}</span>
                 </DropdownMenuItem>
-                {user.isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/blog" className="cursor-pointer">
-                      Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
+                {isApprovedAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="cursor-pointer">
+                        <LayoutDashboard className="h-4 w-4 shrink-0" />
+                        <span>Admin</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="min-w-[200px]">
+                        {adminPages.map((page) => {
+                          const Icon = page.icon;
+                          return (
+                            <DropdownMenuItem key={page.href} asChild>
+                              <Link
+                                href={page.href}
+                                className="cursor-pointer flex items-center gap-2"
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span>{page.name}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                  </>
                 )}
                 <DropdownMenuItem
                   onClick={() => logoutMutation.mutate()}
@@ -230,14 +289,26 @@ export default function Header(_props: HeaderProps) {
                   <div className="px-2 py-1 text-sm font-medium text-foreground/80">
                     Logged in as @{user.username}
                   </div>
-                  {user.isAdmin && (
-                    <Link
-                      href="/admin/blog"
-                      className="block text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
+                  {isApprovedAdmin && (
+                    <div className="space-y-1">
+                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                        Admin
+                      </div>
+                      {adminPages.map((page) => {
+                        const Icon = page.icon;
+                        return (
+                          <Link
+                            key={page.href}
+                            href={page.href}
+                            className="flex items-center gap-2 text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span>{page.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   )}
                   <button
                     type="button"

@@ -151,7 +151,7 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Hero section */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary/10 dark:bg-primary/5 p-12 items-center justify-center">
         <div className="max-w-xl space-y-8">
@@ -192,8 +192,8 @@ const AuthPage = () => {
       </div>
 
       {/* Auth form section */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md space-y-6">
+      <div className="w-full min-w-0 lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+        <div className="w-full max-w-md min-w-0 space-y-6">
           <div className="text-center lg:hidden">
             <h1 className="text-3xl font-bold text-primary">MrGuru.dev</h1>
             <p className="mt-2 text-gray-600 dark:text-gray-300">

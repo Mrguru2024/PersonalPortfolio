@@ -17,6 +17,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -26,10 +27,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-[100vw]">
         <Providers>
           <Header />
-          <main>{children}</main>
+          <main className="min-w-0 overflow-x-hidden">{children}</main>
         </Providers>
       </body>
     </html>

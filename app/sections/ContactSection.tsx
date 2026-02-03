@@ -82,7 +82,13 @@ const ContactSection = () => {
   });
 
   const TwitterIcon = () => (
-    <svg className="text-2xl w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg
+      className="text-2xl w-6 h-6"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
@@ -129,7 +135,7 @@ const ContactSection = () => {
     (data: FormData) => {
       mutate(data);
     },
-    [mutate],
+    [mutate]
   );
 
   const handleEnhanceWithAI = useCallback(
@@ -162,7 +168,7 @@ const ContactSection = () => {
         setIsLoadingAI(false);
       }
     },
-    [form],
+    [form]
   );
 
   return (
@@ -253,18 +259,18 @@ const ContactSection = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 min-w-0">
           {formSubmitted ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 flex flex-col items-center justify-center text-center"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center min-w-0"
             >
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Thank You!</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-4">Thank You!</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Your project inquiry has been received. I'll review the details
                 and get back to you within 24 hours with a custom quote.
@@ -283,13 +289,15 @@ const ContactSection = () => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden"
             >
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
+              <div className="flex items-center gap-3 mb-6 min-w-0">
+                <div className="w-10 h-10 shrink-0 bg-primary/10 rounded-full flex items-center justify-center">
                   <ArrowRight className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">Get a Custom Quote</h3>
+                <h3 className="text-xl sm:text-2xl font-bold truncate">
+                  Get a Custom Quote
+                </h3>
               </div>
 
               <Form {...form}>
