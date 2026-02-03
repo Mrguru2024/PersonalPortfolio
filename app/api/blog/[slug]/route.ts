@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { blogController } from "@server/controllers/blogController";
-import { blogSeedPosts } from "@server/blogSeedData";
+import { blogSeedPosts } from "@/lib/blogSeedData";
 import { createMockResponse } from "@/lib/api-helpers";
 
 export async function GET(
@@ -89,7 +89,12 @@ export async function GET(
   } catch (error: any) {
     console.error("Error in GET /api/blog/[slug]:", error);
 
-    // Always return JSON, never HTML
+    // On any error, try seed fallback first so production always shows posts when possible
+    const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
+    if (fallbackPost) {
+      return NextResponse.json(fallbackPost);
+    }
+
     const errorMessage = error?.message || String(error) || "";
     if (
       errorMessage.includes("endpoint has been disabled") ||
@@ -98,10 +103,6 @@ export async function GET(
       errorMessage.includes("column") ||
       errorMessage.includes("does not exist")
     ) {
-      const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
-      if (fallbackPost) {
-        return NextResponse.json(fallbackPost);
-      }
       return NextResponse.json(
         { error: "Blog post not found" },
         { status: 404 }

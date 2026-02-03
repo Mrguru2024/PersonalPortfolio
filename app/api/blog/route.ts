@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { blogController } from "@server/controllers/blogController";
-import { blogSeedPosts } from "@server/blogSeedData";
+import { blogSeedPosts } from "@/lib/blogSeedData";
 import { canCreateBlog, getSessionUser } from "@/lib/auth-helpers";
 import { createMockResponse } from "@/lib/api-helpers";
 

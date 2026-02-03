@@ -10,7 +10,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BlogPostSEO, StructuredData } from "@/components/SEO";
 import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
-import { apiRequest } from "@/lib/queryClient";
 import { fetchBlogSeedPost } from "@/lib/blogSeedClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
@@ -26,16 +25,15 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
   } = useQuery({
     queryKey: ["/api/blog", slug],
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", `/api/blog/${slug}`);
+      const res = await fetch(`/api/blog/${slug}`, { credentials: "include" });
+      if (res.ok) {
         return (await res.json()) as BlogPostType;
-      } catch {
-        const fallback = await fetchBlogSeedPost(slug);
-        if (!fallback) {
-          throw new Error("Post not found");
-        }
-        return fallback as BlogPostType;
       }
+      const fallback = await fetchBlogSeedPost(slug);
+      if (!fallback) {
+        throw new Error("Post not found");
+      }
+      return fallback;
     },
     enabled: !!slug,
   });
