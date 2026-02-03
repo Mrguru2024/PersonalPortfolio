@@ -11,6 +11,7 @@ import { BlogPostSEO, StructuredData } from "@/components/SEO";
 import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { apiRequest } from "@/lib/queryClient";
+import { fetchBlogSeedPost } from "@/lib/blogSeedClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
 interface BlogPostProps {
@@ -18,15 +19,23 @@ interface BlogPostProps {
 }
 
 export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
-  const { data: post, isLoading, error } = useQuery({
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["/api/blog", slug],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/blog/${slug}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Post not found");
+      try {
+        const res = await apiRequest("GET", `/api/blog/${slug}`);
+        return (await res.json()) as BlogPostType;
+      } catch {
+        const fallback = await fetchBlogSeedPost(slug);
+        if (!fallback) {
+          throw new Error("Post not found");
+        }
+        return fallback as BlogPostType;
       }
-      return res.json() as Promise<BlogPostType>;
     },
     enabled: !!slug,
   });
@@ -52,7 +61,8 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
         <Alert variant="destructive" className="mb-6">
           <AlertTitle>Post not found</AlertTitle>
           <AlertDescription>
-            The blog post you&apos;re looking for doesn&apos;t exist or has been removed.
+            The blog post you&apos;re looking for doesn&apos;t exist or has been
+            removed.
           </AlertDescription>
         </Alert>
         <Button variant="outline" asChild>
@@ -100,7 +110,9 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
         <div className="flex flex-wrap gap-3 mb-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            {post.publishedAt ? format(new Date(post.publishedAt), "MMMM d, yyyy") : "—"}
+            {post.publishedAt
+              ? format(new Date(post.publishedAt), "MMMM d, yyyy")
+              : "—"}
           </span>
           {tags.length > 0 && (
             <span className="flex items-center gap-1 flex-wrap">

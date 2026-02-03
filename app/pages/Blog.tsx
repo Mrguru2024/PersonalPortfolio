@@ -4,13 +4,20 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Calendar, Tag, Search, PlusCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageSEO } from "@/components/SEO";
 import { apiRequest } from "@/lib/queryClient";
+import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
 import { format } from "date-fns";
 
@@ -18,12 +25,20 @@ export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  const { data: posts = [], isLoading, error } = useQuery({
+  const {
+    data: posts = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["/api/blog"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/blog");
-      const json = await res.json();
-      return Array.isArray(json) ? json as BlogPost[] : [];
+      try {
+        const res = await apiRequest("GET", "/api/blog");
+        const json = await res.json();
+        return Array.isArray(json) ? (json as BlogPost[]) : [];
+      } catch {
+        return fetchBlogSeedPosts();
+      }
     },
   });
 
@@ -53,7 +68,8 @@ export default function Blog() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Blog</h1>
             <p className="text-lg text-muted-foreground mb-6">
-              Thoughts, insights, and updates from my journey as a developer and entrepreneur.
+              Thoughts, insights, and updates from my journey as a developer and
+              entrepreneur.
             </p>
           </div>
           <div className="flex justify-end mb-4">
@@ -99,8 +115,13 @@ export default function Blog() {
               </div>
             ) : error ? (
               <div className="text-center py-12 rounded-lg bg-muted">
-                <p className="text-destructive mb-4">Failed to load blog posts</p>
-                <Button variant="outline" onClick={() => window.location.reload()}>
+                <p className="text-destructive mb-4">
+                  Failed to load blog posts
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
                   Try again
                 </Button>
               </div>
@@ -127,7 +148,10 @@ export default function Blog() {
             ) : (
               <div className="space-y-6">
                 {filteredPosts.map((post) => (
-                  <Card key={post.id} className="overflow-hidden transition-all hover:shadow-md">
+                  <Card
+                    key={post.id}
+                    className="overflow-hidden transition-all hover:shadow-md"
+                  >
                     <div className="flex flex-col md:flex-row">
                       <div className="md:w-1/3 h-[200px] overflow-hidden">
                         <img
@@ -141,7 +165,10 @@ export default function Blog() {
                           <div className="flex items-center text-sm text-muted-foreground mb-2">
                             <Calendar className="mr-1 h-3 w-3" />
                             {post.publishedAt
-                              ? format(new Date(post.publishedAt), "MMMM d, yyyy")
+                              ? format(
+                                  new Date(post.publishedAt),
+                                  "MMMM d, yyyy"
+                                )
                               : "—"}
                           </div>
                           <CardTitle className="text-xl mb-1">
@@ -156,9 +183,15 @@ export default function Blog() {
                             {(post.tags || []).slice(0, 3).map((tag) => (
                               <Badge
                                 key={tag}
-                                variant={tag === selectedTag ? "default" : "outline"}
+                                variant={
+                                  tag === selectedTag ? "default" : "outline"
+                                }
                                 className="mr-2 cursor-pointer mb-1"
-                                onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                                onClick={() =>
+                                  setSelectedTag(
+                                    tag === selectedTag ? null : tag
+                                  )
+                                }
                               >
                                 {tag}
                               </Badge>
@@ -169,7 +202,11 @@ export default function Blog() {
                           <p className="text-muted-foreground line-clamp-3 mb-4">
                             {post.summary || ""}
                           </p>
-                          <Button variant="link" className="px-0 h-auto" asChild>
+                          <Button
+                            variant="link"
+                            className="px-0 h-auto"
+                            asChild
+                          >
                             <Link href={`/blog/${post.slug}`}>Read more →</Link>
                           </Button>
                         </CardContent>
@@ -200,7 +237,9 @@ export default function Blog() {
                       key={tag}
                       variant={tag === selectedTag ? "default" : "outline"}
                       className="cursor-pointer"
-                      onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                      onClick={() =>
+                        setSelectedTag(tag === selectedTag ? null : tag)
+                      }
                     >
                       <Tag className="h-3 w-3 mr-1 inline" />
                       {tag}
@@ -215,7 +254,8 @@ export default function Blog() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  I write about my experiences as a developer, entrepreneur, and lifelong learner.
+                  I write about my experiences as a developer, entrepreneur, and
+                  lifelong learner.
                 </p>
                 <Button variant="outline" className="mt-4 w-full" asChild>
                   <Link href="/#contact">Get in touch</Link>
