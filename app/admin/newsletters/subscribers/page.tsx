@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Mail, Trash2, UserPlus, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -62,32 +68,47 @@ export default function SubscribersPage() {
     }
   }, [user, authLoading, router]);
 
-  const { data: subscribers = [], isLoading, error } = useQuery<Subscriber[]>({
+  const {
+    data: subscribers = [],
+    isLoading,
+    error,
+  } = useQuery<Subscriber[]>({
     queryKey: ["/api/admin/subscribers"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("GET", "/api/admin/subscribers?includeUnsubscribed=true");
+        const response = await apiRequest(
+          "GET",
+          "/api/admin/subscribers?includeUnsubscribed=true"
+        );
         if (!response.ok) {
           // Handle 403 gracefully - user might not be approved yet
           if (response.status === 403) {
             return [];
           }
-          const errorData = await response.json().catch(() => ({ message: "Failed to fetch subscribers" }));
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: "Failed to fetch subscribers" }));
           throw new Error(errorData.message || "Failed to fetch subscribers");
         }
         return await response.json();
       } catch (err: any) {
         // If it's a 403 error or admin access error, return empty array instead of throwing
         const errorMessage = err?.message || "";
-        if (errorMessage.includes("Admin access required") || 
-            errorMessage.includes("403") ||
-            errorMessage.includes('"message":"Admin access required"')) {
+        if (
+          errorMessage.includes("Admin access required") ||
+          errorMessage.includes("403") ||
+          errorMessage.includes('"message":"Admin access required"')
+        ) {
           return [];
         }
         throw err;
       }
     },
-    enabled: !authLoading && !!user && user.isAdmin === true && user.adminApproved === true,
+    enabled:
+      !authLoading &&
+      !!user &&
+      user.isAdmin === true &&
+      user.adminApproved === true,
     retry: false,
     throwOnError: false,
   });
@@ -167,8 +188,8 @@ export default function SubscribersPage() {
     return null;
   }
 
-  const activeSubscribers = subscribers.filter(s => s.subscribed);
-  const unsubscribed = subscribers.filter(s => !s.subscribed);
+  const activeSubscribers = subscribers.filter((s) => s.subscribed);
+  const unsubscribed = subscribers.filter((s) => !s.subscribed);
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -198,7 +219,9 @@ export default function SubscribersPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Subscriber</DialogTitle>
-                <DialogDescription>Add a new subscriber to your newsletter</DialogDescription>
+                <DialogDescription>
+                  Add a new subscriber to your newsletter
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -208,7 +231,7 @@ export default function SubscribersPage() {
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="subscriber@example.com"
+                    placeholder="subscriber@email.com"
                     className="mt-1"
                   />
                 </div>
@@ -223,7 +246,10 @@ export default function SubscribersPage() {
                   />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -249,12 +275,18 @@ export default function SubscribersPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Active Subscribers ({activeSubscribers.length})</CardTitle>
-            <CardDescription>Subscribers who will receive newsletters</CardDescription>
+            <CardTitle>
+              Active Subscribers ({activeSubscribers.length})
+            </CardTitle>
+            <CardDescription>
+              Subscribers who will receive newsletters
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {activeSubscribers.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No active subscribers</p>
+              <p className="text-muted-foreground text-center py-8">
+                No active subscribers
+              </p>
             ) : (
               <div className="space-y-2">
                 {activeSubscribers.map((subscriber) => (
@@ -265,10 +297,13 @@ export default function SubscribersPage() {
                     <div>
                       <div className="font-medium">{subscriber.email}</div>
                       {subscriber.name && (
-                        <div className="text-sm text-muted-foreground">{subscriber.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {subscriber.name}
+                        </div>
                       )}
                       <div className="text-xs text-muted-foreground mt-1">
-                        Subscribed {format(new Date(subscriber.subscribedAt), "PP")}
+                        Subscribed{" "}
+                        {format(new Date(subscriber.subscribedAt), "PP")}
                         {subscriber.source && ` • Source: ${subscriber.source}`}
                       </div>
                     </div>
@@ -276,7 +311,9 @@ export default function SubscribersPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => unsubscribeMutation.mutate(subscriber.id)}
+                        onClick={() =>
+                          unsubscribeMutation.mutate(subscriber.id)
+                        }
                       >
                         Unsubscribe
                       </Button>
@@ -299,7 +336,9 @@ export default function SubscribersPage() {
           <Card>
             <CardHeader>
               <CardTitle>Unsubscribed ({unsubscribed.length})</CardTitle>
-              <CardDescription>Subscribers who have unsubscribed</CardDescription>
+              <CardDescription>
+                Subscribers who have unsubscribed
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -311,10 +350,14 @@ export default function SubscribersPage() {
                     <div>
                       <div className="font-medium">{subscriber.email}</div>
                       {subscriber.name && (
-                        <div className="text-sm text-muted-foreground">{subscriber.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {subscriber.name}
+                        </div>
                       )}
                       <div className="text-xs text-muted-foreground mt-1">
-                        Unsubscribed {subscriber.unsubscribedAt && format(new Date(subscriber.unsubscribedAt), "PP")}
+                        Unsubscribed{" "}
+                        {subscriber.unsubscribedAt &&
+                          format(new Date(subscriber.unsubscribedAt), "PP")}
                       </div>
                     </div>
                     <Button
@@ -332,12 +375,16 @@ export default function SubscribersPage() {
         )}
       </div>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog
+        open={deleteId !== null}
+        onOpenChange={() => setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Subscriber</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this subscriber? This action cannot be undone.
+              Are you sure you want to delete this subscriber? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

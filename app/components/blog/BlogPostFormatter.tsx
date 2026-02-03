@@ -60,7 +60,10 @@ export function BlogPostFormatter({
         if (!href) return;
 
         // External links
-        if (href.startsWith("http") && !href.includes(globalThis.location.hostname)) {
+        if (
+          href.startsWith("http") &&
+          !href.includes(globalThis.location.hostname)
+        ) {
           link.setAttribute("rel", "noopener noreferrer");
           link.setAttribute("target", "_blank");
           // Check if it should be nofollow
@@ -73,7 +76,10 @@ export function BlogPostFormatter({
 
         // Add aria-label for accessibility
         if (!link.getAttribute("aria-label") && link.textContent) {
-          link.setAttribute("aria-label", `Read more: ${link.textContent.trim()}`);
+          link.setAttribute(
+            "aria-label",
+            `Read more: ${link.textContent.trim()}`
+          );
         }
       });
 
@@ -84,7 +90,9 @@ export function BlogPostFormatter({
         const level = parseInt(heading.tagName.charAt(1));
         if (level > lastLevel + 1 && lastLevel > 0) {
           // Skip levels detected - could log warning
-          console.warn(`Heading hierarchy issue: ${heading.tagName} after h${lastLevel}`);
+          console.warn(
+            `Heading hierarchy issue: ${heading.tagName} after h${lastLevel}`
+          );
         }
         lastLevel = level;
 
@@ -102,7 +110,13 @@ export function BlogPostFormatter({
       const codeBlocks = container.querySelectorAll("pre code");
       codeBlocks.forEach((code) => {
         if (!code.parentElement?.classList.contains("hljs")) {
-          code.parentElement?.classList.add("bg-gray-900", "dark:bg-gray-950", "p-4", "rounded-lg", "overflow-x-auto");
+          code.parentElement?.classList.add(
+            "bg-gray-900",
+            "dark:bg-gray-950",
+            "p-4",
+            "rounded-lg",
+            "overflow-x-auto"
+          );
         }
       });
 
@@ -112,7 +126,8 @@ export function BlogPostFormatter({
           // Only add to first 10 headings to avoid clutter
           const anchor = document.createElement("a");
           anchor.href = `#${heading.id}`;
-          anchor.className = "heading-anchor opacity-0 hover:opacity-100 transition-opacity ml-2 text-primary";
+          anchor.className =
+            "heading-anchor opacity-0 hover:opacity-100 transition-opacity ml-2 text-primary";
           anchor.setAttribute("aria-label", "Link to this section");
           anchor.innerHTML = "#";
           heading.appendChild(anchor);
@@ -193,7 +208,7 @@ export function BlogPostFormatter({
         "prose-figcaption:text-sm prose-figcaption:text-gray-500 prose-figcaption:mt-2 prose-figcaption:text-center",
         className
       )}
-      dangerouslySetInnerHTML={{ __html: content || '<p>No content available for this post.</p>' }}
+      dangerouslySetInnerHTML={{ __html: content || "" }}
       itemScope
       itemType="https://schema.org/BlogPosting"
     />

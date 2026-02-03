@@ -18,7 +18,13 @@ import {
   Calendar,
   Mail,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -73,7 +79,11 @@ export default function AdminInvoicesPage() {
     amount: "",
     recipientEmail: "",
     dueDate: "",
-    lineItems: [] as { description: string; amount: string; quantity: string }[],
+    lineItems: [] as {
+      description: string;
+      amount: string;
+      quantity: string;
+    }[],
   });
 
   useEffect(() => {
@@ -106,7 +116,10 @@ export default function AdminInvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
-      toast({ title: "Invoice created", description: "Draft invoice has been created." });
+      toast({
+        title: "Invoice created",
+        description: "Draft invoice has been created.",
+      });
       setCreateOpen(false);
       resetForm();
     },
@@ -150,7 +163,11 @@ export default function AdminInvoicesPage() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
-      toast({ title: "Invoice sent", description: "The recipient will receive an email with the payment link." });
+      toast({
+        title: "Invoice sent",
+        description:
+          "The recipient will receive an email with the payment link.",
+      });
     },
     onError: (e: Error) => {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -164,7 +181,10 @@ export default function AdminInvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
-      toast({ title: "Reminder sent", description: "A reminder email was sent to the recipient." });
+      toast({
+        title: "Reminder sent",
+        description: "A reminder email was sent to the recipient.",
+      });
     },
     onError: (e: Error) => {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -197,7 +217,10 @@ export default function AdminInvoicesPage() {
 
   function openCreate() {
     resetForm();
-    setForm((f) => ({ ...f, lineItems: [{ description: "", amount: "", quantity: "1" }] }));
+    setForm((f) => ({
+      ...f,
+      lineItems: [{ description: "", amount: "", quantity: "1" }],
+    }));
     setCreateOpen(true);
   }
 
@@ -215,14 +238,21 @@ export default function AdminInvoicesPage() {
               amount: String(l.amount / 100),
               quantity: String(l.quantity ?? 1),
             }))
-          : [{ description: inv.title, amount: String(inv.amount / 100), quantity: "1" }],
+          : [
+              {
+                description: inv.title,
+                amount: String(inv.amount / 100),
+                quantity: "1",
+              },
+            ],
     });
   }
 
   function submitCreate() {
     const amountCents = Math.round(parseFloat(form.amount || "0") * 100);
     const lineItems =
-      form.lineItems.length > 0 && form.lineItems.some((l) => l.description || l.amount)
+      form.lineItems.length > 0 &&
+      form.lineItems.some((l) => l.description || l.amount)
         ? form.lineItems
             .filter((l) => l.description && l.amount)
             .map((l) => ({
@@ -233,7 +263,9 @@ export default function AdminInvoicesPage() {
         : undefined;
     createMutation.mutate({
       title: form.title,
-      amount: lineItems ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0) : amountCents,
+      amount: lineItems
+        ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0)
+        : amountCents,
       recipientEmail: form.recipientEmail || undefined,
       dueDate: form.dueDate || undefined,
       lineItems,
@@ -244,7 +276,8 @@ export default function AdminInvoicesPage() {
     if (!editing) return;
     const amountCents = Math.round(parseFloat(form.amount || "0") * 100);
     const lineItems =
-      form.lineItems.length > 0 && form.lineItems.some((l) => l.description || l.amount)
+      form.lineItems.length > 0 &&
+      form.lineItems.some((l) => l.description || l.amount)
         ? form.lineItems
             .filter((l) => l.description && l.amount)
             .map((l) => ({
@@ -257,7 +290,9 @@ export default function AdminInvoicesPage() {
       id: editing.id,
       body: {
         title: form.title,
-        amount: lineItems ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0) : amountCents,
+        amount: lineItems
+          ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0)
+          : amountCents,
         recipientEmail: form.recipientEmail || null,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         lineItems,
@@ -265,7 +300,10 @@ export default function AdminInvoicesPage() {
     });
   }
 
-  const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  const statusVariant: Record<
+    string,
+    "default" | "secondary" | "destructive" | "outline"
+  > = {
     draft: "outline",
     sent: "secondary",
     paid: "default",
@@ -274,9 +312,11 @@ export default function AdminInvoicesPage() {
   };
 
   const formatCurrency = (cents: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(
-      cents / 100
-    );
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(cents / 100);
 
   if (authLoading) {
     return (
@@ -319,7 +359,9 @@ export default function AdminInvoicesPage() {
             <FileText className="h-5 w-5 text-violet-500" />
             All invoices
           </CardTitle>
-          <CardDescription>{invoices.length} total · Drafts can be edited and sent via Stripe</CardDescription>
+          <CardDescription>
+            {invoices.length} total · Drafts can be edited and sent via Stripe
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -329,8 +371,12 @@ export default function AdminInvoicesPage() {
           ) : invoices.length === 0 ? (
             <div className="text-center py-12 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5">
               <FileText className="h-12 w-12 mx-auto text-violet-500/60 mb-4" />
-              <p className="text-muted-foreground font-medium">No invoices yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Create your first invoice to get started</p>
+              <p className="text-muted-foreground font-medium">
+                No invoices yet
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Create your first invoice to get started
+              </p>
               <Button onClick={openCreate} variant="outline" className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Create invoice
@@ -356,7 +402,9 @@ export default function AdminInvoicesPage() {
                       )}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
-                      <Badge variant={statusVariant[inv.status] ?? "outline"}>{inv.status}</Badge>
+                      <Badge variant={statusVariant[inv.status] ?? "outline"}>
+                        {inv.status}
+                      </Badge>
                       <span className="text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         {formatCurrency(inv.amount)}
@@ -372,7 +420,11 @@ export default function AdminInvoicesPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     {inv.status === "draft" && (
                       <>
-                        <Button variant="outline" size="sm" onClick={() => openEdit(inv)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEdit(inv)}
+                        >
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
@@ -380,7 +432,9 @@ export default function AdminInvoicesPage() {
                           size="sm"
                           className="bg-violet-600 hover:bg-violet-700"
                           onClick={() => sendMutation.mutate(inv.id)}
-                          disabled={sendMutation.isPending || !inv.recipientEmail}
+                          disabled={
+                            sendMutation.isPending || !inv.recipientEmail
+                          }
                         >
                           <Send className="h-4 w-4 mr-1" />
                           Send
@@ -390,7 +444,11 @@ export default function AdminInvoicesPage() {
                     {inv.status === "sent" && inv.hostInvoiceUrl && (
                       <>
                         <Button variant="outline" size="sm" asChild>
-                          <a href={inv.hostInvoiceUrl} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={inv.hostInvoiceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             <ExternalLink className="h-4 w-4 mr-1" />
                             View
                           </a>
@@ -425,12 +483,24 @@ export default function AdminInvoicesPage() {
       </Card>
 
       {/* Create / Edit dialog */}
-      <Dialog open={createOpen || !!editing} onOpenChange={(open) => { if (!open) { setCreateOpen(false); setEditing(null); } }}>
+      <Dialog
+        open={createOpen || !!editing}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateOpen(false);
+            setEditing(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit invoice" : "New invoice"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit invoice" : "New invoice"}
+            </DialogTitle>
             <DialogDescription>
-              {editing ? "Update details. Only draft invoices can be edited." : "Create a draft invoice. Add recipient email and send via Stripe when ready."}
+              {editing
+                ? "Update details. Only draft invoices can be edited."
+                : "Create a draft invoice. Add recipient email and send via Stripe when ready."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -439,7 +509,9 @@ export default function AdminInvoicesPage() {
               <Input
                 placeholder="e.g. Project Phase 1"
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -449,16 +521,20 @@ export default function AdminInvoicesPage() {
                 step="0.01"
                 placeholder="0.00"
                 value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, amount: e.target.value }))
+                }
               />
             </div>
             <div className="grid gap-2">
               <Label>Recipient email</Label>
               <Input
                 type="email"
-                placeholder="client@example.com"
+                placeholder="client@company.com"
                 value={form.recipientEmail}
-                onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, recipientEmail: e.target.value }))
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -466,22 +542,40 @@ export default function AdminInvoicesPage() {
               <Input
                 type="date"
                 value={form.dueDate}
-                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, dueDate: e.target.value }))
+                }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCreateOpen(false); setEditing(null); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateOpen(false);
+                setEditing(null);
+              }}
+            >
               Cancel
             </Button>
             {editing ? (
-              <Button onClick={submitEdit} disabled={updateMutation.isPending || !form.title}>
-                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              <Button
+                onClick={submitEdit}
+                disabled={updateMutation.isPending || !form.title}
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Save
               </Button>
             ) : (
-              <Button onClick={submitCreate} disabled={createMutation.isPending || !form.title}>
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              <Button
+                onClick={submitCreate}
+                disabled={createMutation.isPending || !form.title}
+              >
+                {createMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Create
               </Button>
             )}
@@ -489,19 +583,25 @@ export default function AdminInvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog
+        open={deleteId !== null}
+        onOpenChange={() => setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove this draft invoice. This action cannot be undone.
+              This will permanently remove this draft invoice. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground"
-              onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+              onClick={() =>
+                deleteId !== null && deleteMutation.mutate(deleteId)
+              }
             >
               Delete
             </AlertDialogAction>

@@ -78,6 +78,13 @@ export interface BlogPost {
   updatedAt: string;
   authorId: number;
   isPublished: boolean;
+  /** SEO/internal links for formatting and backlinks */
+  internalLinks?: Array<{ text: string; url: string; postId?: number }>;
+  /** External authority links (e.g. nofollow) */
+  externalLinks?: Array<{ text: string; url: string; nofollow?: boolean }>;
+  /** Related post IDs for the RelatedPosts block */
+  relatedPosts?: number[];
+  readingTime?: number;
 }
 
 export interface BlogComment {

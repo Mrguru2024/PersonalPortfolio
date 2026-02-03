@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BlogPostSEO, StructuredData } from "@/components/SEO";
+import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
+import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { apiRequest } from "@/lib/queryClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
@@ -118,9 +120,15 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
             className="w-full rounded-lg mb-8 object-cover max-h-80"
           />
         )}
-        <div
-          className="prose dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content || post.summary || "" }}
+        <BlogPostFormatter
+          content={post.content || post.summary || ""}
+          internalLinks={post.internalLinks ?? []}
+          externalLinks={post.externalLinks ?? []}
+        />
+        <RelatedPosts
+          relatedPostIds={post.relatedPosts ?? []}
+          currentPostId={post.id}
+          currentPostTags={tags}
         />
       </article>
     </div>

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
@@ -28,7 +34,9 @@ export default function ForgotPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const res = await apiRequest("POST", "/api/auth/forgot-password", { email: email.trim() });
+      const res = await apiRequest("POST", "/api/auth/forgot-password", {
+        email: email.trim(),
+      });
       const data = await res.json();
       setSubmitted(true);
       if (data.message) {
@@ -57,14 +65,16 @@ export default function ForgotPasswordPage() {
             Forgot password
           </CardTitle>
           <CardDescription>
-            Enter your email and we&apos;ll send you a link to reset your password.
+            Enter your email and we&apos;ll send you a link to reset your
+            password.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {submitted ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                If an account exists with that email, you will receive a password reset link shortly.
+                If an account exists with that email, you will receive a
+                password reset link shortly.
               </p>
               <Button variant="outline" asChild className="w-full">
                 <Link href="/auth">
@@ -80,7 +90,7 @@ export default function ForgotPasswordPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={submitting}
@@ -88,7 +98,9 @@ export default function ForgotPasswordPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Send reset link
               </Button>
               <Button variant="ghost" asChild className="w-full">

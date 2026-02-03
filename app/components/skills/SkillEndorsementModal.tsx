@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -15,18 +15,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { type Skill, type SkillEndorsement, skillEndorsementFormSchema } from '@shared/schema';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import SkillEndorsementCard from './SkillEndorsementCard';
-import { Star } from 'lucide-react';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  type Skill,
+  type SkillEndorsement,
+  skillEndorsementFormSchema,
+} from "@shared/schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import SkillEndorsementCard from "./SkillEndorsementCard";
+import { Star } from "lucide-react";
 
 interface SkillEndorsementModalProps {
   skill: Skill;
@@ -36,87 +40,91 @@ interface SkillEndorsementModalProps {
 
 type FormData = z.infer<typeof skillEndorsementFormSchema>;
 
-const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({ 
-  skill, 
-  isOpen, 
-  onClose 
+const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
+  skill,
+  isOpen,
+  onClose,
 }) => {
   const [rating, setRating] = useState(5);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(skillEndorsementFormSchema),
     defaultValues: {
       skillId: skill.id,
-      name: '',
-      email: '',
-      comment: '',
-      rating: 5
-    }
-  });
-  
-  // Fetch existing endorsements for this skill
-  const { data: endorsements = [], isLoading: isLoadingEndorsements } = useQuery({
-    queryKey: ['/api/skill-endorsements', skill.id],
-    queryFn: async () => {
-      const res = await fetch(`/api/skill-endorsements?skillId=${skill.id}`);
-      if (!res.ok) throw new Error('Failed to fetch endorsements');
-      return res.json();
+      name: "",
+      email: "",
+      comment: "",
+      rating: 5,
     },
-    enabled: isOpen, // Only fetch when modal is open
   });
-  
+
+  // Fetch existing endorsements for this skill
+  const { data: endorsements = [], isLoading: isLoadingEndorsements } =
+    useQuery({
+      queryKey: ["/api/skill-endorsements", skill.id],
+      queryFn: async () => {
+        const res = await fetch(`/api/skill-endorsements?skillId=${skill.id}`);
+        if (!res.ok) throw new Error("Failed to fetch endorsements");
+        return res.json();
+      },
+      enabled: isOpen, // Only fetch when modal is open
+    });
+
   // Submit endorsement mutation
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: FormData) => {
-      const res = await apiRequest('POST', '/api/skill-endorsements', data);
+      const res = await apiRequest("POST", "/api/skill-endorsements", data);
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to submit endorsement');
+        throw new Error(error.error || "Failed to submit endorsement");
       }
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Endorsement submitted',
+        title: "Endorsement submitted",
         description: `Thank you for endorsing ${skill.name}!`,
       });
       form.reset();
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/skill-endorsements', skill.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/skills'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/skill-endorsements", skill.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/skills"] });
       onClose();
     },
     onError: (error) => {
       toast({
-        title: 'Failed to submit endorsement',
+        title: "Failed to submit endorsement",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
-  
+
   const onSubmit = (data: FormData) => {
     // Make sure to include the current rating in the submission
     mutate({ ...data, rating });
   };
-  
+
   const handleRatingClick = (value: number) => {
     setRating(value);
-    form.setValue('rating', value);
+    form.setValue("rating", value);
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Endorse this skill: {skill.name}</DialogTitle>
           <DialogDescription>
-            Share your endorsement for {skill.name}. Your feedback helps others understand Anthony's skill level.
+            Share your endorsement for {skill.name}. Your feedback helps others
+            understand Anthony's skill level.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="flex items-center justify-center mb-4">
@@ -128,18 +136,18 @@ const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
                     onClick={() => handleRatingClick(value)}
                     className="text-2xl p-1 focus:outline-none transition-colors"
                   >
-                    <Star 
+                    <Star
                       className={`h-8 w-8 transition-all ${
-                        value <= rating 
-                        ? 'text-primary fill-primary' 
-                        : 'text-muted-foreground'
+                        value <= rating
+                          ? "text-primary fill-primary"
+                          : "text-muted-foreground"
                       }`}
                     />
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <FormField
               control={form.control}
               name="name"
@@ -153,7 +161,7 @@ const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -161,17 +169,17 @@ const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="your.email@example.com" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="comment"
@@ -179,25 +187,25 @@ const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
                 <FormItem>
                   <FormLabel>Comment (optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Share your experience with Anthony's skills..." 
+                    <Textarea
+                      placeholder="Share your experience with Anthony's skills..."
                       className="min-h-[80px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Submitting...' : 'Submit Endorsement'}
+                {isPending ? "Submitting..." : "Submit Endorsement"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
-        
+
         {/* Show existing endorsements */}
         {endorsements.length > 0 && (
           <div className="mt-6">
@@ -206,9 +214,9 @@ const SkillEndorsementModal: React.FC<SkillEndorsementModalProps> = ({
             </h3>
             <div className="max-h-[200px] overflow-y-auto pr-2">
               {endorsements.slice(0, 3).map((endorsement: SkillEndorsement) => (
-                <SkillEndorsementCard 
-                  key={endorsement.id} 
-                  endorsement={endorsement} 
+                <SkillEndorsementCard
+                  key={endorsement.id}
+                  endorsement={endorsement}
                 />
               ))}
             </div>

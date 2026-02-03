@@ -1,12 +1,12 @@
-import React from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Loader2, FileCheck, Download } from 'lucide-react';
+import React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Loader2, FileCheck, Download } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,28 +15,28 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 // Form schema for resume request
 const ResumeRequestSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
   company: z.string().optional(),
-  reason: z.enum(['hiring', 'collaboration', 'networking', 'other']),
+  reason: z.enum(["hiring", "collaboration", "networking", "other"]),
   message: z.string().optional(),
-  consent: z.boolean().refine(val => val === true, {
-    message: 'You must agree to the terms to proceed',
+  consent: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the terms to proceed",
   }),
 });
 
@@ -46,18 +46,20 @@ interface ResumeRequestFormProps {
   onRequestSuccess: (downloadUrl: string) => void;
 }
 
-const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess }) => {
+const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({
+  onRequestSuccess,
+}) => {
   const { toast } = useToast();
 
   // Initialize form with default values
   const form = useForm<ResumeRequestValues>({
     resolver: zodResolver(ResumeRequestSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      company: '',
-      reason: 'hiring',
-      message: '',
+      name: "",
+      email: "",
+      company: "",
+      reason: "hiring",
+      message: "",
       consent: false,
     },
   });
@@ -65,28 +67,32 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
   // Mutation for submitting the resume request
   const resumeRequestMutation = useMutation({
     mutationFn: async (data: ResumeRequestValues) => {
-      const response = await apiRequest('POST', '/api/resume/request', data);
+      const response = await apiRequest("POST", "/api/resume/request", data);
       return response.json();
     },
     onSuccess: (data) => {
       if (data.success && data.downloadUrl) {
         toast({
-          title: 'Request Successful',
-          description: 'Your request has been approved. You can now download the resume.',
+          title: "Request Successful",
+          description:
+            "Your request has been approved. You can now download the resume.",
         });
         onRequestSuccess(data.downloadUrl);
       } else {
         toast({
-          title: 'Request Submitted',
-          description: 'Your request is being processed. Please check your email for updates.',
+          title: "Request Submitted",
+          description:
+            "Your request is being processed. Please check your email for updates.",
         });
       }
     },
     onError: (error: Error) => {
       toast({
-        title: 'Request Failed',
-        description: error.message || 'There was an error processing your request. Please try again.',
-        variant: 'destructive',
+        title: "Request Failed",
+        description:
+          error.message ||
+          "There was an error processing your request. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -101,11 +107,12 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
       <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
         Resume Access Request
       </h2>
-      
+
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Please fill out this form to request access to my resume. I'll review your request and provide you with access shortly.
+        Please fill out this form to request access to my resume. I'll review
+        your request and provide you with access shortly.
       </p>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -122,7 +129,7 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -130,7 +137,7 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="john.doe@example.com" {...field} />
+                    <Input placeholder="your@email.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -172,8 +179,12 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="hiring">Hiring/Recruitment</SelectItem>
-                    <SelectItem value="collaboration">Project Collaboration</SelectItem>
-                    <SelectItem value="networking">Professional Networking</SelectItem>
+                    <SelectItem value="collaboration">
+                      Project Collaboration
+                    </SelectItem>
+                    <SelectItem value="networking">
+                      Professional Networking
+                    </SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -197,7 +208,8 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
                   />
                 </FormControl>
                 <FormDescription>
-                  Any additional details that would help me understand your request better
+                  Any additional details that would help me understand your
+                  request better
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -220,7 +232,9 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
                     I agree to the storage and processing of my information
                   </FormLabel>
                   <FormDescription>
-                    Your information will be used only for the purpose of this resume request and will be handled in accordance with privacy best practices.
+                    Your information will be used only for the purpose of this
+                    resume request and will be handled in accordance with
+                    privacy best practices.
                   </FormDescription>
                 </div>
                 <FormMessage />
@@ -228,8 +242,8 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({ onRequestSuccess 
             )}
           />
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
             disabled={resumeRequestMutation.isPending}
           >

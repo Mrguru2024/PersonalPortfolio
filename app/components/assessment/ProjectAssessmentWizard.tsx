@@ -3,23 +3,54 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowRight, ArrowLeft, ClipboardList } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProjectAssessment } from "@shared/assessmentSchema";
 
-const PROJECT_TYPES = ["website", "web-app", "mobile-app", "ecommerce", "saas", "api", "other"] as const;
+const PROJECT_TYPES = [
+  "website",
+  "web-app",
+  "mobile-app",
+  "ecommerce",
+  "saas",
+  "api",
+  "other",
+] as const;
 const PLATFORMS = ["web", "ios", "android", "desktop", "api-only"] as const;
-const MAIN_GOALS = ["Increase revenue", "Improve efficiency", "Expand market", "Enhance brand", "Other"];
-const FEATURES = ["User authentication", "Dashboard", "Search", "Payments", "Notifications", "API", "Admin panel", "Reporting"];
+const MAIN_GOALS = [
+  "Increase revenue",
+  "Improve efficiency",
+  "Expand market",
+  "Enhance brand",
+  "Other",
+];
+const FEATURES = [
+  "User authentication",
+  "Dashboard",
+  "Search",
+  "Payments",
+  "Notifications",
+  "API",
+  "Admin panel",
+  "Reporting",
+];
 
 interface ProjectAssessmentWizardProps {
   serviceId?: string | null;
 }
 
-export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmentWizardProps>) {
+export function ProjectAssessmentWizard({
+  serviceId,
+}: Readonly<ProjectAssessmentWizardProps>) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -40,10 +71,15 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
     newsletter: false,
   });
 
-  const toggleArray = (key: "mainGoals" | "platform" | "mustHaveFeatures", value: string) => {
+  const toggleArray = (
+    key: "mainGoals" | "platform" | "mustHaveFeatures",
+    value: string
+  ) => {
     setForm((prev) => {
       const arr = prev[key] as string[];
-      const next = arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
+      const next = arr.includes(value)
+        ? arr.filter((x) => x !== value)
+        : [...arr, value];
       return { ...prev, [key]: next };
     });
   };
@@ -98,7 +134,8 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
         body: JSON.stringify(buildPayload()),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || "Submission failed");
+      if (!res.ok)
+        throw new Error(data.error || data.message || "Submission failed");
       const id = data.assessment?.id ?? data.id;
       if (id) router.push(`/assessment/results?id=${id}`);
       else setError("Submission succeeded but no assessment ID returned.");
@@ -118,7 +155,8 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
             Project Assessment
           </CardTitle>
           <CardDescription>
-            Step {step} of 2 — {step === 1 ? "Contact & project" : "Technical requirements"}
+            Step {step} of 2 —{" "}
+            {step === 1 ? "Contact & project" : "Technical requirements"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -134,7 +172,9 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <Label>Name *</Label>
                 <Input
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
                   placeholder="Your name"
                 />
               </div>
@@ -143,15 +183,19 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <Input
                   type="email"
                   value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  placeholder="you@example.com"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, email: e.target.value }))
+                  }
+                  placeholder="your@email.com"
                 />
               </div>
               <div className="grid gap-2">
                 <Label>Project name *</Label>
                 <Input
                   value={form.projectName}
-                  onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, projectName: e.target.value }))
+                  }
                   placeholder="My Project"
                 />
               </div>
@@ -160,10 +204,18 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={form.projectType}
-                  onChange={(e) => setForm((f) => ({ ...f, projectType: e.target.value as ProjectAssessment["projectType"] }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      projectType: e.target
+                        .value as ProjectAssessment["projectType"],
+                    }))
+                  }
                 >
                   {PROJECT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -171,7 +223,12 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <Label>Project description * (min 50 characters)</Label>
                 <Textarea
                   value={form.projectDescription}
-                  onChange={(e) => setForm((f) => ({ ...f, projectDescription: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      projectDescription: e.target.value,
+                    }))
+                  }
                   placeholder="Describe your project..."
                   rows={4}
                 />
@@ -180,7 +237,9 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <Label>Target audience * (min 10 characters)</Label>
                 <Input
                   value={form.targetAudience}
-                  onChange={(e) => setForm((f) => ({ ...f, targetAudience: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, targetAudience: e.target.value }))
+                  }
                   placeholder="Who will use this?"
                 />
               </div>
@@ -191,7 +250,9 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                     <Button
                       key={g}
                       type="button"
-                      variant={form.mainGoals.includes(g) ? "default" : "outline"}
+                      variant={
+                        form.mainGoals.includes(g) ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() => toggleArray("mainGoals", g)}
                     >
@@ -212,7 +273,9 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                     <Button
                       key={p}
                       type="button"
-                      variant={form.platform.includes(p) ? "default" : "outline"}
+                      variant={
+                        form.platform.includes(p) ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() => {
                         setForm((prev) => ({
@@ -235,7 +298,11 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                     <Button
                       key={f}
                       type="button"
-                      variant={form.mustHaveFeatures.includes(f) ? "default" : "outline"}
+                      variant={
+                        form.mustHaveFeatures.includes(f)
+                          ? "default"
+                          : "outline"
+                      }
                       size="sm"
                       onClick={() => toggleArray("mustHaveFeatures", f)}
                     >
@@ -251,7 +318,11 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
             {step === 1 ? (
               <div />
             ) : (
-              <Button type="button" variant="outline" onClick={() => setStep(1)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -262,8 +333,14 @@ export function ProjectAssessmentWizard({ serviceId }: Readonly<ProjectAssessmen
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button type="button" onClick={handleSubmit} disabled={submitting}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Submit
               </Button>
             )}

@@ -40,7 +40,11 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-export function RichTextEditor({ content, onChange, placeholder = "Start writing..." }: RichTextEditorProps) {
+export function RichTextEditor({
+  content,
+  onChange,
+  placeholder = "Start writing...",
+}: RichTextEditorProps) {
   const [linkUrl, setLinkUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
@@ -73,7 +77,8 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] p-4",
+        class:
+          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] p-4",
       },
     },
     immediatelyRender: false,
@@ -148,7 +153,9 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
           className={editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""}
         >
           <Heading1 className="h-4 w-4" />
@@ -157,7 +164,9 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           className={editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}
         >
           <Heading2 className="h-4 w-4" />
@@ -166,7 +175,9 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
           className={editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""}
         >
           <Heading3 className="h-4 w-4" />
@@ -231,11 +242,14 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
                   id="link-url"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="https://yoursite.com"
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsLinkDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsLinkDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={addLink}>Add Link</Button>
@@ -262,11 +276,14 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
                   id="image-url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="https://yoursite.com/image.jpg"
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsImageDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImageDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={addImage}>Add Image</Button>
@@ -299,7 +316,10 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} className="min-h-[400px] max-h-[600px] overflow-y-auto" />
+      <EditorContent
+        editor={editor}
+        className="min-h-[400px] max-h-[600px] overflow-y-auto"
+      />
     </div>
   );
 }
