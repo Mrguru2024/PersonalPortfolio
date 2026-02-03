@@ -7,16 +7,16 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await params;
+
+  if (!slug) {
+    return NextResponse.json(
+      { error: "Blog post slug is required" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { slug } = await params;
-
-    if (!slug) {
-      return NextResponse.json(
-        { error: "Blog post slug is required" },
-        { status: 400 }
-      );
-    }
-
     if (!process.env.DATABASE_URL) {
       const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
       if (!fallbackPost) {
