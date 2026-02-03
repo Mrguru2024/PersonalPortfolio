@@ -15,8 +15,9 @@ import {
   ClipboardCheck,
   Sparkles,
   Lightbulb,
+  Github,
+  Linkedin,
 } from "lucide-react";
-import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { NoSSR } from "@/components/NoSSR";
 import { AIAssistant } from "@/components/assessment/AIAssistant";
@@ -80,16 +81,22 @@ const ContactSection = () => {
     },
   });
 
+  const TwitterIcon = () => (
+    <svg className="text-2xl w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+
   const getSocialIcon = useCallback((platform: string) => {
     switch (platform.toLowerCase()) {
       case "github":
-        return <FaGithub className="text-2xl" />;
+        return <Github className="text-2xl w-6 h-6" />;
       case "linkedin":
-        return <FaLinkedin className="text-2xl" />;
+        return <Linkedin className="text-2xl w-6 h-6" />;
       case "twitter":
-        return <FaTwitter className="text-2xl" />;
+        return <TwitterIcon />;
       case "email":
-        return <Mail className="text-2xl" />;
+        return <Mail className="text-2xl w-6 h-6" />;
       default:
         return null;
     }
@@ -540,7 +547,7 @@ const ContactSection = () => {
                               size="sm"
                               onClick={() => handleEnhanceWithAI(field)}
                               disabled={isLoadingAI || !field.value}
-                              className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 min-h-[44px] touch-target"
+                              className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 min-h-[44px] touch-target border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:border-primary/40 dark:hover:bg-primary/10 dark:hover:border-primary/60"
                             >
                               <span className="flex items-center justify-center gap-2">
                                 <Sparkles className="h-4 w-4 shrink-0" />
@@ -594,7 +601,7 @@ const ContactSection = () => {
                       type="submit"
                       size="lg"
                       disabled={isPending}
-                      className="w-full px-4 sm:px-6 py-3 bg-primary text-white font-bold text-base sm:text-lg rounded-lg hover:bg-primary/90 transition shadow-md hover:shadow-lg min-h-[44px]"
+                      className="w-full px-4 sm:px-6 py-3 bg-primary text-primary-foreground font-bold text-base sm:text-lg rounded-lg hover:bg-primary/90 transition shadow-md hover:shadow-lg min-h-[44px] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                     >
                       {isPending ? "Sending..." : "Request a Quote"}
                     </Button>

@@ -13,6 +13,12 @@ const nextConfig = {
   // Performance optimizations
   compress: true,
   poweredByHeader: false,
+  // Avoid favicon.ico 404: redirect to SVG icon
+  async redirects() {
+    return [
+      { source: '/favicon.ico', destination: '/favicon.svg', permanent: true },
+    ];
+  },
   
   // Mark server-side packages that use AMD modules as external
   // This prevents bundlers from trying to bundle them (Turbopack doesn't support AMD)

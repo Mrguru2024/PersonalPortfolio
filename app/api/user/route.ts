@@ -49,13 +49,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (!sessionId) {
-      console.log(
-        `[GET /api/user] ❌ No session cookie found - Cookie header: "${cookieHeader.substring(0, 50)}..."${isMobile ? ` (Mobile: ${userAgent.substring(0, 50)})` : ""}`,
-      );
-      return NextResponse.json(
-        { message: "Not authenticated" },
-        { status: 401 },
-      );
+      // Return 200 + null so the browser doesn't log 401 (expected when not logged in)
+      return NextResponse.json(null);
     }
 
     console.log(
@@ -80,14 +75,8 @@ export async function GET(req: NextRequest) {
     const duration = Date.now() - startTime;
 
     if (!user) {
-      // Cookie exists but session lookup failed - return 401
-      console.log(
-        `[GET /api/user] Session lookup failed (cookie exists but no user found) after ${duration}ms${isMobile ? " (Mobile)" : ""}`,
-      );
-      return NextResponse.json(
-        { message: "Not authenticated" },
-        { status: 401 },
-      );
+      // Cookie exists but session lookup failed - return 200 + null (no 401 to avoid console noise)
+      return NextResponse.json(null);
     }
 
     console.log(
@@ -104,6 +93,6 @@ export async function GET(req: NextRequest) {
       err?.message ?? "Unknown error",
       isMobile ? "(Mobile)" : "",
     );
-    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+    return NextResponse.json(null);
   }
 }

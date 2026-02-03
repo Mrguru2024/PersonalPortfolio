@@ -3,7 +3,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { SiGithub, SiLinkedin, SiThreads } from 'react-icons/si';
+import { Github, Linkedin } from 'lucide-react';
+
+const ThreadsIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M12.186 24h-.007c-3.88-.024-7.377-1.582-9.908-4.015C-.277 17.458-1.33 13.573.542 9.455 1.89 6.433 4.67 4.14 7.93 2.877 9.15 2.3 10.5 2 11.94 2h.12c.65 0 1.28.05 1.89.145 2.92.36 5.54 1.58 7.58 3.57 2.02 1.96 3.28 4.39 3.65 7.02.12.85.18 1.72.18 2.6 0 .65-.03 1.3-.09 1.94-.46 3.96-2.44 7.27-5.5 9.55-2.64 1.96-5.86 3.1-9.41 3.18z" />
+  </svg>
+);
 import HeroVideo from '@/components/HeroVideo';
 import AnimatedButton from '@/components/AnimatedButton';
 
@@ -118,7 +124,7 @@ export default function Hero() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors duration-300"
             >
-              <SiGithub className="w-6 h-6" />
+              <Github className="w-6 h-6" />
             </a>
             <a 
               href="https://www.linkedin.com/in/anthony-mrguru-feaster/" 
@@ -126,7 +132,7 @@ export default function Hero() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors duration-300"
             >
-              <SiLinkedin className="w-6 h-6" />
+              <Linkedin className="w-6 h-6" />
             </a>
             <a 
               href="https://www.threads.com/@therealmrguru" 
@@ -134,7 +140,7 @@ export default function Hero() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors duration-300"
             >
-              <SiThreads className="w-6 h-6" />
+              <ThreadsIcon className="w-6 h-6" />
             </a>
           </motion.div>
         </motion.div>

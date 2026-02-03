@@ -3,9 +3,9 @@
 import { useEffect, useRef, Suspense, lazy } from "react";
 import { PageSEO, StructuredData } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
+import HeroSection from "@/sections/HeroSection";
 
-// Lazy load sections for better performance
-const HeroSection = lazy(() => import("@/sections/HeroSection").then(m => ({ default: m.default })));
+// Lazy load below-the-fold sections for better performance (Hero is direct to avoid ChunkLoadError)
 const ServicesSection = lazy(() => import("@/sections/ServicesSection").then(m => ({ default: m.default })));
 const ProjectsSection = lazy(() => import("@/sections/ProjectsSection").then(m => ({ default: m.default })));
 const AboutSection = lazy(() => import("@/sections/AboutSection").then(m => ({ default: m.default })));

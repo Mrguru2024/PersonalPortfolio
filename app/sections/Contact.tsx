@@ -18,8 +18,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import AnimatedButton from "@/components/AnimatedButton";
-import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
-import { SiGithub, SiLinkedin, SiThreads } from "react-icons/si";
+import { ArrowUpRight, Github, Linkedin, Mail, MapPin, Phone } from "lucide-react";
+
+const ThreadsIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M12.186 24h-.007c-3.88-.024-7.377-1.582-9.908-4.015C-.277 17.458-1.33 13.573.542 9.455 1.89 6.433 4.67 4.14 7.93 2.877 9.15 2.3 10.5 2 11.94 2h.12c.65 0 1.28.05 1.89.145 2.92.36 5.54 1.58 7.58 3.57 2.02 1.96 3.28 4.39 3.65 7.02.12.85.18 1.72.18 2.6 0 .65-.03 1.3-.09 1.94-.46 3.96-2.44 7.27-5.5 9.55-2.64 1.96-5.86 3.1-9.41 3.18z" />
+  </svg>
+);
 
 export default function Contact() {
   const { toast } = useToast();
@@ -302,7 +307,7 @@ export default function Contact() {
                       className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 bg-muted/30 hover:bg-muted/50 rounded-full text-muted-foreground hover:text-foreground transition-colors duration-300 touch-manipulation"
                       aria-label="GitHub"
                     >
-                      <SiGithub className="h-5 w-5 fold:h-5 fold:w-5" />
+                      <Github className="h-5 w-5 fold:h-5 fold:w-5" />
                     </a>
                     <a
                       href="https://www.linkedin.com/in/anthony-mrguru-feaster/"
@@ -311,7 +316,7 @@ export default function Contact() {
                       className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 bg-muted/30 hover:bg-muted/50 rounded-full text-muted-foreground hover:text-foreground transition-colors duration-300 touch-manipulation"
                       aria-label="LinkedIn"
                     >
-                      <SiLinkedin className="h-5 w-5 fold:h-5 fold:w-5" />
+                      <Linkedin className="h-5 w-5 fold:h-5 fold:w-5" />
                     </a>
                     <a
                       href="https://www.threads.com/@therealmrguru"
@@ -320,7 +325,7 @@ export default function Contact() {
                       className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 bg-muted/30 hover:bg-muted/50 rounded-full text-muted-foreground hover:text-foreground transition-colors duration-300 touch-manipulation"
                       aria-label="Threads"
                     >
-                      <SiThreads className="h-5 w-5 fold:h-5 fold:w-5" />
+                      <ThreadsIcon className="h-5 w-5 fold:h-5 fold:w-5" />
                     </a>
                   </div>
                 </div>
