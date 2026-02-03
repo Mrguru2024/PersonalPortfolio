@@ -16,16 +16,18 @@ export async function GET(
     );
   }
 
+  // Seed-first: known slugs always return 200 from seed so production never 404s
+  const seedPost = blogSeedPosts.find((post) => post.slug === slug);
+  if (seedPost) {
+    return NextResponse.json(seedPost);
+  }
+
   try {
     if (!process.env.DATABASE_URL) {
-      const fallbackPost = blogSeedPosts.find((post) => post.slug === slug);
-      if (!fallbackPost) {
-        return NextResponse.json(
-          { error: "Blog post not found" },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json(fallbackPost);
+      return NextResponse.json(
+        { error: "Blog post not found" },
+        { status: 404 }
+      );
     }
 
     const mockReq = {
