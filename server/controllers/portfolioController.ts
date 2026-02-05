@@ -378,16 +378,6 @@ export const portfolioController = {
         validatedData = contactFormSchema.parse(req.body);
       }
 
-      // Create contact record in database
-      const contactData: InsertContact = {
-        name: validatedData.name,
-        email: validatedData.email,
-        subject: validatedData.subject || "Contact Form Submission",
-        message: validatedData.message || "",
-      };
-
-      const savedContact = await storage.createContact(contactData);
-
       // For quote requests, calculate pricing estimate using AI-enhanced analysis
       let pricingEstimate = null;
       if (
@@ -437,6 +427,30 @@ export const portfolioController = {
           // Continue without pricing estimate if calculation fails
         }
       }
+
+      const pricingSummary = pricingEstimate
+        ? {
+            estimatedRange: pricingEstimate.estimatedRange,
+            marketComparison: pricingEstimate.marketComparison,
+          }
+        : null;
+
+      // Create contact record in database
+      const contactData: InsertContact = {
+        name: validatedData.name,
+        email: validatedData.email,
+        subject: validatedData.subject || "Contact Form Submission",
+        message: validatedData.message || "",
+        phone: isQuoteRequest ? validatedData.phone || null : null,
+        company: isQuoteRequest ? validatedData.company || null : null,
+        projectType: isQuoteRequest ? validatedData.projectType || null : null,
+        budget: isQuoteRequest ? validatedData.budget || null : null,
+        timeframe: isQuoteRequest ? validatedData.timeframe || null : null,
+        newsletter: isQuoteRequest ? Boolean(validatedData.newsletter) : false,
+        pricingEstimate: isQuoteRequest ? pricingSummary : null,
+      };
+
+      const savedContact = await storage.createContact(contactData);
 
       // Send email notification
       if (isQuoteRequest) {

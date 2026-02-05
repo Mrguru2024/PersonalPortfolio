@@ -136,6 +136,16 @@ export const contacts = pgTable("contacts", {
   email: text("email").notNull(),
   subject: text("subject").notNull(),
   message: text("message").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  projectType: text("project_type"),
+  budget: text("budget"),
+  timeframe: text("timeframe"),
+  newsletter: boolean("newsletter").default(false),
+  pricingEstimate: json("pricing_estimate").$type<{
+    estimatedRange: { min: number; max: number; average: number };
+    marketComparison: { lowEnd: number; highEnd: number; average: number };
+  } | null>(),
   createdAt: text("created_at").notNull(),
 });
 

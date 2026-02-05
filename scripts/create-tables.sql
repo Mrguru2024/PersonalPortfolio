@@ -60,7 +60,15 @@ CREATE TABLE IF NOT EXISTS contacts (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  subject TEXT NOT NULL,
   message TEXT NOT NULL,
+  phone TEXT,
+  company TEXT,
+  project_type TEXT,
+  budget TEXT,
+  timeframe TEXT,
+  newsletter BOOLEAN DEFAULT false,
+  pricing_estimate JSONB,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
   ip_address TEXT
 );
