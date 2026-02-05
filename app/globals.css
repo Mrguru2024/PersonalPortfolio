@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Logo and favicon: no background so they stay transparent on light/dark */
+img.header-logo,
+img[alt="Ascendra Technologies"] {
+  background: transparent !important;
+}
+
+/* Top of page: fixed at top – header and logo do not scroll with page */
+.site-top-no-box {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+}
+.site-top-no-box,
+.site-top-no-box > div,
+.site-top-no-box > div > div,
+.site-top-no-box .container,
+body > div header,
+body header,
+header[class],
+header .container {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -78,6 +107,13 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  /* Top of page: no border from global * rule */
+  .site-top-no-box,
+  .site-top-no-box *,
+  header,
+  header > div {
+    border-color: transparent !important;
   }
   html {
     -webkit-text-size-adjust: 100%;

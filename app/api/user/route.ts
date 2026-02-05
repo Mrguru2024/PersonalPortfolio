@@ -6,93 +6,72 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Optimized for serverless - fast response with diagnostic logging
+const isDev = process.env.NODE_ENV !== "production";
+
+// Optimized for serverless - fast response, minimal logging in production
 export async function GET(req: NextRequest) {
   const userAgent = req.headers.get("user-agent") || "unknown";
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
   const cookieHeader = req.headers.get("cookie") || "";
-  const origin =
-    req.headers.get("origin") || req.headers.get("referer") || "unknown";
-
-  // Always log request details for debugging
-  console.log(
-    `[GET /api/user] Request received from ${origin}${isMobile ? " (Mobile)" : ""}`,
-  );
-  console.log(
-    `[GET /api/user] Cookie header: ${cookieHeader ? cookieHeader.substring(0, 100) + "..." : "NONE"}`,
-  );
 
   try {
-    // Check for session cookie first (fast check) – use same source as getSessionUser
     const cookieStore = await cookies();
     let sessionId: string | undefined =
       cookieStore.get("sessionId")?.value ??
       cookieStore.get("connect.sid")?.value;
 
-    // Log what cookies() found
-    const sessionCookie = cookieStore.get("sessionId");
-    const connectCookie = cookieStore.get("connect.sid");
-    console.log(
-      `[GET /api/user] cookies() found - sessionId: ${sessionCookie ? "YES" : "NO"}, connect.sid: ${connectCookie ? "YES" : "NO"}`,
-    );
-
     if (!sessionId && cookieHeader) {
       const match = cookieHeader.match(
         /(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/,
       );
-      if (match) {
-        sessionId = match[1].trim();
-        console.log(
-          `[GET /api/user] Found sessionId in Cookie header: ${sessionId.substring(0, 16)}...`,
-        );
-      }
+      if (match) sessionId = match[1].trim();
     }
 
     if (!sessionId) {
-      // Return 200 + null so the browser doesn't log 401 (expected when not logged in)
       return NextResponse.json(null);
     }
 
-    console.log(
-      `[GET /api/user] Cookie found, length: ${sessionId.length}, preview: ${sessionId.substring(0, 16)}...${isMobile ? " (Mobile)" : ""}`,
-    );
+    if (isDev) {
+      const origin = req.headers.get("origin") || req.headers.get("referer") || "unknown";
+      console.log(
+        `[GET /api/user] Request from ${origin}${isMobile ? " (Mobile)" : ""}, sessionId: ${sessionId.substring(0, 16)}...`,
+      );
+    }
 
-    // Fast timeout for serverless (2 seconds max)
     const startTime = Date.now();
-    const userPromise = getSessionUser(req);
+    // Swallow rejections (e.g. ErrorEvent from DB/Neon) so Next.js never tries to set .message on them
+    const userPromise = getSessionUser(req, sessionId).catch(() => null);
+    const timeoutMs = 1500;
     const timeoutPromise = new Promise<null>((resolve) =>
-      setTimeout(() => {
-        if (isMobile) {
-          console.log(
-            `[GET /api/user] Session lookup timeout after ${Date.now() - startTime}ms (Mobile)`,
-          );
-        }
-        resolve(null);
-      }, 2000),
+      setTimeout(() => resolve(null), timeoutMs),
     );
 
     const user = await Promise.race([userPromise, timeoutPromise]);
     const duration = Date.now() - startTime;
 
     if (!user) {
-      // Cookie exists but session lookup failed - return 200 + null (no 401 to avoid console noise)
       return NextResponse.json(null);
     }
 
-    console.log(
-      `[GET /api/user] Success: User ${user.id} (${user.username}) authenticated in ${duration}ms${isMobile ? " (Mobile)" : ""}`,
-    );
+    if (isDev) {
+      console.log(
+        `[GET /api/user] Success: User ${user.id} (${user.username}) in ${duration}ms${isMobile ? " (Mobile)" : ""}`,
+      );
+    }
 
     // Don't send password
     const { password, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword);
   } catch (error: unknown) {
-    const err = error as { message?: string };
-    console.error(
-      "[GET /api/user] Error:",
-      err?.message ?? "Unknown error",
-      isMobile ? "(Mobile)" : "",
-    );
+    if (isDev) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : typeof (error as { message?: unknown })?.message === "string"
+            ? (error as { message: string }).message
+            : "Unknown error";
+      console.error("[GET /api/user] Error:", msg, isMobile ? "(Mobile)" : "");
+    }
     return NextResponse.json(null);
   }
 }

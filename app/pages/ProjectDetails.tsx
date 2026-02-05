@@ -25,7 +25,9 @@ export default function ProjectDetails() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-16 flex justify-center min-h-[50vh]">
-        <div className="animate-pulse text-muted-foreground">Loading project details...</div>
+        <div className="animate-pulse text-muted-foreground">
+          Loading project details...
+        </div>
       </div>
     );
   }
@@ -34,8 +36,12 @@ export default function ProjectDetails() {
     return (
       <div className="container mx-auto px-4 py-16 min-h-[50vh]">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4 text-foreground">Project Not Found</h1>
-          <p className="mb-8 text-muted-foreground">The project you&apos;re looking for doesn&apos;t exist.</p>
+          <h1 className="text-3xl font-bold mb-4 text-foreground">
+            Project Not Found
+          </h1>
+          <p className="mb-8 text-muted-foreground">
+            The project you&apos;re looking for doesn&apos;t exist.
+          </p>
           <Link href="/#projects">
             <Button>
               <ChevronLeft className="mr-2 h-4 w-4" />
@@ -50,10 +56,14 @@ export default function ProjectDetails() {
   return (
     <div className="min-h-screen bg-background relative">
       <PageSEO
-        title={`${project.title} | Project Details | MrGuru.dev`}
+        title={`${project.title} | Project Details | Ascendra Technologies`}
         description={project.description}
         canonicalPath={`/projects/${projectId}`}
-        keywords={[...(project.tags || []), ...(project.techStack || []), project.category]}
+        keywords={[
+          ...(project.tags || []),
+          ...(project.techStack || []),
+          project.category,
+        ]}
         ogType="article"
         ogImage={project.image}
         ogImageAlt={`${project.title} project screenshot`}
@@ -105,21 +115,31 @@ export default function ProjectDetails() {
 
               <div className="flex flex-wrap gap-2 mb-6">
                 {(project.tags || []).map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-none">
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="bg-primary/10 text-primary border-none"
+                  >
                     {tag}
                   </Badge>
                 ))}
               </div>
 
               <div className="text-muted-foreground mb-8 space-y-4">
-                <p className="text-lg font-medium text-foreground">{project.description}</p>
+                <p className="text-lg font-medium text-foreground">
+                  {project.description}
+                </p>
                 <Separator />
                 {project.details && <p>{project.details}</p>}
               </div>
 
               <div className="flex flex-wrap gap-4">
                 {project.githubUrl && (
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Button variant="outline" className="flex items-center">
                       <Github className="mr-2 h-4 w-4" />
                       View on GitHub
@@ -127,7 +147,11 @@ export default function ProjectDetails() {
                   </a>
                 )}
                 {project.liveUrl && (
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Button className="flex items-center">
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Live Website
@@ -152,7 +176,9 @@ export default function ProjectDetails() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="rounded-xl shadow-lg p-6 bg-card"
             >
-              <h2 className="text-xl font-bold mb-4 text-foreground">Project Details</h2>
+              <h2 className="text-xl font-bold mb-4 text-foreground">
+                Project Details
+              </h2>
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -160,7 +186,8 @@ export default function ProjectDetails() {
                   <div>
                     <h3 className="font-medium text-foreground">Category</h3>
                     <p className="text-muted-foreground">
-                      {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
+                      {project.category.charAt(0).toUpperCase() +
+                        project.category.slice(1)}
                     </p>
                   </div>
                 </div>
@@ -169,10 +196,16 @@ export default function ProjectDetails() {
                   <div className="flex items-start gap-3">
                     <Layers className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <h3 className="font-medium text-foreground">Technology Stack</h3>
+                      <h3 className="font-medium text-foreground">
+                        Technology Stack
+                      </h3>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {project.techStack.map((tech) => (
-                          <Badge key={tech} variant="outline" className="bg-primary/10 text-primary border-none">
+                          <Badge
+                            key={tech}
+                            variant="outline"
+                            className="bg-primary/10 text-primary border-none"
+                          >
                             {tech}
                           </Badge>
                         ))}

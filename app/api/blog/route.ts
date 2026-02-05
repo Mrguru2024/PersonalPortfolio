@@ -4,6 +4,8 @@ import { blogSeedPosts } from "@/lib/blogSeedData";
 import { canCreateBlog, getSessionUser } from "@/lib/auth-helpers";
 import { createMockResponse } from "@/lib/api-helpers";
 
+const BLOG_DB_TIMEOUT_MS = 5_000; // 5s – fail fast and return seed so homepage loads
+
 export async function GET(req: NextRequest) {
   try {
     if (!process.env.DATABASE_URL) {
@@ -15,7 +17,18 @@ export async function GET(req: NextRequest) {
     } as any;
 
     const { mockRes, getResponse } = createMockResponse();
-    await blogController.getBlogPosts(mockReq, mockRes);
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Database request timeout")),
+        BLOG_DB_TIMEOUT_MS
+      )
+    );
+
+    await Promise.race([
+      blogController.getBlogPosts(mockReq, mockRes),
+      timeoutPromise,
+    ]);
 
     const response = getResponse();
     if (!response) {
@@ -23,8 +36,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(blogSeedPosts);
     }
 
-    if (response.status === 404) {
-      console.warn("Blog posts 404 from controller, returning seed posts");
+    if (response.status === 404 || response.status === 500) {
+      console.warn(
+        "Blog controller returned",
+        response.status,
+        ", returning seed posts"
+      );
       return NextResponse.json(blogSeedPosts);
     }
 
@@ -32,14 +49,18 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error("Error in GET /api/blog:", error);
 
-    // Check if it's a database connection error
-    const errorMessage = error?.message || String(error);
-    if (
+    const errorMessage = (error?.message || String(error)).toLowerCase();
+    const isConnectionError =
       errorMessage.includes("endpoint has been disabled") ||
       errorMessage.includes("connection") ||
-      errorMessage.includes("ECONNREFUSED")
-    ) {
-      console.warn("Database unavailable, returning seed posts");
+      errorMessage.includes("econnrefused") ||
+      errorMessage.includes("econnreset") ||
+      errorMessage.includes("terminated") ||
+      errorMessage.includes("reset") ||
+      errorMessage.includes("timeout");
+
+    if (isConnectionError) {
+      console.warn("Database unavailable or timeout, returning seed posts");
       return NextResponse.json(blogSeedPosts);
     }
 

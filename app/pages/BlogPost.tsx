@@ -88,7 +88,10 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
             datePublished: post.publishedAt || "",
             dateModified: post.updatedAt || post.publishedAt || "",
             author: { name: "Anthony Feaster", url: "https://mrguru.dev" },
-            publisher: { name: "MrGuru.dev", url: "https://mrguru.dev" },
+            publisher: {
+              name: "Ascendra Technologies",
+              url: "https://mrguru.dev",
+            },
             url: `https://mrguru.dev/blog/${post.slug}`,
             mainEntityOfPage: `https://mrguru.dev/blog/${post.slug}`,
             keywords: tags,

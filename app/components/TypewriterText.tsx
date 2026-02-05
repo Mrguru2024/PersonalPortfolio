@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 
 interface TypewriterTextProps {
   phrases: string[];
@@ -23,66 +22,72 @@ const TypewriterText = ({
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  // Simple implementation without complex state management
+
+  const displayTextRef = useRef(displayText);
+  const currentIndexRef = useRef(currentIndex);
+  const isDeletingRef = useRef(isDeleting);
+  displayTextRef.current = displayText;
+  currentIndexRef.current = currentIndex;
+  isDeletingRef.current = isDeleting;
+
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    if (phrases.length === 0) return;
+
+    let timeout: ReturnType<typeof setTimeout>;
     let mounted = true;
-    
+
     const tick = () => {
       if (!mounted) return;
-      
-      // Get current phrase
-      const fullText = phrases[currentIndex];
-      
-      // Update text based on whether we're deleting or typing
-      if (!isDeleting) {
-        setDisplayText((prev) => 
-          fullText.substring(0, prev.length + 1)
-        );
-        
-        // If we've fully typed the text, start deleting after a delay
-        if (displayText === fullText) {
-          // Don't delete if this is the last phrase and once is true
-          if (once && currentIndex === phrases.length - 1) {
-            return;
-          }
-          
+
+      const idx = currentIndexRef.current;
+      const deleting = isDeletingRef.current;
+      const fullText = phrases[idx] ?? '';
+      const prev = displayTextRef.current;
+
+      if (!deleting) {
+        const next = fullText.substring(0, prev.length + 1);
+        setDisplayText(next);
+        displayTextRef.current = next;
+
+        if (next === fullText) {
+          if (once && idx === phrases.length - 1) return;
           timeout = setTimeout(() => {
-            if (mounted) setIsDeleting(true);
+            if (mounted) {
+              setIsDeleting(true);
+              isDeletingRef.current = true;
+            }
           }, delayAfterPhrase);
           return;
         }
       } else {
-        setDisplayText((prev) => 
-          fullText.substring(0, prev.length - 1)
-        );
-        
-        // If we've deleted everything, move to next phrase
-        if (displayText === '') {
+        const next = fullText.substring(0, prev.length - 1);
+        setDisplayText(next);
+        displayTextRef.current = next;
+
+        if (next === '') {
           setIsDeleting(false);
-          setCurrentIndex((prev) => (prev + 1) % phrases.length);
+          setCurrentIndex((i) => (i + 1) % phrases.length);
+          currentIndexRef.current = (idx + 1) % phrases.length;
+          isDeletingRef.current = false;
+          displayTextRef.current = '';
+          timeout = setTimeout(tick, typingSpeed);
           return;
         }
       }
-      
-      // Set the next timeout based on if we're typing or deleting
-      timeout = setTimeout(
-        tick, 
-        isDeleting ? deletingSpeed : typingSpeed
-      );
+
+      timeout = setTimeout(tick, deleting ? deletingSpeed : typingSpeed);
     };
-    
+
     timeout = setTimeout(tick, typingSpeed);
-    
+
     return () => {
       mounted = false;
       clearTimeout(timeout);
     };
-  }, [displayText, isDeleting, currentIndex, phrases, typingSpeed, deletingSpeed, delayAfterPhrase, once]);
-  
+  }, [phrases, typingSpeed, deletingSpeed, delayAfterPhrase, once]);
+
   return (
-    <span className={`${className}`}>
+    <span className={className}>
       {displayText}
       <span className={`typing-cursor ${cursorClassName}`}>|</span>
     </span>

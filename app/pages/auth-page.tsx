@@ -156,7 +156,9 @@ const AuthPage = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-primary/10 dark:bg-primary/5 p-12 items-center justify-center">
         <div className="max-w-xl space-y-8">
           <h1 className="text-4xl font-bold tracking-tight">
-            <span className="block text-primary">Welcome to MrGuru.dev</span>
+            <span className="block text-primary">
+              Welcome to Ascendra Technologies
+            </span>
             <span className="mt-2 block">Your Developer Portfolio</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -195,7 +197,9 @@ const AuthPage = () => {
       <div className="w-full min-w-0 lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
         <div className="w-full max-w-md min-w-0 space-y-6">
           <div className="text-center lg:hidden">
-            <h1 className="text-3xl font-bold text-primary">MrGuru.dev</h1>
+            <h1 className="text-3xl font-bold text-primary">
+              Ascendra Technologies
+            </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-300">
               {personalInfo.title}
             </p>

@@ -26,12 +26,15 @@ interface EnhancedStructuredDataProps {
  * Enhanced Structured Data component for better SEO
  * Adds multiple schema types: BlogPosting, Article, BreadcrumbList, and Organization
  */
-export function EnhancedStructuredData({ post, baseUrl = "https://mrguru.dev" }: EnhancedStructuredDataProps) {
+export function EnhancedStructuredData({
+  post,
+  baseUrl = "https://mrguru.dev",
+}: EnhancedStructuredDataProps) {
   const postUrl = `${baseUrl}/blog/${post.slug}`;
   const imageUrl = post.coverImage || `${baseUrl}/images/blog-default.jpg`;
-  
+
   // Extract text content for word count
-  const textContent = post.content?.replaceAll(/<[^>]*>/g, '').trim() || '';
+  const textContent = post.content?.replaceAll(/<[^>]*>/g, "").trim() || "";
   const wordCount = textContent.split(/\s+/).length;
   const readingTime = Math.ceil(wordCount / 200);
 
@@ -43,7 +46,8 @@ export function EnhancedStructuredData({ post, baseUrl = "https://mrguru.dev" }:
     description: post.summary || textContent.substring(0, 160),
     image: imageUrl,
     datePublished: post.publishedAt || new Date().toISOString(),
-    dateModified: post.updatedAt || post.publishedAt || new Date().toISOString(),
+    dateModified:
+      post.updatedAt || post.publishedAt || new Date().toISOString(),
     author: {
       "@type": "Person",
       name: "Anthony Feaster",
@@ -51,11 +55,11 @@ export function EnhancedStructuredData({ post, baseUrl = "https://mrguru.dev" }:
     },
     publisher: {
       "@type": "Organization",
-      name: "MrGuru.dev",
+      name: "Ascendra Technologies",
       url: baseUrl,
       logo: {
         "@type": "ImageObject",
-        url: `${baseUrl}/images/logo.png`,
+        url: `${baseUrl}/ascendra-logo.svg`,
         width: 60,
         height: 60,
       },
@@ -80,17 +84,18 @@ export function EnhancedStructuredData({ post, baseUrl = "https://mrguru.dev" }:
     description: post.summary || textContent.substring(0, 160),
     image: imageUrl,
     datePublished: post.publishedAt || new Date().toISOString(),
-    dateModified: post.updatedAt || post.publishedAt || new Date().toISOString(),
+    dateModified:
+      post.updatedAt || post.publishedAt || new Date().toISOString(),
     author: {
       "@type": "Person",
       name: "Anthony Feaster",
     },
     publisher: {
       "@type": "Organization",
-      name: "MrGuru.dev",
+      name: "Ascendra Technologies",
       logo: {
         "@type": "ImageObject",
-        url: `${baseUrl}/images/logo.png`,
+        url: `${baseUrl}/ascendra-logo.svg`,
       },
     },
     mainEntityOfPage: postUrl,
@@ -126,9 +131,9 @@ export function EnhancedStructuredData({ post, baseUrl = "https://mrguru.dev" }:
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "MrGuru.dev",
+    name: "Ascendra Technologies",
     url: baseUrl,
-    logo: `${baseUrl}/images/logo.png`,
+    logo: `${baseUrl}/ascendra-logo.svg`,
     sameAs: [
       // Add social media links if available
     ],

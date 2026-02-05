@@ -202,41 +202,56 @@ export class DatabaseStorage implements IStorage {
       };
     }
     
+    // Normalize to a plain Error so callers never receive ErrorEvent (read-only .message) and cause "Cannot set property message"
+    function toPlainError(e: unknown): Error {
+      if (e instanceof Error && e.constructor.name === 'Error') return e;
+      const msg = e != null && typeof (e as { message?: unknown }).message === 'string'
+        ? (e as { message: string }).message
+        : String(e);
+      return new Error(msg);
+    }
+
     // Wrap the get method to handle ENOENT errors and timeouts gracefully
     const originalGet = this.sessionStore.get.bind(this.sessionStore);
     this.sessionStore.get = function(sid: string, callback: (err?: any, session?: any) => void) {
-      // Increased timeout for mobile/network latency (1.5 seconds)
       const timeout = setTimeout(() => {
         callback(undefined, null);
       }, 1500);
-      
+
       try {
-        originalGet(sid, (err, session) => {
+        originalGet(sid, (err: unknown, session: any) => {
           clearTimeout(timeout);
-          
-          // Ignore ENOENT errors for table.sql - this is a known connect-pg-simple issue
-          if (err && err.code === 'ENOENT' && (err.path?.includes('table.sql') || err.path?.includes('connect-pg-simple'))) {
-            return callback(undefined, null);
+
+          if (err) {
+            if (typeof err === 'object' && err !== null && 'code' in err) {
+              const code = (err as { code?: string }).code;
+              const path = (err as { path?: string }).path;
+              const msg = (err as { message?: string }).message;
+              if (code === 'ENOENT' && (path?.includes('table.sql') || path?.includes('connect-pg-simple'))) {
+                return callback(undefined, null);
+              }
+              if (code === 'ECONNREFUSED' || code === 'ETIMEDOUT' || (typeof msg === 'string' && msg.includes('timeout'))) {
+                return callback(undefined, null);
+              }
+            }
+            return callback(toPlainError(err), session);
           }
-          
-          // Handle database connection errors gracefully in serverless
-          if (err && (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('timeout'))) {
-            return callback(undefined, null);
-          }
-          
-          // Pass through other errors and sessions normally
-          callback(err, session);
+          callback(undefined, session);
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(timeout);
-        // Catch any synchronous errors
-        if (error?.code === 'ENOENT' && (error?.path?.includes('table.sql') || error?.path?.includes('connect-pg-simple'))) {
-          return callback(undefined, null);
+        if (error && typeof error === 'object' && 'code' in error) {
+          const code = (error as { code?: string }).code;
+          const path = (error as { path?: string }).path;
+          const msg = (error as { message?: string }).message;
+          if (code === 'ENOENT' && (path?.includes('table.sql') || path?.includes('connect-pg-simple'))) {
+            return callback(undefined, null);
+          }
+          if (code === 'ECONNREFUSED' || code === 'ETIMEDOUT' || (typeof msg === 'string' && msg.includes('timeout'))) {
+            return callback(undefined, null);
+          }
         }
-        if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT' || error?.message?.includes('timeout')) {
-          return callback(undefined, null);
-        }
-        callback(error, null);
+        callback(toPlainError(error), null);
       }
     };
   }

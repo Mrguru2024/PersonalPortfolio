@@ -1,0 +1,14 @@
+{
+  "name": "Ascendra Technologies",
+  "short_name": "Ascendra",
+  "description": "Ascendra Technologies – Custom web solutions and full stack development.",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

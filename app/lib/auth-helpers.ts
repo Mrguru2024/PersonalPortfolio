@@ -2,69 +2,84 @@ import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { storage } from "@server/storage";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 // Session management for Next.js App Router
 // Optimized for serverless environments with fast timeouts
-export async function getSessionUser(req?: NextRequest): Promise<any | null> {
+export async function getSessionUser(
+  req?: NextRequest,
+  sessionIdFromCaller?: string
+): Promise<any | null> {
   const userAgent = req?.headers.get("user-agent") || "unknown";
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
 
   try {
-    const cookieHeader = req?.headers.get("cookie") || "";
-    const cookieStore = await cookies();
-    let sessionId: string | undefined =
-      cookieStore.get("sessionId")?.value ??
-      cookieStore.get("connect.sid")?.value;
+    let sessionId: string | undefined = sessionIdFromCaller;
 
-    // Log cookie detection for debugging
-    if (!sessionId) {
-      console.log(
-        `[getSessionUser] cookies() returned no sessionId. Cookie header: ${cookieHeader ? cookieHeader.substring(0, 80) + "..." : "NONE"}`,
-      );
-    }
+    if (sessionId === undefined) {
+      const cookieHeader = req?.headers.get("cookie") || "";
+      const cookieStore = await cookies();
+      sessionId =
+        cookieStore.get("sessionId")?.value ??
+        cookieStore.get("connect.sid")?.value;
 
-    // Fallback: read Cookie header from request (fixes 401 when cookies() context is missing in serverless)
-    if (!sessionId && cookieHeader) {
-      const match = cookieHeader.match(
-        /(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/,
-      );
-      if (match) {
-        sessionId = match[1].trim();
+      if (isDev && !sessionId) {
         console.log(
-          `[getSessionUser] ✅ Found sessionId in Cookie header fallback: ${sessionId.substring(0, 16)}...`,
+          `[getSessionUser] cookies() returned no sessionId. Cookie header: ${
+            cookieHeader ? cookieHeader.substring(0, 80) + "..." : "NONE"
+          }`
         );
-      } else {
-        console.log(
-          `[getSessionUser] ❌ Cookie header exists but no sessionId/connect.sid found. Header: ${cookieHeader.substring(0, 100)}...`,
+      }
+
+      if (!sessionId && cookieHeader) {
+        const match = cookieHeader.match(
+          /(?:^|;\s*)(?:sessionId|connect\.sid)=([^;]+)/
         );
+        if (match) {
+          sessionId = match[1].trim();
+          if (isDev) {
+            console.log(
+              `[getSessionUser] Found sessionId in Cookie header fallback: ${sessionId.substring(0, 16)}...`
+            );
+          }
+        } else if (isDev) {
+          console.log(
+            `[getSessionUser] Cookie header exists but no sessionId/connect.sid found. Header: ${cookieHeader.substring(0, 100)}...`
+          );
+        }
       }
     }
 
     if (!sessionId) {
-      console.log(
-        `[getSessionUser] ❌ No sessionId found anywhere - returning null`,
-      );
+      if (isDev) {
+        console.log(
+          `[getSessionUser] No sessionId found anywhere - returning null`
+        );
+      }
       return null;
     }
 
-    console.log(
-      `[getSessionUser] ✅ SessionId found: ${sessionId.substring(0, 16)}...`,
-    );
+    if (isDev) {
+      console.log(
+        `[getSessionUser] SessionId found: ${sessionId.substring(0, 16)}...`
+      );
+    }
 
     // Get session from session store directly (avoid circular dependency)
     return new Promise((resolve) => {
       // connect-pg-simple stores sessions with the session ID as-is
       const storeStartTime = Date.now();
 
-      // Increased timeout slightly for mobile/network latency (2 seconds)
+      // Short timeout so /api/user responds quickly; session store can be slow (e.g. cold DB)
       const timeout = setTimeout(() => {
         const storeDuration = Date.now() - storeStartTime;
-        if (isMobile) {
+        if (isDev && storeDuration > 1500 && isMobile) {
           console.log(
-            `[getSessionUser] Session store get timeout after ${storeDuration}ms (Mobile)`,
+            `[getSessionUser] Session store get timeout after ${storeDuration}ms (Mobile)`
           );
         }
         resolve(null);
-      }, 2000);
+      }, 1500);
 
       storage.sessionStore.get(sessionId, async (err, session) => {
         clearTimeout(timeout);
@@ -77,34 +92,32 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
             (err.path?.includes("table.sql") ||
               err.path?.includes("connect-pg-simple"))
           ) {
-            if (isMobile) {
+            if (isDev && isMobile) {
               console.log(
-                `[getSessionUser] ENOENT error (table.sql) after ${storeDuration}ms (Mobile)`,
+                `[getSessionUser] ENOENT error (table.sql) after ${storeDuration}ms (Mobile)`
               );
             }
             resolve(null);
             return;
           }
 
-          // Handle database connection errors gracefully in serverless
           if (
             err.code === "ECONNREFUSED" ||
             err.code === "ETIMEDOUT" ||
             err.message?.includes("timeout")
           ) {
-            if (isMobile) {
+            if (isDev && isMobile) {
               console.log(
-                `[getSessionUser] DB connection error: ${err.code} after ${storeDuration}ms (Mobile)`,
+                `[getSessionUser] DB connection error: ${err.code} after ${storeDuration}ms (Mobile)`
               );
             }
             resolve(null);
             return;
           }
 
-          // Log other errors for mobile debugging
-          if (isMobile) {
+          if (isDev && isMobile) {
             console.error(
-              `[getSessionUser] Session store error: ${err.message || err.code} after ${storeDuration}ms (Mobile)`,
+              `[getSessionUser] Session store error: ${err.message || err.code} after ${storeDuration}ms (Mobile)`
             );
           }
           resolve(null);
@@ -112,10 +125,11 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
         }
 
         if (!session) {
-          // Session doesn't exist or expired
-          console.log(
-            `[getSessionUser] Session not found in store for sessionId ${sessionId.substring(0, 16)}... after ${storeDuration}ms${isMobile ? " (Mobile)" : ""}`,
-          );
+          if (isDev && storeDuration > 4000) {
+            console.warn(
+              `[getSessionUser] Session not found for sessionId ${sessionId.substring(0, 16)}... after ${storeDuration}ms (slow store response)`
+            );
+          }
           resolve(null);
           return;
         }
@@ -128,17 +142,20 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           (session as any).user?.id;
 
         if (!userId) {
-          // No userId in session
-          console.log(
-            `[getSessionUser] No userId in session data. Session keys: ${Object.keys(session || {}).join(", ")} after ${storeDuration}ms${isMobile ? " (Mobile)" : ""}`,
-          );
+          if (isDev) {
+            console.log(
+              `[getSessionUser] No userId in session data. Session keys: ${Object.keys(session || {}).join(", ")} after ${storeDuration}ms${isMobile ? " (Mobile)" : ""}`
+            );
+          }
           resolve(null);
           return;
         }
 
-        console.log(
-          `[getSessionUser] Found userId ${userId} in session after ${storeDuration}ms${isMobile ? " (Mobile)" : ""}`,
-        );
+        if (isDev) {
+          console.log(
+            `[getSessionUser] Found userId ${userId} in session after ${storeDuration}ms${isMobile ? " (Mobile)" : ""}`
+          );
+        }
 
         try {
           // Get user from database with timeout for serverless
@@ -152,39 +169,48 @@ export async function getSessionUser(req?: NextRequest): Promise<any | null> {
           const userPromise = storage.getUser(userIdNum);
           const timeoutPromise = new Promise<null>((resolve) =>
             setTimeout(() => {
-              const dbDuration = Date.now() - dbStartTime;
-              if (isMobile) {
+              if (isDev && isMobile) {
+                const dbDuration = Date.now() - dbStartTime;
                 console.log(
-                  `[getSessionUser] DB query timeout for userId ${userIdNum} after ${dbDuration}ms (Mobile)`,
+                  `[getSessionUser] DB query timeout for userId ${userIdNum} after ${dbDuration}ms (Mobile)`
                 );
               }
               resolve(null);
-            }, 1500),
+            }, 1500)
           );
 
           const user = await Promise.race([userPromise, timeoutPromise]);
           const dbDuration = Date.now() - dbStartTime;
 
           if (!user) {
-            console.log(
-              `[getSessionUser] User ${userIdNum} not found in database after ${dbDuration}ms${isMobile ? " (Mobile)" : ""}`,
-            );
+            if (isDev) {
+              console.log(
+                `[getSessionUser] User ${userIdNum} not found in database after ${dbDuration}ms${isMobile ? " (Mobile)" : ""}`
+              );
+            }
             resolve(null);
             return;
           }
 
-          console.log(
-            `[getSessionUser] Success: Found user ${user.id} (${user.username}) after ${dbDuration}ms${isMobile ? " (Mobile)" : ""}`,
-          );
+          if (isDev) {
+            console.log(
+              `[getSessionUser] Success: Found user ${user.id} (${user.username}) after ${dbDuration}ms${isMobile ? " (Mobile)" : ""}`
+            );
+          }
 
           // Don't send password
           const { password, ...userWithoutPassword } = user;
           resolve(userWithoutPassword);
-        } catch (error: any) {
-          // Log errors for mobile debugging
-          if (isMobile) {
+        } catch (error: unknown) {
+          if (isDev && isMobile) {
+            const msg =
+              error instanceof Error
+                ? error.message
+                : typeof (error as { message?: unknown })?.message === "string"
+                  ? (error as { message: string }).message
+                  : "Unknown";
             console.error(
-              `[getSessionUser] DB query error: ${error?.message || "Unknown"} (Mobile)`,
+              `[getSessionUser] DB query error: ${msg} (Mobile)`
             );
           }
           resolve(null);
@@ -219,10 +245,11 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
     // Increased timeout to 3 seconds for serverless/mobile
     const timeout = setTimeout(() => {
       const duration = Date.now() - startTime;
-      console.warn(
-        `[setSession] Timeout after ${duration}ms for userId ${userId} - session may not be stored`,
-      );
-      // Don't reject - allow login to continue, but log the issue
+      if (isDev) {
+        console.warn(
+          `[setSession] Timeout after ${duration}ms for userId ${userId} - session may not be stored`
+        );
+      }
       resolve();
     }, 3000);
 
@@ -232,36 +259,38 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
         const duration = Date.now() - startTime;
 
         if (err) {
-          console.error(
-            `[setSession] Error storing session for userId ${userId} after ${duration}ms:`,
-            err.message || err.code,
-          );
-          // Don't reject - allow login to continue
-          // The cookie is set, so the session can be stored on next request
+          if (isDev) {
+            console.error(
+              `[setSession] Error storing session for userId ${userId} after ${duration}ms:`,
+              err.message || err.code
+            );
+          }
           resolve();
         } else {
-          console.log(
-            `[setSession] Successfully stored session for userId ${userId} in ${duration}ms`,
-          );
+          if (isDev) {
+            console.log(
+              `[setSession] Successfully stored session for userId ${userId} in ${duration}ms`
+            );
+          }
           resolve();
         }
       });
     } catch (error: any) {
       clearTimeout(timeout);
-      console.error(
-        `[setSession] Exception storing session for userId ${userId}:`,
-        error?.message,
-      );
-      // Don't reject - allow login to continue
+      if (isDev) {
+        console.error(
+          `[setSession] Exception storing session for userId ${userId}:`,
+          error?.message
+        );
+      }
       resolve();
     }
   });
 }
 
 export function deleteSession(sessionId: string): void {
-  // Destroy session in session store
   storage.sessionStore.destroy(sessionId, (err) => {
-    if (err) {
+    if (err && isDev) {
       console.error("Error destroying session:", err);
     }
   });
@@ -287,7 +316,7 @@ export async function canCreateBlog(req?: NextRequest): Promise<boolean> {
 // Check if user has a specific role
 export async function hasRole(
   req: NextRequest | undefined,
-  role: string,
+  role: string
 ): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;

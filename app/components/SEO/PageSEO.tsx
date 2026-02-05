@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 interface PageSEOProps {
   title: string;
@@ -12,53 +12,62 @@ interface PageSEOProps {
   ogImageAlt?: string;
   baseUrl?: string;
   noIndex?: boolean;
-  schemaType?: 'WebPage' | 'AboutPage' | 'ProfilePage' | 'ContactPage' | 'CollectionPage';
+  schemaType?:
+    | "WebPage"
+    | "AboutPage"
+    | "ProfilePage"
+    | "ContactPage"
+    | "CollectionPage";
 }
 
 // Helper function to update or create meta tag
 function updateMetaTag(property: string, content: string, isProperty = false) {
-  if (typeof document === 'undefined') return;
-  
-  const attribute = isProperty ? 'property' : 'name';
-  let element = document.querySelector(`meta[${attribute}="${property}"]`) as HTMLMetaElement;
-  
+  if (typeof document === "undefined") return;
+
+  const attribute = isProperty ? "property" : "name";
+  let element = document.querySelector(
+    `meta[${attribute}="${property}"]`
+  ) as HTMLMetaElement;
+
   if (!element) {
-    element = document.createElement('meta');
+    element = document.createElement("meta");
     element.setAttribute(attribute, property);
     document.head.appendChild(element);
   }
-  
-  element.setAttribute('content', content);
+
+  element.setAttribute("content", content);
 }
 
 // Helper function to update or create link tag
 function updateLinkTag(rel: string, href: string) {
-  if (typeof document === 'undefined') return;
-  
+  if (typeof document === "undefined") return;
+
   let element = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement;
-  
+
   if (!element) {
-    element = document.createElement('link');
-    element.setAttribute('rel', rel);
+    element = document.createElement("link");
+    element.setAttribute("rel", rel);
     document.head.appendChild(element);
   }
-  
-  element.setAttribute('href', href);
+
+  element.setAttribute("href", href);
 }
 
 // Helper function to update or create script tag for JSON-LD
 function updateJsonLdScript(data: object, id: string) {
-  if (typeof document === 'undefined') return;
-  
+  if (typeof document === "undefined") return;
+
   // Remove existing JSON-LD script for this page
-  const existingScript = document.querySelector(`script[type="application/ld+json"][data-seo-id="${id}"]`);
+  const existingScript = document.querySelector(
+    `script[type="application/ld+json"][data-seo-id="${id}"]`
+  );
   if (existingScript) {
     existingScript.remove();
   }
-  
-  const script = document.createElement('script');
-  script.setAttribute('type', 'application/ld+json');
-  script.setAttribute('data-seo-id', id);
+
+  const script = document.createElement("script");
+  script.setAttribute("type", "application/ld+json");
+  script.setAttribute("data-seo-id", id);
   script.textContent = JSON.stringify(data);
   document.head.appendChild(script);
 }
@@ -66,79 +75,104 @@ function updateJsonLdScript(data: object, id: string) {
 export function PageSEO({
   title,
   description,
-  canonicalPath = '',
+  canonicalPath = "",
   keywords = [],
-  ogType = 'website',
-  ogImage = '/images/mrguru-og-image.jpg',
-  ogImageAlt = 'Anthony Feaster - Full Stack Developer',
-  baseUrl = 'https://mrguru.dev',
+  ogType = "website",
+  ogImage = "/ascendra-logo.svg",
+  ogImageAlt = "Ascendra Technologies",
+  baseUrl = "https://mrguru.dev",
   noIndex = false,
-  schemaType = 'WebPage'
+  schemaType = "WebPage",
 }: PageSEOProps) {
-  const fullTitle = title.includes('MrGuru.dev') ? title : `${title} | MrGuru.dev`;
+  const fullTitle = title.includes("Ascendra")
+    ? title
+    : `${title} | Ascendra Technologies`;
   const url = `${baseUrl}${canonicalPath}`;
-  const keywordsString = [...keywords, 'MrGuru', 'Anthony Feaster', 'web developer', 'portfolio'].join(', ');
+  const keywordsString = [
+    ...keywords,
+    "Ascendra Technologies",
+    "Anthony Feaster",
+    "web developer",
+    "portfolio",
+  ].join(", ");
 
   useEffect(() => {
     // Update document title
     document.title = fullTitle;
 
     // Basic Meta Tags
-    updateMetaTag('description', description);
-    updateMetaTag('keywords', keywordsString);
-    
+    updateMetaTag("description", description);
+    updateMetaTag("keywords", keywordsString);
+
     if (noIndex) {
-      updateMetaTag('robots', 'noindex, nofollow');
+      updateMetaTag("robots", "noindex, nofollow");
     } else {
       // Remove noindex if it exists
       const robotsMeta = document.querySelector('meta[name="robots"]');
-      if (robotsMeta && robotsMeta.getAttribute('content') === 'noindex, nofollow') {
+      if (
+        robotsMeta &&
+        robotsMeta.getAttribute("content") === "noindex, nofollow"
+      ) {
         robotsMeta.remove();
       }
     }
-    
-    updateLinkTag('canonical', url);
+
+    updateLinkTag("canonical", url);
 
     // Open Graph / Facebook
-    updateMetaTag('og:type', ogType, true);
-    updateMetaTag('og:url', url, true);
-    updateMetaTag('og:title', fullTitle, true);
-    updateMetaTag('og:description', description, true);
-    updateMetaTag('og:image', `${baseUrl}${ogImage}`, true);
-    updateMetaTag('og:image:alt', ogImageAlt, true);
+    updateMetaTag("og:type", ogType, true);
+    updateMetaTag("og:url", url, true);
+    updateMetaTag("og:title", fullTitle, true);
+    updateMetaTag("og:description", description, true);
+    updateMetaTag("og:image", `${baseUrl}${ogImage}`, true);
+    updateMetaTag("og:image:alt", ogImageAlt, true);
 
     // Twitter
-    updateMetaTag('twitter:card', 'summary_large_image');
-    updateMetaTag('twitter:url', url);
-    updateMetaTag('twitter:title', fullTitle);
-    updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `${baseUrl}${ogImage}`);
-    updateMetaTag('twitter:image:alt', ogImageAlt);
+    updateMetaTag("twitter:card", "summary_large_image");
+    updateMetaTag("twitter:url", url);
+    updateMetaTag("twitter:title", fullTitle);
+    updateMetaTag("twitter:description", description);
+    updateMetaTag("twitter:image", `${baseUrl}${ogImage}`);
+    updateMetaTag("twitter:image:alt", ogImageAlt);
 
     // Schema.org / JSON-LD
-    updateJsonLdScript({
-      '@context': 'https://schema.org',
-      '@type': schemaType,
-      'name': fullTitle,
-      'description': description,
-      'url': url,
-      'author': {
-        '@type': 'Person',
-        'name': 'Anthony Feaster',
-        'url': baseUrl
+    updateJsonLdScript(
+      {
+        "@context": "https://schema.org",
+        "@type": schemaType,
+        name: fullTitle,
+        description: description,
+        url: url,
+        author: {
+          "@type": "Person",
+          name: "Anthony Feaster",
+          url: baseUrl,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Ascendra Technologies",
+          logo: {
+            "@type": "ImageObject",
+            url: `${baseUrl}/favicon.svg`,
+            width: 32,
+            height: 32,
+          },
+        },
       },
-      'publisher': {
-        '@type': 'Organization',
-        'name': 'MrGuru.dev',
-        'logo': {
-          '@type': 'ImageObject',
-          'url': `${baseUrl}/favicon-32x32.png`,
-          'width': 32,
-          'height': 32
-        }
-      }
-    }, 'page-seo');
-  }, [fullTitle, description, keywordsString, url, ogType, ogImage, ogImageAlt, baseUrl, noIndex, schemaType]);
+      "page-seo"
+    );
+  }, [
+    fullTitle,
+    description,
+    keywordsString,
+    url,
+    ogType,
+    ogImage,
+    ogImageAlt,
+    baseUrl,
+    noIndex,
+    schemaType,
+  ]);
 
   // This component doesn't render anything visible
   return null;

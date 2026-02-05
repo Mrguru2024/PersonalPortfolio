@@ -426,17 +426,7 @@ function ServicesSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <Card
-                className={`
-                h-full transition-all hover:shadow-xl hover:scale-105
-                ${service.popular ? "border-primary border-2" : ""}
-              `}
-              >
-                {service.popular && (
-                  <div className="absolute -top-3 right-4">
-                    <Badge className="bg-primary">Popular</Badge>
-                  </div>
-                )}
+              <Card className="h-full transition-all hover:shadow-xl hover:scale-105">
                 <CardHeader>
                   <div className="p-3 rounded-lg bg-primary/10 text-primary w-fit mb-2">
                     {service.icon}
@@ -460,11 +450,7 @@ function ServicesSection() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    asChild
-                    className="w-full"
-                    variant={service.popular ? "default" : "outline"}
-                  >
+                  <Button asChild className="w-full" variant="outline">
                     <Link href={`/assessment?service=${service.id}`}>
                       Get Started
                     </Link>

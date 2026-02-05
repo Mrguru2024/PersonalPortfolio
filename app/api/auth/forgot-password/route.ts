@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     if (!user || !user.email) {
       // Return success even if user doesn't exist (security)
       return NextResponse.json({
-        message: "If an account exists with that email, a password reset link has been sent.",
+        message:
+          "If an account exists with that email, a password reset link has been sent.",
       });
     }
 
@@ -43,17 +44,21 @@ export async function POST(req: NextRequest) {
     });
 
     // Send reset email
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
-    
+    const resetUrl = `${
+      process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000"
+    }/auth/reset-password?token=${resetToken}`;
+
     try {
-      const brevoModule = await import('@getbrevo/brevo');
+      const brevoModule = await import("@getbrevo/brevo");
       const defaultClient = brevoModule.ApiClient.instance;
-      const apiKey = defaultClient.authentications['api-key'];
+      const apiKey = defaultClient.authentications["api-key"];
       apiKey.apiKey = process.env.BREVO_API_KEY;
       const apiInstance = new brevoModule.TransactionalEmailsApi();
-      
+
       const sendSmtpEmail = new brevoModule.SendSmtpEmail();
-      sendSmtpEmail.subject = "Password Reset Request - MrGuru.dev";
+      sendSmtpEmail.subject = "Password Reset Request - Ascendra Technologies";
       sendSmtpEmail.htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -74,7 +79,7 @@ export async function POST(req: NextRequest) {
             </div>
             <div class="content">
               <p>Hello ${user.username || user.email},</p>
-              <p>You requested to reset your password for your MrGuru.dev account.</p>
+              <p>You requested to reset your password for your Ascendra Technologies account.</p>
               <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
               <a href="${resetUrl}" class="button">Reset Password</a>
               <p>Or copy and paste this link into your browser:</p>
@@ -93,7 +98,7 @@ Password Reset Request
 
 Hello ${user.username || user.email},
 
-You requested to reset your password for your MrGuru.dev account.
+You requested to reset your password for your Ascendra Technologies account.
 
 Click the link below to reset your password. This link will expire in 1 hour.
 
@@ -104,11 +109,11 @@ If you didn't request this password reset, please ignore this email. Your passwo
 This is an automated message. Please do not reply to this email.
       `;
       sendSmtpEmail.sender = {
-        name: process.env.FROM_NAME || 'MrGuru.dev Portfolio',
-        email: process.env.FROM_EMAIL || 'noreply@mrguru.dev',
+        name: process.env.FROM_NAME || "Ascendra Technologies",
+        email: process.env.FROM_EMAIL || "noreply@mrguru.dev",
       };
       sendSmtpEmail.to = [{ email: user.email }];
-      
+
       await apiInstance.sendTransacEmail(sendSmtpEmail);
     } catch (emailError) {
       console.error("Error sending password reset email:", emailError);
@@ -116,7 +121,8 @@ This is an automated message. Please do not reply to this email.
     }
 
     return NextResponse.json({
-      message: "If an account exists with that email, a password reset link has been sent.",
+      message:
+        "If an account exists with that email, a password reset link has been sent.",
     });
   } catch (error: any) {
     console.error("Forgot password error:", error);

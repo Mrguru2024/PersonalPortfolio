@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Code,
   Menu,
   X,
   LogIn,
@@ -21,7 +20,6 @@ import {
   Users,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { personalInfo } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,22 +85,18 @@ export default function Header(_props: HeaderProps) {
   const isHomePage = pathname === "/";
 
   return (
-    <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border shadow-sm transition-colors duration-300 pt-[env(safe-area-inset-top)]">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="text-xl font-bold text-primary flex items-center"
-        >
-          <span className="sr-only">{personalInfo.name}</span>
-          <span className="flex items-center">
-            <Code className="h-6 w-6 shrink-0" />
-            <span className="ml-2 hidden sm:inline">MrGuru.dev</span>
-          </span>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-6 lg:space-x-8 items-center">
+    <header
+      className="!bg-transparent !border-0 !shadow-none shrink-0"
+      style={{ background: "transparent", border: "none", boxShadow: "none" }}
+    >
+      <div
+        className="container mx-auto px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none"
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
+      >
+        {/* Left spacer (logo was here) */}
+        <div className="hidden md:block flex-1 min-w-0" aria-hidden />
+        {/* Center: nav */}
+        <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
           {isHomePage ? (
             navItems.map((item) => (
               <button
@@ -142,77 +136,81 @@ export default function Header(_props: HeaderProps) {
               </Link>
             </>
           )}
-
-          {/* Auth */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full"
-                >
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <User className="h-4 w-4" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[200px]">
-                <DropdownMenuItem className="cursor-default">
-                  <span className="text-sm font-medium">@{user.username}</span>
-                </DropdownMenuItem>
-                {isApprovedAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="cursor-pointer">
-                        <LayoutDashboard className="h-4 w-4 shrink-0" />
-                        <span>Admin</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="min-w-[200px]">
-                        {adminPages.map((page) => {
-                          const Icon = page.icon;
-                          return (
-                            <DropdownMenuItem key={page.href} asChild>
-                              <Link
-                                href={page.href}
-                                className="cursor-pointer flex items-center gap-2"
-                              >
-                                <Icon className="h-4 w-4 shrink-0" />
-                                <span>{page.name}</span>
-                              </Link>
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem
-                  onClick={() => logoutMutation.mutate()}
-                  className="cursor-pointer"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Link href="/auth">
-              <Button
-                size="sm"
-                variant="default"
-                className="flex items-center gap-2 text-sm min-h-[44px] sm:min-h-[36px]"
-              >
-                <LogIn className="h-4 w-4 shrink-0" />
-                <span>Login</span>
-              </Button>
-            </Link>
-          )}
-
-          <ThemeToggle />
         </nav>
+        {/* Right: auth + theme (original position) */}
+        <div className="flex flex-1 min-w-0 justify-end items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full"
+                  >
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <User className="h-4 w-4" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[200px]">
+                  <DropdownMenuItem className="cursor-default">
+                    <span className="text-sm font-medium">
+                      @{user.username}
+                    </span>
+                  </DropdownMenuItem>
+                  {isApprovedAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="cursor-pointer">
+                          <LayoutDashboard className="h-4 w-4 shrink-0" />
+                          <span>Admin</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="min-w-[200px]">
+                          {adminPages.map((page) => {
+                            const Icon = page.icon;
+                            return (
+                              <DropdownMenuItem key={page.href} asChild>
+                                <Link
+                                  href={page.href}
+                                  className="cursor-pointer flex items-center gap-2"
+                                >
+                                  <Icon className="h-4 w-4 shrink-0" />
+                                  <span>{page.name}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => logoutMutation.mutate()}
+                    className="cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/auth">
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="flex items-center gap-2 text-sm min-h-[44px] sm:min-h-[36px]"
+                >
+                  <LogIn className="h-4 w-4 shrink-0" />
+                  <span>Login</span>
+                </Button>
+              </Link>
+            )}
+            <ThemeToggle />
+          </div>
+        </div>
 
         {/* Mobile: menu button + theme (nav links in dropdown below) */}
         <div className="flex items-center gap-3 md:hidden shrink-0">
@@ -237,7 +235,7 @@ export default function Header(_props: HeaderProps) {
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="md:hidden">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {isHomePage ? (
               navItems.map((item) => (

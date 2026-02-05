@@ -44,7 +44,8 @@ export const blogSeedPosts = [
     tags: ["Next.js", "React", "Migration", "Web Development", "TypeScript"],
     publishedAt: "2024-01-05T12:00:00.000Z",
     updatedAt: "2024-01-12T12:00:00.000Z",
-    metaTitle: "Migrating from Vite to Next.js 15: Complete Guide | MrGuru.dev",
+    metaTitle:
+      "Migrating from Vite to Next.js 15: Complete Guide | Ascendra Technologies",
     metaDescription:
       "Step-by-step guide to migrating a Vite React app to Next.js 15: App Router, API routes, SSR, and SEO. Real experience from a production portfolio migration.",
     keywords: [
@@ -117,7 +118,7 @@ export const blogSeedPosts = [
     publishedAt: "2023-12-20T12:00:00.000Z",
     updatedAt: "2023-12-22T12:00:00.000Z",
     metaTitle:
-      "Building a Modern Portfolio with Next.js 15 and Tailwind CSS | MrGuru.dev",
+      "Building a Modern Portfolio with Next.js 15 and Tailwind CSS | Ascendra Technologies",
     metaDescription:
       "Guide to building a responsive developer portfolio with Next.js 15, Tailwind CSS, TypeScript, and Drizzle. Design, tech stack, and lessons learned.",
     keywords: [
@@ -201,7 +202,7 @@ export const blogSeedPosts = [
     publishedAt: "2023-12-10T12:00:00.000Z",
     updatedAt: "2023-12-12T12:00:00.000Z",
     metaTitle:
-      "5 Essential Skills Every Modern Web Developer Should Master | MrGuru.dev",
+      "5 Essential Skills Every Modern Web Developer Should Master | Ascendra Technologies",
     metaDescription:
       "Key skills for web developers: JavaScript, API design, performance, responsive design, and testing. Practical advice from a full-stack developer.",
     keywords: [
@@ -281,7 +282,8 @@ export const blogSeedPosts = [
     ],
     publishedAt: "2023-11-25T12:00:00.000Z",
     updatedAt: "2023-11-27T12:00:00.000Z",
-    metaTitle: "TypeScript in React: Why and How to Adopt It | MrGuru.dev",
+    metaTitle:
+      "TypeScript in React: Why and How to Adopt It | Ascendra Technologies",
     metaDescription:
       "How TypeScript improves React development: better DX, fewer bugs, self-documenting code, and safer refactoring. Practical getting-started advice.",
     keywords: [
@@ -353,7 +355,7 @@ export const blogSeedPosts = [
     publishedAt: "2023-12-30T12:00:00.000Z",
     updatedAt: "2024-01-02T12:00:00.000Z",
     metaTitle:
-      "Web Development Trends 2025: RSC, AI, Edge, Sustainability | MrGuru.dev",
+      "Web Development Trends 2025: RSC, AI, Edge, Sustainability | Ascendra Technologies",
     metaDescription:
       "Trends shaping web development in 2025: React Server Components, AI tooling, edge computing, WebAssembly, and sustainable practices.",
     keywords: [
@@ -426,7 +428,7 @@ export const blogSeedPosts = [
     tags: ["Next.js", "API", "Backend", "Best Practices", "TypeScript"],
     publishedAt: "2024-01-20T12:00:00.000Z",
     updatedAt: "2024-01-22T12:00:00.000Z",
-    metaTitle: "API Design in Next.js: Best Practices | MrGuru.dev",
+    metaTitle: "API Design in Next.js: Best Practices | Ascendra Technologies",
     metaDescription:
       "Best practices for Next.js API routes: structure, error handling, type safety, validation, and authentication.",
     keywords: [

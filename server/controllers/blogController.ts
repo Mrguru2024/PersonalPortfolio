@@ -25,17 +25,18 @@ export const blogController = {
       console.error("Error fetching blog posts:", error);
 
       // Check if it's a database connection error
-      const errorMessage = error?.message || String(error);
+      const errorMessage = (error?.message || String(error)).toLowerCase();
       if (
         errorMessage.includes("endpoint has been disabled") ||
         errorMessage.includes("connection") ||
-        errorMessage.includes("ECONNREFUSED") ||
-        errorMessage.includes("ENOTFOUND")
+        errorMessage.includes("econnrefused") ||
+        errorMessage.includes("econnreset") ||
+        errorMessage.includes("enotfound") ||
+        errorMessage.includes("reset")
       ) {
         console.warn(
           "Database unavailable, returning empty array for blog posts"
         );
-        // Return empty array instead of error for database connection issues
         return res.json([]);
       }
 
@@ -64,15 +65,16 @@ export const blogController = {
       console.error("Error fetching blog post:", error);
 
       // Check if it's a database connection error
-      const errorMessage = error?.message || String(error);
+      const errorMessage = (error?.message || String(error)).toLowerCase();
       if (
         errorMessage.includes("endpoint has been disabled") ||
         errorMessage.includes("connection") ||
-        errorMessage.includes("ECONNREFUSED") ||
-        errorMessage.includes("ENOTFOUND")
+        errorMessage.includes("econnrefused") ||
+        errorMessage.includes("econnreset") ||
+        errorMessage.includes("enotfound") ||
+        errorMessage.includes("reset")
       ) {
         console.warn("Database unavailable, returning 404 for blog post");
-        // Return 404 instead of 500 for database connection issues
         return res.status(404).json({ error: "Blog post not found" });
       }
 

@@ -15,7 +15,13 @@ function getPool(): Pool {
         "DATABASE_URL must be set. Did you forget to provision a database?",
       );
     }
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      // Limit wait for a connection (helps session store /api/user avoid long hangs on cold start)
+      connectionTimeoutMillis: 8000,
+      // Allow idle connections to be closed after 30s to avoid holding connections in serverless
+      idleTimeoutMillis: 30_000,
+    });
   }
   return _pool;
 }
