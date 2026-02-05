@@ -235,99 +235,104 @@ export default function Header(_props: HeaderProps) {
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
-            {isHomePage ? (
-              navItems.map((item) => (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() => scrollToSection(item.href)}
-                  className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                >
-                  {item.name}
-                </button>
-              ))
-            ) : (
-              <>
-                <Link
-                  href="/"
-                  className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/blog"
-                  className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Blog
-                </Link>
-                <Link
-                  href="/resume"
-                  className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Resume
-                </Link>
-                <Link
-                  href="/generate-images"
-                  className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition flex items-center gap-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Wand2 className="h-4 w-4 shrink-0" /> AI Image Generator
-                </Link>
-              </>
-            )}
+        <div className="md:hidden relative z-50">
+          <div className="container mx-auto px-4 pb-4 pt-3">
+            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85">
+              <div className="flex flex-col gap-1">
+                {isHomePage ? (
+                  navItems.map((item) => (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => scrollToSection(item.href)}
+                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                    >
+                      {item.name}
+                    </button>
+                  ))
+                ) : (
+                  <>
+                    <Link
+                      href="/"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      href="/blog"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Blog
+                    </Link>
+                    <Link
+                      href="/resume"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Resume
+                    </Link>
+                    <Link
+                      href="/generate-images"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Wand2 className="h-4 w-4 shrink-0" /> AI Image Generator
+                    </Link>
+                  </>
+                )}
 
-            <div className="pt-3 mt-3 border-t border-border">
-              {user ? (
-                <div className="space-y-2">
-                  <div className="px-2 py-1 text-sm font-medium text-foreground/80">
-                    Logged in as @{user.username}
-                  </div>
-                  {isApprovedAdmin && (
-                    <div className="space-y-1">
-                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                        Admin
+                <div className="pt-3 mt-3 border-t border-border/70">
+                  {user ? (
+                    <div className="space-y-2">
+                      <div className="px-2 py-1 text-sm font-medium text-foreground/80">
+                        Logged in as @{user.username}
                       </div>
-                      {adminPages.map((page) => {
-                        const Icon = page.icon;
-                        return (
-                          <Link
-                            key={page.href}
-                            href={page.href}
-                            className="flex items-center gap-2 text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <Icon className="h-4 w-4 shrink-0" />
-                            <span>{page.name}</span>
-                          </Link>
-                        );
-                      })}
+                      {isApprovedAdmin && (
+                        <div className="space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                            Admin
+                          </div>
+                          {adminPages.map((page) => {
+                            const Icon = page.icon;
+                            return (
+                              <Link
+                                key={page.href}
+                                href={page.href}
+                                className="flex items-center gap-2 text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span>{page.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logoutMutation.mutate();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center w-full text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      >
+                        <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
+                      </button>
                     </div>
+                  ) : (
+                    <Link
+                      href="/auth"
+                      className="flex items-center text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login /
+                      Register
+                    </Link>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      logoutMutation.mutate();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex items-center w-full text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                  >
-                    <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
-                  </button>
                 </div>
-              ) : (
-                <Link
-                  href="/auth"
-                  className="flex items-center text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-muted transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login / Register
-                </Link>
-              )}
+              </div>
             </div>
           </div>
         </div>
