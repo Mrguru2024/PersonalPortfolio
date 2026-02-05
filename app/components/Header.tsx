@@ -235,7 +235,7 @@ export default function Header(_props: HeaderProps) {
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-lg">
+        <div className="md:hidden relative z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 shadow-[0_20px_50px_rgba(0,0,0,0.25)] ring-1 ring-border/60">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {isHomePage ? (
               navItems.map((item) => (
