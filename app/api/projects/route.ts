@@ -20,10 +20,11 @@ export async function GET(req: NextRequest) {
       )
     );
 
-    await Promise.race([
-      portfolioController.getProjects(mockReq, mockRes),
-      timeoutPromise,
-    ]);
+    const controllerPromise = portfolioController
+      .getProjects(mockReq, mockRes)
+      .catch(() => {});
+
+    await Promise.race([controllerPromise, timeoutPromise]);
 
     const response = getResponse();
     if (!response) {
@@ -41,10 +42,16 @@ export async function GET(req: NextRequest) {
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Error in GET /api/projects:", error);
+  } catch (error: unknown) {
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof (error as { message?: string })?.message === "string"
+          ? (error as { message: string }).message
+          : String(error);
+    console.error("Error in GET /api/projects:", msg);
 
-    const errorMessage = (error?.message || String(error)).toLowerCase();
+    const errorMessage = msg.toLowerCase();
     const isConnectionError =
       errorMessage.includes("connection") ||
       errorMessage.includes("econnrefused") ||

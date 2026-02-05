@@ -5,6 +5,16 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
+/** Convert ErrorEvent or getter-only errors to a plain Error so no code can set .message and throw */
+function toPlainError(e: unknown): Error {
+  if (e instanceof Error && e.constructor.name === 'Error') return e;
+  const msg =
+    e != null && typeof (e as { message?: unknown }).message === 'string'
+      ? (e as { message: string }).message
+      : String(e);
+  return new Error(msg);
+}
+
 let _pool: Pool | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -15,13 +25,20 @@ function getPool(): Pool {
         "DATABASE_URL must be set. Did you forget to provision a database?",
       );
     }
-    _pool = new Pool({
+    const raw = new Pool({
       connectionString: process.env.DATABASE_URL,
-      // Limit wait for a connection (helps session store /api/user avoid long hangs on cold start)
       connectionTimeoutMillis: 8000,
-      // Allow idle connections to be closed after 30s to avoid holding connections in serverless
       idleTimeoutMillis: 30_000,
     });
+    // Normalize at emit so every listener (including Neon's internal ones) gets a plain Error, never ErrorEvent
+    const originalEmit = raw.emit.bind(raw);
+    raw.emit = function (event: string, ...args: unknown[]) {
+      if (event === 'error' && args.length > 0) {
+        return originalEmit(event, toPlainError(args[0]), ...args.slice(1));
+      }
+      return originalEmit(event, ...args);
+    };
+    _pool = raw;
   }
   return _pool;
 }
@@ -33,8 +50,6 @@ function getDb() {
   return _db;
 }
 
-// Lazy initialization - only connect when actually used
-// This prevents errors during module import in serverless environments
 export const pool = new Proxy({} as Pool, {
   get(_target, prop) {
     const poolInstance = getPool();

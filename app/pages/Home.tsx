@@ -7,13 +7,15 @@ import HeroSection from "@/sections/HeroSection";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 import SectionLoadErrorFallback from "@/components/SectionLoadErrorFallback";
 
-/** Only mount children when this slot is near the viewport – reduces initial chunk requests */
+/** Only mount children when this slot is near the viewport. Large rootMargin = start loading earlier so section is ready when user scrolls. */
 function LazyWhenVisible({
   children,
   minHeight,
+  onVisible,
 }: {
   children: React.ReactNode;
   minHeight: string;
+  onVisible?: () => void;
 }) {
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -23,13 +25,16 @@ function LazyWhenVisible({
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) setInView(true);
+        if (entry?.isIntersecting) {
+          setInView(true);
+          onVisible?.();
+        }
       },
-      { rootMargin: "400px 0px", threshold: 0 }
+      { rootMargin: "900px 0px", threshold: 0 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [onVisible]);
 
   if (!inView) {
     return (
@@ -41,14 +46,37 @@ function LazyWhenVisible({
   return <>{children}</>;
 }
 
+const CHUNK_RETRY_DELAY_MS = 500;
+const CHUNK_MAX_RETRIES = 2;
+
 function withChunkFallback<T>(
   loader: () => Promise<{ default: T }>,
   fallback: React.ComponentType<{ minHeight?: string }>
 ) {
-  return loader().catch(() => ({ default: fallback as T }));
+  return function loadWithRetry(): Promise<{ default: T }> {
+    const attempt = (retriesLeft: number): Promise<{ default: T }> =>
+      loader().catch((err: unknown) => {
+        const isChunkError =
+          (err && typeof err === "object" && (err as { name?: string }).name === "ChunkLoadError") ||
+          (typeof (err as { message?: string })?.message === "string" &&
+            ((err as { message: string }).message.includes("Loading chunk") ||
+              (err as { message: string }).message.includes("Failed to load chunk") ||
+              (err as { message: string }).message.includes("dynamically imported module")));
+        if (retriesLeft > 0 && isChunkError) {
+          return new Promise((resolve, reject) => {
+            setTimeout(
+              () => attempt(retriesLeft - 1).then(resolve).catch(reject),
+              CHUNK_RETRY_DELAY_MS
+            );
+          });
+        }
+        return { default: fallback as T };
+      });
+    return attempt(CHUNK_MAX_RETRIES);
+  };
 }
 
-// Below-the-fold sections: lazy load with chunk-error fallback so ChunkLoadError doesn't crash the page
+// Below-the-fold sections: lazy load with retry + chunk-error fallback so ChunkLoadError doesn't crash the page
 const ServicesSection = dynamic(
   () =>
     withChunkFallback(
@@ -62,7 +90,7 @@ const ServicesSection = dynamic(
           minHeight="min-h-[400px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
     ssr: false,
@@ -78,7 +106,7 @@ const ProjectsSection = dynamic(
           minHeight="min-h-[480px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[480px]" />,
     ssr: false,
@@ -95,7 +123,7 @@ const AboutSection = dynamic(
           minHeight="min-h-[360px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[360px]" />,
     ssr: false,
@@ -114,7 +142,7 @@ const SkillsSection = dynamic(
           minHeight="min-h-[420px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[420px]" />,
     ssr: false,
@@ -130,7 +158,7 @@ const BlogSection = dynamic(
           minHeight="min-h-[400px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
     ssr: false,
@@ -149,7 +177,7 @@ const ContactSection = dynamic(
           minHeight="min-h-[380px]"
         />
       )
-    ),
+    )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[380px]" />,
     ssr: false,
@@ -161,6 +189,14 @@ const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
   loading: () => null,
 });
 
+// Prefetch next section chunks when user scrolls so the next section is ready by the time they reach it
+const prefetchServices = () => import("@/sections/ServicesSection");
+const prefetchProjects = () => import("@/sections/Projects");
+const prefetchAbout = () => import("@/sections/AboutSection");
+const prefetchSkills = () => import("@/sections/SkillsSection");
+const prefetchBlog = () => import("@/sections/Blog");
+const prefetchContact = () => import("@/sections/ContactSection");
+
 interface HomeProps {
   onSectionChange?: (sectionId: string) => void;
 }
@@ -170,17 +206,15 @@ const Home = ({ onSectionChange }: HomeProps) => {
   const sectionsRef = useRef<HTMLElement[]>([]);
 
   const [currentSection, setCurrentSection] = useState("home");
-  const [isImmersive, setIsImmersive] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  // Hydration-safe init for immersive mode from localStorage (deferred)
+  // Prefetch first below-fold section soon after load so it's ready when user scrolls
   useEffect(() => {
     if (!mounted) return;
-    const saved =
-      typeof window !== "undefined" && localStorage.getItem("isImmersiveMode");
-    setIsImmersive(saved ? saved === "true" : true);
+    const t = setTimeout(prefetchServices, 1500);
+    return () => clearTimeout(t);
   }, [mounted]);
 
   // Defer scroll listener so first paint isn't blocked
@@ -308,31 +342,26 @@ const Home = ({ onSectionChange }: HomeProps) => {
       />
 
       <HeroSection />
-      <LazyWhenVisible minHeight="min-h-[400px]">
+      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchProjects}>
         <ServicesSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[480px]">
+      <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
         <ProjectsSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[360px]">
+      <LazyWhenVisible minHeight="min-h-[360px]" onVisible={prefetchSkills}>
         <AboutSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[420px]">
+      <LazyWhenVisible minHeight="min-h-[420px]" onVisible={prefetchBlog}>
         <SkillsSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[400px]">
+      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
       <LazyWhenVisible minHeight="min-h-[380px]">
         <ContactSection />
       </LazyWhenVisible>
 
-      {mounted && (
-        <ViewModeToggle
-          isImmersive={isImmersive}
-          setIsImmersive={setIsImmersive}
-        />
-      )}
+      {mounted && <ViewModeToggle />}
     </>
   );
 };

@@ -48,10 +48,11 @@ export async function GET(req: NextRequest) {
       )
     );
 
-    await Promise.race([
-      portfolioController.getSkills(mockReq, mockRes),
-      timeoutPromise,
-    ]);
+    const controllerPromise = portfolioController
+      .getSkills(mockReq, mockRes)
+      .catch(() => {});
+
+    await Promise.race([controllerPromise, timeoutPromise]);
 
     const response = getResponse();
     if (!response || response.status === 500) {
@@ -62,10 +63,16 @@ export async function GET(req: NextRequest) {
     }
 
     return response;
-  } catch (error: any) {
-    console.error("Error in GET /api/skills:", error);
+  } catch (error: unknown) {
+    const errMsg =
+      error instanceof Error
+        ? error.message
+        : typeof (error as { message?: string })?.message === "string"
+          ? (error as { message: string }).message
+          : String(error);
+    console.error("Error in GET /api/skills:", errMsg);
 
-    const msg = (error?.message || String(error)).toLowerCase();
+    const msg = errMsg.toLowerCase();
     const isConnectionError =
       msg.includes("connection") ||
       msg.includes("econnrefused") ||

@@ -3,17 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Header from "./Header";
+import { useViewMode } from "@/lib/view-mode-context";
 
 const SCROLL_THRESHOLD = 60;
 
 /**
- * Fixed header (logo + nav) that hides when user scrolls down and reappears when they scroll up or are at top.
+ * Fixed header (logo + nav).
+ * Immersive: hides when user scrolls down, reappears when scrolling up or at top.
+ * Standard: always visible for consistent navigation.
  */
 export default function FixedHeaderWrapper() {
+  const { isImmersive } = useViewMode();
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
 
   useEffect(() => {
+    if (!isImmersive) {
+      setHidden(false);
+      return;
+    }
     const handleScroll = () => {
       const y = window.scrollY;
       if (y > lastY.current && y > SCROLL_THRESHOLD) {
@@ -25,15 +33,17 @@ export default function FixedHeaderWrapper() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isImmersive]);
+
+  const shouldHide = isImmersive && hidden;
 
   return (
     <div
-      className={`site-top-no-box fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out`}
+      className="site-top-no-box fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out will-change-transform"
       style={{
         background: "transparent",
         position: "fixed",
-        transform: hidden ? "translateY(-100%)" : "translateY(0)",
+        transform: shouldHide ? "translateY(-100%)" : "translateY(0)",
       }}
     >
       <div
