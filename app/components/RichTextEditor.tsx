@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -70,6 +71,15 @@ export function RichTextEditor({
     },
     immediatelyRender: false,
   });
+
+  // Sync editor content when prop changes from outside (e.g. AI generation)
+  useEffect(() => {
+    if (!editor) return;
+    const currentHtml = editor.getHTML();
+    if (content !== currentHtml) {
+      editor.commands.setContent(content ?? "", false);
+    }
+  }, [editor, content]);
 
   if (!editor) {
     return null;

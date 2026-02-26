@@ -449,18 +449,31 @@ const AdminBlog = () => {
                           // First, generate an image prompt
                           const promptResponse = await apiRequest("POST", "/api/admin/blog/ai/generate-image-prompt", {
                             title,
-                            content: content.substring(0, 1000),
+                            content: (content || "").substring(0, 1000),
                           });
                           const promptData = await promptResponse.json();
-                          
+                          const rawPrompt = typeof promptData?.prompt === "string" ? promptData.prompt.trim() : "";
+                          if (!rawPrompt || rawPrompt.length < 10) {
+                            toast({
+                              title: "Invalid prompt",
+                              description: "Could not generate an image prompt. Try again or enter a longer title/content.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          const prompt = rawPrompt.length > 1000 ? rawPrompt.substring(0, 1000) : rawPrompt;
+
                           // Then generate the image
                           const imageResponse = await apiRequest("POST", "/api/images/generate", {
-                            prompt: promptData.prompt,
-                            size: "1792x1024", // Blog cover image size
+                            prompt,
+                            size: "1792x1024",
                             quality: "hd",
                           });
                           const imageData = await imageResponse.json();
-                          
+                          if (!imageResponse.ok) {
+                            const errMsg = imageData?.message || imageData?.error || "Failed to generate image";
+                            throw new Error(typeof errMsg === "string" ? errMsg : "Failed to generate image");
+                          }
                           if (imageData.success && imageData.data?.url) {
                             form.setValue('coverImage', imageData.data.url);
                             setCoverImageUrl(imageData.data.url);

@@ -15,11 +15,24 @@ export async function GET(req: NextRequest) {
     }
 
     const contacts = await storage.getAllContacts();
-    return NextResponse.json(contacts);
+    const serialized = contacts.map((c) => ({
+      ...c,
+      createdAt:
+        typeof c.createdAt === "string"
+          ? c.createdAt
+          : c.createdAt instanceof Date
+            ? c.createdAt.toISOString()
+            : String(c.createdAt),
+    }));
+    return NextResponse.json(serialized);
   } catch (error: any) {
     console.error("Error fetching contacts:", error);
+    const details =
+      process.env.NODE_ENV === "development" && error?.message
+        ? error.message
+        : undefined;
     return NextResponse.json(
-      { error: "Failed to fetch contacts" },
+      { error: "Failed to fetch contacts", ...(details && { details }) },
       { status: 500 }
     );
   }

@@ -164,6 +164,25 @@ const BlogSection = dynamic(
     ssr: false,
   }
 );
+const AnnouncementsSection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/AnnouncementsSection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Announcements"
+          minHeight="min-h-[280px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[280px]" />,
+    ssr: false,
+  }
+);
 const ContactSection = dynamic(
   () =>
     withChunkFallback(
@@ -191,6 +210,7 @@ const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
 
 // Prefetch next section chunks when user scrolls so the next section is ready by the time they reach it
 const prefetchServices = () => import("@/sections/ServicesSection");
+const prefetchAnnouncements = () => import("@/sections/AnnouncementsSection");
 const prefetchProjects = () => import("@/sections/Projects");
 const prefetchAbout = () => import("@/sections/AboutSection");
 const prefetchSkills = () => import("@/sections/SkillsSection");
@@ -342,8 +362,11 @@ const Home = ({ onSectionChange }: HomeProps) => {
       />
 
       <HeroSection />
-      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchProjects}>
+      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAnnouncements}>
         <ServicesSection />
+      </LazyWhenVisible>
+      <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
+        <AnnouncementsSection />
       </LazyWhenVisible>
       <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
         <ProjectsSection />

@@ -35,9 +35,27 @@ export async function GET(req: NextRequest) {
     }
     const invoices = await storage.getAllInvoices();
     return NextResponse.json(invoices);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching invoices:", error);
-    return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    const isSchemaError =
+      /relation ["']?client_invoices["']? does not exist/i.test(message) ||
+      /column .* does not exist/i.test(message);
+    if (isSchemaError) {
+      return NextResponse.json(
+        {
+          error: "Failed to fetch invoices",
+          message:
+            "Invoices table is missing or outdated. Run: npm run db:create. If the table exists, run: npx tsx scripts/add-invoice-stripe-columns.ts",
+        },
+        { status: 503 }
+      );
+    }
+    const details = process.env.NODE_ENV === "development" ? message : undefined;
+    return NextResponse.json(
+      { error: "Failed to fetch invoices", ...(details && { details }) },
+      { status: 500 }
+    );
   }
 }
 

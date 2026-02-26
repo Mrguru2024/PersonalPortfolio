@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Assessment {
   id: number;
@@ -128,6 +138,7 @@ export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [deleteAssessmentId, setDeleteAssessmentId] = useState<number | null>(null);
   const handled403 = useRef(false);
 
   const handleAdmin403 = (errorMessage?: string) => {
@@ -235,6 +246,25 @@ export default function AdminDashboardPage() {
     },
   });
 
+  // Delete assessment mutation
+  const deleteAssessmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/assessments/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+      setDeleteAssessmentId(null);
+      toast({ title: "Assessment deleted", variant: "destructive" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete assessment",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       pending: "outline",
@@ -291,6 +321,8 @@ export default function AdminDashboardPage() {
   }
 
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
+  const activeAssessments = assessments.filter((a) => a.status !== "archived");
+  const archivedAssessments = assessments.filter((a) => a.status === "archived");
 
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -379,7 +411,7 @@ export default function AdminDashboardPage() {
         </TabsList>
 
         {/* Assessments Tab */}
-        <TabsContent value="assessments" className="space-y-4 mt-4">
+        <TabsContent value="assessments" className="space-y-6 mt-4">
           {assessmentsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -391,66 +423,165 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {assessments.map((assessment) => (
-                <Card key={assessment.id} className="overflow-hidden">
-                  <CardHeader className="px-4 sm:px-6 pb-2">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg truncate">{assessment.name}</CardTitle>
-                        <CardDescription className="break-all">
-                          {assessment.email} {assessment.phone && `• ${assessment.phone}`}
-                        </CardDescription>
-                        {assessment.company && (
-                          <CardDescription className="truncate">{assessment.company}</CardDescription>
-                        )}
-                      </div>
-                      <div className="shrink-0">{getStatusBadge(assessment.status)}</div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium">Project</p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {assessment.assessmentData?.projectName || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Estimated Price</p>
-                      <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                      <Select
-                        value={assessment.status}
-                        onValueChange={(value) =>
-                          updateStatusMutation.mutate({ id: assessment.id, status: value })
-                        }
-                      >
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="reviewed">Reviewed</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="archived">Archived</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
-                          View Details
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
-                          View Results
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Submitted: {format(new Date(assessment.createdAt), "PPp")}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="space-y-8">
+              {/* Active assessments (pending, reviewed, contacted) */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  Active ({activeAssessments.length})
+                </h3>
+                {activeAssessments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active assessments. Change status from Archived to move back.</p>
+                ) : (
+                  activeAssessments.map((assessment) => (
+                    <Card key={assessment.id} className="overflow-hidden">
+                      <CardHeader className="px-4 sm:px-6 pb-2">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base sm:text-lg truncate">{assessment.name}</CardTitle>
+                            <CardDescription className="break-all">
+                              {assessment.email} {assessment.phone && `• ${assessment.phone}`}
+                            </CardDescription>
+                            {assessment.company && (
+                              <CardDescription className="truncate">{assessment.company}</CardDescription>
+                            )}
+                          </div>
+                          <div className="shrink-0">{getStatusBadge(assessment.status)}</div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                        <div>
+                          <p className="text-sm font-medium">Project</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {assessment.assessmentData?.projectName || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Estimated Price</p>
+                          <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                          <Select
+                            value={assessment.status}
+                            onValueChange={(value) =>
+                              updateStatusMutation.mutate({ id: assessment.id, status: value })
+                            }
+                          >
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="reviewed">Reviewed</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
+                              View Details
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
+                              View Results
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => setDeleteAssessmentId(assessment.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+
+              {/* Archived folder */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Archive className="h-4 w-4" />
+                  Archived ({archivedAssessments.length})
+                </h3>
+                {archivedAssessments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No archived assessments. Set status to &quot;Archived&quot; to move here.</p>
+                ) : (
+                  archivedAssessments.map((assessment) => (
+                    <Card key={assessment.id} className="overflow-hidden border-muted">
+                      <CardHeader className="px-4 sm:px-6 pb-2">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base sm:text-lg truncate">{assessment.name}</CardTitle>
+                            <CardDescription className="break-all">
+                              {assessment.email} {assessment.phone && `• ${assessment.phone}`}
+                            </CardDescription>
+                            {assessment.company && (
+                              <CardDescription className="truncate">{assessment.company}</CardDescription>
+                            )}
+                          </div>
+                          <div className="shrink-0">{getStatusBadge(assessment.status)}</div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                        <div>
+                          <p className="text-sm font-medium">Project</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {assessment.assessmentData?.projectName || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Estimated Price</p>
+                          <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                          <Select
+                            value={assessment.status}
+                            onValueChange={(value) =>
+                              updateStatusMutation.mutate({ id: assessment.id, status: value })
+                            }
+                          >
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="reviewed">Reviewed</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
+                              View Details
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
+                              View Results
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => setDeleteAssessmentId(assessment.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </TabsContent>
@@ -633,6 +764,31 @@ export default function AdminDashboardPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete assessment confirmation */}
+      <AlertDialog open={deleteAssessmentId !== null} onOpenChange={(open) => !open && setDeleteAssessmentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete assessment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the assessment and cannot be undone. Quotes or feedback linked to it may be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteAssessmentId !== null) {
+                  deleteAssessmentMutation.mutate(deleteAssessmentId);
+                }
+              }}
+            >
+              {deleteAssessmentMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Assessment Detail Dialog */}
       <Dialog open={!!selectedAssessment} onOpenChange={() => setSelectedAssessment(null)}>

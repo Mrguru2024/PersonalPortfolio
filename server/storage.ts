@@ -61,6 +61,7 @@ export interface IStorage {
   getAllAssessments(): Promise<ProjectAssessment[]>;
   getAssessmentById(id: number): Promise<ProjectAssessment | undefined>;
   updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment>;
+  deleteAssessment(id: number): Promise<void>;
   
   // Resume request operations
   createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest>;
@@ -143,6 +144,7 @@ export interface IStorage {
   getInvoiceByStripeId(stripeInvoiceId: string): Promise<ClientInvoice | undefined>;
   // Announcements admin operations
   getAllAnnouncements(): Promise<ClientAnnouncement[]>;
+  getPublicAnnouncements(): Promise<ClientAnnouncement[]>;
   getAnnouncementById(id: number): Promise<ClientAnnouncement | undefined>;
   createAnnouncement(announcement: Omit<InsertClientAnnouncement, "id">): Promise<ClientAnnouncement>;
   updateAnnouncement(id: number, updates: Partial<InsertClientAnnouncement>): Promise<ClientAnnouncement>;
@@ -443,9 +445,22 @@ export class DatabaseStorage implements IStorage {
       .set({ status })
       .where(eq(projectAssessments.id, id))
       .returning();
+    if (!updated) {
+      throw new Error("Assessment not found");
+    }
     return updated;
   }
-  
+
+  async deleteAssessment(id: number): Promise<void> {
+    const deleted = await db
+      .delete(projectAssessments)
+      .where(eq(projectAssessments.id, id))
+      .returning({ id: projectAssessments.id });
+    if (deleted.length === 0) {
+      throw new Error("Assessment not found");
+    }
+  }
+
   // Resume request operations
   async createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest> {
     const now = new Date();
@@ -1027,13 +1042,34 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(clientAnnouncements.createdAt));
   }
 
+  async getPublicAnnouncements(): Promise<ClientAnnouncement[]> {
+    const now = new Date();
+    return db
+      .select()
+      .from(clientAnnouncements)
+      .where(
+        and(
+          eq(clientAnnouncements.isActive, true),
+          eq(clientAnnouncements.targetAudience, "all"),
+          sql`(expires_at IS NULL OR expires_at > ${now})`
+        )
+      )
+      .orderBy(desc(clientAnnouncements.createdAt));
+  }
+
   async getAnnouncementById(id: number): Promise<ClientAnnouncement | undefined> {
     const [row] = await db.select().from(clientAnnouncements).where(eq(clientAnnouncements.id, id));
     return row || undefined;
   }
 
   async createAnnouncement(announcement: Omit<InsertClientAnnouncement, "id">): Promise<ClientAnnouncement> {
-    const [inserted] = await db.insert(clientAnnouncements).values(announcement).returning();
+    const [inserted] = await db
+      .insert(clientAnnouncements)
+      .values(announcement as typeof clientAnnouncements.$inferInsert)
+      .returning();
+    if (!inserted) {
+      throw new Error("Announcement insert did not return a row");
+    }
     return inserted;
   }
 

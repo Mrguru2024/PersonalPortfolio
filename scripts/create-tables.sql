@@ -174,3 +174,129 @@ CREATE TABLE IF NOT EXISTS project_assessments (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
+
+-- Client Quotes table (customer dashboard)
+CREATE TABLE IF NOT EXISTS client_quotes (
+  id SERIAL PRIMARY KEY,
+  assessment_id INTEGER REFERENCES project_assessments(id),
+  user_id INTEGER REFERENCES users(id),
+  quote_number TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  proposal_data JSONB NOT NULL,
+  total_amount INTEGER NOT NULL,
+  status TEXT DEFAULT 'pending',
+  valid_until TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+-- Client Invoices table (customer dashboard)
+CREATE TABLE IF NOT EXISTS client_invoices (
+  id SERIAL PRIMARY KEY,
+  quote_id INTEGER REFERENCES client_quotes(id),
+  user_id INTEGER REFERENCES users(id),
+  invoice_number TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  status TEXT DEFAULT 'draft',
+  due_date TIMESTAMP,
+  paid_at TIMESTAMP,
+  stripe_invoice_id TEXT,
+  stripe_customer_id TEXT,
+  recipient_email TEXT,
+  host_invoice_url TEXT,
+  line_items JSONB,
+  last_reminder_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+-- Client Announcements table (customer dashboard)
+CREATE TABLE IF NOT EXISTS client_announcements (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  type TEXT DEFAULT 'info',
+  is_active BOOLEAN DEFAULT true,
+  target_audience TEXT DEFAULT 'all',
+  target_user_ids JSONB,
+  target_project_ids JSONB,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  expires_at TIMESTAMP
+);
+
+-- Client Feedback table (customer dashboard)
+CREATE TABLE IF NOT EXISTS client_feedback (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  assessment_id INTEGER REFERENCES project_assessments(id),
+  quote_id INTEGER REFERENCES client_quotes(id),
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  category TEXT DEFAULT 'general',
+  status TEXT DEFAULT 'new',
+  admin_response TEXT,
+  responded_at TIMESTAMP,
+  responded_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+-- Newsletter subscribers
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT,
+  subscribed BOOLEAN DEFAULT true NOT NULL,
+  subscribed_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  unsubscribed_at TIMESTAMP,
+  source TEXT,
+  tags JSONB,
+  metadata JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_newsletter_subscribers_email ON newsletter_subscribers(email);
+CREATE INDEX IF NOT EXISTS idx_newsletter_subscribers_subscribed ON newsletter_subscribers(subscribed);
+
+-- Newsletters (campaigns)
+CREATE TABLE IF NOT EXISTS newsletters (
+  id SERIAL PRIMARY KEY,
+  subject TEXT NOT NULL,
+  content TEXT NOT NULL,
+  plain_text TEXT,
+  preview_text TEXT,
+  status TEXT NOT NULL DEFAULT 'draft',
+  scheduled_at TIMESTAMP,
+  sent_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  created_by INTEGER,
+  total_recipients INTEGER DEFAULT 0,
+  sent_count INTEGER DEFAULT 0,
+  delivered_count INTEGER DEFAULT 0,
+  opened_count INTEGER DEFAULT 0,
+  clicked_count INTEGER DEFAULT 0,
+  failed_count INTEGER DEFAULT 0,
+  recipient_filter JSONB,
+  images JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_newsletters_status ON newsletters(status);
+CREATE INDEX IF NOT EXISTS idx_newsletters_created_at ON newsletters(created_at);
+
+-- Newsletter send logs
+CREATE TABLE IF NOT EXISTS newsletter_sends (
+  id SERIAL PRIMARY KEY,
+  newsletter_id INTEGER NOT NULL,
+  subscriber_id INTEGER NOT NULL,
+  email TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  sent_at TIMESTAMP,
+  delivered_at TIMESTAMP,
+  opened_at TIMESTAMP,
+  clicked_at TIMESTAMP,
+  failed_at TIMESTAMP,
+  error_message TEXT,
+  brevo_message_id TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_newsletter_sends_newsletter_id ON newsletter_sends(newsletter_id);
+CREATE INDEX IF NOT EXISTS idx_newsletter_sends_subscriber_id ON newsletter_sends(subscriber_id);
+CREATE INDEX IF NOT EXISTS idx_newsletter_sends_status ON newsletter_sends(status);

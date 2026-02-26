@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,6 +32,9 @@ export async function PATCH(
     return NextResponse.json(updatedAssessment);
   } catch (error: any) {
     console.error("Error updating assessment status:", error);
+    if (error?.message === "Assessment not found") {
+      return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+    }
     return NextResponse.json(
       { error: "Failed to update assessment status" },
       { status: 500 }

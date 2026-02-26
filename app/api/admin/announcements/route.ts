@@ -25,7 +25,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(announcements);
   } catch (error: any) {
     console.error("Error fetching announcements:", error);
-    return NextResponse.json({ error: "Failed to fetch announcements" }, { status: 500 });
+    const message =
+      process.env.NODE_ENV === "development" && error?.message
+        ? error.message
+        : "Failed to fetch announcements";
+    return NextResponse.json(
+      { error: "Failed to fetch announcements", details: message },
+      { status: 500 }
+    );
   }
 }
 
@@ -36,15 +43,18 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json();
     const data = createAnnouncementSchema.parse(body);
+    const expiresAt = data.expiresAt ? new Date(data.expiresAt) : undefined;
+    const targetUserIds = Array.isArray(data.targetUserIds) && data.targetUserIds.length > 0 ? data.targetUserIds : undefined;
+    const targetProjectIds = Array.isArray(data.targetProjectIds) && data.targetProjectIds.length > 0 ? data.targetProjectIds : undefined;
     const announcement = await storage.createAnnouncement({
       title: data.title,
       content: data.content,
       type: data.type ?? "info",
       isActive: true,
       targetAudience: data.targetAudience ?? "all",
-      targetUserIds: data.targetUserIds ?? null,
-      targetProjectIds: data.targetProjectIds ?? null,
-      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      ...(targetUserIds != null && { targetUserIds }),
+      ...(targetProjectIds != null && { targetProjectIds }),
+      ...(expiresAt != null && { expiresAt }),
     });
     return NextResponse.json(announcement, { status: 201 });
   } catch (error: any) {
@@ -52,6 +62,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 });
     }
     console.error("Error creating announcement:", error);
-    return NextResponse.json({ error: "Failed to create announcement" }, { status: 500 });
+    const details = process.env.NODE_ENV === "development" && error?.message ? error.message : undefined;
+    return NextResponse.json(
+      { error: "Failed to create announcement", ...(details && { details }) },
+      { status: 500 }
+    );
   }
 }

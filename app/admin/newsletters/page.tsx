@@ -63,8 +63,14 @@ export default function NewslettersPage() {
       try {
         const response = await apiRequest("GET", "/api/admin/newsletters");
         if (!response.ok) {
-          // Handle 403 gracefully - user might not be approved yet
           if (response.status === 403) {
+            const data = await response.json().catch(() => ({}));
+            const msg = data?.message || "Admin access required";
+            toast({
+              title: "Access denied",
+              description: msg,
+              variant: "destructive",
+            });
             return [];
           }
           const errorData = await response.json().catch(() => ({ message: "Failed to fetch newsletters" }));
@@ -72,11 +78,13 @@ export default function NewslettersPage() {
         }
         return await response.json();
       } catch (err: any) {
-        // If it's a 403 error or admin access error, return empty array instead of throwing
         const errorMessage = err?.message || "";
-        if (errorMessage.includes("Admin access required") || 
-            errorMessage.includes("403") ||
-            errorMessage.includes('"message":"Admin access required"')) {
+        if (errorMessage.includes("Admin access required") || errorMessage.includes("403")) {
+          toast({
+            title: "Access denied",
+            description: errorMessage,
+            variant: "destructive",
+          });
           return [];
         }
         throw err;

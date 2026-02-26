@@ -129,58 +129,16 @@ export default function CreateNewsletterPage() {
                 <Label htmlFor="subject">Subject Line *</Label>
                 <Dialog open={showSubjectDialog} onOpenChange={setShowSubjectDialog}>
                   <DialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        if (!aiTopic.trim()) {
-                          toast({
-                            title: "Topic required",
-                            description: "Please enter a topic in the dialog",
-                            variant: "destructive",
-                          });
-                          return;
-                        }
-                        setIsGenerating(true);
-                        try {
-                          const response = await apiRequest("POST", "/api/admin/newsletters/ai/generate-subject", {
-                            topic: aiTopic,
-                            tone: aiTone,
-                          });
-                          const data = await response.json();
-                          setGeneratedSubjects(data.subjectLines || []);
-                        } catch (error: any) {
-                          toast({
-                            title: "Generation failed",
-                            description: error.message || "Failed to generate subject lines",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          setIsGenerating(false);
-                        }
-                      }}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          AI Generate
-                        </>
-                      )}
+                    <Button type="button" variant="outline" size="sm">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      AI Generate
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>AI-Generated Subject Lines</DialogTitle>
                       <DialogDescription>
-                        Enter a topic and choose a subject line
+                        Enter a topic, generate, then pick a subject line
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -208,8 +166,55 @@ export default function CreateNewsletterPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      {generatedSubjects.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={!aiTopic.trim() || isGenerating}
+                        onClick={async () => {
+                          if (!aiTopic.trim()) return;
+                          setIsGenerating(true);
+                          setGeneratedSubjects([]);
+                          try {
+                            const response = await apiRequest("POST", "/api/admin/newsletters/ai/generate-subject", {
+                              topic: aiTopic,
+                              tone: aiTone,
+                            });
+                            const data = await response.json();
+                            const lines = Array.isArray(data.subjectLines)
+                              ? data.subjectLines
+                              : Array.isArray(data.subjects)
+                                ? data.subjects
+                                : typeof data.subjectLines === "string"
+                                  ? data.subjectLines.split("\n").map((s: string) => s.trim()).filter(Boolean)
+                                  : [];
+                            setGeneratedSubjects(lines);
+                          } catch (error: any) {
+                            toast({
+                              title: "Generation failed",
+                              description: error.message || "Failed to generate subject lines",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsGenerating(false);
+                          }
+                        }}
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate subject lines"
+                        )}
+                      </Button>
+                      {isGenerating && (
+                        <p className="text-sm text-muted-foreground">Generating subject lines...</p>
+                      )}
+                      {!isGenerating && generatedSubjects.length > 0 && (
                         <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                          <Label>Pick one</Label>
                           {generatedSubjects.map((subj, idx) => (
                             <Button
                               key={idx}
@@ -389,16 +394,31 @@ export default function CreateNewsletterPage() {
                             }
                             setIsGenerating(true);
                             try {
-                              const response = await apiRequest("POST", "/api/admin/newsletters/ai/generate-content", {
-                                topic: aiTopic,
+                              const topicToSend = (aiTopic || "").trim();
+                            if (!topicToSend) {
+                              toast({
+                                title: "Topic required",
+                                description: "Enter or select a topic above, or in this dialog",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            const response = await apiRequest("POST", "/api/admin/newsletters/ai/generate-content", {
+                                topic: topicToSend,
                                 length: aiLength,
                                 tone: aiTone,
                               });
                               const data = await response.json();
-                              setContent(data.content || "");
+                              const html =
+                                typeof data?.content === "string"
+                                  ? data.content
+                                  : typeof data?.data?.content === "string"
+                                    ? data.data.content
+                                    : "";
+                              setContent(html);
                               toast({
                                 title: "Content generated",
-                                description: "AI content has been added to the editor",
+                                description: html ? "AI content has been added to the editor" : "No content returned",
                               });
                             } catch (error: any) {
                               toast({
@@ -439,7 +459,13 @@ export default function CreateNewsletterPage() {
                           instruction: value,
                         });
                         const data = await response.json();
-                        setContent(data.content || "");
+                        const html =
+                          typeof data?.content === "string"
+                            ? data.content
+                            : typeof data?.data?.content === "string"
+                              ? data.data.content
+                              : "";
+                        setContent(html);
                         toast({
                           title: "Content improved",
                           description: `Content has been ${value}d`,
@@ -469,14 +495,49 @@ export default function CreateNewsletterPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-              <RichTextEditor
-                content={content}
-                onChange={setContent}
-                placeholder="Start writing your newsletter content..."
-              />
-            </CardContent>
-          </Card>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
+              <Label className="text-base font-medium">Topic for AI generation</Label>
+              <p className="text-sm text-muted-foreground">
+                Choose a topic or type your own, then click &quot;AI Generate&quot; above to create content.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Select
+                  value={
+                    ["Product update", "Company news", "Tips and how-tos", "Event announcement", "Industry trends"].includes(aiTopic)
+                      ? aiTopic
+                      : "custom"
+                  }
+                  onValueChange={(v) => setAiTopic(v === "custom" ? aiTopic : v)}
+                >
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Select a topic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Product update">Product update</SelectItem>
+                    <SelectItem value="Company news">Company news</SelectItem>
+                    <SelectItem value="Tips and how-tos">Tips and how-tos</SelectItem>
+                    <SelectItem value="Event announcement">Event announcement</SelectItem>
+                    <SelectItem value="Industry trends">Industry trends</SelectItem>
+                    <SelectItem value="custom">Custom (type below)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="ai-topic-main"
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  placeholder="e.g., Latest web development trends"
+                  className="flex-1 min-w-0"
+                />
+              </div>
+            </div>
+            <RichTextEditor
+              content={content}
+              onChange={setContent}
+              placeholder="Start writing your newsletter content..."
+            />
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-4">
           <Button

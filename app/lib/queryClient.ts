@@ -13,6 +13,17 @@ export async function apiRequest<T = unknown>(
   });
   if (!res.ok) {
     const text = await res.text();
+    try {
+      const json = JSON.parse(text) as { message?: string; error?: string };
+      const msg = json.message || json.error;
+      if (typeof msg === "string" && msg.trim().length > 0) {
+        throw new Error(msg.trim());
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.trim().length > 0 && e.name === "Error") {
+        throw e;
+      }
+    }
     throw new Error(text || res.statusText);
   }
   return res;
