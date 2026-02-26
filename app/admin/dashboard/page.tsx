@@ -49,6 +49,16 @@ interface Contact {
   email: string;
   subject: string;
   message: string;
+  phone?: string | null;
+  company?: string | null;
+  projectType?: string | null;
+  budget?: string | null;
+  timeframe?: string | null;
+  newsletter?: boolean | null;
+  pricingEstimate?: {
+    estimatedRange: { min: number; max: number; average: number };
+    marketComparison: { lowEnd: number; highEnd: number; average: number };
+  } | null;
   createdAt: string;
 }
 
@@ -250,13 +260,22 @@ export default function AdminDashboardPage() {
     );
   };
 
-  const getTotalPrice = (pricingBreakdown: any) => {
-    if (!pricingBreakdown) return "N/A";
-    return new Intl.NumberFormat("en-US", {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
-    }).format(pricingBreakdown.total || 0);
+    }).format(value);
+
+  const getTotalPrice = (pricingBreakdown: any) => {
+    if (!pricingBreakdown) return "N/A";
+    const total =
+      pricingBreakdown.total ??
+      pricingBreakdown.estimatedRange?.average ??
+      pricingBreakdown.subtotal ??
+      pricingBreakdown.basePrice ??
+      0;
+    return formatCurrency(total);
   };
 
   if (authLoading) {
@@ -450,30 +469,104 @@ export default function AdminDashboardPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {contacts.map((contact) => (
-                <Card key={contact.id} className="overflow-hidden">
-                  <CardHeader className="px-4 sm:px-6">
-                    <CardTitle className="text-base sm:text-lg truncate">{contact.name}</CardTitle>
-                    <CardDescription className="break-all">{contact.email}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium">Subject</p>
-                      <p className="text-sm text-muted-foreground truncate">{contact.subject}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Message</p>
-                      <p className="text-sm text-muted-foreground line-clamp-3">{contact.message}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedContact(contact)}>
-                      View Full Message
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Submitted: {contact.createdAt ? format(new Date(contact.createdAt), "PPp") : "N/A"}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+              {contacts.map((contact) => {
+                const isQuote = Boolean(
+                  contact.projectType || contact.budget || contact.timeframe
+                );
+                return (
+                  <Card key={contact.id} className="overflow-hidden">
+                    <CardHeader className="px-4 sm:px-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-base sm:text-lg truncate">
+                            {contact.name}
+                          </CardTitle>
+                          <CardDescription className="break-all">
+                            {contact.email}
+                          </CardDescription>
+                        </div>
+                        {isQuote && (
+                          <Badge variant="secondary" className="shrink-0">
+                            Quote Request
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
+                      <div>
+                        <p className="text-sm font-medium">Subject</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {contact.subject ||
+                            (isQuote ? "Quote Request" : "Contact Submission")}
+                        </p>
+                      </div>
+                      {isQuote && (
+                        <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                          {contact.projectType && (
+                            <div>
+                              <span className="font-medium text-foreground">
+                                Project Type:
+                              </span>{" "}
+                              {contact.projectType}
+                            </div>
+                          )}
+                          {contact.budget && (
+                            <div>
+                              <span className="font-medium text-foreground">
+                                Budget:
+                              </span>{" "}
+                              {contact.budget}
+                            </div>
+                          )}
+                          {contact.timeframe && (
+                            <div>
+                              <span className="font-medium text-foreground">
+                                Timeline:
+                              </span>{" "}
+                              {contact.timeframe}
+                            </div>
+                          )}
+                          {contact.phone && (
+                            <div>
+                              <span className="font-medium text-foreground">
+                                Phone:
+                              </span>{" "}
+                              {contact.phone}
+                            </div>
+                          )}
+                          {contact.company && (
+                            <div>
+                              <span className="font-medium text-foreground">
+                                Company:
+                              </span>{" "}
+                              {contact.company}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">Message</p>
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {contact.message}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedContact(contact)}
+                      >
+                        View Full Message
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Submitted:{" "}
+                        {contact.createdAt
+                          ? format(new Date(contact.createdAt), "PPp")
+                          : "N/A"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -602,12 +695,80 @@ export default function AdminDashboardPage() {
                 <h4 className="font-semibold mb-2">Contact Information</h4>
                 <p className="break-words">Name: {selectedContact.name}</p>
                 <p className="break-all">Email: {selectedContact.email}</p>
-                <p className="break-words">Subject: {selectedContact.subject}</p>
+                <p className="break-words">
+                  Subject:{" "}
+                  {selectedContact.subject ||
+                    (selectedContact.projectType
+                      ? "Quote Request"
+                      : "Contact Submission")}
+                </p>
+                {selectedContact.phone && (
+                  <p className="break-words">Phone: {selectedContact.phone}</p>
+                )}
+                {selectedContact.company && (
+                  <p className="break-words">Company: {selectedContact.company}</p>
+                )}
               </div>
+              {(selectedContact.projectType ||
+                selectedContact.budget ||
+                selectedContact.timeframe ||
+                selectedContact.pricingEstimate) && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-2">Quote Details</h4>
+                    {selectedContact.projectType && (
+                      <p className="break-words">
+                        Project Type: {selectedContact.projectType}
+                      </p>
+                    )}
+                    {selectedContact.budget && (
+                      <p className="break-words">
+                        Budget: {selectedContact.budget}
+                      </p>
+                    )}
+                    {selectedContact.timeframe && (
+                      <p className="break-words">
+                        Timeline: {selectedContact.timeframe}
+                      </p>
+                    )}
+                    {selectedContact.newsletter !== undefined && (
+                      <p className="break-words">
+                        Newsletter: {selectedContact.newsletter ? "Yes" : "No"}
+                      </p>
+                    )}
+                    {selectedContact.pricingEstimate?.estimatedRange && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        <p className="font-medium text-foreground">
+                          Estimated Range
+                        </p>
+                        <p>
+                          {formatCurrency(
+                            selectedContact.pricingEstimate.estimatedRange.min
+                          )}{" "}
+                          –{" "}
+                          {formatCurrency(
+                            selectedContact.pricingEstimate.estimatedRange.max
+                          )}
+                        </p>
+                        <p>
+                          Average:{" "}
+                          {formatCurrency(
+                            selectedContact.pricingEstimate.estimatedRange
+                              .average
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
               <Separator />
               <div>
                 <h4 className="font-semibold mb-2">Message</h4>
-                <p className="whitespace-pre-wrap break-words">{selectedContact.message}</p>
+                <p className="whitespace-pre-wrap break-words">
+                  {selectedContact.message}
+                </p>
               </div>
             </div>
           )}
