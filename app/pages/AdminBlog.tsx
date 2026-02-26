@@ -87,6 +87,7 @@ const AdminBlog = () => {
   const [aiTopic, setAiTopic] = useState("");
   const [aiStyle, setAiStyle] = useState<"professional" | "casual" | "technical" | "storytelling">("professional");
   const [aiLength, setAiLength] = useState<"short" | "medium" | "long">("medium");
+  const [aiContentPrompt, setAiContentPrompt] = useState("");
   const [showTitleDialog, setShowTitleDialog] = useState(false);
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const { user } = useAuth();
@@ -586,6 +587,16 @@ const AdminBlog = () => {
                               </Select>
                             </div>
                           </div>
+                          <div>
+                            <label className="text-sm font-medium">Custom instructions (optional)</label>
+                            <Textarea
+                              value={aiContentPrompt}
+                              onChange={(e) => setAiContentPrompt(e.target.value)}
+                              placeholder="e.g., Include code examples, target beginners, add a CTA"
+                              className="mt-1 min-h-[80px] resize-y"
+                              rows={2}
+                            />
+                          </div>
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="outline"
@@ -609,9 +620,11 @@ const AdminBlog = () => {
                                     topic: aiTopic,
                                     length: aiLength,
                                     style: aiStyle,
+                                    customInstructions: aiContentPrompt.trim() || undefined,
                                   });
                                   const data = await response.json();
-                                  form.setValue('content', data.content || "");
+                                  const html = typeof data?.content === "string" ? data.content : "";
+                                  form.setValue("content", html);
                                   toast({
                                     title: "Content generated",
                                     description: "AI content has been added to the editor",

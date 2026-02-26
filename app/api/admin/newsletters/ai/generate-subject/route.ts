@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { topic, tone } = await req.json();
+    const { topic, tone, customInstructions } = await req.json();
 
     if (!topic || typeof topic !== "string") {
       return NextResponse.json(
@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const subjectLines = await generateSubjectLines(topic, tone || "professional");
+    const subjectLines = await generateSubjectLines(
+      topic,
+      tone || "professional",
+      typeof customInstructions === "string" ? customInstructions : undefined
+    );
     return NextResponse.json({ subjectLines });
   } catch (error: any) {
     console.error("Error generating subject lines:", error);

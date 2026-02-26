@@ -42,6 +42,8 @@ export default function CreateNewsletterPage() {
   const [aiTopic, setAiTopic] = useState("");
   const [aiTone, setAiTone] = useState<"professional" | "casual" | "friendly" | "urgent">("professional");
   const [aiLength, setAiLength] = useState<"short" | "medium" | "long">("medium");
+  const [aiContentPrompt, setAiContentPrompt] = useState("");
+  const [aiSubjectPrompt, setAiSubjectPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSubjectDialog, setShowSubjectDialog] = useState(false);
   const [generatedSubjects, setGeneratedSubjects] = useState<string[]>([]);
@@ -166,6 +168,17 @@ export default function CreateNewsletterPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div>
+                        <Label htmlFor="subject-prompt">Custom instructions (optional)</Label>
+                        <Textarea
+                          id="subject-prompt"
+                          value={aiSubjectPrompt}
+                          onChange={(e) => setAiSubjectPrompt(e.target.value)}
+                          placeholder="e.g., Focus on urgency, include a number, avoid questions"
+                          className="mt-1 min-h-[80px] resize-y"
+                          rows={2}
+                        />
+                      </div>
                       <Button
                         type="button"
                         variant="secondary"
@@ -179,6 +192,7 @@ export default function CreateNewsletterPage() {
                             const response = await apiRequest("POST", "/api/admin/newsletters/ai/generate-subject", {
                               topic: aiTopic,
                               tone: aiTone,
+                              customInstructions: aiSubjectPrompt.trim() || undefined,
                             });
                             const data = await response.json();
                             const lines = Array.isArray(data.subjectLines)
@@ -375,6 +389,17 @@ export default function CreateNewsletterPage() {
                           </Select>
                         </div>
                       </div>
+                      <div>
+                        <Label htmlFor="ai-content-prompt">Custom instructions (optional)</Label>
+                        <Textarea
+                          id="ai-content-prompt"
+                          value={aiContentPrompt}
+                          onChange={(e) => setAiContentPrompt(e.target.value)}
+                          placeholder="e.g., Include a CTA, mention our product launch, keep paragraphs short"
+                          className="mt-1 min-h-[80px] resize-y"
+                          rows={2}
+                        />
+                      </div>
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="outline"
@@ -407,6 +432,7 @@ export default function CreateNewsletterPage() {
                                 topic: topicToSend,
                                 length: aiLength,
                                 tone: aiTone,
+                                customInstructions: aiContentPrompt.trim() || undefined,
                               });
                               const data = await response.json();
                               const html =

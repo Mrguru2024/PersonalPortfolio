@@ -13,6 +13,15 @@ function getOpenAIClient(): OpenAI {
   return openai;
 }
 
+/** Strip markdown code fences and return publish-ready HTML only. */
+function toPublishReadyHtml(raw: string): string {
+  let out = raw.trim();
+  const htmlBlock = /^```(?:html)?\s*\n?([\s\S]*?)\n?```\s*$/i;
+  const match = out.match(htmlBlock);
+  if (match) out = match[1].trim();
+  return out;
+}
+
 /**
  * Generate blog post title suggestions using AI
  */
@@ -84,33 +93,33 @@ export async function generateBlogSummary(title: string, content: string): Promi
 }
 
 /**
- * Generate blog post content using AI
+ * Generate blog post content using AI (publish-ready HTML only, no markdown or code fences).
  */
 export async function generateBlogContent(
   topic: string,
   length: "short" | "medium" | "long" = "medium",
-  style: "professional" | "casual" | "technical" | "storytelling" = "professional"
+  style: "professional" | "casual" | "technical" | "storytelling" = "professional",
+  customInstructions?: string
 ): Promise<string> {
   try {
     const client = getOpenAIClient();
-    
     const lengthGuidance = {
       short: "800-1200 words, 3-4 sections",
       medium: "1500-2000 words, 5-7 sections with headings",
       long: "2500-3500 words, 8-10 sections with detailed explanations"
     };
+    const userContent = customInstructions?.trim()
+      ? `Write a ${style} blog post about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as clean HTML only—no markdown, no code blocks, no visible HTML tags or syntax. Use only <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>, <a>. Output publish-ready HTML that renders as readable content.\n\nAdditional instructions (follow for accuracy): ${customInstructions.trim()}`
+      : `Write a ${style} blog post about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as clean HTML only—no markdown, no code blocks. Use only <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>, <a>. Output publish-ready HTML that renders as readable content. Include an introduction, main sections, and a conclusion. SEO-friendly heading hierarchy.`;
 
     const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert blog writer. Generate engaging, well-structured blog post content in HTML format. Use proper HTML tags like <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>, and <a>. Make it professional, informative, and engaging with proper headings hierarchy for SEO."
+          content: "You are an expert blog writer. Output only valid, publish-ready HTML. Do not wrap in code fences or markdown. Do not include any visible HTML tags or syntax in the text—only use semantic tags so the content renders as clean, readable copy. Use <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>, <a> only. No <div>, <span>, or code blocks."
         },
-        {
-          role: "user",
-          content: `Write a ${style} blog post about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as HTML with proper structure, headings (h2, h3), paragraphs, lists, and formatting. Include an introduction, main content sections, and a conclusion. Make it SEO-friendly with proper heading hierarchy.`
-        }
+        { role: "user", content: userContent }
       ],
       temperature: 0.7,
       max_tokens: (() => {
@@ -120,8 +129,8 @@ export async function generateBlogContent(
       })(),
     });
 
-    const content = response.choices[0]?.message?.content || "";
-    return content.trim();
+    const raw = response.choices[0]?.message?.content || "";
+    return toPublishReadyHtml(raw);
   } catch (error: any) {
     console.error("Error generating blog content:", error);
     throw new Error("Failed to generate blog content. Please try again.");
@@ -162,8 +171,8 @@ export async function improveBlogContent(
       max_tokens: 4000,
     });
 
-    const improvedContent = response.choices[0]?.message?.content || "";
-    return improvedContent.trim();
+    const raw = response.choices[0]?.message?.content || "";
+    return toPublishReadyHtml(raw);
   } catch (error: any) {
     console.error("Error improving blog content:", error);
     throw new Error("Failed to improve blog content. Please try again.");

@@ -15,17 +15,16 @@ export async function GET(req: NextRequest) {
     }
 
     const contacts = await storage.getAllContacts();
-    const serialized = contacts.map((c) => ({
-      ...c,
-      createdAt:
-        typeof c.createdAt === "string"
-          ? c.createdAt
-          : typeof c.createdAt === "object" &&
-              c.createdAt !== null &&
-              c.createdAt instanceof Date
-            ? c.createdAt.toISOString()
-            : String(c.createdAt),
-    }));
+    const serialized = contacts.map((c) => {
+      const raw = c.createdAt;
+      const createdAt =
+        typeof raw === "string"
+          ? raw
+          : (raw as object) instanceof Date
+            ? (raw as Date).toISOString()
+            : String(raw);
+      return { ...c, createdAt };
+    });
     return NextResponse.json(serialized);
   } catch (error: any) {
     console.error("Error fetching contacts:", error);

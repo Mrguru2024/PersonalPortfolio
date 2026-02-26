@@ -13,23 +13,36 @@ function getOpenAIClient(): OpenAI {
   return openai;
 }
 
+/** Strip markdown code fences and return publish-ready HTML only (no visible tags/syntax). */
+function toPublishReadyHtml(raw: string): string {
+  let out = raw.trim();
+  const htmlBlock = /^```(?:html)?\s*\n?([\s\S]*?)\n?```\s*$/i;
+  const match = out.match(htmlBlock);
+  if (match) out = match[1].trim();
+  return out;
+}
+
 /**
  * Generate newsletter subject line suggestions using AI
  */
-export async function generateSubjectLines(topic: string, tone: "professional" | "casual" | "friendly" | "urgent" = "professional"): Promise<string[]> {
+export async function generateSubjectLines(
+  topic: string,
+  tone: "professional" | "casual" | "friendly" | "urgent" = "professional",
+  customInstructions?: string
+): Promise<string[]> {
   try {
     const client = getOpenAIClient();
+    const userContent = customInstructions?.trim()
+      ? `Generate 5 email subject line suggestions for a newsletter about: "${topic}". Tone: ${tone}. Make them concise (under 50 characters), attention-grabbing, and relevant.\n\nAdditional instructions (follow these for more accuracy): ${customInstructions.trim()}`
+      : `Generate 5 email subject line suggestions for a newsletter about: "${topic}". Tone: ${tone}. Make them concise (under 50 characters), attention-grabbing, and relevant.`;
     const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert email marketing copywriter. Generate compelling, engaging subject lines that increase open rates. Return only the subject lines, one per line, without numbering or bullets."
+          content: "You are an expert email marketing copywriter. Generate compelling, engaging subject lines that increase open rates. Return only the subject lines, one per line, without numbering, bullets, or any other markup—plain text only."
         },
-        {
-          role: "user",
-          content: `Generate 5 email subject line suggestions for a newsletter about: "${topic}". Tone: ${tone}. Make them concise (under 50 characters), attention-grabbing, and relevant.`
-        }
+        { role: "user", content: userContent }
       ],
       temperature: 0.8,
       max_tokens: 200,
@@ -84,33 +97,33 @@ export async function generatePreviewText(subject: string, content: string): Pro
 }
 
 /**
- * Generate newsletter content using AI
+ * Generate newsletter content using AI (publish-ready HTML only, no markdown or code fences).
  */
 export async function generateNewsletterContent(
   topic: string,
   length: "short" | "medium" | "long" = "medium",
-  tone: "professional" | "casual" | "friendly" = "professional"
+  tone: "professional" | "casual" | "friendly" = "professional",
+  customInstructions?: string
 ): Promise<string> {
   try {
     const client = getOpenAIClient();
-    
     const lengthGuidance = {
       short: "2-3 paragraphs, approximately 200-300 words",
       medium: "4-6 paragraphs, approximately 400-600 words",
       long: "8-10 paragraphs, approximately 800-1000 words"
     };
+    const userContent = customInstructions?.trim()
+      ? `Write a ${tone} newsletter about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as clean HTML only—no markdown, no code blocks, no visible HTML tags or syntax. Use only these tags: <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>. Output publish-ready HTML that renders as readable content.\n\nAdditional instructions (follow for accuracy): ${customInstructions.trim()}`
+      : `Write a ${tone} newsletter about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as clean HTML only—no markdown, no code blocks. Use only <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>. Output publish-ready HTML that renders as readable content.`;
 
     const response = await client.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert newsletter writer. Generate engaging, well-structured newsletter content in HTML format. Use proper HTML tags like <h2>, <p>, <ul>, <li>, <strong>, <em>, and <a>. Make it professional, informative, and engaging."
+          content: "You are an expert newsletter writer. Output only valid, publish-ready HTML. Do not wrap in code fences or markdown. Do not include any visible HTML tags or syntax in the text—only use semantic tags so the content renders as clean, readable copy. Use <h2>, <p>, <ul>, <li>, <strong>, <em>, <a> only. No <div>, <span>, or code blocks."
         },
-        {
-          role: "user",
-          content: `Write a ${tone} newsletter about: "${topic}". Length: ${lengthGuidance[length]}. Format the response as HTML with proper structure, headings, and paragraphs. Include engaging content that would be valuable to readers.`
-        }
+        { role: "user", content: userContent }
       ],
       temperature: 0.7,
       max_tokens: (() => {
@@ -120,8 +133,8 @@ export async function generateNewsletterContent(
       })(),
     });
 
-    const content = response.choices[0]?.message?.content || "";
-    return content.trim();
+    const raw = response.choices[0]?.message?.content || "";
+    return toPublishReadyHtml(raw);
   } catch (error: any) {
     console.error("Error generating newsletter content:", error);
     throw new Error("Failed to generate newsletter content. Please try again.");
@@ -161,8 +174,8 @@ export async function improveNewsletterContent(
       max_tokens: 2000,
     });
 
-    const improvedContent = response.choices[0]?.message?.content || "";
-    return improvedContent.trim();
+    const raw = response.choices[0]?.message?.content || "";
+    return toPublishReadyHtml(raw);
   } catch (error: any) {
     console.error("Error improving newsletter content:", error);
     throw new Error("Failed to improve newsletter content. Please try again.");

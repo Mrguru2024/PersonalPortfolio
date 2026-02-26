@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { topic, length, tone } = await req.json();
+    const { topic, length, tone, customInstructions } = await req.json();
 
     if (!topic || typeof topic !== "string") {
       return NextResponse.json(
@@ -22,7 +22,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const content = await generateNewsletterContent(topic, length || "medium", tone || "professional");
+    const content = await generateNewsletterContent(
+      topic,
+      length || "medium",
+      tone || "professional",
+      typeof customInstructions === "string" ? customInstructions : undefined
+    );
     return NextResponse.json({ content });
   } catch (error: any) {
     console.error("Error generating newsletter content:", error);
