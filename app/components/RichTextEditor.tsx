@@ -77,7 +77,7 @@ export function RichTextEditor({
     if (!editor) return;
     const currentHtml = editor.getHTML();
     if (content !== currentHtml) {
-      editor.commands.setContent(content ?? "", false);
+      editor.commands.setContent(content ?? "", { emitUpdate: false });
     }
   }, [editor, content]);
 
