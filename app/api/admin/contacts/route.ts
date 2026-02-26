@@ -20,7 +20,9 @@ export async function GET(req: NextRequest) {
       createdAt:
         typeof c.createdAt === "string"
           ? c.createdAt
-          : c.createdAt instanceof Date
+          : typeof c.createdAt === "object" &&
+              c.createdAt !== null &&
+              c.createdAt instanceof Date
             ? c.createdAt.toISOString()
             : String(c.createdAt),
     }));
