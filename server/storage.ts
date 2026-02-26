@@ -389,9 +389,19 @@ export class DatabaseStorage implements IStorage {
   // Contact operations
   async createContact(contact: InsertContact): Promise<Contact> {
     const now = new Date().toISOString();
+    type PricingEstimateValue = NonNullable<Contact["pricingEstimate"]>;
+    const isPricingEstimate = (v: unknown): v is PricingEstimateValue =>
+      v != null &&
+      typeof v === "object" &&
+      !Array.isArray(v) &&
+      "estimatedRange" in (v as object) &&
+      "marketComparison" in (v as object);
+    const pricingEstimate = isPricingEstimate(contact.pricingEstimate)
+      ? contact.pricingEstimate
+      : null;
     const [insertedContact] = await db
       .insert(contacts)
-      .values({ ...contact, createdAt: now })
+      .values({ ...contact, createdAt: now, pricingEstimate })
       .returning();
     return insertedContact;
   }
