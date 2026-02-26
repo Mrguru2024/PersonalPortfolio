@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,11 +57,58 @@ interface ResumeRequest {
   name: string;
   email: string;
   company?: string;
+  purpose?: string;
   position?: string;
   message?: string;
   accessed: boolean;
   accessedAt?: string;
   createdAt: string;
+}
+
+/** Format assessment payload as plain text for display (no JSON). */
+function formatAssessmentDataAsText(data: Record<string, unknown> | null | undefined): string {
+  if (!data || typeof data !== "object") return "No data.";
+  const lines: string[] = [];
+  const label = (key: string) => key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()).trim();
+  const append = (key: string, value: unknown) => {
+    if (value === undefined || value === null) return;
+    if (Array.isArray(value)) {
+      lines.push(`${label(key)}: ${value.map((v) => (typeof v === "object" && v !== null ? String(v) : v)).join(", ")}`);
+    } else if (typeof value === "object" && value !== null && !(value instanceof Date)) {
+      lines.push(`${label(key)}: ${Object.entries(value).map(([k, v]) => `${k}: ${String(v)}`).join("; ")}`);
+    } else {
+      lines.push(`${label(key)}: ${String(value)}`);
+    }
+  };
+  const order = ["projectName", "projectType", "projectDescription", "targetAudience", "mainGoals", "successMetrics", "platform", "mustHaveFeatures", "niceToHaveFeatures", "preferredTimeline", "budget", "newsletter"];
+  order.forEach((key) => append(key, (data as Record<string, unknown>)[key]));
+  Object.keys(data).filter((k) => !order.includes(k)).forEach((key) => append(key, (data as Record<string, unknown>)[key]));
+  return lines.filter(Boolean).join("\n");
+}
+
+/** Format pricing breakdown as plain text for display (no JSON). */
+function formatPricingAsText(pb: Record<string, unknown> | null | undefined): string {
+  if (!pb || typeof pb !== "object") return "No pricing data.";
+  const lines: string[] = [];
+  const range = pb.estimatedRange as { min?: number; max?: number; average?: number } | undefined;
+  if (range) {
+    if (range.min != null && range.max != null) {
+      lines.push(`Estimated range: $${Number(range.min).toLocaleString()} – $${Number(range.max).toLocaleString()}`);
+    }
+    if (range.average != null) lines.push(`Average: $${Number(range.average).toLocaleString()}`);
+  }
+  if (pb.basePrice != null) lines.push(`Base price: $${Number(pb.basePrice).toLocaleString()}`);
+  const features = pb.features as Array<{ name?: string; price?: number }> | undefined;
+  if (Array.isArray(features) && features.length) {
+    lines.push("");
+    lines.push("Features:");
+    features.forEach((f) => {
+      const name = f.name ?? "Item";
+      const price = f.price != null ? `$${Number(f.price).toLocaleString()}` : "";
+      lines.push(`  • ${name}${price ? ` — ${price}` : ""}`);
+    });
+  }
+  return lines.join("\n");
 }
 
 export default function AdminDashboardPage() {
@@ -71,6 +118,27 @@ export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const handled403 = useRef(false);
+
+  const handleAdmin403 = (errorMessage?: string) => {
+    if (handled403.current) return;
+    handled403.current = true;
+    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    let hint = "Session may have expired. Please sign in again.";
+    try {
+      const parsed = typeof errorMessage === "string" && errorMessage.startsWith("{") ? JSON.parse(errorMessage) : null;
+      if (parsed?.hint) hint = parsed.hint;
+    } catch {
+      if (errorMessage?.includes("create-session-table")) hint = "Run in terminal: npx tsx scripts/create-session-table.ts then log out and log back in.";
+    }
+    toast({
+      title: "Access denied",
+      description: hint,
+      variant: "destructive",
+      duration: 12000,
+    });
+    router.push("/auth");
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -81,34 +149,59 @@ export default function AdminDashboardPage() {
   }, [user, authLoading, router]);
 
   // Fetch assessments
-  const { data: assessments = [], isLoading: assessmentsLoading } = useQuery<Assessment[]>({
+  const { data: assessments = [], isLoading: assessmentsLoading, error: assessmentsError } = useQuery<Assessment[]>({
     queryKey: ["/api/admin/assessments"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/assessments");
       return await response.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
+    retry: (failureCount, error: Error) => {
+      const msg = String(error?.message ?? "");
+      if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) return false;
+      return failureCount < 1;
+    },
   });
 
   // Fetch contacts
-  const { data: contacts = [], isLoading: contactsLoading } = useQuery<Contact[]>({
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<Contact[]>({
     queryKey: ["/api/admin/contacts"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/contacts");
       return await response.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
+    retry: (failureCount, error: Error) => {
+      const msg = String(error?.message ?? "");
+      if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) return false;
+      return failureCount < 1;
+    },
   });
 
   // Fetch resume requests
-  const { data: resumeRequests = [], isLoading: resumeLoading } = useQuery<ResumeRequest[]>({
+  const { data: resumeRequests = [], isLoading: resumeLoading, error: resumeError } = useQuery<ResumeRequest[]>({
     queryKey: ["/api/admin/resume-requests"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/resume-requests");
       return await response.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
+    retry: (failureCount, error: Error) => {
+      const msg = String(error?.message ?? "");
+      if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) return false;
+      return failureCount < 1;
+    },
   });
+
+  // Handle 403 from any admin query (onError was removed in TanStack Query v5)
+  useEffect(() => {
+    const err = assessmentsError ?? contactsError ?? resumeError;
+    if (!err) return;
+    const msg = String(err?.message ?? "");
+    if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) {
+      handleAdmin403(msg);
+    }
+  }, [assessmentsError, contactsError, resumeError]);
 
   // Update assessment status mutation
   const updateStatusMutation = useMutation({
@@ -470,18 +563,22 @@ export default function AdminDashboardPage() {
               <Separator />
               <div>
                 <h4 className="font-semibold mb-2">Project Details</h4>
-                <pre className="bg-muted p-4 rounded-md text-sm overflow-auto">
-                  {JSON.stringify(selectedAssessment.assessmentData, null, 2)}
-                </pre>
+                <div className="bg-muted p-4 rounded-md text-sm overflow-auto">
+                  <p className="whitespace-pre-wrap break-words text-foreground">
+                    {formatAssessmentDataAsText(selectedAssessment.assessmentData)}
+                  </p>
+                </div>
               </div>
               {selectedAssessment.pricingBreakdown && (
                 <>
                   <Separator />
                   <div>
                     <h4 className="font-semibold mb-2">Pricing Breakdown</h4>
-                    <pre className="bg-muted p-4 rounded-md text-sm overflow-auto">
-                      {JSON.stringify(selectedAssessment.pricingBreakdown, null, 2)}
-                    </pre>
+                    <div className="bg-muted p-4 rounded-md text-sm overflow-auto">
+                      <p className="whitespace-pre-wrap break-words text-foreground">
+                        {formatPricingAsText(selectedAssessment.pricingBreakdown)}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}

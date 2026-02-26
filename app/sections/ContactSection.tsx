@@ -191,12 +191,11 @@ const ContactSection = () => {
             WORK WITH ME
           </Badge>
           <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Let's Build Something Amazing Together
+            Ready to Start Your Project?
           </h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-4">
-            Ready to take your online presence to the next level? Get a custom
-            quote for your project and let's create a solution that drives
-            results.
+            Get a custom quote tailored to your goals. Share your project
+            details and I'll respond with a clear plan and next steps.
           </p>
           <div className="flex justify-center gap-4">
             <a

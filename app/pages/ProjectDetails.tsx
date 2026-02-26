@@ -77,7 +77,7 @@ export default function ProjectDetails() {
             description: project.description,
             url: `https://mrguru.dev/projects/${project.id}`,
             image: project.image,
-            author: { name: "Anthony Feaster", url: "https://mrguru.dev" },
+            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
             datePublished: new Date().toISOString().split("T")[0],
             technologies: project.techStack || [],
           },

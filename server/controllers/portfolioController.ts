@@ -387,6 +387,9 @@ export const portfolioController = {
       };
 
       const savedContact = await storage.createContact(contactData);
+      console.log(
+        `[Contact form] Saved id=${savedContact.id} email=${savedContact.email} name=${savedContact.name}`
+      );
 
       // For quote requests, calculate pricing estimate using AI-enhanced analysis
       let pricingEstimate = null;
@@ -438,25 +441,28 @@ export const portfolioController = {
         }
       }
 
-      // Send email notification
-      if (isQuoteRequest) {
-        await emailService.sendNotification({
-          type: "quote",
-          data: {
-            ...validatedData,
-            pricingEstimate: pricingEstimate
-              ? {
-                  estimatedRange: pricingEstimate.estimatedRange,
-                  marketComparison: pricingEstimate.marketComparison,
-                }
-              : null,
-          },
-        });
-      } else {
-        await emailService.sendNotification({
-          type: "contact",
-          data: validatedData,
-        });
+      // Send email notification to admin
+      const emailSent = isQuoteRequest
+        ? await emailService.sendNotification({
+            type: "quote",
+            data: {
+              ...validatedData,
+              pricingEstimate: pricingEstimate
+                ? {
+                    estimatedRange: pricingEstimate.estimatedRange,
+                    marketComparison: pricingEstimate.marketComparison,
+                  }
+                : null,
+            },
+          })
+        : await emailService.sendNotification({
+            type: "contact",
+            data: validatedData,
+          });
+      if (!emailSent) {
+        console.warn(
+          "[Contact form] Email notification was not sent. Set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env) to receive form notifications."
+        );
       }
 
       res.status(200).json({
@@ -492,15 +498,23 @@ export const portfolioController = {
       };
 
       const savedRequest = await storage.createResumeRequest(requestData);
+      console.log(
+        `[Resume request] Saved id=${savedRequest.id} email=${savedRequest.email} name=${savedRequest.name}`
+      );
 
-      // Send email notification
-      await emailService.sendNotification({
+      // Send email notification to admin
+      const emailSent = await emailService.sendNotification({
         type: "resume",
         data: {
           ...validatedData,
           accessToken: savedRequest.accessToken,
         },
       });
+      if (!emailSent) {
+        console.warn(
+          "[Resume request] Email notification was not sent. Set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env) to receive form notifications."
+        );
+      }
 
       // Return only the token to the client - we'll use this to validate the download
       res.status(200).json({

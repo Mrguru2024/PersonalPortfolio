@@ -29,9 +29,12 @@ export async function POST(req: NextRequest) {
       pricingBreakdown: pricingBreakdown,
       status: 'pending',
     }).returning();
-    
-    // Send email notification
-    await emailService.sendNotification({
+    console.log(
+      `[Assessment form] Saved id=${assessment.id} email=${assessment.email} name=${assessment.name}`
+    );
+
+    // Send email notification to admin
+    const emailSent = await emailService.sendNotification({
       type: 'quote',
       data: {
         name: validatedData.name,
@@ -45,7 +48,12 @@ export async function POST(req: NextRequest) {
         newsletter: validatedData.newsletter || false,
       }
     });
-    
+    if (!emailSent) {
+      console.warn(
+        "[Assessment form] Email notification was not sent. Set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env) to receive form notifications."
+      );
+    }
+
     // Generate proposal automatically (for all budgets)
     let proposal = null;
     try {

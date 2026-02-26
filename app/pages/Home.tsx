@@ -298,8 +298,8 @@ const Home = ({ onSectionChange }: HomeProps) => {
   return (
     <>
       <PageSEO
-        title="Anthony Feaster | Full Stack Developer | Ascendra Technologies"
-        description="Anthony Feaster is a Full Stack Developer at Ascendra Technologies, specializing in modern web technologies. Explore our portfolio of projects, skills, and expertise."
+        title="Anthony MrGuru Feaster | Senior Full Stack Developer | Ascendra Technologies"
+        description="Anthony MrGuru Feaster is a Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional."
         keywords={[
           "fullstack",
           "developer",
@@ -315,16 +315,16 @@ const Home = ({ onSectionChange }: HomeProps) => {
         schema={{
           type: "Person",
           data: {
-            name: "Anthony Feaster",
-            jobTitle: "Full Stack Developer",
+            name: "Anthony MrGuru Feaster",
+            jobTitle: "Senior Full Stack Developer",
             image: "https://mrguru.dev/images/profile.jpg",
             url: "https://mrguru.dev",
             sameAs: [
               "https://github.com/Mrguru2024",
-              "https://www.linkedin.com/in/anthony-feaster",
+              "https://www.linkedin.com/in/anthony-mrguru-feaster",
             ],
             description:
-              "Full Stack Developer specializing in React, Node.js, and modern web technologies.",
+              "Senior Full Stack Developer at Ascendra Technologies. Full-stack web applications, clean architecture, and professional delivery.",
           },
         }}
       />
@@ -332,11 +332,11 @@ const Home = ({ onSectionChange }: HomeProps) => {
         schema={{
           type: "WebSite",
           data: {
-            name: "Ascendra Technologies – Anthony Feaster's Portfolio",
+            name: "Ascendra Technologies – Anthony MrGuru Feaster",
             description:
-              "Professional portfolio of Anthony Feaster, showcasing projects, skills, and services in full stack development.",
+              "Professional portfolio of Anthony MrGuru Feaster, Senior Full Stack Developer at Ascendra Technologies. Projects, skills, and services to start your next web project.",
             url: "https://mrguru.dev",
-            author: { name: "Anthony Feaster", url: "https://mrguru.dev" },
+            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
           },
         }}
       />

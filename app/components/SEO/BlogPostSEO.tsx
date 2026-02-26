@@ -130,8 +130,8 @@ export function BlogPostSEO({
     updateMetaTag(
       "keywords",
       keywords
-        ? `${keywords}, Ascendra Technologies, Anthony Feaster, blog, web development`
-        : "Ascendra Technologies, Anthony Feaster, blog, web development"
+        ? `${keywords}, Ascendra Technologies, Anthony MrGuru Feaster, blog, web development`
+        : "Ascendra Technologies, Anthony MrGuru Feaster, blog, web development"
     );
     updateLinkTag("canonical", canonicalUrl);
 
@@ -183,10 +183,10 @@ export function BlogPostSEO({
       dateModified: modifiedDate,
       keywords:
         keywords ||
-        "Ascendra Technologies, Anthony Feaster, blog, web development",
+        "Ascendra Technologies, Anthony MrGuru Feaster, blog, web development",
       author: {
         "@type": "Person",
-        name: "Anthony Feaster",
+        name: "Anthony MrGuru Feaster",
         url: baseUrl,
       },
       publisher: {

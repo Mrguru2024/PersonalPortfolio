@@ -98,17 +98,17 @@ export interface BlogComment {
 }
 
 export const personalInfo: PersonalInfo = {
-  name: "Anthony Feaster – Ascendra Technologies",
-  title: "Full Stack Web Developer",
+  name: "Anthony MrGuru Feaster",
+  title: "Senior Full Stack Developer",
   description:
-    "Hello! I'm Anthony Feaster, an innovative entrepreneur and tech enthusiast based in Atlanta, Georgia. I'm the founder of Ascendra Technologies, a tech and development company specializing in custom web solutions. With a strong background in electronic repair and automotive locksmiths, I also founded SSI-M.E.T Repairs-KeyCode Help to bring advanced technology solutions to the locksmith industry. Currently, I'm expanding my skill set through Codenoobs WebDev Incubator. My passion lies in problem-solving and continuous learning. I thrive on creating solutions that improve customer experiences and streamline operations.",
+    "I'm Anthony MrGuru Feaster, Senior Full Stack Developer at Ascendra Technologies. I help businesses turn ideas into reliable, scalable web applications—from MVPs to production systems. With experience across the full stack and a focus on clean architecture and user experience, I deliver solutions that drive results. Ready to start your next project? Let's talk.",
   education: [
     "Codenoobs WebDev Incubator",
     "Tech Entrepreneurship Training",
     "Automotive Security Systems Specialist",
   ],
   experience: [
-    "Founder, Ascendra Technologies",
+    "Senior Full Stack Developer, Ascendra Technologies",
     "Founder, SSI-M.E.T Repairs-KeyCode Help",
     "Automotive Locksmith Specialist",
     "Electronic Repair Technician",

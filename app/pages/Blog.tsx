@@ -56,7 +56,7 @@ export default function Blog() {
     <div className="container mx-auto px-4 py-12">
       <PageSEO
         title="Blog | Ascendra Technologies"
-        description="Insights, tutorials, and updates from Ascendra Technologies - Full Stack Development."
+        description="Insights and updates from Anthony MrGuru Feaster and Ascendra Technologies – Senior Full Stack Development."
         canonicalPath="/blog"
         keywords={allTags}
         ogType="blog"

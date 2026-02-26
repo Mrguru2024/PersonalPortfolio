@@ -1,5 +1,14 @@
 -- Create all tables for the portfolio database
 
+-- Session table (required by connect-pg-simple; avoids ENOENT table.sql error)
+CREATE TABLE IF NOT EXISTS "session" (
+  "sid" varchar NOT NULL,
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL,
+  PRIMARY KEY ("sid")
+);
+CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -60,6 +69,7 @@ CREATE TABLE IF NOT EXISTS contacts (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  subject TEXT NOT NULL DEFAULT '',
   message TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
   ip_address TEXT
@@ -71,7 +81,7 @@ CREATE TABLE IF NOT EXISTS resume_requests (
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   company TEXT,
-  position TEXT,
+  purpose TEXT NOT NULL DEFAULT '',
   message TEXT,
   access_token TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,

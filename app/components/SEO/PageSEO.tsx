@@ -91,7 +91,7 @@ export function PageSEO({
   const keywordsString = [
     ...keywords,
     "Ascendra Technologies",
-    "Anthony Feaster",
+    "Anthony MrGuru Feaster",
     "web developer",
     "portfolio",
   ].join(", ");
@@ -145,7 +145,7 @@ export function PageSEO({
         url: url,
         author: {
           "@type": "Person",
-          name: "Anthony Feaster",
+          name: "Anthony MrGuru Feaster",
           url: baseUrl,
         },
         publisher: {

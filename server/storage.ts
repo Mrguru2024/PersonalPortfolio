@@ -256,6 +256,19 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  /** Insert session directly into DB (fallback when connect-pg-simple fails with ENOENT table.sql) */
+  async insertSessionDirect(sid: string, sess: Record<string, unknown>, expire: Date): Promise<void> {
+    const client = await pool.connect();
+    try {
+      await client.query(
+        'INSERT INTO session (sid, sess, expire) VALUES ($1, $2, $3) ON CONFLICT (sid) DO UPDATE SET sess = $2, expire = $3',
+        [sid, JSON.stringify(sess), expire]
+      );
+    } finally {
+      client.release();
+    }
+  }
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

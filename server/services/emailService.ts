@@ -33,9 +33,10 @@ export class EmailService {
       this.initializeBrevo().catch((error) => {
         console.error('Failed to initialize Brevo:', error);
       });
+      console.log(`📧 Email notifications: enabled (admin: ${this.adminEmail})`);
     } else {
-      console.warn('⚠️  Brevo API key not found. Email notifications will be disabled.');
-      console.warn('   Set BREVO_API_KEY in your .env.local file to enable email notifications.');
+      console.warn('⚠️  Email notifications: disabled. Form submissions (contact, resume, assessment) will not email you.');
+      console.warn('   To enable: set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env). See .env.example.');
     }
   }
 
@@ -396,7 +397,7 @@ This endorsement was submitted from your portfolio website.
 
   async sendNotification(notification: EmailNotification): Promise<boolean> {
     if (!this.isConfigured) {
-      console.warn('Email service not configured. Skipping email notification.');
+      console.warn('Email service not configured. Skipping email notification (set BREVO_API_KEY and ADMIN_EMAIL).');
       return false;
     }
 

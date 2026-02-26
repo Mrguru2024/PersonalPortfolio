@@ -143,15 +143,14 @@ export default function Projects() {
             className="text-3xl md:text-4xl font-bold mb-6 text-center bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
             variants={itemVariants}
           >
-            Projects that <span className="text-primary">Convert</span>
+            Work That <span className="text-primary">Delivers</span>
           </motion.h2>
           <motion.p
             className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
             variants={itemVariants}
           >
-            I build immersive, user-friendly web applications that help
-            businesses increase their conversion rates and grow their online
-            presence.
+            From MVPs to production systems—see how I help businesses ship
+            reliable, scalable web applications that drive results.
           </motion.p>
 
           <motion.div variants={itemVariants}>

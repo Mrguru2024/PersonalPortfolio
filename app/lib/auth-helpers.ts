@@ -73,9 +73,9 @@ export async function getSessionUser(
       // Short timeout so /api/user responds quickly; session store can be slow (e.g. cold DB)
       const timeout = setTimeout(() => {
         const storeDuration = Date.now() - storeStartTime;
-        if (isDev && storeDuration > 1500 && isMobile) {
-          console.log(
-            `[getSessionUser] Session store get timeout after ${storeDuration}ms (Mobile)`
+        if (isDev) {
+          console.warn(
+            `[getSessionUser] Session store timeout after ${storeDuration}ms. Log out and log back in.`
           );
         }
         resolve(null);
@@ -125,9 +125,9 @@ export async function getSessionUser(
         }
 
         if (!session) {
-          if (isDev && storeDuration > 4000) {
+          if (isDev) {
             console.warn(
-              `[getSessionUser] Session not found for sessionId ${sessionId.substring(0, 16)}... after ${storeDuration}ms (slow store response)`
+              `[getSessionUser] Session not in store for sessionId ${sessionId.substring(0, 16)}... (${storeDuration}ms). Log out and log back in to create a new session.`
             );
           }
           resolve(null);
@@ -253,6 +253,19 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
       resolve();
     }, 3000);
 
+    const tryDirectInsert = () => {
+      (storage as { insertSessionDirect?: (sid: string, sess: Record<string, unknown>, expire: Date) => Promise<void> })
+        .insertSessionDirect?.(sessionId, sessionData, sessionData.cookie.expires)
+        .then(() => {
+          if (isDev) console.log(`[setSession] Stored via direct INSERT for userId ${userId}`);
+          resolve();
+        })
+        .catch((e: unknown) => {
+          if (isDev) console.error(`[setSession] Direct INSERT failed:`, (e as Error)?.message);
+          resolve();
+        });
+    };
+
     try {
       storage.sessionStore.set(sessionId, sessionData, (err) => {
         clearTimeout(timeout);
@@ -264,8 +277,9 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
               `[setSession] Error storing session for userId ${userId} after ${duration}ms:`,
               err.message || err.code
             );
+            console.log(`[setSession] Trying direct INSERT fallback...`);
           }
-          resolve();
+          tryDirectInsert();
         } else {
           if (isDev) {
             console.log(
@@ -282,8 +296,9 @@ export function setSession(sessionId: string, userId: number): Promise<void> {
           `[setSession] Exception storing session for userId ${userId}:`,
           error?.message
         );
+        console.log(`[setSession] Trying direct INSERT fallback...`);
       }
-      resolve();
+      tryDirectInsert();
     }
   });
 }

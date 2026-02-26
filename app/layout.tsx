@@ -8,7 +8,7 @@ const baseUrl = "https://mrguru.dev";
 export const metadata: Metadata = {
   title: "Ascendra Technologies",
   description:
-    "Ascendra Technologies – Custom web solutions and full stack development.",
+    "Ascendra Technologies – Senior Full Stack Developer Anthony MrGuru Feaster. Custom web solutions and professional delivery.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

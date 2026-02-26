@@ -99,7 +99,7 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
     }
   };
 
-  const budgetDifference = comparison.assessmentNeeds.calculatedTotal - comparison.budgetRange.average;
+  const budgetDifference = (comparison.assessmentNeeds.calculatedTotal ?? 0) - (comparison.budgetRange.average ?? 0);
   const percentageDiff = comparison.alignment.percentageDifference;
 
   return (
@@ -165,12 +165,12 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
                   <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Range</span>
                     <span className="font-bold">
-                      ${comparison.budgetRange.min.toLocaleString()} - ${comparison.budgetRange.max === Infinity ? '∞' : comparison.budgetRange.max.toLocaleString()}
+                      ${(comparison.budgetRange.min ?? 0).toLocaleString()} - {comparison.budgetRange.max == null || comparison.budgetRange.max === Infinity ? "∞" : comparison.budgetRange.max.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Average</span>
-                    <span className="font-bold text-lg">${comparison.budgetRange.average.toLocaleString()}</span>
+                    <span className="font-bold text-lg">${(comparison.budgetRange.average ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -187,13 +187,13 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
                   <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Estimated Range</span>
                     <span className="font-bold">
-                      ${comparison.assessmentNeeds.estimatedMin.toLocaleString()} - ${comparison.assessmentNeeds.estimatedMax.toLocaleString()}
+                      ${(comparison.assessmentNeeds.estimatedMin ?? 0).toLocaleString()} - ${(comparison.assessmentNeeds.estimatedMax ?? 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Calculated Total</span>
                     <span className="font-bold text-lg text-purple-600 dark:text-purple-400">
-                      ${comparison.assessmentNeeds.calculatedTotal.toLocaleString()}
+                      ${(comparison.assessmentNeeds.calculatedTotal ?? 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -212,15 +212,15 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
             </div>
             <Progress 
               value={
-                comparison.budgetRange.max === Infinity 
-                  ? 50 
-                  : Math.min(100, (comparison.assessmentNeeds.calculatedTotal / comparison.budgetRange.max) * 100)
-              } 
+                comparison.budgetRange.max == null || comparison.budgetRange.max === Infinity
+                  ? 50
+                  : Math.min(100, ((comparison.assessmentNeeds.calculatedTotal ?? 0) / comparison.budgetRange.max) * 100)
+              }
               className="h-3"
             />
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Budget: ${comparison.budgetRange.average.toLocaleString()}</span>
-              <span>Needs: ${comparison.assessmentNeeds.calculatedTotal.toLocaleString()}</span>
+              <span>Budget: ${(comparison.budgetRange.average ?? 0).toLocaleString()}</span>
+              <span>Needs: ${(comparison.assessmentNeeds.calculatedTotal ?? 0).toLocaleString()}</span>
             </div>
           </div>
         </CardContent>
@@ -315,7 +315,7 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
                             </p>
                           </div>
                           <Badge variant="outline" className="text-green-600 border-green-600">
-                            Save ${alt.costSavings.toLocaleString()}
+                            Save ${(alt.costSavings ?? 0).toLocaleString()}
                           </Badge>
                         </div>
                       </div>
@@ -376,7 +376,7 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
                           </div>
                         </div>
                         <Progress 
-                          value={Math.min(100, Math.max(0, (displayValue / Math.max(comparison.assessmentNeeds.calculatedTotal, 1)) * 100))} 
+                          value={Math.min(100, Math.max(0, (displayValue / Math.max(comparison.assessmentNeeds.calculatedTotal ?? 1, 1)) * 100))} 
                           className="h-2"
                         />
                       </div>

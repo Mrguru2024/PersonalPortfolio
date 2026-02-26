@@ -87,7 +87,7 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
             image: post.coverImage || "",
             datePublished: post.publishedAt || "",
             dateModified: post.updatedAt || post.publishedAt || "",
-            author: { name: "Anthony Feaster", url: "https://mrguru.dev" },
+            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
             publisher: {
               name: "Ascendra Technologies",
               url: "https://mrguru.dev",
