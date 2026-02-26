@@ -435,18 +435,18 @@ export const portfolioController = {
           }
         : null;
 
-      // Create contact record in database
+      // Create contact record in database (quote-only fields use 'in' for type narrowing)
       const contactData: InsertContact = {
         name: validatedData.name,
         email: validatedData.email,
         subject: validatedData.subject || "Contact Form Submission",
         message: validatedData.message || "",
-        phone: isQuoteRequest ? validatedData.phone || null : null,
-        company: isQuoteRequest ? validatedData.company || null : null,
-        projectType: isQuoteRequest ? validatedData.projectType || null : null,
-        budget: isQuoteRequest ? validatedData.budget || null : null,
-        timeframe: isQuoteRequest ? validatedData.timeframe || null : null,
-        newsletter: isQuoteRequest ? Boolean(validatedData.newsletter) : false,
+        phone: "phone" in validatedData ? validatedData.phone || null : null,
+        company: "company" in validatedData ? validatedData.company || null : null,
+        projectType: "projectType" in validatedData ? validatedData.projectType || null : null,
+        budget: "budget" in validatedData ? validatedData.budget || null : null,
+        timeframe: "timeframe" in validatedData ? validatedData.timeframe || null : null,
+        newsletter: "newsletter" in validatedData ? Boolean(validatedData.newsletter) : false,
         pricingEstimate: isQuoteRequest ? pricingSummary : null,
       };
 
