@@ -47,7 +47,41 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const url = new URL(req.url);
+    const summary = url.searchParams.get("summary") === "1";
+
     const assessments = await storage.getAllAssessments();
+
+    if (summary) {
+      const totalFromPb = (pb: unknown): number => {
+        if (!pb || typeof pb !== "object") return 0;
+        const o = pb as Record<string, unknown>;
+        if (typeof o.total === "number") return o.total;
+        const range = o.estimatedRange as { average?: number } | undefined;
+        if (range && typeof range.average === "number") return range.average;
+        if (typeof o.subtotal === "number") return o.subtotal;
+        if (typeof o.basePrice === "number") return o.basePrice;
+        return 0;
+      };
+      const list = assessments.map((a) => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        phone: a.phone ?? undefined,
+        company: a.company ?? undefined,
+        role: a.role ?? undefined,
+        status: a.status,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+        projectName:
+          a.assessmentData && typeof a.assessmentData === "object" && "projectName" in a.assessmentData
+            ? (a.assessmentData as { projectName?: string }).projectName
+            : undefined,
+        totalPrice: totalFromPb(a.pricingBreakdown),
+      }));
+      return NextResponse.json(list);
+    }
+
     return NextResponse.json(assessments);
   } catch (error: any) {
     console.error("Error fetching assessments:", error);

@@ -17,6 +17,7 @@ import {
   DollarSign,
   Calendar,
   Mail,
+  Users,
 } from "lucide-react";
 import {
   Card,
@@ -93,6 +94,15 @@ export default function AdminInvoicesPage() {
       router.push("/");
     }
   }, [user, authLoading, router]);
+
+  const { data: crmContacts = [] } = useQuery<{ id: number; email: string; name: string }[]>({
+    queryKey: ["/api/admin/crm/contacts"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/contacts");
+      return res.json();
+    },
+    enabled: crmPickOpen,
+  });
 
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/admin/invoices"],
@@ -528,14 +538,20 @@ export default function AdminInvoicesPage() {
             </div>
             <div className="grid gap-2">
               <Label>Recipient email</Label>
-              <Input
-                type="email"
-                placeholder="client@company.com"
-                value={form.recipientEmail}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, recipientEmail: e.target.value }))
-                }
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="client@company.com"
+                  value={form.recipientEmail}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, recipientEmail: e.target.value }))
+                  }
+                  className="flex-1"
+                />
+                <Button type="button" variant="outline" onClick={() => setCrmPickOpen(true)} title="Select from CRM">
+                  <Users className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Due date</Label>
@@ -580,6 +596,34 @@ export default function AdminInvoicesPage() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={crmPickOpen} onOpenChange={setCrmPickOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select from CRM</DialogTitle>
+            <DialogDescription>Choose a contact to use as invoice recipient.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {crmContacts.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition"
+                onClick={() => {
+                  setForm((f) => ({ ...f, recipientEmail: c.email }));
+                  setCrmPickOpen(false);
+                }}
+              >
+                <div className="font-medium">{c.name}</div>
+                <div className="text-sm text-muted-foreground">{c.email}</div>
+              </button>
+            ))}
+            {crmContacts.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4">No CRM contacts. Add leads or clients in CRM first.</p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

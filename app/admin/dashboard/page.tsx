@@ -39,6 +39,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+/** Summary row for list (lightweight for fast load on mobile). */
+interface AssessmentSummary {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  role?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  projectName?: string;
+  totalPrice: number;
+}
+
+/** Full assessment for View Details modal. */
 interface Assessment {
   id: number;
   name: string;
@@ -169,11 +185,11 @@ export default function AdminDashboardPage() {
     }
   }, [user, authLoading, router]);
 
-  // Fetch assessments
-  const { data: assessments = [], isLoading: assessmentsLoading, error: assessmentsError } = useQuery<Assessment[]>({
-    queryKey: ["/api/admin/assessments"],
+  // Fetch assessments (summary only for fast mobile load)
+  const { data: assessments = [], isLoading: assessmentsLoading, error: assessmentsError } = useQuery<AssessmentSummary[]>({
+    queryKey: ["/api/admin/assessments", { summary: 1 }],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/assessments");
+      const response = await apiRequest("GET", "/api/admin/assessments?summary=1");
       return await response.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
@@ -182,6 +198,19 @@ export default function AdminDashboardPage() {
       if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) return false;
       return failureCount < 1;
     },
+  });
+
+  // Fetch full assessment only when View Details is opened
+  const { data: selectedAssessment, isLoading: selectedAssessmentLoading } = useQuery<Assessment>({
+    queryKey: ["/api/admin/assessments", selectedAssessmentId],
+    queryFn: async () => {
+      if (selectedAssessmentId == null) throw new Error("No id");
+      const response = await apiRequest("GET", `/api/admin/assessments/${selectedAssessmentId}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error ?? "Failed to load");
+      return data;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && selectedAssessmentId != null,
   });
 
   // Fetch contacts
@@ -296,17 +325,6 @@ export default function AdminDashboardPage() {
       currency: "USD",
       minimumFractionDigits: 0,
     }).format(value);
-
-  const getTotalPrice = (pricingBreakdown: any) => {
-    if (!pricingBreakdown) return "N/A";
-    const total =
-      pricingBreakdown.total ??
-      pricingBreakdown.estimatedRange?.average ??
-      pricingBreakdown.subtotal ??
-      pricingBreakdown.basePrice ??
-      0;
-    return formatCurrency(total);
-  };
 
   if (authLoading) {
     return (
@@ -452,12 +470,12 @@ export default function AdminDashboardPage() {
                         <div>
                           <p className="text-sm font-medium">Project</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {assessment.assessmentData?.projectName || "N/A"}
+                            {assessment.projectName || "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm font-medium">Estimated Price</p>
-                          <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
+                          <p className="text-sm font-semibold">{formatCurrency(assessment.totalPrice)}</p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                           <Select
@@ -477,7 +495,7 @@ export default function AdminDashboardPage() {
                             </SelectContent>
                           </Select>
                           <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessmentId(assessment.id)}>
                               View Details
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
@@ -532,12 +550,12 @@ export default function AdminDashboardPage() {
                         <div>
                           <p className="text-sm font-medium">Project</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {assessment.assessmentData?.projectName || "N/A"}
+                            {assessment.projectName || "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm font-medium">Estimated Price</p>
-                          <p className="text-sm font-semibold">{getTotalPrice(assessment.pricingBreakdown)}</p>
+                          <p className="text-sm font-semibold">{formatCurrency(assessment.totalPrice)}</p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                           <Select
@@ -557,7 +575,7 @@ export default function AdminDashboardPage() {
                             </SelectContent>
                           </Select>
                           <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessment(assessment)}>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessmentId(assessment.id)}>
                               View Details
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
@@ -791,15 +809,20 @@ export default function AdminDashboardPage() {
       </AlertDialog>
 
       {/* Assessment Detail Dialog */}
-      <Dialog open={!!selectedAssessment} onOpenChange={() => setSelectedAssessment(null)}>
+      <Dialog open={!!selectedAssessmentId} onOpenChange={(open) => !open && setSelectedAssessmentId(null)}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">Assessment Details</DialogTitle>
             <DialogDescription>
-              Full assessment information for {selectedAssessment?.name}
+              {selectedAssessment ? `Full assessment information for ${selectedAssessment.name}` : "Loading…"}
             </DialogDescription>
           </DialogHeader>
-          {selectedAssessment && (
+          {selectedAssessmentLoading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!selectedAssessmentLoading && selectedAssessment && (
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Contact Information</h4>

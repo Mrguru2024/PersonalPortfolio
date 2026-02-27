@@ -35,16 +35,25 @@ export async function POST(
       );
     }
 
-    // Get subscribers based on filter
-    const filter = newsletter.recipientFilter || {};
-    let subscribers = await storage.getAllSubscribers(!filter.subscribed);
+    // Resolve recipients: explicit list (bulk/CRM) or subscriber filter
+    const recipientEmails = (newsletter as { recipientEmails?: string[] }).recipientEmails;
+    let subscribers: { id: number; email: string }[];
 
-    // Apply tag filter if specified
-    if (filter.tags && filter.tags.length > 0) {
-      subscribers = subscribers.filter((sub) => {
-        const subTags = sub.tags || [];
-        return filter.tags!.some((tag) => subTags.includes(tag));
-      });
+    if (recipientEmails && Array.isArray(recipientEmails) && recipientEmails.length > 0) {
+      const emails = [...new Set(recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+      subscribers = await Promise.all(
+        emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+      ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+    } else {
+      const filter = newsletter.recipientFilter || {};
+      let list = await storage.getAllSubscribers(!filter.subscribed);
+      if (filter.tags && filter.tags.length > 0) {
+        list = list.filter((sub) => {
+          const subTags = sub.tags || [];
+          return filter.tags!.some((tag: string) => subTags.includes(tag));
+        });
+      }
+      subscribers = list.map((s) => ({ id: s.id, email: s.email }));
     }
 
     // Update newsletter status

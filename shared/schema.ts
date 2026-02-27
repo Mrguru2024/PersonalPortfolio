@@ -431,3 +431,5 @@ export type InsertClientAnnouncement = z.infer<typeof insertClientAnnouncementSc
 export type ClientAnnouncement = typeof clientAnnouncements.$inferSelect;
 export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
 export type ClientFeedback = typeof clientFeedback.$inferSelect;
+
+export * from "./crmSchema";

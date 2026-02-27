@@ -49,6 +49,8 @@ export const newsletters = pgTable("newsletters", {
     tags?: string[];
     subscribed?: boolean;
   }>(),
+  // Explicit recipient list: when set, send to these emails (bulk/CRM); otherwise use subscriber filter
+  recipientEmails: json("recipient_emails").$type<string[]>(),
   // Media attachments
   images: json("images").$type<Array<{ url: string; alt?: string; cid?: string }>>(),
 });

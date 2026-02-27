@@ -18,6 +18,7 @@ import {
   Mail,
   BarChart3,
   Users,
+  Contact,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,6 +63,7 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "CRM", href: "/admin/crm", icon: Contact },
     { name: "Blog", href: "/admin/blog", icon: FileText },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3 },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt },

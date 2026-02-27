@@ -300,3 +300,59 @@ CREATE TABLE IF NOT EXISTS newsletter_sends (
 CREATE INDEX IF NOT EXISTS idx_newsletter_sends_newsletter_id ON newsletter_sends(newsletter_id);
 CREATE INDEX IF NOT EXISTS idx_newsletter_sends_subscriber_id ON newsletter_sends(subscriber_id);
 CREATE INDEX IF NOT EXISTS idx_newsletter_sends_status ON newsletter_sends(status);
+
+-- CRM: contacts/leads with high-value fields
+CREATE TABLE IF NOT EXISTS crm_contacts (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL DEFAULT 'lead',
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  company TEXT,
+  job_title TEXT,
+  industry TEXT,
+  source TEXT,
+  status TEXT DEFAULT 'new',
+  estimated_value INTEGER,
+  notes TEXT,
+  tags JSONB,
+  custom_fields JSONB,
+  contact_id INTEGER,
+  stripe_customer_id TEXT,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_crm_contacts_type ON crm_contacts(type);
+CREATE INDEX IF NOT EXISTS idx_crm_contacts_status ON crm_contacts(status);
+CREATE INDEX IF NOT EXISTS idx_crm_contacts_email ON crm_contacts(email);
+
+-- CRM: deals pipeline
+CREATE TABLE IF NOT EXISTS crm_deals (
+  id SERIAL PRIMARY KEY,
+  contact_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  value INTEGER NOT NULL,
+  stage TEXT NOT NULL DEFAULT 'qualification',
+  expected_close_at TIMESTAMP,
+  closed_at TIMESTAMP,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_crm_deals_contact_id ON crm_deals(contact_id);
+CREATE INDEX IF NOT EXISTS idx_crm_deals_stage ON crm_deals(stage);
+
+-- CRM: activity/communication log
+CREATE TABLE IF NOT EXISTS crm_activities (
+  id SERIAL PRIMARY KEY,
+  contact_id INTEGER NOT NULL,
+  deal_id INTEGER,
+  type TEXT NOT NULL,
+  subject TEXT,
+  body TEXT,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_crm_activities_contact_id ON crm_activities(contact_id);
+
+-- Newsletter: optional explicit recipient list (emails); when set, send to these instead of subscriber filter
+ALTER TABLE newsletters ADD COLUMN IF NOT EXISTS recipient_emails JSONB;

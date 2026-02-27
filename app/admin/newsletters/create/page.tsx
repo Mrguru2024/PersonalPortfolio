@@ -314,7 +314,7 @@ export default function CreateNewsletterPage() {
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
                 placeholder="Short preview text shown in email clients..."
-                className="mt-1"
+                className="mt-1 text-foreground"
               />
               <p className="text-sm text-muted-foreground mt-1">
                 This text appears after the subject line in most email clients

@@ -4,6 +4,36 @@ import { storage } from "@server/storage";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    if (!(await isAdmin(_req))) {
+      return NextResponse.json(
+        { message: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    const { id: idParam } = await params;
+    const id = Number.parseInt(idParam, 10);
+    if (Number.isNaN(id)) {
+      return NextResponse.json({ error: "Invalid assessment id" }, { status: 400 });
+    }
+    const assessment = await storage.getAssessmentById(id);
+    if (!assessment) {
+      return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+    }
+    return NextResponse.json(assessment);
+  } catch (error: unknown) {
+    console.error("Error fetching assessment:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch assessment" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

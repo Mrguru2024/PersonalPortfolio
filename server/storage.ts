@@ -19,8 +19,13 @@ import {
   newsletters, type Newsletter, type InsertNewsletter,
   newsletterSends, type NewsletterSend, type InsertNewsletterSend
 } from "@shared/newsletterSchema";
+import {
+  crmContacts, type CrmContact, type InsertCrmContact,
+  crmDeals, type CrmDeal, type InsertCrmDeal,
+  crmActivities, type CrmActivity, type InsertCrmActivity
+} from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -124,6 +129,7 @@ export interface IStorage {
   updateNewsletterSend(id: number, updates: Partial<InsertNewsletterSend> & { sentAt?: Date; deliveredAt?: Date; openedAt?: Date; clickedAt?: Date; failedAt?: Date }): Promise<NewsletterSend>;
   getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]>;
   getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]>;
+  getOrCreateSubscriberForEmail(email: string, source?: string): Promise<NewsletterSubscriber>;
   
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
@@ -149,6 +155,21 @@ export interface IStorage {
   createAnnouncement(announcement: Omit<InsertClientAnnouncement, "id">): Promise<ClientAnnouncement>;
   updateAnnouncement(id: number, updates: Partial<InsertClientAnnouncement>): Promise<ClientAnnouncement>;
   deleteAnnouncement(id: number): Promise<void>;
+
+  // CRM operations
+  getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
+  getCrmContactById(id: number): Promise<CrmContact | undefined>;
+  createCrmContact(contact: InsertCrmContact): Promise<CrmContact>;
+  updateCrmContact(id: number, updates: Partial<InsertCrmContact>): Promise<CrmContact>;
+  deleteCrmContact(id: number): Promise<void>;
+  getCrmDeals(contactId?: number): Promise<(CrmDeal & { contact?: CrmContact })[]>;
+  getCrmDealById(id: number): Promise<CrmDeal | undefined>;
+  createCrmDeal(deal: InsertCrmDeal): Promise<CrmDeal>;
+  updateCrmDeal(id: number, updates: Partial<InsertCrmDeal>): Promise<CrmDeal>;
+  deleteCrmDeal(id: number): Promise<void>;
+  getCrmActivities(contactId: number): Promise<CrmActivity[]>;
+  createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
+  getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -917,6 +938,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(newsletterSends.subscriberId, subscriberId))
       .orderBy(desc(newsletterSends.sentAt));
   }
+
+  async getOrCreateSubscriberForEmail(email: string, source: string = "manual"): Promise<NewsletterSubscriber> {
+    const existing = await this.getSubscriberByEmail(email);
+    if (existing) return existing;
+    return this.createSubscriber({
+      email: email.trim().toLowerCase(),
+      name: null,
+      subscribed: true,
+      source,
+    });
+  }
   
   // Client dashboard operations
   async getClientQuotes(userId: number): Promise<ClientQuote[]> {
@@ -1084,6 +1116,110 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAnnouncement(id: number): Promise<void> {
     await db.delete(clientAnnouncements).where(eq(clientAnnouncements.id, id));
+  }
+
+  // CRM implementation
+  async getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]> {
+    if (type) {
+      return db
+        .select()
+        .from(crmContacts)
+        .where(eq(crmContacts.type, type))
+        .orderBy(desc(crmContacts.updatedAt));
+    }
+    return db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt));
+  }
+
+  async getCrmContactById(id: number): Promise<CrmContact | undefined> {
+    const [row] = await db.select().from(crmContacts).where(eq(crmContacts.id, id));
+    return row || undefined;
+  }
+
+  async createCrmContact(contact: InsertCrmContact): Promise<CrmContact> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(crmContacts)
+      .values({ ...contact, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted;
+  }
+
+  async updateCrmContact(id: number, updates: Partial<InsertCrmContact>): Promise<CrmContact> {
+    const [updated] = await db
+      .update(crmContacts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmContacts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCrmContact(id: number): Promise<void> {
+    await db.delete(crmContacts).where(eq(crmContacts.id, id));
+  }
+
+  async getCrmDeals(contactId?: number): Promise<(CrmDeal & { contact?: CrmContact })[]> {
+    if (contactId) {
+      const deals = await db
+        .select()
+        .from(crmDeals)
+        .where(eq(crmDeals.contactId, contactId))
+        .orderBy(desc(crmDeals.updatedAt));
+      const contact = await this.getCrmContactById(contactId);
+      return deals.map((d) => ({ ...d, contact: contact || undefined }));
+    }
+    const deals = await db.select().from(crmDeals).orderBy(desc(crmDeals.updatedAt));
+    const contactIds = [...new Set(deals.map((d) => d.contactId))];
+    const contacts = await Promise.all(contactIds.map((id) => this.getCrmContactById(id)));
+    const byId = Object.fromEntries(contactIds.map((id, i) => [id, contacts[i]]));
+    return deals.map((d) => ({ ...d, contact: byId[d.contactId] }));
+  }
+
+  async getCrmDealById(id: number): Promise<CrmDeal | undefined> {
+    const [row] = await db.select().from(crmDeals).where(eq(crmDeals.id, id));
+    return row || undefined;
+  }
+
+  async createCrmDeal(deal: InsertCrmDeal): Promise<CrmDeal> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(crmDeals)
+      .values({ ...deal, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted;
+  }
+
+  async updateCrmDeal(id: number, updates: Partial<InsertCrmDeal>): Promise<CrmDeal> {
+    const [updated] = await db
+      .update(crmDeals)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmDeals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCrmDeal(id: number): Promise<void> {
+    await db.delete(crmDeals).where(eq(crmDeals.id, id));
+  }
+
+  async getCrmActivities(contactId: number): Promise<CrmActivity[]> {
+    return db
+      .select()
+      .from(crmActivities)
+      .where(eq(crmActivities.contactId, contactId))
+      .orderBy(desc(crmActivities.createdAt));
+  }
+
+  async createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity> {
+    const [inserted] = await db.insert(crmActivities).values(activity).returning();
+    return inserted;
+  }
+
+  async getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]> {
+    if (emails.length === 0) return [];
+    return db
+      .select()
+      .from(crmContacts)
+      .where(inArray(crmContacts.email, emails));
   }
 }
 
