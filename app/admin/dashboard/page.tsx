@@ -152,7 +152,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<number | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [deleteAssessmentId, setDeleteAssessmentId] = useState<number | null>(null);
   const handled403 = useRef(false);
