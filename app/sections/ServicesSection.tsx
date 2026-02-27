@@ -379,7 +379,7 @@ function ServicesSection() {
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Full-Stack Development Services
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             From concept to deployment, I offer comprehensive development,
             design, and consulting services that showcase my expertise as a
             Next.js React and UX/UI developer.
@@ -444,7 +444,7 @@ function ServicesSection() {
                         className="flex items-start gap-2 text-sm"
                       >
                         <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-foreground">
                           {feature}
                         </span>
                       </li>
@@ -474,7 +474,7 @@ function ServicesSection() {
               <h3 className="text-2xl font-bold mb-4">
                 Ready to Start Your Project?
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                 Let's discuss how I can help bring your vision to life with
                 cutting-edge technology and exceptional user experience design.
               </p>

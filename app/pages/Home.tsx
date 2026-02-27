@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PageSEO, StructuredData } from "@/components/SEO";
 import HeroSection from "@/sections/HeroSection";
+import FreeSiteAuditPromoSection from "@/sections/FreeSiteAuditPromoSection";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 import SectionLoadErrorFallback from "@/components/SectionLoadErrorFallback";
 
@@ -365,6 +366,7 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAnnouncements}>
         <ServicesSection />
       </LazyWhenVisible>
+      <FreeSiteAuditPromoSection />
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>

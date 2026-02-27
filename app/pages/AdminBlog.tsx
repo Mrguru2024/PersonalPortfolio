@@ -207,7 +207,7 @@ const AdminBlog = () => {
       <div className="max-w-6xl mx-auto">
         <div className="mb-10">
           <h1 className="text-3xl font-bold mb-2">Create New Blog Post</h1>
-          <p className="text-gray-600 dark:text-gray-400">Add a new post to your blog with SEO optimization and rich formatting</p>
+          <p className="text-muted-foreground">Add a new post to your blog with SEO optimization and rich formatting</p>
           <Separator className="my-6" />
         </div>
         
@@ -406,12 +406,12 @@ const AdminBlog = () => {
                           alt="Cover preview" 
                           className="max-h-[200px] mx-auto object-contain rounded-md" 
                         />
-                        <p className="text-sm text-center text-gray-500 truncate">{coverImageUrl || form.watch("coverImage")}</p>
+                        <p className="text-sm text-center text-muted-foreground truncate">{coverImageUrl || form.watch("coverImage")}</p>
                       </div>
                     ) : (
                       <div className="text-center p-6">
-                        <ImageIcon className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">No cover image selected</p>
+                        <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No cover image selected</p>
                       </div>
                     )}
                   </div>

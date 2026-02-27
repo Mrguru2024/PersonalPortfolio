@@ -1015,7 +1015,7 @@ export function SEOPanel({
                   <p className="font-semibold text-sm mb-1">
                     {ogTitle || title}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  <p className="text-xs text-muted-foreground line-clamp-2">
                     {ogDescription || summary}
                   </p>
                 </div>

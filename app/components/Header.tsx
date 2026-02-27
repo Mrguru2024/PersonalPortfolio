@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -43,8 +43,12 @@ export default function Header(_props: HeaderProps) {
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
 
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
   const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+    setMobileMenuOpen((prev) => !prev);
   };
 
   const navItems = [
@@ -74,12 +78,43 @@ export default function Header(_props: HeaderProps) {
   const isApprovedAdmin =
     user?.isAdmin === true && user?.adminApproved === true;
 
+  // Lock body scroll when mobile menu is open so background doesn't scroll
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+      document.documentElement.style.overflow = prevHtml;
+    };
+  }, [mobileMenuOpen]);
+
+  // Close menu on scroll (e.g. after section link tap or if scroll slips through)
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleScroll = () => closeMobileMenu();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [mobileMenuOpen, closeMobileMenu]);
+
+  // Close menu when route changes
+  useEffect(() => {
+    closeMobileMenu();
+  }, [pathname, closeMobileMenu]);
+
   const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-      setMobileMenuOpen(false);
-    }
+    closeMobileMenu();
+    // Run scroll after menu closes and body unlock so smooth scroll works
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const element = document.querySelector(href);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    });
   };
 
   const isHomePage = pathname === "/";
@@ -235,10 +270,17 @@ export default function Header(_props: HeaderProps) {
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden relative z-50">
-          <div className="container mx-auto px-4 pb-4 pt-3">
-            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85">
-              <div className="flex flex-col gap-1">
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)]" style={{ top: 0 }}>
+          {/* Backdrop: tap to close, prevents touch scroll from hitting body */}
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] touch-none"
+            onClick={closeMobileMenu}
+          />
+          <div className="container mx-auto px-4 pb-4 pt-3 relative z-10 flex-1 min-h-0 flex flex-col">
+            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
+              <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
                 {isHomePage ? (
                   navItems.map((item) => (
                     <button
@@ -255,28 +297,28 @@ export default function Header(_props: HeaderProps) {
                     <Link
                       href="/"
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Home
                     </Link>
                     <Link
                       href="/blog"
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Blog
                     </Link>
                     <Link
                       href="/resume"
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Resume
                     </Link>
                     <Link
                       href="/generate-images"
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       <Wand2 className="h-4 w-4 shrink-0" /> AI Image Generator
                     </Link>
@@ -301,7 +343,7 @@ export default function Header(_props: HeaderProps) {
                                 key={page.href}
                                 href={page.href}
                                 className="flex items-center gap-2 text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                                onClick={() => setMobileMenuOpen(false)}
+                                onClick={closeMobileMenu}
                               >
                                 <Icon className="h-4 w-4 shrink-0" />
                                 <span>{page.name}</span>
@@ -314,7 +356,7 @@ export default function Header(_props: HeaderProps) {
                         type="button"
                         onClick={() => {
                           logoutMutation.mutate();
-                          setMobileMenuOpen(false);
+                          closeMobileMenu();
                         }}
                         className="flex items-center w-full text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
                       >
@@ -325,7 +367,7 @@ export default function Header(_props: HeaderProps) {
                     <Link
                       href="/auth"
                       className="flex items-center text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login /
                       Register

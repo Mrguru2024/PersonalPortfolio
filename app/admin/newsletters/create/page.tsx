@@ -114,7 +114,7 @@ export default function CreateNewsletterPage() {
           </Link>
         </Button>
         <h1 className="text-4xl font-bold mt-4 mb-2">Create Newsletter</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Build your email campaign with our rich text editor
         </p>
       </div>

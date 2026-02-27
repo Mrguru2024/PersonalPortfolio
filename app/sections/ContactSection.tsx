@@ -193,7 +193,7 @@ const ContactSection = () => {
           <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Ready to Start Your Project?
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-4">
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
             Get a custom quote tailored to your goals. Share your project
             details and I'll respond with a clear plan and next steps.
           </p>
@@ -226,7 +226,7 @@ const ContactSection = () => {
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-bold text-lg mb-2">Expert Craftsmanship</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Each project is built with clean, well-documented code following
                 best practices.
               </p>
@@ -238,7 +238,7 @@ const ContactSection = () => {
                 <Calendar className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-bold text-lg mb-2">On-Time Delivery</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Clear timelines and reliable delivery schedules you can count
                 on.
               </p>
@@ -250,7 +250,7 @@ const ContactSection = () => {
                 <Clock className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-bold text-lg mb-2">Ongoing Support</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground">
                 Post-launch support and maintenance to keep your project running
                 smoothly.
               </p>
@@ -270,7 +270,7 @@ const ContactSection = () => {
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold mb-4">Thank You!</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Your project inquiry has been received. I'll review the details
                 and get back to you within 24 hours with a custom quote.
               </p>
@@ -401,7 +401,7 @@ const ContactSection = () => {
                     </div>
 
                     <Separator className="my-2" />
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <p className="text-sm font-medium text-foreground mb-2">
                       Project Details
                     </p>
 
@@ -572,7 +572,7 @@ const ContactSection = () => {
                                 <Lightbulb className="h-4 w-4 text-primary" />
                                 AI Suggestions:
                               </p>
-                              <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                                 {aiSuggestions.map((suggestion, idx) => (
                                   <li key={idx}>{suggestion}</li>
                                 ))}
@@ -643,10 +643,10 @@ const ContactSection = () => {
                     <Mail className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    <p className="text-xs fold:text-sm text-foreground font-medium">
                       Email
                     </p>
-                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-all">
+                    <p className="text-xs fold:text-sm text-muted-foreground break-all">
                       {contactInfo.email}
                     </p>
                   </div>
@@ -657,10 +657,10 @@ const ContactSection = () => {
                     <MapPin className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    <p className="text-xs fold:text-sm text-foreground font-medium">
                       Location
                     </p>
-                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-words">
+                    <p className="text-xs fold:text-sm text-muted-foreground break-words">
                       {contactInfo.location}
                     </p>
                   </div>
@@ -671,10 +671,10 @@ const ContactSection = () => {
                     <Phone className="text-primary w-4 h-4 fold:w-5 fold:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs fold:text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    <p className="text-xs fold:text-sm text-foreground font-medium">
                       Phone
                     </p>
-                    <p className="text-xs fold:text-sm text-gray-600 dark:text-gray-400 break-all">
+                    <p className="text-xs fold:text-sm text-muted-foreground break-all">
                       {contactInfo.phone}
                     </p>
                   </div>
@@ -703,10 +703,10 @@ const ContactSection = () => {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 fold:gap-4 min-h-[44px] p-3 fold:p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition group min-w-0 touch-manipulation"
                   >
-                    <span className="flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-primary">
+                    <span className="flex-shrink-0 text-muted-foreground group-hover:text-primary">
                       {getSocialIcon(link.platform)}
                     </span>
-                    <span className="text-sm fold:text-base text-gray-700 dark:text-gray-300 group-hover:text-primary truncate min-w-0">
+                    <span className="text-sm fold:text-base text-foreground group-hover:text-primary truncate min-w-0">
                       {link.platform}
                     </span>
                   </a>

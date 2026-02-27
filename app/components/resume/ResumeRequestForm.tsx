@@ -108,7 +108,7 @@ const ResumeRequestForm: React.FC<ResumeRequestFormProps> = ({
         Resume Access Request
       </h2>
 
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-muted-foreground mb-6">
         Please fill out this form to request access to my resume. I'll review
         your request and provide you with access shortly.
       </p>

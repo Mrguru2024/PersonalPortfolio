@@ -307,7 +307,7 @@ const SkillsSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
-            className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed"
+            className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed"
           >
             My core technical competencies and areas of expertise that I've
             mastered throughout my professional journey.
@@ -450,7 +450,7 @@ const SkillsSection = () => {
             viewport={{ once: true }}
             className="mt-8 text-center"
           >
-            <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto italic">
+            <p className="text-muted-foreground text-sm max-w-2xl mx-auto italic">
               My diverse skill set allows me to tackle projects from concept to
               deployment, ensuring elegant solutions to complex technical
               challenges.

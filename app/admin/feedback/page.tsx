@@ -177,7 +177,7 @@ export default function AdminFeedbackPage() {
           </Button>
         </div>
         <h1 className="text-4xl font-bold mb-2">Client Feedback Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Review and respond to client feedback
         </p>
       </div>

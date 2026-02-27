@@ -248,7 +248,7 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
           <Mouse className="text-primary" size={24} />
           <div>
             <h4 className="font-medium">Interactive Cursor</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Hover over the journey path or clickable items for enhanced
               interaction
             </p>

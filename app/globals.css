@@ -2,10 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Logo and favicon: no background so they stay transparent on light/dark */
+/* Logo: dark on light theme (visible), white on dark theme */
 img.header-logo,
 img[alt="Ascendra Technologies"] {
   background: transparent !important;
+  filter: brightness(0); /* light theme: white logo → black so it’s visible */
+}
+.dark img.header-logo,
+.dark img[alt="Ascendra Technologies"] {
+  filter: none; /* dark theme: keep white logo */
 }
 
 /* Top of page: fixed at top – header and logo do not scroll with page */

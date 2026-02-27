@@ -205,7 +205,7 @@ export default function SubscribersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2">Subscribers</h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Manage your newsletter subscribers
             </p>
           </div>

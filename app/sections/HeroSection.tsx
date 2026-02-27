@@ -106,7 +106,7 @@ const HeroSection = () => {
               type: "spring",
               stiffness: 50,
             }}
-            className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4"
+            className="text-xl md:text-2xl text-foreground mb-4"
           >
             <span className="font-medium">
               {personalInfo.title} at Ascendra Technologies
@@ -117,7 +117,7 @@ const HeroSection = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="mb-6 sm:mb-8 md:mb-10 text-base fold:text-lg xs:text-lg sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 px-2"
+            className="mb-6 sm:mb-8 md:mb-10 text-base fold:text-lg xs:text-lg sm:text-lg md:text-xl text-muted-foreground px-2"
           >
             <TypewriterText
               phrases={[
@@ -219,7 +219,7 @@ const HeroSection = () => {
             </motion.div>
             <SocialLinks
               className="flex flex-wrap justify-center gap-2 fold:gap-3 sm:gap-4 md:gap-6"
-              iconClassName="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-full p-2 fold:p-2.5 sm:p-3 text-base fold:text-lg sm:text-xl text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:scale-110 active:scale-95 transition-all touch-manipulation"
+              iconClassName="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-full p-2 fold:p-2.5 sm:p-3 text-base fold:text-lg sm:text-xl text-muted-foreground hover:text-primary dark:hover:text-primary hover:scale-110 active:scale-95 transition-all touch-manipulation"
             />
           </motion.div>
         </div>

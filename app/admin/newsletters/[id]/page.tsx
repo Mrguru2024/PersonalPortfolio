@@ -111,7 +111,7 @@ export default function NewsletterViewPage() {
               <h1 className="text-4xl font-bold">{newsletter.subject}</h1>
               {getStatusBadge(newsletter.status)}
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Created {format(new Date(newsletter.createdAt), "PPp")}
               {newsletter.sentAt && (
                 <> • Sent {format(new Date(newsletter.sentAt), "PPp")}</>

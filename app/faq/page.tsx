@@ -20,7 +20,7 @@ export default function FAQPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Frequently Asked Questions
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about web development, pricing, timelines, and working with us. 
             All explained in simple, easy-to-understand language - no technical jargon!
           </p>
@@ -41,7 +41,7 @@ export default function FAQPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-foreground">
               If you have questions that aren't covered here, or if you'd like to discuss your specific project needs, 
               we'd love to hear from you. Get in touch and we'll get back to you as soon as possible.
             </p>
