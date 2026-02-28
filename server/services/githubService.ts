@@ -2,6 +2,7 @@ import { Octokit } from 'octokit';
 import { Skill } from '@shared/schema';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 // Get the GitHub token from environment variables
 const githubToken = process.env.GITHUB_TOKEN;
@@ -22,19 +23,24 @@ if (!isValidToken) {
 // The GitHub username to fetch data for (from env or default)
 const GITHUB_USERNAME = process.env.GITHUB_USERNAME || 'Mrguru2024';
 
-// Configure caching
-const CACHE_DIR = path.join(process.cwd(), '.cache');
+// Use a writable directory: /tmp in serverless (Vercel etc.), .cache in cwd locally
+const isServerless = typeof process.env.VERCEL !== 'undefined' || process.cwd() === '/var/task';
+const CACHE_DIR = isServerless
+  ? path.join(os.tmpdir(), 'portfolio-github-cache')
+  : path.join(process.cwd(), '.cache');
 const SKILLS_CACHE_FILE = path.join(CACHE_DIR, 'github-skills-cache.json');
 const REPO_CACHE_FILE = path.join(CACHE_DIR, 'github-repos-cache.json');
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 
-// Create cache directory if it doesn't exist
+// Create cache directory if it doesn't exist (skip on failure so serverless still works without disk cache)
+let cacheDirReady = false;
 try {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
   }
+  cacheDirReady = true;
 } catch (error) {
-  console.warn('Warning: Could not create cache directory:', error);
+  console.warn('Warning: Could not create cache directory (GitHub cache disabled):', error instanceof Error ? error.message : error);
 }
 
 export const githubService = {
@@ -44,6 +50,7 @@ export const githubService = {
    * @returns True if cache exists and is valid, false otherwise
    */
   isCacheValid(cacheFile: string): boolean {
+    if (!cacheDirReady) return false;
     try {
       if (!fs.existsSync(cacheFile)) {
         return false;
@@ -65,11 +72,12 @@ export const githubService = {
    * @returns Cached data or null if not available
    */
   readCache<T>(cacheFile: string): T | null {
+    if (!cacheDirReady) return null;
     try {
       if (!this.isCacheValid(cacheFile)) {
         return null;
       }
-      
+
       const data = fs.readFileSync(cacheFile, 'utf8');
       return JSON.parse(data) as T;
     } catch (error) {
@@ -84,6 +92,7 @@ export const githubService = {
    * @param data Data to cache
    */
   writeCache(cacheFile: string, data: any): void {
+    if (!cacheDirReady) return;
     try {
       fs.writeFileSync(cacheFile, JSON.stringify(data), 'utf8');
     } catch (error) {

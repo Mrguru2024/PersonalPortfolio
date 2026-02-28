@@ -45,56 +45,84 @@ function AssessmentResultsContent() {
   const { user } = useAuth();
   const assessmentId = searchParams.get("id");
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetchDone, setFetchDone] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [requiresAccount, setRequiresAccount] = useState(false);
 
   useEffect(() => {
-    if (assessmentId) {
-      // Fetch assessment from API
-      fetch(`/api/assessment/${assessmentId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAssessment(data.assessment);
-            setRequiresAccount(data.requiresAccount || false);
-            // Store in localStorage for reference
-            try {
-              if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-                localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
-              }
-            } catch (error) {
-              console.warn("Failed to save to localStorage:", error);
-            }
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching assessment:", error);
-          // Try to get from localStorage as fallback
+    setFetchError(null);
+    setFetchDone(false);
+    if (!assessmentId) {
+      setFetchDone(true);
+      setFetchError("No assessment ID in URL.");
+      return;
+    }
+    fetch(`/api/assessment/${assessmentId}`)
+      .then((res) => res.json().then((data) => ({ res, data })))
+      .then(({ res, data }) => {
+        if (res.ok && data.success && data.assessment) {
+          setAssessment(data.assessment);
+          setRequiresAccount(data.requiresAccount || false);
+          setFetchError(null);
           try {
             if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-              const stored = localStorage.getItem(`assessment_${assessmentId}`);
-              if (stored) {
-                setAssessment(JSON.parse(stored));
-              }
+              localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
             }
-          } catch (storageError) {
-            console.warn("Failed to read from localStorage:", storageError);
+          } catch (e) {
+            console.warn("Failed to save to localStorage:", e);
           }
-        });
-    }
+        } else {
+          setFetchError(data?.error || "Assessment could not be loaded.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching assessment:", error);
+        setFetchError("Network error. Please check your connection and try again.");
+        try {
+          if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+            const stored = localStorage.getItem(`assessment_${assessmentId}`);
+            if (stored) {
+              setAssessment(JSON.parse(stored));
+              setFetchError(null);
+            }
+          }
+        } catch (storageError) {
+          console.warn("Failed to read from localStorage:", storageError);
+        }
+      })
+      .finally(() => setFetchDone(true));
   }, [assessmentId]);
 
-  if (!assessment) {
+  if (!fetchDone) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Loading Assessment...</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please wait while we retrieve your assessment results.
-          </p>
+          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold mb-2">Loading Assessment...</h2>
+          <p className="text-muted-foreground">Retrieving your assessment results.</p>
         </div>
       </div>
     );
+  }
+
+  if (fetchError && !assessment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-2">Unable to Load Assessment</h2>
+          <p className="text-muted-foreground mb-4">{fetchError}</p>
+          <Button onClick={() => router.push("/assessment")} variant="default">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Assessment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return null;
   }
 
   const { assessmentData, pricingBreakdown } = assessment;

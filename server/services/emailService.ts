@@ -53,6 +53,14 @@ export class EmailService {
     }
   }
 
+  /** Re-apply API key before send (handles serverless cold start / env available later). */
+  private async ensureBrevoAuth() {
+    const brevoModule = await getBrevo();
+    const defaultClient = brevoModule.ApiClient.instance;
+    const auth = defaultClient.authentications['api-key'];
+    if (auth) auth.apiKey = process.env.BREVO_API_KEY;
+  }
+
   private formatContactEmail(data: any): { subject: string; html: string; text: string } {
     return {
       subject: `📧 New Contact Form Submission from ${data.name}`,
@@ -448,16 +456,24 @@ This endorsement was submitted from your portfolio website.
         email: notification.data.email || this.adminEmail
       };
 
+      await this.ensureBrevoAuth();
       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
       console.log(`✅ Email notification sent successfully for ${notification.type} from ${notification.data.email || notification.data.name}`);
       console.log(`   Brevo message ID: ${result.messageId}`);
       return true;
     } catch (error: any) {
-      console.error('❌ Error sending email notification:', error);
-      if (error.response) {
-        console.error('Brevo error details:', error.response.body);
-      } else if (error.body) {
-        console.error('Brevo error details:', error.body);
+      const status = error?.status ?? error?.response?.status ?? error?.response?.statusCode;
+      console.error('❌ Error sending email notification:', error?.message ?? error);
+      if (status === 401) {
+        console.error(
+          '   Brevo returned 401 Unauthorized. Fix: Use the API Key from Brevo (Settings → API Keys), not the SMTP password. ' +
+          'Ensure BREVO_API_KEY in .env is correct and the key has not been revoked.'
+        );
+      }
+      if (error?.response?.body) {
+        console.error('   Brevo response:', error.response.body);
+      } else if (error?.body) {
+        console.error('   Brevo response:', error.body);
       }
       return false;
     }
@@ -521,11 +537,16 @@ This endorsement was submitted from your portfolio website.
       sendSmtpEmail.textContent = `Invoice reminder: ${data.invoiceNumber} - ${data.title}. Amount: ${data.amountFormatted}. Pay at: ${data.payUrl}`;
       sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
       sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
       await this.apiInstance.sendTransacEmail(sendSmtpEmail);
       console.log(`✅ Invoice reminder sent to ${data.to} for ${data.invoiceNumber}`);
       return true;
     } catch (error: any) {
-      console.error('❌ Error sending invoice reminder:', error);
+      const status = error?.status ?? error?.response?.status;
+      console.error('❌ Error sending invoice reminder:', error?.message ?? error);
+      if (status === 401) {
+        console.error('   Brevo 401: Use API Key from Brevo Settings → API Keys (not SMTP password). Check BREVO_API_KEY.');
+      }
       return false;
     }
   }

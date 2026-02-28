@@ -33,6 +33,22 @@ const MAIN_GOALS = [
   "Enhance brand",
   "Other",
 ];
+const BUDGET_RANGES = [
+  { value: "under-5k", label: "Under $5,000" },
+  { value: "5k-10k", label: "$5,000 – $10,000" },
+  { value: "10k-25k", label: "$10,000 – $25,000" },
+  { value: "25k-50k", label: "$25,000 – $50,000" },
+  { value: "50k-100k", label: "$50,000 – $100,000" },
+  { value: "100k+", label: "$100,000+" },
+  { value: "discuss", label: "Prefer to discuss" },
+] as const;
+const TIMELINES = [
+  { value: "asap", label: "As soon as possible" },
+  { value: "1-3-months", label: "1–3 months" },
+  { value: "3-6-months", label: "3–6 months" },
+  { value: "6-12-months", label: "6–12 months" },
+  { value: "flexible", label: "Flexible" },
+] as const;
 const FEATURES = [
   "User authentication",
   "Dashboard",
@@ -66,6 +82,10 @@ export function ProjectAssessmentWizard({
     projectDescription: "",
     targetAudience: "",
     mainGoals: [] as string[],
+    budgetRange: "" as "" | (typeof BUDGET_RANGES)[number]["value"],
+    preferredTimeline: "flexible" as ProjectAssessment["preferredTimeline"],
+    successMetrics: "",
+    additionalNotes: "",
     platform: ["web"] as ProjectAssessment["platform"],
     mustHaveFeatures: [] as string[],
     newsletter: false,
@@ -96,6 +116,10 @@ export function ProjectAssessmentWizard({
       projectDescription: form.projectDescription,
       targetAudience: form.targetAudience,
       mainGoals: form.mainGoals,
+      budgetRange: form.budgetRange || undefined,
+      preferredTimeline: form.preferredTimeline,
+      successMetrics: form.successMetrics || undefined,
+      additionalNotes: form.additionalNotes || undefined,
       platform: form.platform,
       mustHaveFeatures: form.mustHaveFeatures,
       newsletter: form.newsletter,
@@ -155,8 +179,8 @@ export function ProjectAssessmentWizard({
             Project Assessment
           </CardTitle>
           <CardDescription>
-            Step {step} of 2 —{" "}
-            {step === 1 ? "Contact & project" : "Technical requirements"}
+            Step {step} of 3 —{" "}
+            {step === 1 ? "Contact & project" : step === 2 ? "Budget, timeline & business context" : "Technical requirements"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -267,6 +291,75 @@ export function ProjectAssessmentWizard({
           {step === 2 && (
             <div className="space-y-4">
               <div className="grid gap-2">
+                <Label>Budget range</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.budgetRange}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      budgetRange: e.target.value as (typeof BUDGET_RANGES)[number]["value"],
+                    }))
+                  }
+                >
+                  <option value="">Select your budget range</option>
+                  {BUDGET_RANGES.map((b) => (
+                    <option key={b.value} value={b.value}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Helps us tailor the proposal and scope to your expectations.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <Label>Preferred timeline</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.preferredTimeline}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      preferredTimeline: e.target.value as ProjectAssessment["preferredTimeline"],
+                    }))
+                  }
+                >
+                  {TIMELINES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <Label>How do you measure success? (optional)</Label>
+                <Textarea
+                  value={form.successMetrics}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, successMetrics: e.target.value }))
+                  }
+                  placeholder="e.g. number of sign-ups, revenue target, time saved"
+                  rows={2}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Current process / business flow (optional)</Label>
+                <Textarea
+                  value={form.additionalNotes}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, additionalNotes: e.target.value }))
+                  }
+                  placeholder="Describe how you run things today or how your business operates. This helps us understand your needs better."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="grid gap-2">
                 <Label>Platforms * (select at least one)</Label>
                 <div className="flex flex-wrap gap-2">
                   {PLATFORMS.map((p) => (
@@ -321,7 +414,7 @@ export function ProjectAssessmentWizard({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(step - 1)}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -329,6 +422,11 @@ export function ProjectAssessmentWizard({
             )}
             {step === 1 ? (
               <Button type="button" onClick={() => setStep(2)}>
+                Next
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            ) : step === 2 ? (
+              <Button type="button" onClick={() => setStep(3)}>
                 Next
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
