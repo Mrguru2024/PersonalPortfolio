@@ -91,11 +91,11 @@ function AssessmentResultsContent() {
         }
       } catch (err) {
         if (cancelled) return;
-        setFetchError("Network error. Please check your connection and try again.");
+        if (!cancelled) setFetchError("Network error. Please check your connection and try again.");
         try {
           if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
             const stored = localStorage.getItem(`assessment_${assessmentId}`);
-            if (stored) {
+            if (stored && !cancelled) {
               setAssessment(JSON.parse(stored));
               setFetchError(null);
             }
