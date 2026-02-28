@@ -14,6 +14,12 @@ export async function GET(req: NextRequest) {
     const contacts = await storage.getCrmContacts(type ?? undefined);
     return NextResponse.json(contacts);
   } catch (error: any) {
+    const msg = error?.message ?? String(error);
+    const missingTable = /crm_contacts.*does not exist|relation.*crm_contacts|table.*crm_contacts/i.test(msg);
+    if (missingTable) {
+      console.warn("CRM contacts table missing. Run scripts/create-tables.sql (CRM section) or migrate DB.");
+      return NextResponse.json([]);
+    }
     console.error("Error fetching CRM contacts:", error);
     return NextResponse.json(
       { error: "Failed to fetch CRM contacts" },

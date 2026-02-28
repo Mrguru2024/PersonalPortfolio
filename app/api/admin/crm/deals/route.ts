@@ -16,6 +16,12 @@ export async function GET(req: NextRequest) {
     );
     return NextResponse.json(deals);
   } catch (error: any) {
+    const msg = error?.message ?? String(error);
+    const missingTable = /crm_deals.*does not exist|relation.*crm_deals|table.*crm_deals/i.test(msg);
+    if (missingTable) {
+      console.warn("CRM deals table missing. Run scripts/create-tables.sql (CRM section) or migrate DB.");
+      return NextResponse.json([]);
+    }
     console.error("Error fetching CRM deals:", error);
     return NextResponse.json({ error: "Failed to fetch CRM deals" }, { status: 500 });
   }

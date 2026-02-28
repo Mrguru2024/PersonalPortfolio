@@ -166,7 +166,8 @@ export async function getSessionUser(
           const dbStartTime = Date.now();
 
           // Increased timeout for database query (1.5 seconds for mobile/network latency)
-          const userPromise = storage.getUser(userIdNum);
+          // .catch(() => null) so rejections (e.g. ErrorEvent from Neon) never escape and trigger "Cannot set property message"
+          const userPromise = storage.getUser(userIdNum).catch(() => null);
           const timeoutPromise = new Promise<null>((resolve) =>
             setTimeout(() => {
               if (isDev && isMobile) {

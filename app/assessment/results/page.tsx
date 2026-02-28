@@ -58,11 +58,25 @@ function AssessmentResultsContent() {
       setFetchError("No assessment ID in URL.");
       return;
     }
-    fetch(`/api/assessment/${assessmentId}`)
-      .then((res) => res.json().then((data) => ({ res, data })))
-      .then(({ res, data }) => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/assessment/${assessmentId}`);
+        const contentType = res.headers.get("content-type") || "";
+        const text = await res.text();
+        if (cancelled) return;
+        let data: { success?: boolean; assessment?: unknown; error?: string; requiresAccount?: boolean } = {};
+        if (contentType.includes("application/json") && text.trim().startsWith("{")) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { error: "Invalid response from server." };
+          }
+        } else {
+          data = { error: res.status === 404 ? "Assessment not found." : res.status >= 500 ? "Server error. Please try again later." : res.status === 403 ? "Access denied." : "Assessment could not be loaded." };
+        }
         if (res.ok && data.success && data.assessment) {
-          setAssessment(data.assessment);
+          setAssessment(data.assessment as AssessmentResult);
           setRequiresAccount(data.requiresAccount || false);
           setFetchError(null);
           try {
@@ -75,9 +89,8 @@ function AssessmentResultsContent() {
         } else {
           setFetchError(data?.error || "Assessment could not be loaded.");
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching assessment:", error);
+      } catch (err) {
+        if (cancelled) return;
         setFetchError("Network error. Please check your connection and try again.");
         try {
           if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
@@ -90,8 +103,11 @@ function AssessmentResultsContent() {
         } catch (storageError) {
           console.warn("Failed to read from localStorage:", storageError);
         }
-      })
-      .finally(() => setFetchDone(true));
+      } finally {
+        if (!cancelled) setFetchDone(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [assessmentId]);
 
   if (!fetchDone) {
