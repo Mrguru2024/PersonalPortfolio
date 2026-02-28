@@ -73,6 +73,7 @@ export default function AdminInvoicesPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
+  const [crmPickOpen, setCrmPickOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState({
