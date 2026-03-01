@@ -58,13 +58,15 @@ function AssessmentResultsContent() {
       setFetchError("No assessment ID in URL.");
       return;
     }
-    let cancelled = false;
+    const ac = new AbortController();
     (async () => {
       try {
-        const res = await fetch(`/api/assessment/${assessmentId}`);
+        const res = await fetch(`/api/assessment/${assessmentId}`, {
+          signal: ac.signal,
+        });
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
-        if (cancelled) return;
+        if (ac.signal.aborted) return;
         let data: { success?: boolean; assessment?: unknown; error?: string; requiresAccount?: boolean } = {};
         if (contentType.includes("application/json") && text.trim().startsWith("{")) {
           try {
@@ -87,15 +89,20 @@ function AssessmentResultsContent() {
             console.warn("Failed to save to localStorage:", e);
           }
         } else {
-          setFetchError(data?.error || "Assessment could not be loaded.");
+          const message =
+            res.status === 404
+              ? "Assessment not found. It may have been deleted or the link may be incorrect."
+              : data?.error || "Assessment could not be loaded.";
+          setFetchError(message);
         }
       } catch (err) {
-        if (cancelled) return;
-        if (!cancelled) setFetchError("Network error. Please check your connection and try again.");
+        if (ac.signal.aborted) return;
+        if (err instanceof Error && err.name === "AbortError") return;
+        setFetchError("Network error. Please check your connection and try again.");
         try {
           if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
             const stored = localStorage.getItem(`assessment_${assessmentId}`);
-            if (stored && !cancelled) {
+            if (stored) {
               setAssessment(JSON.parse(stored));
               setFetchError(null);
             }
@@ -104,10 +111,10 @@ function AssessmentResultsContent() {
           console.warn("Failed to read from localStorage:", storageError);
         }
       } finally {
-        if (!cancelled) setFetchDone(true);
+        if (!ac.signal.aborted) setFetchDone(true);
       }
     })();
-    return () => { cancelled = true; };
+    return () => ac.abort();
   }, [assessmentId]);
 
   if (!fetchDone) {
