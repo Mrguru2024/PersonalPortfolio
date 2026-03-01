@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Fetch full assessment only when View Details is opened
+  // Fetch full assessment only when View Details is opened (no refetch on focus to avoid repeated 404s for deleted items)
   const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
     queryFn: async () => {
@@ -216,6 +216,8 @@ export default function AdminDashboardPage() {
       if (error?.message?.includes("Assessment not found") || error?.message?.includes("404")) return false;
       return failureCount < 1;
     },
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Fetch contacts
