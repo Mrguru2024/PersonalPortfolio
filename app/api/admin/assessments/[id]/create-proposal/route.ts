@@ -59,7 +59,7 @@ export async function POST(
       userId: null,
       quoteNumber,
       title: proposal.title,
-      proposalData: proposal as unknown as Record<string, unknown>,
+      proposalData: proposal as any,
       totalAmount: proposal.pricing.finalTotal,
       status: "sent",
       validUntil,
