@@ -207,9 +207,15 @@ export default function AdminDashboardPage() {
     queryFn: async () => {
       if (selectedAssessmentId == null) throw new Error("No id");
       const response = await apiRequest("GET", `/api/admin/assessments/${selectedAssessmentId}`);
-      const data = await response.json();
+      const text = await response.text();
+      let data: { error?: string } = {};
+      try {
+        if (text.trim().startsWith("{")) data = JSON.parse(text);
+      } catch {
+        // Server may return HTML 404 page
+      }
       if (!response.ok) throw new Error(data?.error ?? (response.status === 404 ? "Assessment not found." : "Failed to load"));
-      return data;
+      return data as Assessment;
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved && selectedAssessmentId != null,
     retry: (failureCount, error) => {
@@ -219,6 +225,14 @@ export default function AdminDashboardPage() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  // When detail returns 404, refresh the list so stale entries disappear when user closes the dialog
+  useEffect(() => {
+    if (!selectedAssessmentError || !selectedAssessmentId) return;
+    const msg = String(selectedAssessmentError.message ?? "");
+    if (!msg.includes("Assessment not found") && !msg.includes("404") && !msg.includes("not found")) return;
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+  }, [selectedAssessmentError, selectedAssessmentId, queryClient]);
 
   // Fetch contacts
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<Contact[]>({
@@ -833,7 +847,7 @@ export default function AdminDashboardPage() {
           {!selectedAssessmentLoading && selectedAssessmentError && (
             <div className="py-6 text-center">
               <p className="text-muted-foreground mb-4">{selectedAssessmentError.message}</p>
-              <p className="text-sm text-muted-foreground mb-4">It may have been deleted. The list will refresh when you close this.</p>
+              <p className="text-sm text-muted-foreground mb-4">It may have been deleted. The list has been refreshed—close this to see the current assessments. If you have a database backup, restoring it may recover the full assessment data.</p>
               <Button variant="outline" onClick={() => { setSelectedAssessmentId(null); setCreateProposalResult(null); }}>Close</Button>
             </div>
           )}
