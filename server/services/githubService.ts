@@ -390,11 +390,11 @@ export const githubService = {
       return commits
         .filter((c: { commit?: { message?: string } }) => c.commit?.message)
         .slice(0, limit)
-        .map((c: { sha: string; commit: { message: string; author?: { date?: string } } }) => {
+        .map((c: { sha: string; commit: { message: string; author?: { date?: string } | null } }) => {
           const raw = c.commit.message.split('\n')[0].trim();
           const { title, description } = this.humanizeCommitMessage(raw);
           return {
-            date: c.commit.author?.date || new Date().toISOString(),
+            date: c.commit.author?.date ?? new Date().toISOString(),
             title,
             description,
           };
