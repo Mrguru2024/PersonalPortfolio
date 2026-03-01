@@ -339,8 +339,10 @@ export const clientQuotes = pgTable("client_quotes", {
   title: text("title").notNull(),
   proposalData: json("proposal_data").$type<any>().notNull(),
   totalAmount: integer("total_amount").notNull(),
-  status: text("status").default("pending"), // pending, sent, accepted, rejected, expired
+  status: text("status").default("pending"), // pending, sent, accepted, rejected, expired, in_development, completed
   validUntil: timestamp("valid_until"),
+  viewToken: text("view_token").unique(), // secure link for client to view/approve without login
+  paymentPlan: text("payment_plan"), // "30-30-40" | "50-25-25" set when client accepts
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

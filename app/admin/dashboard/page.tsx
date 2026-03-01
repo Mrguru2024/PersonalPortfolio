@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2 } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -155,6 +155,7 @@ export default function AdminDashboardPage() {
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<number | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [deleteAssessmentId, setDeleteAssessmentId] = useState<number | null>(null);
+  const [createProposalResult, setCreateProposalResult] = useState<{ viewUrl: string; quoteNumber: string } | null>(null);
   const handled403 = useRef(false);
 
   const handleAdmin403 = (errorMessage?: string) => {
@@ -201,16 +202,20 @@ export default function AdminDashboardPage() {
   });
 
   // Fetch full assessment only when View Details is opened
-  const { data: selectedAssessment, isLoading: selectedAssessmentLoading } = useQuery<Assessment>({
+  const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
     queryFn: async () => {
       if (selectedAssessmentId == null) throw new Error("No id");
       const response = await apiRequest("GET", `/api/admin/assessments/${selectedAssessmentId}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data?.error ?? "Failed to load");
+      if (!response.ok) throw new Error(data?.error ?? (response.status === 404 ? "Assessment not found." : "Failed to load"));
       return data;
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved && selectedAssessmentId != null,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes("Assessment not found") || error?.message?.includes("404")) return false;
+      return failureCount < 1;
+    },
   });
 
   // Fetch contacts
@@ -286,8 +291,9 @@ export default function AdminDashboardPage() {
       toast({ title: "Assessment deleted", variant: "destructive" });
     },
     onError: (error: any) => {
+      setDeleteAssessmentId(null);
       toast({
-        title: "Error",
+        title: "Cannot delete",
         description: error?.message || "Failed to delete assessment",
         variant: "destructive",
       });
@@ -789,7 +795,7 @@ export default function AdminDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete assessment?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove the assessment and cannot be undone. Quotes or feedback linked to it may be affected.
+              This will permanently remove the assessment and cannot be undone. If this assessment has linked quotes or feedback, you must remove those first before deleting.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -809,7 +815,7 @@ export default function AdminDashboardPage() {
       </AlertDialog>
 
       {/* Assessment Detail Dialog */}
-      <Dialog open={!!selectedAssessmentId} onOpenChange={(open) => !open && setSelectedAssessmentId(null)}>
+      <Dialog open={!!selectedAssessmentId} onOpenChange={(open) => { if (!open) { setSelectedAssessmentId(null); setCreateProposalResult(null); } }}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">Assessment Details</DialogTitle>
@@ -822,7 +828,14 @@ export default function AdminDashboardPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!selectedAssessmentLoading && selectedAssessment && (
+          {!selectedAssessmentLoading && selectedAssessmentError && (
+            <div className="py-6 text-center">
+              <p className="text-muted-foreground mb-4">{selectedAssessmentError.message}</p>
+              <p className="text-sm text-muted-foreground mb-4">It may have been deleted. The list will refresh when you close this.</p>
+              <Button variant="outline" onClick={() => { setSelectedAssessmentId(null); setCreateProposalResult(null); }}>Close</Button>
+            </div>
+          )}
+          {!selectedAssessmentLoading && !selectedAssessmentError && selectedAssessment && (
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Contact Information</h4>
@@ -854,6 +867,72 @@ export default function AdminDashboardPage() {
                   </div>
                 </>
               )}
+              <Separator />
+              <div className="flex flex-col gap-3">
+                <h4 className="font-semibold">Proposal workflow</h4>
+                <p className="text-sm text-muted-foreground">
+                  Create a professional proposal from this assessment and get a link to send to the client. They can sign in at /client to view and approve it.
+                </p>
+                {createProposalResult ? (
+                  <div className="rounded-lg border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm font-medium">Proposal created: {createProposalResult.quoteNumber}</p>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <code className="text-xs bg-background px-2 py-1 rounded truncate max-w-[240px] sm:max-w-none">
+                        {createProposalResult.viewUrl}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(createProposalResult.viewUrl);
+                          toast({ title: "Link copied", description: "Share this link with your client." });
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy link
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={createProposalResult.viewUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Open
+                        </a>
+                      </Button>
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={() => setCreateProposalResult(null)}>
+                      Create another
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-fit"
+                    onClick={async () => {
+                      if (!selectedAssessmentId) return;
+                      try {
+                        const res = await apiRequest("POST", `/api/admin/assessments/${selectedAssessmentId}/create-proposal`);
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data?.error || data?.message || "Failed to create proposal");
+                        setCreateProposalResult({
+                          viewUrl: data.viewUrl,
+                          quoteNumber: data.quoteNumber || `#${data.quoteId}`,
+                        });
+                        toast({
+                          title: "Proposal created",
+                          description: data.emailSent ? "Client has been emailed the view link and next steps." : "Share the link with your client or have them sign in at /dashboard.",
+                        });
+                      } catch (e: any) {
+                        toast({
+                          title: "Error",
+                          description: e?.message || "Failed to create proposal",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Create &amp; send proposal
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>

@@ -357,5 +357,96 @@ export const githubService = {
       // In development, propagate the error
       throw error;
     }
-  }
+  },
+
+  /**
+   * Fetch recent commits for changelog and return client-friendly entries.
+   * Repo: GITHUB_CHANGELOG_REPO (e.g. "owner/repo") or first repo from user.
+   */
+  async getChangelogEntries(limit: number = 20): Promise<Array<{ date: string; title: string; description: string }>> {
+    const repoSpec = process.env.GITHUB_CHANGELOG_REPO || '';
+    let owner = GITHUB_USERNAME;
+    let repo = '';
+
+    if (repoSpec.includes('/')) {
+      [owner, repo] = repoSpec.split('/').map(s => s.trim());
+    }
+    if (!repo) {
+      const repos = await this.fetchRepositories();
+      const mainRepo = repos.find((r: { name: string }) =>
+        /portfolio|website|site|main/i.test(r.name)
+      ) || repos[0];
+      if (!mainRepo?.name) return [];
+      repo = mainRepo.name;
+    }
+
+    try {
+      const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+        owner,
+        repo,
+        per_page: Math.min(limit, 50),
+      });
+
+      return commits
+        .filter((c: { commit?: { message?: string } }) => c.commit?.message)
+        .slice(0, limit)
+        .map((c: { sha: string; commit: { message: string; author?: { date?: string } } }) => {
+          const raw = c.commit.message.split('\n')[0].trim();
+          const { title, description } = this.humanizeCommitMessage(raw);
+          return {
+            date: c.commit.author?.date || new Date().toISOString(),
+            title,
+            description,
+          };
+        });
+    } catch (error) {
+      console.error('Error fetching changelog commits:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Turn a git commit message into simple, client-friendly title and description.
+   */
+  humanizeCommitMessage(msg: string): { title: string; description: string } {
+    const lower = msg.toLowerCase();
+    let title = msg;
+    let description = '';
+
+    const prefixes: Array<[RegExp, string]> = [
+      [/^fix(?:es)?\s*[(:]\s*/i, 'We fixed an issue: '],
+      [/^fix\s+/i, 'We fixed: '],
+      [/^bugfix\s*[(:]\s*/i, 'We fixed a bug: '],
+      [/^add(?:s|ed)?\s+/i, 'We added: '],
+      [/^feat(?:ure)?\s*[(:]\s*/i, 'We added a new feature: '],
+      [/^update(?:s|d)?\s+/i, 'We updated: '],
+      [/^improve(?:s|d)?\s+/i, 'We improved: '],
+      [/^refactor\s*[(:]\s*/i, 'We improved the code: '],
+      [/^chore\s*[(:]\s*/i, 'Maintenance: '],
+      [/^docs?\s*[(:]\s*/i, 'Documentation: '],
+      [/^style\s*[(:]\s*/i, 'Style update: '],
+      [/^security\s*[(:]\s*/i, 'Security update: '],
+    ];
+
+    for (const [re, prefix] of prefixes) {
+      if (re.test(msg)) {
+        title = msg.replace(re, '').trim();
+        description = prefix + title;
+        break;
+      }
+    }
+
+    if (!description) {
+      if (lower.startsWith('merge') || lower.includes('merge branch')) {
+        return { title: 'Code updates merged', description: 'We merged recent code changes.' };
+      }
+      description = title.replace(/^[\w-]+:\s*/i, '').trim();
+      if (description.length > 80) description = description.slice(0, 77) + '...';
+      description = 'Update: ' + description;
+    }
+
+    title = title.replace(/^[\w-]+:\s*/i, '').trim();
+    if (title.length > 60) title = title.slice(0, 57) + '...';
+    return { title, description };
+  },
 };

@@ -479,6 +479,234 @@ This endorsement was submitted from your portfolio website.
     }
   }
 
+  /** Send proposal-ready email to client with view link and next steps (matches professional proposal workflow). */
+  async sendProposalToClient(data: {
+    to: string;
+    clientName: string;
+    projectName: string;
+    viewUrl: string;
+  }): Promise<boolean> {
+    if (!this.isConfigured) {
+      console.warn('Email service not configured. Skipping proposal email to client.');
+      return false;
+    }
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `Your professional proposal: ${data.projectName}`;
+      const nextSteps = [
+        'Review proposal',
+        'Confirm Phase 1 (or project) approval',
+        'Sign agreement',
+        'Submit initial deposit',
+        'Schedule kickoff',
+      ];
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0; }
+            .content { background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; }
+            .button { display: inline-block; padding: 14px 28px; background: #6366f1; color: white !important; text-decoration: none; border-radius: 8px; margin: 16px 0; font-weight: 600; }
+            .steps { margin: 16px 0; padding-left: 20px; }
+            .steps li { margin: 8px 0; }
+            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">Professional proposal ready</h2>
+              <p style="margin: 8px 0 0 0; opacity: 0.9;">${data.projectName}</p>
+            </div>
+            <div class="content">
+              <p>Hi ${data.clientName},</p>
+              <p>Your proposal for <strong>${data.projectName}</strong> is ready to review. You can view the full proposal, including phases, timeline, and investment, at the link below.</p>
+              <p><a href="${data.viewUrl}" class="button">View your proposal</a></p>
+              <p><strong>Next steps:</strong></p>
+              <ol class="steps">
+                ${nextSteps.map(s => `<li>${s}</li>`).join('')}
+              </ol>
+              <p>After you review, sign in to the same link (or from your client dashboard) to confirm approval. We’ll then send the agreement and coordinate deposit and kickoff.</p>
+              <div class="footer">
+                <p>If you have any questions, reply to this email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Hi ${data.clientName},\n\nYour proposal for ${data.projectName} is ready.\n\nView your proposal: ${data.viewUrl}\n\nNext steps:\n${nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\nAfter you review, sign in to confirm approval. We'll then send the agreement and coordinate deposit and kickoff.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Proposal email sent to client ${data.to} for ${data.projectName}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending proposal email to client:', error?.message ?? error);
+      return false;
+    }
+  }
+
+  /** Notify admin that client accepted the proposal. */
+  async sendProposalAcceptedToAdmin(data: { clientName: string; clientEmail: string; projectName: string }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `Proposal accepted: ${data.projectName} – ${data.clientName}`;
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;}.container{max-width:600px;margin:0 auto;padding:20px;}.header{background:#10b981;color:white;padding:20px;border-radius:8px 8px 0 0;}.content{background:#f9f9f9;padding:20px;border-radius:0 0 8px 8px;}</style></head>
+        <body>
+          <div class="container">
+            <div class="header"><h2 style="margin:0;">Proposal accepted</h2></div>
+            <div class="content">
+              <p><strong>${data.clientName}</strong> (${data.clientEmail}) has accepted the proposal for <strong>${data.projectName}</strong>.</p>
+              <p><strong>Next steps:</strong> Send agreement → Collect initial deposit → Schedule kickoff.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Proposal accepted: ${data.projectName}. Client: ${data.clientName} (${data.clientEmail}). Next steps: Send agreement, collect deposit, schedule kickoff.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: this.adminEmail }];
+      sendSmtpEmail.replyTo = { email: data.clientEmail };
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Proposal-accepted notification sent to admin for ${data.projectName}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending proposal-accepted email to admin:', error?.message ?? error);
+      return false;
+    }
+  }
+
+  /** Send confirmation to client after they accept (next steps: sign agreement, deposit, kickoff). */
+  async sendProposalAcceptedToClient(data: { to: string; clientName: string; projectName: string }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `Thank you – proposal accepted for ${data.projectName}`;
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;}.container{max-width:600px;margin:0 auto;padding:20px;}.header{background:#10b981;color:white;padding:20px;border-radius:8px 8px 0 0;}.content{background:#f9f9f9;padding:20px;border-radius:0 0 8px 8px;}.steps{margin:16px 0;padding-left:20px;}.steps li{margin:8px 0;}</style></head>
+        <body>
+          <div class="container">
+            <div class="header"><h2 style="margin:0;">Thank you for accepting</h2></div>
+            <div class="content">
+              <p>Hi ${data.clientName},</p>
+              <p>We’ve received your approval for <strong>${data.projectName}</strong>. Next steps:</p>
+              <ol class="steps">
+                <li>We’ll send the agreement for your signature.</li>
+                <li>Submit initial deposit to begin.</li>
+                <li>Schedule kickoff to discuss project details.</li>
+              </ol>
+              <p>We’ll be in touch shortly to complete these steps.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Hi ${data.clientName}, we've received your approval for ${data.projectName}. Next steps: We'll send the agreement, you submit the initial deposit, and we'll schedule the kickoff. We'll be in touch shortly.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Proposal-accepted confirmation sent to client ${data.to}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending proposal-accepted confirmation to client:', error?.message ?? error);
+      return false;
+    }
+  }
+
+  /** Send deposit invoice to client after proposal acceptance (pay link + portal link). */
+  async sendDepositInvoiceToClient(data: {
+    to: string;
+    clientName: string;
+    projectName: string;
+    amountFormatted: string;
+    payUrl: string;
+    invoiceNumber: string;
+  }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `Deposit invoice for ${data.projectName} – ${data.invoiceNumber}`;
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0; }
+            .content { background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; }
+            .amount { font-size: 1.5rem; font-weight: bold; color: #059669; }
+            .button { display: inline-block; padding: 14px 28px; background: #10b981; color: white !important; text-decoration: none; border-radius: 8px; margin: 16px 0; font-weight: 600; }
+            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">Deposit invoice</h2>
+              <p style="margin: 8px 0 0 0; opacity: 0.9;">${data.projectName}</p>
+            </div>
+            <div class="content">
+              <p>Hi ${data.clientName},</p>
+              <p>Thank you for accepting the proposal for <strong>${data.projectName}</strong>. Your deposit invoice is ready.</p>
+              <p class="amount">${data.amountFormatted}</p>
+              <p>Invoice number: <strong>${data.invoiceNumber}</strong></p>
+              <p><a href="${data.payUrl}" class="button">Pay deposit</a></p>
+              <p>You can also view and pay this invoice from your client dashboard.</p>
+              <div class="footer">
+                <p>If you have any questions, reply to this email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Hi ${data.clientName}, your deposit invoice for ${data.projectName} is ready. Amount: ${data.amountFormatted}. Invoice: ${data.invoiceNumber}. Pay at: ${data.payUrl}`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Deposit invoice email sent to ${data.to} for ${data.projectName}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending deposit invoice email:', error?.message ?? error);
+      return false;
+    }
+  }
+
   /** Send invoice reminder to the recipient (customer) */
   async sendInvoiceReminder(data: {
     to: string;

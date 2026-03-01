@@ -186,6 +186,8 @@ CREATE TABLE IF NOT EXISTS client_quotes (
   total_amount INTEGER NOT NULL,
   status TEXT DEFAULT 'pending',
   valid_until TIMESTAMP,
+  view_token TEXT UNIQUE,
+  payment_plan TEXT,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );

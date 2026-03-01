@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -65,6 +66,16 @@ interface FeedbackItem {
   createdAt: string;
 }
 
+interface ProposalItem {
+  id: number;
+  quoteNumber: string;
+  title: string;
+  totalAmount: number;
+  status: string;
+  validUntil: string | null;
+  createdAt: string;
+}
+
 export default function ClientDashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -103,6 +114,16 @@ export default function ClientDashboardPage() {
     queryKey: ["/api/client/feedback"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/client/feedback");
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  const { data: proposals = [], isLoading: proposalsLoading } = useQuery<ProposalItem[]>({
+    queryKey: ["/api/client/proposals"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/client/proposals");
+      if (!res.ok) return [];
       return res.json();
     },
     enabled: !!user,
@@ -154,13 +175,17 @@ export default function ClientDashboardPage() {
           Your dashboard
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
-          View invoices, project updates, and send feedback
+          View invoices, proposals, project updates, and send feedback
         </p>
+        <Button variant="link" className="px-0 mt-1 h-auto text-muted-foreground" asChild>
+          <Link href="/updates">View change log &amp; updates</Link>
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-        <TabsList className="w-full sm:max-w-md grid grid-cols-3 h-11 sm:h-12 p-1 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">
+        <TabsList className="w-full sm:max-w-2xl grid grid-cols-2 sm:grid-cols-4 h-11 sm:h-12 p-1 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="proposals">Proposals</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
         </TabsList>
@@ -194,6 +219,31 @@ export default function ClientDashboardPage() {
                         onClick={() => setActiveTab("invoices")}
                       >
                         View & pay
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="border-2 border-violet-500/20 bg-gradient-to-br from-background to-violet-500/5 overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 shrink-0">
+                  <Send className="h-4 w-4 text-violet-500 shrink-0" />
+                  Proposals
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0">
+                {proposalsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{proposals.length}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {proposals.filter((p) => p.status === "sent" || p.status === "pending").length} awaiting your decision
+                    </p>
+                    {proposals.length > 0 && (
+                      <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("proposals")}>
+                        View proposals
                       </Button>
                     )}
                   </>
@@ -253,6 +303,58 @@ export default function ClientDashboardPage() {
                       <p className="text-xs mt-2 opacity-75">
                         {format(new Date(a.createdAt), "PPP")}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="proposals" className="space-y-4 sm:space-y-6 mt-4">
+          <Card className="border-2 border-violet-500/20 overflow-hidden">
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Send className="h-5 w-5 text-violet-500 shrink-0" />
+                Your proposals
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Review and approve project proposals sent to you</CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6 pt-0">
+              {proposalsLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+                </div>
+              ) : proposals.length === 0 ? (
+                <div className="text-center py-12 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5">
+                  <Send className="h-12 w-12 mx-auto text-violet-500/60 mb-4" />
+                  <p className="text-muted-foreground font-medium">No proposals yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">When we send you a proposal, it will appear here. Use the same email as your assessment.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 sm:space-y-4">
+                  {proposals.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border bg-card p-3 sm:p-4 shadow-sm hover:shadow-md transition-all"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm sm:text-base truncate">{p.title}</p>
+                        <p className="text-xs text-muted-foreground">{p.quoteNumber}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <Badge variant={p.status === "accepted" ? "default" : p.status === "rejected" ? "destructive" : "secondary"}>
+                            {p.status === "sent" || p.status === "pending" ? "Awaiting your decision" : p.status}
+                          </Badge>
+                          <span className="font-medium text-violet-600 dark:text-violet-400 text-sm">
+                            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(p.totalAmount)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button asChild variant="outline" size="sm" className="shrink-0">
+                        <Link href={`/dashboard/proposals/${p.id}`}>
+                          {p.status === "sent" || p.status === "pending" ? "View & approve" : "View"}
+                        </Link>
+                      </Button>
                     </div>
                   ))}
                 </div>

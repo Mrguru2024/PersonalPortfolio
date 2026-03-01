@@ -36,13 +36,18 @@ export async function GET(req: NextRequest) {
       }
     }
     if (!adminResult) {
+      let hint: string | undefined;
+      if (sessionUser) {
+        if (!sessionUser.isAdmin) {
+          hint = "Your account is not an admin. Run: npx tsx scripts/create-admin.ts \"your@email.com\" <password> then log out and log back in.";
+        } else if (!sessionUser.adminApproved) {
+          hint = "Your account is not yet approved for admin access. Ask an existing admin to approve you, or run the approve script.";
+        }
+      } else if (isDev) {
+        hint = "No session found. Log in again, or run: npx tsx scripts/create-session-table.ts then log out and log back in.";
+      }
       return NextResponse.json(
-        {
-          message: "Admin access required",
-          ...(isDev && !sessionUser && {
-            hint: "Session not in database. Run: npx tsx scripts/create-session-table.ts then log out and log back in.",
-          }),
-        },
+        { message: hint ? `Admin access required. ${hint}` : "Admin access required", ...(hint && { hint }) },
         { status: 403 }
       );
     }

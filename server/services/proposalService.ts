@@ -2,11 +2,22 @@ import { ProjectAssessment } from "@shared/assessmentSchema";
 import { pricingService } from "./pricingService";
 import { aiAssistanceService } from "./aiAssistanceService";
 
+/** Single development phase in the professional proposal template (e.g. Phase 1 — Launch Foundation). */
+export interface ProposalDevelopmentPhase {
+  phaseName: string;
+  purpose: string;
+  included: string[];
+  benefits: string[];
+  investment: number | string; // number in dollars or range string e.g. "$3,200 – $4,500"
+}
+
 export interface ProposalDocument {
   title: string;
   clientName: string;
   clientEmail: string;
   date: string;
+  /** Company name shown as "Prepared by" (e.g. Ascendra Technologies). Set via PROPOSAL_COMPANY_NAME. */
+  preparedBy: string;
   projectOverview: {
     projectName: string;
     projectType: string;
@@ -73,6 +84,14 @@ export interface ProposalDocument {
     communication: string;
   };
   nextSteps: string[];
+  /** Human-readable payment structure (e.g. "40% deposit to begin, 30% at midpoint, 30% prior to launch"). */
+  paymentStructureText: string;
+  /** Post-launch support description (e.g. "30 days of post-launch support is included after each phase launch."). */
+  postLaunchSupportText: string;
+  /** Collaboration & adjustments note. */
+  collaborationNote: string;
+  /** Optional phased development breakdown for doc-style proposals. */
+  developmentPhases?: ProposalDevelopmentPhase[];
   domainServices?: {
     included: boolean;
     message: string;
@@ -121,6 +140,12 @@ export class ProposalService {
       ? this.generateLowBudgetProposal(assessment, finalTotal)
       : undefined;
 
+    const nextStepsStandard = this.getStandardNextSteps();
+    const paymentStructureText = '40% deposit to begin, 30% at midpoint, 30% prior to launch. Future phases will follow a similar structure.';
+    const postLaunchSupportText = '30 days of post-launch support is included after each phase launch.';
+    const collaborationNote = 'Throughout development, we will work collaboratively to ensure the platform aligns with your vision. Adjustments within the agreed scope of each phase will be incorporated during development. Major feature additions outside of the confirmed phase scope can be scheduled for a future phase to maintain timeline clarity.';
+    const preparedBy = process.env.PROPOSAL_COMPANY_NAME || 'Ascendra Technologies';
+
     return {
       title: `Professional Proposal: ${assessment.projectName}`,
       clientName: assessment.name,
@@ -130,6 +155,7 @@ export class ProposalService {
         month: 'long', 
         day: 'numeric' 
       }),
+      preparedBy,
       projectOverview: {
         projectName: assessment.projectName,
         projectType: assessment.projectType,
@@ -153,10 +179,45 @@ export class ProposalService {
       },
       deliverables,
       expectations,
-      nextSteps,
+      nextSteps: nextStepsStandard,
+      paymentStructureText,
+      postLaunchSupportText,
+      collaborationNote,
+      developmentPhases: this.buildDevelopmentPhasesFromTimeline(timeline, finalTotal),
       domainServices,
       specialNotes,
     };
+  }
+
+  /** Next steps matching the professional proposal workflow (review → confirm → sign → deposit → kickoff). */
+  private getStandardNextSteps(): string[] {
+    return [
+      'Review proposal',
+      'Confirm Phase 1 (or project) approval',
+      'Sign agreement',
+      'Submit initial deposit',
+      'Schedule kickoff',
+    ];
+  }
+
+  /** Build doc-style development phases from timeline + total for client-facing display. */
+  private buildDevelopmentPhasesFromTimeline(timeline: ProposalDocument['timeline'], finalTotal: number): ProposalDevelopmentPhase[] {
+    const phases = timeline.phases.map((p, i) => {
+      const pct = i === 0 ? 0.25 : i === 1 ? 0.45 : i === 2 ? 0.2 : 0.1;
+      const amount = Math.round(finalTotal * pct);
+      return {
+        phaseName: p.phase,
+        purpose: i === 0 ? 'Establish foundation and scope.' : i === 1 ? 'Core build and integration.' : i === 2 ? 'Quality assurance and refinement.' : 'Launch and handoff.',
+        included: p.deliverables,
+        benefits: [
+          'Clear milestones',
+          'Aligned deliverables',
+          'Predictable timeline',
+        ],
+        investment: amount,
+      };
+    });
+    return phases;
   }
 
   /**
@@ -397,52 +458,20 @@ Phone: 678-216-5112
     };
   }
 
-  private generatePaymentSchedule(total: number, duration: string): Array<{ milestone: string; amount: number; dueDate: string }> {
+  /** Payment structure: 40% deposit, 30% at midpoint, 30% prior to launch (matches professional proposal template). */
+  private generatePaymentSchedule(total: number, _duration: string): Array<{ milestone: string; amount: number; dueDate: string }> {
     const schedule = [
-      {
-        milestone: 'Project Kickoff',
-        amount: Math.round(total * 0.3),
-        dueDate: 'Upon contract signing',
-      },
-      {
-        milestone: 'Design Approval',
-        amount: Math.round(total * 0.3),
-        dueDate: 'Upon design phase completion',
-      },
-      {
-        milestone: 'Development Milestone',
-        amount: Math.round(total * 0.3),
-        dueDate: 'Upon development phase completion',
-      },
-      {
-        milestone: 'Final Delivery',
-        amount: Math.round(total * 0.1),
-        dueDate: 'Upon project completion and launch',
-      },
+      { milestone: 'Deposit to begin', amount: Math.round(total * 0.4), dueDate: 'Upon contract signing' },
+      { milestone: 'Midpoint', amount: Math.round(total * 0.3), dueDate: 'At project midpoint' },
+      { milestone: 'Prior to launch', amount: Math.round(total * 0.3), dueDate: 'Prior to launch' },
     ];
-    
-    // Adjust last payment to account for rounding
     const paid = schedule.slice(0, -1).reduce((sum, item) => sum + item.amount, 0);
     schedule[schedule.length - 1].amount = total - paid;
-    
     return schedule;
   }
 
-  private generateNextSteps(assessment: ProjectAssessment, isLowBudget: boolean): string[] {
-    const steps = [
-      'Review this proposal and discuss any questions or concerns',
-      'Confirm project scope and timeline',
-      'Sign the project agreement',
-      'Provide initial payment to begin project kickoff',
-      'Schedule kickoff meeting to discuss project details',
-    ];
-    
-    if (isLowBudget) {
-      steps.unshift('Consider the realistic scope options provided for your budget');
-      steps.push('Discuss phased approach if needed to fit budget constraints');
-    }
-    
-    return steps;
+  private generateNextSteps(_assessment: ProjectAssessment, _isLowBudget: boolean): string[] {
+    return this.getStandardNextSteps();
   }
 
   private generateDomainServices(assessment: ProjectAssessment): ProposalDocument['domainServices'] {

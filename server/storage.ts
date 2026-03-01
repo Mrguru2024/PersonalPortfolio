@@ -133,6 +133,8 @@ export interface IStorage {
   
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
+  getClientQuoteById(id: number, userId: number): Promise<ClientQuote | undefined>;
+  updateClientQuoteStatus(id: number, userId: number, status: "accepted" | "rejected"): Promise<ClientQuote>;
   getClientInvoices(userId: number): Promise<ClientInvoice[]>;
   getClientAnnouncements(userId: number): Promise<ClientAnnouncement[]>;
   getClientFeedback(userId: number): Promise<ClientFeedback[]>;
@@ -473,13 +475,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAssessment(id: number): Promise<void> {
-    const deleted = await db
-      .delete(projectAssessments)
-      .where(eq(projectAssessments.id, id))
-      .returning({ id: projectAssessments.id });
-    if (deleted.length === 0) {
-      throw new Error("Assessment not found");
-    }
+    await db.transaction(async (tx) => {
+      // 1. Unlink invoices from quotes that belong to this assessment (preserve invoice records)
+      const quoteIds = await tx
+        .select({ id: clientQuotes.id })
+        .from(clientQuotes)
+        .where(eq(clientQuotes.assessmentId, id));
+      const ids = quoteIds.map((r) => r.id);
+      if (ids.length > 0) {
+        await tx
+          .update(clientInvoices)
+          .set({ quoteId: null })
+          .where(inArray(clientInvoices.quoteId, ids));
+      }
+      // 2. Delete feedback and quotes that reference this assessment
+      await tx.delete(clientFeedback).where(eq(clientFeedback.assessmentId, id));
+      await tx.delete(clientQuotes).where(eq(clientQuotes.assessmentId, id));
+      // 3. Delete the assessment
+      const deleted = await tx
+        .delete(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .returning({ id: projectAssessments.id });
+      if (deleted.length === 0) {
+        throw new Error("Assessment not found");
+      }
+    });
   }
 
   // Resume request operations
@@ -958,6 +978,85 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clientQuotes.userId, userId))
       .orderBy(desc(clientQuotes.createdAt));
   }
+
+  async getClientQuoteById(id: number, userId: number): Promise<ClientQuote | undefined> {
+    const [quote] = await db
+      .select()
+      .from(clientQuotes)
+      .where(and(eq(clientQuotes.id, id), eq(clientQuotes.userId, userId)))
+      .limit(1);
+    return quote || undefined;
+  }
+
+  async updateClientQuoteStatus(id: number, userId: number, status: "accepted" | "rejected", paymentPlan?: string | null): Promise<ClientQuote> {
+    const updates: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (paymentPlan != null) (updates as any).paymentPlan = paymentPlan;
+    const [updated] = await db
+      .update(clientQuotes)
+      .set(updates as any)
+      .where(and(eq(clientQuotes.id, id), eq(clientQuotes.userId, userId)))
+      .returning();
+    if (!updated) throw new Error("Quote not found or access denied");
+    return updated;
+  }
+
+  /** Get quotes for a client by their email (match assessment email). Use when client has no userId on quote. */
+  async getClientQuotesByEmail(clientEmail: string): Promise<ClientQuote[]> {
+    const rows = await db
+      .select({ quote: clientQuotes })
+      .from(clientQuotes)
+      .innerJoin(projectAssessments, eq(clientQuotes.assessmentId, projectAssessments.id))
+      .where(eq(projectAssessments.email, clientEmail))
+      .orderBy(desc(clientQuotes.createdAt));
+    return rows.map((r) => r.quote);
+  }
+
+  /** Get one quote by id if the assessment belongs to this client email. */
+  async getClientQuoteByIdForEmail(quoteId: number, clientEmail: string): Promise<ClientQuote | undefined> {
+    const rows = await db
+      .select({ quote: clientQuotes })
+      .from(clientQuotes)
+      .innerJoin(projectAssessments, eq(clientQuotes.assessmentId, projectAssessments.id))
+      .where(and(eq(clientQuotes.id, quoteId), eq(projectAssessments.email, clientEmail)))
+      .limit(1);
+    return rows[0]?.quote ?? undefined;
+  }
+
+  /** Update quote status (approve/reject) when client is identified by email. */
+  async updateClientQuoteStatusByEmail(quoteId: number, clientEmail: string, status: "accepted" | "rejected", paymentPlan?: string | null): Promise<ClientQuote> {
+    const quote = await this.getClientQuoteByIdForEmail(quoteId, clientEmail);
+    if (!quote) throw new Error("Quote not found or access denied");
+    const updates: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (paymentPlan != null) (updates as any).paymentPlan = paymentPlan;
+    const [updated] = await db
+      .update(clientQuotes)
+      .set(updates as any)
+      .where(eq(clientQuotes.id, quoteId))
+      .returning();
+    if (!updated) throw new Error("Quote not found or access denied");
+    return updated;
+  }
+
+  /** Get quote by secure view token (for link-based access). */
+  async getClientQuoteByViewToken(token: string): Promise<ClientQuote | undefined> {
+    const [quote] = await db
+      .select()
+      .from(clientQuotes)
+      .where(eq(clientQuotes.viewToken, token))
+      .limit(1);
+    return quote ?? undefined;
+  }
+
+  async createClientQuote(values: InsertClientQuote & { viewToken?: string | null }): Promise<ClientQuote> {
+    const [inserted] = await db
+      .insert(clientQuotes)
+      .values({
+        ...values,
+        viewToken: values.viewToken ?? null,
+      })
+      .returning();
+    return inserted;
+  }
   
   async getClientInvoices(userId: number): Promise<ClientInvoice[]> {
     return db
@@ -966,20 +1065,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clientInvoices.userId, userId))
       .orderBy(desc(clientInvoices.createdAt));
   }
+
+  /** Quote IDs for this user that are approved and active in development (so we can filter announcements). */
+  async getActiveProjectQuoteIdsForUser(userId: number): Promise<number[]> {
+    const user = await this.getUser(userId);
+    const activeStatuses = ["accepted", "in_development"];
+    const byUserId = await db
+      .select({ id: clientQuotes.id })
+      .from(clientQuotes)
+      .where(
+        and(
+          eq(clientQuotes.userId, userId),
+          inArray(clientQuotes.status, activeStatuses)
+        )
+      );
+    const ids = new Set(byUserId.map((r) => r.id));
+    if (user?.email) {
+      const byEmail = await db
+        .select({ id: clientQuotes.id })
+        .from(clientQuotes)
+        .innerJoin(projectAssessments, eq(clientQuotes.assessmentId, projectAssessments.id))
+        .where(
+          and(
+            eq(projectAssessments.email, user.email),
+            inArray(clientQuotes.status, activeStatuses)
+          )
+        );
+      byEmail.forEach((r) => ids.add(r.id));
+    }
+    return Array.from(ids);
+  }
   
+  /** Announcements only for this client's approved projects that are active in development (or all / user-targeted). */
   async getClientAnnouncements(userId: number): Promise<ClientAnnouncement[]> {
     const now = new Date();
-    return db
+    const activeQuoteIds = await this.getActiveProjectQuoteIdsForUser(userId);
+    const rows = await db
       .select()
       .from(clientAnnouncements)
       .where(
         and(
           eq(clientAnnouncements.isActive, true),
           sql`(expires_at IS NULL OR expires_at > ${now})`,
-          sql`(target_audience = 'all' OR target_user_ids @> ${JSON.stringify([userId])}::jsonb)`
+          sql`(
+            target_audience = 'all'
+            OR (target_user_ids IS NOT NULL AND target_user_ids @> ${JSON.stringify([userId])}::jsonb)
+            OR (target_project_ids IS NOT NULL AND target_project_ids != '[]'::jsonb AND target_project_ids && ${JSON.stringify(activeQuoteIds)}::jsonb)
+          )`
         )
       )
       .orderBy(desc(clientAnnouncements.createdAt));
+    return rows;
   }
   
   async getClientFeedback(userId: number): Promise<ClientFeedback[]> {
