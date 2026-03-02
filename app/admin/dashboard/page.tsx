@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,11 +212,25 @@ export default function AdminDashboardPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
+  // Invalidate only list queries (not single-assessment detail) to avoid refetching a 404 detail and spamming the API
+  const invalidateAssessmentLists = useCallback(() => {
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        const k = query.queryKey;
+        return k[0] === "/api/admin/assessments" && typeof k[1] === "object" && k[1] !== null && "summary" in (k[1] as object);
+      },
+    });
+  }, [queryClient]);
+
   // Fetch full assessment only when View Details is opened (no refetch on focus to avoid repeated 404s for deleted items)
   const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
     queryFn: async () => {
       if (selectedAssessmentId == null) throw new Error("No id");
+      const storageKey = `admin_assessment_404_${selectedAssessmentId}`;
+      if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(storageKey) === "1") {
+        throw new Error("Assessment not found.");
+      }
       const response = await apiRequest("GET", `/api/admin/assessments/${selectedAssessmentId}`);
       const text = await response.text();
       let data: { error?: string } = {};
@@ -225,7 +239,13 @@ export default function AdminDashboardPage() {
       } catch {
         // Server may return HTML 404 page
       }
-      if (!response.ok) throw new Error(data?.error ?? (response.status === 404 ? "Assessment not found." : "Failed to load"));
+      if (!response.ok) {
+        if (response.status === 404 && typeof sessionStorage !== "undefined") {
+          sessionStorage.setItem(storageKey, "1");
+        }
+        throw new Error(data?.error ?? (response.status === 404 ? "Assessment not found." : "Failed to load"));
+      }
+      if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey);
       return data as Assessment;
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved && selectedAssessmentId != null,
@@ -237,13 +257,13 @@ export default function AdminDashboardPage() {
     refetchOnReconnect: false,
   });
 
-  // When detail returns 404, refresh the list so stale entries disappear when user closes the dialog
+  // When detail returns 404, refresh the list only (not the detail query) so stale entries disappear when user closes the dialog
   useEffect(() => {
     if (!selectedAssessmentError || !selectedAssessmentId) return;
     const msg = String(selectedAssessmentError.message ?? "");
     if (!msg.includes("Assessment not found") && !msg.includes("404") && !msg.includes("not found")) return;
-    queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
-  }, [selectedAssessmentError, selectedAssessmentId, queryClient]);
+    invalidateAssessmentLists();
+  }, [selectedAssessmentError, selectedAssessmentId, invalidateAssessmentLists]);
 
   // Fetch contacts
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useQuery<Contact[]>({
@@ -292,7 +312,7 @@ export default function AdminDashboardPage() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+      invalidateAssessmentLists();
       toast({
         title: "Success",
         description: "Assessment status updated successfully",
@@ -313,7 +333,7 @@ export default function AdminDashboardPage() {
       await apiRequest("DELETE", `/api/admin/assessments/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+      invalidateAssessmentLists();
       setDeleteAssessmentId(null);
       toast({ title: "Assessment moved to Deleted", description: "You can restore it from the Deleted section below." });
     },
@@ -334,7 +354,7 @@ export default function AdminDashboardPage() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+      invalidateAssessmentLists();
       toast({ title: "Assessment restored", description: "It appears in the active list again." });
     },
     onError: (error: any) => {

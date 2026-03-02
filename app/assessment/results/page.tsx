@@ -58,6 +58,18 @@ function AssessmentResultsContent() {
       lastFetchedIdRef.current = null;
       return;
     }
+    // Skip refetch if we already got 404 for this id this session (avoids repeated 404s on remount/Suspense)
+    try {
+      if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+        if (sessionStorage.getItem(`assessment_404_${assessmentId}`) === "1") {
+          setFetchError("Assessment not found. It may have been deleted or the link may be incorrect.");
+          setFetchDone(true);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
     // Show cached data immediately to avoid flash on remount (e.g. after Suspense)
     let cached: AssessmentResult | null = null;
     try {
@@ -85,6 +97,11 @@ function AssessmentResultsContent() {
             return;
           }
           if (data.success && data.assessment) {
+            try {
+              sessionStorage.removeItem(`assessment_404_${assessmentId}`);
+            } catch {
+              // ignore
+            }
             setAssessment(data.assessment as AssessmentResult);
             setRequiresAccount(data.requiresAccount ?? false);
             try {
@@ -121,6 +138,11 @@ function AssessmentResultsContent() {
         }
         if (res.ok && data.success && data.assessment) {
           const next = data.assessment as AssessmentResult;
+          try {
+            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(`assessment_404_${assessmentId}`);
+          } catch {
+            // ignore
+          }
           setAssessment(next);
           setRequiresAccount(data.requiresAccount || false);
           setFetchError(null);
@@ -133,6 +155,13 @@ function AssessmentResultsContent() {
             console.warn("Failed to save to localStorage:", e);
           }
         } else {
+          if (res.status === 404) {
+            try {
+              if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`assessment_404_${assessmentId}`, "1");
+            } catch {
+              // ignore
+            }
+          }
           const message =
             res.status === 404
               ? "Assessment not found. It may have been deleted or the link may be incorrect."
