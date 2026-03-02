@@ -478,10 +478,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(projectAssessments.id));
     } catch (e) {
       if (!DatabaseStorage.isMissingColumnError(e)) throw e;
-      return db
+      const rows = await db
         .select(DatabaseStorage.assessmentColumnsWithoutDeletedAt)
         .from(projectAssessments)
-        .orderBy(desc(projectAssessments.id)) as Promise<ProjectAssessment[]>;
+        .orderBy(desc(projectAssessments.id));
+      return rows as unknown as ProjectAssessment[];
     }
   }
 
