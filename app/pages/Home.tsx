@@ -370,9 +370,11 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
-        <ProjectsSection />
-      </LazyWhenVisible>
+      <div id="projects">
+        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
+          <ProjectsSection />
+        </LazyWhenVisible>
+      </div>
       <LazyWhenVisible minHeight="min-h-[360px]" onVisible={prefetchSkills}>
         <AboutSection />
       </LazyWhenVisible>
@@ -382,9 +384,11 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[380px]">
-        <ContactSection />
-      </LazyWhenVisible>
+      <div id="contact">
+        <LazyWhenVisible minHeight="min-h-[380px]">
+          <ContactSection />
+        </LazyWhenVisible>
+      </div>
 
       {mounted && <ViewModeToggle />}
     </>

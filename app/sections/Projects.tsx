@@ -128,8 +128,8 @@ export default function Projects() {
 
   return (
     <section
-      id="projects"
       className="py-20 bg-gradient-to-b from-background/95 to-background"
+      aria-label="Projects"
     >
       <div className="container px-4 mx-auto">
         <motion.div
