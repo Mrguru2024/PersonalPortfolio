@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { ASSESSMENT_STATUSES } from "@shared/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,9 @@ export async function PATCH(
     const { id: idParam } = await params;
     const id = Number.parseInt(idParam, 10);
 
-    if (!status || !["pending", "reviewed", "contacted", "archived"].includes(status)) {
+    if (!status || !ASSESSMENT_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: "Invalid status. Must be: pending, reviewed, contacted, or archived" },
+        { error: `Invalid status. Must be one of: ${ASSESSMENT_STATUSES.join(", ")}` },
         { status: 400 }
       );
     }

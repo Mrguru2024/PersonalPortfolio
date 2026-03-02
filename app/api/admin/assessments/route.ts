@@ -54,20 +54,24 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const summary = url.searchParams.get("summary") === "1";
+    const deleted = url.searchParams.get("deleted") === "1";
 
-    const assessments = await storage.getAllAssessments();
+    const assessments = deleted
+      ? await storage.getDeletedAssessments()
+      : await storage.getAllAssessments();
+
+    const totalFromPb = (pb: unknown): number => {
+      if (!pb || typeof pb !== "object") return 0;
+      const o = pb as Record<string, unknown>;
+      if (typeof o.total === "number") return o.total;
+      const range = o.estimatedRange as { average?: number } | undefined;
+      if (range && typeof range.average === "number") return range.average;
+      if (typeof o.subtotal === "number") return o.subtotal;
+      if (typeof o.basePrice === "number") return o.basePrice;
+      return 0;
+    };
 
     if (summary) {
-      const totalFromPb = (pb: unknown): number => {
-        if (!pb || typeof pb !== "object") return 0;
-        const o = pb as Record<string, unknown>;
-        if (typeof o.total === "number") return o.total;
-        const range = o.estimatedRange as { average?: number } | undefined;
-        if (range && typeof range.average === "number") return range.average;
-        if (typeof o.subtotal === "number") return o.subtotal;
-        if (typeof o.basePrice === "number") return o.basePrice;
-        return 0;
-      };
       const list = assessments.map((a) => ({
         id: a.id,
         name: a.name,
@@ -78,6 +82,7 @@ export async function GET(req: NextRequest) {
         status: a.status,
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
+        deletedAt: a.deletedAt ?? undefined,
         projectName:
           a.assessmentData && typeof a.assessmentData === "object" && "projectName" in a.assessmentData
             ? (a.assessmentData as { projectName?: string }).projectName

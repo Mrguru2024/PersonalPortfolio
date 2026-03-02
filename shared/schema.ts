@@ -70,6 +70,10 @@ export const insertProjectSchema = createInsertSchema(projects);
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
 
+// Allowed assessment status values (single source of truth for validation)
+export const ASSESSMENT_STATUSES = ["pending", "reviewed", "contacted", "archived"] as const;
+export type AssessmentStatus = (typeof ASSESSMENT_STATUSES)[number];
+
 // Project Assessment schema
 export const projectAssessments = pgTable("project_assessments", {
   id: serial("id").primaryKey(),
@@ -83,6 +87,7 @@ export const projectAssessments = pgTable("project_assessments", {
   status: text("status").default("pending"), // pending, reviewed, contacted, archived
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"), // soft delete: set to non-null to hide; restore by setting to null
 });
 
 export const insertProjectAssessmentSchema = createInsertSchema(projectAssessments);

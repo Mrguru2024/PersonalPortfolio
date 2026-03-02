@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,6 +50,7 @@ interface AssessmentSummary {
   status: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
   projectName?: string;
   totalPrice: number;
 }
@@ -201,6 +202,16 @@ export default function AdminDashboardPage() {
     },
   });
 
+  // Fetch deleted assessments for recovery
+  const { data: deletedAssessments = [], isLoading: deletedLoading } = useQuery<AssessmentSummary[]>({
+    queryKey: ["/api/admin/assessments", { summary: 1, deleted: 1 }],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assessments?summary=1&deleted=1");
+      return await response.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
   // Fetch full assessment only when View Details is opened (no refetch on focus to avoid repeated 404s for deleted items)
   const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
@@ -296,7 +307,7 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Delete assessment mutation
+  // Delete assessment mutation (soft delete: moves to Deleted, recoverable)
   const deleteAssessmentMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/admin/assessments/${id}`);
@@ -304,13 +315,32 @@ export default function AdminDashboardPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
       setDeleteAssessmentId(null);
-      toast({ title: "Assessment deleted", variant: "destructive" });
+      toast({ title: "Assessment moved to Deleted", description: "You can restore it from the Deleted section below." });
     },
     onError: (error: any) => {
       setDeleteAssessmentId(null);
       toast({
         title: "Cannot delete",
         description: error?.message || "Failed to delete assessment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Restore soft-deleted assessment
+  const restoreAssessmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("POST", `/api/admin/assessments/${id}/restore`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
+      toast({ title: "Assessment restored", description: "It appears in the active list again." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Cannot restore",
+        description: error?.message || "Failed to restore assessment",
         variant: "destructive",
       });
     },
@@ -622,6 +652,66 @@ export default function AdminDashboardPage() {
                   ))
                 )}
               </div>
+
+              {/* Deleted (recoverable) */}
+              <div className="space-y-4 pt-6 border-t">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    Deleted ({deletedAssessments.length})
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const res = await apiRequest("GET", "/api/admin/assessments/export?includeDeleted=1");
+                        const blob = await res.blob();
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `assessments-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        toast({ title: "Backup downloaded", description: "Saved assessments (including deleted) as JSON." });
+                      } catch (e) {
+                        toast({ title: "Export failed", description: (e as Error)?.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Export backup (JSON)
+                  </Button>
+                </div>
+                {deletedLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : deletedAssessments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No deleted assessments. Removed items appear here and can be restored.</p>
+                ) : (
+                  deletedAssessments.map((assessment) => (
+                    <Card key={assessment.id} className="overflow-hidden border-dashed border-muted-foreground/30 bg-muted/30">
+                      <CardContent className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{assessment.name}</p>
+                          <p className="text-sm text-muted-foreground break-all">{assessment.email}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Removed {assessment.deletedAt ? format(new Date(assessment.deletedAt), "PPp") : "—"}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => restoreAssessmentMutation.mutate(assessment.id)}
+                          disabled={restoreAssessmentMutation.isPending}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          {restoreAssessmentMutation.isPending && restoreAssessmentMutation.variables === assessment.id ? "Restoring…" : "Restore"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </TabsContent>
@@ -805,13 +895,13 @@ export default function AdminDashboardPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Delete assessment confirmation */}
+      {/* Delete assessment confirmation (soft delete: recoverable from Deleted section) */}
       <AlertDialog open={deleteAssessmentId !== null} onOpenChange={(open) => !open && setDeleteAssessmentId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete assessment?</AlertDialogTitle>
+            <AlertDialogTitle>Remove assessment from list?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove the assessment and cannot be undone. If this assessment has linked quotes or feedback, you must remove those first before deleting.
+              The assessment will be moved to the &quot;Deleted&quot; section below. Client data is kept and you can restore it anytime. Restore from the Deleted section to bring it back to the active list.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

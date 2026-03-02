@@ -25,7 +25,7 @@ import {
   crmActivities, type CrmActivity, type InsertCrmActivity
 } from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, isNull, isNotNull } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -65,8 +65,10 @@ export interface IStorage {
   // Project Assessment operations
   getAllAssessments(): Promise<ProjectAssessment[]>;
   getAssessmentById(id: number): Promise<ProjectAssessment | undefined>;
+  getDeletedAssessments(): Promise<ProjectAssessment[]>;
   updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment>;
   deleteAssessment(id: number): Promise<void>;
+  restoreAssessment(id: number): Promise<ProjectAssessment>;
   
   // Resume request operations
   createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest>;
@@ -446,27 +448,37 @@ export class DatabaseStorage implements IStorage {
     return contact || undefined;
   }
   
-  // Project Assessment operations
+  // Project Assessment operations (soft delete: deleted_at set = hidden, restore = clear deleted_at)
   async getAllAssessments(): Promise<ProjectAssessment[]> {
     return db
       .select()
       .from(projectAssessments)
+      .where(isNull(projectAssessments.deletedAt))
       .orderBy(desc(projectAssessments.id));
   }
-  
+
   async getAssessmentById(id: number): Promise<ProjectAssessment | undefined> {
     const [assessment] = await db
       .select()
       .from(projectAssessments)
-      .where(eq(projectAssessments.id, id));
+      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
     return assessment || undefined;
   }
-  
+
+  async getDeletedAssessments(): Promise<ProjectAssessment[]> {
+    return db
+      .select()
+      .from(projectAssessments)
+      .where(isNotNull(projectAssessments.deletedAt))
+      .orderBy(desc(projectAssessments.deletedAt));
+  }
+
   async updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment> {
+    const now = new Date();
     const [updated] = await db
       .update(projectAssessments)
-      .set({ status })
-      .where(eq(projectAssessments.id, id))
+      .set({ status, updatedAt: now })
+      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)))
       .returning();
     if (!updated) {
       throw new Error("Assessment not found");
@@ -475,31 +487,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAssessment(id: number): Promise<void> {
-    await db.transaction(async (tx) => {
-      // 1. Unlink invoices from quotes that belong to this assessment (preserve invoice records)
-      const quoteIds = await tx
-        .select({ id: clientQuotes.id })
-        .from(clientQuotes)
-        .where(eq(clientQuotes.assessmentId, id));
-      const ids = quoteIds.map((r) => r.id);
-      if (ids.length > 0) {
-        await tx
-          .update(clientInvoices)
-          .set({ quoteId: null })
-          .where(inArray(clientInvoices.quoteId, ids));
-      }
-      // 2. Delete feedback and quotes that reference this assessment
-      await tx.delete(clientFeedback).where(eq(clientFeedback.assessmentId, id));
-      await tx.delete(clientQuotes).where(eq(clientQuotes.assessmentId, id));
-      // 3. Delete the assessment
-      const deleted = await tx
-        .delete(projectAssessments)
-        .where(eq(projectAssessments.id, id))
-        .returning({ id: projectAssessments.id });
-      if (deleted.length === 0) {
-        throw new Error("Assessment not found");
-      }
-    });
+    const [row] = await db
+      .select({ id: projectAssessments.id })
+      .from(projectAssessments)
+      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
+    if (!row) throw new Error("Assessment not found");
+    await db
+      .update(projectAssessments)
+      .set({ deletedAt: new Date() })
+      .where(eq(projectAssessments.id, id));
+  }
+
+  async restoreAssessment(id: number): Promise<ProjectAssessment> {
+    const [restored] = await db
+      .update(projectAssessments)
+      .set({ deletedAt: null })
+      .where(eq(projectAssessments.id, id))
+      .returning();
+    if (!restored) throw new Error("Assessment not found");
+    return restored;
   }
 
   // Resume request operations

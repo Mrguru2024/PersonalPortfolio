@@ -172,7 +172,8 @@ CREATE TABLE IF NOT EXISTS project_assessments (
   pricing_breakdown JSONB,
   status TEXT DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  deleted_at TIMESTAMP
 );
 
 -- Client Quotes table (customer dashboard)
