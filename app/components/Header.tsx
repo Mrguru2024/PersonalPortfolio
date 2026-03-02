@@ -41,8 +41,14 @@ interface HeaderProps {
 
 export default function Header(_props: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user, logoutMutation } = useAuth();
+
+  // Avoid hydration mismatch: server has no session, client may have user from cookie
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
@@ -177,7 +183,7 @@ export default function Header(_props: HeaderProps) {
         {/* Right: auth + theme (original position) */}
         <div className="flex flex-1 min-w-0 justify-end items-center gap-2">
           <div className="hidden md:flex items-center gap-2">
-            {user ? (
+            {mounted && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -234,15 +240,12 @@ export default function Header(_props: HeaderProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/auth">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="flex items-center gap-2 text-sm min-h-[44px] sm:min-h-[36px]"
-                >
-                  <LogIn className="h-4 w-4 shrink-0" />
-                  <span>Login</span>
-                </Button>
+              <Link
+                href="/auth"
+                className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 min-h-[44px] sm:min-h-[36px] px-3"
+              >
+                <LogIn className="h-4 w-4 shrink-0" />
+                <span>Login</span>
               </Link>
             )}
             <ThemeToggle />
@@ -328,7 +331,7 @@ export default function Header(_props: HeaderProps) {
                 )}
 
                 <div className="pt-3 mt-3 border-t border-border/70">
-                  {user ? (
+                  {mounted && user ? (
                     <div className="space-y-2">
                       <div className="px-2 py-1 text-sm font-medium text-foreground/80">
                         Logged in as @{user.username}

@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@server/db";
-import { projectAssessments } from "@shared/schema";
-import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 
@@ -12,7 +9,7 @@ export async function GET(
   try {
     const { id: idParam } = await params;
     const id = parseInt(idParam);
-    
+
     if (isNaN(id)) {
       return NextResponse.json(
         { error: "Invalid assessment ID" },
@@ -20,11 +17,7 @@ export async function GET(
       );
     }
 
-    const [assessment] = await db
-      .select()
-      .from(projectAssessments)
-      .where(eq(projectAssessments.id, id))
-      .limit(1);
+    const assessment = await storage.getAssessmentById(id);
 
     if (!assessment) {
       return NextResponse.json(
@@ -41,7 +34,6 @@ export async function GET(
     if (user) {
       userId = user.id;
     } else {
-      // Check if user exists with this email
       const userByEmail = await storage.getUserByEmail(assessment.email);
       if (userByEmail) {
         userId = userByEmail.id;
@@ -55,7 +47,7 @@ export async function GET(
       assessment,
       requiresAccount,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching assessment:", error);
     return NextResponse.json(
       { error: "Failed to fetch assessment" },

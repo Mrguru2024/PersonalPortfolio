@@ -449,63 +449,137 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Project Assessment operations (soft delete: deleted_at set = hidden, restore = clear deleted_at)
+  // Fallback when deleted_at column does not exist yet (e.g. production before migration)
+  private static assessmentColumnsWithoutDeletedAt = {
+    id: projectAssessments.id,
+    name: projectAssessments.name,
+    email: projectAssessments.email,
+    phone: projectAssessments.phone,
+    company: projectAssessments.company,
+    role: projectAssessments.role,
+    assessmentData: projectAssessments.assessmentData,
+    pricingBreakdown: projectAssessments.pricingBreakdown,
+    status: projectAssessments.status,
+    createdAt: projectAssessments.createdAt,
+    updatedAt: projectAssessments.updatedAt,
+  };
+
+  private static isMissingColumnError(e: unknown): boolean {
+    const msg = String(e instanceof Error ? e.message : e).toLowerCase();
+    return msg.includes("deleted_at") || (msg.includes("column") && msg.includes("does not exist"));
+  }
+
   async getAllAssessments(): Promise<ProjectAssessment[]> {
-    return db
-      .select()
-      .from(projectAssessments)
-      .where(isNull(projectAssessments.deletedAt))
-      .orderBy(desc(projectAssessments.id));
+    try {
+      return await db
+        .select()
+        .from(projectAssessments)
+        .where(isNull(projectAssessments.deletedAt))
+        .orderBy(desc(projectAssessments.id));
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      return db
+        .select(DatabaseStorage.assessmentColumnsWithoutDeletedAt)
+        .from(projectAssessments)
+        .orderBy(desc(projectAssessments.id)) as Promise<ProjectAssessment[]>;
+    }
   }
 
   async getAssessmentById(id: number): Promise<ProjectAssessment | undefined> {
-    const [assessment] = await db
-      .select()
-      .from(projectAssessments)
-      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
-    return assessment || undefined;
+    try {
+      const [assessment] = await db
+        .select()
+        .from(projectAssessments)
+        .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
+      return assessment || undefined;
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      const [row] = await db
+        .select(DatabaseStorage.assessmentColumnsWithoutDeletedAt)
+        .from(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .limit(1);
+      return (row as ProjectAssessment | undefined) ?? undefined;
+    }
   }
 
   async getDeletedAssessments(): Promise<ProjectAssessment[]> {
-    return db
-      .select()
-      .from(projectAssessments)
-      .where(isNotNull(projectAssessments.deletedAt))
-      .orderBy(desc(projectAssessments.deletedAt));
+    try {
+      return await db
+        .select()
+        .from(projectAssessments)
+        .where(isNotNull(projectAssessments.deletedAt))
+        .orderBy(desc(projectAssessments.deletedAt));
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      return [];
+    }
   }
 
   async updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment> {
     const now = new Date();
-    const [updated] = await db
-      .update(projectAssessments)
-      .set({ status, updatedAt: now })
-      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)))
-      .returning();
-    if (!updated) {
-      throw new Error("Assessment not found");
+    try {
+      const [updated] = await db
+        .update(projectAssessments)
+        .set({ status, updatedAt: now })
+        .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)))
+        .returning();
+      if (!updated) throw new Error("Assessment not found");
+      return updated;
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      const [updated] = await db
+        .update(projectAssessments)
+        .set({ status, updatedAt: now })
+        .where(eq(projectAssessments.id, id))
+        .returning(DatabaseStorage.assessmentColumnsWithoutDeletedAt);
+      if (!updated) throw new Error("Assessment not found");
+      return updated as unknown as ProjectAssessment;
     }
-    return updated;
   }
 
   async deleteAssessment(id: number): Promise<void> {
-    const [row] = await db
-      .select({ id: projectAssessments.id })
-      .from(projectAssessments)
-      .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
-    if (!row) throw new Error("Assessment not found");
-    await db
-      .update(projectAssessments)
-      .set({ deletedAt: new Date() })
-      .where(eq(projectAssessments.id, id));
+    try {
+      const [row] = await db
+        .select({ id: projectAssessments.id })
+        .from(projectAssessments)
+        .where(and(eq(projectAssessments.id, id), isNull(projectAssessments.deletedAt)));
+      if (!row) throw new Error("Assessment not found");
+      await db
+        .update(projectAssessments)
+        .set({ deletedAt: new Date() })
+        .where(eq(projectAssessments.id, id));
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      const [row] = await db
+        .select({ id: projectAssessments.id })
+        .from(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .limit(1);
+      if (!row) throw new Error("Assessment not found");
+      await db.delete(projectAssessments).where(eq(projectAssessments.id, id));
+    }
   }
 
   async restoreAssessment(id: number): Promise<ProjectAssessment> {
-    const [restored] = await db
-      .update(projectAssessments)
-      .set({ deletedAt: null })
-      .where(eq(projectAssessments.id, id))
-      .returning();
-    if (!restored) throw new Error("Assessment not found");
-    return restored;
+    try {
+      const [restored] = await db
+        .update(projectAssessments)
+        .set({ deletedAt: null })
+        .where(eq(projectAssessments.id, id))
+        .returning();
+      if (!restored) throw new Error("Assessment not found");
+      return restored;
+    } catch (e) {
+      if (!DatabaseStorage.isMissingColumnError(e)) throw e;
+      const [row] = await db
+        .select(DatabaseStorage.assessmentColumnsWithoutDeletedAt)
+        .from(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .limit(1);
+      if (!row) throw new Error("Assessment not found");
+      return row as ProjectAssessment;
+    }
   }
 
   // Resume request operations

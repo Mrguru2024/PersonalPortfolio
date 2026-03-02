@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
@@ -49,15 +49,57 @@ function AssessmentResultsContent() {
   const [fetchDone, setFetchDone] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [requiresAccount, setRequiresAccount] = useState(false);
+  const lastFetchedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setFetchError(null);
-    setFetchDone(false);
     if (!assessmentId) {
       setFetchDone(true);
       setFetchError("No assessment ID in URL.");
+      lastFetchedIdRef.current = null;
       return;
     }
+    // Show cached data immediately to avoid flash on remount (e.g. after Suspense)
+    let cached: AssessmentResult | null = null;
+    try {
+      if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+        const stored = localStorage.getItem(`assessment_${assessmentId}`);
+        if (stored) cached = JSON.parse(stored) as AssessmentResult;
+      }
+    } catch {
+      // ignore
+    }
+    if (cached && cached.id === Number(assessmentId)) {
+      setAssessment(cached);
+      setFetchError(null);
+      setFetchDone(true);
+      lastFetchedIdRef.current = assessmentId;
+      // Still refresh in background (no loading state)
+      fetch(`/api/assessment/${assessmentId}`)
+        .then((res) => res.text())
+        .then((text) => {
+          if (typeof window === "undefined") return;
+          let data: { success?: boolean; assessment?: unknown; requiresAccount?: boolean } = {};
+          try {
+            if (text.trim().startsWith("{")) data = JSON.parse(text);
+          } catch {
+            return;
+          }
+          if (data.success && data.assessment) {
+            setAssessment(data.assessment as AssessmentResult);
+            setRequiresAccount(data.requiresAccount ?? false);
+            try {
+              localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
+            } catch {
+              // ignore
+            }
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+    lastFetchedIdRef.current = assessmentId;
+    setFetchError(null);
+    setFetchDone(false);
     const ac = new AbortController();
     (async () => {
       try {
@@ -78,9 +120,11 @@ function AssessmentResultsContent() {
           data = { error: res.status === 404 ? "Assessment not found." : res.status >= 500 ? "Server error. Please try again later." : res.status === 403 ? "Access denied." : "Assessment could not be loaded." };
         }
         if (res.ok && data.success && data.assessment) {
-          setAssessment(data.assessment as AssessmentResult);
+          const next = data.assessment as AssessmentResult;
+          setAssessment(next);
           setRequiresAccount(data.requiresAccount || false);
           setFetchError(null);
+          lastFetchedIdRef.current = assessmentId;
           try {
             if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
               localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
