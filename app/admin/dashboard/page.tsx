@@ -308,7 +308,7 @@ export default function AdminDashboardPage() {
   // Update assessment status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest("PATCH", `/api/admin/assessments/${id}/status`, { status });
+      const response = await apiRequest("POST", `/api/admin/assessments/${id}/status`, { status });
       return await response.json();
     },
     onSuccess: () => {
