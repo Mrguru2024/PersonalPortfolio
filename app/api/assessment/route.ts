@@ -9,37 +9,11 @@ import { storage } from "@server/storage";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
-  let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid request body", message: "Request body must be valid JSON" },
-      { status: 400 }
-    );
-  }
-  if (body == null || typeof body !== "object") {
-    return NextResponse.json(
-      { error: "Invalid request body", message: "Request body must be a JSON object" },
-      { status: 400 }
-    );
-  }
-
-  try {
+    const body = await req.json();
+    
     // Validate assessment data
-    const parseResult = projectAssessmentSchema.safeParse(body);
-    if (!parseResult.success) {
-      const err = parseResult.error;
-      const first = err.errors?.[0];
-      const message = first
-        ? [first.path.filter(Boolean).join("."), first.message].filter(Boolean).join(": ") || first.message
-        : "Validation failed";
-      return NextResponse.json(
-        { error: "Validation error", message, details: err.errors },
-        { status: 400 }
-      );
-    }
-    const validatedData = parseResult.data;
+    const validatedData = projectAssessmentSchema.parse(body);
     
     // Calculate pricing
     const pricingBreakdown = pricingService.calculatePricing(validatedData);
@@ -147,11 +121,18 @@ export async function POST(req: NextRequest) {
     });
     
     return response;
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Error processing assessment:", error);
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Failed to process assessment", message: msg },
+      { error: "Failed to process assessment" },
       { status: 500 }
     );
   }

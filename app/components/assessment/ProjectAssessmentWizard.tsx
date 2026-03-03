@@ -106,21 +106,21 @@ export function ProjectAssessmentWizard({
 
   function buildPayload(): ProjectAssessment {
     const payload = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone?.trim() || undefined,
-      company: form.company?.trim() || undefined,
-      role: form.role?.trim() || undefined,
-      projectName: form.projectName.trim(),
-      projectType: (form.projectType || "web-app") as ProjectAssessment["projectType"],
-      projectDescription: form.projectDescription.trim(),
-      targetAudience: form.targetAudience.trim(),
+      name: form.name,
+      email: form.email,
+      phone: form.phone || undefined,
+      company: form.company || undefined,
+      role: form.role || undefined,
+      projectName: form.projectName,
+      projectType: form.projectType,
+      projectDescription: form.projectDescription,
+      targetAudience: form.targetAudience,
       mainGoals: form.mainGoals,
       budgetRange: form.budgetRange || undefined,
-      preferredTimeline: (form.preferredTimeline || "flexible") as ProjectAssessment["preferredTimeline"],
-      successMetrics: form.successMetrics?.trim() || undefined,
-      additionalNotes: form.additionalNotes?.trim() || undefined,
-      platform: form.platform.length ? form.platform : (["web"] as ProjectAssessment["platform"]),
+      preferredTimeline: form.preferredTimeline,
+      successMetrics: form.successMetrics || undefined,
+      additionalNotes: form.additionalNotes || undefined,
+      platform: form.platform,
       mustHaveFeatures: form.mustHaveFeatures,
       newsletter: form.newsletter,
       paymentProcessing: false,
@@ -156,26 +156,10 @@ export function ProjectAssessmentWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload()),
-        credentials: "include",
       });
-      let data: { assessment?: { id?: number }; id?: number; error?: string; message?: string; details?: unknown[] } = {};
-      try {
-        data = await res.json();
-      } catch {
-        setError(res.statusText || "Submission failed.");
-        return;
-      }
-      if (!res.ok) {
-        const msg =
-          data.message ||
-          data.error ||
-          (Array.isArray(data.details) && data.details[0] && typeof data.details[0] === "object" && "message" in data.details[0]
-            ? String((data.details[0] as { message: string }).message)
-            : null) ||
-          "Submission failed";
-        setError(msg);
-        return;
-      }
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || data.message || "Submission failed");
       const id = data.assessment?.id ?? data.id;
       if (id) router.push(`/assessment/results?id=${id}`);
       else setError("Submission succeeded but no assessment ID returned.");

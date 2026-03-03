@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { db } from "@server/db";
-import { projectAssessments } from "@shared/schema";
+import { projectAssessments, type ProjectAssessment } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -42,7 +42,7 @@ export async function GET(
         .from(projectAssessments)
         .where(eq(projectAssessments.id, id))
         .limit(1);
-      assessment = row ?? undefined;
+      assessment = (row ? (row as ProjectAssessment) : undefined);
     }
 
     if (!assessment) {
