@@ -37,6 +37,7 @@ export async function GET(
           status: projectAssessments.status,
           createdAt: projectAssessments.createdAt,
           updatedAt: projectAssessments.updatedAt,
+          deletedAt: projectAssessments.deletedAt,
         })
         .from(projectAssessments)
         .where(eq(projectAssessments.id, id))
