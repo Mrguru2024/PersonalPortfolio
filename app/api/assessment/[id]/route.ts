@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { db } from "@server/db";
+import { projectAssessments } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -17,7 +20,29 @@ export async function GET(
       );
     }
 
-    const assessment = await storage.getAssessmentById(id);
+    let assessment = await storage.getAssessmentById(id);
+
+    // Fallback: load by id only (works when DB has no deleted_at or row was just created)
+    if (!assessment) {
+      const [row] = await db
+        .select({
+          id: projectAssessments.id,
+          name: projectAssessments.name,
+          email: projectAssessments.email,
+          phone: projectAssessments.phone,
+          company: projectAssessments.company,
+          role: projectAssessments.role,
+          assessmentData: projectAssessments.assessmentData,
+          pricingBreakdown: projectAssessments.pricingBreakdown,
+          status: projectAssessments.status,
+          createdAt: projectAssessments.createdAt,
+          updatedAt: projectAssessments.updatedAt,
+        })
+        .from(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .limit(1);
+      assessment = row ?? undefined;
+    }
 
     if (!assessment) {
       return NextResponse.json(
