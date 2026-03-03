@@ -26,6 +26,9 @@
     "db:add-customer-dashboard": "tsx scripts/add-customer-dashboard-tables.ts",
     "db:add-invoice-stripe": "tsx scripts/add-invoice-stripe-columns.ts",
     "approve-admin": "tsx scripts/approve-admin.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:email": "tsx scripts/test-email.ts",
     "lint": "next lint"
   },
@@ -124,6 +127,12 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "@replit/vite-plugin-cartographer": "^0.1.2",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.19",

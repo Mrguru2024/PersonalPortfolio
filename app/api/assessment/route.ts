@@ -9,26 +9,61 @@ import { storage } from "@server/storage";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
+  let body: unknown;
   try {
-    const body = await req.json();
-    
-    // Validate assessment data
-    const validatedData = projectAssessmentSchema.parse(body);
-    
-    // Calculate pricing
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body", message: "Request body must be valid JSON" },
+      { status: 400 }
+    );
+  }
+  if (body == null || typeof body !== "object") {
+    return NextResponse.json(
+      { error: "Invalid request body", message: "Request body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
+  const parseResult = projectAssessmentSchema.safeParse(body);
+  if (!parseResult.success) {
+    const err = parseResult.error;
+    const first = err.errors?.[0];
+    const message = first
+      ? [first.path.filter(Boolean).join("."), first.message].filter(Boolean).join(": ") || first.message
+      : "Validation failed";
+    return NextResponse.json(
+      { error: "Validation error", message, details: err.errors },
+      { status: 400 }
+    );
+  }
+  const validatedData = parseResult.data;
+
+  try {
     const pricingBreakdown = pricingService.calculatePricing(validatedData);
-    
-    // Save to database
-    const [assessment] = await db.insert(projectAssessments).values({
-      name: validatedData.name,
-      email: validatedData.email,
-      phone: validatedData.phone || null,
-      company: validatedData.company || null,
-      role: validatedData.role || null,
-      assessmentData: validatedData,
-      pricingBreakdown: pricingBreakdown,
-      status: 'pending',
-    }).returning();
+
+    const inserted = await db
+      .insert(projectAssessments)
+      .values({
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone || null,
+        company: validatedData.company || null,
+        role: validatedData.role || null,
+        assessmentData: validatedData,
+        pricingBreakdown: pricingBreakdown,
+        status: "pending",
+      })
+      .returning();
+
+    const assessment = inserted?.[0];
+    if (!assessment || typeof assessment.id !== "number") {
+      console.error("[Assessment form] Insert did not return a row:", inserted?.length, inserted);
+      return NextResponse.json(
+        { error: "Failed to save assessment", message: "Database did not acknowledge the save. Please try again." },
+        { status: 500 }
+      );
+    }
     console.log(
       `[Assessment form] Saved id=${assessment.id} email=${assessment.email} name=${assessment.name}`
     );
@@ -108,9 +143,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Store in response for client-side access
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
+      message: "Assessment saved successfully.",
       assessment: {
         id: assessment.id,
         pricingBreakdown,
@@ -119,20 +154,22 @@ export async function POST(req: NextRequest) {
         requiresAccount: !userId,
       },
     });
-    
-    return response;
-  } catch (error: any) {
-    console.error("Error processing assessment:", error);
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      );
-    }
-    
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("[Assessment form] Error processing assessment:", err.message, err.stack);
+    const isDbError =
+      err.message.includes("DATABASE_URL") ||
+      err.message.includes("connection") ||
+      err.message.includes("ECONNREFUSED") ||
+      err.message.includes("column") ||
+      err.message.includes("relation");
     return NextResponse.json(
-      { error: "Failed to process assessment" },
+      {
+        error: "Failed to process assessment",
+        message: isDbError
+          ? "A database error occurred. Please try again or contact support."
+          : "Something went wrong. Please try again.",
+      },
       { status: 500 }
     );
   }

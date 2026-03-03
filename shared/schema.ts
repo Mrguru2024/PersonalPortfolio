@@ -39,6 +39,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Session table (used by connect-pg-simple; created by scripts/create-session-table.ts)
+// Included in schema so drizzle-kit push does not propose to drop it.
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire", { withTimezone: true, precision: 6 }).notNull(),
+});
+
 // Portfolio schemas
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
@@ -440,3 +448,4 @@ export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
 export type ClientFeedback = typeof clientFeedback.$inferSelect;
 
 export * from "./crmSchema";
+export * from "./newsletterSchema";
