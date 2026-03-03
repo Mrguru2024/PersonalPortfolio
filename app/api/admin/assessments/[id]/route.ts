@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { db } from "@server/db";
+import { projectAssessments, type ProjectAssessment } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +23,33 @@ export async function GET(
     if (Number.isNaN(id)) {
       return NextResponse.json({ error: "Invalid assessment id" }, { status: 400 });
     }
-    const assessment = await storage.getAssessmentById(id);
+    let assessment: ProjectAssessment | undefined;
+    try {
+      assessment = await storage.getAssessmentById(id);
+    } catch {
+      assessment = undefined;
+    }
+    // Fallback: load by id without deleted_at so it works in prod when column is missing
+    if (!assessment) {
+      const [row] = await db
+        .select({
+          id: projectAssessments.id,
+          name: projectAssessments.name,
+          email: projectAssessments.email,
+          phone: projectAssessments.phone,
+          company: projectAssessments.company,
+          role: projectAssessments.role,
+          assessmentData: projectAssessments.assessmentData,
+          pricingBreakdown: projectAssessments.pricingBreakdown,
+          status: projectAssessments.status,
+          createdAt: projectAssessments.createdAt,
+          updatedAt: projectAssessments.updatedAt,
+        })
+        .from(projectAssessments)
+        .where(eq(projectAssessments.id, id))
+        .limit(1);
+      assessment = row ? ({ ...row, deletedAt: null } as ProjectAssessment) : undefined;
+    }
     if (!assessment) {
       return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
     }

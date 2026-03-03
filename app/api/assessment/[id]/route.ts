@@ -20,9 +20,13 @@ export async function GET(
       );
     }
 
-    let assessment = await storage.getAssessmentById(id);
-
-    // Fallback: load by id only (works when DB has no deleted_at or row was just created)
+    let assessment: ProjectAssessment | undefined;
+    try {
+      assessment = await storage.getAssessmentById(id);
+    } catch {
+      assessment = undefined;
+    }
+    // Fallback: load by id without deleted_at so it works in prod when column is missing
     if (!assessment) {
       const [row] = await db
         .select({
@@ -37,12 +41,11 @@ export async function GET(
           status: projectAssessments.status,
           createdAt: projectAssessments.createdAt,
           updatedAt: projectAssessments.updatedAt,
-          deletedAt: projectAssessments.deletedAt,
         })
         .from(projectAssessments)
         .where(eq(projectAssessments.id, id))
         .limit(1);
-      assessment = (row ? (row as ProjectAssessment) : undefined);
+      assessment = row ? ({ ...row, deletedAt: null } as ProjectAssessment) : undefined;
     }
 
     if (!assessment) {
