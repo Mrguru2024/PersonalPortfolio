@@ -223,6 +223,7 @@ export default function AdminDashboardPage() {
   }, [queryClient]);
 
   // Fetch full assessment only when View Details is opened (no refetch on focus to avoid repeated 404s for deleted items)
+  // Use fetch directly so we never show raw HTML in the UI when production returns an HTML error page
   const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
     queryFn: async () => {
@@ -231,22 +232,31 @@ export default function AdminDashboardPage() {
       if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(storageKey) === "1") {
         throw new Error("Assessment not found.");
       }
-      const response = await apiRequest("GET", `/api/admin/assessments/${selectedAssessmentId}`);
+      const response = await fetch(`/api/admin/assessments/${selectedAssessmentId}`, { credentials: "include" });
       const text = await response.text();
       let data: { error?: string } = {};
       try {
         if (text.trim().startsWith("{")) data = JSON.parse(text);
       } catch {
-        // Server may return HTML 404 page
+        // Server may return HTML 404/500 page in production
       }
       if (!response.ok) {
         if (response.status === 404 && typeof sessionStorage !== "undefined") {
           sessionStorage.setItem(storageKey, "1");
         }
-        throw new Error(data?.error ?? (response.status === 404 ? "Assessment not found." : "Failed to load"));
+        const safeMessage =
+          (typeof data?.error === "string" && data.error.trim().length > 0 && data.error.length < 500)
+            ? data.error.trim()
+            : response.status === 404
+              ? "Assessment not found."
+              : "Failed to load assessment. Try again or check the server.";
+        throw new Error(safeMessage);
       }
       if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey);
-      return data as Assessment;
+      if (data && typeof (data as Assessment).id === "number" && typeof (data as Assessment).email === "string") {
+        return data as Assessment;
+      }
+      throw new Error("Invalid response from server.");
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved && selectedAssessmentId != null,
     retry: (failureCount, error) => {

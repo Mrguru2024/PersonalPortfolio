@@ -122,6 +122,7 @@ function AssessmentResultsContent() {
       try {
         const res = await fetch(`/api/assessment/${assessmentId}`, {
           signal: ac.signal,
+          credentials: "include",
         });
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
@@ -162,10 +163,15 @@ function AssessmentResultsContent() {
               // ignore
             }
           }
+          const rawErr = typeof data?.error === "string" ? data.error.trim() : "";
+          const safeErr =
+            rawErr.length > 0 && rawErr.length < 300 && !rawErr.toLowerCase().includes("<!doctype")
+              ? rawErr
+              : "";
           const message =
             res.status === 404
               ? "Assessment not found. It may have been deleted or the link may be incorrect."
-              : data?.error || "Assessment could not be loaded.";
+              : safeErr || "Assessment could not be loaded.";
           setFetchError(message);
         }
       } catch (err) {
