@@ -44,6 +44,7 @@ function AssessmentResultsContent() {
   const router = useRouter();
   const { user } = useAuth();
   const assessmentId = searchParams.get("id");
+  const isFreshSubmission = searchParams.get("fresh") === "1";
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchDone, setFetchDone] = useState(false);
@@ -58,17 +59,18 @@ function AssessmentResultsContent() {
       lastFetchedIdRef.current = null;
       return;
     }
-    // Skip refetch if we already got 404 for this id this session (avoids repeated 404s on remount/Suspense)
-    try {
-      if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
-        if (sessionStorage.getItem(`assessment_404_${assessmentId}`) === "1") {
-          setFetchError("Assessment not found. It may have been deleted or the link may be incorrect.");
-          setFetchDone(true);
-          return;
+    // Fresh submission should bypass stale local/session cache and force server read.
+    if (isFreshSubmission) {
+      try {
+        if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+          localStorage.removeItem(`assessment_${assessmentId}`);
         }
+        if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+          sessionStorage.removeItem(`assessment_404_${assessmentId}`);
+        }
+      } catch {
+        // ignore cache access failures
       }
-    } catch {
-      // ignore
     }
     // Show cached data immediately to avoid flash on remount (e.g. after Suspense)
     let cached: AssessmentResult | null = null;
@@ -80,7 +82,7 @@ function AssessmentResultsContent() {
     } catch {
       // ignore
     }
-    if (cached && cached.id === Number(assessmentId)) {
+    if (!isFreshSubmission && cached && cached.id === Number(assessmentId)) {
       setAssessment(cached);
       setFetchError(null);
       setFetchDone(true);
@@ -97,11 +99,6 @@ function AssessmentResultsContent() {
             return;
           }
           if (data.success && data.assessment) {
-            try {
-              sessionStorage.removeItem(`assessment_404_${assessmentId}`);
-            } catch {
-              // ignore
-            }
             setAssessment(data.assessment as AssessmentResult);
             setRequiresAccount(data.requiresAccount ?? false);
             try {
@@ -120,13 +117,30 @@ function AssessmentResultsContent() {
     const ac = new AbortController();
     (async () => {
       try {
-        const res = await fetch(`/api/assessment/${assessmentId}`, {
-          signal: ac.signal,
-          credentials: "include",
-        });
-        const contentType = res.headers.get("content-type") || "";
-        const text = await res.text();
-        if (ac.signal.aborted) return;
+        const fetchAssessment = async (
+          attempt = 0
+        ): Promise<{ res: Response; contentType: string; text: string } | null> => {
+          const res = await fetch(`/api/assessment/${assessmentId}`, {
+            signal: ac.signal,
+            credentials: "include",
+          });
+          const contentType = res.headers.get("content-type") || "";
+          const text = await res.text();
+          if (ac.signal.aborted) return null;
+
+          // New submissions may hit a short propagation delay; retry not-found briefly.
+          if (isFreshSubmission && res.status === 404 && attempt < 4) {
+            await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+            if (ac.signal.aborted) return null;
+            return fetchAssessment(attempt + 1);
+          }
+
+          return { res, contentType, text };
+        };
+
+        const fetched = await fetchAssessment();
+        if (!fetched || ac.signal.aborted) return;
+        const { res, contentType, text } = fetched;
         let data: { success?: boolean; assessment?: unknown; error?: string; requiresAccount?: boolean } = {};
         if (contentType.includes("application/json") && text.trim().startsWith("{")) {
           try {
@@ -139,11 +153,6 @@ function AssessmentResultsContent() {
         }
         if (res.ok && data.success && data.assessment) {
           const next = data.assessment as AssessmentResult;
-          try {
-            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(`assessment_404_${assessmentId}`);
-          } catch {
-            // ignore
-          }
           setAssessment(next);
           setRequiresAccount(data.requiresAccount || false);
           setFetchError(null);
@@ -156,13 +165,6 @@ function AssessmentResultsContent() {
             console.warn("Failed to save to localStorage:", e);
           }
         } else {
-          if (res.status === 404) {
-            try {
-              if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`assessment_404_${assessmentId}`, "1");
-            } catch {
-              // ignore
-            }
-          }
           const rawErr = typeof data?.error === "string" ? data.error.trim() : "";
           const safeErr =
             rawErr.length > 0 && rawErr.length < 300 && !rawErr.toLowerCase().includes("<!doctype")
@@ -194,7 +196,7 @@ function AssessmentResultsContent() {
       }
     })();
     return () => ac.abort();
-  }, [assessmentId]);
+  }, [assessmentId, isFreshSubmission]);
 
   if (!fetchDone) {
     return (
