@@ -193,18 +193,18 @@ export const projects: Project[] = [
     tags: ["SaaS", "Automotive", "Security"],
     category: "business",
     githubUrl: "https://github.com/Mrguru2024",
-    liveUrl: "https://keycodehelp.com",
+    liveUrl: "https://www.keycode.help",
     details:
       "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
     demoType: "iframe",
-    demoUrl: "https://keycodehelp.com",
+    demoUrl: "https://www.keycode.help",
     demoConfig: {
       width: "100%",
       height: "600px",
       allowFullscreen: true,
       isResponsive: true,
     },
-    techStack: ["HTML", "CSS", "JavaScript", "PHP", "MySQL"],
+    techStack: ["Next.js", "TypeScript", "Tailwind CSS", "Prisma ORM", "MySQL"],
     synopsis: {
       tagline: "Automotive keycodes. Verified. Secured. Delivered.",
       description:
@@ -214,7 +214,7 @@ export const projects: Project[] = [
           "No centralized, trustworthy, and secure platform existed for independent pros to access keycodes or track VIN-to-key workflows legally and efficiently.",
         role: [
           "Founder / Full Stack Developer",
-          "UI/UX Designer (Wix + Velo & migrating to Next.js)",
+          "UI/UX Designer (platform redesign + Next.js migration)",
           "Market Researcher & Industry Liaison",
         ],
         stack: [
@@ -287,10 +287,10 @@ export const projects: Project[] = [
     techStack: [
       "React",
       "Vite",
-      "TailwindCSS",
+      "Tailwind CSS",
       "Express",
       "PostgreSQL",
-      "Chart.js",
+      "Recharts",
     ],
     synopsis: {
       tagline: "Financial Intelligence. Visualized. Personalized.",
@@ -308,8 +308,8 @@ export const projects: Project[] = [
           "React + Vite (Frontend)",
           "Express + Node.js (Backend)",
           "PostgreSQL (Database)",
-          "Chart.js (Visualizations)",
-          "TailwindCSS (Styling)",
+          "Recharts (Visualizations)",
+          "Tailwind CSS (Styling)",
           "React Query (Data Fetching)",
         ],
         features: [
@@ -338,22 +338,22 @@ export const projects: Project[] = [
       "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
     tags: ["Business", "Service", "Automotive"],
     category: "business",
-    liveUrl: "https://metrepairs.com",
+    liveUrl: "https://www.metrepairs.com",
     details:
       "M.E.T Repairs is a business website that offers electronic repair and automotive locksmith services. The site includes service descriptions, appointment scheduling, and customer testimonials.",
     demoType: "iframe",
-    demoUrl: "https://metrepairs.com",
+    demoUrl: "https://www.metrepairs.com",
     demoConfig: {
       width: "100%",
       height: "600px",
       allowFullscreen: true,
       isResponsive: true,
     },
-    techStack: ["HTML", "CSS", "JavaScript", "Wix", "Velo"],
+    techStack: ["TypeScript", "React", "Vite", "Express", "PostgreSQL"],
     synopsis: {
       tagline: "Electronics. Automotive. Fixed & Secured.",
       description:
-        "M.E.T Repairs represents the digital transformation of my brick-and-mortar repair business, bringing specialized electronic repair and automotive locksmith services online to reach more customers. This website, developed with Wix and now being redeveloped, serves as both a digital storefront and educational resource for customers looking to understand repair options before committing. The project exemplifies how traditional service businesses can leverage technology to improve customer acquisition and service delivery.",
+        "M.E.T Repairs represents the digital transformation of my brick-and-mortar repair business, bringing specialized electronic repair and automotive locksmith services online to reach more customers. This website, now maintained on a modern TypeScript/React stack, serves as both a digital storefront and educational resource for customers looking to understand repair options before committing. The project exemplifies how traditional service businesses can leverage technology to improve customer acquisition and service delivery.",
       caseStudy: {
         problem:
           "Local repair businesses often struggle with digital presence, relying on word-of-mouth or costly advertising. Customers need to understand services and pricing before visiting, but most local repair shops lack informative, accessible online platforms.",
@@ -364,12 +364,12 @@ export const projects: Project[] = [
           "SEO Specialist",
         ],
         stack: [
-          "Wix (Platform)",
-          "Velo by Wix (JavaScript Development)",
-          "Wix Bookings (Appointment System)",
-          "Custom CSS & JavaScript",
+          "React + TypeScript (Frontend)",
+          "Vite + Tailwind CSS (Build & Styling)",
+          "Express + Node.js (Backend API)",
+          "PostgreSQL + Drizzle ORM (Data Layer)",
           "Google Business Integration",
-          "Schema.org Markup (for Local SEO)",
+          "Schema.org Markup (Local SEO)",
         ],
         features: [
           "Service categorization with transparent pricing",
