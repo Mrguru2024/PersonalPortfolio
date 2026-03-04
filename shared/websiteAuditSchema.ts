@@ -55,6 +55,13 @@ export const AD_PLATFORMS = [
 
 export const CONTACT_METHODS = ["email", "phone", "zoom"] as const;
 
+export const WEBSITE_AUDIT_STATUSES = [
+  "new",
+  "in_review",
+  "delivered",
+  "closed",
+] as const;
+
 export const AUDIT_TIMELINES = [
   "asap",
   "this-week",

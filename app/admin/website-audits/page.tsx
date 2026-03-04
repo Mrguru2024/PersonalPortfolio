@@ -1,17 +1,40 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ExternalLink, Loader2, Search, AlertTriangle } from "lucide-react";
+import {
+  ExternalLink,
+  Loader2,
+  Search,
+  AlertTriangle,
+  Download,
+  Save,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import type { WebsiteAuditSubmission } from "@shared/websiteAuditSchema";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  WEBSITE_AUDIT_STATUSES,
+  type WebsiteAuditSubmission,
+} from "@shared/websiteAuditSchema";
+
+type WebsiteAuditStatus = (typeof WEBSITE_AUDIT_STATUSES)[number];
+type WebsiteAuditAdminMeta = {
+  internalNotes?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+};
+type WebsiteAuditDataWithMeta = WebsiteAuditSubmission & {
+  __admin?: WebsiteAuditAdminMeta;
+};
 
 interface WebsiteAuditItem {
   id: number;
@@ -22,7 +45,7 @@ interface WebsiteAuditItem {
   role?: string | null;
   websiteUrl: string;
   status: string | null;
-  auditData: WebsiteAuditSubmission;
+  auditData: WebsiteAuditDataWithMeta;
   createdAt: string;
 }
 
@@ -42,9 +65,28 @@ function toTitle(value: string | undefined) {
   return value.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+function safeFormatDateTime(value?: string): string {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return format(parsed, "PPp");
+}
+
+function getAdminMeta(auditData: WebsiteAuditDataWithMeta): WebsiteAuditAdminMeta {
+  const raw = auditData?.__admin;
+  if (!raw || typeof raw !== "object") return {};
+  return raw;
+}
+
 export default function AdminWebsiteAuditsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [drafts, setDrafts] = useState<
+    Record<number, { status: WebsiteAuditStatus; internalNotes: string }>
+  >({});
+  const [savingAuditId, setSavingAuditId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -75,16 +117,77 @@ export default function AdminWebsiteAuditsPage() {
 
   const items = data?.items ?? [];
 
+  const buildDefaultDraft = (item: WebsiteAuditItem) => {
+    const status = WEBSITE_AUDIT_STATUSES.includes(item.status as WebsiteAuditStatus)
+      ? (item.status as WebsiteAuditStatus)
+      : "new";
+    const adminMeta = getAdminMeta(item.auditData);
+    return {
+      status,
+      internalNotes: adminMeta.internalNotes || "",
+    };
+  };
+
+  const getDraft = (item: WebsiteAuditItem) => drafts[item.id] || buildDefaultDraft(item);
+
+  const updateDraft = (
+    item: WebsiteAuditItem,
+    patch: Partial<{ status: WebsiteAuditStatus; internalNotes: string }>
+  ) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [item.id]: {
+        ...(prev[item.id] || buildDefaultDraft(item)),
+        ...patch,
+      },
+    }));
+  };
+
+  const saveAuditUpdates = async (item: WebsiteAuditItem) => {
+    const draft = getDraft(item);
+    setSavingAuditId(item.id);
+    try {
+      await apiRequest("PATCH", `/api/admin/website-audits/${item.id}`, {
+        status: draft.status,
+        internalNotes: draft.internalNotes,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/website-audits"] });
+      toast({
+        title: "Website audit updated",
+        description: `Saved status and internal notes for #${item.id}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not save website audit updates.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAuditId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Search className="h-6 w-6 text-primary" />
-          Website Audit Requests
-        </h1>
-        <p className="text-muted-foreground">
-          Review free audit submissions and prepare professional audit reports.
-        </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Search className="h-6 w-6 text-primary" />
+            Website Audit Requests
+          </h1>
+          <p className="text-muted-foreground">
+            Review free audit submissions and prepare professional audit reports.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <a href="/api/admin/website-audits?format=csv">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </a>
+        </Button>
       </div>
 
       {data?.missingTable ? (
@@ -115,6 +218,8 @@ export default function AdminWebsiteAuditsPage() {
       <div className="space-y-4">
         {items.map((item) => {
           const audit = item.auditData;
+          const adminMeta = getAdminMeta(audit);
+          const draft = getDraft(item);
           return (
             <Card key={item.id}>
               <CardHeader className="pb-3">
@@ -150,6 +255,60 @@ export default function AdminWebsiteAuditsPage() {
                 </div>
 
                 <Separator />
+
+                <div className="rounded-md border bg-muted/30 p-4 space-y-4">
+                  <p className="text-sm font-medium">Internal Audit Management</p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor={`audit-status-${item.id}`}>Status</Label>
+                      <select
+                        id={`audit-status-${item.id}`}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={draft.status}
+                        onChange={(e) =>
+                          updateDraft(item, { status: e.target.value as WebsiteAuditStatus })
+                        }
+                      >
+                        {WEBSITE_AUDIT_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {toTitle(status)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid gap-2 md:col-span-2">
+                      <Label htmlFor={`audit-notes-${item.id}`}>Internal Notes</Label>
+                      <Textarea
+                        id={`audit-notes-${item.id}`}
+                        rows={4}
+                        value={draft.internalNotes}
+                        onChange={(e) =>
+                          updateDraft(item, { internalNotes: e.target.value })
+                        }
+                        placeholder="Add audit findings, blockers, handoff notes, or follow-up context (admin-only)."
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      {adminMeta.updatedAt
+                        ? `Last internal update: ${safeFormatDateTime(adminMeta.updatedAt)}${adminMeta.updatedBy ? ` by @${adminMeta.updatedBy}` : ""}`
+                        : "No internal notes saved yet."}
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => saveAuditUpdates(item)}
+                      disabled={savingAuditId === item.id}
+                    >
+                      {savingAuditId === item.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Updates
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
                   <div>
