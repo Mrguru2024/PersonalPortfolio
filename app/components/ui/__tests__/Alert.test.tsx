@@ -22,7 +22,7 @@ describe('Alert', () => {
 
   it('applies destructive variant class', () => {
     const { container } = render(<Alert variant="destructive">Error</Alert>);
-    // Destructive variant uses border-destructive/50 and text-destructive
-    expect(container.firstChild?.className).toMatch(/destructive/);
+    const alert = container.firstElementChild as HTMLElement;
+    expect(alert).toHaveClass('text-destructive');
   });
 });
