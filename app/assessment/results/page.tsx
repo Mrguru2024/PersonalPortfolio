@@ -540,7 +540,11 @@ function AssessmentResultsContent() {
 
         {/* Proposal Document */}
         <Separator className="my-8" />
-        <ProposalDocument assessmentId={assessment.id} />
+        <ProposalDocument
+          assessmentId={assessment.id}
+          fallbackAssessmentData={assessmentData}
+          fallbackPricingBreakdown={pricingBreakdown}
+        />
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
