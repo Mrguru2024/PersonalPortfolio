@@ -215,7 +215,10 @@ const ContactSection = () => {
                 </span>
               </Button>
             </a>
-            <a href="/audit" className="w-full sm:w-auto block sm:inline-block">
+            <a
+              href="/schedule"
+              className="w-full sm:w-auto block sm:inline-block"
+            >
               <Button
                 size="lg"
                 variant="outline"
@@ -223,7 +226,7 @@ const ContactSection = () => {
               >
                 <span className="flex items-center justify-center gap-2">
                   <span className="whitespace-nowrap text-center">
-                    Start Free Website Audit
+                    Schedule Consultation
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>

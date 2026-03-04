@@ -121,6 +121,35 @@ export const insertWebsiteAuditSchema = createInsertSchema(websiteAudits);
 export type InsertWebsiteAudit = z.infer<typeof insertWebsiteAuditSchema>;
 export type WebsiteAudit = typeof websiteAudits.$inferSelect;
 
+// Consultation scheduling (Calendly-style workflow)
+export const consultationBookings = pgTable("consultation_bookings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  websiteUrl: text("website_url"),
+  timezone: text("timezone").notNull(),
+  topic: text("topic").notNull(),
+  notes: text("notes"),
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+  endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+  durationMinutes: integer("duration_minutes").notNull().default(30),
+  status: text("status").notNull().default("booked"), // booked, cancelled, completed
+  googleCalendarEventId: text("google_calendar_event_id"),
+  googleCalendarEventLink: text("google_calendar_event_link"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConsultationBookingSchema = createInsertSchema(
+  consultationBookings
+);
+export type InsertConsultationBooking = z.infer<
+  typeof insertConsultationBookingSchema
+>;
+export type ConsultationBooking = typeof consultationBookings.$inferSelect;
+
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
