@@ -222,17 +222,26 @@ export default function AdminDashboardPage() {
     });
   }, [queryClient]);
 
+  const openAssessmentDetails = useCallback((id: number) => {
+    // Clear stale detail cache/error so each open does a fresh lookup.
+    queryClient.removeQueries({
+      queryKey: ["/api/admin/assessments", id],
+      exact: true,
+    });
+    setCreateProposalResult(null);
+    setSelectedAssessmentId(id);
+  }, [queryClient]);
+
   // Fetch full assessment only when View Details is opened (no refetch on focus to avoid repeated 404s for deleted items)
   // Use fetch directly so we never show raw HTML in the UI when production returns an HTML error page
   const { data: selectedAssessment, isLoading: selectedAssessmentLoading, error: selectedAssessmentError } = useQuery<Assessment>({
     queryKey: ["/api/admin/assessments", selectedAssessmentId],
     queryFn: async () => {
       if (selectedAssessmentId == null) throw new Error("No id");
-      const storageKey = `admin_assessment_404_${selectedAssessmentId}`;
-      if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(storageKey) === "1") {
-        throw new Error("Assessment not found.");
-      }
-      const response = await fetch(`/api/admin/assessments/${selectedAssessmentId}`, { credentials: "include" });
+      const response = await fetch(`/api/admin/assessments/${selectedAssessmentId}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       const text = await response.text();
       let data: { error?: string } = {};
       try {
@@ -241,9 +250,6 @@ export default function AdminDashboardPage() {
         // Server may return HTML 404/500 page in production
       }
       if (!response.ok) {
-        if (response.status === 404 && typeof sessionStorage !== "undefined") {
-          sessionStorage.setItem(storageKey, "1");
-        }
         const safeMessage =
           (typeof data?.error === "string" && data.error.trim().length > 0 && data.error.length < 500)
             ? data.error.trim()
@@ -252,7 +258,6 @@ export default function AdminDashboardPage() {
               : "Failed to load assessment. Try again or check the server.";
         throw new Error(safeMessage);
       }
-      if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey);
       if (data && typeof (data as Assessment).id === "number" && typeof (data as Assessment).email === "string") {
         return data as Assessment;
       }
@@ -577,7 +582,7 @@ export default function AdminDashboardPage() {
                             </SelectContent>
                           </Select>
                           <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessmentId(assessment.id)}>
+                            <Button variant="outline" size="sm" onClick={() => openAssessmentDetails(assessment.id)}>
                               View Details
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
@@ -657,7 +662,7 @@ export default function AdminDashboardPage() {
                             </SelectContent>
                           </Select>
                           <div className="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setSelectedAssessmentId(assessment.id)}>
+                            <Button variant="outline" size="sm" onClick={() => openAssessmentDetails(assessment.id)}>
                               View Details
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => router.push(`/assessment/results?id=${assessment.id}`)}>
