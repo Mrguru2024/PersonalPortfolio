@@ -13,11 +13,11 @@ const FreeSiteAuditPromoSection = () => {
       aria-label="Free site audit offer"
     >
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-emerald-500/10 dark:from-primary/20 dark:via-primary/10 dark:to-emerald-500/20" />
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-primary/10 via-primary/5 to-emerald-500/10 dark:from-primary/20 dark:via-primary/10 dark:to-emerald-500/20" />
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
 
       <motion.div
-        className="container mx-auto px-4 sm:px-6 relative"
+        className="container mx-auto px-4 sm:px-6 relative z-10"
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
@@ -50,7 +50,7 @@ const FreeSiteAuditPromoSection = () => {
                 size="lg"
                 className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
               >
-                <Link href="/audit">
+                <Link href="/audit" aria-label="Start free website audit workflow">
                   Claim free audit
                   <ArrowRight className="w-4 h-4" />
                 </Link>
