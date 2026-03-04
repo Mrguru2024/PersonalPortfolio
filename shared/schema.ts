@@ -102,6 +102,25 @@ export const insertProjectAssessmentSchema = createInsertSchema(projectAssessmen
 export type InsertProjectAssessment = z.infer<typeof insertProjectAssessmentSchema>;
 export type ProjectAssessment = typeof projectAssessments.$inferSelect;
 
+// Free Website Audit intake schema
+export const websiteAudits = pgTable("website_audits", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  role: text("role"),
+  websiteUrl: text("website_url").notNull(),
+  status: text("status").default("new"), // new, in_review, delivered, closed
+  auditData: json("audit_data").$type<any>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWebsiteAuditSchema = createInsertSchema(websiteAudits);
+export type InsertWebsiteAudit = z.infer<typeof insertWebsiteAuditSchema>;
+export type WebsiteAudit = typeof websiteAudits.$inferSelect;
+
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),

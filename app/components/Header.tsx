@@ -19,6 +19,7 @@ import {
   BarChart3,
   Users,
   Contact,
+  Search,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -69,6 +70,7 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Website Audits", href: "/admin/website-audits", icon: Search },
     { name: "CRM", href: "/admin/crm", icon: Contact },
     { name: "Blog", href: "/admin/blog", icon: FileText },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3 },
@@ -141,16 +143,24 @@ export default function Header(_props: HeaderProps) {
         {/* Center: nav */}
         <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
           {isHomePage ? (
-            navItems.map((item) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => scrollToSection(item.href)}
+            <>
+              {navItems.map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => scrollToSection(item.href)}
+                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+                >
+                  {item.name}
+                </button>
+              ))}
+              <Link
+                href="/audit"
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
-                {item.name}
-              </button>
-            ))
+                Free Audit
+              </Link>
+            </>
           ) : (
             <>
               <Link
@@ -170,6 +180,12 @@ export default function Header(_props: HeaderProps) {
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
                 Resume
+              </Link>
+              <Link
+                href="/audit"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Free Audit
               </Link>
               <Link
                 href="/generate-images"
@@ -287,16 +303,25 @@ export default function Header(_props: HeaderProps) {
             <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
               <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
                 {isHomePage ? (
-                  navItems.map((item) => (
-                    <button
-                      key={item.name}
-                      type="button"
-                      onClick={() => scrollToSection(item.href)}
-                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                  <>
+                    {navItems.map((item) => (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => scrollToSection(item.href)}
+                        className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      >
+                        {item.name}
+                      </button>
+                    ))}
+                    <Link
+                      href="/audit"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
                     >
-                      {item.name}
-                    </button>
-                  ))
+                      Free Audit
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link
@@ -319,6 +344,13 @@ export default function Header(_props: HeaderProps) {
                       onClick={closeMobileMenu}
                     >
                       Resume
+                    </Link>
+                    <Link
+                      href="/audit"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Free Audit
                     </Link>
                     <Link
                       href="/generate-images"

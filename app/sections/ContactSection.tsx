@@ -215,6 +215,20 @@ const ContactSection = () => {
                 </span>
               </Button>
             </a>
+            <a href="/audit" className="w-full sm:w-auto block sm:inline-block">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <span className="whitespace-nowrap text-center">
+                    Start Free Website Audit
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </span>
+              </Button>
+            </a>
           </div>
         </motion.div>
 

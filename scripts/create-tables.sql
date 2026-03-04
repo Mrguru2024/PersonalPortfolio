@@ -176,6 +176,21 @@ CREATE TABLE IF NOT EXISTS project_assessments (
   deleted_at TIMESTAMP
 );
 
+-- Website audit intake table
+CREATE TABLE IF NOT EXISTS website_audits (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  company TEXT,
+  role TEXT,
+  website_url TEXT NOT NULL,
+  status TEXT DEFAULT 'new',
+  audit_data JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
 -- Client Quotes table (customer dashboard)
 CREATE TABLE IF NOT EXISTS client_quotes (
   id SERIAL PRIMARY KEY,

@@ -510,6 +510,19 @@ function ServicesSection() {
                     </span>
                   </Link>
                 </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                >
+                  <Link href="/audit">
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="whitespace-nowrap">Free Website</span>
+                      <span className="whitespace-nowrap">Audit</span>
+                    </span>
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

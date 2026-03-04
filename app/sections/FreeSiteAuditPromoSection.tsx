@@ -3,13 +3,9 @@
 import { motion } from "framer-motion";
 import { Search, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const FreeSiteAuditPromoSection = () => {
-  const scrollToContact = () => {
-    const el = document.getElementById("contact");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <section
       id="site-audit-promo"
@@ -50,12 +46,14 @@ const FreeSiteAuditPromoSection = () => {
             </div>
             <div className="shrink-0">
               <Button
+                asChild
                 size="lg"
-                onClick={scrollToContact}
                 className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
               >
-                Claim free audit
-                <ArrowRight className="w-4 h-4" />
+                <Link href="/audit">
+                  Claim free audit
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </Button>
             </div>
           </div>
