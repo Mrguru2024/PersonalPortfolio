@@ -120,19 +120,25 @@ export function validateConsultationSlotWindow(
 }
 
 async function getBookedIntervalsForRange(startUtc: DateTime, endUtc: DateTime) {
-  return db
-    .select({
-      scheduledAt: consultationBookings.scheduledAt,
-      endAt: consultationBookings.endAt,
-    })
-    .from(consultationBookings)
-    .where(
-      and(
-        eq(consultationBookings.status, "booked"),
-        lt(consultationBookings.scheduledAt, endUtc.toJSDate()),
-        gt(consultationBookings.endAt, startUtc.toJSDate())
-      )
-    );
+  try {
+    return await db
+      .select({
+        scheduledAt: consultationBookings.scheduledAt,
+        endAt: consultationBookings.endAt,
+      })
+      .from(consultationBookings)
+      .where(
+        and(
+          eq(consultationBookings.status, "booked"),
+          lt(consultationBookings.scheduledAt, endUtc.toJSDate()),
+          gt(consultationBookings.endAt, startUtc.toJSDate())
+        )
+      );
+  } catch (error) {
+    // Keep scheduling UI available even if booking history lookup fails.
+    console.warn("Consultation booking lookup failed; continuing without conflicts.", error);
+    return [];
+  }
 }
 
 function overlaps(

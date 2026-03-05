@@ -92,6 +92,7 @@ export function ConsultationScheduler() {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [availabilityReloadNonce, setAvailabilityReloadNonce] = useState(0);
   const [customTime, setCustomTime] = useState("");
   const [customTimeError, setCustomTimeError] = useState<string | null>(null);
 
@@ -134,18 +135,52 @@ export function ConsultationScheduler() {
       setCustomTimeError(null);
       setSelectedSlot(null);
       try {
-        const res = await fetch(
-          `/api/schedule/availability?date=${encodeURIComponent(
-            selectedDateIso
-          )}&timezone=${encodeURIComponent(
-            timezone
-          )}&durationMinutes=${durationMinutes}`,
-          { credentials: "include", cache: "no-store" }
-        );
-        const payload = await res.json();
-        if (!res.ok) {
-          throw new Error(payload?.message || "Failed to load availability.");
+        const params = new URLSearchParams({
+          date: selectedDateIso,
+          timezone,
+          durationMinutes: String(durationMinutes),
+        });
+        const url = `/api/schedule/availability?${params.toString()}`;
+
+        let payload: unknown = null;
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const res = await fetch(url, { credentials: "include", cache: "no-store" });
+          const text = await res.text();
+          let parsed: unknown = null;
+          try {
+            parsed = text ? JSON.parse(text) : null;
+          } catch {
+            parsed = null;
+          }
+          payload = parsed;
+
+          if (res.ok) {
+            lastError = null;
+            break;
+          }
+
+          const message =
+            payload &&
+            typeof payload === "object" &&
+            "message" in payload &&
+            typeof (payload as { message?: unknown }).message === "string"
+              ? (payload as { message: string }).message
+              : text?.trim() || "Failed to load availability.";
+
+          lastError = new Error(message);
+          if (res.status < 500 || attempt === 1) {
+            break;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
         }
+
+        if (lastError) {
+          throw lastError;
+        }
+
         if (!ignore) {
           setAvailability(payload as AvailabilityResponse);
         }
@@ -169,7 +204,7 @@ export function ConsultationScheduler() {
     return () => {
       ignore = true;
     };
-  }, [selectedDateIso, timezone, durationMinutes]);
+  }, [selectedDateIso, timezone, durationMinutes, availabilityReloadNonce]);
 
   const selectCustomTime = () => {
     setCustomTimeError(null);
@@ -449,12 +484,12 @@ export function ConsultationScheduler() {
               </div>
             </div>
 
-            <div className="rounded-md border p-2 sm:p-3">
+            <div className="rounded-md border p-2 sm:p-3 overflow-x-auto">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="mx-auto w-fit"
+                className="mx-auto min-w-[272px]"
                 disabled={(date) => {
                   const now = new Date();
                   now.setHours(0, 0, 0, 0);
@@ -477,7 +512,17 @@ export function ConsultationScheduler() {
                   Loading available slots...
                 </div>
               ) : availabilityError ? (
-                <p className="text-sm text-destructive">{availabilityError}</p>
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive">{availabilityError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAvailabilityReloadNonce((value) => value + 1)}
+                  >
+                    Retry loading times
+                  </Button>
+                </div>
               ) : availability?.slots?.length ? (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {availability.slots.map((slot) => (
