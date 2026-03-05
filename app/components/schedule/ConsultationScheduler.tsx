@@ -449,23 +449,12 @@ export function ConsultationScheduler() {
               </div>
             </div>
 
-            <div className="rounded-md border p-2 sm:p-3 overflow-x-auto">
+            <div className="rounded-md border p-2 sm:p-3">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="mx-auto w-full min-w-[280px] sm:min-w-[320px]"
-                classNames={{
-                  months: "w-full",
-                  month: "w-full",
-                  table: "w-full border-collapse",
-                  head_row: "grid grid-cols-7",
-                  row: "grid grid-cols-7 mt-1",
-                  head_cell:
-                    "text-center text-muted-foreground text-[11px] sm:text-xs font-medium py-1",
-                  cell: "h-9 sm:h-10 p-0 text-center",
-                  day: "h-9 sm:h-10 w-full max-w-[2.25rem] sm:max-w-[2.5rem] mx-auto",
-                }}
+                className="mx-auto w-fit"
                 disabled={(date) => {
                   const now = new Date();
                   now.setHours(0, 0, 0, 0);
