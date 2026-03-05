@@ -41,6 +41,11 @@ export interface ConsultationAvailabilityResult {
   slots: ConsultationAvailabilitySlot[];
 }
 
+export interface ConsultationSlotValidationResult {
+  isValid: boolean;
+  reason?: string;
+}
+
 export function isValidTimeZone(timezone: string): boolean {
   return DateTime.now().setZone(timezone).isValid;
 }
@@ -50,6 +55,68 @@ export function normalizeTimeZone(timezone: string | undefined): string {
     return timezone;
   }
   return HOST_TIMEZONE;
+}
+
+export function validateConsultationSlotWindow(
+  startUtc: DateTime,
+  durationMinutes: number
+): ConsultationSlotValidationResult {
+  if (!startUtc.isValid) {
+    return { isValid: false, reason: "Invalid selected time." };
+  }
+
+  const hostStart = startUtc.toUTC().setZone(HOST_TIMEZONE);
+  const hostEnd = hostStart.plus({ minutes: durationMinutes });
+  const hostNowPlusNotice = DateTime.now()
+    .setZone(HOST_TIMEZONE)
+    .plus({ minutes: MIN_NOTICE_MINUTES });
+  const hostLatestAllowed = DateTime.now()
+    .setZone(HOST_TIMEZONE)
+    .plus({ days: MAX_DAYS_AHEAD })
+    .endOf("day");
+
+  if (!WORKING_DAY_SET.has(hostStart.weekday)) {
+    return {
+      isValid: false,
+      reason: "Selected day is outside available consultation days.",
+    };
+  }
+
+  if (hostStart < hostNowPlusNotice) {
+    return {
+      isValid: false,
+      reason: `Please choose a time at least ${MIN_NOTICE_MINUTES} minutes from now.`,
+    };
+  }
+
+  if (hostStart > hostLatestAllowed) {
+    return {
+      isValid: false,
+      reason: `Please select a date within ${MAX_DAYS_AHEAD} days.`,
+    };
+  }
+
+  const dayStart = hostStart.startOf("day").set({
+    hour: START_HOUR,
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+  const dayEnd = hostStart.startOf("day").set({
+    hour: END_HOUR,
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+
+  if (hostStart < dayStart || hostEnd > dayEnd) {
+    return {
+      isValid: false,
+      reason: "Selected time is outside consultation working hours.",
+    };
+  }
+
+  return { isValid: true };
 }
 
 async function getBookedIntervalsForRange(startUtc: DateTime, endUtc: DateTime) {
@@ -162,6 +229,12 @@ export async function getConsultationAvailability(params: {
       slotStart = slotStart.plus({ minutes: SLOT_INTERVAL_MINUTES })
     ) {
       if (slotStart < hostNowPlusNotice) continue;
+
+      const windowCheck = validateConsultationSlotWindow(
+        slotStart.toUTC(),
+        durationMinutes
+      );
+      if (!windowCheck.isValid) continue;
 
       const slotEnd = slotStart.plus({ minutes: durationMinutes });
       const viewerStart = slotStart.setZone(timezone);

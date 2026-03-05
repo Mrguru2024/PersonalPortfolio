@@ -92,6 +92,8 @@ export function ConsultationScheduler() {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [customTime, setCustomTime] = useState("");
+  const [customTimeError, setCustomTimeError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -110,6 +112,13 @@ export function ConsultationScheduler() {
     () => (selectedDate ? toIsoDate(selectedDate) : null),
     [selectedDate]
   );
+  const selectedSlotDisplay = useMemo(() => {
+    if (!selectedSlot) return null;
+    const dt = DateTime.fromISO(selectedSlot.startIso, { zone: "utc" }).setZone(
+      timezone
+    );
+    return dt.isValid ? dt.toFormat("cccc, LLL d · h:mm a") : null;
+  }, [selectedSlot, timezone]);
 
   useEffect(() => {
     if (!selectedDateIso) {
@@ -122,6 +131,7 @@ export function ConsultationScheduler() {
     const loadAvailability = async () => {
       setLoadingSlots(true);
       setAvailabilityError(null);
+      setCustomTimeError(null);
       setSelectedSlot(null);
       try {
         const res = await fetch(
@@ -160,6 +170,44 @@ export function ConsultationScheduler() {
       ignore = true;
     };
   }, [selectedDateIso, timezone, durationMinutes]);
+
+  const selectCustomTime = () => {
+    setCustomTimeError(null);
+    if (!selectedDateIso) {
+      setCustomTimeError("Select a date first.");
+      return;
+    }
+    if (!customTime) {
+      setCustomTimeError("Enter a custom time.");
+      return;
+    }
+
+    const localDateTime = DateTime.fromISO(`${selectedDateIso}T${customTime}`, {
+      zone: timezone,
+    });
+    if (!localDateTime.isValid) {
+      setCustomTimeError("Custom time is invalid for this timezone.");
+      return;
+    }
+
+    const startIso = localDateTime.toUTC().toISO();
+    const endIso = localDateTime
+      .plus({ minutes: durationMinutes })
+      .toUTC()
+      .toISO();
+    if (!startIso || !endIso) {
+      setCustomTimeError("Could not parse selected custom time.");
+      return;
+    }
+
+    const hostTimezone = availability?.hostTimezone || "America/New_York";
+    setSelectedSlot({
+      startIso,
+      endIso,
+      label: localDateTime.toFormat("h:mm a"),
+      hostLabel: localDateTime.setZone(hostTimezone).toFormat("h:mm a"),
+    });
+  };
 
   const canSubmit =
     Boolean(name.trim()) &&
@@ -265,7 +313,7 @@ export function ConsultationScheduler() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
+    <div className="container mx-auto max-w-7xl px-3 py-6 sm:px-4 sm:py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <CalendarClock className="h-7 w-7 text-primary" />
@@ -401,11 +449,23 @@ export function ConsultationScheduler() {
               </div>
             </div>
 
-            <div className="rounded-md border p-2">
+            <div className="rounded-md border p-2 sm:p-3 overflow-x-auto">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
+                className="mx-auto w-full min-w-[280px] sm:min-w-[320px]"
+                classNames={{
+                  months: "w-full",
+                  month: "w-full",
+                  table: "w-full border-collapse",
+                  head_row: "grid grid-cols-7",
+                  row: "grid grid-cols-7 mt-1",
+                  head_cell:
+                    "text-center text-muted-foreground text-[11px] sm:text-xs font-medium py-1",
+                  cell: "h-9 sm:h-10 p-0 text-center",
+                  day: "h-9 sm:h-10 w-full max-w-[2.25rem] sm:max-w-[2.5rem] mx-auto",
+                }}
                 disabled={(date) => {
                   const now = new Date();
                   now.setHours(0, 0, 0, 0);
@@ -440,7 +500,11 @@ export function ConsultationScheduler() {
                           ? "default"
                           : "outline"
                       }
-                      onClick={() => setSelectedSlot(slot)}
+                      onClick={() => {
+                        setSelectedSlot(slot);
+                        setCustomTime("");
+                        setCustomTimeError(null);
+                      }}
                     >
                       {slot.label}
                     </Button>
@@ -452,6 +516,43 @@ export function ConsultationScheduler() {
                 </p>
               )}
             </div>
+
+            <div className="space-y-2 rounded-md border p-3">
+              <p className="text-sm font-medium">Prefer a custom time?</p>
+              <p className="text-xs text-muted-foreground">
+                Enter your own local time. We will validate availability and
+                working-hours rules when booking.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="grid gap-2 sm:w-44">
+                  <Label htmlFor="custom-time">Custom time</Label>
+                  <Input
+                    id="custom-time"
+                    type="time"
+                    step={300}
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={selectCustomTime}
+                  className="sm:w-auto"
+                >
+                  Use custom time
+                </Button>
+              </div>
+              {customTimeError ? (
+                <p className="text-sm text-destructive">{customTimeError}</p>
+              ) : null}
+            </div>
+
+            {selectedSlotDisplay ? (
+              <p className="text-sm text-muted-foreground">
+                Selected: <span className="font-medium text-foreground">{selectedSlotDisplay}</span>
+              </p>
+            ) : null}
 
             <label className="flex items-start gap-2 text-sm">
               <input

@@ -4,9 +4,9 @@ import { db } from "@server/db";
 import { consultationBookings } from "@shared/schema";
 import { consultationBookingSchema } from "@shared/consultationSchema";
 import {
-  getConsultationAvailability,
   isConsultationSlotAvailable,
   normalizeTimeZone,
+  validateConsultationSlotWindow,
 } from "@server/services/consultationSchedulerService";
 import { emailService } from "@server/services/emailService";
 import { googleCalendarService } from "@server/services/googleCalendarService";
@@ -60,34 +60,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const selectedDateInViewerZone = startUtc.setZone(timezone).toISODate();
-  if (!selectedDateInViewerZone) {
+  const normalizedStartIso = startUtc.toISO();
+  if (!normalizedStartIso) {
     return NextResponse.json(
       {
         error: "Validation error",
-        message: "Could not determine selected date from timezone.",
+        message: "Selected start time could not be parsed.",
       },
       { status: 400 }
     );
   }
 
-  // Ensure slot still appears in current availability to prevent race conditions.
-  const availability = await getConsultationAvailability({
-    date: selectedDateInViewerZone,
-    timezone,
-    durationMinutes: validated.durationMinutes,
-  });
-  const normalizedStartIso = startUtc.toISO();
-  const isInAvailableList = availability.slots.some(
-    (slot) => slot.startIso === normalizedStartIso
+  const windowCheck = validateConsultationSlotWindow(
+    startUtc,
+    validated.durationMinutes
   );
-  if (!isInAvailableList) {
+  if (!windowCheck.isValid) {
     return NextResponse.json(
       {
-        error: "Slot unavailable",
-        message: "That slot is no longer available. Please choose another time.",
+        error: "Invalid time selection",
+        message:
+          windowCheck.reason ||
+          "Selected time is outside allowed scheduling window.",
       },
-      { status: 409 }
+      { status: 400 }
     );
   }
 
