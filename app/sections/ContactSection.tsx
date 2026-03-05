@@ -18,6 +18,7 @@ import {
   Github,
   Linkedin,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { NoSSR } from "@/components/NoSSR";
 import { AIAssistant } from "@/components/assessment/AIAssistant";
@@ -198,14 +199,12 @@ const ContactSection = () => {
             details and I'll respond with a clear plan and next steps.
           </p>
           <div className="flex justify-center gap-4">
-            <a
-              href="/assessment"
-              className="w-full sm:w-auto block sm:inline-block"
+            <Button
+              asChild
+              size="lg"
+              className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
-              >
+              <Link href="/assessment" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardCheck className="h-4 w-4 shrink-0" />
                   <span className="whitespace-nowrap text-center">
@@ -213,25 +212,23 @@ const ContactSection = () => {
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>
-              </Button>
-            </a>
-            <a
-              href="/schedule"
-              className="w-full sm:w-auto block sm:inline-block"
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
-              >
+              <Link href="/schedule" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <span className="whitespace-nowrap text-center">
                     Schedule Consultation
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>
-              </Button>
-            </a>
+              </Link>
+            </Button>
           </div>
         </motion.div>
 
