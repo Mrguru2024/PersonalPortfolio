@@ -93,10 +93,10 @@ const HeroSection = () => {
               transition={{ delay: 0.3, duration: 0.7 }}
               className="text-glow block"
             >
-              Build a Website That
+              Build Digital Systems That Turn
             </motion.span>
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
-              Converts Visitors Into Revenue
+              Website Visitors Into Revenue
             </span>
           </motion.h1>
 
@@ -112,7 +112,7 @@ const HeroSection = () => {
             className="text-xl md:text-2xl text-foreground mb-4"
           >
             <span className="font-medium">
-              Ascendra Technologies · Full-Stack Development & Automation Systems
+              Custom websites, automation systems, and scalable platforms built for businesses ready to grow.
             </span>
           </motion.div>
 

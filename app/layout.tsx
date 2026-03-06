@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
+import SiteFooterCTA from "./components/SiteFooterCTA";
 
 const baseUrl = "https://www.ascendra.tech";
 
@@ -61,6 +62,7 @@ export default function RootLayout({
           <main className="relative min-w-0 overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
             {children}
           </main>
+          <SiteFooterCTA />
         </Providers>
       </body>
     </html>

@@ -45,10 +45,10 @@ export default function Blog() {
 
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])));
   const seoTopics = [
-    "contractor website lead generation",
-    "local business marketing systems",
-    "Next.js development for startups",
-    "automation for service businesses",
+    "Why most contractor websites fail to generate leads",
+    "The hidden cost of cheap websites",
+    "Next.js vs WordPress for scaling businesses",
+    "How local businesses lose customers online",
   ];
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
