@@ -32,7 +32,7 @@ export function PersonaLandingPage({
   caseExamples,
 }: PersonaLandingPageProps) {
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-10 sm:py-14">
+    <div className="container mx-auto max-w-6xl px-4 py-8 sm:py-12">
       <PageSEO
         title={`${title} | Ascendra Technologies`}
         description={heroDescription}
@@ -40,20 +40,29 @@ export function PersonaLandingPage({
         schemaType="WebPage"
       />
 
-      <section className="space-y-6 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">{title}</h1>
+      <section className="space-y-6 text-center rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-purple-600/10 p-5 sm:p-8">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-balance">{title}</h1>
         <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
           {subtitle}
         </p>
         <p className="text-muted-foreground max-w-3xl mx-auto">{heroDescription}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Button asChild size="lg" className="w-full sm:w-auto">
+          <Button
+            asChild
+            size="lg"
+            className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+          >
             <Link href="/audit">
               <Search className="mr-2 h-4 w-4" />
               Get Your Free Website Growth Audit
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+          >
             <Link href="/schedule">
               Book a Strategy Call
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -63,7 +72,7 @@ export function PersonaLandingPage({
       </section>
 
       <section className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle>Pain Points We Solve</CardTitle>
           </CardHeader>
@@ -76,7 +85,7 @@ export function PersonaLandingPage({
             ))}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle>Outcomes You Can Expect</CardTitle>
           </CardHeader>
@@ -111,7 +120,7 @@ export function PersonaLandingPage({
         <h2 className="text-2xl font-semibold mb-4">Case-Style Examples</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {caseExamples.map((example) => (
-            <Card key={example.title}>
+            <Card key={example.title} className="h-full">
               <CardHeader>
                 <CardTitle className="text-lg">{example.title}</CardTitle>
               </CardHeader>

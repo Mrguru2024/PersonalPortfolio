@@ -28,13 +28,20 @@ export default function SiteFooterCTA() {
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button asChild className="w-full sm:w-auto">
+            <Button
+              asChild
+              className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+            >
               <Link href="/audit">
                 <Search className="mr-2 h-4 w-4" />
                 Get Your Free Website Growth Audit
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Button
+              asChild
+              variant="outline"
+              className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+            >
               <Link href="/schedule">
                 Book a Strategy Call
                 <ArrowRight className="ml-2 h-4 w-4" />

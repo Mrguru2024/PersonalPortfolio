@@ -38,13 +38,22 @@ export function PrimaryFunnelCTA({
           </h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">{description}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Button asChild size="lg" className="w-full sm:w-auto">
+            <Button
+              asChild
+              size="lg"
+              className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+            >
               <Link href="/audit">
                 <Search className="mr-2 h-4 w-4" />
                 Get Your Free Website Growth Audit
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto h-auto px-4 py-3 whitespace-normal text-center leading-snug"
+            >
               <Link href="/schedule">
                 Book a Strategy Call
                 <ArrowRight className="ml-2 h-4 w-4" />
