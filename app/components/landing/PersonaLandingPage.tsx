@@ -5,7 +5,6 @@ import { ArrowRight, CheckCircle2, Search } from "lucide-react";
 import { PageSEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 
 export interface PersonaLandingPageProps {
   slug: string;
@@ -132,9 +131,6 @@ export function PersonaLandingPage({
         </div>
       </section>
 
-      <section className="mt-10">
-        <PrimaryFunnelCTA />
-      </section>
     </div>
   );
 }

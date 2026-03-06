@@ -398,9 +398,8 @@ function ServicesSection() {
             Revenue-Focused Development Services
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            We design and build conversion-ready websites, automation workflows,
-            and scalable products for contractors, local businesses, and startup
-            founders.
+            Choose the delivery path that matches your current stage, then scale with
+            clear priorities, measurable milestones, and production-ready implementation.
           </p>
         </motion.div>
 

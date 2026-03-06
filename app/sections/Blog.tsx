@@ -87,8 +87,8 @@ export default function Blog() {
             className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
             variants={itemVariants}
           >
-            I share my knowledge and experience through articles on web
-            development, design trends, and tech industry insights.
+            Practical growth content for contractors, local businesses, and startups:
+            conversion systems, technical SEO, performance, and scalable product delivery.
           </motion.p>
 
           {isLoading ? (

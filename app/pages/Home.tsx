@@ -459,15 +459,6 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
-      <section className="py-6 sm:py-10">
-        <div className="container mx-auto px-4">
-          <PrimaryFunnelCTA
-            compact
-            title="Ready for your growth plan?"
-            description="Start with a free audit, then book a strategy call to map scope, timeline, and investment."
-          />
-        </div>
-      </section>
       <div id="contact">
         <LazyWhenVisible minHeight="min-h-[380px]">
           <ContactSection />

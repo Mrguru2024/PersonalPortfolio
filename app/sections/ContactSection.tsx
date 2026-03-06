@@ -192,11 +192,11 @@ const ContactSection = () => {
             WORK WITH ME
           </Badge>
           <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Ready to Grow Your Pipeline?
+            Ready to Scope Your Next Build?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-            Start with a free growth audit and get a conversion-focused action
-            plan for your website, funnel, and automation.
+            Choose the path that fits your stage: start with a free audit for clarity
+            or book a strategy call for direct planning.
           </p>
           <div className="flex justify-center gap-4">
             <Button

@@ -5,15 +5,15 @@ import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const authorityPoints = [
-  "Full-stack development partner across frontend, backend, data, and deployment.",
-  "Automation systems builder focused on lead response speed and operational efficiency.",
-  "Revenue-focused website architect that aligns UX decisions to conversion outcomes.",
+  "Full-stack delivery across frontend, backend, data, and deployment.",
+  "Automation implementation that shortens response time and removes manual bottlenecks.",
+  "Conversion-aware UX decisions tied to measurable business outcomes.",
 ];
 
 const trustSignals = [
   "Production-grade Next.js and TypeScript architecture",
-  "SEO + performance + analytics integrated from day one",
-  "Clear scope, milestones, and communication throughout delivery",
+  "SEO, performance, and analytics integrated from day one",
+  "Clear scope, milestones, and communication from kickoff to launch",
 ];
 
 export default function AuthoritySection() {
@@ -31,11 +31,11 @@ export default function AuthoritySection() {
             >
               <div className="text-center mb-7">
                 <h2 className="text-2xl sm:text-3xl font-bold">
-                  Ascendra Technologies is your technical growth partner
+                  Ascendra Technologies is the team that builds and ships
                 </h2>
                 <p className="text-muted-foreground mt-3">
-                  We combine product engineering, conversion strategy, and automation to help
-                  businesses grow with systems that actually perform.
+                  After strategy, you need execution. We turn growth plans into production-ready
+                  systems without handoff gaps.
                 </p>
               </div>
 

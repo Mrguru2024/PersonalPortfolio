@@ -9,21 +9,21 @@ import { projects } from "@/lib/data";
 const trustSignals = [
   {
     icon: Workflow,
-    title: "System-first implementation",
+    title: "System-first builds",
     description:
-      "Every build aligns UX, conversion goals, and automation so your website works like a revenue system.",
+      "Each project connects messaging, UX, and operations so visitors can move cleanly from interest to action.",
   },
   {
     icon: Wrench,
-    title: "Full-stack execution",
+    title: "One-team execution",
     description:
-      "Frontend, backend, data, and integrations delivered as one cohesive architecture instead of fragmented handoffs.",
+      "Frontend, backend, data, and integrations are delivered together, avoiding fragmented ownership.",
   },
   {
     icon: ShieldCheck,
-    title: "Production-grade quality",
+    title: "Launch-ready quality",
     description:
-      "Clean code, maintainable structure, and performance-conscious delivery built for long-term growth.",
+      "Maintainable code and performance-conscious delivery designed for long-term iteration.",
   },
 ] as const;
 
@@ -41,11 +41,11 @@ export default function TrustSignalsSection() {
           className="text-center mb-8"
         >
           <h2 className="text-2xl sm:text-3xl font-bold">
-            Built for outcomes, not just output
+            Proof you can evaluate before committing
           </h2>
           <p className="text-muted-foreground mt-3 max-w-3xl mx-auto">
-            Ascendra combines technical depth and conversion strategy to help businesses
-            launch faster and grow with confidence.
+            Review delivery standards and real project examples to see how strategy becomes
+            measurable implementation.
           </p>
         </motion.div>
 
