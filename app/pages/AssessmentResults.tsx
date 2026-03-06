@@ -82,7 +82,7 @@ export default function AssessmentResults() {
             Assessment Complete!
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Thank you for completing the assessment. Here's your custom estimate.
+            Your estimate, project summary, and next steps are ready below.
           </p>
         </motion.div>
 
@@ -94,7 +94,7 @@ export default function AssessmentResults() {
               Your Custom Estimate
             </CardTitle>
             <CardDescription>
-              Based on your project requirements and industry standards
+              Benchmarks for planning, followed by tailored recommendations.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -104,17 +104,17 @@ export default function AssessmentResults() {
                 <p className="text-3xl font-bold text-primary">
                   ${pricingBreakdown?.estimatedRange?.min.toLocaleString()} - ${pricingBreakdown?.estimatedRange?.max.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Custom-fitted to your project</p>
+                <p className="text-xs text-gray-500 mt-2">Planning baseline</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Average Estimate</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Midpoint</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.estimatedRange?.average.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Based on your requirements</p>
+                <p className="text-xs text-gray-500 mt-2">Range midpoint</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Benchmark</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.marketComparison?.average.toLocaleString()}
                 </p>
@@ -125,9 +125,7 @@ export default function AssessmentResults() {
             <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
               <p className="text-sm font-medium mb-2">💡 Important Note</p>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                This is an <strong>estimated range</strong> based on your answers. Final pricing is 
-                <strong> custom-fitted</strong> to your specific project needs, timeline, and budget. 
-                We'll work with you to create a solution that fits your requirements perfectly.
+                This estimate is directional. Final scope and pricing are tailored after requirement review.
               </p>
             </div>
           </CardContent>

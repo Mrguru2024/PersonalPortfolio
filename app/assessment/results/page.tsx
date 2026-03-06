@@ -247,7 +247,7 @@ function AssessmentResultsContent() {
             Assessment Complete!
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Thank you for completing the assessment! Your professional proposal with detailed cost breakdown, timeline, and project scope is ready below. You can view it in your browser and download it as PDF, TXT, or DOCX.
+            Your estimate, project summary, and proposal tools are ready below.
           </p>
           {!user && (
             <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -281,35 +281,35 @@ function AssessmentResultsContent() {
               Market Price Reference
             </CardTitle>
             <CardDescription>
-              Market average prices for reference - your personalized quote will be sent via email
+              Benchmarks shown here are for guidance; your tailored quote follows after review.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                ⚠️ Important: These are market average prices for reference only
+                ⚠️ Important: These figures are directional benchmarks
               </p>
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                Your personalized quote tailored to your specific project needs and budget will be sent to your email within 24 hours.
+                We will send your custom scope and pricing recommendation after reviewing your submission.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average Range</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Range</p>
                 <p className="text-3xl font-bold text-primary">
                   ${pricingBreakdown?.estimatedRange?.min.toLocaleString()} - ${pricingBreakdown?.estimatedRange?.max.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Industry reference only</p>
+                <p className="text-xs text-gray-500 mt-2">Planning baseline</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Industry Average</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Midpoint</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.estimatedRange?.average.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Market reference</p>
+                <p className="text-xs text-gray-500 mt-2">Range midpoint</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Benchmark</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.marketComparison?.average.toLocaleString()}
                 </p>

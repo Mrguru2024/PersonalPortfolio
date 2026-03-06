@@ -6,14 +6,17 @@ import { ArrowRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const HIDDEN_PREFIXES = ["/admin", "/dashboard", "/auth"];
+const HIDDEN_EXACT_PATHS = new Set(["/audit", "/schedule"]);
 
 export default function SiteFooterCTA() {
   const pathname = usePathname();
   const currentPath = pathname || "/";
 
   const hideFooter =
+    HIDDEN_EXACT_PATHS.has(currentPath) ||
     HIDDEN_PREFIXES.some((prefix) => currentPath.startsWith(prefix)) ||
-    currentPath.startsWith("/proposal/view");
+    currentPath.startsWith("/proposal/view") ||
+    currentPath.startsWith("/assessment/results");
 
   if (hideFooter) return null;
 

@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageSEO } from "@/components/SEO";
-import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { apiRequest } from "@/lib/queryClient";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
@@ -88,14 +87,6 @@ export default function Blog() {
             </Button>
           </div>
         </div>
-        <div className="mb-8">
-          <PrimaryFunnelCTA
-            compact
-            title="Want your website reviewed by a growth-focused dev team?"
-            description="Get your free audit, then book a strategy call to prioritize fixes that increase leads and sales."
-          />
-        </div>
-
         <div className="flex flex-col md:flex-row gap-6 mb-10">
           <div className="w-full md:w-3/4">
             <div className="relative mb-8">
@@ -279,12 +270,12 @@ export default function Blog() {
             </Card>
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Growth Funnel Actions</CardTitle>
+                <CardTitle>Apply What You Read</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Use each article as a playbook, then apply it to your business
-                  with a free website growth audit.
+                  Pick one next step: request an audit for prioritized fixes or
+                  book a strategy call for direct planning.
                 </p>
                 <Button className="mt-4 w-full" asChild>
                   <Link href="/audit">Get Your Free Website Growth Audit</Link>

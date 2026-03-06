@@ -10,7 +10,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BlogPostSEO, StructuredData } from "@/components/SEO";
 import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
-import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { fetchBlogSeedPost } from "@/lib/blogSeedClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
@@ -139,12 +138,13 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
           internalLinks={post.internalLinks ?? []}
           externalLinks={post.externalLinks ?? []}
         />
-        <div className="my-10">
-          <PrimaryFunnelCTA
-            compact
-            title="Like this strategy? Apply it to your business."
-            description="Get a free website growth audit with prioritized recommendations you can execute immediately."
-          />
+        <div className="my-10 rounded-lg border bg-muted/30 p-5">
+          <p className="text-sm sm:text-base">
+            Want this strategy translated into a practical action plan for your site?
+          </p>
+          <Button asChild className="mt-3">
+            <Link href="/audit">Get Your Free Website Growth Audit</Link>
+          </Button>
         </div>
         <RelatedPosts
           relatedPostIds={post.relatedPosts ?? []}

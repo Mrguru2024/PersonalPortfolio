@@ -21,8 +21,7 @@ export default function FAQPage() {
             Frequently Asked Questions
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to know about web development, pricing, timelines, and working with us. 
-            All explained in simple, easy-to-understand language - no technical jargon!
+            Clear answers about process, pricing, timelines, and delivery—written in plain language.
           </p>
         </div>
 
@@ -37,7 +36,7 @@ export default function FAQPage() {
               Still Have Questions?
             </CardTitle>
             <CardDescription>
-              Can't find what you're looking for? We're here to help!
+              If your question is specific to your project, reach out directly.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

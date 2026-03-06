@@ -113,16 +113,14 @@ const ProjectRecommendationPage: React.FC = () => {
                 AI-Powered Project Recommendations
               </h1>
               <p className="text-xl text-blue-100 mb-6">
-                Find the perfect projects that match your interests, skills, and
-                learning goals with our intelligent recommendation engine.
+                Discover project ideas that align with your interests, skill level,
+                and learning goals.
               </p>
               <div className="bg-blue-800/50 p-4 rounded-lg border border-blue-700/50 inline-flex items-start">
                 <Lightbulb className="text-yellow-300 mr-3 mt-1 flex-shrink-0" />
                 <p className="text-sm text-blue-100">
-                  Our AI analyzes your preferences and matches them with
-                  available projects, providing personalized recommendations
-                  with explanations for why each project might be a good fit for
-                  you.
+                  Share your goals and constraints, and the system will return
+                  ranked project options with clear fit reasoning.
                 </p>
               </div>
             </div>
