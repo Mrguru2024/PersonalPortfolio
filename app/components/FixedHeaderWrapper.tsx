@@ -47,7 +47,7 @@ export default function FixedHeaderWrapper() {
       }}
     >
       <div
-        className="w-full pt-0 pb-0.5 pl-4 pr-4 sm:pl-6 sm:pr-6"
+        className="w-full pt-0 pb-0.5 pl-3 fold:pl-4 pr-3 fold:pr-4 sm:pl-6 sm:pr-6"
         style={{ background: "transparent" }}
       >
         <Link
@@ -58,7 +58,7 @@ export default function FixedHeaderWrapper() {
           <img
             src="/ascendra-logo.svg"
             alt="Ascendra Technologies"
-            className="header-logo h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain bg-transparent"
+            className="header-logo h-14 fold:h-14 xs:h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain bg-transparent"
             width={320}
             height={128}
           />
