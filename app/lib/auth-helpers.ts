@@ -318,15 +318,30 @@ export async function isAdmin(req?: NextRequest): Promise<boolean> {
   return user !== null && user.isAdmin === true && user.adminApproved === true;
 }
 
-// Check if user is admin or approved writer
-export async function canCreateBlog(req?: NextRequest): Promise<boolean> {
+export async function isApprovedDeveloper(
+  req?: NextRequest
+): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-
-  // Allow admin or users with role "writer" or "admin"
   return (
-    user.isAdmin === true || user.role === "writer" || user.role === "admin"
+    user.isAdmin !== true &&
+    user.role === "developer" &&
+    user.adminApproved === true
   );
+}
+
+// Check if user is approved admin or approved developer contributor
+export async function canCreateBlog(req?: NextRequest): Promise<boolean> {
+  const [admin, developer] = await Promise.all([
+    isAdmin(req),
+    isApprovedDeveloper(req),
+  ]);
+  return admin || developer;
+}
+
+// Only approved admins can publish and approve contributor submissions.
+export async function canPublishBlog(req?: NextRequest): Promise<boolean> {
+  return isAdmin(req);
 }
 
 // Check if user has a specific role

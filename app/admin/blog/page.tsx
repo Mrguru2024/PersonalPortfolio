@@ -2,15 +2,18 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AdminBlog from "@/pages/AdminBlog";
-import { Loader2, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function AdminBlogPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [requestingAccess, setRequestingAccess] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -30,8 +33,13 @@ export default function AdminBlogPage() {
     return null;
   }
 
-  // Check if user can create blogs (admin or writer)
-  const canCreate = (user.isAdmin === true && user.adminApproved === true) || user.role === "writer" || user.role === "admin";
+  const isApprovedAdmin =
+    user.isAdmin === true && user.adminApproved === true;
+  const isApprovedDeveloper =
+    user.isAdmin !== true &&
+    user.role === "developer" &&
+    user.adminApproved === true;
+  const canCreate = isApprovedAdmin || isApprovedDeveloper;
 
   if (!canCreate) {
     return (
@@ -43,14 +51,52 @@ export default function AdminBlogPage() {
               <CardTitle className="text-red-600">Access Denied</CardTitle>
             </div>
             <CardDescription>
-              You don't have permission to create blog posts
+              Contributor access required
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Only administrators and approved writers can create blog posts. 
-              If you believe you should have access, please contact an administrator.
+              Only approved developer contributors and admins can create posts.
+              Developer submissions require admin approval before publishing.
             </p>
+            {user.isAdmin !== true && (
+              <div className="mb-4 rounded-lg border bg-muted/40 p-3">
+                <p className="text-sm text-muted-foreground">
+                  Want to write here as a developer? Submit a contributor request
+                  and an admin will review your account.
+                </p>
+                <Button
+                  className="mt-3"
+                  disabled={requestingAccess || requestSubmitted}
+                  onClick={async () => {
+                    setRequestingAccess(true);
+                    try {
+                      const res = await fetch("/api/blog/contributor-request", {
+                        method: "POST",
+                        credentials: "include",
+                      });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        throw new Error(
+                          body?.message || "Failed to submit contributor request."
+                        );
+                      }
+                      setRequestSubmitted(true);
+                    } catch (error) {
+                      console.error(error);
+                    } finally {
+                      setRequestingAccess(false);
+                    }
+                  }}
+                >
+                  {requestSubmitted
+                    ? "Request submitted"
+                    : requestingAccess
+                      ? "Submitting..."
+                      : "Request contributor access"}
+                </Button>
+              </div>
+            )}
             <div className="flex gap-4">
               <Button onClick={() => router.push("/")} variant="outline">
                 Go Home
@@ -65,5 +111,26 @@ export default function AdminBlogPage() {
     );
   }
 
-  return <AdminBlog />;
+  return (
+    <>
+      {isApprovedAdmin && (
+        <div className="container mx-auto px-4 pt-6">
+          <Card className="max-w-6xl mx-auto border-primary/30 bg-primary/5">
+            <CardContent className="py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm">
+                  Admin mode: you can publish directly and review developer submissions.
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin/blog/review">Review submissions</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      <AdminBlog />
+    </>
+  );
 }

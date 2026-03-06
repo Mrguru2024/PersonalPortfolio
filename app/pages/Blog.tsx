@@ -20,10 +20,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [requestingContributorAccess, setRequestingContributorAccess] =
+    useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const canWriteBlog =
+    (user?.isAdmin === true && user?.adminApproved === true) ||
+    (user?.isAdmin !== true &&
+      user?.role === "developer" &&
+      user?.adminApproved === true);
 
   const {
     data: posts = [],
@@ -79,13 +91,69 @@ export default function Blog() {
             </p>
           </div>
           <div className="flex justify-end mb-4">
-            <Button asChild>
-              <Link href="/admin/blog">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create New Post
-              </Link>
-            </Button>
+            {canWriteBlog ? (
+              <Button asChild>
+                <Link href="/admin/blog">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Write for the Blog
+                </Link>
+              </Button>
+            ) : user ? (
+              <Button
+                variant="outline"
+                disabled={requestingContributorAccess}
+                onClick={async () => {
+                  setRequestingContributorAccess(true);
+                  try {
+                    const res = await fetch("/api/blog/contributor-request", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    const payload = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      throw new Error(
+                        payload?.message ||
+                          "Failed to request contributor access."
+                      );
+                    }
+                    toast({
+                      title: "Request submitted",
+                      description:
+                        payload?.message ||
+                        "An admin will review your developer contributor request.",
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Request failed",
+                      description:
+                        error?.message ||
+                        "Could not submit contributor request right now.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setRequestingContributorAccess(false);
+                  }
+                }}
+              >
+                {requestingContributorAccess
+                  ? "Submitting request..."
+                  : "Request developer contributor access"}
+              </Button>
+            ) : (
+              <Button variant="outline" asChild>
+                <Link href="/auth">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Register to write here
+                </Link>
+              </Button>
+            )}
           </div>
+          {!canWriteBlog && (
+            <p className="mb-4 text-sm text-muted-foreground text-right">
+              Inviting developers: register, request contributor access, and submit
+              articles for admin approval.
+            </p>
+          )}
         </div>
         <div className="flex flex-col md:flex-row gap-6 mb-10">
           <div className="w-full md:w-3/4">
