@@ -202,12 +202,12 @@ const ContactSection = () => {
             <Button
               asChild
               size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
+              className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
               <Link href="/audit" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardCheck className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap text-center">
+                  <span className="text-center">
                     Get Your Free Website Growth Audit
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
@@ -218,11 +218,11 @@ const ContactSection = () => {
               asChild
               size="lg"
               variant="outline"
-              className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
+              className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
               <Link href="/schedule" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
-                  <span className="whitespace-nowrap text-center">
+                  <span className="text-center">
                     Book a Strategy Call
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />

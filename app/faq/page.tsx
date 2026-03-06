@@ -46,15 +46,24 @@ export default function FAQPage() {
               we'd love to hear from you. Get in touch and we'll get back to you as soon as possible.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Button asChild size="lg" className="flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+              <Button
+                asChild
+                size="lg"
+                className="flex-1 h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+              >
                 <Link href="/#contact" className="flex items-center justify-center gap-2">
                   <Mail className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">Contact Us</span>
+                  <span>Contact Us</span>
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="flex-1 h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+              >
                 <Link href="/assessment" className="flex items-center justify-center">
-                  <span className="whitespace-nowrap">Start Project Assessment</span>
+                  <span>Start Project Assessment</span>
                 </Link>
               </Button>
             </div>

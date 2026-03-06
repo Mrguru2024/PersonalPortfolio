@@ -523,25 +523,17 @@ function ServicesSection() {
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/audit">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Get Your Free Website Growth Audit</span>
-                    </span>
-                  </Link>
+                  <Link href="/audit">Get Your Free Website Growth Audit</Link>
                 </Button>
                 <Button
                   asChild
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/schedule">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Book a Strategy Call</span>
-                    </span>
-                  </Link>
+                  <Link href="/schedule">Book a Strategy Call</Link>
                 </Button>
               </div>
             </CardContent>
