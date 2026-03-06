@@ -44,6 +44,30 @@ interface Service {
   popular?: boolean;
 }
 
+const outcomeSolutions = [
+  {
+    title: "Lead Generation Systems",
+    description:
+      "For contractors and service businesses that need better inbound lead flow and faster follow-up.",
+    href: "/contractor-systems",
+    cta: "Explore Contractor Systems",
+  },
+  {
+    title: "Conversion Focused Websites",
+    description:
+      "For local businesses scaling online that need stronger conversion paths, tracking, and appointment funnels.",
+    href: "/local-business-growth",
+    cta: "Explore Local Growth Systems",
+  },
+  {
+    title: "Startup / MVP Development",
+    description:
+      "For founders validating products and building scalable technical foundations with a real delivery partner.",
+    href: "/startup-mvp-development",
+    cta: "Explore MVP Development",
+  },
+] as const;
+
 const services: Service[] = [
   // Development Services
   {
@@ -384,6 +408,29 @@ function ServicesSection() {
             and scalable products for contractors, local businesses, and startup
             founders.
           </p>
+        </motion.div>
+
+        {/* Outcome Solutions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10"
+        >
+          {outcomeSolutions.map((solution) => (
+            <Card key={solution.title} className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">{solution.title}</CardTitle>
+                <CardDescription>{solution.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={solution.href}>{solution.cta}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </motion.div>
 
         {/* Category Filter */}

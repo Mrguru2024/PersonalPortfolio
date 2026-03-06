@@ -241,6 +241,25 @@ const AuthoritySection = dynamic(
     ssr: false,
   }
 );
+const TrustSignalsSection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/TrustSignalsSection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Trust Signals"
+          minHeight="min-h-[300px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[300px]" />,
+    ssr: false,
+  }
+);
 
 const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
   ssr: false,
@@ -252,6 +271,7 @@ const prefetchServices = () => import("@/sections/ServicesSection");
 const prefetchAuthority = () => import("@/sections/AuthoritySection");
 const prefetchAnnouncements = () => import("@/sections/AnnouncementsSection");
 const prefetchProjects = () => import("@/sections/Projects");
+const prefetchTrustSignals = () => import("@/sections/TrustSignalsSection");
 const prefetchAbout = () => import("@/sections/AboutSection");
 const prefetchSkills = () => import("@/sections/SkillsSection");
 const prefetchBlog = () => import("@/sections/Blog");
@@ -423,10 +443,13 @@ const Home = ({ onSectionChange }: HomeProps) => {
         <AnnouncementsSection />
       </LazyWhenVisible>
       <div id="projects">
-        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
+        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchTrustSignals}>
           <ProjectsSection />
         </LazyWhenVisible>
       </div>
+      <LazyWhenVisible minHeight="min-h-[300px]" onVisible={prefetchAbout}>
+        <TrustSignalsSection />
+      </LazyWhenVisible>
       <LazyWhenVisible minHeight="min-h-[360px]" onVisible={prefetchSkills}>
         <AboutSection />
       </LazyWhenVisible>
