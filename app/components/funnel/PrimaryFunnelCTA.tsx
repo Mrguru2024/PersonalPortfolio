@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface PrimaryFunnelCTAProps {
@@ -29,10 +28,12 @@ export function PrimaryFunnelCTA({
     >
       <CardContent className={cn(compact ? "py-6 px-4" : "py-8 px-5 sm:px-8")}>
         <div className="mx-auto max-w-4xl text-center space-y-4">
-          <Badge variant="outline" className="border-primary/40 text-primary">
-            Conversion Funnel CTA
-          </Badge>
-          <h3 className={cn("font-bold", compact ? "text-2xl" : "text-2xl sm:text-3xl")}>
+          <h3
+            className={cn(
+              "font-bold text-balance",
+              compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+            )}
+          >
             {title}
           </h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">{description}</p>

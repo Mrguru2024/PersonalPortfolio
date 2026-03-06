@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { AlertTriangle, BarChart3, Gauge, Workflow } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 const problems = [
   {
@@ -43,12 +42,8 @@ export default function ProblemAwarenessSection() {
           transition={{ duration: 0.4 }}
           className="text-center mb-8"
         >
-          <Badge variant="outline" className="border-primary/40 text-primary mb-3">
-            Problem Awareness
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-bold">
-            Most businesses do not have a design problem.
-            <br />
+            Most businesses do not have a design problem.{" "}
             <span className="text-primary">They have a system problem.</span>
           </h2>
           <p className="text-muted-foreground mt-3 max-w-3xl mx-auto">

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle2, ShieldCheck, Wrench, Workflow } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { projects } from "@/lib/data";
 
 const trustSignals = [
@@ -41,9 +40,6 @@ export default function TrustSignalsSection() {
           transition={{ duration: 0.45 }}
           className="text-center mb-8"
         >
-          <Badge variant="outline" className="border-primary/40 text-primary mb-3">
-            Trust & Authority
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-bold">
             Built for outcomes, not just output
           </h2>
@@ -81,7 +77,7 @@ export default function TrustSignalsSection() {
               <Link
                 key={project.id}
                 href={`/projects/${project.id}`}
-                className="rounded-md border p-4 hover:border-primary/40 transition-colors"
+                className="min-w-0 rounded-md border p-4 hover:border-primary/40 transition-colors"
               >
                 <p className="font-semibold mb-1">{project.title}</p>
                 <p className="text-sm text-muted-foreground line-clamp-3">

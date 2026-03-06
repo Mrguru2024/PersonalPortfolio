@@ -17,7 +17,6 @@ import {
   Rocket,
   Globe,
   Users,
-  TrendingUp,
   Layers,
   Monitor,
   Server,
@@ -30,7 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -396,10 +394,6 @@ function ServicesSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <Badge variant="outline" className="mb-4">
-            <TrendingUp className="h-3 w-3 mr-2" />
-            Revenue-Generating Services
-          </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Revenue-Focused Development Services
           </h2>

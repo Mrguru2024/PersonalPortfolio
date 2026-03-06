@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 const authorityPoints = [
   "Full-stack development partner across frontend, backend, data, and deployment.",
@@ -31,9 +30,6 @@ export default function AuthoritySection() {
               className="max-w-5xl mx-auto"
             >
               <div className="text-center mb-7">
-                <Badge variant="outline" className="border-primary/40 text-primary mb-3">
-                  Authority Positioning
-                </Badge>
                 <h2 className="text-2xl sm:text-3xl font-bold">
                   Ascendra Technologies is your technical growth partner
                 </h2>

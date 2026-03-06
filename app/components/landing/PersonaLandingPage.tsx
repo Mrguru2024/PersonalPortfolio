@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Search } from "lucide-react";
 import { PageSEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 
@@ -42,9 +41,6 @@ export function PersonaLandingPage({
       />
 
       <section className="space-y-6 text-center">
-        <Badge variant="outline" className="border-primary/40 text-primary">
-          Industry Growth System
-        </Badge>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">{title}</h1>
         <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
           {subtitle}
