@@ -123,7 +123,8 @@ header .container {
   html {
     -webkit-text-size-adjust: 100%;
     width: 100%;
-    overflow-x: clip;
+    max-width: 100%;
+    overflow-x: hidden !important;
     overflow-y: auto;
     /* Prevent overscroll/bounce on iOS when content doesn't fill screen */
     overscroll-behavior-x: none;
@@ -132,7 +133,7 @@ header .container {
     @apply bg-background text-foreground min-w-0;
     width: 100%;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: hidden !important;
     overflow-y: auto;
     overflow-wrap: break-word;
     padding-left: env(safe-area-inset-left);
@@ -140,6 +141,13 @@ header .container {
     padding-bottom: env(safe-area-inset-bottom);
     /* Smooth touch scrolling on iOS */
     -webkit-overflow-scrolling: touch;
+  }
+  /* Root wrapper: prevent any child from causing horizontal scroll */
+  body > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
   }
   /* Prevent media and embeds from overflowing on small screens */
   img,

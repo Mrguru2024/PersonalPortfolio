@@ -53,15 +53,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
       <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
-        <Providers>
-          {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
-          <FixedHeaderWrapper />
-          <main className="relative w-full min-w-0 max-w-full overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
-            {children}
-          </main>
-        </Providers>
+        <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
+          <Providers>
+            {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
+            <FixedHeaderWrapper />
+            <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
+              {children}
+            </main>
+          </Providers>
+        </div>
       </body>
     </html>
   );
