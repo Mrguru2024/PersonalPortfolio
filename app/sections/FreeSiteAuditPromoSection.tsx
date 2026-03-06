@@ -13,7 +13,7 @@ const FreeSiteAuditPromoSection = () => {
   return (
     <section
       id="site-audit-promo"
-      className="relative py-10 md:py-14 overflow-hidden"
+      className="w-full min-w-0 max-w-full relative py-10 md:py-14 overflow-hidden"
       aria-label="Free site audit offer"
     >
       {/* Gradient background */}
@@ -21,7 +21,7 @@ const FreeSiteAuditPromoSection = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
 
       <motion.div
-        className="container mx-auto px-4 sm:px-6 relative"
+        className="container mx-auto px-4 sm:px-6 relative min-w-0"
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}

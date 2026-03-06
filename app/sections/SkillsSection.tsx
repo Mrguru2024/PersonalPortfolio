@@ -218,7 +218,7 @@ const SkillsSection = () => {
     <section
       id="skills"
       ref={sectionRef}
-      className="py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900"
+      className="w-full min-w-0 max-w-full py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900"
     >
       {/* Decorative elements */}
       <motion.div
@@ -269,7 +269,7 @@ const SkillsSection = () => {
         }}
       />
 
-      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative min-w-0">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}

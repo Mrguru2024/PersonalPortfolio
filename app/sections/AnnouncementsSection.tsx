@@ -79,8 +79,8 @@ export default function AnnouncementsSection() {
 
   if (isLoading) {
     return (
-      <section id="announcements" className="py-16 md:py-20 bg-muted/30 dark:bg-muted/10">
-        <div className="container px-4 mx-auto">
+      <section id="announcements" className="w-full min-w-0 max-w-full py-16 md:py-20 bg-muted/30 dark:bg-muted/10">
+        <div className="container px-4 mx-auto min-w-0">
           <div className="flex justify-center items-center min-h-[200px]">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
@@ -96,9 +96,9 @@ export default function AnnouncementsSection() {
   return (
     <section
       id="announcements"
-      className="py-16 md:py-20 bg-muted/30 dark:bg-muted/10 scroll-mt-20"
+      className="w-full min-w-0 max-w-full py-16 md:py-20 bg-muted/30 dark:bg-muted/10 scroll-mt-20"
     >
-      <div className="container px-4 mx-auto max-w-4xl">
+      <div className="container px-4 mx-auto max-w-4xl min-w-0">
         <motion.div
           initial="hidden"
           whileInView="visible"

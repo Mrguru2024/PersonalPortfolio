@@ -20,14 +20,14 @@ export function PageSEO({
   keywords = [],
   ogType = 'website',
   ogImage = '/images/mrguru-og-image.jpg',
-  ogImageAlt = 'Anthony Feaster - Full Stack Developer',
+  ogImageAlt = 'Anthony MrGuru Feaster - Senior Full Stack Developer',
   baseUrl = 'https://mrguru.dev',
   noIndex = false,
   schemaType = 'WebPage'
 }: PageSEOProps) {
   const fullTitle = title.includes('MrGuru.dev') ? title : `${title} | MrGuru.dev`;
   const url = `${baseUrl}${canonicalPath}`;
-  const keywordsString = [...keywords, 'MrGuru', 'Anthony Feaster', 'web developer', 'portfolio'].join(', ');
+  const keywordsString = [...keywords, 'MrGuru', 'Anthony MrGuru Feaster', 'web developer', 'portfolio'].join(', ');
 
   return (
     <Helmet>
@@ -64,12 +64,12 @@ export function PageSEO({
           'url': url,
           'author': {
             '@type': 'Person',
-            'name': 'Anthony Feaster',
+            'name': 'Anthony MrGuru Feaster',
             'url': baseUrl
           },
           'publisher': {
             '@type': 'Organization',
-            'name': 'MrGuru.dev',
+            'name': 'Ascendra Technologies',
             'logo': {
               '@type': 'ImageObject',
               'url': `${baseUrl}/favicon-32x32.png`,

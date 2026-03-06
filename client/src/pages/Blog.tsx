@@ -45,7 +45,7 @@ const Blog = () => {
       {/* Add SEO for Blog page */}
       <PageSEO 
         title="Blog | MrGuru.dev"
-        description="Insights, tutorials, and updates from Anthony Feaster - Full Stack Developer. Explore articles on web development, programming, and technology."
+        description="Insights, tutorials, and updates from Anthony MrGuru Feaster - Senior Full Stack Developer at Ascendra Technologies. Explore articles on web development, programming, and technology."
         canonicalPath="/blog"
         keywords={allTags}
         ogType="blog"

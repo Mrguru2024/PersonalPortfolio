@@ -39,7 +39,7 @@ function LazyWhenVisible({
 
   if (!inView) {
     return (
-      <div ref={ref} className={minHeight}>
+      <div ref={ref} className={`w-full min-w-0 max-w-full ${minHeight}`}>
         <SectionPlaceholder minHeight={minHeight} />
       </div>
     );
@@ -317,7 +317,7 @@ const Home = ({ onSectionChange }: HomeProps) => {
   }, [onSectionChange, mounted]);
 
   return (
-    <>
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden">
       <PageSEO
         title="Anthony MrGuru Feaster | Senior Full Stack Developer | Ascendra Technologies"
         description="Anthony MrGuru Feaster is a Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional."
@@ -370,7 +370,7 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>
-      <div id="projects">
+      <div id="projects" className="w-full min-w-0 max-w-full">
         <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
           <ProjectsSection />
         </LazyWhenVisible>
@@ -384,14 +384,14 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
-      <div id="contact">
+      <div id="contact" className="w-full min-w-0 max-w-full">
         <LazyWhenVisible minHeight="min-h-[380px]">
           <ContactSection />
         </LazyWhenVisible>
       </div>
 
       {mounted && <ViewModeToggle />}
-    </>
+    </div>
   );
 };
 

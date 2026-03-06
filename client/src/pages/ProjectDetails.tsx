@@ -71,7 +71,7 @@ const ProjectDetails = () => {
                 url: `https://mrguru.dev/projects/${project.id}`,
                 image: project.image,
                 author: {
-                  name: 'Anthony Feaster',
+                  name: 'Anthony MrGuru Feaster',
                   url: 'https://mrguru.dev'
                 },
                 datePublished: new Date().toISOString().split('T')[0],

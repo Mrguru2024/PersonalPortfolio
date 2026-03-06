@@ -277,7 +277,7 @@ const BlogPostPage = () => {
                 datePublished: post.publishedAt || post.createdAt || new Date().toISOString(),
                 dateModified: post.updatedAt || post.publishedAt || new Date().toISOString(),
                 author: {
-                  name: 'Anthony Feaster',
+                  name: 'Anthony MrGuru Feaster',
                   url: 'https://mrguru.dev'
                 },
                 publisher: {

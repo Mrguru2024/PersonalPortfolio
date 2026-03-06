@@ -102,7 +102,9 @@ const HeroSection = () => {
             }}
             className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-4"
           >
-            <span className="font-medium">{personalInfo.title}</span>
+            <span className="font-medium">
+              {personalInfo.title} at Ascendra Technologies
+            </span>
           </motion.div>
 
           <motion.div
@@ -113,10 +115,10 @@ const HeroSection = () => {
           >
             <TypewriterText
               phrases={[
-                "specializing in creating elegant solutions to complex problems.",
-                "turning innovative ideas into exceptional digital experiences.",
-                "building modern, responsive web applications that convert.",
-                "helping businesses succeed in the digital landscape.",
+                "Building web applications that scale and deliver results.",
+                "From concept to launch—I help you ship with confidence.",
+                "Full-stack expertise. Clear process. Professional delivery.",
+                "Ready to start your project? Let's make it happen.",
               ]}
               typingSpeed={50}
               deletingSpeed={20}
@@ -144,7 +146,7 @@ const HeroSection = () => {
                 withGlowEffect={true}
               >
                 <span className="flex items-center gap-2">
-                  View My Work
+                  See My Work
                   <Sparkles className="h-4 w-4 shrink-0" />
                 </span>
               </AnimatedButton>
@@ -175,7 +177,7 @@ const HeroSection = () => {
                 withPressEffect={true}
               >
                 <span className="flex items-center gap-2">
-                  Get In Touch
+                  Start a Project
                   <motion.div
                     animate={{
                       x: hoverContactBtn ? 5 : 0,

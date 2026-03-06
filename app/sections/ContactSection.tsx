@@ -173,10 +173,10 @@ const ContactSection = () => {
 
   return (
     <section
-      className="py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
       aria-label="Contact"
     >
-      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

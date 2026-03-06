@@ -128,10 +128,10 @@ export default function Projects() {
 
   return (
     <section
-      className="py-20 bg-gradient-to-b from-background/95 to-background"
+      className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background/95 to-background"
       aria-label="Projects"
     >
-      <div className="container px-4 mx-auto">
+      <div className="container px-4 mx-auto min-w-0">
         <motion.div
           initial="hidden"
           whileInView="visible"

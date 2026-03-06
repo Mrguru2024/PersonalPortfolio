@@ -361,9 +361,9 @@ function ServicesSection() {
   return (
     <section
       id="services"
-      className="py-20 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full py-20 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto min-w-0">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
