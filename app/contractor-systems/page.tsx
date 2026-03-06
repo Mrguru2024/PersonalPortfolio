@@ -21,9 +21,9 @@ export default function ContractorSystemsPage() {
           caption: "Mobile and tablet-ready website presentation",
         },
         {
-          src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
-          alt: "Analytics dashboard on large display",
-          caption: "Lead and conversion reporting visual context",
+          src: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=80",
+          alt: "Construction team onsite for service execution context",
+          caption: "Onsite service and field operations visual context",
         },
       ]}
       painPoints={[

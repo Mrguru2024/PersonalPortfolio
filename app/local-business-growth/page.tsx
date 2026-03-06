@@ -21,9 +21,9 @@ export default function LocalBusinessGrowthPage() {
           caption: "Structured dashboard and conversion analytics style",
         },
         {
-          src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
-          alt: "Office planning and conversion strategy session",
-          caption: "Polished SaaS-style planning and reporting visual",
+          src: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80",
+          alt: "Retail storefront environment with local customer focus",
+          caption: "Local business storefront and customer-facing visual style",
         },
       ]}
       painPoints={[

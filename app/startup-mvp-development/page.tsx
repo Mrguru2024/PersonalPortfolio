@@ -21,9 +21,9 @@ export default function StartupMvpDevelopmentPage() {
           caption: "Scalable systems and architecture-oriented visuals",
         },
         {
-          src: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1600&q=80",
-          alt: "Technical workflow and product build environment",
-          caption: "Product workflow and build-to-scale visual direction",
+          src: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?auto=format&fit=crop&w=1600&q=80",
+          alt: "Product prototyping and startup build workflow",
+          caption: "Prototype-to-MVP execution workflow visual direction",
         },
       ]}
       painPoints={[

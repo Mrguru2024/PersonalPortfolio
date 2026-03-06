@@ -60,7 +60,7 @@ export const blogSeedPosts = [
     ogDescription:
       "Learn how to migrate a Vite portfolio to Next.js 15 with App Router, API routes, and better SEO.",
     ogImage:
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2015&q=80",
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "modern portfolio with Next.js and Tailwind",
@@ -133,7 +133,7 @@ export const blogSeedPosts = [
     ogDescription:
       "How to create a beautiful, responsive portfolio with Next.js 15 and Tailwind CSS.",
     ogImage:
-      "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
+      "https://images.unsplash.com/photo-1484417894907-623942c8ee29?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "migrating from Vite to Next.js",
@@ -217,7 +217,7 @@ export const blogSeedPosts = [
     ogDescription:
       "JavaScript, APIs, performance, responsive design, and testing: the skills that separate good developers from great ones.",
     ogImage:
-      "https://images.unsplash.com/photo-1573495627361-d9b87960b12d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
+      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "TypeScript in React",
@@ -298,7 +298,7 @@ export const blogSeedPosts = [
     ogDescription:
       "Why TypeScript in React is worth the learning curve: benefits and how to get started.",
     ogImage:
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "Next.js and Tailwind portfolio",
@@ -370,7 +370,7 @@ export const blogSeedPosts = [
     ogDescription:
       "RSC, AI, edge, WebAssembly, and sustainability: what’s shaping web development in 2025.",
     ogImage:
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80",
+      "https://images.unsplash.com/photo-1518773553398-650c184e0bb3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "Next.js migration",
@@ -443,7 +443,7 @@ export const blogSeedPosts = [
     ogDescription:
       "How to design clean, maintainable API routes in Next.js with error handling and type safety.",
     ogImage:
-      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80",
+      "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     internalLinks: [
       {
         text: "migrating from Vite to Next.js",
