@@ -135,13 +135,14 @@ export default function AuditPage() {
         canonicalPath="/audit"
       />
 
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-background to-muted/30 py-10 xs:py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-xl">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-10 xs:py-12 sm:py-16 md:py-20 relative">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent)] pointer-events-none" aria-hidden />
+        <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-xl">
           {submitted ? (
-            <Card className="border-border bg-card">
+            <Card className="border-border bg-card shadow-lg overflow-hidden">
               <CardHeader className="text-center px-4 sm:px-6 md:px-8 pb-2">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-3 sm:mb-4 shrink-0">
-                  <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-primary mx-auto mb-3 sm:mb-4 shrink-0">
+                  <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8" />
                 </div>
                 <CardTitle className="text-center text-xl sm:text-2xl">You're all set</CardTitle>
                 <CardDescription className="text-center text-sm sm:text-base max-w-md mx-auto">
@@ -153,13 +154,13 @@ export default function AuditPage() {
                   Next step: book a short strategy call so we can walk through the audit and options.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center">
-                  <Button asChild size="lg" className="gap-2 w-full sm:w-auto min-h-[44px]">
+                  <Button asChild size="lg" className="gap-2 w-full sm:w-auto min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-md">
                     <Link href="/#contact">
                       Book a Strategy Call
                       <ArrowRight className="h-4 w-4 shrink-0" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="w-full sm:w-auto min-h-[44px]">
+                  <Button asChild variant="outline" size="lg" className="w-full sm:w-auto min-h-[44px] text-foreground border-border hover:bg-accent hover:text-accent-foreground">
                     <Link href="/contractor-systems">Back to contractor systems</Link>
                   </Button>
                 </div>
@@ -167,19 +168,20 @@ export default function AuditPage() {
             </Card>
           ) : (
             <>
-              <div className="text-center mb-8 sm:mb-10">
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 text-primary mb-3 sm:mb-4 shrink-0">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 dark:bg-primary/20 text-primary mb-3 sm:mb-4 shrink-0">
                   <Search className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
                 <h1 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
                   Get Your Free Website Growth Audit
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
+                <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto mb-2">
                   We'll review your current website, identify conversion gaps, and show you where you may be losing leads online.
                 </p>
+                <p className="text-xs text-muted-foreground/90">Free · No obligation · Results in 24–48 hours</p>
               </div>
 
-              <Card className="border-border bg-card">
+              <Card className="border-border bg-card shadow-md overflow-hidden">
                 <CardHeader className="px-4 sm:px-6 md:px-8">
                   <CardTitle className="text-lg sm:text-xl">Request your audit</CardTitle>
                   <CardDescription className="text-sm sm:text-base">
@@ -336,10 +338,16 @@ export default function AuditPage() {
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" size="lg" className="w-full gap-2 min-h-[44px] sm:min-h-[48px]" disabled={isPending}>
+                      <Button
+                        type="submit"
+                        size="lg"
+                        className="w-full gap-2 min-h-[44px] sm:min-h-[48px] bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-md"
+                        disabled={isPending}
+                      >
                         {isPending ? "Submitting…" : "Get My Free Audit"}
                         <ArrowRight className="h-4 w-4 shrink-0" />
                       </Button>
+                      <p className="text-center text-xs text-muted-foreground">We'll review your site and respond within 24–48 hours.</p>
                     </form>
                   </Form>
                 </CardContent>

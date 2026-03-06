@@ -153,7 +153,7 @@ export default function ClientProposalDetailPage() {
               <li>Schedule kickoff to discuss project details.</li>
             </ol>
             {acceptInvoiceUrl && (
-              <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white border-0">
                 <a href={acceptInvoiceUrl} target="_blank" rel="noopener noreferrer">
                   Pay deposit invoice
                 </a>
@@ -323,7 +323,7 @@ export default function ClientProposalDetailPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
                     onClick={() => approveMutation.mutate()}
                     disabled={approveMutation.isPending || rejectMutation.isPending}
                   >

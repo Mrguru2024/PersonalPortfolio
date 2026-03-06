@@ -376,7 +376,7 @@ function ServicesSection() {
             <TrendingUp className="h-3 w-3 mr-2" />
             Revenue-Generating Services
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Full-Stack Development Services
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -482,7 +482,7 @@ function ServicesSection() {
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 border-0 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
                   <Link href="/assessment">
                     <span className="flex items-center justify-center gap-2">
@@ -498,7 +498,7 @@ function ServicesSection() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
                   <Link href="/#contact">
                     <span className="flex items-center justify-center gap-2">

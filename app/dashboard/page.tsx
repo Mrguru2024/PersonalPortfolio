@@ -421,7 +421,7 @@ export default function ClientDashboardPage() {
                         </div>
                       </div>
                       {(inv.status === "sent" || inv.status === "overdue") && inv.hostInvoiceUrl && (
-                        <Button asChild className="w-full sm:w-auto shrink-0 bg-emerald-600 hover:bg-emerald-700">
+                        <Button asChild className="w-full sm:w-auto shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
                           <a href={inv.hostInvoiceUrl} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2 shrink-0" />
                             Pay invoice

@@ -190,7 +190,7 @@ const ContactSection = () => {
           >
             WORK WITH ME
           </Badge>
-          <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Ready to Start Your Project?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
@@ -204,7 +204,7 @@ const ContactSection = () => {
             >
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
+                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] border-0"
               >
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardCheck className="h-4 w-4 shrink-0" />
