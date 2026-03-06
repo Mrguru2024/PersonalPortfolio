@@ -4,9 +4,11 @@ export default function LocalBusinessGrowthPage() {
   return (
     <PersonaLandingPage
       slug="local-business-growth"
-      title="Local Business Growth Websites"
-      subtitle="Turn your website into an appointment and lead-generation engine."
+      persona="local"
+      title="Build a Website That Converts Local Intent Into Bookings"
+      subtitle="Growth-focused website systems for clinics, gyms, consultants, legal teams, and local service brands."
       heroDescription="For local businesses scaling online, we combine conversion-focused design, analytics, and automation so your site drives qualified bookings instead of just traffic."
+      projectIds={["stackzen", "web-development-services", "keycode-help"]}
       painPoints={[
         "Website traffic isn’t converting into appointments.",
         "No measurable funnel from click to booked call.",

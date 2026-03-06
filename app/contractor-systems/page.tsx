@@ -4,9 +4,11 @@ export default function ContractorSystemsPage() {
   return (
     <PersonaLandingPage
       slug="contractor-systems"
-      title="Contractor Website & Automation Systems"
-      subtitle="Generate more qualified calls and estimate requests from your website."
+      persona="contractor"
+      title="Get More Service Calls From Your Website"
+      subtitle="Contractor website and automation systems built to turn local traffic into estimate requests."
       heroDescription="For roofing, HVAC, plumbing, electrical, and other service trades: we build fast, mobile-first websites and automation systems that convert local traffic into booked jobs."
+      projectIds={["ssi-met-repairs", "keycode-help", "portfolio-website"]}
       painPoints={[
         "Outdated websites that look untrustworthy on mobile.",
         "No follow-up automation after quote or contact form submissions.",

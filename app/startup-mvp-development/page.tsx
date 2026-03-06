@@ -4,9 +4,11 @@ export default function StartupMvpDevelopmentPage() {
   return (
     <PersonaLandingPage
       slug="startup-mvp-development"
-      title="Startup MVP Development"
-      subtitle="Ship a scalable MVP faster, without accumulating product debt."
+      persona="startup"
+      title="Build Your MVP on a Scalable Foundation"
+      subtitle="MVP delivery for founders who need launch speed today and architecture that supports tomorrow."
       heroDescription="For founders and product teams, we build MVPs with modern Next.js architecture, clean backend foundations, and a roadmap that supports post-launch growth."
+      projectIds={["stackzen", "keycode-help", "portfolio-website"]}
       painPoints={[
         "Need to ship fast while keeping architecture scalable.",
         "Unclear scope causes delays and rework.",
