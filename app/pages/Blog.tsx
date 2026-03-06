@@ -20,10 +20,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [requestingContributorAccess, setRequestingContributorAccess] =
+    useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const canWriteBlog =
+    (user?.isAdmin === true && user?.adminApproved === true) ||
+    (user?.isAdmin !== true &&
+      user?.role === "developer" &&
+      user?.adminApproved === true);
 
   const {
     data: posts = [],
@@ -43,6 +55,12 @@ export default function Blog() {
   });
 
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])));
+  const seoTopics = [
+    "Why most contractor websites fail to generate leads",
+    "The hidden cost of cheap websites",
+    "Next.js vs WordPress for scaling businesses",
+    "How local businesses lose customers online",
+  ];
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
       !searchQuery ||
@@ -68,20 +86,75 @@ export default function Blog() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Blog</h1>
             <p className="text-lg text-muted-foreground mb-6">
-              Thoughts, insights, and updates from my journey as a developer and
-              entrepreneur.
+              Practical guidance for common triggers: low estimate requests,
+              weak appointment conversion, and unclear MVP build priorities.
             </p>
           </div>
           <div className="flex justify-end mb-4">
-            <Button asChild>
-              <Link href="/admin/blog">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create New Post
-              </Link>
-            </Button>
+            {canWriteBlog ? (
+              <Button asChild>
+                <Link href="/admin/blog">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Write for the Blog
+                </Link>
+              </Button>
+            ) : user ? (
+              <Button
+                variant="outline"
+                disabled={requestingContributorAccess}
+                onClick={async () => {
+                  setRequestingContributorAccess(true);
+                  try {
+                    const res = await fetch("/api/blog/contributor-request", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    const payload = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      throw new Error(
+                        payload?.message ||
+                          "Failed to request contributor access."
+                      );
+                    }
+                    toast({
+                      title: "Request submitted",
+                      description:
+                        payload?.message ||
+                        "An admin will review your developer contributor request.",
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Request failed",
+                      description:
+                        error?.message ||
+                        "Could not submit contributor request right now.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setRequestingContributorAccess(false);
+                  }
+                }}
+              >
+                {requestingContributorAccess
+                  ? "Submitting request..."
+                  : "Request developer contributor access"}
+              </Button>
+            ) : (
+              <Button variant="outline" asChild>
+                <Link href="/auth">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Register to write here
+                </Link>
+              </Button>
+            )}
           </div>
+          {!canWriteBlog && (
+            <p className="mb-4 text-sm text-muted-foreground text-right">
+              Inviting developers: register, request contributor access, and submit
+              articles for admin approval.
+            </p>
+          )}
         </div>
-
         <div className="flex flex-col md:flex-row gap-6 mb-10">
           <div className="w-full md:w-3/4">
             <div className="relative mb-8">
@@ -93,6 +166,21 @@ export default function Blog() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="mb-8">
+              <p className="text-sm font-medium mb-3">Popular search topics</p>
+              <div className="flex flex-wrap gap-2">
+                {seoTopics.map((topic) => (
+                  <Badge
+                    key={topic}
+                    variant={searchQuery === topic ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setSearchQuery(topic)}
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
             </div>
 
             {isLoading ? (
@@ -250,15 +338,18 @@ export default function Blog() {
             </Card>
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>About</CardTitle>
+                <CardTitle>Choose Your Next Step by Trigger</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  I write about my experiences as a developer, entrepreneur, and
-                  lifelong learner.
+                  Contractors: missed estimate requests. Local businesses: low booking conversion.
+                  Startups: unclear MVP scope. Pick the CTA that matches your case.
                 </p>
-                <Button variant="outline" className="mt-4 w-full" asChild>
-                  <Link href="/#contact">Get in touch</Link>
+                <Button className="mt-4 w-full" asChild>
+                  <Link href="/audit">Get Your Free Website Growth Audit</Link>
+                </Button>
+                <Button variant="outline" className="mt-2 w-full" asChild>
+                  <Link href="/schedule">Book a Strategy Call</Link>
                 </Button>
               </CardContent>
             </Card>

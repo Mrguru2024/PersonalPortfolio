@@ -161,7 +161,17 @@ export function ProjectAssessmentWizard({
       if (!res.ok)
         throw new Error(data.error || data.message || "Submission failed");
       const id = data.assessment?.id ?? data.id;
-      if (id) router.push(`/assessment/results?id=${id}`);
+      if (id) {
+        const idValue = String(id);
+        try {
+          if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+            sessionStorage.removeItem(`assessment_404_${idValue}`);
+          }
+        } catch {
+          // ignore storage failures and continue navigation
+        }
+        router.push(`/assessment/results?id=${encodeURIComponent(idValue)}&fresh=1`);
+      }
       else setError("Submission succeeded but no assessment ID returned.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission failed.");

@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
+import SiteFooterCTA from "./components/SiteFooterCTA";
 
-const baseUrl = "https://mrguru.dev";
+const baseUrl = "https://www.ascendra.tech";
 
 export const metadata: Metadata = {
   title: "Ascendra Technologies",
@@ -62,6 +63,7 @@ export default function RootLayout({
             <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
               {children}
             </main>
+            <SiteFooterCTA />
           </Providers>
         </div>
       </body>

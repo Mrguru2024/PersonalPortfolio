@@ -17,8 +17,10 @@ import {
   MessageSquare,
   Mail,
   BarChart3,
+  CheckCircle2,
   Users,
   Contact,
+  Search,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -69,8 +71,10 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Website Audits", href: "/admin/website-audits", icon: Search },
     { name: "CRM", href: "/admin/crm", icon: Contact },
     { name: "Blog", href: "/admin/blog", icon: FileText },
+    { name: "Blog Reviews", href: "/admin/blog/review", icon: CheckCircle2 },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3 },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
@@ -126,6 +130,8 @@ export default function Header(_props: HeaderProps) {
   };
 
   const isHomePage = pathname === "/";
+  const mobileNavItemClass =
+    "min-h-[44px] flex items-center text-foreground/80 hover:text-primary font-medium py-3 px-3 rounded-md hover:bg-background/70 transition";
 
   return (
     <header
@@ -133,7 +139,7 @@ export default function Header(_props: HeaderProps) {
       style={{ background: "transparent", border: "none", boxShadow: "none" }}
     >
       <div
-        className="container mx-auto px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
+        className="container mx-auto px-3 fold:px-4 sm:px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
         style={{ background: "transparent", border: "none", boxShadow: "none" }}
       >
         {/* Left spacer (logo was here) */}
@@ -141,16 +147,30 @@ export default function Header(_props: HeaderProps) {
         {/* Center: nav */}
         <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
           {isHomePage ? (
-            navItems.map((item) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => scrollToSection(item.href)}
+            <>
+              {navItems.map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => scrollToSection(item.href)}
+                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+                >
+                  {item.name}
+                </button>
+              ))}
+              <Link
+                href="/audit"
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
-                {item.name}
-              </button>
-            ))
+                Growth Audit
+              </Link>
+              <Link
+                href="/schedule"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Strategy Call
+              </Link>
+            </>
           ) : (
             <>
               <Link
@@ -170,6 +190,18 @@ export default function Header(_props: HeaderProps) {
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
                 Resume
+              </Link>
+              <Link
+                href="/audit"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Growth Audit
+              </Link>
+              <Link
+                href="/schedule"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Strategy Call
               </Link>
               <Link
                 href="/generate-images"
@@ -253,13 +285,13 @@ export default function Header(_props: HeaderProps) {
         </div>
 
         {/* Mobile: menu button + theme (nav links in dropdown below) */}
-        <div className="flex items-center gap-3 md:hidden shrink-0">
+        <div className="flex items-center gap-2 md:hidden shrink-0">
           <ThemeToggle />
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleMobileMenu}
-            className="h-10 min-h-[44px] px-3 gap-2 text-foreground font-medium border border-border/50"
+            className="h-11 min-h-[44px] min-w-[44px] px-3 gap-2 text-foreground font-medium border border-border/50"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
           >
@@ -268,14 +300,19 @@ export default function Header(_props: HeaderProps) {
             ) : (
               <Menu className="h-5 w-5 shrink-0" />
             )}
-            <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
+            <span className="hidden xs:inline">
+              {mobileMenuOpen ? "Close" : "Menu"}
+            </span>
           </Button>
         </div>
       </div>
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)]" style={{ top: 0 }}>
+        <div
+          className="md:hidden fixed inset-0 z-50 flex flex-col pt-[max(env(safe-area-inset-top),0.5rem)] pb-[env(safe-area-inset-bottom)]"
+          style={{ top: 0 }}
+        >
           {/* Backdrop: tap to close, prevents touch scroll from hitting body */}
           <button
             type="button"
@@ -283,46 +320,76 @@ export default function Header(_props: HeaderProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-[2px] touch-none"
             onClick={closeMobileMenu}
           />
-          <div className="container mx-auto px-4 pb-4 pt-3 relative z-10 flex-1 min-h-0 flex flex-col">
-            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 pb-3 pt-2 relative z-10 flex-1 min-h-0 flex flex-col">
+            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[calc(100dvh-6.5rem)] sm:max-h-[calc(100dvh-7rem)]">
               <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
                 {isHomePage ? (
-                  navItems.map((item) => (
-                    <button
-                      key={item.name}
-                      type="button"
-                      onClick={() => scrollToSection(item.href)}
-                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                  <>
+                    {navItems.map((item) => (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => scrollToSection(item.href)}
+                        className={`${mobileNavItemClass} text-left w-full`}
+                      >
+                        {item.name}
+                      </button>
+                    ))}
+                    <Link
+                      href="/audit"
+                      className={mobileNavItemClass}
+                      onClick={closeMobileMenu}
                     >
-                      {item.name}
-                    </button>
-                  ))
+                      Growth Audit
+                    </Link>
+                    <Link
+                      href="/schedule"
+                      className={mobileNavItemClass}
+                      onClick={closeMobileMenu}
+                    >
+                      Strategy Call
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link
                       href="/"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      className={mobileNavItemClass}
                       onClick={closeMobileMenu}
                     >
                       Home
                     </Link>
                     <Link
                       href="/blog"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      className={mobileNavItemClass}
                       onClick={closeMobileMenu}
                     >
                       Blog
                     </Link>
                     <Link
                       href="/resume"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      className={mobileNavItemClass}
                       onClick={closeMobileMenu}
                     >
                       Resume
                     </Link>
                     <Link
+                      href="/audit"
+                      className={mobileNavItemClass}
+                      onClick={closeMobileMenu}
+                    >
+                      Growth Audit
+                    </Link>
+                    <Link
+                      href="/schedule"
+                      className={mobileNavItemClass}
+                      onClick={closeMobileMenu}
+                    >
+                      Strategy Call
+                    </Link>
+                    <Link
                       href="/generate-images"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition flex items-center gap-2"
+                      className={`${mobileNavItemClass} gap-2`}
                       onClick={closeMobileMenu}
                     >
                       <Wand2 className="h-4 w-4 shrink-0" /> AI Image Generator
@@ -347,7 +414,7 @@ export default function Header(_props: HeaderProps) {
                               <Link
                                 key={page.href}
                                 href={page.href}
-                                className="flex items-center gap-2 text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                                className={`${mobileNavItemClass} gap-2`}
                                 onClick={closeMobileMenu}
                               >
                                 <Icon className="h-4 w-4 shrink-0" />
@@ -363,7 +430,7 @@ export default function Header(_props: HeaderProps) {
                           logoutMutation.mutate();
                           closeMobileMenu();
                         }}
-                        className="flex items-center w-full text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                        className={`${mobileNavItemClass} w-full text-left`}
                       >
                         <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
                       </button>
@@ -371,7 +438,7 @@ export default function Header(_props: HeaderProps) {
                   ) : (
                     <Link
                       href="/auth"
-                      className="flex items-center text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      className={mobileNavItemClass}
                       onClick={closeMobileMenu}
                     >
                       <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login /

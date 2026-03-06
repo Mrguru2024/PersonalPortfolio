@@ -91,6 +91,7 @@ const AdminBlog = () => {
   const [showTitleDialog, setShowTitleDialog] = useState(false);
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const { user } = useAuth();
+  const isApprovedAdmin = user?.isAdmin === true && user?.adminApproved === true;
   
   const { toast } = useToast();
   const router = useRouter();
@@ -121,12 +122,16 @@ const AdminBlog = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      return apiRequest('/api/blog', 'POST', data);
+      const response = await apiRequest("POST", "/api/blog", data);
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
+      const submittedForReview = result?.submittedForReview === true;
       toast({
         title: "Success!",
-        description: "Blog post created successfully.",
+        description: submittedForReview
+          ? "Submission received. An admin will review and publish it."
+          : "Blog post created successfully.",
       });
       router.push("/blog");
     },
@@ -135,7 +140,7 @@ const AdminBlog = () => {
       toast({
         title: "Error",
         description: errorMessage.includes("403") || errorMessage.includes("Access denied")
-          ? "You don't have permission to create blog posts. Only admins and approved writers can create posts."
+          ? "You don't have permission. Only approved developers and admins can submit posts."
           : `Failed to create blog post: ${errorMessage}`,
         variant: "destructive"
       });
@@ -360,13 +365,16 @@ const AdminBlog = () => {
                             type="checkbox"
                             checked={field.value}
                             onChange={field.onChange}
+                            disabled={!isApprovedAdmin}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Publish immediately</FormLabel>
                           <FormDescription>
-                            If unchecked, the post will be saved as a draft.
+                            {isApprovedAdmin
+                              ? "If unchecked, the post will be saved as a draft."
+                              : "Developer submissions always require admin approval before publishing."}
                           </FormDescription>
                         </div>
                       </FormItem>

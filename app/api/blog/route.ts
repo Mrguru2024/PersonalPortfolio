@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { blogController } from "@server/controllers/blogController";
 import { blogSeedPosts } from "@/lib/blogSeedData";
-import { canCreateBlog, getSessionUser } from "@/lib/auth-helpers";
+import {
+  canCreateBlog,
+  canPublishBlog,
+  getIpAddress,
+  getSessionUser,
+} from "@/lib/auth-helpers";
 import { createMockResponse } from "@/lib/api-helpers";
+import { storage } from "@server/storage";
+import { z } from "zod";
 
 const BLOG_DB_TIMEOUT_MS = 5_000; // 5s – fail fast and return seed so homepage loads
+const contributorSubmissionSchema = z.object({
+  title: z.string().min(5),
+  summary: z.string().min(10),
+  content: z.string().min(50),
+  coverImage: z.string().optional().default(""),
+  tags: z.array(z.string()).min(1),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -80,35 +94,103 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Check if user can create blogs (admin or approved writer)
+    // Only approved developers/admins can write.
     if (!(await canCreateBlog(req))) {
       return NextResponse.json(
         {
           message:
-            "Access denied. Only admins and approved writers can create blog posts.",
+            "Access denied. Only approved developers and admins can submit blog posts.",
         },
         { status: 403 }
       );
     }
 
-    const body = await req.json();
-    const mockReq = {
-      body,
-      user: await getSessionUser(req),
-    } as any;
-
-    const { mockRes, getResponse } = createMockResponse();
-    await blogController.createBlogPost(mockReq, mockRes);
-
-    const response = getResponse();
-    if (!response) {
+    const user = await getSessionUser(req);
+    if (!user) {
       return NextResponse.json(
-        { error: "No response from controller" },
-        { status: 500 }
+        { message: "Authentication required." },
+        { status: 401 }
       );
     }
 
-    return response;
+    const body = await req.json();
+
+    // Approved admins can publish directly.
+    if (await canPublishBlog(req)) {
+      const mockReq = {
+        body,
+        user,
+      } as any;
+
+      const { mockRes, getResponse } = createMockResponse();
+      await blogController.createBlogPost(mockReq, mockRes);
+
+      const response = getResponse();
+      if (!response) {
+        return NextResponse.json(
+          { error: "No response from controller" },
+          { status: 500 }
+        );
+      }
+
+      const responsePayload = await response.clone().json().catch(() => null);
+      if (
+        response.ok &&
+        body?.isPublished === true &&
+        responsePayload &&
+        typeof responsePayload.id === "number"
+      ) {
+        const post = await storage.updateBlogPost(responsePayload.id, {
+          isPublished: true,
+        } as any);
+        return NextResponse.json({
+          ...post,
+          publishedByAdmin: true,
+          message: "Blog post published by admin.",
+        });
+      }
+
+      return response;
+    }
+
+    // Approved developers submit for admin review (not published directly).
+    const parsed = contributorSubmissionSchema.safeParse({
+      title: body?.title,
+      summary: body?.summary,
+      content: body?.content,
+      coverImage: body?.coverImage || "",
+      tags: Array.isArray(body?.tags) ? body.tags : [],
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid blog submission data.",
+          details: parsed.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const contribution = await storage.createBlogPostContribution(
+      {
+        ...parsed.data,
+        coverImage: parsed.data.coverImage || "/favicon.svg",
+        authorName: user.full_name || user.username || "Developer Contributor",
+        authorEmail: user.email || `${user.username}@local.dev`,
+      },
+      getIpAddress(req)
+    );
+
+    return NextResponse.json(
+      {
+        message:
+          "Submission received. An admin will review and approve before publishing.",
+        submittedForReview: true,
+        contributionId: contribution.id,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("Error in POST /api/blog:", error);
     return NextResponse.json(

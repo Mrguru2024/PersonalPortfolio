@@ -16,7 +16,7 @@ export default function ResumePage() {
               Resume Request
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              I'm excited that you're interested in my qualifications. Please complete the form below to access my resume.
+              Complete the form below to request my resume and relevant background details.
             </p>
           </div>
           

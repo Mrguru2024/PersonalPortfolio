@@ -178,7 +178,7 @@ const AuthPage = () => {
                 <span className="text-primary font-bold">02</span>
               </div>
               <p className="font-medium">
-                Read and contribute to the development blog
+                Apply as a developer contributor for the blog
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -405,6 +405,11 @@ const AuthPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Developer writer invite: after registration, request contributor
+                  access from the blog page. Admin approval is required before you
+                  can submit posts.
+                </p>
                   <Form {...registerForm}>
                     <form
                       onSubmit={registerForm.handleSubmit(onRegister)}

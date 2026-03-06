@@ -1,52 +1,127 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, FileText, File, FileType, Loader2, Printer } from "lucide-react";
+import { Download, File, FileType, Loader2, Printer, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ProposalDocument as ProposalDocType } from "@server/services/proposalService";
+import type { ProjectAssessment } from "@shared/assessmentSchema";
 
 interface ProposalDocumentProps {
   assessmentId: number;
+  fallbackAssessmentData?: Partial<ProjectAssessment> & { name?: string; email?: string };
+  fallbackPricingBreakdown?: any;
 }
 
-export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
+export function ProposalDocument({
+  assessmentId,
+  fallbackAssessmentData,
+  fallbackPricingBreakdown,
+}: ProposalDocumentProps) {
   const [proposal, setProposal] = useState<ProposalDocType | null>(null);
   const [suggestions, setSuggestions] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
-    const fetchProposal = async () => {
-      try {
-        const [proposalRes, suggestionsRes] = await Promise.all([
-          fetch(`/api/assessment/${assessmentId}/proposal`),
-          fetch(`/api/assessment/${assessmentId}/suggestions`),
-        ]);
-
-        if (proposalRes.ok) {
-          const proposalData = await proposalRes.json();
-          setProposal(proposalData.proposal);
+    const ac = new AbortController();
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const fetchWithRetry = async (
+      url: string,
+      retries = 2
+    ): Promise<Response> => {
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          return await fetch(url, {
+            signal: ac.signal,
+            credentials: "include",
+            cache: "no-store",
+          });
+        } catch (error) {
+          if (ac.signal.aborted) throw error;
+          lastError = error;
+          if (attempt < retries) {
+            await wait(250 * (attempt + 1));
+          }
         }
+      }
+      throw lastError instanceof Error ? lastError : new Error("Network request failed.");
+    };
 
-        if (suggestionsRes.ok) {
-          const suggestionsData = await suggestionsRes.json();
+    const fetchProposal = async () => {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const proposalRes = await fetchWithRetry(`/api/assessment/${assessmentId}/proposal`, 2);
+        if (!proposalRes.ok) {
+          throw new Error(`Proposal request failed (${proposalRes.status}).`);
+        }
+        const proposalData = await proposalRes.json();
+        if (ac.signal.aborted) return;
+
+        if (proposalData?.proposal) {
+          setProposal(proposalData.proposal);
+        } else {
+          throw new Error("Proposal response did not include a proposal.");
+        }
+      } catch (error) {
+        if (ac.signal.aborted) return;
+        console.error("Error fetching proposal:", error);
+
+        const fallback = buildFallbackProposal(
+          assessmentId,
+          fallbackAssessmentData,
+          fallbackPricingBreakdown
+        );
+
+        if (fallback) {
+          setProposal(fallback);
+          setFetchError(
+            "We couldn’t fetch the live proposal right now, so this fallback proposal is generated from your saved assessment data."
+          );
+        } else {
+          setFetchError(
+            error instanceof Error ? error.message : "Unable to load proposal."
+          );
+          setProposal(null);
+        }
+      } finally {
+        if (!ac.signal.aborted) {
+          setLoading(false);
+        }
+      }
+
+      // Suggestions are optional; do not block proposal display if this fails.
+      try {
+        const suggestionsRes = await fetchWithRetry(
+          `/api/assessment/${assessmentId}/suggestions`,
+          1
+        );
+        if (!suggestionsRes.ok || ac.signal.aborted) return;
+        const suggestionsData = await suggestionsRes.json();
+        if (typeof suggestionsData?.suggestions === "string") {
           setSuggestions(suggestionsData.suggestions);
         }
       } catch (error) {
-        console.error("Error fetching proposal:", error);
-      } finally {
-        setLoading(false);
+        if (!ac.signal.aborted) {
+          console.warn("Suggestions unavailable:", error);
+        }
       }
     };
 
     if (assessmentId) {
       fetchProposal();
+    } else {
+      setLoading(false);
     }
-  }, [assessmentId]);
+
+    return () => ac.abort();
+  }, [assessmentId, fallbackAssessmentData, fallbackPricingBreakdown, retryNonce]);
 
   const exportAsPDF = () => {
     setExporting("pdf");
@@ -238,6 +313,18 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <p className="text-gray-600 dark:text-gray-400">Unable to load proposal</p>
+          {fetchError && (
+            <p className="text-sm text-muted-foreground mt-2">{fetchError}</p>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setRetryNonce((prev) => prev + 1)}
+          >
+            Retry loading proposal
+          </Button>
         </CardContent>
       </Card>
     );
@@ -252,6 +339,12 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
           <CardDescription>Export your proposal in your preferred format</CardDescription>
         </CardHeader>
         <CardContent>
+          {fetchError && (
+            <div className="mb-4 p-3 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 text-sm text-yellow-900 dark:text-yellow-200 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{fetchError}</span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={exportAsPDF}
@@ -682,6 +775,158 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
       )}
     </div>
   );
+}
+
+function buildFallbackProposal(
+  assessmentId: number,
+  assessmentData?: Partial<ProjectAssessment> & { name?: string; email?: string },
+  pricingBreakdown?: any
+): ProposalDocType | null {
+  if (!assessmentData) return null;
+
+  const safeProjectName = assessmentData.projectName || `Project ${assessmentId}`;
+  const estimatedMin = toNumber(pricingBreakdown?.estimatedRange?.min);
+  const estimatedMax = toNumber(pricingBreakdown?.estimatedRange?.max);
+  const estimatedAvg =
+    toNumber(pricingBreakdown?.estimatedRange?.average) ||
+    Math.round((estimatedMin + estimatedMax) / 2);
+  const finalTotal = estimatedAvg > 0 ? estimatedAvg : estimatedMax || estimatedMin;
+
+  return {
+    title: `Professional Proposal: ${safeProjectName}`,
+    clientName: assessmentData.name || "Client",
+    clientEmail: assessmentData.email || "N/A",
+    date: new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+    preparedBy: "Ascendra Technologies",
+    projectOverview: {
+      projectName: safeProjectName,
+      projectType: assessmentData.projectType || "project",
+      description:
+        assessmentData.projectDescription ||
+        "Project details were provided in the assessment form.",
+      targetAudience: assessmentData.targetAudience || "Target audience not specified.",
+      mainGoals: assessmentData.mainGoals || [],
+    },
+    scopeOfWork: {
+      features: assessmentData.mustHaveFeatures || [],
+      platforms: assessmentData.platform || [],
+      integrations: assessmentData.integrations || [],
+      technicalRequirements: [
+        "Responsive design",
+        "Production-ready deployment",
+      ],
+    },
+    timeline: {
+      phases: [
+        {
+          phase: "Discovery & Planning",
+          duration: "1-2 weeks",
+          deliverables: ["Requirements review", "Implementation plan"],
+        },
+        {
+          phase: "Build & Iteration",
+          duration: "3-6 weeks",
+          deliverables: ["Core development", "Internal QA and revisions"],
+        },
+        {
+          phase: "Launch & Handoff",
+          duration: "1-2 weeks",
+          deliverables: ["Deployment", "Handoff documentation"],
+        },
+      ],
+      totalDuration: "Approximately 6-10 weeks",
+      startDate: "Upon approval",
+    },
+    pricing: {
+      basePrice: toNumber(pricingBreakdown?.basePrice),
+      features: Array.isArray(pricingBreakdown?.features)
+        ? pricingBreakdown.features
+        : [],
+      complexity: {
+        level: pricingBreakdown?.complexity?.level || "moderate",
+        multiplier: toNumber(pricingBreakdown?.complexity?.multiplier, 1),
+        description:
+          pricingBreakdown?.complexity?.description ||
+          "Complexity is based on selected scope and features.",
+      },
+      timeline: {
+        rush: Boolean(pricingBreakdown?.timeline?.rush),
+        multiplier: toNumber(pricingBreakdown?.timeline?.multiplier, 1),
+        description:
+          pricingBreakdown?.timeline?.description || "Standard delivery schedule.",
+      },
+      platform: {
+        platforms: assessmentData.platform || [],
+        price: toNumber(pricingBreakdown?.platform?.price),
+      },
+      design: {
+        level: pricingBreakdown?.design?.level || "modern",
+        price: toNumber(pricingBreakdown?.design?.price),
+      },
+      integrations: {
+        count: toNumber(pricingBreakdown?.integrations?.count),
+        price: toNumber(pricingBreakdown?.integrations?.price),
+      },
+      subtotal: toNumber(pricingBreakdown?.subtotal) || finalTotal,
+      finalTotal,
+      paymentSchedule: [
+        {
+          milestone: "Deposit to begin",
+          amount: Math.round(finalTotal * 0.4),
+          dueDate: "Upon contract signing",
+        },
+        {
+          milestone: "Midpoint",
+          amount: Math.round(finalTotal * 0.3),
+          dueDate: "At project midpoint",
+        },
+        {
+          milestone: "Prior to launch",
+          amount: finalTotal - Math.round(finalTotal * 0.4) - Math.round(finalTotal * 0.3),
+          dueDate: "Prior to launch",
+        },
+      ],
+    },
+    deliverables: [
+      "Production-ready implementation",
+      "Source code handoff",
+      "Launch support",
+    ],
+    expectations: {
+      clientResponsibilities: [
+        "Provide timely feedback",
+        "Supply required content and assets",
+      ],
+      ourCommitments: [
+        "Deliver agreed scope",
+        "Provide regular progress updates",
+      ],
+      communication:
+        "Primary communication via email, with milestone check-ins as needed.",
+    },
+    nextSteps: [
+      "Review proposal details",
+      "Confirm scope and timeline",
+      "Approve and schedule kickoff",
+    ],
+    paymentStructureText:
+      "40% deposit to begin, 30% at midpoint, 30% prior to launch.",
+    postLaunchSupportText: "30 days of post-launch support is included.",
+    collaborationNote:
+      "We will collaborate closely and adjust within agreed phase scope.",
+    developmentPhases: undefined,
+    domainServices: undefined,
+    specialNotes: undefined,
+  };
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : fallback;
 }
 
 function formatProposalAsText(proposal: ProposalDocType | null, suggestions: string): string {

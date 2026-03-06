@@ -87,13 +87,13 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
             image: post.coverImage || "",
             datePublished: post.publishedAt || "",
             dateModified: post.updatedAt || post.publishedAt || "",
-            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
+            author: { name: "Anthony MrGuru Feaster", url: "https://www.ascendra.tech" },
             publisher: {
               name: "Ascendra Technologies",
-              url: "https://mrguru.dev",
+              url: "https://www.ascendra.tech",
             },
-            url: `https://mrguru.dev/blog/${post.slug}`,
-            mainEntityOfPage: `https://mrguru.dev/blog/${post.slug}`,
+            url: `https://www.ascendra.tech/blog/${post.slug}`,
+            mainEntityOfPage: `https://www.ascendra.tech/blog/${post.slug}`,
             keywords: tags,
           },
         }}
@@ -138,6 +138,15 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
           internalLinks={post.internalLinks ?? []}
           externalLinks={post.externalLinks ?? []}
         />
+        <div className="my-10 rounded-lg border bg-muted/30 p-5">
+          <p className="text-sm sm:text-base">
+            If this matches your trigger (missed estimate requests, low booking conversion,
+            or unclear MVP priorities), we can map your next actions in an audit.
+          </p>
+          <Button asChild className="mt-3">
+            <Link href="/audit">Get Your Free Website Growth Audit</Link>
+          </Button>
+        </div>
         <RelatedPosts
           relatedPostIds={post.relatedPosts ?? []}
           currentPostId={post.id}

@@ -17,7 +17,6 @@ import {
   Rocket,
   Globe,
   Users,
-  TrendingUp,
   Layers,
   Monitor,
   Server,
@@ -30,7 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -43,6 +41,30 @@ interface Service {
   category: "development" | "design" | "consulting" | "maintenance";
   popular?: boolean;
 }
+
+const outcomeSolutions = [
+  {
+    title: "Lead Generation Systems",
+    description:
+      "For contractors and service businesses that need better inbound lead flow and faster follow-up.",
+    href: "/contractor-systems",
+    cta: "Explore Contractor Systems",
+  },
+  {
+    title: "Conversion Focused Websites",
+    description:
+      "For local businesses scaling online that need stronger conversion paths, tracking, and appointment funnels.",
+    href: "/local-business-growth",
+    cta: "Explore Local Growth Systems",
+  },
+  {
+    title: "Startup / MVP Development",
+    description:
+      "For founders validating products and building scalable technical foundations with a real delivery partner.",
+    href: "/startup-mvp-development",
+    cta: "Explore MVP Development",
+  },
+] as const;
 
 const services: Service[] = [
   // Development Services
@@ -361,9 +383,9 @@ function ServicesSection() {
   return (
     <section
       id="services"
-      className="w-full min-w-0 max-w-full py-20 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
+      className="py-20 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
-      <div className="max-w-7xl mx-auto min-w-0">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -372,18 +394,36 @@ function ServicesSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <Badge variant="outline" className="mb-4">
-            <TrendingUp className="h-3 w-3 mr-2" />
-            Revenue-Generating Services
-          </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Full-Stack Development Services
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Revenue-Focused Development Services
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From concept to deployment, I offer comprehensive development,
-            design, and consulting services that showcase my expertise as a
-            Next.js React and UX/UI developer.
+            Choose the delivery path that matches your current stage, then scale with
+            clear priorities, measurable milestones, and production-ready implementation.
           </p>
+        </motion.div>
+
+        {/* Outcome Solutions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10"
+        >
+          {outcomeSolutions.map((solution) => (
+            <Card key={solution.title} className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">{solution.title}</CardTitle>
+                <CardDescription>{solution.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={solution.href}>{solution.cta}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </motion.div>
 
         {/* Category Filter */}
@@ -472,43 +512,27 @@ function ServicesSection() {
           <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
             <CardContent className="py-8">
               <h3 className="text-2xl font-bold mb-4">
-                Ready to Start Your Project?
+                Ready to turn traffic into qualified leads?
               </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Let's discuss how I can help bring your vision to life with
-                cutting-edge technology and exceptional user experience design.
+                Start with a free growth audit to identify your fastest ROI
+                opportunities, then book a strategy call to map execution.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 border-0 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/assessment">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Start Project</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Assessment
-                      </span>
-                      <span className="xs:hidden">Assessment</span>
-                    </span>
-                  </Link>
+                  <Link href="/audit">Get Your Free Website Growth Audit</Link>
                 </Button>
                 <Button
                   asChild
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/#contact">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Schedule</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Consultation
-                      </span>
-                      <span className="xs:hidden">Consult</span>
-                    </span>
-                  </Link>
+                  <Link href="/schedule">Book a Strategy Call</Link>
                 </Button>
               </div>
             </CardContent>

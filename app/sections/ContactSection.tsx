@@ -18,6 +18,7 @@ import {
   Github,
   Linkedin,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { NoSSR } from "@/components/NoSSR";
 import { AIAssistant } from "@/components/assessment/AIAssistant";
@@ -173,10 +174,10 @@ const ContactSection = () => {
 
   return (
     <section
-      className="w-full min-w-0 max-w-full py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
+      className="py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
       aria-label="Contact"
     >
-      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -190,31 +191,44 @@ const ContactSection = () => {
           >
             WORK WITH ME
           </Badge>
-          <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Ready to Start Your Project?
+          <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Ready to Scope Your Next Build?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-            Get a custom quote tailored to your goals. Share your project
-            details and I'll respond with a clear plan and next steps.
+            Choose the path that fits your stage: start with a free audit for clarity
+            or book a strategy call for direct planning.
           </p>
           <div className="flex justify-center gap-4">
-            <a
-              href="/assessment"
-              className="w-full sm:w-auto block sm:inline-block"
+            <Button
+              asChild
+              size="lg"
+              className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] border-0"
-              >
+              <Link href="/audit" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardCheck className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap text-center">
-                    Start Interactive Assessment
+                  <span className="text-center">
+                    Get Your Free Website Growth Audit
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>
-              </Button>
-            </a>
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto h-auto whitespace-normal text-center leading-snug text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
+            >
+              <Link href="/schedule" className="w-full sm:w-auto">
+                <span className="flex items-center justify-center gap-2">
+                  <span className="text-center">
+                    Book a Strategy Call
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </span>
+              </Link>
+            </Button>
           </div>
         </motion.div>
 

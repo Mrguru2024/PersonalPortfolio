@@ -15,6 +15,7 @@ import {
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import AnimatedButton from "@/components/AnimatedButton";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 
 export default function Blog() {
@@ -86,8 +87,8 @@ export default function Blog() {
             className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
             variants={itemVariants}
           >
-            I share my knowledge and experience through articles on web
-            development, design trends, and tech industry insights.
+            Articles built around real triggers: contractors missing estimate requests,
+            local businesses with low booking conversion, and startups unclear on MVP scope.
           </motion.p>
 
           {isLoading ? (
@@ -179,6 +180,13 @@ export default function Blog() {
                 View All Articles
               </AnimatedButton>
             </Link>
+          </motion.div>
+          <motion.div className="mt-10" variants={itemVariants}>
+            <PrimaryFunnelCTA
+              compact
+              title="Seeing one of these issues in your business?"
+              description="Use a free audit to prioritize fixes for missed estimate requests, low appointment conversion, or unclear MVP delivery priorities."
+            />
           </motion.div>
         </motion.div>
       </div>

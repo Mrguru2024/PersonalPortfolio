@@ -5,10 +5,10 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { ArrowRight, MousePointer, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import SocialLinks from "@/components/SocialLinks";
-import { personalInfo } from "@/lib/data";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ParticleAnimation from "@/components/ParticleAnimation";
 import ParallaxBackground from "@/components/ParallaxBackground";
 import TypewriterText from "@/components/TypewriterText";
@@ -26,12 +26,15 @@ const HeroSection = () => {
   const y = useTransform(scrollYProgress, [0, 0.5], [0, 50]);
   const [hoverWorkBtn, setHoverWorkBtn] = useState(false);
   const [hoverContactBtn, setHoverContactBtn] = useState(false);
+  const router = useRouter();
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
+  const scrollToWork = () => {
+    const element = document.getElementById("projects");
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+      return;
     }
+    router.push("/#projects");
   };
 
   return (
@@ -84,17 +87,17 @@ const HeroSection = () => {
             }}
             className="text-3xl fold:text-4xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
           >
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
-              Hello, I'm
-            </span>{" "}
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.7 }}
-              className="text-glow"
+              className="text-glow block"
             >
-              {personalInfo.name}
+              Build Digital Systems That Turn
             </motion.span>
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
+              Website Visitors Into Revenue
+            </span>
           </motion.h1>
 
           <motion.div
@@ -109,7 +112,7 @@ const HeroSection = () => {
             className="text-xl md:text-2xl text-foreground mb-4"
           >
             <span className="font-medium">
-              {personalInfo.title} at Ascendra Technologies
+              Custom websites, automation systems, and scalable platforms built for businesses ready to grow.
             </span>
           </motion.div>
 
@@ -121,10 +124,10 @@ const HeroSection = () => {
           >
             <TypewriterText
               phrases={[
-                "Building web applications that scale and deliver results.",
-                "From concept to launch—I help you ship with confidence.",
-                "Full-stack expertise. Clear process. Professional delivery.",
-                "Ready to start your project? Let's make it happen.",
+                "For contractors, local businesses, and startups ready to scale online.",
+                "Conversion-focused websites, automation, and product systems built to perform.",
+                "From strategy to launch: clear scope, fast execution, measurable outcomes.",
+                "Typical project range: $3,000 to $10,000+ with growth-ready architecture.",
               ]}
               typingSpeed={50}
               deletingSpeed={20}
@@ -147,13 +150,13 @@ const HeroSection = () => {
               <AnimatedButton
                 variant="gradient"
                 size="lg"
-                onClick={() => scrollToSection("projects")}
+                onClick={() => router.push("/audit")}
                 className="px-4 py-3 fold:px-6 fold:py-4 sm:px-6 sm:py-4 md:px-8 md:py-6 text-sm fold:text-base sm:text-base md:text-lg font-medium tracking-wide"
                 withGlowEffect={true}
               >
                 <span className="flex items-center gap-2">
-                  See My Work
-                  <Sparkles className="h-4 w-4" />
+                  Get Your Free Website Growth Audit
+                  <Sparkles className="h-4 w-4 shrink-0" />
                 </span>
               </AnimatedButton>
 
@@ -178,12 +181,12 @@ const HeroSection = () => {
               <AnimatedButton
                 variant="outline"
                 size="lg"
-                onClick={() => scrollToSection("contact")}
+                onClick={scrollToWork}
                 className="px-4 py-3 fold:px-6 fold:py-4 sm:px-6 sm:py-4 md:px-8 md:py-6 text-sm fold:text-base sm:text-base md:text-lg font-medium tracking-wide"
                 withPressEffect={true}
               >
                 <span className="flex items-center justify-center gap-2">
-                  <span className="whitespace-nowrap">Start a Project</span>
+                  <span className="whitespace-nowrap">View Our Work</span>
                   <motion.div
                     animate={{
                       x: hoverContactBtn ? 5 : 0,
@@ -196,6 +199,36 @@ const HeroSection = () => {
                 </span>
               </AnimatedButton>
             </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.72 }}
+            className="mt-3"
+          >
+            <button
+              type="button"
+              onClick={() => router.push("/schedule")}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Prefer to talk first? Book a Strategy Call
+            </button>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+            className="mt-6 flex flex-wrap justify-center gap-2 text-xs sm:text-sm"
+          >
+            <Link href="/contractor-systems" className="rounded-full border px-3 py-1 hover:border-primary hover:text-primary transition-colors">
+              Contractor Systems
+            </Link>
+            <Link href="/local-business-growth" className="rounded-full border px-3 py-1 hover:border-primary hover:text-primary transition-colors">
+              Local Business Growth
+            </Link>
+            <Link href="/startup-mvp-development" className="rounded-full border px-3 py-1 hover:border-primary hover:text-primary transition-colors">
+              Startup MVP Development
+            </Link>
           </motion.div>
 
           <motion.div

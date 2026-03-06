@@ -44,6 +44,7 @@ function AssessmentResultsContent() {
   const router = useRouter();
   const { user } = useAuth();
   const assessmentId = searchParams.get("id");
+  const isFreshSubmission = searchParams.get("fresh") === "1";
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchDone, setFetchDone] = useState(false);
@@ -58,17 +59,18 @@ function AssessmentResultsContent() {
       lastFetchedIdRef.current = null;
       return;
     }
-    // Skip refetch if we already got 404 for this id this session (avoids repeated 404s on remount/Suspense)
-    try {
-      if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
-        if (sessionStorage.getItem(`assessment_404_${assessmentId}`) === "1") {
-          setFetchError("Assessment not found. It may have been deleted or the link may be incorrect.");
-          setFetchDone(true);
-          return;
+    // Fresh submission should bypass stale local/session cache and force server read.
+    if (isFreshSubmission) {
+      try {
+        if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+          localStorage.removeItem(`assessment_${assessmentId}`);
         }
+        if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+          sessionStorage.removeItem(`assessment_404_${assessmentId}`);
+        }
+      } catch {
+        // ignore cache access failures
       }
-    } catch {
-      // ignore
     }
     // Show cached data immediately to avoid flash on remount (e.g. after Suspense)
     let cached: AssessmentResult | null = null;
@@ -80,7 +82,7 @@ function AssessmentResultsContent() {
     } catch {
       // ignore
     }
-    if (cached && cached.id === Number(assessmentId)) {
+    if (!isFreshSubmission && cached && cached.id === Number(assessmentId)) {
       setAssessment(cached);
       setFetchError(null);
       setFetchDone(true);
@@ -97,11 +99,6 @@ function AssessmentResultsContent() {
             return;
           }
           if (data.success && data.assessment) {
-            try {
-              sessionStorage.removeItem(`assessment_404_${assessmentId}`);
-            } catch {
-              // ignore
-            }
             setAssessment(data.assessment as AssessmentResult);
             setRequiresAccount(data.requiresAccount ?? false);
             try {
@@ -120,13 +117,30 @@ function AssessmentResultsContent() {
     const ac = new AbortController();
     (async () => {
       try {
-        const res = await fetch(`/api/assessment/${assessmentId}`, {
-          signal: ac.signal,
-          credentials: "include",
-        });
-        const contentType = res.headers.get("content-type") || "";
-        const text = await res.text();
-        if (ac.signal.aborted) return;
+        const fetchAssessment = async (
+          attempt = 0
+        ): Promise<{ res: Response; contentType: string; text: string } | null> => {
+          const res = await fetch(`/api/assessment/${assessmentId}`, {
+            signal: ac.signal,
+            credentials: "include",
+          });
+          const contentType = res.headers.get("content-type") || "";
+          const text = await res.text();
+          if (ac.signal.aborted) return null;
+
+          // New submissions may hit a short propagation delay; retry not-found briefly.
+          if (isFreshSubmission && res.status === 404 && attempt < 4) {
+            await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+            if (ac.signal.aborted) return null;
+            return fetchAssessment(attempt + 1);
+          }
+
+          return { res, contentType, text };
+        };
+
+        const fetched = await fetchAssessment();
+        if (!fetched || ac.signal.aborted) return;
+        const { res, contentType, text } = fetched;
         let data: { success?: boolean; assessment?: unknown; error?: string; requiresAccount?: boolean } = {};
         if (contentType.includes("application/json") && text.trim().startsWith("{")) {
           try {
@@ -139,11 +153,6 @@ function AssessmentResultsContent() {
         }
         if (res.ok && data.success && data.assessment) {
           const next = data.assessment as AssessmentResult;
-          try {
-            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(`assessment_404_${assessmentId}`);
-          } catch {
-            // ignore
-          }
           setAssessment(next);
           setRequiresAccount(data.requiresAccount || false);
           setFetchError(null);
@@ -156,13 +165,6 @@ function AssessmentResultsContent() {
             console.warn("Failed to save to localStorage:", e);
           }
         } else {
-          if (res.status === 404) {
-            try {
-              if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`assessment_404_${assessmentId}`, "1");
-            } catch {
-              // ignore
-            }
-          }
           const rawErr = typeof data?.error === "string" ? data.error.trim() : "";
           const safeErr =
             rawErr.length > 0 && rawErr.length < 300 && !rawErr.toLowerCase().includes("<!doctype")
@@ -194,7 +196,7 @@ function AssessmentResultsContent() {
       }
     })();
     return () => ac.abort();
-  }, [assessmentId]);
+  }, [assessmentId, isFreshSubmission]);
 
   if (!fetchDone) {
     return (
@@ -245,7 +247,7 @@ function AssessmentResultsContent() {
             Assessment Complete!
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Thank you for completing the assessment! Your professional proposal with detailed cost breakdown, timeline, and project scope is ready below. You can view it in your browser and download it as PDF, TXT, or DOCX.
+            Your estimate, project summary, and proposal tools are ready below.
           </p>
           {!user && (
             <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -279,35 +281,35 @@ function AssessmentResultsContent() {
               Market Price Reference
             </CardTitle>
             <CardDescription>
-              Market average prices for reference - your personalized quote will be sent via email
+              Benchmarks shown here are for guidance; your tailored quote follows after review.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
-                ⚠️ Important: These are market average prices for reference only
+                ⚠️ Important: These figures are directional benchmarks
               </p>
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                Your personalized quote tailored to your specific project needs and budget will be sent to your email within 24 hours.
+                We will send your custom scope and pricing recommendation after reviewing your submission.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average Range</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Range</p>
                 <p className="text-3xl font-bold text-primary">
                   ${pricingBreakdown?.estimatedRange?.min.toLocaleString()} - ${pricingBreakdown?.estimatedRange?.max.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Industry reference only</p>
+                <p className="text-xs text-gray-500 mt-2">Planning baseline</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Industry Average</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Midpoint</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.estimatedRange?.average.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Market reference</p>
+                <p className="text-xs text-gray-500 mt-2">Range midpoint</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Benchmark</p>
                 <p className="text-3xl font-bold">
                   ${pricingBreakdown?.marketComparison?.average.toLocaleString()}
                 </p>
@@ -538,7 +540,11 @@ function AssessmentResultsContent() {
 
         {/* Proposal Document */}
         <Separator className="my-8" />
-        <ProposalDocument assessmentId={assessment.id} />
+        <ProposalDocument
+          assessmentId={assessment.id}
+          fallbackAssessmentData={assessmentData}
+          fallbackPricingBreakdown={pricingBreakdown}
+        />
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
@@ -559,10 +565,10 @@ function AssessmentResultsContent() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push("/#contact")}
+            onClick={() => router.push("/schedule")}
           >
             <Mail className="h-4 w-4 mr-2" />
-            Contact Us
+            Book a Strategy Call
           </Button>
         </div>
       </div>

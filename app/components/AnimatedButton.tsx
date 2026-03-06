@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface AnimatedButtonProps
@@ -33,7 +33,6 @@ const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
     const buttonVariant = variant === "gradient" ? "default" : variant === "outline" ? "outline" : variant;
 
     const baseClass = cn(
-      buttonVariants({ variant: buttonVariant, size }),
       isGradient &&
         "bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg",
       withGlowEffect && "shadow-primary/25 shadow-lg hover:shadow-primary/40",

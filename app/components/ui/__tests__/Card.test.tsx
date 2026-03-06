@@ -27,7 +27,7 @@ describe('Card', () => {
 
   it('applies custom className to Card', () => {
     const { container } = render(<Card className="custom-class">Body</Card>);
-    const card = container.firstChild;
+    const card = container.firstElementChild as HTMLElement;
     expect(card).toHaveClass('custom-class');
   });
 });

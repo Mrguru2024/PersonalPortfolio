@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PageSEO, StructuredData } from "@/components/SEO";
 import HeroSection from "@/sections/HeroSection";
-import FreeSiteAuditPromoSection from "@/sections/FreeSiteAuditPromoSection";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 import SectionLoadErrorFallback from "@/components/SectionLoadErrorFallback";
 
@@ -39,7 +39,7 @@ function LazyWhenVisible({
 
   if (!inView) {
     return (
-      <div ref={ref} className={`w-full min-w-0 max-w-full ${minHeight}`}>
+      <div ref={ref} className={minHeight}>
         <SectionPlaceholder minHeight={minHeight} />
       </div>
     );
@@ -94,6 +94,25 @@ const ServicesSection = dynamic(
     )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
+    ssr: false,
+  }
+);
+const ProblemAwarenessSection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/ProblemAwarenessSection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Problem Awareness"
+          minHeight="min-h-[280px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[280px]" />,
     ssr: false,
   }
 );
@@ -203,6 +222,44 @@ const ContactSection = dynamic(
     ssr: false,
   }
 );
+const AuthoritySection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/AuthoritySection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Authority"
+          minHeight="min-h-[260px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[260px]" />,
+    ssr: false,
+  }
+);
+const TrustSignalsSection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/TrustSignalsSection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Trust Signals"
+          minHeight="min-h-[300px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[300px]" />,
+    ssr: false,
+  }
+);
 
 const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
   ssr: false,
@@ -211,8 +268,10 @@ const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
 
 // Prefetch next section chunks when user scrolls so the next section is ready by the time they reach it
 const prefetchServices = () => import("@/sections/ServicesSection");
+const prefetchAuthority = () => import("@/sections/AuthoritySection");
 const prefetchAnnouncements = () => import("@/sections/AnnouncementsSection");
 const prefetchProjects = () => import("@/sections/Projects");
+const prefetchTrustSignals = () => import("@/sections/TrustSignalsSection");
 const prefetchAbout = () => import("@/sections/AboutSection");
 const prefetchSkills = () => import("@/sections/SkillsSection");
 const prefetchBlog = () => import("@/sections/Blog");
@@ -317,7 +376,7 @@ const Home = ({ onSectionChange }: HomeProps) => {
   }, [onSectionChange, mounted]);
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+    <>
       <PageSEO
         title="Anthony MrGuru Feaster | Senior Full Stack Developer | Ascendra Technologies"
         description="Anthony MrGuru Feaster is a Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional."
@@ -338,8 +397,8 @@ const Home = ({ onSectionChange }: HomeProps) => {
           data: {
             name: "Anthony MrGuru Feaster",
             jobTitle: "Senior Full Stack Developer",
-            image: "https://mrguru.dev/images/profile.jpg",
-            url: "https://mrguru.dev",
+            image: "https://www.ascendra.tech/images/profile.jpg",
+            url: "https://www.ascendra.tech",
             sameAs: [
               "https://github.com/Mrguru2024",
               "https://www.linkedin.com/in/anthony-mrguru-feaster",
@@ -356,25 +415,41 @@ const Home = ({ onSectionChange }: HomeProps) => {
             name: "Ascendra Technologies – Anthony MrGuru Feaster",
             description:
               "Professional portfolio of Anthony MrGuru Feaster, Senior Full Stack Developer at Ascendra Technologies. Projects, skills, and services to start your next web project.",
-            url: "https://mrguru.dev",
-            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
+            url: "https://www.ascendra.tech",
+            author: { name: "Anthony MrGuru Feaster", url: "https://www.ascendra.tech" },
           },
         }}
       />
 
       <HeroSection />
-      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAnnouncements}>
+      <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchServices}>
+        <ProblemAwarenessSection />
+      </LazyWhenVisible>
+      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAuthority}>
         <ServicesSection />
       </LazyWhenVisible>
-      <FreeSiteAuditPromoSection />
+      <LazyWhenVisible minHeight="min-h-[260px]" onVisible={prefetchAnnouncements}>
+        <AuthoritySection />
+      </LazyWhenVisible>
+      <section className="py-8 sm:py-10">
+        <div className="container mx-auto px-4">
+          <PrimaryFunnelCTA
+            title="Need more qualified leads from your website?"
+            description="Get a free growth audit and a practical roadmap tailored to your business model, funnel gaps, and revenue goals."
+          />
+        </div>
+      </section>
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>
-      <div id="projects" className="w-full min-w-0 max-w-full">
-        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
+      <div id="projects">
+        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchTrustSignals}>
           <ProjectsSection />
         </LazyWhenVisible>
       </div>
+      <LazyWhenVisible minHeight="min-h-[300px]" onVisible={prefetchAbout}>
+        <TrustSignalsSection />
+      </LazyWhenVisible>
       <LazyWhenVisible minHeight="min-h-[360px]" onVisible={prefetchSkills}>
         <AboutSection />
       </LazyWhenVisible>
@@ -384,14 +459,14 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
-      <div id="contact" className="w-full min-w-0 max-w-full">
+      <div id="contact">
         <LazyWhenVisible minHeight="min-h-[380px]">
           <ContactSection />
         </LazyWhenVisible>
       </div>
 
       {mounted && <ViewModeToggle />}
-    </div>
+    </>
   );
 };
 
