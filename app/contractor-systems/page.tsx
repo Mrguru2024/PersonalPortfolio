@@ -9,6 +9,23 @@ export default function ContractorSystemsPage() {
       subtitle="Contractor website and automation systems built to turn local traffic into estimate requests."
       heroDescription="For roofing, HVAC, plumbing, electrical, and other service trades: we build fast, mobile-first websites and automation systems that convert local traffic into booked jobs."
       projectIds={["ssi-met-repairs", "keycode-help", "portfolio-website"]}
+      visualAssets={[
+        {
+          src: "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?auto=format&fit=crop&w=1600&q=80",
+          alt: "Service professional working onsite",
+          caption: "Service-professional imagery for trust and practicality",
+        },
+        {
+          src: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+          alt: "Tablet website view in field context",
+          caption: "Mobile and tablet-ready website presentation",
+        },
+        {
+          src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
+          alt: "Analytics dashboard on large display",
+          caption: "Lead and conversion reporting visual context",
+        },
+      ]}
       painPoints={[
         "Outdated websites that look untrustworthy on mobile.",
         "No follow-up automation after quote or contact form submissions.",

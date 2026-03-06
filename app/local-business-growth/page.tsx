@@ -9,6 +9,23 @@ export default function LocalBusinessGrowthPage() {
       subtitle="Growth-focused website systems for clinics, gyms, consultants, legal teams, and local service brands."
       heroDescription="For local businesses scaling online, we combine conversion-focused design, analytics, and automation so your site drives qualified bookings instead of just traffic."
       projectIds={["stackzen", "web-development-services", "keycode-help"]}
+      visualAssets={[
+        {
+          src: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1600&q=80",
+          alt: "Professional customer interaction in local business setting",
+          caption: "Credibility-focused business interaction visuals",
+        },
+        {
+          src: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1600&q=80",
+          alt: "Team reviewing business dashboard metrics",
+          caption: "Structured dashboard and conversion analytics style",
+        },
+        {
+          src: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80",
+          alt: "Office planning and conversion strategy session",
+          caption: "Polished SaaS-style planning and reporting visual",
+        },
+      ]}
       painPoints={[
         "Website traffic isn’t converting into appointments.",
         "No measurable funnel from click to booked call.",

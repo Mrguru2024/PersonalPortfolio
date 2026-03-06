@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -162,6 +163,11 @@ export interface PersonaLandingPageProps {
   subtitle: string;
   heroDescription: string;
   projectIds: string[];
+  visualAssets?: {
+    src: string;
+    alt: string;
+    caption: string;
+  }[];
   painPoints: string[];
   outcomes: string[];
   serviceHighlights: string[];
@@ -178,6 +184,7 @@ export function PersonaLandingPage({
   subtitle,
   heroDescription,
   projectIds,
+  visualAssets,
   painPoints,
   outcomes,
   serviceHighlights,
@@ -187,6 +194,14 @@ export function PersonaLandingPage({
   const highlightedProjects = projects
     .filter((project) => projectIds.includes(project.id))
     .slice(0, 3);
+  const showcaseAssets =
+    visualAssets && visualAssets.length > 0
+      ? visualAssets.slice(0, 3)
+      : highlightedProjects.map((project) => ({
+          src: project.image,
+          alt: `${project.title} visual`,
+          caption: project.title,
+        }));
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 sm:py-12">
@@ -258,19 +273,43 @@ export function PersonaLandingPage({
       </section>
 
       <section className={cn("mt-8 rounded-2xl p-4 sm:p-5", config.sectionTintClassName)}>
-        <h2 className="mb-4 text-2xl font-semibold">Visual Proof from Existing Builds</h2>
+        <h2 className="mb-4 text-2xl font-semibold">Visual Direction and Quality References</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {showcaseAssets.map((asset) => (
+            <Card
+              key={asset.src}
+              className="group h-full overflow-hidden border-border/70 bg-card/95 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <div className="relative h-44 overflow-hidden">
+                <Image
+                  src={asset.src}
+                  alt={asset.alt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  quality={90}
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </div>
+              <CardContent className="p-4">
+                <p className="text-sm font-semibold">{asset.caption}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           {highlightedProjects.map((project) => (
-            <Card key={project.id} className="h-full overflow-hidden border-border/70">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={project.image}
-                alt={`${project.title} screenshot`}
-                className="h-40 w-full object-cover"
-              />
+            <Card key={project.id} className="border-border/70 bg-card/95 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-sm font-semibold">{project.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{project.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                  {project.description}
+                </p>
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="mt-2 inline-flex text-xs font-medium text-primary hover:underline"
+                >
+                  View project reference
+                </Link>
               </CardContent>
             </Card>
           ))}
