@@ -140,7 +140,8 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
         />
         <div className="my-10 rounded-lg border bg-muted/30 p-5">
           <p className="text-sm sm:text-base">
-            Want this strategy translated into a practical action plan for your site?
+            If this matches your trigger (missed estimate requests, low booking conversion,
+            or unclear MVP priorities), we can map your next actions in an audit.
           </p>
           <Button asChild className="mt-3">
             <Link href="/audit">Get Your Free Website Growth Audit</Link>

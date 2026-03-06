@@ -74,8 +74,8 @@ export default function Blog() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Blog</h1>
             <p className="text-lg text-muted-foreground mb-6">
-              Practical growth insights on lead generation websites, automation
-              systems, and scalable Next.js development.
+              Practical guidance for common triggers: low estimate requests,
+              weak appointment conversion, and unclear MVP build priorities.
             </p>
           </div>
           <div className="flex justify-end mb-4">
@@ -270,12 +270,12 @@ export default function Blog() {
             </Card>
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Apply What You Read</CardTitle>
+                <CardTitle>Choose Your Next Step by Trigger</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Pick one next step: request an audit for prioritized fixes or
-                  book a strategy call for direct planning.
+                  Contractors: missed estimate requests. Local businesses: low booking conversion.
+                  Startups: unclear MVP scope. Pick the CTA that matches your case.
                 </p>
                 <Button className="mt-4 w-full" asChild>
                   <Link href="/audit">Get Your Free Website Growth Audit</Link>

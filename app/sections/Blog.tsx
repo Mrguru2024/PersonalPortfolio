@@ -87,8 +87,8 @@ export default function Blog() {
             className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
             variants={itemVariants}
           >
-            Practical growth content for contractors, local businesses, and startups:
-            conversion systems, technical SEO, performance, and scalable product delivery.
+            Articles built around real triggers: contractors missing estimate requests,
+            local businesses with low booking conversion, and startups unclear on MVP scope.
           </motion.p>
 
           {isLoading ? (
@@ -184,8 +184,8 @@ export default function Blog() {
           <motion.div className="mt-10" variants={itemVariants}>
             <PrimaryFunnelCTA
               compact
-              title="Turn blog traffic into real project opportunities"
-              description="Use a free growth audit to identify your best conversion wins and next build priorities."
+              title="Seeing one of these issues in your business?"
+              description="Use a free audit to prioritize fixes for missed estimate requests, low appointment conversion, or unclear MVP delivery priorities."
             />
           </motion.div>
         </motion.div>
