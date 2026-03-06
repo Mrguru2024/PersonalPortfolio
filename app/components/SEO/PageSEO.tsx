@@ -80,7 +80,7 @@ export function PageSEO({
   ogType = "website",
   ogImage = "/ascendra-logo.svg",
   ogImageAlt = "Ascendra Technologies",
-  baseUrl = "https://mrguru.dev",
+  baseUrl = "https://www.ascendra.tech",
   noIndex = false,
   schemaType = "WebPage",
 }: PageSEOProps) {

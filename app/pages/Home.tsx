@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PageSEO, StructuredData } from "@/components/SEO";
 import HeroSection from "@/sections/HeroSection";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import SectionPlaceholder from "@/components/SectionPlaceholder";
 import SectionLoadErrorFallback from "@/components/SectionLoadErrorFallback";
 
@@ -93,6 +94,25 @@ const ServicesSection = dynamic(
     )(),
   {
     loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
+    ssr: false,
+  }
+);
+const ProblemAwarenessSection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/ProblemAwarenessSection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Problem Awareness"
+          minHeight="min-h-[280px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[280px]" />,
     ssr: false,
   }
 );
@@ -202,6 +222,25 @@ const ContactSection = dynamic(
     ssr: false,
   }
 );
+const AuthoritySection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/AuthoritySection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Authority"
+          minHeight="min-h-[260px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[260px]" />,
+    ssr: false,
+  }
+);
 
 const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
   ssr: false,
@@ -210,6 +249,7 @@ const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
 
 // Prefetch next section chunks when user scrolls so the next section is ready by the time they reach it
 const prefetchServices = () => import("@/sections/ServicesSection");
+const prefetchAuthority = () => import("@/sections/AuthoritySection");
 const prefetchAnnouncements = () => import("@/sections/AnnouncementsSection");
 const prefetchProjects = () => import("@/sections/Projects");
 const prefetchAbout = () => import("@/sections/AboutSection");
@@ -337,8 +377,8 @@ const Home = ({ onSectionChange }: HomeProps) => {
           data: {
             name: "Anthony MrGuru Feaster",
             jobTitle: "Senior Full Stack Developer",
-            image: "https://mrguru.dev/images/profile.jpg",
-            url: "https://mrguru.dev",
+            image: "https://www.ascendra.tech/images/profile.jpg",
+            url: "https://www.ascendra.tech",
             sameAs: [
               "https://github.com/Mrguru2024",
               "https://www.linkedin.com/in/anthony-mrguru-feaster",
@@ -355,16 +395,30 @@ const Home = ({ onSectionChange }: HomeProps) => {
             name: "Ascendra Technologies – Anthony MrGuru Feaster",
             description:
               "Professional portfolio of Anthony MrGuru Feaster, Senior Full Stack Developer at Ascendra Technologies. Projects, skills, and services to start your next web project.",
-            url: "https://mrguru.dev",
-            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
+            url: "https://www.ascendra.tech",
+            author: { name: "Anthony MrGuru Feaster", url: "https://www.ascendra.tech" },
           },
         }}
       />
 
       <HeroSection />
-      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAnnouncements}>
+      <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchServices}>
+        <ProblemAwarenessSection />
+      </LazyWhenVisible>
+      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAuthority}>
         <ServicesSection />
       </LazyWhenVisible>
+      <LazyWhenVisible minHeight="min-h-[260px]" onVisible={prefetchAnnouncements}>
+        <AuthoritySection />
+      </LazyWhenVisible>
+      <section className="py-8 sm:py-10">
+        <div className="container mx-auto px-4">
+          <PrimaryFunnelCTA
+            title="Need more qualified leads from your website?"
+            description="Get a free growth audit and a practical roadmap tailored to your business model, funnel gaps, and revenue goals."
+          />
+        </div>
+      </section>
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>
@@ -382,6 +436,15 @@ const Home = ({ onSectionChange }: HomeProps) => {
       <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
         <BlogSection />
       </LazyWhenVisible>
+      <section className="py-6 sm:py-10">
+        <div className="container mx-auto px-4">
+          <PrimaryFunnelCTA
+            compact
+            title="Ready for your growth plan?"
+            description="Start with a free audit, then book a strategy call to map scope, timeline, and investment."
+          />
+        </div>
+      </section>
       <div id="contact">
         <LazyWhenVisible minHeight="min-h-[380px]">
           <ContactSection />

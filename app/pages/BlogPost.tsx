@@ -10,6 +10,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BlogPostSEO, StructuredData } from "@/components/SEO";
 import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { fetchBlogSeedPost } from "@/lib/blogSeedClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
@@ -87,13 +88,13 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
             image: post.coverImage || "",
             datePublished: post.publishedAt || "",
             dateModified: post.updatedAt || post.publishedAt || "",
-            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
+            author: { name: "Anthony MrGuru Feaster", url: "https://www.ascendra.tech" },
             publisher: {
               name: "Ascendra Technologies",
-              url: "https://mrguru.dev",
+              url: "https://www.ascendra.tech",
             },
-            url: `https://mrguru.dev/blog/${post.slug}`,
-            mainEntityOfPage: `https://mrguru.dev/blog/${post.slug}`,
+            url: `https://www.ascendra.tech/blog/${post.slug}`,
+            mainEntityOfPage: `https://www.ascendra.tech/blog/${post.slug}`,
             keywords: tags,
           },
         }}
@@ -138,6 +139,13 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
           internalLinks={post.internalLinks ?? []}
           externalLinks={post.externalLinks ?? []}
         />
+        <div className="my-10">
+          <PrimaryFunnelCTA
+            compact
+            title="Like this strategy? Apply it to your business."
+            description="Get a free website growth audit with prioritized recommendations you can execute immediately."
+          />
+        </div>
         <RelatedPosts
           relatedPostIds={post.relatedPosts ?? []}
           currentPostId={post.id}

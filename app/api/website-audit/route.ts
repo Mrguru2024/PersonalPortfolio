@@ -33,6 +33,8 @@ function buildAuditSummary(data: WebsiteAuditSubmission): string {
     "FREE WEBSITE AUDIT REQUEST",
     "",
     `Website: ${data.websiteUrl}`,
+    `Monthly Revenue Range: ${toTitle(data.monthlyRevenueRange)}`,
+    `Main Problem: ${data.mainProblem}`,
     `Business Type: ${toTitle(data.businessType)}`,
     `Preferred Timeline: ${toTitle(data.preferredTimeline)}`,
     `Preferred Contact Method: ${toTitle(data.preferredContactMethod)}`,

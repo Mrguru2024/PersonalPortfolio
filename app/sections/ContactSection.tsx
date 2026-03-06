@@ -192,11 +192,11 @@ const ContactSection = () => {
             WORK WITH ME
           </Badge>
           <h2 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Ready to Start Your Project?
+            Ready to Grow Your Pipeline?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-            Get a custom quote tailored to your goals. Share your project
-            details and I'll respond with a clear plan and next steps.
+            Start with a free growth audit and get a conversion-focused action
+            plan for your website, funnel, and automation.
           </p>
           <div className="flex justify-center gap-4">
             <Button
@@ -204,11 +204,11 @@ const ContactSection = () => {
               size="lg"
               className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]"
             >
-              <Link href="/assessment" className="w-full sm:w-auto">
+              <Link href="/audit" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardCheck className="h-4 w-4 shrink-0" />
                   <span className="whitespace-nowrap text-center">
-                    Start Interactive Assessment
+                    Get Your Free Website Growth Audit
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>
@@ -223,7 +223,7 @@ const ContactSection = () => {
               <Link href="/schedule" className="w-full sm:w-auto">
                 <span className="flex items-center justify-center gap-2">
                   <span className="whitespace-nowrap text-center">
-                    Schedule Consultation
+                    Book a Strategy Call
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>

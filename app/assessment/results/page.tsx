@@ -565,10 +565,10 @@ function AssessmentResultsContent() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push("/#contact")}
+            onClick={() => router.push("/schedule")}
           >
             <Mail className="h-4 w-4 mr-2" />
-            Contact Us
+            Book a Strategy Call
           </Button>
         </div>
       </div>

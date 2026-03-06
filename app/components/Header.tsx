@@ -158,7 +158,13 @@ export default function Header(_props: HeaderProps) {
                 href="/audit"
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
-                Free Audit
+                Growth Audit
+              </Link>
+              <Link
+                href="/schedule"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Strategy Call
               </Link>
             </>
           ) : (
@@ -185,7 +191,13 @@ export default function Header(_props: HeaderProps) {
                 href="/audit"
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
-                Free Audit
+                Growth Audit
+              </Link>
+              <Link
+                href="/schedule"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Strategy Call
               </Link>
               <Link
                 href="/generate-images"
@@ -319,7 +331,14 @@ export default function Header(_props: HeaderProps) {
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
                       onClick={closeMobileMenu}
                     >
-                      Free Audit
+                      Growth Audit
+                    </Link>
+                    <Link
+                      href="/schedule"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Strategy Call
                     </Link>
                   </>
                 ) : (
@@ -350,7 +369,14 @@ export default function Header(_props: HeaderProps) {
                       className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
                       onClick={closeMobileMenu}
                     >
-                      Free Audit
+                      Growth Audit
+                    </Link>
+                    <Link
+                      href="/schedule"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Strategy Call
                     </Link>
                     <Link
                       href="/generate-images"

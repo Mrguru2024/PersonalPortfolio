@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
 
-const baseUrl = "https://mrguru.dev";
+const baseUrl = "https://www.ascendra.tech";
 
 export const metadata: Metadata = {
   title: "Ascendra Technologies",

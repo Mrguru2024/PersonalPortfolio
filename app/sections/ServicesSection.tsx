@@ -377,12 +377,12 @@ function ServicesSection() {
             Revenue-Generating Services
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Full-Stack Development Services
+            Revenue-Focused Development Services
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From concept to deployment, I offer comprehensive development,
-            design, and consulting services that showcase my expertise as a
-            Next.js React and UX/UI developer.
+            We design and build conversion-ready websites, automation workflows,
+            and scalable products for contractors, local businesses, and startup
+            founders.
           </p>
         </motion.div>
 
@@ -472,11 +472,11 @@ function ServicesSection() {
           <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
             <CardContent className="py-8">
               <h3 className="text-2xl font-bold mb-4">
-                Ready to Start Your Project?
+                Ready to turn traffic into qualified leads?
               </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Let's discuss how I can help bring your vision to life with
-                cutting-edge technology and exceptional user experience design.
+                Start with a free growth audit to identify your fastest ROI
+                opportunities, then book a strategy call to map execution.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Button
@@ -484,13 +484,9 @@ function ServicesSection() {
                   size="lg"
                   className="w-full sm:w-auto bg-gradient-to-r from-primary to-purple-600 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/assessment">
+                  <Link href="/audit">
                     <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Start Project</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Assessment
-                      </span>
-                      <span className="xs:hidden">Assessment</span>
+                      <span className="whitespace-nowrap">Get Your Free Website Growth Audit</span>
                     </span>
                   </Link>
                 </Button>
@@ -502,11 +498,7 @@ function ServicesSection() {
                 >
                   <Link href="/schedule">
                     <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Schedule</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Consultation
-                      </span>
-                      <span className="xs:hidden">Consult</span>
+                      <span className="whitespace-nowrap">Book a Strategy Call</span>
                     </span>
                   </Link>
                 </Button>

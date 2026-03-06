@@ -55,6 +55,15 @@ export const AD_PLATFORMS = [
 
 export const CONTACT_METHODS = ["email", "phone", "zoom"] as const;
 
+export const AUDIT_REVENUE_RANGES = [
+  "pre-revenue",
+  "under-10k",
+  "10k-50k",
+  "50k-100k",
+  "100k-250k",
+  "250k-plus",
+] as const;
+
 export const WEBSITE_AUDIT_STATUSES = [
   "new",
   "in_review",
@@ -87,6 +96,10 @@ export const websiteAuditSchema = z.object({
   company: z.string().optional(),
   role: z.string().optional(),
   websiteUrl: z.string().url("Enter a valid website URL, including https://"),
+  monthlyRevenueRange: z.enum(AUDIT_REVENUE_RANGES),
+  mainProblem: z
+    .string()
+    .min(20, "Please describe the main problem in at least 20 characters."),
   businessType: z.enum(WEBSITE_BUSINESS_TYPES),
   targetAudience: z
     .string()

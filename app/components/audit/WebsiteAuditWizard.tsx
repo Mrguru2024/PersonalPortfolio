@@ -22,6 +22,7 @@ import {
   AD_PLATFORMS,
   AUDIT_CONVERSION_ACTIONS,
   AUDIT_PRIMARY_GOALS,
+  AUDIT_REVENUE_RANGES,
   AUDIT_TIMELINES,
   CMS_OPTIONS,
   CONTACT_METHODS,
@@ -33,6 +34,7 @@ type BusinessType = (typeof WEBSITE_BUSINESS_TYPES)[number];
 type CmsType = (typeof CMS_OPTIONS)[number];
 type Timeline = (typeof AUDIT_TIMELINES)[number];
 type ContactMethod = (typeof CONTACT_METHODS)[number];
+type RevenueRange = (typeof AUDIT_REVENUE_RANGES)[number];
 
 const parseList = (value: string): string[] =>
   value
@@ -58,6 +60,8 @@ export function WebsiteAuditWizard() {
     company: "",
     role: "",
     websiteUrl: "",
+    monthlyRevenueRange: "under-10k" as RevenueRange,
+    mainProblem: "",
     businessType: "lead-generation" as BusinessType,
     targetAudience: "",
     topChallenges: "",
@@ -107,6 +111,10 @@ export function WebsiteAuditWizard() {
       }
       if (!/^https?:\/\//i.test(form.websiteUrl.trim())) {
         setError("Website URL must include https:// or http://.");
+        return false;
+      }
+      if (form.mainProblem.trim().length < 20) {
+        setError("Main problem should be at least 20 characters.");
         return false;
       }
       if (form.targetAudience.trim().length < 10) {
@@ -160,6 +168,8 @@ export function WebsiteAuditWizard() {
     company: form.company.trim() || undefined,
     role: form.role.trim() || undefined,
     websiteUrl: form.websiteUrl.trim(),
+    monthlyRevenueRange: form.monthlyRevenueRange,
+    mainProblem: form.mainProblem.trim(),
     businessType: form.businessType,
     targetAudience: form.targetAudience.trim(),
     topChallenges: form.topChallenges.trim(),
@@ -231,11 +241,11 @@ export function WebsiteAuditWizard() {
               <Badge variant="secondary">Reference ID: {submittedId}</Badge>
             ) : null}
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button type="button" onClick={() => router.push("/")}>
-                Back to Home
+              <Button type="button" onClick={() => router.push("/schedule")}>
+                Book a Strategy Call
               </Button>
-              <Button type="button" variant="outline" onClick={() => router.push("/assessment")}>
-                Start Project Assessment
+              <Button type="button" variant="outline" onClick={() => router.push("/")}>
+                Back to Home
               </Button>
             </div>
           </CardContent>
@@ -327,22 +337,52 @@ export function WebsiteAuditWizard() {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Monthly Revenue Range *</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={form.monthlyRevenueRange}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        monthlyRevenueRange: e.target.value as RevenueRange,
+                      }))
+                    }
+                  >
+                    {AUDIT_REVENUE_RANGES.map((option) => (
+                      <option key={option} value={option}>
+                        {toTitle(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Business Type *</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={form.businessType}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, businessType: e.target.value as BusinessType }))
+                    }
+                  >
+                    {WEBSITE_BUSINESS_TYPES.map((option) => (
+                      <option key={option} value={option}>
+                        {toTitle(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               <div className="grid gap-2">
-                <Label>Business Type *</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={form.businessType}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, businessType: e.target.value as BusinessType }))
-                  }
-                >
-                  {WEBSITE_BUSINESS_TYPES.map((option) => (
-                    <option key={option} value={option}>
-                      {toTitle(option)}
-                    </option>
-                  ))}
-                </select>
+                <Label>Main Problem You Want Solved *</Label>
+                <Textarea
+                  rows={3}
+                  value={form.mainProblem}
+                  onChange={(e) => setForm((f) => ({ ...f, mainProblem: e.target.value }))}
+                  placeholder="Ex: We get traffic but very few qualified calls. The website is slow on mobile and our contact flow leaks leads."
+                />
               </div>
 
               <div className="grid gap-2">

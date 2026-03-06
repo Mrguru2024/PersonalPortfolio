@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageSEO } from "@/components/SEO";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { apiRequest } from "@/lib/queryClient";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
@@ -43,6 +44,12 @@ export default function Blog() {
   });
 
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])));
+  const seoTopics = [
+    "contractor website lead generation",
+    "local business marketing systems",
+    "Next.js development for startups",
+    "automation for service businesses",
+  ];
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
       !searchQuery ||
@@ -68,8 +75,8 @@ export default function Blog() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Blog</h1>
             <p className="text-lg text-muted-foreground mb-6">
-              Thoughts, insights, and updates from my journey as a developer and
-              entrepreneur.
+              Practical growth insights on lead generation websites, automation
+              systems, and scalable Next.js development.
             </p>
           </div>
           <div className="flex justify-end mb-4">
@@ -80,6 +87,13 @@ export default function Blog() {
               </Link>
             </Button>
           </div>
+        </div>
+        <div className="mb-8">
+          <PrimaryFunnelCTA
+            compact
+            title="Want your website reviewed by a growth-focused dev team?"
+            description="Get your free audit, then book a strategy call to prioritize fixes that increase leads and sales."
+          />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-10">
@@ -93,6 +107,21 @@ export default function Blog() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="mb-8">
+              <p className="text-sm font-medium mb-3">Popular search topics</p>
+              <div className="flex flex-wrap gap-2">
+                {seoTopics.map((topic) => (
+                  <Badge
+                    key={topic}
+                    variant={searchQuery === topic ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setSearchQuery(topic)}
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
             </div>
 
             {isLoading ? (
@@ -250,15 +279,18 @@ export default function Blog() {
             </Card>
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>About</CardTitle>
+                <CardTitle>Growth Funnel Actions</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  I write about my experiences as a developer, entrepreneur, and
-                  lifelong learner.
+                  Use each article as a playbook, then apply it to your business
+                  with a free website growth audit.
                 </p>
-                <Button variant="outline" className="mt-4 w-full" asChild>
-                  <Link href="/#contact">Get in touch</Link>
+                <Button className="mt-4 w-full" asChild>
+                  <Link href="/audit">Get Your Free Website Growth Audit</Link>
+                </Button>
+                <Button variant="outline" className="mt-2 w-full" asChild>
+                  <Link href="/schedule">Book a Strategy Call</Link>
                 </Button>
               </CardContent>
             </Card>

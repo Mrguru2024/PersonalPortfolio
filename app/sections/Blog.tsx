@@ -15,6 +15,7 @@ import {
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import AnimatedButton from "@/components/AnimatedButton";
+import { PrimaryFunnelCTA } from "@/components/funnel/PrimaryFunnelCTA";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 
 export default function Blog() {
@@ -179,6 +180,13 @@ export default function Blog() {
                 View All Articles
               </AnimatedButton>
             </Link>
+          </motion.div>
+          <motion.div className="mt-10" variants={itemVariants}>
+            <PrimaryFunnelCTA
+              compact
+              title="Turn blog traffic into real project opportunities"
+              description="Use a free growth audit to identify your best conversion wins and next build priorities."
+            />
           </motion.div>
         </motion.div>
       </div>

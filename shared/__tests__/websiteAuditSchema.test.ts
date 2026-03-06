@@ -4,6 +4,9 @@ const validPayload = {
   name: "Jane Doe",
   email: "jane@example.com",
   websiteUrl: "https://example.com",
+  monthlyRevenueRange: "10k-50k" as const,
+  mainProblem:
+    "We get traffic but very few qualified leads, and our mobile conversion path is weak.",
   businessType: "lead-generation" as const,
   targetAudience: "Small business owners in need of online visibility",
   topChallenges:
