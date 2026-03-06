@@ -34,7 +34,7 @@ const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
 
     const baseClass = cn(
       isGradient &&
-        "bg-gradient-to-r from-primary to-purple-600 text-white hover:from-primary/90 hover:to-purple-600/90 border-0 shadow-lg",
+        "bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg",
       withGlowEffect && "shadow-primary/25 shadow-lg hover:shadow-primary/40",
       className
     );

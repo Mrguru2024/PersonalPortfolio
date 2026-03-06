@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: baseUrl,
     siteName: "Ascendra Technologies",
-    title: "Ascendra Technologies",
+    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
     description:
-      "Ascendra Technologies – Custom web solutions and full stack development.",
+      "Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional.",
     images: [
       {
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ascendra Technologies",
+    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
     description:
-      "Ascendra Technologies – Custom web solutions and full stack development.",
+      "Senior Full Stack Developer at Ascendra Technologies. Start your next web project with a proven professional.",
     images: [`${baseUrl}/ascendra-logo.svg`],
   },
 };
@@ -54,16 +54,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-[100vw]">
-        <Providers>
-          {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
-          <FixedHeaderWrapper />
-          <main className="relative min-w-0 overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
-            {children}
-          </main>
-          <SiteFooterCTA />
-        </Providers>
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+      <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
+        <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
+          <Providers>
+            {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
+            <FixedHeaderWrapper />
+            <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
+              {children}
+            </main>
+            <SiteFooterCTA />
+          </Providers>
+        </div>
       </body>
     </html>
   );

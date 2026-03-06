@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { personalInfo } from "@/lib/data";
 
 interface BlogPost {
   id: number;
@@ -50,7 +51,7 @@ export function EnhancedStructuredData({
       post.updatedAt || post.publishedAt || new Date().toISOString(),
     author: {
       "@type": "Person",
-      name: "Anthony Feaster",
+      name: personalInfo.name,
       url: baseUrl,
     },
     publisher: {
@@ -88,7 +89,7 @@ export function EnhancedStructuredData({
       post.updatedAt || post.publishedAt || new Date().toISOString(),
     author: {
       "@type": "Person",
-      name: "Anthony Feaster",
+      name: personalInfo.name,
     },
     publisher: {
       "@type": "Organization",

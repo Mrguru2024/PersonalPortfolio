@@ -67,9 +67,9 @@ export default function Blog() {
   return (
     <section
       id="blog"
-      className="py-20 bg-gradient-to-b from-background to-background/95"
+      className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background to-background/95"
     >
-      <div className="container px-4 mx-auto">
+      <div className="container px-4 mx-auto min-w-0">
         <motion.div
           initial="hidden"
           whileInView="visible"

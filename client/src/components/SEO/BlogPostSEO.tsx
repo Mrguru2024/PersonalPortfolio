@@ -32,7 +32,7 @@ export function BlogPostSEO({ post, baseUrl = 'https://mrguru.dev' }: BlogPostSE
       {/* Basic Meta Tags */}
       <title>{post.title} | MrGuru.dev Blog</title>
       <meta name="description" content={description} />
-      <meta name="keywords" content={`${keywords}, MrGuru.dev, Anthony Feaster, blog, web development`} />
+      <meta name="keywords" content={`${keywords}, MrGuru.dev, Anthony MrGuru Feaster, blog, web development`} />
       <link rel="canonical" href={postUrl} />
 
       {/* Open Graph / Facebook */}
@@ -68,12 +68,12 @@ export function BlogPostSEO({ post, baseUrl = 'https://mrguru.dev' }: BlogPostSE
           'keywords': keywords,
           'author': {
             '@type': 'Person',
-            'name': 'Anthony Feaster',
+            'name': 'Anthony MrGuru Feaster',
             'url': baseUrl
           },
           'publisher': {
             '@type': 'Organization',
-            'name': 'MrGuru.dev',
+            'name': 'Ascendra Technologies',
             'logo': {
               '@type': 'ImageObject',
               'url': `${baseUrl}/favicon-32x32.png`,

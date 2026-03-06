@@ -74,12 +74,12 @@ const AboutSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 mix-blend-overlay z-10"></div>
               <img
                 src={personalInfo.image}
-                alt="Anthony Feaster - MrGuru.dev"
+                alt={`${personalInfo.name} - Ascendra Technologies`}
                 className="w-full h-full object-cover relative z-0"
               />
               <div className="absolute bottom-0 left-0 right-0 text-center bg-gradient-to-t from-black/70 to-transparent py-4 z-20">
                 <h3 className="text-white font-bold text-xl">
-                  Anthony Feaster
+                  {personalInfo.name}
                 </h3>
                 <p className="text-white/90 text-sm">@MrGuru</p>
               </div>

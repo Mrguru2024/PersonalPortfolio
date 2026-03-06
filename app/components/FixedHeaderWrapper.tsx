@@ -39,7 +39,7 @@ export default function FixedHeaderWrapper() {
 
   return (
     <div
-      className="site-top-no-box fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out will-change-transform"
+      className="site-top-no-box fixed inset-x-0 top-0 z-50 w-full min-w-0 max-w-full pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out will-change-transform overflow-x-hidden"
       style={{
         background: "transparent",
         position: "fixed",

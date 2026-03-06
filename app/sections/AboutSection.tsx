@@ -8,8 +8,8 @@ import Link from "next/link";
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-20 bg-gradient-to-b from-background/95 to-background">
-      <div className="container mx-auto px-4">
+    <section id="about" className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background/95 to-background">
+      <div className="container mx-auto px-4 min-w-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

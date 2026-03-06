@@ -41,7 +41,7 @@ const HeroSection = () => {
     <section
       ref={sectionRef}
       id="home"
-      className="relative -mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
+      className="relative w-full min-w-0 max-w-full -mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
     >
       {/* Interactive particle background */}
       <NoSSR>

@@ -139,7 +139,7 @@ export default function Header(_props: HeaderProps) {
       style={{ background: "transparent", border: "none", boxShadow: "none" }}
     >
       <div
-        className="container mx-auto px-3 fold:px-4 sm:px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none"
+        className="container mx-auto px-3 fold:px-4 sm:px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
         style={{ background: "transparent", border: "none", boxShadow: "none" }}
       >
         {/* Left spacer (logo was here) */}
