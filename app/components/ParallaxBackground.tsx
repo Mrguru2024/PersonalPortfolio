@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 
 interface ParallaxBackgroundProps {
   className?: string;
+  reducedMotion?: boolean;
 }
 
-const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '' }) => {
+const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '', reducedMotion = false }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [mounted, setMounted] = useState(false);
@@ -44,43 +45,37 @@ const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '' 
     };
   }, []);
   
-  // Generate grid of gradient dots for parallax effect
-  const dotCount = 5; // Grid size (5x5)
+  // Large-scale, smooth ambient orbs (fewer, bigger, softer)
+  const dotCount = 4; // 4x4 grid – large-scale professional look
   const dots = [];
   
   for (let i = 0; i < dotCount; i++) {
     for (let j = 0; j < dotCount; j++) {
-      // Calculate position as percentage
-      const x = (i / (dotCount - 1)) * 100;
-      const y = (j / (dotCount - 1)) * 100;
-      
-      // Calculate parallax offset based on mouse position
-      // Invert the movement direction to create proper parallax effect
-      const offsetX = (0.5 - mousePosition.x) * 30 * ((i - dotCount / 2) / (dotCount / 2));
-      const offsetY = (0.5 - mousePosition.y) * 30 * ((j - dotCount / 2) / (dotCount / 2));
+      const x = (i / Math.max(dotCount - 1, 1)) * 100;
+      const y = (j / Math.max(dotCount - 1, 1)) * 100;
+      const center = dotCount / 2;
+      const offsetX = (0.5 - mousePosition.x) * 12 * ((i - center) / center);
+      const offsetY = (0.5 - mousePosition.y) * 12 * ((j - center) / center);
+      const baseOpacity = 0.2 + (Math.abs(i - center) + Math.abs(j - center)) / (dotCount * 2) * 0.25;
       
       dots.push(
         <motion.div
           key={`${i}-${j}`}
-          className="absolute rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 blur-md"
+          className="absolute rounded-full bg-gradient-to-br from-primary/15 to-secondary/15 dark:from-primary/25 dark:to-secondary/25 blur-2xl"
           style={{
             left: `calc(${x}% + ${offsetX}px)`,
             top: `calc(${y}% + ${offsetY}px)`,
-            width: '15vmin',
-            height: '15vmin',
+            width: '28vmin',
+            height: '28vmin',
             transform: 'translate(-50%, -50%)',
-            opacity: 0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.6
+            opacity: baseOpacity
           }}
           animate={{
-            scale: [1, 1.05, 1],
-            opacity: [
-              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.5,
-              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.7,
-              0.4 + Math.abs((i - dotCount / 2) * (j - dotCount / 2)) / ((dotCount * dotCount) / 4) * 0.5
-            ]
+            scale: [1, 1.03, 1],
+            opacity: [baseOpacity, baseOpacity * 1.2, baseOpacity]
           }}
           transition={{
-            duration: 3 + Math.random() * 3,
+            duration: 6 + (i + j) * 0.5,
             repeat: Infinity,
             ease: 'easeInOut'
           }}
@@ -91,6 +86,17 @@ const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '' 
   
   if (!mounted) {
     return null;
+  }
+
+  if (reducedMotion) {
+    return (
+      <div
+        className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+        aria-hidden
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 dark:from-primary/10 dark:to-secondary/20" />
+      </div>
+    );
   }
   
   return (

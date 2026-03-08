@@ -342,7 +342,7 @@ export default function ContractorSystemsPage() {
                   <ArrowRight className="h-4 w-4 shrink-0" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-2 border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto min-h-[44px]">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto min-h-[44px] bg-transparent border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground/15 focus-visible:ring-primary-foreground/50">
                 <Link href="/#contact">{BOOK_CALL_CTA}</Link>
               </Button>
             </div>

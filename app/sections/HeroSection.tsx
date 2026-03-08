@@ -11,12 +11,18 @@ import { personalInfo } from "@/lib/data";
 import { useRef, useState } from "react";
 import ParticleAnimation from "@/components/ParticleAnimation";
 import ParallaxBackground from "@/components/ParallaxBackground";
+import MouseReactiveGlow from "@/components/MouseReactiveGlow";
 import TypewriterText from "@/components/TypewriterText";
 import AnimatedButton from "@/components/AnimatedButton";
 import { NoSSR } from "@/components/NoSSR";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+
+/** Smooth, professional particle palette – muted and large-scale feel */
+const PARTICLE_COLORS = ["#64748b", "#94a3b8", "#cbd5e1", "#818cf8", "#a5b4fc"];
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
@@ -40,34 +46,51 @@ const HeroSection = () => {
       id="home"
       className="relative w-full min-w-0 max-w-full -mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
     >
-      {/* Interactive particle background */}
-      <NoSSR>
-        <ParticleAnimation
-          count={80}
-          minSize={1}
-          maxSize={4}
-          colorArray={["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb"]}
-          linkParticles={true}
-          linkDistance={150}
-          className="opacity-40 dark:opacity-30"
+      {/* Background effects layer: smooth fade at bottom so no hard cut-off */}
+      <div
+        className="absolute inset-0 z-0 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_35%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_35%,transparent_100%)] [mask-size:cover] [-webkit-mask-size:cover]"
+        aria-hidden
+      >
+        {/* Mouse-reactive soft glow (theme-aware, follows cursor) */}
+        <NoSSR>
+          <MouseReactiveGlow />
+        </NoSSR>
+
+        {/* Smooth, large-scale particle layer – slow and professional */}
+        <NoSSR>
+          <ParticleAnimation
+            count={reducedMotion ? 8 : 42}
+            minSize={1.5}
+            maxSize={3.5}
+            minSpeed={0.02}
+            maxSpeed={0.14}
+            colorArray={PARTICLE_COLORS}
+            linkParticles={!reducedMotion}
+            linkDistance={200}
+            linkThickness={0.3}
+            className="opacity-[0.38] dark:opacity-[0.28]"
+          />
+        </NoSSR>
+
+        {/* Parallax mouse-moving background (static gradient when reduced motion) */}
+        <NoSSR>
+          <ParallaxBackground className="z-0" reducedMotion={reducedMotion} />
+        </NoSSR>
+
+        {/* Grid overlay */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+
+        {/* Subtle noise texture */}
+        <div className="noise-texture absolute inset-0 pointer-events-none" aria-hidden />
+
+        {/* Background gradient – soft and large-scale */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] to-secondary/[0.06] dark:from-primary/10 dark:to-secondary/10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reducedMotion ? 0 : 2, ease: 'easeOut' }}
         />
-      </NoSSR>
-
-      {/* Parallax mouse-moving background */}
-      <NoSSR>
-        <ParallaxBackground className="z-0" />
-      </NoSSR>
-
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
-
-      {/* Background gradient */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-      />
+      </div>
 
       <motion.div
         className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative"
@@ -84,7 +107,7 @@ const HeroSection = () => {
             }}
             className="text-3xl fold:text-4xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
           >
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent gradient-text">
+            <span className="cta-gradient-text cta-gradient-text-shimmer font-semibold tracking-tight">
               Hello, I'm
             </span>{" "}
             <motion.span

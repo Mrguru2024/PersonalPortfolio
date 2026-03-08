@@ -111,8 +111,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         color: particleColor,
         speedX: (Math.random() - 0.5) * (maxSpeed - minSpeed) + minSpeed,
         speedY: (Math.random() - 0.5) * (maxSpeed - minSpeed) + minSpeed,
-        alpha: 0.3 + Math.random() * 0.7,
-        alphaSpeed: 0.001 + Math.random() * 0.01
+        alpha: 0.4 + Math.random() * 0.5,
+        alphaSpeed: 0.0004 + Math.random() * 0.004
       });
     }
     
@@ -176,8 +176,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         if (p.alpha > 1) {
           p.alpha = 1;
           p.alphaSpeed *= -1;
-        } else if (p.alpha < 0.3) {
-          p.alpha = 0.3;
+        } else if (p.alpha < 0.4) {
+          p.alpha = 0.4;
           p.alphaSpeed *= -1;
         }
         

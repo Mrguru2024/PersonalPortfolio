@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * Landing page composition. All sections below are the main site landing.
+ * Section components live in app/sections/:
+ *
+ * 1. HeroSection       – app/sections/HeroSection.tsx  (hero, CTA, name)
+ * 2. ServicesSection   – app/sections/ServicesSection.tsx
+ * 3. FreeSiteAuditPromoSection – app/sections/FreeSiteAuditPromoSection.tsx
+ * 4. AnnouncementsSection – app/sections/AnnouncementsSection.tsx
+ * 5. ProjectsSection   – app/sections/Projects.tsx    (wrapped in #projects)
+ * 6. AboutSection      – app/sections/AboutSection.tsx
+ * 7. SkillsSection     – app/sections/SkillsSection.tsx
+ * 8. BlogSection       – app/sections/Blog.tsx
+ * 9. ContactSection    – app/sections/ContactSection.tsx (wrapped in #contact)
+ */
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PageSEO, StructuredData } from "@/components/SEO";
