@@ -47,6 +47,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { contactInfo, socialLinks } from "@/lib/data";
+import SectionAmbient from "@/components/SectionAmbient";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -174,10 +175,11 @@ const ContactSection = () => {
 
   return (
     <section
-      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 relative"
       aria-label="Contact"
     >
-      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-full">
+      <SectionAmbient variant="orbs" />
+      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-full relative z-10">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

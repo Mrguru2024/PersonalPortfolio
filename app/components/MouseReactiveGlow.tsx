@@ -48,7 +48,7 @@ export default function MouseReactiveGlow() {
       className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-[1.5s] ease-out"
       aria-hidden
       style={{
-        background: `radial-gradient(ellipse 110% 75% at ${position.x}% ${position.y}%, hsl(var(--primary) / 0.06) 0%, transparent 60%)`,
+        background: `radial-gradient(ellipse 120% 80% at ${position.x}% ${position.y}%, hsl(var(--primary) / 0.04) 0%, hsl(var(--primary) / 0.02) 35%, transparent 70%)`,
         opacity,
       }}
     />

@@ -22,6 +22,8 @@ interface ParticleAnimationProps {
   linkParticles?: boolean;
   linkDistance?: number;
   linkThickness?: number;
+  /** Soft glow radius multiplier around each particle (0 = no glow) */
+  glowRadius?: number;
   className?: string;
 }
 
@@ -36,6 +38,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
   linkParticles = true,
   linkDistance = 150,
   linkThickness = 0.5,
+  glowRadius = 2.5,
   className = "",
 }) => {
   // Reduce particle count on smaller devices for better performance
@@ -201,6 +204,22 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
           }
         }
         
+        // Draw soft glow under particle (if enabled)
+        if (glowRadius > 0 && p.size > 0) {
+          const glowSize = p.size * glowRadius;
+          const hex = p.color.startsWith('#') ? p.color : '#64748b';
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
+          gradient.addColorStop(0, `rgba(${r},${g},${b},${p.alpha * 0.28})`);
+          gradient.addColorStop(0.5, `rgba(${r},${g},${b},${p.alpha * 0.08})`);
+          gradient.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
         // Draw the particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -247,7 +266,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [canvasSize, isMouseInCanvas, mousePosition, linkParticles, linkDistance, linkThickness, mounted]);
+  }, [canvasSize, isMouseInCanvas, mousePosition, linkParticles, linkDistance, linkThickness, glowRadius, mounted]);
 
   if (!mounted) {
     return null;

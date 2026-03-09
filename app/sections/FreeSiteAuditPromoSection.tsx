@@ -5,6 +5,7 @@ import { Search, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
+import SectionAmbient from "@/components/SectionAmbient";
 
 const PAIN_POINTS = [
   "Websites that do not generate leads",
@@ -21,6 +22,7 @@ const FreeSiteAuditPromoSection = () => {
       className="w-full min-w-0 max-w-full relative py-6 fold:py-8 sm:py-10 md:py-14 overflow-x-hidden overflow-y-visible"
       aria-label="Free site audit offer"
     >
+      <SectionAmbient variant="orbs" className="opacity-70" />
       {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-emerald-500/10 dark:from-primary/20 dark:via-primary/10 dark:to-emerald-500/20" />
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />

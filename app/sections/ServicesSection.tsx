@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
+import SectionAmbient from "@/components/SectionAmbient";
 
 interface Service {
   id: string;
@@ -362,9 +363,10 @@ function ServicesSection() {
   return (
     <section
       id="services"
-      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 px-3 fold:px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 px-3 fold:px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative"
     >
-      <div className="max-w-7xl mx-auto min-w-0">
+      <SectionAmbient variant="orbs" />
+      <div className="max-w-7xl mx-auto min-w-0 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -5,11 +5,13 @@ import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { personalInfo } from "@/lib/data";
 import Link from "next/link";
+import SectionAmbient from "@/components/SectionAmbient";
 
 export default function AboutSection() {
   return (
-    <section id="about" className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background">
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-full">
+    <section id="about" className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background relative">
+      <SectionAmbient variant="dots" />
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

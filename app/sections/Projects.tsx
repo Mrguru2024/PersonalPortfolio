@@ -17,6 +17,7 @@ import { ArrowUpRight, Github, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { projects as staticProjects } from "@/lib/data";
+import SectionAmbient from "@/components/SectionAmbient";
 
 export default function Projects() {
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -128,10 +129,11 @@ export default function Projects() {
 
   return (
     <section
-      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background relative"
       aria-label="Projects"
     >
-      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full">
+      <SectionAmbient variant="dots" />
+      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full relative z-10">
         <motion.div
           initial="hidden"
           whileInView="visible"

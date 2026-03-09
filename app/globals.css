@@ -8,6 +8,30 @@
  * Use base for smallest viewports; add fold: for 260px+; xs/sm/md for larger.
  */
 
+/* Root layout: very soft gradient so hero/particles blend with page – no harsh line at top */
+.hero-page-gradient {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    hsl(var(--primary) / 0.01) 8%,
+    hsl(var(--primary) / 0.02) 25%,
+    hsl(var(--primary) / 0.03) 50%,
+    hsl(var(--background)) 85%,
+    hsl(var(--background)) 100%
+  );
+}
+.dark .hero-page-gradient {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    hsl(var(--primary) / 0.02) 10%,
+    hsl(var(--primary) / 0.04) 30%,
+    hsl(var(--primary) / 0.05) 55%,
+    hsl(var(--background)) 88%,
+    hsl(var(--background)) 100%
+  );
+}
+
 /* Logo: dark on light theme (visible), white on dark theme */
 img.header-logo,
 img[alt="Ascendra Technologies"] {
@@ -233,6 +257,11 @@ header .container {
   @keyframes cta-shimmer {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
+  }
+  @keyframes ambient-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(8px, -6px) scale(1.02); }
+    66% { transform: translate(-5px, 4px) scale(0.98); }
   }
   /* Soft glow for hero name / emphasis – fits design purpose */
   .text-glow {

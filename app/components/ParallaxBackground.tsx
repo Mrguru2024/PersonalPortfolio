@@ -61,7 +61,7 @@ const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '',
       dots.push(
         <motion.div
           key={`${i}-${j}`}
-          className="absolute rounded-full bg-gradient-to-br from-primary/15 to-secondary/15 dark:from-primary/25 dark:to-secondary/25 blur-2xl"
+          className="absolute rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 blur-3xl"
           style={{
             left: `calc(${x}% + ${offsetX}px)`,
             top: `calc(${y}% + ${offsetY}px)`,
@@ -94,7 +94,7 @@ const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({ className = '',
         className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
         aria-hidden
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 dark:from-primary/10 dark:to-secondary/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.04] to-primary/[0.08] dark:via-primary/[0.08] dark:to-primary/[0.12]" />
       </div>
     );
   }

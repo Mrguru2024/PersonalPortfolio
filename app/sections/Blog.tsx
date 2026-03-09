@@ -18,6 +18,7 @@ import AnimatedButton from "@/components/AnimatedButton";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
 import { Button } from "@/components/ui/button";
+import SectionAmbient from "@/components/SectionAmbient";
 
 export default function Blog() {
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
@@ -68,9 +69,10 @@ export default function Blog() {
   return (
     <section
       id="blog"
-      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background to-background/95"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background to-background/95 relative"
     >
-      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full">
+      <SectionAmbient variant="full" />
+      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full relative z-10">
         <motion.div
           initial="hidden"
           whileInView="visible"

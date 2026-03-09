@@ -20,8 +20,8 @@ import AnimatedButton from "@/components/AnimatedButton";
 import { NoSSR } from "@/components/NoSSR";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
-/** Smooth, professional particle palette – muted and large-scale feel */
-const PARTICLE_COLORS = ["#64748b", "#94a3b8", "#cbd5e1", "#818cf8", "#a5b4fc"];
+/** Appealing particle palette – slate and soft violet/indigo for depth and warmth */
+const PARTICLE_COLORS = ["#64748b", "#94a3b8", "#a5b4fc", "#818cf8", "#c4b5fd", "#e2e8f0"];
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -48,9 +48,9 @@ const HeroSection = () => {
       id="home"
       className="relative w-full min-w-0 max-w-full -mt-[160px] fold:-mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[160px] fold:pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-16 fold:pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
     >
-      {/* Background effects layer: smooth fade at bottom so no hard cut-off */}
+      {/* Background effects layer: gentle fade at bottom so particles and orbs blend into next section */}
       <div
-        className="absolute inset-0 z-0 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_35%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_35%,transparent_100%)] [mask-size:cover] [-webkit-mask-size:cover]"
+        className="absolute inset-0 z-0 overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_20%,black_50%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_20%,black_50%,transparent_100%)] [mask-size:cover] [-webkit-mask-size:cover]"
         aria-hidden
       >
         {/* Mouse-reactive soft glow (theme-aware, follows cursor) */}
@@ -61,16 +61,17 @@ const HeroSection = () => {
         {/* Smooth, large-scale particle layer – slow and professional */}
         <NoSSR>
           <ParticleAnimation
-            count={reducedMotion ? 8 : 42}
-            minSize={1.5}
-            maxSize={3.5}
-            minSpeed={0.06}
-            maxSpeed={0.24}
+            count={reducedMotion ? 10 : 52}
+            minSize={1.2}
+            maxSize={3.2}
+            minSpeed={0.05}
+            maxSpeed={0.2}
             colorArray={PARTICLE_COLORS}
             linkParticles={!reducedMotion}
-            linkDistance={200}
-            linkThickness={0.3}
-            className="opacity-[0.38] dark:opacity-[0.28]"
+            linkDistance={220}
+            linkThickness={0.35}
+            glowRadius={3}
+            className="opacity-[0.42] dark:opacity-[0.32]"
           />
         </NoSSR>
 
@@ -85,9 +86,9 @@ const HeroSection = () => {
         {/* Subtle noise texture */}
         <div className="noise-texture absolute inset-0 pointer-events-none" aria-hidden />
 
-        {/* Background gradient – soft and large-scale */}
+        {/* Background tint – very soft so particles and parallax orbs stay visible and blend */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] to-secondary/[0.06] dark:from-primary/10 dark:to-secondary/10"
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.03] to-primary/[0.06] dark:via-primary/[0.06] dark:to-primary/[0.08]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: reducedMotion ? 0 : 2, ease: 'easeOut' }}

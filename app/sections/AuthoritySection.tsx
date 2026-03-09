@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRIMARY_CTA, AUDIT_PATH } from "@/lib/funnelCtas";
 import { Layers, Zap, TrendingUp } from "lucide-react";
+import SectionAmbient from "@/components/SectionAmbient";
 
 const POINTS = [
   { icon: Layers, label: "Full-stack development partner" },
@@ -16,9 +17,10 @@ export default function AuthoritySection() {
   return (
     <section
       id="authority"
-      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/20 dark:bg-muted/10"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/20 dark:bg-muted/10 relative"
     >
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-3xl">
+      <SectionAmbient variant="full" />
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-3xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

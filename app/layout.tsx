@@ -57,8 +57,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
       <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
-        {/* Subtle full-page gradient so hero effects blend smoothly; no hard edge */}
-        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-primary/[0.04] to-background dark:from-primary/[0.07] dark:to-background pointer-events-none" aria-hidden />
+        {/* Very soft full-page gradient – blends hero/particles with page, no harsh line at top */}
+        <div className="fixed inset-0 -z-10 hero-page-gradient pointer-events-none" aria-hidden />
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
