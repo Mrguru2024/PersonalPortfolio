@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageSEO } from "@/components/SEO";
 import { apiRequest } from "@/lib/queryClient";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
 import { format } from "date-fns";
@@ -53,7 +54,8 @@ export default function Blog() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12 min-w-0 max-w-full">
       <PageSEO
         title="Blog | Ascendra Technologies"
         description="Insights and updates from Anthony MrGuru Feaster and Ascendra Technologies – Senior Full Stack Development."
@@ -63,27 +65,35 @@ export default function Blog() {
         schemaType="CollectionPage"
       />
 
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-12">
+      <div className="max-w-5xl mx-auto min-w-0">
+        <div className="mb-8 sm:mb-12">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Blog</h1>
-            <p className="text-lg text-muted-foreground mb-6">
+            <h1 className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-1">Blog</h1>
+            <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6 px-1">
               Thoughts, insights, and updates from my journey as a developer and
               entrepreneur.
             </p>
           </div>
-          <div className="flex justify-end mb-4">
-            <Button asChild>
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-between gap-4 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button asChild size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0 min-h-[44px]">
+                <Link href={AUDIT_PATH}>{PRIMARY_CTA}</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="min-h-[44px] border-border">
+                <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+              </Button>
+            </div>
+            <Button asChild className="w-full sm:w-auto min-h-[44px]">
               <Link href="/admin/blog">
-                <PlusCircle className="h-4 w-4 mr-2" />
+                <PlusCircle className="h-4 w-4 mr-2 shrink-0" />
                 Create New Post
               </Link>
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 mb-10">
-          <div className="w-full md:w-3/4">
+        <div className="flex flex-col md:flex-row gap-4 sm:gap-6 mb-8 sm:mb-10">
+          <div className="w-full min-w-0 md:w-3/4">
             <div className="relative mb-8">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -264,6 +274,7 @@ export default function Blog() {
             </Card>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

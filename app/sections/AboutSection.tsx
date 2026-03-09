@@ -8,9 +8,9 @@ import Link from "next/link";
 
 export default function AboutSection() {
   return (
-    <section id="about" className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background/95 to-background">
-      <div className="container mx-auto px-4 min-w-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <section id="about" className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -18,7 +18,7 @@ export default function AboutSection() {
             viewport={{ once: true }}
             className="order-2 lg:order-1"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
+            <h2 className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-foreground">
               About Me
             </h2>
             <p className="text-muted-foreground mb-4">{personalInfo.description}</p>
@@ -54,7 +54,7 @@ export default function AboutSection() {
             viewport={{ once: true }}
             className="order-1 lg:order-2"
           >
-            <div className="aspect-square max-w-md mx-auto rounded-xl overflow-hidden shadow-2xl bg-muted">
+            <div className="aspect-square w-full max-w-[280px] sm:max-w-[320px] md:max-w-md mx-auto rounded-xl overflow-hidden shadow-2xl bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={personalInfo.image}

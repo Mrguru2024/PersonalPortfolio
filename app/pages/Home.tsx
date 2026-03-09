@@ -179,6 +179,25 @@ const BlogSection = dynamic(
     ssr: false,
   }
 );
+const AuthoritySection = dynamic(
+  () =>
+    withChunkFallback(
+      () =>
+        import("@/sections/AuthoritySection").then((m) => ({
+          default: m.default,
+        })),
+      () => (
+        <SectionLoadErrorFallback
+          sectionName="Authority"
+          minHeight="min-h-[240px]"
+        />
+      )
+    )(),
+  {
+    loading: () => <SectionPlaceholder minHeight="min-h-[240px]" />,
+    ssr: false,
+  }
+);
 const AnnouncementsSection = dynamic(
   () =>
     withChunkFallback(
@@ -381,6 +400,9 @@ const Home = ({ onSectionChange }: HomeProps) => {
         <ServicesSection />
       </LazyWhenVisible>
       <FreeSiteAuditPromoSection />
+      <LazyWhenVisible minHeight="min-h-[240px]" onVisible={prefetchProjects}>
+        <AuthoritySection />
+      </LazyWhenVisible>
       <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
         <AnnouncementsSection />
       </LazyWhenVisible>

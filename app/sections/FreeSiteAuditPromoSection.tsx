@@ -1,19 +1,24 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, ArrowRight, Sparkles } from "lucide-react";
+import { Search, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
+
+const PAIN_POINTS = [
+  "Websites that do not generate leads",
+  "Lack of automation",
+  "Weak SEO",
+  "Slow mobile performance",
+];
 
 const FreeSiteAuditPromoSection = () => {
-  const scrollToContact = () => {
-    const el = document.getElementById("contact");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
     <section
       id="site-audit-promo"
-      className="w-full min-w-0 max-w-full relative py-10 md:py-14 overflow-hidden"
+      className="w-full min-w-0 max-w-full relative py-6 fold:py-8 sm:py-10 md:py-14 overflow-x-hidden overflow-y-visible"
       aria-label="Free site audit offer"
     >
       {/* Gradient background */}
@@ -34,28 +39,29 @@ const FreeSiteAuditPromoSection = () => {
                 <Search className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Limited offer
-                  </span>
-                </div>
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-                  <span className="text-primary">FREE</span> Site Audit
+                  <span className="text-primary">FREE</span> Website Growth Audit
                 </h2>
                 <p className="text-muted-foreground mt-1 text-sm sm:text-base max-w-lg">
-                  Get a professional review of your site’s performance, SEO, accessibility, and UX—no obligation.
+                  Many businesses struggle with: websites that do not generate leads, lack of automation, weak SEO, slow mobile performance.’s performance, SEO, accessibility, and UX—no obligation.
+                </p>
+                <p className="mt-3 text-foreground font-semibold text-sm sm:text-base">
+                  Most businesses do not have a design problem.
+                </p>
+                <p className="mt-0.5 text-primary font-semibold text-sm sm:text-base">
+                  They have a system problem.
                 </p>
               </div>
             </div>
-            <div className="shrink-0">
-              <Button
-                size="lg"
-                onClick={scrollToContact}
-                className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-              >
-                Claim free audit
-                <ArrowRight className="w-4 h-4" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 shrink-0">
+              <Button asChild size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
+                <Link href={AUDIT_PATH}>
+                  {PRIMARY_CTA}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto gap-2 border-2">
+                <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
               </Button>
             </div>
           </div>

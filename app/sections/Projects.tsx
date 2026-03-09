@@ -128,10 +128,10 @@ export default function Projects() {
 
   return (
     <section
-      className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background/95 to-background"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background/95 to-background"
       aria-label="Projects"
     >
-      <div className="container px-4 mx-auto min-w-0">
+      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -140,13 +140,13 @@ export default function Projects() {
           className="mb-16"
         >
           <motion.h2
-            className="text-3xl md:text-4xl font-bold mb-6 text-center bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+            className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-center bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent px-1"
             variants={itemVariants}
           >
             Work That <span className="text-primary">Delivers</span>
           </motion.h2>
           <motion.p
-            className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
+            className="text-base sm:text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-8 sm:mb-12 px-1"
             variants={itemVariants}
           >
             From MVPs to production systems—see how I help businesses ship
@@ -160,12 +160,12 @@ export default function Projects() {
               value={activeTab}
               onValueChange={setActiveTab}
             >
-              <div className="flex justify-center mb-12">
-                <TabsList className="bg-background/50 border border-border">
-                  <TabsTrigger value="all">All Projects</TabsTrigger>
-                  <TabsTrigger value="frontend">Frontend</TabsTrigger>
-                  <TabsTrigger value="backend">Backend</TabsTrigger>
-                  <TabsTrigger value="fullstack">Full Stack</TabsTrigger>
+              <div className="flex justify-center mb-8 sm:mb-12 w-full min-w-0 overflow-x-auto -mx-2 px-2">
+                <TabsList className="bg-background/50 border border-border inline-flex shrink-0 w-max">
+                  <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-3 py-2 min-h-[44px] sm:min-h-0">All Projects</TabsTrigger>
+                  <TabsTrigger value="frontend" className="text-xs sm:text-sm px-2 sm:px-3 py-2 min-h-[44px] sm:min-h-0">Frontend</TabsTrigger>
+                  <TabsTrigger value="backend" className="text-xs sm:text-sm px-2 sm:px-3 py-2 min-h-[44px] sm:min-h-0">Backend</TabsTrigger>
+                  <TabsTrigger value="fullstack" className="text-xs sm:text-sm px-2 sm:px-3 py-2 min-h-[44px] sm:min-h-0">Full Stack</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -176,7 +176,7 @@ export default function Projects() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                       {categorizedProjects[
                         tab as keyof typeof categorizedProjects
                       ].map((project, index) => (

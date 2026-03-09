@@ -1,6 +1,6 @@
 import React from "react";
 import { Project } from "@/lib/data";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Palette, Layout, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,7 @@ export function ProjectSynopsis({ project }: ProjectSynopsisProps) {
   if (!project.synopsis) return null;
 
   const { tagline, description, caseStudy } = project.synopsis;
+  const ux = project.uxUiBreakdown;
 
   return (
     <div className="my-10">
@@ -104,6 +105,47 @@ export function ProjectSynopsis({ project }: ProjectSynopsisProps) {
           ))}
         </ul>
       </div>
+
+      {ux && (
+        <>
+          <Separator className="my-8" />
+          <h3 className="text-xl font-bold mb-5 flex items-center">
+            <span className="mr-2"><Palette className="h-5 w-5 text-primary" /></span>
+            UX/UI Breakdown
+          </h3>
+          <p className="text-lg leading-relaxed mb-6 text-gray-700 dark:text-gray-300">
+            <Target className="h-5 w-5 inline-block mr-2 text-primary align-middle" />
+            <strong className="text-foreground">Purpose of the site:</strong> {ux.purposeOfSite}
+          </p>
+
+          <h4 className="text-lg font-semibold mb-3 flex items-center">
+            <Layout className="h-5 w-5 mr-2 text-primary" />
+            Design factors
+          </h4>
+          <div className="grid md:grid-cols-1 gap-4 mb-8">
+            {ux.designFactors.map((factor, index) => (
+              <Card key={index} className="border border-border bg-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">{factor.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-gray-700 dark:text-gray-300 text-sm">
+                  {factor.description}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <h4 className="text-lg font-semibold mb-3">Key components & purpose</h4>
+          <ul className="space-y-3 mb-6">
+            {ux.components.map((comp, index) => (
+              <li key={index} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <span><strong className="text-foreground">{comp.name}</strong> — {comp.purpose}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <Separator className="my-8" />
     </div>

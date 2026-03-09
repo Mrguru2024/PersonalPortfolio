@@ -4,11 +4,14 @@ import {
   useTransform,
   AnimatePresence,
 } from "framer-motion";
-import { ArrowRight, MousePointer, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialLinks from "@/components/SocialLinks";
 import { personalInfo } from "@/lib/data";
+import { CONTRACTORS_TRADES_PERSONA } from "@/lib/targetPersonas";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
 import { useRef, useState } from "react";
+import Link from "next/link";
 import ParticleAnimation from "@/components/ParticleAnimation";
 import ParallaxBackground from "@/components/ParallaxBackground";
 import MouseReactiveGlow from "@/components/MouseReactiveGlow";
@@ -30,7 +33,6 @@ const HeroSection = () => {
 
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const y = useTransform(scrollYProgress, [0, 0.5], [0, 50]);
-  const [hoverWorkBtn, setHoverWorkBtn] = useState(false);
   const [hoverContactBtn, setHoverContactBtn] = useState(false);
 
   const scrollToSection = (id: string) => {
@@ -44,7 +46,7 @@ const HeroSection = () => {
     <section
       ref={sectionRef}
       id="home"
-      className="relative w-full min-w-0 max-w-full -mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
+      className="relative w-full min-w-0 max-w-full -mt-[160px] fold:-mt-[180px] sm:-mt-[200px] md:-mt-[220px] lg:-mt-[240px] pt-[160px] fold:pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-16 fold:pb-20 md:pb-32 overflow-hidden min-h-[90vh] flex items-center"
     >
       {/* Background effects layer: smooth fade at bottom so no hard cut-off */}
       <div
@@ -62,8 +64,8 @@ const HeroSection = () => {
             count={reducedMotion ? 8 : 42}
             minSize={1.5}
             maxSize={3.5}
-            minSpeed={0.02}
-            maxSpeed={0.14}
+            minSpeed={0.06}
+            maxSpeed={0.24}
             colorArray={PARTICLE_COLORS}
             linkParticles={!reducedMotion}
             linkDistance={200}
@@ -93,7 +95,7 @@ const HeroSection = () => {
       </div>
 
       <motion.div
-        className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative"
+        className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 relative min-w-0 max-w-full"
         style={{ opacity, y }}
       >
         <div className="max-w-3xl mx-auto text-center">
@@ -105,95 +107,42 @@ const HeroSection = () => {
               type: "spring",
               stiffness: 100,
             }}
-            className="text-3xl fold:text-4xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6"
+            className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight"
           >
-            <span className="cta-gradient-text cta-gradient-text-shimmer font-semibold tracking-tight">
-              Hello, I'm
-            </span>{" "}
-            <motion.span
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.7 }}
-              className="text-glow"
-            >
-              {personalInfo.name}
-            </motion.span>
+            <span className="text-foreground">
+              Build Digital Systems That Turn Website Visitors Into{" "}
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Revenue</span>
+            </span>
           </motion.h1>
 
-          <motion.div
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.6,
-              delay: 0.4,
-              type: "spring",
-              stiffness: 50,
-            }}
-            className="text-xl md:text-2xl text-foreground mb-4"
+            transition={{ duration: 0.6, delay: 0.2, type: "spring", stiffness: 50 }}
+            className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-2"
           >
-            <span className="font-medium">
-              {personalInfo.title} at Ascendra Technologies
-            </span>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="mb-6 sm:mb-8 md:mb-10 text-base fold:text-lg xs:text-lg sm:text-lg md:text-xl text-muted-foreground px-2"
-          >
-            <TypewriterText
-              phrases={[
-                "Building web applications that scale and deliver results.",
-                "From concept to launch—I help you ship with confidence.",
-                "Full-stack expertise. Clear process. Professional delivery.",
-                "Ready to start your project? Let's make it happen.",
-              ]}
-              typingSpeed={50}
-              deletingSpeed={20}
-              delayAfterPhrase={3000}
-              className="inline-block font-light"
-            />
-          </motion.div>
+            Custom websites, automation systems, and scalable platforms built for businesses ready to grow.
+          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
             className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5"
           >
-            <div
-              onMouseEnter={() => setHoverWorkBtn(true)}
-              onMouseLeave={() => setHoverWorkBtn(false)}
-              className="relative"
-            >
+            <Link href={AUDIT_PATH} className="inline-block">
               <AnimatedButton
                 variant="gradient"
                 size="lg"
-                onClick={() => scrollToSection("projects")}
-                className="px-4 py-3 fold:px-6 fold:py-4 sm:px-6 sm:py-4 md:px-8 md:py-6 text-sm fold:text-base sm:text-base md:text-lg font-medium tracking-wide"
+                className="px-4 py-3 fold:px-6 fold:py-4 sm:px-6 sm:py-4 md:px-8 md:py-6 text-sm fold:text-base sm:text-base md:text-lg font-medium tracking-wide w-full sm:w-auto"
                 withGlowEffect={true}
               >
                 <span className="flex items-center gap-2">
-                  See My Work
-                  <Sparkles className="h-4 w-4" />
+                  {PRIMARY_CTA}
+                  <ArrowRight className="h-4 w-4 shrink-0" />
                 </span>
               </AnimatedButton>
-
-              <AnimatePresence>
-                {hoverWorkBtn && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="absolute -right-2 -top-2 bg-secondary rounded-full p-1"
-                  >
-                    <MousePointer className="h-3 w-3 text-white" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
+            </Link>
             <div
               onMouseEnter={() => setHoverContactBtn(true)}
               onMouseLeave={() => setHoverContactBtn(false)}
@@ -206,11 +155,9 @@ const HeroSection = () => {
                 withPressEffect={true}
               >
                 <span className="flex items-center justify-center gap-2">
-                  <span className="whitespace-nowrap">Start a Project</span>
+                  <span className="whitespace-nowrap">{SECONDARY_CTA}</span>
                   <motion.div
-                    animate={{
-                      x: hoverContactBtn ? 5 : 0,
-                    }}
+                    animate={{ x: hoverContactBtn ? 5 : 0 }}
                     transition={{ type: "spring", stiffness: 400 }}
                     className="shrink-0"
                   >
@@ -220,6 +167,24 @@ const HeroSection = () => {
               </AnimatedButton>
             </div>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="mt-4 sm:mt-5 text-center"
+          >
+            <span className="text-muted-foreground text-xs sm:text-sm">
+              {CONTRACTORS_TRADES_PERSONA.shortLabel}:{" "}
+              <Link
+                href={CONTRACTORS_TRADES_PERSONA.href}
+                className="font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                aria-label={CONTRACTORS_TRADES_PERSONA.ariaLabel}
+              >
+                {CONTRACTORS_TRADES_PERSONA.ctaLabel} →
+              </Link>
+            </span>
+          </motion.p>
 
           <motion.div
             initial={{ opacity: 0 }}

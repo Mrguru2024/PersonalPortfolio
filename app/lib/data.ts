@@ -34,6 +34,12 @@ export interface Project {
       nextSteps: string[];
     };
   };
+  /** Optional UX/UI breakdown: design factors, components, and purpose (for project detail page) */
+  uxUiBreakdown?: {
+    purposeOfSite: string;
+    designFactors: { title: string; description: string }[];
+    components: { name: string; purpose: string }[];
+  };
 }
 
 export interface Skill {
@@ -237,6 +243,124 @@ export const projects: Project[] = [
           "Expanding member benefits & pro community board",
         ],
       },
+    },
+  },
+  {
+    id: "the-unauthorized-author",
+    title: "The Unauthorized Author",
+    description:
+      "A modern author platform and book discovery site built to showcase works, connect with readers, and support independent storytelling.",
+    image:
+      "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    tags: ["Next.js", "Author Platform", "Books", "Responsive"],
+    category: "web",
+    liveUrl: "https://www.theunauthorizedauthor.com",
+    details:
+      "The Unauthorized Author is a professional author platform and book discovery website. It provides a clean, immersive experience for visitors to explore works, learn about the author, and engage with content—built with a focus on readability, trust, and conversion.",
+    demoType: "iframe",
+    demoUrl: "https://www.theunauthorizedauthor.com",
+    demoConfig: {
+      width: "100%",
+      height: "600px",
+      allowFullscreen: true,
+      isResponsive: true,
+    },
+    techStack: ["Next.js", "TypeScript", "Tailwind CSS", "React"],
+    synopsis: {
+      tagline: "Where stories meet readers.",
+      description:
+        "The Unauthorized Author is a custom author platform designed to put books and the author's voice front and center. The site balances a literary, editorial feel with clear CTAs and structure so visitors can discover works, sign up for updates, or purchase with minimal friction. Built with Next.js and Tailwind for performance and maintainability.",
+      caseStudy: {
+        problem:
+          "Many author sites feel either too generic (template-heavy) or too dense, making it hard for readers to quickly understand what the author offers and where to go next.",
+        role: [
+          "Full Stack Developer",
+          "UX/UI Designer",
+          "Content Structure & IA",
+        ],
+        stack: [
+          "Next.js (App Router)",
+          "TypeScript",
+          "Tailwind CSS",
+          "Responsive & accessible markup",
+        ],
+        features: [
+          "Hero and book-focused landing experience",
+          "Clear navigation and section structure",
+          "Newsletter/contact and conversion paths",
+          "Responsive layout and readable typography",
+          "Performance- and SEO-conscious implementation",
+        ],
+        status: "✅ Live",
+        nextSteps: [
+          "Expand book detail and sample chapters",
+          "Integrate e-commerce or purchase links",
+          "Add blog or author notes section",
+        ],
+      },
+    },
+    uxUiBreakdown: {
+      purposeOfSite:
+        "The site exists to establish the author's brand, showcase their work, and convert visitors into readers and subscribers. Every design decision supports discoverability, trust, and a single primary path: discover the author → explore the work → take action (newsletter, purchase, or contact).",
+      designFactors: [
+        {
+          title: "Hierarchy & focus",
+          description:
+            "A single hero or book-focused block anchors the page so visitors immediately understand the site’s purpose. Typography scale and spacing create clear hierarchy between headline, supporting copy, and CTAs.",
+        },
+        {
+          title: "Readability & tone",
+          description:
+            "Typefaces and line lengths are chosen for long-form reading. Contrast and spacing meet accessibility guidelines while keeping a literary, editorial feel that fits an author brand.",
+        },
+        {
+          title: "Trust & credibility",
+          description:
+            "Consistent layout, clear section labels, and visible CTAs (e.g. newsletter, buy links) build credibility. The design avoids clutter so the author and their work feel professional and intentional.",
+        },
+        {
+          title: "Conversion paths",
+          description:
+            "Primary actions (e.g. “Get the book”, “Subscribe”) are visually prominent and repeated in logical places (hero, end of sections, footer). Secondary actions stay available without competing for attention.",
+        },
+        {
+          title: "Responsive & performance",
+          description:
+            "Layout and components adapt cleanly from mobile to desktop. Images and assets are optimized so the site stays fast and usable on all devices and connections.",
+        },
+      ],
+      components: [
+        {
+          name: "Hero / above-the-fold block",
+          purpose:
+            "Introduces the author or featured work and presents the main CTA. Sets tone and intent in one glance.",
+        },
+        {
+          name: "Navigation & header",
+          purpose:
+            "Provides consistent wayfinding (e.g. Books, About, Contact) and keeps key actions accessible without scrolling.",
+        },
+        {
+          name: "Book or work showcase",
+          purpose:
+            "Surfaces the author’s work with cover, title, short description, and a clear next step (e.g. learn more, buy, sample).",
+        },
+        {
+          name: "About / author section",
+          purpose:
+            "Builds connection and trust by sharing the author’s story and credentials in a scannable, readable format.",
+        },
+        {
+          name: "Newsletter or signup",
+          purpose:
+            "Captures leads and keeps readers engaged via email, with a simple form and clear value proposition.",
+        },
+        {
+          name: "Footer & secondary links",
+          purpose:
+            "Holds legal, social, and contact links so the main content stays focused while remaining options are still available.",
+        },
+      ],
     },
   },
   {

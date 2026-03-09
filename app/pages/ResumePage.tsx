@@ -6,16 +6,16 @@ import Link from "next/link";
 
 export default function ResumePage() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gray-50 dark:bg-gray-900 relative">
       <ParallaxBackground />
       
-      <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600 mb-4">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12 relative z-10 min-w-0 max-w-full">
+        <div className="max-w-4xl mx-auto min-w-0">
+          <div className="text-center mb-8 sm:mb-10">
+            <h1 className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600 mb-3 sm:mb-4 px-1">
               Resume Request
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-1">
               I'm excited that you're interested in my qualifications. Please complete the form below to access my resume.
             </p>
           </div>

@@ -24,9 +24,11 @@ export default function ProjectDetails() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center min-h-[50vh]">
-        <div className="animate-pulse text-muted-foreground">
-          Loading project details...
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+        <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-12 sm:py-16 flex justify-center min-h-[50vh] min-w-0 max-w-full">
+          <div className="animate-pulse text-muted-foreground">
+            Loading project details...
+          </div>
         </div>
       </div>
     );
@@ -34,7 +36,8 @@ export default function ProjectDetails() {
 
   if (!project) {
     return (
-      <div className="container mx-auto px-4 py-16 min-h-[50vh]">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+        <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-12 sm:py-16 min-h-[50vh] min-w-0 max-w-full">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4 text-foreground">
             Project Not Found
@@ -43,18 +46,19 @@ export default function ProjectDetails() {
             The project you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link href="/#projects">
-            <Button>
+            <Button className="min-h-[44px]">
               <ChevronLeft className="mr-2 h-4 w-4" />
               Back to Projects
             </Button>
           </Link>
         </div>
       </div>
+    </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-background relative">
       <PageSEO
         title={`${project.title} | Project Details | Ascendra Technologies`}
         description={project.description}
@@ -84,9 +88,9 @@ export default function ProjectDetails() {
         }}
       />
 
-      <div className="container mx-auto px-4 py-16 relative z-10">
-        <Link href="/#projects" className="inline-block mb-8">
-          <Button variant="outline" className="flex items-center">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-10 sm:py-16 relative z-10 min-w-0 max-w-full">
+        <Link href="/#projects" className="inline-block mb-6 sm:mb-8">
+          <Button variant="outline" className="flex items-center min-h-[44px]">
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Projects
           </Button>
@@ -96,7 +100,7 @@ export default function ProjectDetails() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 xl:grid-cols-3 gap-8"
+          className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8 min-w-0"
         >
           <div className="xl:col-span-2 space-y-8">
             <div className="rounded-xl overflow-hidden shadow-lg bg-card">

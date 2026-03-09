@@ -16,6 +16,8 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import AnimatedButton from "@/components/AnimatedButton";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
+import { Button } from "@/components/ui/button";
 
 export default function Blog() {
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
@@ -66,9 +68,9 @@ export default function Blog() {
   return (
     <section
       id="blog"
-      className="w-full min-w-0 max-w-full py-20 bg-gradient-to-b from-background to-background/95"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 bg-gradient-to-b from-background to-background/95"
     >
-      <div className="container px-4 mx-auto min-w-0">
+      <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -77,13 +79,13 @@ export default function Blog() {
           className="mb-16"
         >
           <motion.h2
-            className="text-3xl md:text-4xl font-bold mb-6 text-center bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+            className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-center bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent px-1"
             variants={itemVariants}
           >
             Latest <span className="text-primary">Insights</span>
           </motion.h2>
           <motion.p
-            className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-12"
+            className="text-base sm:text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-8 sm:mb-12 px-1"
             variants={itemVariants}
           >
             I share my knowledge and experience through articles on web
@@ -95,7 +97,7 @@ export default function Blog() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {posts?.slice(0, 3).map((post, index) => (
                 <motion.div
                   key={post.id}
@@ -166,7 +168,7 @@ export default function Blog() {
           )}
 
           <motion.div
-            className="flex justify-center mt-12"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
             variants={itemVariants}
           >
             <Link href="/blog">
@@ -179,6 +181,14 @@ export default function Blog() {
                 View All Articles
               </AnimatedButton>
             </Link>
+            <div className="flex flex-col xs:flex-row gap-2">
+              <Button asChild size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
+                <Link href={AUDIT_PATH}>{PRIMARY_CTA}</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="border-border">
+                <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+              </Button>
+            </div>
           </motion.div>
         </motion.div>
       </div>

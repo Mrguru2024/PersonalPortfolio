@@ -20,24 +20,22 @@ export default {
   theme: {
     extend: {
       screens: {
-        // Standard breakpoints
-        'xs': '475px',
+        // Breakpoint order (mobile-first; Tailwind sorts by value):
+        // base (0) → fold (260) → xs (475) → fold-open (512) → sm (640) → md (768) → lg (1024) → xl (1280) → 2xl (1536)
+        // Z Fold / foldables: cover screen ~260–384px logical width; unfolded inner ~512px+.
+        'fold': '260px',   // Z Fold 4/5 cover (narrow), split-screen, small foldables
+        'xs': '475px',     // Large phones, narrow tablets
+        'fold-open': '512px', // Z Fold unfolded inner width (min)
         'sm': '640px',
         'md': '768px',
         'lg': '1024px',
         'xl': '1280px',
         '2xl': '1536px',
-        // Foldable device support (Samsung Z Fold, Surface Duo, etc.)
-        'fold': '280px', // Folded state (narrow)
-        'fold-open': '512px', // Unfolded state (wide)
-        'fold-landscape': { 'raw': '(min-width: 280px) and (max-width: 512px) and (orientation: landscape)' },
-        // Tablet and larger
+        'fold-landscape': { raw: '(min-width: 260px) and (max-width: 512px) and (orientation: landscape)' },
         'tablet': '768px',
         'tablet-lg': '1024px',
-        // Desktop
         'desktop': '1280px',
         'desktop-lg': '1536px',
-        // Ultra-wide
         'ultrawide': '1920px',
       },
       borderRadius: {

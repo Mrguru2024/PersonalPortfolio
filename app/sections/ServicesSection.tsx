@@ -33,6 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
 
 interface Service {
   id: string;
@@ -361,7 +362,7 @@ function ServicesSection() {
   return (
     <section
       id="services"
-      className="w-full min-w-0 max-w-full py-20 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 px-3 fold:px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
       <div className="max-w-7xl mx-auto min-w-0">
         {/* Header */}
@@ -370,19 +371,17 @@ function ServicesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
         >
-          <Badge variant="outline" className="mb-4">
-            <TrendingUp className="h-3 w-3 mr-2" />
+          <Badge variant="outline" className="mb-4 text-xs sm:text-sm">
+            <TrendingUp className="h-3 w-3 mr-2 shrink-0" />
             Revenue-Generating Services
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h2 className="text-2xl fold:text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent px-1">
             Full-Stack Development Services
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From concept to deployment, I offer comprehensive development,
-            design, and consulting services that showcase my expertise as a
-            Next.js React and UX/UI developer.
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-1">
+            Lead generation systems, conversion-focused websites, and startup/MVP development—from concept to deployment.
           </p>
         </motion.div>
 
@@ -392,7 +391,7 @@ function ServicesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-wrap justify-center gap-3 mb-12"
+          className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12"
         >
           {categories.map((category) => {
             const Icon = category.icon;
@@ -401,7 +400,7 @@ function ServicesSection() {
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={`
-                  flex items-center gap-2 px-6 py-3 rounded-lg border transition-all
+                  flex items-center gap-1.5 fold:gap-2 sm:gap-2 px-3 py-2 fold:px-4 fold:py-2.5 sm:px-6 sm:py-3 rounded-lg border transition-all text-xs fold:text-sm sm:text-base min-h-[44px] touch-manipulation
                   ${
                     selectedCategory === category.id
                       ? "bg-primary text-primary-foreground border-primary shadow-lg"
@@ -417,7 +416,7 @@ function ServicesSection() {
         </motion.div>
 
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {filteredServices.map((service, index) => (
             <motion.div
               key={service.id}
@@ -469,29 +468,23 @@ function ServicesSection() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center"
         >
-          <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
-            <CardContent className="py-8">
+<Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/20">
+              <CardContent className="py-8">
               <h3 className="text-2xl font-bold mb-4">
-                Ready to Start Your Project?
+                Ready to Grow Your Business Online?
               </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Let's discuss how I can help bring your vision to life with
-                cutting-edge technology and exceptional user experience design.
+                Get a free website growth audit to see where you may be losing leads—then we can discuss your project and next steps.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center flex-wrap">
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 border-0 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/assessment">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Start Project</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Assessment
-                      </span>
-                      <span className="xs:hidden">Assessment</span>
-                    </span>
+                  <Link href={AUDIT_PATH}>
+                    <Search className="h-4 w-4 shrink-0" />
+                    {PRIMARY_CTA}
                   </Link>
                 </Button>
                 <Button
@@ -500,15 +493,15 @@ function ServicesSection() {
                   variant="outline"
                   className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
                 >
-                  <Link href="/#contact">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="whitespace-nowrap">Schedule</span>
-                      <span className="hidden xs:inline whitespace-nowrap">
-                        Consultation
-                      </span>
-                      <span className="xs:hidden">Consult</span>
-                    </span>
-                  </Link>
+                  <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                >
+                  <Link href="/assessment">Start Project Assessment</Link>
                 </Button>
               </div>
             </CardContent>

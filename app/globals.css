@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Responsive breakpoints (see tailwind.config.ts):
+ * base 0 → fold 260px (Z Fold cover) → xs 475px → fold-open 512px → sm 640px → md 768px → lg 1024px → xl 1280px → 2xl 1536px
+ * Use base for smallest viewports; add fold: for 260px+; xs/sm/md for larger.
+ */
+
 /* Logo: dark on light theme (visible), white on dark theme */
 img.header-logo,
 img[alt="Ascendra Technologies"] {

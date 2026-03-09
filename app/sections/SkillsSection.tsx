@@ -186,9 +186,9 @@ const SkillsSection = () => {
     return (
       <section
         id="skills"
-        className="py-12 xs:py-16 sm:py-20 flex items-center justify-center"
+        className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 flex items-center justify-center"
       >
-        <div className="text-center">
+        <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-full text-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">
             Loading skills data from GitHub...
@@ -202,9 +202,9 @@ const SkillsSection = () => {
     return (
       <section
         id="skills"
-        className="py-12 xs:py-16 sm:py-20 flex items-center justify-center"
+        className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 flex items-center justify-center"
       >
-        <div className="text-center">
+        <div className="container mx-auto px-3 fold:px-4 sm:px-6 min-w-0 max-w-full text-center">
           <p className="text-destructive mb-2">Failed to load skills data</p>
           <p className="text-muted-foreground text-sm max-w-md">
             {(error as Error).message}
@@ -218,7 +218,7 @@ const SkillsSection = () => {
     <section
       id="skills"
       ref={sectionRef}
-      className="w-full min-w-0 max-w-full py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900"
+      className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900"
     >
       {/* Decorative elements */}
       <motion.div

@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -173,10 +174,10 @@ const ContactSection = () => {
 
   return (
     <section
-      className="w-full min-w-0 max-w-full py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950"
       aria-label="Contact"
     >
-      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-full">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -194,27 +195,26 @@ const ContactSection = () => {
             Ready to Start Your Project?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-            Get a custom quote tailored to your goals. Share your project
-            details and I'll respond with a clear plan and next steps.
+            Get a custom quote tailored to your goals. Or start with a free website growth audit—we'll review your site and show you where you may be losing leads.
           </p>
-          <div className="flex justify-center gap-4">
-            <a
-              href="/assessment"
-              className="w-full sm:w-auto block sm:inline-block"
-            >
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] border-0"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <ClipboardCheck className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap text-center">
-                    Start Interactive Assessment
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0" />
-                </span>
-              </Button>
-            </a>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+            <Button asChild size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] border-0">
+              <Link href="/audit" className="flex items-center justify-center gap-2">
+                Get Your Free Website Growth Audit
+                <ArrowRight className="h-4 w-4 shrink-0" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]">
+              <Link href="/#contact" className="flex items-center justify-center gap-2">
+                Book a Strategy Call
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto text-foreground border-border hover:bg-accent hover:text-accent-foreground text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 min-h-[44px]">
+              <Link href="/assessment" className="flex items-center justify-center gap-2">
+                <ClipboardCheck className="h-4 w-4 shrink-0" />
+                Start Interactive Assessment
+              </Link>
+            </Button>
           </div>
         </motion.div>
 

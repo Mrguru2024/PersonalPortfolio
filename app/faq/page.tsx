@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function FAQPage() {
   return (
-    <div className="w-full min-w-0 max-w-full min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-10 xs:py-12 sm:py-16 px-3 fold:px-4 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
+    <div className="w-full min-w-0 max-w-full min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-8 fold:py-10 xs:py-12 sm:py-16 px-3 fold:px-4 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 min-w-0">
         {/* Header */}
         <div className="text-center space-y-3 sm:space-y-4">

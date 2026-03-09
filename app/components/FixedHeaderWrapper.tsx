@@ -47,18 +47,18 @@ export default function FixedHeaderWrapper() {
       }}
     >
       <div
-        className="w-full pt-0 pb-0.5 pl-4 pr-4 sm:pl-6 sm:pr-6"
+        className="w-full pt-0 pb-0.5 pl-3 pr-3 fold:pl-4 fold:pr-4 sm:pl-6 sm:pr-6"
         style={{ background: "transparent" }}
       >
         <Link
           href="/"
-          className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded min-h-[44px] items-center"
           aria-label="Ascendra Technologies – Home"
         >
           <img
             src="/ascendra-logo.svg"
             alt="Ascendra Technologies"
-            className="header-logo h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain bg-transparent"
+            className="header-logo h-14 fold:h-16 sm:h-20 md:h-24 lg:h-28 w-auto max-w-[200px] fold:max-w-none object-contain bg-transparent"
             width={320}
             height={128}
           />

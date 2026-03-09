@@ -78,7 +78,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set canvas size
+    // Set canvas size and get dimensions for particle spread (use rect so particles fill area immediately)
     const updateSize = () => {
       const rect = canvas.getBoundingClientRect();
       setCanvasSize({
@@ -90,9 +90,12 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     };
     
     updateSize();
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(rect.width, 1);
+    const h = Math.max(rect.height, 1);
     window.addEventListener('resize', updateSize);
     
-    // Create random particles
+    // Create random particles spread across full area (use w/h so they're not clustered at origin)
     const newParticles: Particle[] = [];
     
     for (let i = 0; i < count; i++) {
@@ -105,8 +108,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
       }
       
       newParticles.push({
-        x: Math.random() * canvasSize.width,
-        y: Math.random() * canvasSize.height,
+        x: Math.random() * w,
+        y: Math.random() * h,
         size: minSize + Math.random() * (maxSize - minSize),
         color: particleColor,
         speedX: (Math.random() - 0.5) * (maxSpeed - minSpeed) + minSpeed,

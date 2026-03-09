@@ -79,8 +79,8 @@ export default function AnnouncementsSection() {
 
   if (isLoading) {
     return (
-      <section id="announcements" className="w-full min-w-0 max-w-full py-16 md:py-20 bg-muted/30 dark:bg-muted/10">
-        <div className="container px-4 mx-auto min-w-0">
+      <section id="announcements" className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 sm:py-16 md:py-20 bg-muted/30 dark:bg-muted/10">
+        <div className="container px-3 fold:px-4 sm:px-6 mx-auto min-w-0 max-w-full">
           <div className="flex justify-center items-center min-h-[200px]">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
@@ -96,9 +96,9 @@ export default function AnnouncementsSection() {
   return (
     <section
       id="announcements"
-      className="w-full min-w-0 max-w-full py-16 md:py-20 bg-muted/30 dark:bg-muted/10 scroll-mt-20"
+      className="w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 sm:py-16 md:py-20 bg-muted/30 dark:bg-muted/10 scroll-mt-20"
     >
-      <div className="container px-4 mx-auto max-w-4xl min-w-0">
+      <div className="container px-3 fold:px-4 sm:px-6 mx-auto max-w-4xl min-w-0 max-w-full">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -110,7 +110,7 @@ export default function AnnouncementsSection() {
             className="flex items-center gap-2 mb-8 justify-center"
           >
             <Megaphone className="h-7 w-7 text-primary" aria-hidden />
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h2 className="text-xl fold:text-2xl sm:text-2xl md:text-3xl font-bold text-foreground px-1">
               Project updates & announcements
             </h2>
           </motion.div>

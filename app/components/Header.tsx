@@ -59,12 +59,16 @@ export default function Header(_props: HeaderProps) {
   };
 
   const navItems = [
-    { name: "Home", href: "#home" },
-    { name: "Projects", href: "#projects" },
-    { name: "About", href: "#about" },
-    { name: "Skills", href: "#skills" },
-    { name: "Blog", href: "#blog" },
-    { name: "Contact", href: "#contact" },
+    { name: "Home", href: "#home", scroll: true },
+    { name: "Audit", href: "/audit", scroll: false },
+    { name: "For Contractors", href: "/contractor-systems", scroll: false },
+    { name: "Local Business", href: "/local-business-growth", scroll: false },
+    { name: "Startup MVP", href: "/startup-mvp-development", scroll: false },
+    { name: "Projects", href: "#projects", scroll: true },
+    { name: "About", href: "#about", scroll: true },
+    { name: "Skills", href: "#skills", scroll: true },
+    { name: "Blog", href: "#blog", scroll: true },
+    { name: "Contact", href: "#contact", scroll: true },
   ];
 
   const adminPages = [
@@ -133,7 +137,7 @@ export default function Header(_props: HeaderProps) {
       style={{ background: "transparent", border: "none", boxShadow: "none" }}
     >
       <div
-        className="container mx-auto px-4 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
+        className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
         style={{ background: "transparent", border: "none", boxShadow: "none" }}
       >
         {/* Left spacer (logo was here) */}
@@ -141,16 +145,26 @@ export default function Header(_props: HeaderProps) {
         {/* Center: nav */}
         <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
           {isHomePage ? (
-            navItems.map((item) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => scrollToSection(item.href)}
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                {item.name}
-              </button>
-            ))
+            navItems.map((item) =>
+              item.scroll !== false ? (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => scrollToSection(item.href)}
+                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+                >
+                  {item.name}
+                </button>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+                >
+                  {item.name}
+                </Link>
+              )
+            )
           ) : (
             <>
               <Link
@@ -158,6 +172,30 @@ export default function Header(_props: HeaderProps) {
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm"
               >
                 Home
+              </Link>
+              <Link
+                href="/audit"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Audit
+              </Link>
+              <Link
+                href="/contractor-systems"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                For Contractors
+              </Link>
+              <Link
+                href="/local-business-growth"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Local Business
+              </Link>
+              <Link
+                href="/startup-mvp-development"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
+              >
+                Startup MVP
               </Link>
               <Link
                 href="/blog"
@@ -287,16 +325,27 @@ export default function Header(_props: HeaderProps) {
             <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
               <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
                 {isHomePage ? (
-                  navItems.map((item) => (
-                    <button
-                      key={item.name}
-                      type="button"
-                      onClick={() => scrollToSection(item.href)}
-                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                    >
-                      {item.name}
-                    </button>
-                  ))
+                  navItems.map((item) =>
+                    item.scroll !== false ? (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => scrollToSection(item.href)}
+                        className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      >
+                        {item.name}
+                      </button>
+                    ) : (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={closeMobileMenu}
+                        className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block py-3 px-2"
+                      >
+                        {item.name}
+                      </Link>
+                    )
+                  )
                 ) : (
                   <>
                     <Link
@@ -305,6 +354,34 @@ export default function Header(_props: HeaderProps) {
                       onClick={closeMobileMenu}
                     >
                       Home
+                    </Link>
+                    <Link
+                      href="/audit"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Audit
+                    </Link>
+                    <Link
+                      href="/contractor-systems"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      For Contractors
+                    </Link>
+                    <Link
+                      href="/local-business-growth"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Local Business
+                    </Link>
+                    <Link
+                      href="/startup-mvp-development"
+                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                      onClick={closeMobileMenu}
+                    >
+                      Startup MVP
                     </Link>
                     <Link
                       href="/blog"

@@ -171,7 +171,8 @@ export function ProjectAssessmentWizard({
   };
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-6 sm:py-8">
+      <div className="container mx-auto max-w-2xl px-3 fold:px-4 sm:px-6 py-6 sm:py-8 min-w-0">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -445,6 +446,7 @@ export function ProjectAssessmentWizard({
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
