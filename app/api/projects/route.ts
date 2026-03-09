@@ -41,7 +41,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(staticProjects);
     }
 
-    return response;
+    // Merge DB projects with static: ensure every static project appears (DB may be out of date)
+    try {
+      const body = await response.json();
+      const fromDb = Array.isArray(body) ? body : [];
+      const dbIds = new Set(fromDb.map((p: { id?: string }) => p.id));
+      const fromStatic = staticProjects.filter((p) => !dbIds.has(p.id));
+      const merged = [...fromDb, ...fromStatic];
+      return NextResponse.json(merged);
+    } catch {
+      return response;
+    }
   } catch (error: unknown) {
     const msg =
       error instanceof Error
