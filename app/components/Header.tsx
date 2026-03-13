@@ -128,9 +128,9 @@ export default function Header(_props: HeaderProps) {
         style={{ background: "transparent", border: "none", boxShadow: "none" }}
       >
         {/* Left spacer (logo was here) */}
-        <div className="hidden md:block flex-1 min-w-0" aria-hidden />
+        <div className="hidden lg:block flex-1 min-w-0" aria-hidden />
         {/* Center: nav */}
-        <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
+        <nav className="hidden lg:flex flex-shrink-0 space-x-6 xl:space-x-8 items-center">
           {navItems.map((item) => (
             <Link
               key={item.name}
@@ -147,11 +147,15 @@ export default function Header(_props: HeaderProps) {
         </nav>
         {/* Right: auth + theme (original position) */}
         <div className="flex flex-1 min-w-0 justify-end items-center gap-2">
-          <div className="hidden md:flex items-center gap-2">
-            <Button asChild size="sm" className="min-h-[44px] sm:min-h-[36px]">
-              <Link href={AUDIT_PATH}>
-                <Search className="h-4 w-4 mr-1.5 shrink-0" />
-                Request Audit
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <Button
+              asChild
+              size="sm"
+              className="min-h-[44px] sm:min-h-[36px] px-2 xl:px-3"
+            >
+              <Link href={AUDIT_PATH} aria-label="Request Audit">
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="hidden xl:inline ml-1.5">Request Audit</span>
               </Link>
             </Button>
             {mounted && user ? (
@@ -213,10 +217,11 @@ export default function Header(_props: HeaderProps) {
             ) : (
               <Link
                 href="/auth"
-                className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 min-h-[44px] sm:min-h-[36px] px-3"
+                aria-label="Login"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 min-h-[44px] sm:min-h-[36px] w-9 xl:w-auto px-0 xl:px-3"
               >
-                <LogIn className="h-4 w-4 shrink-0" />
-                <span>Login</span>
+                <LogIn className="h-4 w-4 shrink-0 xl:mr-1.5" />
+                <span className="hidden xl:inline">Login</span>
               </Link>
             )}
             <ThemeToggle />
@@ -224,7 +229,7 @@ export default function Header(_props: HeaderProps) {
         </div>
 
         {/* Mobile: menu button + theme (nav links in dropdown below) */}
-        <div className="flex items-center gap-3 md:hidden shrink-0">
+        <div className="flex items-center gap-3 lg:hidden shrink-0">
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -246,7 +251,7 @@ export default function Header(_props: HeaderProps) {
 
       {/* Mobile Navigation - visible when menu is open */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)]" style={{ top: 0 }}>
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)]" style={{ top: 0 }}>
           {/* Backdrop: tap to close, prevents touch scroll from hitting body */}
           <button
             type="button"
