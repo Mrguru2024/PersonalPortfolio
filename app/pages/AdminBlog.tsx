@@ -84,7 +84,7 @@ const AdminBlog = () => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiTopic, setAiTopic] = useState("");
+  const [bjvcjb n , setAiTopic] = useState("");
   const [aiStyle, setAiStyle] = useState<"professional" | "casual" | "technical" | "storytelling">("professional");
   const [aiLength, setAiLength] = useState<"short" | "medium" | "long">("medium");
   const [aiContentPrompt, setAiContentPrompt] = useState("");
