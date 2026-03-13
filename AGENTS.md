@@ -33,7 +33,8 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 
 ### Key gotchas
 
-- **`npm run lint`** is broken in this codebase: `next lint` was removed in Next.js 16. Use `npm run check` (`tsc`) for type checking instead. The `tsc` output shows pre-existing type errors in test files (`@testing-library/jest-dom` matcher types) — these do not affect runtime.
+- **`npm run lint`** runs ESLint via a flat config (`eslint.config.mjs`) using `eslint-config-next`. The codebase has pre-existing lint warnings/errors (e.g. unescaped entities, hooks called conditionally). These are not regressions.
+- **`npm run check`** runs `tsc` for type checking. The output shows pre-existing type errors in test files (`@testing-library/jest-dom` matcher types) — these do not affect runtime.
 - **`npm run dev:webpack`** also uses Turbopack in Next.js 16; the `--webpack` flag only applies to builds.
 - **Chrome ephemeral connections** can claim port 3000 transiently. If the dev server starts on a different port, check logs for the actual port.
 - **Schema management** uses `npm run db:push` which runs `drizzle-kit push` (uses `pg` driver directly, not Neon WebSocket). This works without the WebSocket proxy.
@@ -43,6 +44,7 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 
 See `package.json` scripts and `README.md` for:
 - `npm run dev` — dev server (Turbopack, port 3000)
+- `npm run lint` — ESLint (flat config, `eslint-config-next`)
 - `npm run check` — TypeScript type check
 - `npm test` — Jest test suite (17 suites, 75 tests)
 - `npm run db:push` — push Drizzle schema to PostgreSQL
