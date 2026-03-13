@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,7 @@ import {
 import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Layout, Zap, Cpu } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
-
-const ProjectsSection = dynamic(() => import("@/sections/Projects").then((m) => ({ default: m.default })), { ssr: false });
-const SkillsSection = dynamic(() => import("@/sections/SkillsSection").then((m) => ({ default: m.default })), { ssr: false });
+import { projects } from "@/lib/data";
 
 const ASCENDRA_LOGO = "/ascendra-logo.svg";
 
@@ -122,11 +119,56 @@ export default function AscendraTechnologiesPartnerPage() {
           </div>
         </section>
 
-        <div id="projects" className="scroll-mt-20">
-          <ProjectsSection />
-        </div>
+        <section id="projects" className="scroll-mt-20 w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/20 dark:bg-muted/5">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
+              Our work
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
+              {projects.slice(0, 6).map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`} className="min-w-0">
+                  <Card className="border-border bg-card shadow-sm hover:border-primary/30 transition-all overflow-hidden h-full min-w-0">
+                    <CardContent className="p-4 sm:p-5 min-w-0">
+                      <p className="text-xs font-medium text-primary uppercase tracking-wide">{project.category}</p>
+                      <h3 className="font-semibold text-foreground mt-1 break-words">{project.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2 break-words">{project.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <Button asChild variant="outline" size="sm" className="min-h-[44px]">
+                <Link href="/results">View all results</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
-        <SkillsSection />
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 bg-muted/30 dark:bg-muted/10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-6 sm:mb-8">
+              Skills & technologies
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              {Array.from(
+                new Set(projects.flatMap((p) => p.techStack || []).filter(Boolean))
+              )
+                .slice(0, 24)
+                .map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20"
+                  >
+                    {tech}
+                  </span>
+                ))}
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-6 max-w-2xl mx-auto">
+              Full-stack development, conversion-focused design, and system integration for web and automation.
+            </p>
+          </div>
+        </section>
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.12),transparent)]" />
