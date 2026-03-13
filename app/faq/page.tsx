@@ -47,7 +47,7 @@ export default function FAQPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button asChild size="lg" className="flex-1 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
-                <Link href="/#contact" className="flex items-center justify-center gap-2">
+                <Link href="/contact" className="flex items-center justify-center gap-2">
                   <Mail className="h-4 w-4 shrink-0" />
                   <span className="whitespace-nowrap">Contact Us</span>
                 </Link>

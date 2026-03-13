@@ -38,7 +38,7 @@ export const GENERAL_PERSONA: TargetPersona = {
   description:
     "Anyone looking for custom web development, design, or a tailored quote for their next project.",
   ctaLabel: "Start a Project",
-  href: "/#contact",
+  href: "/contact",
   ariaLabel: "Start a project or get in touch",
 };
 

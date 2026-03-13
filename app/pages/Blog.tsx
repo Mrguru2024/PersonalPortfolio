@@ -268,7 +268,7 @@ export default function Blog() {
                   lifelong learner.
                 </p>
                 <Button variant="outline" className="mt-4 w-full" asChild>
-                  <Link href="/#contact">Get in touch</Link>
+                  <Link href="/contact">Get in touch</Link>
                 </Button>
               </CardContent>
             </Card>

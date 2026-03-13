@@ -3,8 +3,8 @@
  * Keeps primary/secondary CTAs consistent site-wide.
  */
 
-export const PRIMARY_CTA = "Get Your Free Website Growth Audit";
-export const PRIMARY_CTA_SHORT = "Get My Free Audit";
+export const PRIMARY_CTA = "Request a Digital Growth Audit";
+export const PRIMARY_CTA_SHORT = "Request Audit";
 export const SECONDARY_CTA = "Book a Strategy Call";
 export const AUDIT_PATH = "/audit";
-export const BOOK_CALL_HREF = "/#contact";
+export const BOOK_CALL_HREF = "/contact";

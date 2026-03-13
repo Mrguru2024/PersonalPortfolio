@@ -10,7 +10,7 @@ const baseUrl = "https://mrguru.dev";
 export const metadata: Metadata = {
   title: "Ascendra Technologies",
   description:
-    "Ascendra Technologies – Senior Full Stack Developer Anthony MrGuru Feaster. Custom web solutions and professional delivery.",
+    "Ascendra Technologies ecosystem: strategy, design, and technology delivery for businesses that need stronger positioning, presentation, and conversion performance.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: baseUrl,
     siteName: "Ascendra Technologies",
-    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
+    title: "Ascendra Technologies | Strategy + Design + Technology",
     description:
-      "Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional.",
+      "A coordinated growth ecosystem helping businesses improve brand clarity, visual trust, and website conversion systems.",
     images: [
       {
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
+    title: "Ascendra Technologies | Strategy + Design + Technology",
     description:
-      "Senior Full Stack Developer at Ascendra Technologies. Start your next web project with a proven professional.",
+      "Strategy, design, and technology for businesses that need to attract, convert, and grow.",
     images: [`${baseUrl}/ascendra-logo.svg`],
   },
 };

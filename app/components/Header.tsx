@@ -9,7 +9,6 @@ import {
   LogIn,
   LogOut,
   User,
-  Wand2,
   LayoutDashboard,
   FileText,
   Receipt,
@@ -19,6 +18,7 @@ import {
   BarChart3,
   Users,
   Contact,
+  Search,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -33,6 +33,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { AUDIT_PATH } from "@/lib/funnelCtas";
 
 interface HeaderProps {
   currentSection?: string;
@@ -59,16 +60,12 @@ export default function Header(_props: HeaderProps) {
   };
 
   const navItems = [
-    { name: "Home", href: "#home", scroll: true },
-    { name: "Audit", href: "/audit", scroll: false },
-    { name: "For Contractors", href: "/contractor-systems", scroll: false },
-    { name: "Local Business", href: "/local-business-growth", scroll: false },
-    { name: "Startup MVP", href: "/startup-mvp-development", scroll: false },
-    { name: "Projects", href: "#projects", scroll: true },
-    { name: "About", href: "#about", scroll: true },
-    { name: "Skills", href: "#skills", scroll: true },
-    { name: "Blog", href: "#blog", scroll: true },
-    { name: "Contact", href: "#contact", scroll: true },
+    { name: "Home", href: "/" },
+    { name: "Services", href: "/services" },
+    { name: "Digital Growth Audit", href: "/audit" },
+    { name: "About", href: "/about" },
+    { name: "Results", href: "/results" },
+    { name: "Contact", href: "/contact" },
   ];
 
   const adminPages = [
@@ -116,20 +113,10 @@ export default function Header(_props: HeaderProps) {
     closeMobileMenu();
   }, [pathname, closeMobileMenu]);
 
-  const scrollToSection = (href: string) => {
-    closeMobileMenu();
-    // Run scroll after menu closes and body unlock so smooth scroll works
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const element = document.querySelector(href);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      });
-    });
+  const isActiveLink = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
-
-  const isHomePage = pathname === "/";
 
   return (
     <header
@@ -144,83 +131,29 @@ export default function Header(_props: HeaderProps) {
         <div className="hidden md:block flex-1 min-w-0" aria-hidden />
         {/* Center: nav */}
         <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
-          {isHomePage ? (
-            navItems.map((item) =>
-              item.scroll !== false ? (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() => scrollToSection(item.href)}
-                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-                >
-                  {item.name}
-                </button>
-              ) : (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-                >
-                  {item.name}
-                </Link>
-              )
-            )
-          ) : (
-            <>
-              <Link
-                href="/"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Home
-              </Link>
-              <Link
-                href="/audit"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Audit
-              </Link>
-              <Link
-                href="/contractor-systems"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                For Contractors
-              </Link>
-              <Link
-                href="/local-business-growth"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Local Business
-              </Link>
-              <Link
-                href="/startup-mvp-development"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Startup MVP
-              </Link>
-              <Link
-                href="/blog"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Blog
-              </Link>
-              <Link
-                href="/resume"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm"
-              >
-                Resume
-              </Link>
-              <Link
-                href="/generate-images"
-                className="text-foreground/80 hover:text-primary font-medium transition text-sm flex items-center gap-1"
-              >
-                <Wand2 className="h-4 w-4 shrink-0" /> AI Images
-              </Link>
-            </>
-          )}
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`font-medium transition text-sm ${
+                isActiveLink(item.href)
+                  ? "text-primary"
+                  : "text-foreground/80 hover:text-primary"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
         </nav>
         {/* Right: auth + theme (original position) */}
         <div className="flex flex-1 min-w-0 justify-end items-center gap-2">
           <div className="hidden md:flex items-center gap-2">
+            <Button asChild size="sm" className="min-h-[44px] sm:min-h-[36px]">
+              <Link href={AUDIT_PATH}>
+                <Search className="h-4 w-4 mr-1.5 shrink-0" />
+                Request Audit
+              </Link>
+            </Button>
             {mounted && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -324,88 +257,26 @@ export default function Header(_props: HeaderProps) {
           <div className="container mx-auto px-4 pb-4 pt-3 relative z-10 flex-1 min-h-0 flex flex-col">
             <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
               <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
-                {isHomePage ? (
-                  navItems.map((item) =>
-                    item.scroll !== false ? (
-                      <button
-                        key={item.name}
-                        type="button"
-                        onClick={() => scrollToSection(item.href)}
-                        className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      >
-                        {item.name}
-                      </button>
-                    ) : (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={closeMobileMenu}
-                        className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block py-3 px-2"
-                      >
-                        {item.name}
-                      </Link>
-                    )
-                  )
-                ) : (
-                  <>
-                    <Link
-                      href="/"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Home
-                    </Link>
-                    <Link
-                      href="/audit"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Audit
-                    </Link>
-                    <Link
-                      href="/contractor-systems"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      For Contractors
-                    </Link>
-                    <Link
-                      href="/local-business-growth"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Local Business
-                    </Link>
-                    <Link
-                      href="/startup-mvp-development"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Startup MVP
-                    </Link>
-                    <Link
-                      href="/blog"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Blog
-                    </Link>
-                    <Link
-                      href="/resume"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
-                      onClick={closeMobileMenu}
-                    >
-                      Resume
-                    </Link>
-                    <Link
-                      href="/generate-images"
-                      className="text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition flex items-center gap-2"
-                      onClick={closeMobileMenu}
-                    >
-                      <Wand2 className="h-4 w-4 shrink-0" /> AI Image Generator
-                    </Link>
-                  </>
-                )}
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className={`text-left font-medium py-3 px-2 rounded-md transition block ${
+                      isActiveLink(item.href)
+                        ? "text-primary bg-background/70"
+                        : "text-foreground/80 hover:text-primary hover:bg-background/70"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <Button asChild className="mt-2 min-h-[44px]">
+                  <Link href={AUDIT_PATH} onClick={closeMobileMenu}>
+                    <Search className="h-4 w-4 mr-2 shrink-0" />
+                    Request Audit
+                  </Link>
+                </Button>
 
                 <div className="pt-3 mt-3 border-t border-border/70">
                   {mounted && user ? (

@@ -73,7 +73,7 @@ const ResumeDownloadSuccess: React.FC<ResumeDownloadSuccessProps> = ({ downloadU
             whileTap={{ scale: 0.95 }}
             className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-left"
           >
-            <a href="#contact" className="group flex items-start">
+            <a href="/contact" className="group flex items-start">
               <div className="mr-3 mt-1">
                 <ArrowRight className="h-5 w-5 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
               </div>

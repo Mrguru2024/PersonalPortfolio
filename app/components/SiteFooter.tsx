@@ -7,12 +7,12 @@ import { Search } from "lucide-react";
 
 const FOOTER_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Free Audit", href: AUDIT_PATH },
-  { label: "For Contractors", href: "/contractor-systems" },
-  { label: "Local Business", href: "/local-business-growth" },
-  { label: "Startup MVP", href: "/startup-mvp-development" },
-  { label: "Blog", href: "/blog" },
+  { label: "Services", href: "/services" },
+  { label: "Digital Growth Audit", href: AUDIT_PATH },
+  { label: "About", href: "/about" },
+  { label: "Results", href: "/results" },
   { label: "Contact", href: BOOK_CALL_HREF },
+  { label: "Blog", href: "/blog" },
 ];
 
 export default function SiteFooter() {
@@ -47,6 +47,9 @@ export default function SiteFooter() {
               </Link>
             ))}
           </nav>
+          <p className="text-xs text-muted-foreground">
+            Built in partnership with Style Studio Branding and Macon Designs®.
+          </p>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Ascendra Technologies. All rights reserved.
           </p>
