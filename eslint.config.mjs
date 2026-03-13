@@ -1,0 +1,23 @@
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypeScript from "eslint-config-next/typescript";
+
+export default [
+  ...nextCoreWebVitals,
+  ...nextTypeScript,
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "dist/**",
+      "coverage/**",
+      "public/**",
+      "client/**",
+      "api/**",
+      "scripts/**",
+      "server/**",
+      "types/**",
+      "**/*.d.ts",
+    ],
+  },
+];
