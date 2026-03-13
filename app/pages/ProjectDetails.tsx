@@ -45,10 +45,10 @@ export default function ProjectDetails() {
           <p className="mb-8 text-muted-foreground">
             The project you&apos;re looking for doesn&apos;t exist.
           </p>
-          <Link href="/#projects">
+          <Link href="/results">
             <Button className="min-h-[44px]">
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Back to Projects
+              Back to Results
             </Button>
           </Link>
         </div>
@@ -88,11 +88,11 @@ export default function ProjectDetails() {
         }}
       />
 
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-10 sm:py-16 relative z-10 min-w-0 max-w-full">
-        <Link href="/#projects" className="inline-block mb-6 sm:mb-8">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6         py-10 sm:py-16 relative z-10 min-w-0 max-w-full">
+        <Link href="/results" className="inline-block mb-6 sm:mb-8">
           <Button variant="outline" className="flex items-center min-h-[44px]">
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Projects
+            Back to Results
           </Button>
         </Link>
 

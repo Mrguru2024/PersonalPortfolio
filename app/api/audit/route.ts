@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { portfolioController } from "@server/controllers/portfolioController";
 import { createMockResponse } from "@/lib/api-helpers";
 
-const AUDIT_SUBJECT = "Website Growth Audit Request";
+const AUDIT_SUBJECT = "Digital Growth Audit Request";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +13,19 @@ export async function POST(req: NextRequest) {
     const email = String(body.email ?? "").trim();
     const websiteUrl = String(body.websiteUrl ?? body.website ?? "").trim() || "";
     const industry = String(body.industry ?? "").trim();
-    const revenueRange = String(body.revenueRange ?? body.monthlyRevenue ?? "").trim();
-    const mainChallenge = String(body.mainChallenge ?? body.challenge ?? "").trim();
+    const budgetRange = String(
+      body.budgetRange ?? body.revenueRange ?? body.monthlyRevenue ?? ""
+    ).trim();
+    const mainChallenge = String(
+      body.mainChallenge ?? body.currentChallenge ?? body.challenge ?? ""
+    ).trim();
+    const businessStage = String(body.businessStage ?? body.currentStage ?? "").trim();
+    const helpNeeded =
+      Array.isArray(body.helpNeeded) && body.helpNeeded.length > 0
+        ? body.helpNeeded.map((value: unknown) => String(value).trim()).filter(Boolean)
+        : [];
     const timeline = String(body.timeline ?? "").trim();
+    const notes = String(body.notes ?? body.extraNotes ?? "").trim();
 
     if (!name || !email) {
       return NextResponse.json(
@@ -28,8 +38,11 @@ export async function POST(req: NextRequest) {
       mainChallenge && `Main challenge: ${mainChallenge}`,
       websiteUrl && `Website: ${websiteUrl}`,
       industry && `Industry: ${industry}`,
-      revenueRange && `Monthly revenue range: ${revenueRange}`,
+      businessStage && `Business stage: ${businessStage}`,
+      helpNeeded.length > 0 && `Help needed: ${helpNeeded.join(", ")}`,
+      budgetRange && `Budget range: ${budgetRange}`,
       timeline && `Timeline: ${timeline}`,
+      notes && `Additional notes: ${notes}`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -39,10 +52,10 @@ export async function POST(req: NextRequest) {
       email,
       company: businessName || undefined,
       phone: undefined,
-      projectType: industry || undefined,
-      budget: revenueRange || undefined,
+      projectType: [industry, businessStage].filter(Boolean).join(" | ") || undefined,
+      budget: budgetRange || undefined,
       timeframe: timeline || undefined,
-      message: message || "Website Growth Audit request",
+      message: message || "Digital Growth Audit request",
       newsletter: false,
       subject: AUDIT_SUBJECT,
     };

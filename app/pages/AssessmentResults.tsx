@@ -288,7 +288,7 @@ export default function AssessmentResults() {
             Back to Home
           </Button>
           <Button
-            onClick={() => router.push("/#contact")}
+            onClick={() => router.push("/contact")}
             className="bg-gradient-to-r from-primary to-purple-600"
           >
             <Mail className="h-4 w-4 mr-2" />

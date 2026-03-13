@@ -1,0 +1,96 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ECOSYSTEM_PILLARS, POSITIONING_STATEMENT } from "@/lib/funnel-content";
+
+export const metadata: Metadata = {
+  title: "About the Ecosystem | Ascendra Technologies",
+  description:
+    "Learn how Ascendra Technologies, Macon Designs®, and Style Studio Branding work together as one coordinated growth ecosystem.",
+};
+
+const collaborationSteps = [
+  "We align on business goals and current bottlenecks.",
+  "We diagnose positioning, visual trust, and conversion structure.",
+  "We assign the right delivery mix across strategy, design, and technology.",
+  "We execute in coordinated phases with clear next-step priorities.",
+];
+
+export default function AboutPage() {
+  return (
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
+          <section className="text-center max-w-3xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+              One ecosystem. Three specialized partners.
+            </h1>
+            <p className="mt-3 text-base sm:text-lg text-muted-foreground">
+              {POSITIONING_STATEMENT}
+            </p>
+          </section>
+
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {ECOSYSTEM_PILLARS.map((pillar) => (
+              <Card key={pillar.name} className="border-border bg-card h-full">
+                <CardContent className="p-5 sm:p-6">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {pillar.name}
+                  </h2>
+                  <p className="mt-2 text-sm font-medium text-primary">
+                    {pillar.role}
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {pillar.summary}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+            <h2 className="text-2xl font-semibold text-foreground">
+              Why the ecosystem model works
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+              Most businesses do not need random tactics. They need strategy,
+              presentation, and execution to work together. That is what this
+              model is designed to do.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm sm:text-base text-muted-foreground">
+              {collaborationSteps.map((step) => (
+                <li key={step} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
+            <h2 className="text-2xl font-semibold text-foreground">
+              Start with clarity, then scale delivery.
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+              The Digital Growth Audit is the fastest way to understand your
+              strongest next move.
+            </p>
+            <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
+              <Button asChild className="min-h-[44px]">
+                <Link href="/audit">
+                  Request a Digital Growth Audit
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="min-h-[44px]">
+                <Link href="/services">View service systems</Link>
+              </Button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}

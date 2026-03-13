@@ -117,7 +117,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         color: particleColor,
         speedX: (Math.random() - 0.5) * (maxSpeed - minSpeed) + minSpeed,
         speedY: (Math.random() - 0.5) * (maxSpeed - minSpeed) + minSpeed,
-        alpha: 0.4 + Math.random() * 0.5,
+        alpha: 0.6 + Math.random() * 0.4,
         alphaSpeed: 0.0004 + Math.random() * 0.004
       });
     }
@@ -182,8 +182,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         if (p.alpha > 1) {
           p.alpha = 1;
           p.alphaSpeed *= -1;
-        } else if (p.alpha < 0.4) {
-          p.alpha = 0.4;
+        } else if (p.alpha < 0.6) {
+          p.alpha = 0.6;
           p.alphaSpeed *= -1;
         }
         
@@ -212,8 +212,8 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
           const g = parseInt(hex.slice(3, 5), 16);
           const b = parseInt(hex.slice(5, 7), 16);
           const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
-          gradient.addColorStop(0, `rgba(${r},${g},${b},${p.alpha * 0.28})`);
-          gradient.addColorStop(0.5, `rgba(${r},${g},${b},${p.alpha * 0.08})`);
+          gradient.addColorStop(0, `rgba(${r},${g},${b},${p.alpha * 0.45})`);
+          gradient.addColorStop(0.5, `rgba(${r},${g},${b},${p.alpha * 0.15})`);
           gradient.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.beginPath();
           ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
@@ -231,7 +231,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
       
       // Draw links between particles
       if (linkParticles) {
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.48;
         for (let i = 0; i < updatedParticles.length; i++) {
           for (let j = i + 1; j < updatedParticles.length; j++) {
             const p1 = updatedParticles[i];

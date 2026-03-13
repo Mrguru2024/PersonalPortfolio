@@ -8,9 +8,9 @@ import SiteFooter from "./components/SiteFooter";
 const baseUrl = "https://mrguru.dev";
 
 export const metadata: Metadata = {
-  title: "Ascendra Technologies",
+  title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
   description:
-    "Ascendra Technologies – Senior Full Stack Developer Anthony MrGuru Feaster. Custom web solutions and professional delivery.",
+    "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with the Brand Growth ecosystem.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: baseUrl,
     siteName: "Ascendra Technologies",
-    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
+    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
     description:
-      "Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional.",
+      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale.",
     images: [
       {
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ascendra Technologies – Anthony MrGuru Feaster | Senior Full Stack Developer",
+    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
     description:
-      "Senior Full Stack Developer at Ascendra Technologies. Start your next web project with a proven professional.",
+      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team.",
     images: [`${baseUrl}/ascendra-logo.svg`],
   },
 };

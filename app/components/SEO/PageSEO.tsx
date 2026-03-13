@@ -14,6 +14,7 @@ interface PageSEOProps {
   noIndex?: boolean;
   schemaType?:
     | "WebPage"
+    | "WebSite"
     | "AboutPage"
     | "ProfilePage"
     | "ContactPage"

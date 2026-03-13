@@ -1,0 +1,268 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { TIMELINE_OPTIONS } from "@/lib/funnel-content";
+
+const strategyCallSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  businessName: z.string().min(1, "Business name is required"),
+  email: z.string().email("Enter a valid email"),
+  websiteUrl: z.string().optional(),
+  primaryGoal: z.string().min(8, "Add a little detail so we can prepare"),
+  timeline: z.string().min(1, "Select a timeline"),
+  notes: z.string().optional(),
+});
+
+type StrategyCallValues = z.infer<typeof strategyCallSchema>;
+
+export function StrategyCallForm() {
+  const [submitted, setSubmitted] = useState(false);
+
+  const form = useForm<StrategyCallValues>({
+    resolver: zodResolver(strategyCallSchema),
+    defaultValues: {
+      name: "",
+      businessName: "",
+      email: "",
+      websiteUrl: "",
+      primaryGoal: "",
+      timeline: "",
+      notes: "",
+    },
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (values: StrategyCallValues) => {
+      const message = [
+        `Primary goal: ${values.primaryGoal}`,
+        values.websiteUrl ? `Website: ${values.websiteUrl}` : "",
+        values.notes ? `Notes: ${values.notes}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          company: values.businessName,
+          projectType: "Strategy Call",
+          budget: "Not specified",
+          timeframe: values.timeline,
+          message,
+          newsletter: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        throw new Error(errorJson.message || "Failed to submit strategy call request");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      toast({
+        title: "Request received",
+        description:
+          "Thanks. We will review your details and send next-step scheduling guidance.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to submit",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (submitted) {
+    return (
+      <Card className="border-border bg-card">
+        <CardContent className="p-6 sm:p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground">
+            Strategy call request submitted.
+          </h3>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+            We will review your context, then reach out with the best next-step
+            call flow for your stage.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link href="/audit">Prefer a full audit first?</Link>
+            </Button>
+            <Button asChild className="min-h-[44px]">
+              <Link href="/services">Review service options</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-border bg-card">
+      <CardContent className="p-4 sm:p-6">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((values) => mutate(values))}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Business name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email *</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="you@business.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="websiteUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://yourwebsite.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="primaryGoal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Primary goal *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={3}
+                      placeholder="What should this strategy call solve first?"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timeline"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timeline *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timeline" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIMELINE_OPTIONS.map((timeline) => (
+                        <SelectItem key={timeline} value={timeline}>
+                          {timeline}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Extra notes (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea rows={3} placeholder="Anything else to share?" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
+              {isPending ? "Submitting..." : "Request Strategy Call"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}

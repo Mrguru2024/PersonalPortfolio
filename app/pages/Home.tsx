@@ -1,434 +1,234 @@
-"use client";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ECOSYSTEM_PILLARS,
+  POSITIONING_STATEMENT,
+  PREMIUM_OFFERS,
+} from "@/lib/funnel-content";
+import { projects } from "@/lib/data";
 
-/**
- * Landing page composition. All sections below are the main site landing.
- * Section components live in app/sections/:
- *
- * 1. HeroSection       – app/sections/HeroSection.tsx  (hero, CTA, name)
- * 2. ServicesSection   – app/sections/ServicesSection.tsx
- * 3. FreeSiteAuditPromoSection – app/sections/FreeSiteAuditPromoSection.tsx
- * 4. AnnouncementsSection – app/sections/AnnouncementsSection.tsx
- * 5. ProjectsSection   – app/sections/Projects.tsx    (wrapped in #projects)
- * 6. AboutSection      – app/sections/AboutSection.tsx
- * 7. SkillsSection     – app/sections/SkillsSection.tsx
- * 8. BlogSection       – app/sections/Blog.tsx
- * 9. ContactSection    – app/sections/ContactSection.tsx (wrapped in #contact)
- */
-import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
-import { PageSEO, StructuredData } from "@/components/SEO";
-import HeroSection from "@/sections/HeroSection";
-import FreeSiteAuditPromoSection from "@/sections/FreeSiteAuditPromoSection";
-import SectionPlaceholder from "@/components/SectionPlaceholder";
-import SectionLoadErrorFallback from "@/components/SectionLoadErrorFallback";
+const processSteps = [
+  "Diagnose the current bottleneck across strategy, design, and website conversion.",
+  "Define the right offer path and implementation scope for your stage.",
+  "Execute in clear phases with measurable next-step priorities.",
+];
 
-/** Only mount children when this slot is near the viewport. Large rootMargin = start loading earlier so section is ready when user scrolls. */
-function LazyWhenVisible({
-  children,
-  minHeight,
-  onVisible,
-}: {
-  children: React.ReactNode;
-  minHeight: string;
-  onVisible?: () => void;
-}) {
-  const [inView, setInView] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+const trustHighlights = [
+  "Conversion-focused website and funnel execution",
+  "Cross-functional strategy, design, and implementation support",
+  "Practical delivery model for businesses starting lean",
+];
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setInView(true);
-          onVisible?.();
-        }
-      },
-      { rootMargin: "900px 0px", threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onVisible]);
-
-  if (!inView) {
-    return (
-      <div ref={ref} className={`w-full min-w-0 max-w-full ${minHeight}`}>
-        <SectionPlaceholder minHeight={minHeight} />
-      </div>
-    );
-  }
-  return <>{children}</>;
-}
-
-const CHUNK_RETRY_DELAY_MS = 500;
-const CHUNK_MAX_RETRIES = 2;
-
-function withChunkFallback<T>(
-  loader: () => Promise<{ default: T }>,
-  fallback: React.ComponentType<{ minHeight?: string }>
-) {
-  return function loadWithRetry(): Promise<{ default: T }> {
-    const attempt = (retriesLeft: number): Promise<{ default: T }> =>
-      loader().catch((err: unknown) => {
-        const isChunkError =
-          (err && typeof err === "object" && (err as { name?: string }).name === "ChunkLoadError") ||
-          (typeof (err as { message?: string })?.message === "string" &&
-            ((err as { message: string }).message.includes("Loading chunk") ||
-              (err as { message: string }).message.includes("Failed to load chunk") ||
-              (err as { message: string }).message.includes("dynamically imported module")));
-        if (retriesLeft > 0 && isChunkError) {
-          return new Promise((resolve, reject) => {
-            setTimeout(
-              () => attempt(retriesLeft - 1).then(resolve).catch(reject),
-              CHUNK_RETRY_DELAY_MS
-            );
-          });
-        }
-        return { default: fallback as T };
-      });
-    return attempt(CHUNK_MAX_RETRIES);
-  };
-}
-
-// Below-the-fold sections: lazy load with retry + chunk-error fallback so ChunkLoadError doesn't crash the page
-const ServicesSection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/ServicesSection").then((m) => ({
-          default: m.default,
-        })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Services"
-          minHeight="min-h-[400px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
-    ssr: false,
-  }
-);
-const ProjectsSection = dynamic(
-  () =>
-    withChunkFallback(
-      () => import("@/sections/Projects").then((m) => ({ default: m.default })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Projects"
-          minHeight="min-h-[480px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[480px]" />,
-    ssr: false,
-  }
-);
-const AboutSection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/AboutSection").then((m) => ({ default: m.default })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="About"
-          minHeight="min-h-[360px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[360px]" />,
-    ssr: false,
-  }
-);
-const SkillsSection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/SkillsSection").then((m) => ({
-          default: m.default,
-        })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Skills"
-          minHeight="min-h-[420px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[420px]" />,
-    ssr: false,
-  }
-);
-const BlogSection = dynamic(
-  () =>
-    withChunkFallback(
-      () => import("@/sections/Blog").then((m) => ({ default: m.default })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Blog"
-          minHeight="min-h-[400px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[400px]" />,
-    ssr: false,
-  }
-);
-const AuthoritySection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/AuthoritySection").then((m) => ({
-          default: m.default,
-        })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Authority"
-          minHeight="min-h-[240px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[240px]" />,
-    ssr: false,
-  }
-);
-const AnnouncementsSection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/AnnouncementsSection").then((m) => ({
-          default: m.default,
-        })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Announcements"
-          minHeight="min-h-[280px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[280px]" />,
-    ssr: false,
-  }
-);
-const ContactSection = dynamic(
-  () =>
-    withChunkFallback(
-      () =>
-        import("@/sections/ContactSection").then((m) => ({
-          default: m.default,
-        })),
-      () => (
-        <SectionLoadErrorFallback
-          sectionName="Contact"
-          minHeight="min-h-[380px]"
-        />
-      )
-    )(),
-  {
-    loading: () => <SectionPlaceholder minHeight="min-h-[380px]" />,
-    ssr: false,
-  }
-);
-
-const ViewModeToggle = dynamic(() => import("@/components/ViewModeToggle"), {
-  ssr: false,
-  loading: () => null,
-});
-
-// Prefetch next section chunks when user scrolls so the next section is ready by the time they reach it
-const prefetchServices = () => import("@/sections/ServicesSection");
-const prefetchAnnouncements = () => import("@/sections/AnnouncementsSection");
-const prefetchProjects = () => import("@/sections/Projects");
-const prefetchAbout = () => import("@/sections/AboutSection");
-const prefetchSkills = () => import("@/sections/SkillsSection");
-const prefetchBlog = () => import("@/sections/Blog");
-const prefetchContact = () => import("@/sections/ContactSection");
-
-interface HomeProps {
-  onSectionChange?: (sectionId: string) => void;
-}
-
-const Home = ({ onSectionChange }: HomeProps) => {
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const sectionsRef = useRef<HTMLElement[]>([]);
-
-  const [currentSection, setCurrentSection] = useState("home");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  // Prefetch first below-fold section soon after load so it's ready when user scrolls
-  useEffect(() => {
-    if (!mounted) return;
-    const t = setTimeout(prefetchServices, 1500);
-    return () => clearTimeout(t);
-  }, [mounted]);
-
-  // Defer scroll listener so first paint isn't blocked
-  useEffect(() => {
-    if (!mounted) return;
-    let teardown: (() => void) | undefined;
-    const id = setTimeout(() => {
-      let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
-
-      const handleScroll = () => {
-        if (scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          const scrollY = window.scrollY;
-          const sections = document.querySelectorAll("section[id]");
-          if (sections.length === 0) {
-            setCurrentSection("home");
-            return;
-          }
-          let bestId = "home";
-          let maxVisibility = 0;
-          sections.forEach((el) => {
-            const section = el as HTMLElement;
-            const top = section.offsetTop;
-            const height = section.offsetHeight;
-            const bottom = top + height;
-            const visibleTop = Math.max(top, scrollY);
-            const visibleBottom = Math.min(
-              bottom,
-              scrollY + window.innerHeight
-            );
-            const visible = Math.max(0, visibleBottom - visibleTop) / height;
-            if (visible > maxVisibility) {
-              maxVisibility = visible;
-              bestId = section.id || "home";
-            }
-          });
-          const formatted = bestId.charAt(0).toUpperCase() + bestId.slice(1);
-          setCurrentSection(formatted);
-        }, 100);
-      };
-
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      handleScroll();
-      teardown = () => {
-        window.removeEventListener("scroll", handleScroll);
-        if (scrollTimeout) clearTimeout(scrollTimeout);
-      };
-    }, 0);
-
-    return () => {
-      clearTimeout(id);
-      teardown?.();
-    };
-  }, [mounted]);
-
-  // Optional: intersection observer for parent callback (deferred)
-  useEffect(() => {
-    if (!onSectionChange || !mounted) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.target.id)
-            onSectionChange(entry.target.id);
-        });
-      },
-      { root: null, rootMargin: "0px", threshold: 0.5 }
-    );
-    observerRef.current = observer;
-    const t = setTimeout(() => {
-      const sections = document.querySelectorAll("section[id]");
-      sectionsRef.current = Array.from(sections) as HTMLElement[];
-      sectionsRef.current.forEach((s) => observer.observe(s));
-    }, 100);
-    return () => {
-      clearTimeout(t);
-      sectionsRef.current.forEach((s) => observer.unobserve(s));
-      observerRef.current = null;
-    };
-  }, [onSectionChange, mounted]);
-
+export default function Home() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden">
-      <PageSEO
-        title="Anthony MrGuru Feaster | Senior Full Stack Developer | Ascendra Technologies"
-        description="Anthony MrGuru Feaster is a Senior Full Stack Developer at Ascendra Technologies. Explore projects, skills, and start your next web project with a proven professional."
-        keywords={[
-          "fullstack",
-          "developer",
-          "React",
-          "Node.js",
-          "JavaScript",
-          "portfolio",
-          "web development",
-        ]}
-        schemaType="ProfilePage"
-      />
-      <StructuredData
-        schema={{
-          type: "Person",
-          data: {
-            name: "Anthony MrGuru Feaster",
-            jobTitle: "Senior Full Stack Developer",
-            image: "https://mrguru.dev/images/profile.jpg",
-            url: "https://mrguru.dev",
-            sameAs: [
-              "https://github.com/Mrguru2024",
-              "https://www.linkedin.com/in/anthony-mrguru-feaster",
-            ],
-            description:
-              "Senior Full Stack Developer at Ascendra Technologies. Full-stack web applications, clean architecture, and professional delivery.",
-          },
-        }}
-      />
-      <StructuredData
-        schema={{
-          type: "WebSite",
-          data: {
-            name: "Ascendra Technologies – Anthony MrGuru Feaster",
-            description:
-              "Professional portfolio of Anthony MrGuru Feaster, Senior Full Stack Developer at Ascendra Technologies. Projects, skills, and services to start your next web project.",
-            url: "https://mrguru.dev",
-            author: { name: "Anthony MrGuru Feaster", url: "https://mrguru.dev" },
-          },
-        }}
-      />
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-8 sm:space-y-10 pb-10 sm:pb-14">
+      <section id="home" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl rounded-2xl border border-border bg-card/80 p-6 sm:p-10 text-center">
+          <p className="text-sm font-medium text-primary">
+            Ascendra Technologies ecosystem
+          </p>
+          <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+            A coordinated growth ecosystem for businesses that need better
+            strategy, stronger presentation, and websites that convert.
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
+            {POSITIONING_STATEMENT}
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+            <Button asChild className="min-h-[44px]">
+              <Link href="/audit">
+                Request a Digital Growth Audit
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link href="/services">View Services</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
-      <HeroSection />
-      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchAnnouncements}>
-        <ServicesSection />
-      </LazyWhenVisible>
-      <FreeSiteAuditPromoSection />
-      <LazyWhenVisible minHeight="min-h-[240px]" onVisible={prefetchProjects}>
-        <AuthoritySection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[280px]" onVisible={prefetchProjects}>
-        <AnnouncementsSection />
-      </LazyWhenVisible>
-      <div id="projects" className="w-full min-w-0 max-w-full">
-        <LazyWhenVisible minHeight="min-h-[480px]" onVisible={prefetchAbout}>
-          <ProjectsSection />
-        </LazyWhenVisible>
-      </div>
-      <LazyWhenVisible minHeight="min-h-[360px]" onVisible={prefetchSkills}>
-        <AboutSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[420px]" onVisible={prefetchBlog}>
-        <SkillsSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight="min-h-[400px]" onVisible={prefetchContact}>
-        <BlogSection />
-      </LazyWhenVisible>
-      <div id="contact" className="w-full min-w-0 max-w-full">
-        <LazyWhenVisible minHeight="min-h-[380px]">
-          <ContactSection />
-        </LazyWhenVisible>
-      </div>
+      <section id="skills" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="border-border bg-card">
+            <CardContent className="p-5 sm:p-6">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Why most businesses stall online
+              </h2>
+              <ul className="mt-4 space-y-2 text-sm sm:text-base text-muted-foreground">
+                {[
+                  "Brand presence is unclear, so trust drops before conversations start.",
+                  "Visual execution is inconsistent, so quality perception suffers.",
+                  "Websites exist but fail to convert traffic into qualified leads.",
+                  "Systems are disconnected, so growth efforts feel random and slow.",
+                ].map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="p-5 sm:p-6">
+              <h2 className="text-2xl font-semibold text-foreground">
+                What changes with this model
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground">
+                Instead of treating strategy, design, and technology as separate
+                vendors, we coordinate all three around one goal: improve how your
+                business is seen, understood, and converted online.
+              </p>
+              <Button asChild variant="outline" className="mt-4 min-h-[44px]">
+                <Link href="/about">How the ecosystem works</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-      {mounted && <ViewModeToggle />}
+      <section id="about" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-semibold text-foreground text-center">
+            The 3-pillar ecosystem
+          </h2>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {ECOSYSTEM_PILLARS.map((pillar) => (
+              <Card key={pillar.name} className="border-border bg-card h-full">
+                <CardContent className="p-5">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {pillar.name}
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-primary">{pillar.role}</p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {pillar.summary}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="services" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
+            Free Digital Growth Audit
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground">
+            Your entry point into the ecosystem. We review brand clarity, visual
+            presentation, and website conversion structure to identify the most
+            valuable next move.
+          </p>
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <Button asChild className="min-h-[44px]">
+              <Link href="/audit">Request a Digital Growth Audit</Link>
+            </Button>
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link href="/services">See premium offer systems</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-semibold text-foreground text-center">
+            Premium offer systems
+          </h2>
+          <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {PREMIUM_OFFERS.map((offer) => (
+              <Card key={offer.slug} className="border-border bg-card h-full">
+                <CardContent className="p-5">
+                  <h3 className="text-lg font-semibold text-foreground">{offer.name}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{offer.outcome}</p>
+                  <p className="mt-3 text-sm font-medium text-foreground">Best for</p>
+                  <p className="text-sm text-muted-foreground">{offer.audience}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="border-border bg-card">
+            <CardContent className="p-5 sm:p-6">
+              <h2 className="text-2xl font-semibold text-foreground">
+                How we work
+              </h2>
+              <ol className="mt-4 space-y-2 text-sm sm:text-base text-muted-foreground">
+                {processSteps.map((step, index) => (
+                  <li key={step}>
+                    <span className="font-semibold text-foreground mr-2">
+                      {index + 1}.
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="p-5 sm:p-6">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Trust and transformation focus
+              </h2>
+              <ul className="mt-4 space-y-2 text-sm sm:text-base text-muted-foreground">
+                {trustHighlights.map((highlight) => (
+                  <li key={highlight}>• {highlight}</li>
+                ))}
+              </ul>
+              <Button asChild variant="outline" className="mt-4 min-h-[44px]">
+                <Link href="/results">Review results and work</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section id="projects" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6">
+          <h2 className="text-2xl font-semibold text-foreground">
+            Selected project examples
+          </h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {projects.slice(0, 3).map((project) => (
+              <Link
+                key={project.id}
+                href={`/projects/${project.id}`}
+                className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors"
+              >
+                <p className="font-medium text-foreground">{project.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                  {project.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
+            Ready to improve how your business is seen, understood, and converted?
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+            Start with the Digital Growth Audit or move directly to a strategy
+            call if you are already clear on your direction.
+          </p>
+          <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
+            <Button asChild className="min-h-[44px]">
+              <Link href="/audit">Request a Digital Growth Audit</Link>
+            </Button>
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link href="/contact">Book a Strategy Call</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default Home;
+}

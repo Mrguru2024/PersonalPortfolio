@@ -2,17 +2,24 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BRAND_GROWTH_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { Search } from "lucide-react";
 
 const FOOTER_LINKS = [
   { label: "Home", href: "/" },
+  { label: "Brand Growth", href: BRAND_GROWTH_PATH },
+  { label: "Meet the team", href: `${BRAND_GROWTH_PATH}#meet-the-team` },
+  { label: "Our work", href: "/partners/ascendra-technologies#projects" },
+  { label: "Services", href: "/services" },
+  { label: "About", href: "/about" },
+  { label: "Results", href: "/results" },
   { label: "Free Audit", href: AUDIT_PATH },
+  { label: "Strategy Call", href: STRATEGY_CALL_PATH },
   { label: "For Contractors", href: "/contractor-systems" },
   { label: "Local Business", href: "/local-business-growth" },
   { label: "Startup MVP", href: "/startup-mvp-development" },
   { label: "Blog", href: "/blog" },
-  { label: "Contact", href: BOOK_CALL_HREF },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function SiteFooter() {
@@ -32,14 +39,14 @@ export default function SiteFooter() {
                 </Link>
               </Button>
               <Button asChild size="sm" variant="outline" className="border-border hover:bg-accent hover:text-accent-foreground">
-                <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+                <Link href={STRATEGY_CALL_PATH}>{SECONDARY_CTA}</Link>
               </Button>
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground" aria-label="Footer navigation">
             {FOOTER_LINKS.map(({ label, href }) => (
               <Link
-                key={href}
+                key={label}
                 href={href}
                 className="hover:text-foreground transition-colors"
               >
@@ -47,6 +54,9 @@ export default function SiteFooter() {
               </Link>
             ))}
           </nav>
+          <p className="text-xs text-muted-foreground">
+            Built in partnership with Style Studio Branding and Macon Designs®.
+          </p>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Ascendra Technologies. All rights reserved.
           </p>
