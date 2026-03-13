@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PREMIUM_OFFERS } from "@/lib/funnel-content";
+import { FunnelPageShell } from "@/components/funnel/FunnelPageShell";
 
 export const metadata: Metadata = {
   title: "Services | Ascendra Technologies",
@@ -31,7 +32,7 @@ const pathways = [
 
 export default function ServicesPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+    <FunnelPageShell className="py-10 sm:py-14">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
           <section className="text-center max-w-3xl mx-auto">
@@ -47,7 +48,10 @@ export default function ServicesPage() {
 
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {PREMIUM_OFFERS.map((offer) => (
-              <Card key={offer.slug} className="border-border bg-card h-full">
+              <Card
+                key={offer.slug}
+                className="border-border bg-card h-full funnel-card funnel-card-hover"
+              >
                 <CardContent className="p-5 sm:p-6 flex h-full flex-col">
                   <h2 className="text-xl font-semibold text-foreground">
                     {offer.name}
@@ -78,7 +82,7 @@ export default function ServicesPage() {
             ))}
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <h2 className="text-2xl font-semibold text-foreground">
               Existing pathway pages (kept and aligned)
             </h2>
@@ -91,7 +95,7 @@ export default function ServicesPage() {
                 <Link
                   key={pathway.href}
                   href={pathway.href}
-                  className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors"
+                  className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors funnel-card-hover"
                 >
                   <p className="font-medium text-foreground">{pathway.label}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -102,7 +106,7 @@ export default function ServicesPage() {
             </div>
           </section>
 
-          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <h2 className="text-2xl font-semibold text-foreground">
               Not sure which offer fits?
             </h2>
@@ -120,6 +124,6 @@ export default function ServicesPage() {
           </section>
         </div>
       </div>
-    </div>
+    </FunnelPageShell>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,6 +8,7 @@ import {
   PREMIUM_OFFERS,
 } from "@/lib/funnel-content";
 import { projects } from "@/lib/data";
+import { FunnelPageShell } from "@/components/funnel/FunnelPageShell";
 
 const processSteps = [
   "Diagnose the current bottleneck across strategy, design, and website conversion.",
@@ -21,11 +22,18 @@ const trustHighlights = [
   "Practical delivery model for businesses starting lean",
 ];
 
+const funnelPath = [
+  "Land on a clear authority site",
+  "Request the Digital Growth Audit",
+  "Complete qualification details",
+  "Book strategy call and match offer",
+];
+
 export default function Home() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-8 sm:space-y-10 pb-10 sm:pb-14">
+    <FunnelPageShell className="space-y-8 sm:space-y-10 pb-10 sm:pb-14" intensity="strong">
       <section id="home" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl rounded-2xl border border-border bg-card/80 p-6 sm:p-10 text-center">
+        <div className="mx-auto max-w-5xl rounded-2xl border border-border bg-card/80 p-6 sm:p-10 text-center funnel-card">
           <p className="text-sm font-medium text-primary">
             Ascendra Technologies ecosystem
           </p>
@@ -50,9 +58,33 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border p-4 sm:p-6 funnel-card">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground text-center">
+            Funnel path
+          </h2>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+            {funnelPath.map((step, index) => (
+              <div
+                key={step}
+                className="rounded-lg border border-border/80 bg-background/75 p-3 sm:p-4 text-sm text-muted-foreground funnel-card-hover"
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  Step {index + 1}
+                </p>
+                <p className="mt-1">{step}</p>
+                {index < funnelPath.length - 1 && (
+                  <MoveRight className="mt-2 h-4 w-4 text-primary/70 md:hidden" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="skills" className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card funnel-card">
             <CardContent className="p-5 sm:p-6">
               <h2 className="text-2xl font-semibold text-foreground">
                 Why most businesses stall online
@@ -69,7 +101,7 @@ export default function Home() {
               </ul>
             </CardContent>
           </Card>
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card funnel-card">
             <CardContent className="p-5 sm:p-6">
               <h2 className="text-2xl font-semibold text-foreground">
                 What changes with this model
@@ -94,7 +126,10 @@ export default function Home() {
           </h2>
           <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
             {ECOSYSTEM_PILLARS.map((pillar) => (
-              <Card key={pillar.name} className="border-border bg-card h-full">
+              <Card
+                key={pillar.name}
+                className="border-border bg-card h-full funnel-card funnel-card-hover"
+              >
                 <CardContent className="p-5">
                   <h3 className="text-lg font-semibold text-foreground">
                     {pillar.name}
@@ -111,7 +146,7 @@ export default function Home() {
       </section>
 
       <section id="services" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
             Free Digital Growth Audit
           </h2>
@@ -138,7 +173,10 @@ export default function Home() {
           </h2>
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
             {PREMIUM_OFFERS.map((offer) => (
-              <Card key={offer.slug} className="border-border bg-card h-full">
+              <Card
+                key={offer.slug}
+                className="border-border bg-card h-full funnel-card funnel-card-hover"
+              >
                 <CardContent className="p-5">
                   <h3 className="text-lg font-semibold text-foreground">{offer.name}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{offer.outcome}</p>
@@ -153,7 +191,7 @@ export default function Home() {
 
       <section className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card funnel-card">
             <CardContent className="p-5 sm:p-6">
               <h2 className="text-2xl font-semibold text-foreground">
                 How we work
@@ -170,7 +208,7 @@ export default function Home() {
               </ol>
             </CardContent>
           </Card>
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card funnel-card">
             <CardContent className="p-5 sm:p-6">
               <h2 className="text-2xl font-semibold text-foreground">
                 Trust and transformation focus
@@ -189,7 +227,7 @@ export default function Home() {
       </section>
 
       <section id="projects" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
           <h2 className="text-2xl font-semibold text-foreground">
             Selected project examples
           </h2>
@@ -198,7 +236,7 @@ export default function Home() {
               <Link
                 key={project.id}
                 href={`/projects/${project.id}`}
-                className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors"
+                className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors funnel-card-hover"
               >
                 <p className="font-medium text-foreground">{project.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
@@ -211,7 +249,7 @@ export default function Home() {
       </section>
 
       <section id="contact" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
+        <div className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-8 text-center funnel-card">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
             Ready to improve how your business is seen, understood, and converted?
           </h2>
@@ -229,6 +267,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>
+    </FunnelPageShell>
   );
 }

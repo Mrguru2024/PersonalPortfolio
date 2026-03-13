@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { projects } from "@/lib/data";
+import { FunnelPageShell } from "@/components/funnel/FunnelPageShell";
 
 export const metadata: Metadata = {
   title: "Results & Work | Ascendra Technologies",
@@ -15,7 +16,7 @@ const featuredProjects = projects.slice(0, 6);
 
 export default function ResultsPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+    <FunnelPageShell className="py-10 sm:py-14">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
           <section className="text-center max-w-3xl mx-auto">
@@ -32,7 +33,10 @@ export default function ResultsPage() {
             {featuredProjects.map((project) => {
               const caseStudy = project.synopsis?.caseStudy;
               return (
-                <Card key={project.id} className="border-border bg-card h-full">
+                <Card
+                  key={project.id}
+                  className="border-border bg-card h-full funnel-card funnel-card-hover"
+                >
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-primary font-semibold">
@@ -91,7 +95,7 @@ export default function ResultsPage() {
             })}
           </section>
 
-          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <h2 className="text-2xl font-semibold text-foreground">
               Ready to apply this to your business?
             </h2>
@@ -110,6 +114,6 @@ export default function ResultsPage() {
           </section>
         </div>
       </div>
-    </div>
+    </FunnelPageShell>
   );
 }

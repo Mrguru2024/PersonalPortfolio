@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ECOSYSTEM_PILLARS, POSITIONING_STATEMENT } from "@/lib/funnel-content";
+import { FunnelPageShell } from "@/components/funnel/FunnelPageShell";
 
 export const metadata: Metadata = {
   title: "About the Ecosystem | Ascendra Technologies",
@@ -20,7 +21,7 @@ const collaborationSteps = [
 
 export default function AboutPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+    <FunnelPageShell className="py-10 sm:py-14">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
           <section className="text-center max-w-3xl mx-auto">
@@ -34,7 +35,10 @@ export default function AboutPage() {
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {ECOSYSTEM_PILLARS.map((pillar) => (
-              <Card key={pillar.name} className="border-border bg-card h-full">
+              <Card
+                key={pillar.name}
+                className="border-border bg-card h-full funnel-card funnel-card-hover"
+              >
                 <CardContent className="p-5 sm:p-6">
                   <h2 className="text-xl font-semibold text-foreground">
                     {pillar.name}
@@ -50,7 +54,7 @@ export default function AboutPage() {
             ))}
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <h2 className="text-2xl font-semibold text-foreground">
               Why the ecosystem model works
             </h2>
@@ -69,7 +73,7 @@ export default function AboutPage() {
             </ul>
           </section>
 
-          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <h2 className="text-2xl font-semibold text-foreground">
               Start with clarity, then scale delivery.
             </h2>
@@ -91,6 +95,6 @@ export default function AboutPage() {
           </section>
         </div>
       </div>
-    </div>
+    </FunnelPageShell>
   );
 }

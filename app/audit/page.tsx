@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AuditRequestForm } from "@/components/funnel/AuditRequestForm";
+import { FunnelPageShell } from "@/components/funnel/FunnelPageShell";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Ascendra Technologies",
@@ -22,7 +23,7 @@ const AUDIT_AREAS = [
 
 export default function AuditPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-10 sm:py-14">
+    <FunnelPageShell className="py-10 sm:py-14" intensity="strong">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-4xl space-y-8 sm:space-y-10">
           <section className="text-center">
@@ -42,7 +43,7 @@ export default function AuditPage() {
           </section>
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-border bg-card/80">
+            <Card className="border-border bg-card/80 funnel-card funnel-card-hover">
               <CardContent className="p-5">
                 <h2 className="font-semibold text-foreground">
                   Style Studio Branding
@@ -53,7 +54,7 @@ export default function AuditPage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-border bg-card/80">
+            <Card className="border-border bg-card/80 funnel-card funnel-card-hover">
               <CardContent className="p-5">
                 <h2 className="font-semibold text-foreground">Macon Designs®</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -62,7 +63,7 @@ export default function AuditPage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-border bg-card/80">
+            <Card className="border-border bg-card/80 funnel-card funnel-card-hover">
               <CardContent className="p-5">
                 <h2 className="font-semibold text-foreground">
                   Ascendra Technologies
@@ -76,7 +77,7 @@ export default function AuditPage() {
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="border-border bg-card">
+            <Card className="border-border bg-card funnel-card">
               <CardContent className="p-5 sm:p-6">
                 <h2 className="text-xl font-semibold text-foreground">
                   Who this is for
@@ -97,7 +98,7 @@ export default function AuditPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border bg-card">
+            <Card className="border-border bg-card funnel-card">
               <CardContent className="p-5 sm:p-6">
                 <h2 className="text-xl font-semibold text-foreground">
                   Sample audit areas
@@ -127,7 +128,7 @@ export default function AuditPage() {
             <AuditRequestForm />
           </section>
 
-          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
+          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6 funnel-card">
             <p className="text-sm sm:text-base text-muted-foreground">
               Prefer to review offers first?
             </p>
@@ -140,6 +141,6 @@ export default function AuditPage() {
           </section>
         </div>
       </div>
-    </div>
+    </FunnelPageShell>
   );
 }

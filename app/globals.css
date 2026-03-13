@@ -274,4 +274,95 @@ header .container {
       0 0 32px hsl(var(--primary) / 0.25),
       0 2px 6px hsl(var(--foreground) / 0.12);
   }
+
+  .funnel-ambient-base {
+    background:
+      radial-gradient(55% 40% at 12% 6%, hsl(var(--primary) / 0.12), transparent 72%),
+      radial-gradient(50% 38% at 88% 14%, hsl(var(--secondary) / 0.13), transparent 74%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background) / 0.94));
+  }
+
+  .dark .funnel-ambient-base {
+    background:
+      radial-gradient(55% 42% at 12% 6%, hsl(var(--primary) / 0.2), transparent 72%),
+      radial-gradient(48% 38% at 88% 14%, hsl(var(--secondary) / 0.2), transparent 75%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background) / 0.94));
+  }
+
+  .funnel-ambient-strong {
+    filter: saturate(1.12);
+  }
+
+  .funnel-grid-overlay {
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+    background-size: 26px 26px;
+    opacity: 0.3;
+    mask-image: linear-gradient(to bottom, black 25%, transparent 100%);
+  }
+
+  .dark .funnel-grid-overlay {
+    opacity: 0.42;
+  }
+
+  .funnel-blob {
+    position: absolute;
+    width: 16rem;
+    height: 16rem;
+    border-radius: 9999px;
+    filter: blur(56px);
+    opacity: 0.28;
+    animation: funnel-float 16s ease-in-out infinite;
+  }
+
+  .funnel-blob-primary {
+    background: hsl(var(--primary) / 0.45);
+  }
+
+  .funnel-blob-secondary {
+    background: hsl(var(--secondary) / 0.42);
+    animation-delay: 2s;
+    animation-duration: 18s;
+  }
+
+  .funnel-blob-tertiary {
+    background: hsl(var(--primary) / 0.32);
+    animation-delay: 4s;
+    animation-duration: 20s;
+  }
+
+  .dark .funnel-blob {
+    opacity: 0.32;
+  }
+
+  .funnel-card {
+    border-color: hsl(var(--border) / 0.85);
+    background: hsl(var(--card) / 0.84);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 36px hsl(var(--foreground) / 0.07);
+  }
+
+  .funnel-card-hover {
+    transition: transform 180ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
+
+  .funnel-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--primary) / 0.35);
+    box-shadow: 0 20px 42px hsl(var(--foreground) / 0.11);
+  }
+}
+
+@keyframes funnel-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(10px, -9px, 0) scale(1.03);
+  }
+  66% {
+    transform: translate3d(-8px, 6px, 0) scale(0.97);
+  }
 }
