@@ -9,6 +9,7 @@ import {
   LogIn,
   LogOut,
   User,
+  ChevronDown,
   LayoutDashboard,
   FileText,
   Receipt,
@@ -20,6 +21,7 @@ import {
   Contact,
   Search,
 } from "lucide-react";
+import { AUDIT_PATH, STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { AUDIT_PATH } from "@/lib/funnelCtas";
 
 interface HeaderProps {
   currentSection?: string;
@@ -59,14 +60,27 @@ export default function Header(_props: HeaderProps) {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Services", href: "/services" },
-    { name: "Digital Growth Audit", href: "/audit" },
-    { name: "About", href: "/about" },
-    { name: "Results", href: "/results" },
-    { name: "Contact", href: "/contact" },
+  const isHomePage = pathname === "/";
+
+  /** Single source of truth: primary nav + dropdowns. On home, Home/Blog use scroll anchors. */
+  const primaryNav = [
+    { name: "Home", href: "/", scrollOnHome: "#home" },
+    { name: "Brand Growth", href: "/brand-growth" },
+    { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
   ];
+  const servicesSubmenu = [
+    { name: "Launch your brand", href: LAUNCH_YOUR_BRAND_PATH },
+    { name: "Rebrand your business", href: REBRAND_YOUR_BUSINESS_PATH },
+    { name: "Marketing assets", href: MARKETING_ASSETS_PATH },
+  ];
+  const whoWeServeSubmenu = [
+    { name: "For Contractors", href: "/contractor-systems" },
+    { name: "Local Business", href: "/local-business-growth" },
+    { name: "Startup MVP", href: "/startup-mvp-development" },
+  ];
+  const bookCallHref = isHomePage ? "#contact" : STRATEGY_CALL_PATH;
+  const isScrollLink = (item: (typeof primaryNav)[0]) => isHomePage && "scrollOnHome" in item && item.scrollOnHome;
+  const getLinkHref = (item: (typeof primaryNav)[0]) => ("scrollOnHome" in item && item.scrollOnHome ? item.scrollOnHome : item.href);
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -118,6 +132,18 @@ export default function Header(_props: HeaderProps) {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  const scrollToSection = (href: string) => {
+    closeMobileMenu();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const element = document.querySelector(href);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    });
+  };
+
   return (
     <header
       className="!bg-transparent !border-0 !shadow-none shrink-0"
@@ -129,21 +155,83 @@ export default function Header(_props: HeaderProps) {
       >
         {/* Left spacer (logo was here) */}
         <div className="hidden md:block flex-1 min-w-0" aria-hidden />
-        {/* Center: nav */}
-        <nav className="hidden md:flex flex-shrink-0 space-x-6 lg:space-x-8 items-center">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`font-medium transition text-sm ${
-                isActiveLink(item.href)
-                  ? "text-primary"
-                  : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
+        {/* Center: consolidated nav — primary links, Services & Who we serve dropdowns, CTAs */}
+        <nav className="hidden md:flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4" aria-label="Main navigation">
+          {primaryNav.map((item) =>
+            isScrollLink(item) ? (
+              <button
+                key={item.name}
+                type="button"
+                onClick={() => scrollToSection(getLinkHref(item) as string)}
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1"
+              >
+                {item.name}
+              </button>
+            ) : (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1"
+              >
+                {item.name}
+              </Link>
+            )
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 flex items-center gap-0.5 outline-none"
+              >
+                Services <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[200px]">
+              {servicesSubmenu.map((sub) => (
+                <DropdownMenuItem key={sub.href} asChild>
+                  <Link href={sub.href} className="cursor-pointer">
+                    {sub.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 flex items-center gap-0.5 outline-none"
+              >
+                Who we serve <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[200px]">
+              {whoWeServeSubmenu.map((sub) => (
+                <DropdownMenuItem key={sub.href} asChild>
+                  <Link href={sub.href} className="cursor-pointer">
+                    {sub.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link href="/about" className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 hidden md:inline">About</Link>
+          <Link href="/results" className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 hidden md:inline">Results</Link>
+          <Link href="/services" className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 hidden md:inline">Services</Link>
+          <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-border/60">
+            <Button asChild size="sm" variant="ghost" className="text-foreground/80 hover:text-primary font-medium text-sm">
+              <Link href={AUDIT_PATH}>Free Audit</Link>
+            </Button>
+            {isHomePage ? (
+              <Button type="button" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm" onClick={() => scrollToSection("#contact")}>
+                Book a call
+              </Button>
+            ) : (
+              <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
+                <Link href={STRATEGY_CALL_PATH}>Book a call</Link>
+              </Button>
+            )}
+          </div>
         </nav>
         {/* Right: auth + theme (original position) */}
         <div className="flex flex-1 min-w-0 justify-end items-center gap-2">
@@ -255,28 +343,59 @@ export default function Header(_props: HeaderProps) {
             onClick={closeMobileMenu}
           />
           <div className="container mx-auto px-4 pb-4 pt-3 relative z-10 flex-1 min-h-0 flex flex-col">
-            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),480px)]">
+            <div className="rounded-2xl border border-border/60 bg-muted/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-8rem),560px)]">
               <div className="flex flex-col gap-1 overflow-y-auto overscroll-contain py-1 -my-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={closeMobileMenu}
-                    className={`text-left font-medium py-3 px-2 rounded-md transition block ${
-                      isActiveLink(item.href)
-                        ? "text-primary bg-background/70"
-                        : "text-foreground/80 hover:text-primary hover:bg-background/70"
-                    }`}
-                  >
-                    {item.name}
+                {primaryNav.map((item) =>
+                  isScrollLink(item) ? (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => { scrollToSection(getLinkHref(item) as string); }}
+                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition"
+                    >
+                      {item.name}
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={closeMobileMenu}
+                      className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block py-3 px-2"
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                )}
+                <Link href="/services" onClick={closeMobileMenu} className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block">Services</Link>
+                <Link href="/about" onClick={closeMobileMenu} className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block">About</Link>
+                <Link href="/results" onClick={closeMobileMenu} className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block">Results</Link>
+                <Link href="/contact" onClick={closeMobileMenu} className="text-left text-foreground/80 hover:text-primary font-medium py-3 px-2 rounded-md hover:bg-background/70 transition block">Contact</Link>
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Services</div>
+                {servicesSubmenu.map((sub) => (
+                  <Link key={sub.href} href={sub.href} onClick={closeMobileMenu} className="text-foreground/80 hover:text-primary font-medium py-2.5 px-2 rounded-md hover:bg-background/70 transition pl-4">
+                    {sub.name}
                   </Link>
                 ))}
-                <Button asChild className="mt-2 min-h-[44px]">
-                  <Link href={AUDIT_PATH} onClick={closeMobileMenu}>
-                    <Search className="h-4 w-4 mr-2 shrink-0" />
-                    Request Audit
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Who we serve</div>
+                {whoWeServeSubmenu.map((sub) => (
+                  <Link key={sub.href} href={sub.href} onClick={closeMobileMenu} className="text-foreground/80 hover:text-primary font-medium py-2.5 px-2 rounded-md hover:bg-background/70 transition pl-4">
+                    {sub.name}
                   </Link>
-                </Button>
+                ))}
+                <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border/70">
+                  <Link href={AUDIT_PATH} onClick={closeMobileMenu} className="flex items-center justify-center gap-2 py-3 px-3 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90">
+                    Free Audit
+                  </Link>
+                  {isHomePage ? (
+                    <button type="button" onClick={() => scrollToSection("#contact")} className="flex items-center justify-center py-3 px-3 rounded-md border border-border font-medium text-sm hover:bg-accent">
+                      Book a call
+                    </button>
+                  ) : (
+                    <Link href={STRATEGY_CALL_PATH} onClick={closeMobileMenu} className="flex items-center justify-center py-3 px-3 rounded-md border border-border font-medium text-sm hover:bg-accent">
+                      Book a call
+                    </Link>
+                  )}
+                </div>
 
                 <div className="pt-3 mt-3 border-t border-border/70">
                   {mounted && user ? (

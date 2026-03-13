@@ -88,7 +88,7 @@ export default function ProjectDetails() {
         }}
       />
 
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-10 sm:py-16 relative z-10 min-w-0 max-w-full">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6         py-10 sm:py-16 relative z-10 min-w-0 max-w-full">
         <Link href="/results" className="inline-block mb-6 sm:mb-8">
           <Button variant="outline" className="flex items-center min-h-[44px]">
             <ChevronLeft className="mr-2 h-4 w-4" />

@@ -17,12 +17,7 @@ import {
   Users,
   CheckCircle2,
 } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FaqSection } from "@/components/FaqSection";
 import {
   PRIMARY_CTA,
   PRIMARY_CTA_SHORT,
@@ -31,7 +26,14 @@ import {
   BOOK_CALL_HREF,
 } from "@/lib/funnelCtas";
 
-const VIEW_WORK_HREF = "/#projects";
+const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
+
+const LOCAL_BUSINESS_FAQ = [
+  { q: "How long does a project usually take?", a: "Timeline depends on scope. A focused site refresh or appointment integration might take a few weeks; a full site and system can take a few months. We'll give you a clear timeline after the audit." },
+  { q: "Do you work with practices outside Atlanta?", a: "Yes. We work with healthcare and professional service firms in and beyond Atlanta. Remote collaboration is standard." },
+  { q: "What types of practices do you work with?", a: "Chiropractors, med spas, dental offices, therapy clinics, law firms, consultants, accountants, and other professional service businesses that want a stronger online presence and more clients." },
+  { q: "How do I get started?", a: "Request your free website growth audit. We'll review your current site, identify gaps, and show you where you may be losing patients or clients. From there you can book a strategy call to plan next steps." },
+];
 
 export default function LocalBusinessGrowthPage() {
   return (
@@ -236,33 +238,9 @@ export default function LocalBusinessGrowthPage() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl">
-            <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
-              Frequently Asked Questions
-            </h2>
-            <Card className="border-border bg-card shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <Accordion type="single" collapsible className="w-full">
-                  {[
-                    { q: "How long does a project usually take?", a: "Timeline depends on scope. A focused site refresh or appointment integration might take a few weeks; a full site and system can take a few months. We’ll give you a clear timeline after the audit." },
-                    { q: "Do you work with practices outside Atlanta?", a: "Yes. We work with healthcare and professional service firms in and beyond Atlanta. Remote collaboration is standard." },
-                    { q: "What types of practices do you work with?", a: "Chiropractors, med spas, dental offices, therapy clinics, law firms, consultants, accountants, and other professional service businesses that want a stronger online presence and more clients." },
-                    { q: "How do I get started?", a: "Request your free website growth audit. We’ll review your current site, identify gaps, and show you where you may be losing patients or clients. From there you can book a strategy call to plan next steps." },
-                  ].map(({ q, a }, i) => (
-                    <AccordionItem key={i} value={`faq-${i}`} className="border-b border-border last:border-0 px-4 sm:px-6">
-                      <AccordionTrigger className="text-left text-sm sm:text-base py-3 sm:py-4 hover:no-underline">{q}</AccordionTrigger>
-                      <AccordionContent className="text-sm sm:text-base pb-4">{a}</AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        <FaqSection items={LOCAL_BUSINESS_FAQ} />
 
-        {/* Final CTA */}
+        {/* Final CTA */}        {/* Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">

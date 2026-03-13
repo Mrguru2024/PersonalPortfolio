@@ -17,21 +17,23 @@ import {
   Code2,
   CheckCircle2,
 } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FaqSection } from "@/components/FaqSection";
 import {
   PRIMARY_CTA,
   PRIMARY_CTA_SHORT,
   SECONDARY_CTA,
   AUDIT_PATH,
-  BOOK_CALL_HREF,
+  STRATEGY_CALL_PATH,
 } from "@/lib/funnelCtas";
 
-const VIEW_WORK_HREF = "/#projects";
+const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
+
+const STARTUP_MVP_FAQ = [
+  { q: "How long does an MVP usually take?", a: "Typical MVP timelines range from a few weeks to a few months depending on scope. We'll give you a clear timeline and milestones after the audit and strategy discussion." },
+  { q: "Do you work with non-technical founders?", a: "Yes. We're used to working with founders who want to focus on product and growth while we handle architecture, development, and technical decisions." },
+  { q: "What kind of products do you build?", a: "SaaS products, marketplaces, web apps, and custom platforms. We focus on MVPs and scalable architecture so you can iterate and grow." },
+  { q: "How do I get started?", a: "Request your free website growth audit (or share your product idea). We'll review and outline a path. From there you can book a strategy call to define scope and next steps." },
+];
 
 export default function StartupMvpDevelopmentPage() {
   return (
@@ -227,7 +229,7 @@ export default function StartupMvpDevelopmentPage() {
                     <Link href={AUDIT_PATH}>{PRIMARY_CTA_SHORT}</Link>
                   </Button>
                   <Button asChild variant="outline" size="sm" className="w-full xs:w-auto min-h-[44px] sm:min-h-0 text-foreground border-border hover:bg-accent hover:text-accent-foreground">
-                    <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+                    <Link href={STRATEGY_CALL_PATH}>{SECONDARY_CTA}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -235,33 +237,9 @@ export default function StartupMvpDevelopmentPage() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl">
-            <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
-              Frequently Asked Questions
-            </h2>
-            <Card className="border-border bg-card shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <Accordion type="single" collapsible className="w-full">
-                  {[
-                    { q: "How long does an MVP usually take?", a: "Typical MVP timelines range from a few weeks to a few months depending on scope. We’ll give you a clear timeline and milestones after the audit and strategy discussion." },
-                    { q: "Do you work with non-technical founders?", a: "Yes. We’re used to working with founders who want to focus on product and growth while we handle architecture, development, and technical decisions." },
-                    { q: "What kind of products do you build?", a: "SaaS products, marketplaces, web apps, and custom platforms. We focus on MVPs and scalable architecture so you can iterate and grow." },
-                    { q: "How do I get started?", a: "Request your free website growth audit (or share your product idea). We’ll review and outline a path. From there you can book a strategy call to define scope and next steps." },
-                  ].map(({ q, a }, i) => (
-                    <AccordionItem key={i} value={`faq-${i}`} className="border-b border-border last:border-0 px-4 sm:px-6">
-                      <AccordionTrigger className="text-left text-sm sm:text-base py-3 sm:py-4 hover:no-underline">{q}</AccordionTrigger>
-                      <AccordionContent className="text-sm sm:text-base pb-4">{a}</AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        <FaqSection items={STARTUP_MVP_FAQ} />
 
-        {/* Final CTA */}
+        {/* Final CTA */}        {/* Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -279,7 +257,7 @@ export default function StartupMvpDevelopmentPage() {
                 <Link href={AUDIT_PATH}>{PRIMARY_CTA_SHORT}<ArrowRight className="h-4 w-4 shrink-0" /></Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto min-h-[44px] bg-transparent border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground/15 focus-visible:ring-primary-foreground/50">
-                <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
+                <Link href={STRATEGY_CALL_PATH}>{SECONDARY_CTA}</Link>
               </Button>
             </div>
             <p className="mt-4 text-xs text-primary-foreground/80">Free · No obligation · Response within 24–48 hours</p>

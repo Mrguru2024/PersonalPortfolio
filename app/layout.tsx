@@ -8,9 +8,9 @@ import SiteFooter from "./components/SiteFooter";
 const baseUrl = "https://mrguru.dev";
 
 export const metadata: Metadata = {
-  title: "Ascendra Technologies",
+  title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
   description:
-    "Ascendra Technologies ecosystem: strategy, design, and technology delivery for businesses that need stronger positioning, presentation, and conversion performance.",
+    "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with the Brand Growth ecosystem.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: baseUrl,
     siteName: "Ascendra Technologies",
-    title: "Ascendra Technologies | Strategy + Design + Technology",
+    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
     description:
-      "A coordinated growth ecosystem helping businesses improve brand clarity, visual trust, and website conversion systems.",
+      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale.",
     images: [
       {
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ascendra Technologies | Strategy + Design + Technology",
+    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
     description:
-      "Strategy, design, and technology for businesses that need to attract, convert, and grow.",
+      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team.",
     images: [`${baseUrl}/ascendra-logo.svg`],
   },
 };

@@ -20,12 +20,7 @@ import {
   Target,
   CheckCircle2,
 } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FaqSection } from "@/components/FaqSection";
 import {
   PRIMARY_CTA,
   PRIMARY_CTA_SHORT,
@@ -35,6 +30,13 @@ import {
 } from "@/lib/funnelCtas";
 
 const VIEW_WORK_CTA = "View Our Work";
+
+const CONTRACTOR_FAQ = [
+  { q: "How long does a project usually take?", a: "Timeline depends on scope. A focused lead-generation site or refresh might take a few weeks; a full system with forms and follow-up can take a few months. We'll give you a clear timeline after the audit." },
+  { q: "Do you work with local Atlanta businesses only?", a: "We work with contractors and trades businesses in and beyond Atlanta. Remote collaboration is standard, and we can align with your schedule." },
+  { q: "What kind of businesses is this best for?", a: "Electricians, HVAC, plumbers, locksmiths, security installers, roofing companies, and other local trades and service businesses that want more calls and qualified leads from their website." },
+  { q: "How do I get started?", a: "Request your free website growth audit. We'll review your current site, identify conversion gaps, and show you where you may be losing leads. From there you can book a strategy call to plan next steps." },
+];
 
 export default function ContractorSystemsPage() {
   return (
@@ -108,7 +110,7 @@ export default function ContractorSystemsPage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto min-h-[44px] opacity-90 hover:opacity-100 text-foreground border-border hover:bg-accent hover:text-accent-foreground">
-                <Link href="/#projects">{VIEW_WORK_CTA}</Link>
+                <Link href="/partners/ascendra-technologies#projects">{VIEW_WORK_CTA}</Link>
               </Button>
             </motion.div>
             <motion.p
@@ -277,7 +279,7 @@ export default function ContractorSystemsPage() {
                     <Link href={AUDIT_PATH}>{PRIMARY_CTA_SHORT}</Link>
                   </Button>
                   <Button asChild variant="outline" size="sm" className="w-full xs:w-auto min-h-[44px] sm:min-h-0 text-foreground border-border hover:bg-accent hover:text-accent-foreground">
-                    <Link href="/#projects">{VIEW_WORK_CTA}</Link>
+                    <Link href="/partners/ascendra-technologies#projects">{VIEW_WORK_CTA}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -285,45 +287,9 @@ export default function ContractorSystemsPage() {
           </div>
         </section>
 
-        {/* 7. FAQ — contained in card */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl">
-            <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
-              Frequently Asked Questions
-            </h2>
-            <Card className="border-border bg-card shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-            <Accordion type="single" collapsible className="w-full">
-              {[
-                {
-                  q: "How long does a project usually take?",
-                  a: "Timeline depends on scope. A focused lead-generation site or refresh might take a few weeks; a full system with forms and follow-up can take a few months. We’ll give you a clear timeline after the audit.",
-                },
-                {
-                  q: "Do you work with local Atlanta businesses only?",
-                  a: "We work with contractors and trades businesses in and beyond Atlanta. Remote collaboration is standard, and we can align with your schedule.",
-                },
-                {
-                  q: "What kind of businesses is this best for?",
-                  a: "Electricians, HVAC, plumbers, locksmiths, security installers, roofing companies, and other local trades and service businesses that want more calls and qualified leads from their website.",
-                },
-                {
-                  q: "How do I get started?",
-                  a: "Request your free website growth audit. We’ll review your current site, identify conversion gaps, and show you where you may be losing leads. From there you can book a strategy call to plan next steps.",
-                },
-              ].map(({ q, a }, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="border-b border-border last:border-0 px-4 sm:px-6">
-                  <AccordionTrigger className="text-left text-sm sm:text-base py-3 sm:py-4 hover:no-underline">{q}</AccordionTrigger>
-                  <AccordionContent className="text-sm sm:text-base pb-4">{a}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        <FaqSection items={CONTRACTOR_FAQ} />
 
-        {/* 8. Final CTA */}
+        {/* 8. Final CTA */}        {/* 8. Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">

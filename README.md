@@ -1,98 +1,24 @@
-# MrGuru Portfolio Website
+# Brand Growth Ecosystem — Ascendra Technologies
 
-A cutting-edge, interactive developer portfolio website that offers an immersive user experience through dynamic content and intelligent project demonstration capabilities.
+A Next.js (App Router) site for the **Brand Growth** ecosystem: three partners (Ascendra Technologies, Macon Designs, Style Studio Branding) with a funnel-led homepage, strategy-call flow, and partner authority pages.
 
-## Tech Stack
+## Tech stack
 
-- Frontend: React, TypeScript, Tailwind CSS
-- Backend: Express, Node.js
-- State Management: React Query
-- Form Validation: Zod
-- Database: PostgreSQL
-- Authentication: GitHub OAuth
+- **Frontend:** Next.js 15 (App Router), React, TypeScript, Tailwind CSS
+- **State / data:** React Query, shared CTA config (`app/lib/funnelCtas.ts`)
+- **Forms:** react-hook-form, Zod
+- **Motion:** Framer Motion (hero, sections; respects `prefers-reduced-motion`)
+- **Deployment:** Vercel (see [Docs/deployment](Docs/deployment))
 
-## Deployment Instructions for Vercel
+## Project structure
 
-### 1. Push to GitHub
-
-Make sure your project is pushed to a GitHub repository.
-
-### 2. Connect to Vercel
-
-1. Create a Vercel account if you don't have one: [Vercel Signup](https://vercel.com/signup)
-2. Connect your GitHub account to Vercel
-3. Import your repository
-
-### 3. Configure Project Settings
-
-Use the following settings in the Vercel deployment configuration:
-- **Framework Preset**: Other
-- **Root Directory**: ./
-- **Build Command**: Leave blank (configured in vercel.json)
-- **Output Directory**: dist
-- **Install Command**: Leave blank (configured in vercel.json)
-
-### 4. Set Environment Variables
-
-Add the following environment variables in the Vercel project settings:
-
-```
-DATABASE_URL=postgres://username:password@host:port/database
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-SESSION_SECRET=your_session_secret
-NODE_ENV=production
-```
-
-If using SendGrid for email functionality, also add:
-```
-SENDGRID_API_KEY=your_sendgrid_api_key
-```
-
-### 5. Database Setup
-
-For the database, you have several options:
-
-1. **Vercel Postgres**: The easiest option to set up directly in Vercel
-   - Go to Storage tab in your Vercel dashboard
-   - Click "Create Database" and select Postgres
-   - Vercel will automatically set DATABASE_URL environment variable
-
-2. **Neon Database**: Works well with Vercel and offers a generous free tier
-   - Sign up at [neon.tech](https://neon.tech)
-   - Create a new project
-   - Copy the connection string to your `DATABASE_URL` environment variable
-
-3. **Other options**: Supabase or Railway are also good choices
-
-After setting up your database, make sure to run the migration command to create your tables:
-
-```bash
-# In your local development environment
-npm run db:push
-```
-
-### 6. Deploy
-
-1. Review the Vercel configuration files in your project:
-   - `vercel.json`: Contains all the build and routing configurations
-   - `server/vercel.ts`: Optimized server entry point for Vercel
-   - `vercel-build.js`: Custom build script for better reliability
-
-2. Click "Deploy" in the Vercel dashboard.
-
-### 7. Verify Deployment
-
-Once deployed, check:
-- The frontend is loading correctly
-- API endpoints are responding properly
-- Database connections are working
-- GitHub authentication is functioning (may need to update callback URLs)
-
-If you encounter issues:
-1. Check Vercel deployment logs
-2. Verify environment variables
-3. Ensure database is accessible from Vercel
+- **Homepage (`/`):** Funnel-led hero (“Build a Brand That Converts Customers”), primary CTA → Brand Growth Plan, secondary → Strategy Call. No projects/skills on home.
+- **Brand Growth hub:** `/brand-growth` — path selector (Launch / Rebrand / Marketing Assets), 3-pillar solution, process, CTAs.
+- **Funnel paths:** `/launch-your-brand`, `/rebrand-your-business`, `/marketing-assets` — persona-focused landings with FAQ and strategy-call CTAs.
+- **Strategy flow:** `/strategy-call` (form) → `/call-confirmation` (thank-you + prep checklist).
+- **Partners:** `/partners/ascendra-technologies`, `/partners/macon-designs`, `/partners/style-studio-branding` — authority pages with brand accents.
+- **Persona landings:** `/contractor-systems`, `/local-business-growth`, `/startup-mvp-development` — use shared `FaqSection`; CTAs to audit and strategy call.
+- **Other:** `/audit`, `/blog`, `/assessment`, `/faq`, `/resume`, contact section, admin/dashboard (unchanged).
 
 ## Development
 
@@ -103,9 +29,6 @@ npm install
 # Run development server
 npm run dev
 
-# Push database schema changes
-npm run db:push
-
 # Build for production
 npm run build
 
@@ -113,11 +36,18 @@ npm run build
 npm start
 ```
 
-## Features
+## Documentation
 
-- Interactive project showcases with live demos
-- Blog with content management
-- Resume request and download functionality
-- GitHub OAuth authentication
-- Admin dashboard for content management
-- Responsive design for all devices
+All project documentation lives in the **[Docs](Docs/)** folder:
+
+- **Audits & strategy:** [Docs/audits](Docs/audits) — Phase 1 ecosystem audit, conversion funnel audit, wireframe & copy system.
+- **Deployment:** [Docs/deployment](Docs/deployment) — Vercel (static/serverless), production checklist.
+- **Implementation:** [Docs/implementation](Docs/implementation) — Assessment workflow, notifications, services, update posts.
+- **Reference:** [Docs/reference](Docs/reference) — Security, credentials, admin scripts.
+- **Archive:** [Docs/archive](Docs/archive) — Migration, cleanup, and fix logs.
+
+See **[Docs/README.md](Docs/README.md)** for the full index and links.
+
+## Security
+
+- Never commit secrets. Use `.env.local` for local config and follow [Docs/reference/SECURITY.md](Docs/reference/SECURITY.md).
