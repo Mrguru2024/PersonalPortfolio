@@ -45,7 +45,7 @@
       title: "Keycode Help",
       description: "Tool to help developers identify JavaScript key codes for event handling.",
       image_url: "/assets/project-keycode.webp",
-      live_url: "https://keycodehelper.netlify.app/",
+      live_url: "https://www.keycode.help",
       github_url: "https://github.com/Mrguru2/KeycodeHelper",
       technologies: ["JavaScript", "HTML", "CSS"],
       featured: true,

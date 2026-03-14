@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
-import { ArrowRight, Palette, Target, Layers, ChevronDown } from "lucide-react";
+import { ArrowRight, Palette, Target, Layers, ChevronDown, ExternalLink } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 
 const MACON_LOGO_BADGE = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
@@ -177,11 +177,22 @@ export default function MaconDesignsPartnerPage() {
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-8 mt-12 tracking-tight">
               Portfolio / selected work
             </h2>
-            <Card className="border-dashed border-2 border-border bg-muted/20 dark:bg-muted/10 overflow-hidden min-w-0">
-              <CardContent className="pt-8 pb-8 sm:pt-10 sm:pb-10 px-4 sm:px-6 text-center min-w-0">
-                <p className="text-muted-foreground text-sm sm:text-base break-words min-w-0">
-                  Selected brand identity and visual system work will be showcased here. In the meantime, book a strategy call to discuss your project and see relevant examples.
+            <Card className="border-primary/20 bg-card shadow-sm overflow-hidden min-w-0">
+              <CardContent className="pt-6 pb-6 sm:pt-8 sm:pb-8 px-4 sm:px-6 min-w-0">
+                <p className="text-muted-foreground text-sm sm:text-base break-words min-w-0 mb-6">
+                  Brand identity, social media branding kits, conference and event branding, and motion graphics—view Denishia&apos;s full portfolio on Behance.
                 </p>
+                <Button asChild className="gap-2 min-h-[44px] w-full sm:w-auto">
+                  <a
+                    href="https://www.behance.net/macondesigns"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center"
+                  >
+                    View portfolio on Behance
+                    <ExternalLink className="h-4 w-4 shrink-0" />
+                  </a>
+                </Button>
               </CardContent>
             </Card>
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-8 mt-12 tracking-tight">

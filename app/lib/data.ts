@@ -199,11 +199,11 @@ export const projects: Project[] = [
     tags: ["SaaS", "Automotive", "Security"],
     category: "business",
     githubUrl: "https://github.com/Mrguru2024",
-    liveUrl: "https://keycodehelp.com",
+    liveUrl: "https://www.keycode.help",
     details:
       "Keycode Help is a Software as a Service (SaaS) platform designed to support automotive professionals with key coding and programming needs. This platform provides essential VIN to KeyCode translation services specifically for locksmiths working in the automotive security industry.",
     demoType: "iframe",
-    demoUrl: "https://keycodehelp.com",
+    demoUrl: "https://www.keycode.help",
     demoConfig: {
       width: "100%",
       height: "600px",

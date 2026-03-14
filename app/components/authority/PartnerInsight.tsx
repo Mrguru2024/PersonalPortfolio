@@ -35,13 +35,24 @@ export function PartnerInsight({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <Image
-                src={imageUrl}
-                alt={founder.imageAlt ?? founder.name}
-                fill
-                className={founder.useLogo ? "object-contain p-1.5" : "object-cover"}
-                sizes="64px"
-              />
+              <>
+                <Image
+                  src={imageUrl}
+                  alt={founder.imageAlt ?? founder.name}
+                  fill
+                  className={founder.useLogo ? `object-contain p-1.5 ${founder.logoDark ? "dark:hidden" : ""}` : "object-cover"}
+                  sizes="64px"
+                />
+                {founder.logoDark && (
+                  <Image
+                    src={founder.logoDark}
+                    alt={founder.imageAlt ?? founder.name}
+                    fill
+                    className="object-contain p-1.5 hidden dark:block"
+                    sizes="64px"
+                  />
+                )}
+              </>
             )
           ) : (
             <span className="flex h-full w-full items-center justify-center text-lg font-semibold text-muted-foreground">
@@ -83,13 +94,24 @@ export function PartnerInsight({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <Image
-                  src={imageUrl}
-                  alt={founder.imageAlt ?? founder.name}
-                  fill
-                  className={founder.useLogo ? "object-contain p-1.5" : "object-cover"}
-                  sizes="56px"
-                />
+                <>
+                  <Image
+                    src={imageUrl}
+                    alt={founder.imageAlt ?? founder.name}
+                    fill
+                    className={founder.useLogo ? `object-contain p-1.5 ${founder.logoDark ? "dark:hidden" : ""}` : "object-cover"}
+                    sizes="56px"
+                  />
+                  {founder.logoDark && (
+                    <Image
+                      src={founder.logoDark}
+                      alt={founder.imageAlt ?? founder.name}
+                      fill
+                      className="object-contain p-1.5 hidden dark:block"
+                      sizes="56px"
+                    />
+                  )}
+                </>
               )
             ) : (
               <span className="flex h-full w-full items-center justify-center text-xl font-semibold text-muted-foreground">

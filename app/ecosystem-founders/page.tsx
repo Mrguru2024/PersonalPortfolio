@@ -59,13 +59,24 @@ export default function EcosystemFoundersPage() {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <Image
-                                src={imageUrl}
-                                alt={founder.imageAlt ?? founder.name}
-                                fill
-                                className={founder.useLogo ? "object-contain p-3" : "object-cover"}
-                                sizes="144px"
-                              />
+                              <>
+                                <Image
+                                  src={imageUrl}
+                                  alt={founder.imageAlt ?? founder.name}
+                                  fill
+                                  className={founder.useLogo ? `object-contain p-3 ${founder.logoDark ? "dark:hidden" : ""}` : "object-cover"}
+                                  sizes="144px"
+                                />
+                                {founder.logoDark && (
+                                  <Image
+                                    src={founder.logoDark}
+                                    alt={founder.imageAlt ?? founder.name}
+                                    fill
+                                    className="object-contain p-3 hidden dark:block"
+                                    sizes="144px"
+                                  />
+                                )}
+                              </>
                             )
                           ) : (
                             <span className="flex h-full w-full items-center justify-center text-3xl font-semibold text-muted-foreground">

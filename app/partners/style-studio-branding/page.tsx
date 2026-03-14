@@ -13,12 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
-import { ArrowRight, Megaphone, Package, ImageIcon, ChevronDown } from "lucide-react";
+import { ArrowRight, Megaphone, Package, ImageIcon, ChevronDown, ExternalLink } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 
 /** Black/red logo for white (light) background — StyleStudio_Blk_Rd_.png */
 const STYLE_STUDIO_LOGO_BLACK_RED = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
 const STYLE_STUDIO_LOGO_WHITE = "/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png";
+const BEHANCE_STYLE_STUDIO_URL = "https://www.behance.net/kwilliams7";
 
 const FOCUS_AREAS = [
   {
@@ -193,10 +194,31 @@ export default function StyleStudioBrandingPartnerPage() {
                 </p>
               </CardContent>
             </Card>
+            <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-8 mt-12 tracking-tight">
+              Portfolio / selected work
+            </h2>
+            <Card className="border-primary/20 bg-card shadow-sm overflow-hidden min-w-0">
+              <CardContent className="pt-6 pb-6 sm:pt-8 sm:pb-8 px-4 sm:px-6 min-w-0">
+                <p className="text-muted-foreground text-sm sm:text-base break-words min-w-0 mb-6">
+                  Marketing graphics, presentations, flyers, conference materials, and corporate design—view Kristopher&apos;s full portfolio on Behance.
+                </p>
+                <Button asChild className="gap-2 min-h-[44px] w-full sm:w-auto">
+                  <a
+                    href={BEHANCE_STYLE_STUDIO_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center"
+                  >
+                    View portfolio on Behance
+                    <ExternalLink className="h-4 w-4 shrink-0" />
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
-        {/* CTA — white background, black/red logo only */}
+        {/* CTA — light: black/red logo; dark: white/red logo */}
         <section className="w-full min-w-0 max-w-full py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 relative overflow-hidden bg-background border-t border-border">
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl flex flex-col items-center text-center">
             <div className="relative w-full max-w-[240px] sm:max-w-[280px] mx-auto h-14 sm:h-16 mb-6 sm:mb-8">
@@ -204,7 +226,14 @@ export default function StyleStudioBrandingPartnerPage() {
                 src={STYLE_STUDIO_LOGO_BLACK_RED}
                 alt="Style Studio Branding"
                 fill
-                className="object-contain object-center"
+                className="object-contain object-center dark:hidden"
+                sizes="(max-width: 640px) 240px, 280px"
+              />
+              <Image
+                src={STYLE_STUDIO_LOGO_WHITE}
+                alt="Style Studio Branding"
+                fill
+                className="object-contain object-center hidden dark:block"
                 sizes="(max-width: 640px) 240px, 280px"
               />
             </div>

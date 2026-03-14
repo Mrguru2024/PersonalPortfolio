@@ -73,7 +73,8 @@ export default function MarketingAssetsPage() {
               </Button>
               <Link href="/partners/style-studio-branding" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
                 <div className="relative w-20 h-8 shrink-0">
-                  <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left" sizes="80px" />
+                  <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left dark:hidden" sizes="80px" />
+                  <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left hidden dark:block" sizes="80px" />
                 </div>
                 <span>Marketing & production by Style Studio Branding</span>
               </Link>

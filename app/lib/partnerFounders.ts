@@ -35,6 +35,10 @@ export interface FounderProfile {
   roleInEcosystem: string;
   /** One sentence perspective on helping businesses */
   perspective: string;
+  /** Optional portfolio/work URL (e.g. Behance, Dribbble) */
+  portfolioUrl?: string;
+  /** Optional logo URL for dark theme (e.g. white logo); when set, light theme uses image/logo above */
+  logoDark?: string;
 }
 
 export interface PartnerInsightItem {
@@ -50,7 +54,8 @@ export interface PartnerInsightItem {
 
 const ASCENDRA_LOGO = "/ascendra-logo.svg";
 const MACON_LOGO = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
-const STYLE_STUDIO_LOGO = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
+const STYLE_STUDIO_LOGO_LIGHT = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
+const STYLE_STUDIO_LOGO_DARK = "/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png";
 
 export const FOUNDERS: FounderProfile[] = [
   {
@@ -100,6 +105,7 @@ export const FOUNDERS: FounderProfile[] = [
       "Owns the visual experience—identity systems, brand guidelines, and design that builds trust and supports the message.",
     perspective:
       "Design isn't decoration. It's how you're perceived. When your visuals are consistent and professional, visitors are more likely to trust you and take the next step.",
+    portfolioUrl: "https://www.behance.net/macondesigns",
   },
   {
     slug: "kristopher-williams",
@@ -124,6 +130,8 @@ export const FOUNDERS: FounderProfile[] = [
       "Clarifies positioning and messaging so the market immediately gets what you do, who it's for, and why it matters.",
     perspective:
       "When your message sounds like everyone else's, you blend in. Clarity and specificity build trust and help the right clients choose you.",
+    portfolioUrl: "https://www.behance.net/kwilliams7",
+    logoDark: STYLE_STUDIO_LOGO_DARK,
   },
 ];
 
@@ -227,7 +235,7 @@ export const PARTNER_INSIGHTS: PartnerInsightItem[] = [
 const FOUNDER_LOGO: Record<FounderSlug, string> = {
   "anthony-feaster": ASCENDRA_LOGO,
   denishia: MACON_LOGO,
-  "kristopher-williams": STYLE_STUDIO_LOGO,
+  "kristopher-williams": STYLE_STUDIO_LOGO_LIGHT,
 };
 
 export function getFounderBySlug(slug: FounderSlug): FounderProfile | undefined {
