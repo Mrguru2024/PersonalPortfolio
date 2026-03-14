@@ -11,6 +11,45 @@ interface Particle {
   alphaSpeed: number;
 }
 
+/** Parse hex or hsl(...) to RGB for canvas gradient (glow). */
+function colorToRgb(color: string): { r: number; g: number; b: number } {
+  const c = color.trim();
+  if (c.startsWith('#')) {
+    const hex = c.slice(1).padEnd(6, '0');
+    return {
+      r: parseInt(hex.slice(0, 2), 16),
+      g: parseInt(hex.slice(2, 4), 16),
+      b: parseInt(hex.slice(4, 6), 16),
+    };
+  }
+  const hslMatch = c.match(/hsl\s*\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)%\s*[, ]\s*(\d+(?:\.\d+)?)%\s*\)/i);
+  if (hslMatch) {
+    const h = Number(hslMatch[1]) / 360;
+    const s = Number(hslMatch[2]) / 100;
+    const l = Number(hslMatch[3]) / 100;
+    let r: number, g: number, b: number;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+  return { r: 100, g: 116, b: 139 };
+}
+
 interface ParticleAnimationProps {
   count?: number;
   minSize?: number;
@@ -19,6 +58,8 @@ interface ParticleAnimationProps {
   maxSpeed?: number;
   color?: string;
   colorArray?: string[];
+  /** Used when document has .dark class (e.g. dark theme) for better visibility */
+  colorArrayDark?: string[];
   linkParticles?: boolean;
   linkDistance?: number;
   linkThickness?: number;
@@ -35,6 +76,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
   maxSpeed = 0.5,
   color = "#3b82f6",
   colorArray,
+  colorArrayDark,
   linkParticles = true,
   linkDistance = 150,
   linkThickness = 0.5,
@@ -43,6 +85,15 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
 }) => {
   // Reduce particle count on smaller devices for better performance
   const [adjustedCount, setAdjustedCount] = useState(count);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -73,9 +124,12 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     setMounted(true);
   }, []);
 
-  // Initialize particles
+  // Initialize particles (read dark from DOM so first paint in dark theme is correct)
   useEffect(() => {
     if (!mounted || !canvasRef.current) return;
+
+    const isDarkNow = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    const activeColorArray = isDarkNow && colorArrayDark && colorArrayDark.length > 0 ? colorArrayDark : colorArray;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -100,14 +154,13 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
     
     // Create random particles spread across full area (use w/h so they're not clustered at origin)
     const newParticles: Particle[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       let particleColor = color;
-      
-      // Use colors from array if provided
-      if (colorArray && colorArray.length > 0) {
-        const randomIndex = Math.floor(Math.random() * colorArray.length);
-        particleColor = colorArray[randomIndex];
+
+      if (activeColorArray && activeColorArray.length > 0) {
+        const randomIndex = Math.floor(Math.random() * activeColorArray.length);
+        particleColor = activeColorArray[randomIndex];
       }
       
       newParticles.push({
@@ -147,7 +200,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationRef.current);
     };
-  }, [adjustedCount, minSize, maxSize, minSpeed, maxSpeed, color, colorArray, mounted]);
+  }, [adjustedCount, minSize, maxSize, minSpeed, maxSpeed, color, colorArray, colorArrayDark, isDark, mounted]);
   
   // Animation loop
   // Keep track of animation state without triggering re-renders
@@ -207,10 +260,7 @@ const ParticleAnimation: React.FC<ParticleAnimationProps> = ({
         // Draw soft glow under particle (if enabled)
         if (glowRadius > 0 && p.size > 0) {
           const glowSize = p.size * glowRadius;
-          const hex = p.color.startsWith('#') ? p.color : '#64748b';
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
+          const { r, g, b } = colorToRgb(p.color);
           const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
           gradient.addColorStop(0, `rgba(${r},${g},${b},${p.alpha * 0.45})`);
           gradient.addColorStop(0.5, `rgba(${r},${g},${b},${p.alpha * 0.15})`);

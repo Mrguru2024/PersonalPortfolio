@@ -10,6 +10,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BlogPostSEO, StructuredData } from "@/components/SEO";
 import { BlogPostFormatter } from "@/components/blog/BlogPostFormatter";
 import { RelatedPosts } from "@/components/blog/RelatedPosts";
+import { BlogComments } from "@/components/blog/BlogComments";
 import { fetchBlogSeedPost } from "@/lib/blogSeedClient";
 import type { BlogPost as BlogPostType } from "@/lib/data";
 
@@ -143,6 +144,7 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
           currentPostId={post.id}
           currentPostTags={tags}
         />
+        <BlogComments postId={post.id} />
       </article>
     </div>
   );

@@ -5,19 +5,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 min-w-0 max-w-full sm:whitespace-nowrap",
+  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-transform duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 min-w-0 max-w-full sm:whitespace-nowrap touch-manipulation [-webkit-tap-highlight-color:transparent] hover:scale-[1.02] active:scale-[0.96] motion-reduce:transform-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default:
+          "bg-primary text-primary-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-primary/90 hover:shadow-md active:shadow-sm active:bg-primary/95",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-destructive/90 hover:shadow-md active:shadow-sm active:bg-destructive/95",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background transition-[transform,box-shadow,background-color] duration-200 hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:shadow-none active:bg-accent/80",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-secondary text-secondary-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-secondary/80 hover:shadow-sm active:shadow-none active:bg-secondary/70",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
+        link: "text-primary underline-offset-4 hover:underline hover:scale-100 active:scale-100",
       },
       size: {
         default: "h-10 min-h-[44px] sm:min-h-[40px] px-4 py-2",

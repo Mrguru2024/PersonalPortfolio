@@ -207,7 +207,7 @@ export function BlogPostSEO({
 
     // Cleanup function to restore default title when component unmounts
     return () => {
-      document.title = "Ascendra Technologies | Portfolio & Blog";
+      document.title = "Ascendra Technologies | Blog";
     };
   }, [
     safeTitle,

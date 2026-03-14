@@ -27,14 +27,19 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { TIMELINE_OPTIONS } from "@/lib/funnel-content";
+import { TIMELINE_OPTIONS, BUDGET_OPTIONS_WITH_FLEXIBLE } from "@/lib/funnel-content";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
   businessName: z.string().min(1, "Business name is required"),
   email: z.string().email("Enter a valid email"),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Enter a valid phone number"),
   websiteUrl: z.string().optional(),
   primaryGoal: z.string().min(8, "Add a little detail so we can prepare"),
+  budgetRange: z.string().optional(),
   timeline: z.string().min(1, "Select a timeline"),
   notes: z.string().optional(),
 });
@@ -50,8 +55,10 @@ export function StrategyCallForm() {
       name: "",
       businessName: "",
       email: "",
+      phone: "",
       websiteUrl: "",
       primaryGoal: "",
+      budgetRange: "",
       timeline: "",
       notes: "",
     },
@@ -62,6 +69,7 @@ export function StrategyCallForm() {
       const message = [
         `Primary goal: ${values.primaryGoal}`,
         values.websiteUrl ? `Website: ${values.websiteUrl}` : "",
+        values.budgetRange ? `Budget range: ${values.budgetRange}` : "",
         values.notes ? `Notes: ${values.notes}` : "",
       ]
         .filter(Boolean)
@@ -73,9 +81,10 @@ export function StrategyCallForm() {
         body: JSON.stringify({
           name: values.name,
           email: values.email,
+          phone: values.phone || undefined,
           company: values.businessName,
           projectType: "Strategy Call",
-          budget: "Not specified",
+          budget: values.budgetRange || "Not specified",
           timeframe: values.timeline,
           message,
           newsletter: false,
@@ -122,7 +131,7 @@ export function StrategyCallForm() {
           </p>
           <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
             <Button asChild variant="outline" className="min-h-[44px]">
-              <Link href="/audit">Prefer a full audit first?</Link>
+              <Link href="/digital-growth-audit">Prefer a full audit first?</Link>
             </Button>
             <Button asChild className="min-h-[44px]">
               <Link href="/services">Review service options</Link>
@@ -186,13 +195,58 @@ export function StrategyCallForm() {
               />
               <FormField
                 control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="Best number to reach you"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="websiteUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Website URL</FormLabel>
+                    <FormLabel>Website URL (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://yourwebsite.com" {...field} />
+                      <Input placeholder="https://yourwebsite.com" type="url" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="budgetRange"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget range (optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select if known" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {BUDGET_OPTIONS_WITH_FLEXIBLE.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -257,7 +311,7 @@ export function StrategyCallForm() {
             />
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
-              {isPending ? "Submitting..." : "Request Strategy Call"}
+              {isPending ? "Submitting..." : "Book my free call"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>

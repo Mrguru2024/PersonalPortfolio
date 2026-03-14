@@ -2,6 +2,12 @@ export interface EcosystemPillar {
   name: string;
   role: string;
   summary: string;
+  /** Logo path for partner card (e.g. on About page). */
+  logo?: string;
+  /** Optional dark-theme logo. */
+  logoDark?: string;
+  /** Partner page path for the card link. */
+  href?: string;
 }
 
 export interface PremiumOffer {
@@ -21,18 +27,25 @@ export const ECOSYSTEM_PILLARS: EcosystemPillar[] = [
     role: "Brand strategy, messaging, and positioning",
     summary:
       "Clarifies how your business should be understood so your market immediately gets what you do and why it matters.",
+    logo: "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png",
+    logoDark: "/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png",
+    href: "/partners/style-studio-branding",
   },
   {
     name: "Macon Designs®",
     role: "Visual design and creative asset execution",
     summary:
       "Improves visual quality across your web presence so your business looks established, intentional, and trustworthy.",
+    logo: "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png",
+    href: "/partners/macon-designs",
   },
   {
     name: "Ascendra Technologies",
     role: "Web systems, funnels, performance, and automation",
     summary:
       "Builds and optimizes the digital system that turns traffic and referrals into qualified leads and booked conversations.",
+    logo: "/ascendra-logo.svg",
+    href: "/partners/ascendra-technologies",
   },
 ];
 
@@ -41,45 +54,42 @@ export const PREMIUM_OFFERS: PremiumOffer[] = [
     slug: "website-optimization",
     name: "Website Optimization System",
     audience:
-      "Best for businesses with an existing identity that need better website performance and conversions.",
+      "Businesses with an existing website that need better performance and more leads.",
     outcome:
-      "A stronger, faster, conversion-focused website that captures more qualified leads.",
+      "Improved clarity, stronger CTAs, better mobile experience, and conversion issues fixed so your site turns more visitors into opportunities.",
     includes: [
-      "Website UX and structure improvements",
-      "Stronger CTA and conversion path design",
+      "Clarity and structure improvements",
+      "Stronger CTAs and conversion path",
       "Mobile experience optimization",
-      "Lead capture improvements",
-      "Conversion-focused page updates",
+      "Lead capture and conversion fixes",
     ],
   },
   {
     slug: "brand-website",
     name: "Brand + Website System",
     audience:
-      "Best for businesses that need stronger presentation and a better-performing website.",
+      "Businesses that need stronger presentation and a better website. Includes collaboration with Macon Designs®.",
     outcome:
-      "A clearer visual identity and a high-trust website built to attract and convert.",
+      "Visual refresh, improved presentation, website redesign, and clearer messaging so your business looks and communicates more effectively.",
     includes: [
-      "Visual refresh and presentation quality upgrades",
+      "Visual refresh and presentation quality",
       "Website redesign or strategic refresh",
-      "Message-to-design alignment",
-      "Lead funnel setup",
-      "Core conversion page planning",
+      "Clearer messaging and alignment",
+      "Lead path and conversion planning",
     ],
   },
   {
     slug: "business-growth",
     name: "Business Growth System",
     audience:
-      "Best for businesses needing strategy, design, and technology coordinated together.",
+      "Businesses that need strategy, design, and technology aligned. Includes Style Studio Branding, Macon Designs®, and Ascendra Technologies.",
     outcome:
-      "A complete growth system with positioning, design, website funnel execution, and automation support.",
+      "Positioning clarity, improved presentation, and conversion-ready website systems so you grow with one coordinated team.",
     includes: [
-      "Brand positioning support",
-      "Messaging clarity and strategic direction",
+      "Brand positioning and messaging clarity",
       "Visual direction and execution",
       "Website and funnel implementation",
-      "Automation and growth support",
+      "Conversion and growth support",
     ],
   },
 ];
@@ -115,6 +125,12 @@ export const BUDGET_OPTIONS = [
   "$1,500-$3,500",
   "$3,500-$7,500",
   "$7,500+",
+] as const;
+
+/** Optional "prefer not to say" for lower-friction quote/call forms */
+export const BUDGET_OPTIONS_WITH_FLEXIBLE = [
+  ...BUDGET_OPTIONS,
+  "Not sure yet",
 ] as const;
 
 export const TIMELINE_OPTIONS = [

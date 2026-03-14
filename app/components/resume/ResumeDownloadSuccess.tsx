@@ -91,14 +91,14 @@ const ResumeDownloadSuccess: React.FC<ResumeDownloadSuccessProps> = ({ downloadU
           >
             <button className="group flex items-start w-full" onClick={() => {
               navigator.clipboard.writeText(window.location.origin);
-              alert('Portfolio URL copied to clipboard!');
+              alert('Page URL copied to clipboard!');
             }}>
               <div className="mr-3 mt-1">
                 <Share2 className="h-5 w-5 text-purple-600 dark:text-purple-400 group-hover:rotate-12 transition-transform" />
               </div>
               <div className="text-left">
-                <h4 className="font-medium text-purple-600 dark:text-purple-400">Share My Portfolio</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Copy my portfolio URL to share with your network</p>
+                <h4 className="font-medium text-purple-600 dark:text-purple-400">Share this page</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Copy the page URL to share with your network</p>
               </div>
             </button>
           </motion.div>

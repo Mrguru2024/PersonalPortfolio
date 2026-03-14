@@ -25,8 +25,8 @@ export default function CallConfirmationPage() {
   return (
     <>
       <PageSEO
-        title="Strategy Call Confirmed | Next Steps"
-        description="Your strategy call request was received. Here’s what to prepare and what to expect."
+        title="Call request received | Next Steps"
+        description="Your call request was received. Here’s what to prepare and what to expect."
         canonicalPath="/call-confirmation"
       />
 
@@ -42,7 +42,7 @@ export default function CallConfirmationPage() {
               </div>
               <CardTitle className="text-center text-xl sm:text-2xl">You’re on the list</CardTitle>
               <CardDescription className="text-center text-sm sm:text-base max-w-md mx-auto break-words min-w-0">
-                Thanks for requesting a strategy call. We’ll reach out shortly to schedule a time that works for you.
+                Thanks for requesting a strategy call. We’ll reach out shortly to find a time that works for you.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 px-4 sm:px-6 md:px-8 pt-0">

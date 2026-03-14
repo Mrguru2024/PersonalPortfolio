@@ -59,7 +59,7 @@ const GuruCharacter: React.FC<GuruCharacterProps> = ({
               </button>
               
               <p className="pr-4 text-gray-700 dark:text-gray-300">
-                I'll guide you through my portfolio. Click on milestone points to learn more!
+                I'll guide you through the site. Click on milestone points to learn more!
               </p>
               
               {/* Triangle pointer */}

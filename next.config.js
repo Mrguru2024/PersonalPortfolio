@@ -17,6 +17,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/favicon.ico', destination: '/favicon.svg', permanent: true },
+      { source: '/insights', destination: '/blog', permanent: true },
+      { source: '/insights/:path*', destination: '/blog', permanent: true },
     ];
   },
   

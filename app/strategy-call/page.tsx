@@ -138,8 +138,8 @@ export default function StrategyCallPage() {
   return (
     <>
       <PageSEO
-        title="Book a Strategy Call | Brand Growth"
-        description="Schedule a strategy call to discuss your brand, website, or marketing goals. One coordinated team—brand, web, and marketing."
+        title="Book a free call | Brand Growth"
+        description="Book a free call to discuss your brand, website, or marketing goals. One coordinated team—brand, web, and marketing."
         keywords={["strategy call", "brand strategy", "consultation", "brand growth"]}
         canonicalPath="/strategy-call"
       />
@@ -155,7 +155,7 @@ export default function StrategyCallPage() {
               <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h1 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Book a Strategy Call
+              Book a free call
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Share a few details. We’ll reach out to schedule a call and align on your goals—no pressure, no obligation.
@@ -183,7 +183,7 @@ export default function StrategyCallPage() {
 
           <Card className="border-border bg-card shadow-md overflow-hidden min-w-0">
             <CardHeader className="px-4 sm:px-6 md:px-8">
-              <CardTitle className="text-lg sm:text-xl">Strategy call request</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Book your free call</CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 All fields help us prepare for the conversation.
               </CardDescription>

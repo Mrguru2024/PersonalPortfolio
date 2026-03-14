@@ -40,6 +40,10 @@ const auditRequestSchema = z.object({
   name: z.string().min(1, "Name is required"),
   businessName: z.string().min(1, "Business name is required"),
   email: z.string().email("Enter a valid email"),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^[\d\s\-+()]{10,}$/.test(v), "Enter a valid phone number"),
   websiteUrl: z.string().optional(),
   industry: z.string().min(1, "Industry is required"),
   currentChallenge: z.string().min(1, "Select a challenge"),
@@ -61,6 +65,7 @@ export function AuditRequestForm() {
       name: "",
       businessName: "",
       email: "",
+      phone: "",
       websiteUrl: "",
       industry: "",
       currentChallenge: "",
@@ -79,6 +84,7 @@ export function AuditRequestForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
+          phone: values.phone || undefined,
           revenueRange: values.budgetRange,
           mainChallenge: values.currentChallenge,
         }),
@@ -125,12 +131,12 @@ export function AuditRequestForm() {
           <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
             <Button asChild className="min-h-[44px]">
               <Link href="/contact">
-                Book a Strategy Call
+                Book a free call
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" className="min-h-[44px]">
-              <Link href="/services">Review Service Options</Link>
+              <Link href="/services">See how we can help</Link>
             </Button>
           </div>
         </CardContent>
@@ -191,14 +197,15 @@ export function AuditRequestForm() {
               />
               <FormField
                 control={form.control}
-                name="websiteUrl"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Website URL</FormLabel>
+                    <FormLabel>Phone (optional)</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="https://yourwebsite.com"
-                        type="url"
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="Best number to reach you"
                         {...field}
                       />
                     </FormControl>
@@ -207,6 +214,24 @@ export function AuditRequestForm() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="websiteUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website URL (optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://yourwebsite.com"
+                      type="url"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

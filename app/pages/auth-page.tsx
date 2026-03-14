@@ -27,7 +27,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { personalInfo } from "@/lib/data";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -157,12 +156,12 @@ const AuthPage = () => {
         <div className="max-w-xl space-y-8">
           <h1 className="text-4xl font-bold tracking-tight">
             <span className="block text-primary">
-              Welcome to Ascendra Technologies
+              Ascendra Technologies
             </span>
-            <span className="mt-2 block">Your Developer Portfolio</span>
+            <span className="mt-2 block">Sign in to your account</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            {personalInfo.description}
+            Sign in to access the admin dashboard, manage content, view leads and analytics, or continue to the Brand Growth ecosystem.
           </p>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -170,7 +169,7 @@ const AuthPage = () => {
                 <span className="text-primary font-bold">01</span>
               </div>
               <p className="font-medium">
-                View showcased projects and live demos
+                Access admin dashboard and CRM
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -178,7 +177,7 @@ const AuthPage = () => {
                 <span className="text-primary font-bold">02</span>
               </div>
               <p className="font-medium">
-                Read and contribute to the development blog
+                Manage blog, announcements, and newsletters
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -186,7 +185,7 @@ const AuthPage = () => {
                 <span className="text-primary font-bold">03</span>
               </div>
               <p className="font-medium">
-                Contact for project inquiries and collaborations
+                View analytics, feedback, and resume requests
               </p>
             </div>
           </div>
@@ -201,7 +200,7 @@ const AuthPage = () => {
               Ascendra Technologies
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-300">
-              {personalInfo.title}
+              Sign in to your account
             </p>
           </div>
 

@@ -8,7 +8,7 @@ import { PREMIUM_OFFERS } from "@/lib/funnel-content";
 export const metadata: Metadata = {
   title: "Services | Ascendra Technologies",
   description:
-    "Explore Ascendra's premium offer systems for website optimization, brand + website execution, and full business growth delivery.",
+    "See how we can help—website optimization, brand and website execution, and full business growth. Pick the path that fits where you are.",
 };
 
 const pathways = [
@@ -33,19 +33,17 @@ export default function ServicesPage() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <section className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-              Premium growth systems, built around your stage.
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
+              Growth systems that fit where you are
             </h1>
-            <p className="mt-3 text-base sm:text-lg text-muted-foreground">
-              Choose the delivery path that matches where your business is right
-              now. Each offer is designed to improve visibility, trust, and
-              conversion.
+            <p className="text-base sm:text-lg text-muted-foreground">
+              Three ways we help: improve an existing website, build a stronger brand and site, or align strategy, design, and technology for conversion-ready growth.
             </p>
           </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
             {PREMIUM_OFFERS.map((offer) => (
               <Card key={offer.slug} className="border-border bg-card h-full">
                 <CardContent className="p-5 sm:p-6 flex h-full flex-col">
@@ -68,7 +66,7 @@ export default function ServicesPage() {
                   <div className="mt-auto pt-6">
                     <Button asChild className="w-full min-h-[44px]">
                       <Link href="/contact">
-                        Discuss this offer
+                        See recommended growth system
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
@@ -79,14 +77,13 @@ export default function ServicesPage() {
           </section>
 
           <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Existing pathway pages (kept and aligned)
+            <h2 className="text-2xl font-semibold text-foreground mb-3 sm:mb-4">
+              Paths for your situation
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              If your business already fits one of these use cases, you can use
-              the dedicated pathway pages directly.
+            <p className="text-sm sm:text-base text-muted-foreground">
+              If one of these sounds like you, you can go straight to that path.
             </p>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
               {pathways.map((pathway) => (
                 <Link
                   key={pathway.href}
@@ -103,15 +100,20 @@ export default function ServicesPage() {
           </section>
 
           <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Not sure which offer fits?
+            <h2 className="text-2xl font-semibold text-foreground mb-3 sm:mb-4">
+              Not sure where to start?
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              Start with a Digital Growth Audit and we will map your next move.
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Start with a Digital Growth Audit to understand where your website may be holding you back. Or explore our{" "}
+              <Link href="/website-revenue-calculator" className="font-medium text-primary hover:underline">revenue loss calculator</Link> and{" "}
+              <Link href="/homepage-conversion-blueprint" className="font-medium text-primary hover:underline">homepage conversion blueprint</Link> for free tools.
             </p>
-            <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
               <Button asChild className="min-h-[44px]">
-                <Link href="/audit">Request a Digital Growth Audit</Link>
+                <Link href="/digital-growth-audit">Request Your Digital Growth Audit</Link>
+              </Button>
+              <Button asChild variant="outline" className="min-h-[44px]">
+                <Link href="/website-revenue-calculator">Explore free growth tools</Link>
               </Button>
               <Button asChild variant="outline" className="min-h-[44px]">
                 <Link href="/results">View recent work</Link>

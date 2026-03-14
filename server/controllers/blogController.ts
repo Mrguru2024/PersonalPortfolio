@@ -179,6 +179,15 @@ export const blogController = {
       // Validate comment data
       const validatedData = blogCommentFormSchema.parse(req.body);
 
+      // Require commenter to be a newsletter subscriber
+      const subscriber = await storage.getSubscriberByEmail(validatedData.email.trim().toLowerCase());
+      if (!subscriber || !subscriber.subscribed) {
+        return res.status(403).json({
+          error: "You must be a newsletter subscriber to comment. Subscribe with the same email below, then try again.",
+          code: "SUBSCRIBE_REQUIRED",
+        });
+      }
+
       // Get IP address
       const ipAddress = req.ip || req.socket.remoteAddress || "0.0.0.0";
 

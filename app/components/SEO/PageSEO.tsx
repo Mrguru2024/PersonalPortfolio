@@ -92,9 +92,9 @@ export function PageSEO({
   const keywordsString = [
     ...keywords,
     "Ascendra Technologies",
-    "Anthony MrGuru Feaster",
-    "web developer",
-    "portfolio",
+    "brand growth",
+    "website strategy",
+    "conversion",
   ].join(", ");
 
   useEffect(() => {

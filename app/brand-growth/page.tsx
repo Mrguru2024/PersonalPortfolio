@@ -82,6 +82,65 @@ const PATHS = [
   { label: "Improve My Marketing", href: MARKETING_ASSETS_PATH, description: "Stronger ads and visuals" },
 ];
 
+const TEAM_ABOUT = [
+  {
+    name: personalInfo.name,
+    role: "Ascendra Technologies",
+    description: personalInfo.description,
+    education: personalInfo.education,
+    experience: personalInfo.experience,
+    image: personalInfo.image,
+    imageAlt: personalInfo.name,
+    useLogo: false,
+    href: "/resume",
+    buttonLabel: "Download Resume",
+    buttonIcon: FileText,
+    secondaryHref: "/partners/ascendra-technologies",
+    secondaryLabel: "Visit Ascendra Technologies",
+  },
+  {
+    name: "Denishia",
+    role: "Macon Designs®",
+    description:
+      "Denishia leads Macon Designs with a BA in Visual Communications and 10+ years focused on brand identity. She helps growth-ready businesses build identity systems that look professional and convert—brand strategy, visual identity, and design systems that integrate with the broader Brand Growth team (Ascendra for web, Style Studio for marketing assets).",
+    education: ["BA Visual Communications", "Brand strategy & visual identity"],
+    experience: [
+      "10+ years brand identity & visual systems",
+      "Logo systems, color, typography, and guidelines",
+      "Strategic design that supports positioning",
+    ],
+    image: MACON_LOGO_BADGE,
+    imageAlt: "Macon Designs — Brand identity & visual systems",
+    useLogo: true,
+    href: "/partners/macon-designs",
+    buttonLabel: "Visit Macon Designs",
+    buttonIcon: ArrowRight,
+    secondaryHref: STRATEGY_CALL_PATH,
+    secondaryLabel: "Book a strategy call",
+  },
+  {
+    name: "Kristopher Williams",
+    role: "Style Studio Branding",
+    description:
+      "Kristopher leads Style Studio Branding with 12+ years in production design—print, packaging, digital, and multi-format marketing assets. Experience across brands such as Payscape, DiversiTech, JustChair, and Osaic. Production-ready work that converts, aligned with Macon Designs (brand identity) and Ascendra (web) when you need the full ecosystem.",
+    education: ["Production design & multi-format marketing", "Print, packaging, and digital assets"],
+    experience: [
+      "12+ years production design",
+      "Brands: Payscape, DiversiTech, JustChair, Osaic",
+      "Ad creatives, packaging, social graphics",
+    ],
+    image: STYLE_STUDIO_LOGO,
+    imageAlt: "Style Studio Branding — Marketing & production design",
+    imageDark: STYLE_STUDIO_LOGO_WHITE,
+    useLogo: true,
+    href: "/partners/style-studio-branding",
+    buttonLabel: "Visit Style Studio Branding",
+    buttonIcon: ArrowRight,
+    secondaryHref: STRATEGY_CALL_PATH,
+    secondaryLabel: "Book a strategy call",
+  },
+];
+
 export default function BrandGrowthPage() {
   return (
     <>
@@ -264,55 +323,94 @@ export default function BrandGrowthPage() {
           </div>
         </section>
 
-        {/* Meet the team — About Anthony + partner links */}
+        {/* Meet the team — About Anthony, Denishia (Macon), Kristopher (Style Studio) */}
         <section id="meet-the-team" className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-4 sm:mb-6">
               Meet the team
             </h2>
             <p className="text-center text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto mb-10 sm:mb-12 break-words">
-              One coordinated team—brand, web, and marketing. Here’s who leads the technical side; meet our brand and marketing partners above.
+              One coordinated team—brand, web, and marketing. Here’s who leads each pillar: technical (Ascendra), brand identity (Macon Designs), and marketing assets (Style Studio).
             </p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center min-w-0">
-              <div className="min-w-0 order-2 lg:order-1">
-                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">{personalInfo.name}</h3>
-                <p className="text-muted-foreground text-sm sm:text-base mb-4 break-words">{personalInfo.description}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <h4 className="font-semibold text-foreground text-sm mb-2">Education</h4>
-                    <ul className="text-muted-foreground text-sm space-y-1">
-                      {personalInfo.education.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
+            <div className="space-y-12 sm:space-y-16 min-w-0">
+              {TEAM_ABOUT.map((member) => {
+                const Icon = member.buttonIcon;
+                return (
+                  <div
+                    key={member.name + member.role}
+                    className="flex flex-col gap-6 sm:gap-8 min-w-0"
+                  >
+                    <div className="flex flex-row gap-4 sm:gap-5 items-center min-w-0">
+                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 shrink-0 rounded-xl overflow-hidden shadow-md bg-muted">
+                        {member.useLogo ? (
+                          <>
+                            <Image
+                              src={member.image}
+                              alt={member.imageAlt}
+                              fill
+                              className={`object-contain p-2 ${"imageDark" in member && member.imageDark ? "dark:hidden" : ""}`}
+                              sizes="208px"
+                            />
+                            {"imageDark" in member && member.imageDark && (
+                              <Image
+                                src={member.imageDark}
+                                alt={member.imageAlt}
+                                fill
+                                className="object-contain p-2 hidden dark:block"
+                                sizes="208px"
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <Image
+                            src={member.image}
+                            alt={member.imageAlt}
+                            fill
+                            className="object-cover"
+                            sizes="208px"
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground">{member.name}</h3>
+                        <p className="text-sm font-medium text-primary mt-0.5">{member.role}</p>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground text-sm sm:text-base break-words">{member.description}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm mb-2">Education & focus</h4>
+                        <ul className="text-muted-foreground text-sm space-y-1">
+                          {member.education.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm mb-2">Experience</h4>
+                        <ul className="text-muted-foreground text-sm space-y-1">
+                          {member.experience.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button asChild size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
+                        <Link href={member.href}>
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {member.buttonLabel}
+                        </Link>
+                      </Button>
+                      {member.secondaryHref && (
+                        <Button asChild variant="outline" size="lg" className="gap-2">
+                          <Link href={member.secondaryHref}>{member.secondaryLabel}</Link>
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground text-sm mb-2">Experience</h4>
-                    <ul className="text-muted-foreground text-sm space-y-1">
-                      {personalInfo.experience.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-                <Link href="/resume">
-                  <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
-                    <FileText className="h-4 w-4 shrink-0" />
-                    Download Resume
-                  </Button>
-                </Link>
-              </div>
-              <div className="relative min-w-0 order-1 lg:order-2 flex justify-center lg:justify-end">
-                <div className="relative aspect-square w-full max-w-[240px] sm:max-w-[280px] rounded-xl overflow-hidden shadow-lg bg-muted">
-                  <Image
-                    src={personalInfo.image}
-                    alt={personalInfo.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 280px, 320px"
-                  />
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </section>

@@ -17,25 +17,24 @@ export default function ResultsPage() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
           <section className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
               Results and work examples
             </h1>
-            <p className="mt-3 text-base sm:text-lg text-muted-foreground">
-              Honest project framing focused on business context, implementation,
-              and what was improved.
+            <p className="text-base sm:text-lg text-muted-foreground">
+              Real projects—what we did, why, and what changed for the business.
             </p>
           </section>
 
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 min-w-0">
             {featuredProjects.map((project) => {
               const caseStudy = project.synopsis?.caseStudy;
               return (
                 <Card key={project.id} className="border-border bg-card h-full">
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-primary font-semibold">
+                      <p className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
                         {project.category}
                       </p>
                       <h2 className="text-2xl font-semibold text-foreground">
@@ -44,15 +43,15 @@ export default function ResultsPage() {
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-foreground">Challenge</p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm font-medium text-foreground mb-1">Challenge</p>
+                      <p className="text-sm text-muted-foreground">
                         {caseStudy?.problem || project.description}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-foreground">Solution direction</p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm font-medium text-foreground mb-1">Solution direction</p>
+                      <p className="text-sm text-muted-foreground">
                         {project.synopsis?.description || project.details}
                       </p>
                     </div>
@@ -96,15 +95,18 @@ export default function ResultsPage() {
               Ready to apply this to your business?
             </h2>
             <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              Start with the Digital Growth Audit or request a strategy call if
-              you already know your direction.
+              Start with a free audit, or book a call if you already know what you want. See how you stack up with a{" "}
+              <Link href="/competitor-position-snapshot" className="font-medium text-primary hover:underline">competitor position snapshot</Link>.
             </p>
             <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
               <Button asChild className="min-h-[44px]">
-                <Link href="/audit">Request a Digital Growth Audit</Link>
+                <Link href="/audit">Get your free audit</Link>
               </Button>
               <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/contact">Book a Strategy Call</Link>
+                <Link href="/contact">Book a free call</Link>
+              </Button>
+              <Button asChild variant="outline" className="min-h-[44px]">
+                <Link href="/competitor-position-snapshot">Competitor snapshot</Link>
               </Button>
             </div>
           </section>

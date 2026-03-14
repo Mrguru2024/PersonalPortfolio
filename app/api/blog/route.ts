@@ -46,6 +46,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(blogSeedPosts);
     }
 
+    if (response.ok) {
+      try {
+        const cloned = response.clone();
+        const dbPosts = (await cloned.json()) as { slug?: string }[];
+        const slugs = new Set((dbPosts || []).map((p) => p.slug).filter(Boolean));
+        const fromSeed = blogSeedPosts.filter((p) => !slugs.has(p.slug));
+        const merged = [...(Array.isArray(dbPosts) ? dbPosts : []), ...fromSeed];
+        return NextResponse.json(merged);
+      } catch {
+        return response;
+      }
+    }
     return response;
   } catch (error: unknown) {
     const msg =

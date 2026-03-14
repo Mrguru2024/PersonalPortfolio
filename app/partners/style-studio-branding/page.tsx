@@ -16,7 +16,8 @@ import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Megaphone, Package, ImageIcon, ChevronDown } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 
-const STYLE_STUDIO_LOGO_LIGHT = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
+/** Black/red logo for white (light) background — StyleStudio_Blk_Rd_.png */
+const STYLE_STUDIO_LOGO_BLACK_RED = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
 const STYLE_STUDIO_LOGO_WHITE = "/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png";
 
 const FOCUS_AREAS = [
@@ -65,7 +66,7 @@ export default function StyleStudioBrandingPartnerPage() {
               className="relative w-full max-w-[280px] sm:max-w-[320px] mx-auto h-20 sm:h-24 mb-8 sm:mb-10"
             >
               <Image
-                src={STYLE_STUDIO_LOGO_LIGHT}
+                src={STYLE_STUDIO_LOGO_BLACK_RED}
                 alt="Style Studio Branding — Marketing & production design"
                 fill
                 className="object-contain object-center drop-shadow-sm dark:hidden"
@@ -195,26 +196,25 @@ export default function StyleStudioBrandingPartnerPage() {
           </div>
         </section>
 
-        {/* CTA — white/red logo (consistent with Macon CTA treatment) */}
-        <section className="w-full min-w-0 max-w-full py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 relative overflow-hidden bg-primary text-primary-foreground">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.12),transparent)]" />
+        {/* CTA — white background, black/red logo only */}
+        <section className="w-full min-w-0 max-w-full py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 relative overflow-hidden bg-background border-t border-border">
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl flex flex-col items-center text-center">
             <div className="relative w-full max-w-[240px] sm:max-w-[280px] mx-auto h-14 sm:h-16 mb-6 sm:mb-8">
               <Image
-                src={STYLE_STUDIO_LOGO_WHITE}
+                src={STYLE_STUDIO_LOGO_BLACK_RED}
                 alt="Style Studio Branding"
                 fill
-                className="object-contain object-center opacity-95"
+                className="object-contain object-center"
                 sizes="(max-width: 640px) 240px, 280px"
               />
             </div>
-            <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 break-words">
+            <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4 break-words">
               Ready for marketing assets that convert?
             </h2>
-            <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8 max-w-md mx-auto break-words min-w-0">
+            <p className="text-muted-foreground text-sm sm:text-base mb-6 sm:mb-8 max-w-md mx-auto break-words min-w-0">
               Book a strategy call. We'll align on your goals and outline clear next steps—no pressure.
             </p>
-            <Button asChild size="lg" className="gap-2 min-h-[48px] bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
+            <Button asChild size="lg" className="gap-2 min-h-[48px] bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold">
               <Link href={STRATEGY_CALL_PATH}>
                 {ECOSYSTEM_CTA_STRATEGY_CALL}
                 <ArrowRight className="h-4 w-4 shrink-0" />

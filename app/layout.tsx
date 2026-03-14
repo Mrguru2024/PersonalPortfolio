@@ -47,6 +47,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f7f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#111a1f" },
+  ],
 };
 
 export default function RootLayout({
@@ -65,7 +69,7 @@ export default function RootLayout({
             <ScrollProgress />
             {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
             <FixedHeaderWrapper />
-            <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[160px] fold:pt-[180px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px]">
+            <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[150px] fold:pt-[170px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[env(safe-area-inset-bottom)]">
               {children}
             </main>
             <SiteFooter />

@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     const businessName = String(body.businessName ?? body.company ?? "").trim();
     const name = String(body.name ?? body.contactName ?? businessName).trim();
     const email = String(body.email ?? "").trim();
+    const phone = String(body.phone ?? "").trim() || undefined;
     const websiteUrl = String(body.websiteUrl ?? body.website ?? "").trim() || "";
     const industry = String(body.industry ?? "").trim();
     const budgetRange = String(
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       company: businessName || undefined,
-      phone: undefined,
+      phone: phone || undefined,
       projectType: [industry, businessStage].filter(Boolean).join(" | ") || undefined,
       budget: budgetRange || undefined,
       timeframe: timeline || undefined,

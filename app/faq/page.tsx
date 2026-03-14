@@ -8,16 +8,17 @@ import Link from "next/link";
 
 export default function FAQPage() {
   return (
-    <div className="w-full min-w-0 max-w-full min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-8 fold:py-10 xs:py-12 sm:py-16 px-3 fold:px-4 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 min-w-0">
+    <div className="w-full min-w-0 max-w-full min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 overflow-x-hidden py-10 sm:py-14">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto space-y-10 sm:space-y-12 min-w-0">
         {/* Header */}
-        <div className="text-center space-y-3 sm:space-y-4">
-          <div className="flex justify-center">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
             <div className="rounded-full bg-primary/10 p-3 sm:p-4 shrink-0">
               <HelpCircle className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-3 sm:mb-4">
             Frequently Asked Questions
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -60,6 +61,7 @@ export default function FAQPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
