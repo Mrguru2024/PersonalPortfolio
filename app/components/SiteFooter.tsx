@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
+import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, FREE_GROWTH_TOOLS_PATH, STARTUP_GROWTH_KIT_PATH } from "@/lib/funnelCtas";
 import { Search } from "lucide-react";
 
 const MAIN_LINKS = [
@@ -18,6 +18,7 @@ const GROWTH_LINKS = [
   { label: "Brand Growth", href: BRAND_GROWTH_PATH },
   { label: "Ecosystem founders", href: "/ecosystem-founders" },
   { label: "Free growth tools", href: FREE_GROWTH_TOOLS_PATH },
+  { label: "Startup growth kit", href: STARTUP_GROWTH_KIT_PATH },
   { label: "Our work", href: "/partners/ascendra-technologies#projects" },
 ];
 

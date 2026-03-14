@@ -32,3 +32,9 @@ export const ECOSYSTEM_CTA_MARKETING = "Upgrade your marketing";
 export const FREE_GROWTH_TOOLS_PATH = "/free-growth-tools";
 export const COMPETITOR_SNAPSHOT_PATH = "/competitor-position-snapshot";
 export const HOMEPAGE_BLUEPRINT_PATH = "/homepage-conversion-blueprint";
+
+/** Startup founder funnel */
+export const STARTUP_GROWTH_KIT_PATH = "/resources/startup-growth-kit";
+export const STARTUP_WEBSITE_SCORE_PATH = "/tools/startup-website-score";
+export const STARTUP_ACTION_PLAN_PATH = "/resources/startup-action-plan";
+export const STARTUP_GROWTH_SYSTEM_OFFER_PATH = "/offers/startup-growth-system";

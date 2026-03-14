@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout } from "lucide-react";
+import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
+import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH } from "@/lib/funnelCtas";
 
 export const metadata: Metadata = {
   title: "Free growth tools | Ascendra Technologies",
@@ -61,6 +62,26 @@ const LEAD_MAGNETS = [
     cta: "View the blueprint",
     href: "/homepage-conversion-blueprint",
     icon: Layout,
+  },
+  {
+    id: "startup-growth-kit",
+    title: "Startup growth kit",
+    who: "New business owners building a business online with little or no budget.",
+    problem: "You're not sure where to begin or how to grow without a big agency budget.",
+    get: "Educational guide: why most startup websites fail, assets vs systems, the 4 layers of online growth, and a simple roadmap.",
+    cta: "Read the kit",
+    href: STARTUP_GROWTH_KIT_PATH,
+    icon: BookOpen,
+  },
+  {
+    id: "startup-website-score",
+    title: "Startup website score",
+    who: "Founders who want to know if their site is ready to capture leads.",
+    problem: "You don't know how your website stacks up on clarity, trust, and conversion.",
+    get: "A simple questionnaire and readiness score (0–100) with improvement suggestions and a path to your Startup Action Plan.",
+    cta: "Get my score",
+    href: STARTUP_WEBSITE_SCORE_PATH,
+    icon: Sparkles,
   },
 ];
 

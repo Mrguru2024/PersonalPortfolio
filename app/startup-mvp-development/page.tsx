@@ -24,6 +24,7 @@ import {
   SECONDARY_CTA,
   AUDIT_PATH,
   STRATEGY_CALL_PATH,
+  STARTUP_GROWTH_KIT_PATH,
 } from "@/lib/funnelCtas";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
@@ -97,6 +98,12 @@ export default function StartupMvpDevelopmentPage() {
             </motion.div>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 sm:mt-5 text-xs sm:text-sm text-muted-foreground">
               Free audit · No obligation · Results in 24–48 hours
+            </motion.p>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mt-2 text-xs sm:text-sm text-muted-foreground">
+              Building on a tight budget?{" "}
+              <Link href={STARTUP_GROWTH_KIT_PATH} className="font-medium text-primary hover:underline">
+                Start with our free Startup Growth Kit
+              </Link>
             </motion.p>
           </div>
         </section>
