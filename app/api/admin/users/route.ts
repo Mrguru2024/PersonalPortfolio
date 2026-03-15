@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { isSuperUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 
 /**
  * GET /api/admin/users
- * Get all users (requires admin approval)
+ * List all users (super user only; for approving founders and managing privileges)
  */
 export async function GET(req: NextRequest) {
   try {
-    // Check if requester is an approved admin
-    const requesterIsAdmin = await isAdmin(req);
-    if (!requesterIsAdmin) {
+    if (!(await isSuperUser(req))) {
       return NextResponse.json(
-        { message: "Admin access required" },
+        { message: "Super user access required" },
         { status: 403 }
       );
     }

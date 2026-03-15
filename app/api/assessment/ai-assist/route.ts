@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       case 'suggest-features':
         result = {
           suggestions: await aiAssistanceService.suggestFeatures(
-            context,
+            currentAnswers?.projectType || 'website',
             currentAnswers?.mustHaveFeatures || []
           ),
         };
@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
       case 'clarify-requirements':
         result = {
           suggestions: await aiAssistanceService.clarifyRequirements(
-            context,
-            currentAnswers || {}
+            typeof context === 'string' ? context : '',
+            (currentAnswers || {}) as Record<string, unknown>
           ),
         };
         break;

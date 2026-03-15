@@ -43,6 +43,7 @@ const registerSchema = z
     email: z.string().email("Please enter a valid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
+    requestAdmin: z.boolean().default(false),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -76,6 +77,7 @@ const AuthPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      requestAdmin: false,
     },
   });
 
@@ -134,11 +136,12 @@ const AuthPage = () => {
   };
 
   const onRegister = async (values: RegisterFormValues) => {
-    console.log("Register attempt with:", values);
     try {
-      const { confirmPassword, ...registerData } = values;
-      console.log("Sending register data:", registerData);
-      await registerMutation.mutateAsync(registerData);
+      const { confirmPassword, requestAdmin, ...rest } = values;
+      await registerMutation.mutateAsync({
+        ...rest,
+        requestAdmin: requestAdmin ?? false,
+      });
     } catch (error) {
       console.error("Registration error:", error);
     }
@@ -200,9 +203,16 @@ const AuthPage = () => {
               Ascendra Technologies
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-300">
-              Sign in to your account
+              Admin and founder sign-in
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Client? <Link href="/login" className="underline font-medium text-foreground hover:no-underline">Sign in here</Link>
             </p>
           </div>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Admin and founder access only. Clients use <Link href="/login" className="underline font-medium text-foreground hover:no-underline">client login</Link>.
+          </p>
 
           <Tabs
             defaultValue="login"
@@ -473,6 +483,25 @@ const AuthPage = () => {
                               />
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="requestAdmin"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/50 bg-muted/30 p-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="cursor-pointer text-sm font-normal">
+                                Request admin (founder) access — dashboard, leads, content. Requires approval by the project developer.
+                              </FormLabel>
+                            </div>
                           </FormItem>
                         )}
                       />

@@ -17,6 +17,7 @@ import {
   REVENUE_CALCULATOR_PATH,
   STARTUP_ACTION_PLAN_PATH,
 } from "@/lib/funnelCtas";
+import { getFunnelContent } from "@/lib/funnelContent";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -47,7 +48,17 @@ const FOUR_LAYERS = [
   },
 ];
 
-export default function StartupGrowthKitPage() {
+export default async function StartupGrowthKitPage() {
+  const stored = await getFunnelContent("growth-kit");
+  const heroTitle =
+    (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroTitle === "string")
+      ? (stored as Record<string, unknown>).heroTitle
+      : "Where to begin when building a business online";
+  const heroSubtitle =
+    (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroSubtitle === "string")
+      ? (stored as Record<string, unknown>).heroSubtitle
+      : "A practical guide for new business owners with little or no budget. Learn why most startup websites fail, what to build first, and how to grow without a full agency.";
+
   return (
     <>
       <PageSEO
@@ -58,16 +69,15 @@ export default function StartupGrowthKitPage() {
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
-            {/* Hero */}
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <BookOpen className="h-7 w-7" />
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
-                Where to begin when building a business online
+                {heroTitle}
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-                A practical guide for new business owners with little or no budget. Learn why most startup websites fail, what to build first, and how to grow without a full agency.
+                {heroSubtitle}
               </p>
             </section>
 

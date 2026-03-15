@@ -88,7 +88,7 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/auth");
+      router.push("/login");
     }
   }, [user, authLoading, router]);
 

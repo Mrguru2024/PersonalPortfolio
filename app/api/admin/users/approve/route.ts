@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { isSuperUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 
 /**
  * POST /api/admin/users/approve
- * Approve a user for admin access (requires admin approval)
+ * Approve a founder for admin access (super user only)
  */
 export async function POST(req: NextRequest) {
   try {
-    // Check if requester is an approved admin
-    const requesterIsAdmin = await isAdmin(req);
-    if (!requesterIsAdmin) {
+    if (!(await isSuperUser(req))) {
       return NextResponse.json(
-        { message: "Admin access required" },
+        { message: "Super user access required" },
         { status: 403 }
       );
     }
@@ -26,7 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get the user to approve
     const user = await storage.getUser(userId);
     if (!user) {
       return NextResponse.json(
@@ -35,7 +32,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Only approve users who have isAdmin set to true
     if (!user.isAdmin) {
       return NextResponse.json(
         { message: "User must have isAdmin flag set to true before approval" },
@@ -43,9 +39,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Approve the user
+    // Approve and ensure role is admin (founder), never developer
     const updatedUser = await storage.updateUser(userId, {
       adminApproved: true,
+      role: user.role === "developer" ? "developer" : "admin",
     });
 
     // Don't send password

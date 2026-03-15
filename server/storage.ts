@@ -11,7 +11,8 @@ import { users, type User, type InsertUser,
   clientQuotes, type ClientQuote, type InsertClientQuote,
   clientInvoices, type ClientInvoice, type InsertClientInvoice,
   clientAnnouncements, type ClientAnnouncement, type InsertClientAnnouncement,
-  clientFeedback, type ClientFeedback, type InsertClientFeedback
+  clientFeedback, type ClientFeedback, type InsertClientFeedback,
+  funnelContent, type FunnelContent, type InsertFunnelContent
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -22,10 +23,18 @@ import {
 import {
   crmContacts, type CrmContact, type InsertCrmContact,
   crmDeals, type CrmDeal, type InsertCrmDeal,
-  crmActivities, type CrmActivity, type InsertCrmActivity
+  crmActivities, type CrmActivity, type InsertCrmActivity,
+  communicationEvents, type CommunicationEvent, type InsertCommunicationEvent,
+  documentEvents, documentEventLog, type DocumentEvent, type InsertDocumentEvent, type InsertDocumentEventLog,
+  visitorActivity, type VisitorActivity, type InsertVisitorActivity,
+  crmAlerts, type CrmAlert, type InsertCrmAlert,
+  crmTasks, type CrmTask, type InsertCrmTask,
+  crmSequences, type CrmSequence, type InsertCrmSequence,
+  crmSequenceEnrollments, type CrmSequenceEnrollment, type InsertCrmSequenceEnrollment,
+  crmSavedLists, type CrmSavedList, type InsertCrmSavedList,
 } from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -41,6 +50,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<InsertUser> & { resetToken?: string | null; resetTokenExpiry?: Date | null }): Promise<User>;
+  
+  getFunnelContent(slug: string): Promise<FunnelContent | undefined>;
+  setFunnelContent(slug: string, data: Record<string, unknown>): Promise<FunnelContent>;
   
   // Project operations
   getProjects(): Promise<Project[]>;
@@ -174,6 +186,70 @@ export interface IStorage {
   getCrmActivities(contactId: number): Promise<CrmActivity[]>;
   createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
   getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
+
+  // Lead intelligence: communication events
+  createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent>;
+  getCommunicationEventsByLeadId(leadId: number): Promise<CommunicationEvent[]>;
+
+  // Lead intelligence: document engagement
+  upsertDocumentEvent(data: {
+    documentId: string;
+    documentType: string;
+    leadId: number | null;
+    quoteId: number | null;
+    viewTimeSeconds?: number;
+    eventDetail: string;
+    deviceType?: string | null;
+    location?: string | null;
+  }): Promise<DocumentEvent>;
+  getDocumentEventsByLeadId(leadId: number): Promise<DocumentEvent[]>;
+  getDocumentEventLogByLeadId(leadId: number): Promise<{ id: number; documentId: string; documentType: string; eventDetail: string; viewTimeSeconds: number | null; createdAt: Date }[]>;
+
+  // Lead intelligence: visitor activity
+  createVisitorActivity(activity: InsertVisitorActivity): Promise<VisitorActivity>;
+  attachVisitorToLead(visitorId: string, leadId: number): Promise<void>;
+  getVisitorActivityByLeadId(leadId: number): Promise<VisitorActivity[]>;
+
+  // Lead intelligence: alerts
+  createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert>;
+  getCrmAlerts(leadId?: number, unreadOnly?: boolean): Promise<(CrmAlert & { lead?: CrmContact })[]>;
+  markCrmAlertRead(id: number): Promise<void>;
+
+  // Resolve CRM lead from quote (assessment email)
+  getCrmContactIdByQuoteId(quoteId: number): Promise<number | null>;
+
+  // Engagement analytics (counts for dashboard)
+  getCrmEngagementStats(): Promise<{
+    emailOpens: number;
+    emailClicks: number;
+    documentViews: number;
+    highIntentLeadsCount: number;
+    unreadAlertsCount: number;
+  }>;
+
+  // Tasks (Apollo-style)
+  createCrmTask(task: InsertCrmTask): Promise<CrmTask>;
+  updateCrmTask(id: number, updates: Partial<InsertCrmTask>): Promise<CrmTask>;
+  deleteCrmTask(id: number): Promise<void>;
+  getCrmTasksByContactId(contactId: number): Promise<CrmTask[]>;
+  getCrmTasks(filters: { contactId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]>;
+
+  // Sequences
+  createCrmSequence(seq: InsertCrmSequence): Promise<CrmSequence>;
+  getCrmSequences(): Promise<CrmSequence[]>;
+  getCrmSequenceById(id: number): Promise<CrmSequence | undefined>;
+  updateCrmSequence(id: number, updates: Partial<InsertCrmSequence>): Promise<CrmSequence>;
+  createCrmSequenceEnrollment(enrollment: InsertCrmSequenceEnrollment): Promise<CrmSequenceEnrollment>;
+  getCrmSequenceEnrollments(contactId?: number, sequenceId?: number): Promise<(CrmSequenceEnrollment & { contact?: CrmContact; sequence?: CrmSequence })[]>;
+  updateCrmSequenceEnrollment(id: number, updates: Partial<InsertCrmSequenceEnrollment>): Promise<CrmSequenceEnrollment>;
+
+  // Saved lists
+  createCrmSavedList(list: InsertCrmSavedList): Promise<CrmSavedList>;
+  getCrmSavedLists(): Promise<CrmSavedList[]>;
+  getCrmSavedListById(id: number): Promise<CrmSavedList | undefined>;
+  updateCrmSavedList(id: number, updates: Partial<InsertCrmSavedList>): Promise<CrmSavedList>;
+  deleteCrmSavedList(id: number): Promise<void>;
+  getCrmContactsBySavedListFilters(filters: CrmSavedList["filters"]): Promise<CrmContact[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -331,6 +407,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updated;
+  }
+
+  async getFunnelContent(slug: string): Promise<FunnelContent | undefined> {
+    const [row] = await db.select().from(funnelContent).where(eq(funnelContent.slug, slug));
+    return row ?? undefined;
+  }
+
+  async setFunnelContent(slug: string, data: Record<string, unknown>): Promise<FunnelContent> {
+    const [row] = await db
+      .insert(funnelContent)
+      .values({ slug, data, updated_at: new Date() })
+      .onConflictDoUpdate({
+        target: funnelContent.slug,
+        set: { data, updated_at: new Date() },
+      })
+      .returning();
+    return row;
   }
   
   // Project operations
@@ -1437,6 +1530,359 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(crmContacts)
       .where(inArray(crmContacts.email, emails));
+  }
+
+  async createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent> {
+    const [inserted] = await db.insert(communicationEvents).values(event).returning();
+    return inserted;
+  }
+
+  async getCommunicationEventsByLeadId(leadId: number): Promise<CommunicationEvent[]> {
+    return db
+      .select()
+      .from(communicationEvents)
+      .where(eq(communicationEvents.leadId, leadId))
+      .orderBy(desc(communicationEvents.createdAt));
+  }
+
+  async upsertDocumentEvent(data: {
+    documentId: string;
+    documentType: string;
+    leadId: number | null;
+    quoteId: number | null;
+    viewTimeSeconds?: number;
+    eventDetail: string;
+    deviceType?: string | null;
+    location?: string | null;
+  }): Promise<DocumentEvent> {
+    const now = new Date();
+    const existing = data.leadId != null
+      ? await db
+          .select()
+          .from(documentEvents)
+          .where(
+            and(
+              eq(documentEvents.documentId, data.documentId),
+              eq(documentEvents.leadId, data.leadId)
+            )
+          )
+          .limit(1)
+      : await db
+          .select()
+          .from(documentEvents)
+          .where(
+            and(
+              eq(documentEvents.documentId, data.documentId),
+              isNull(documentEvents.leadId)
+            )
+          )
+          .limit(1);
+    const addTime = data.viewTimeSeconds ?? 0;
+    if (existing.length > 0) {
+      const row = existing[0];
+      const [updated] = await db
+        .update(documentEvents)
+        .set({
+          viewCount: row.viewCount + 1,
+          lastViewedAt: now,
+          totalViewTimeSeconds: (row.totalViewTimeSeconds ?? 0) + addTime,
+          lastEventDetail: data.eventDetail,
+          deviceType: data.deviceType ?? row.deviceType,
+          location: data.location ?? row.location,
+          updatedAt: now,
+        })
+        .where(eq(documentEvents.id, row.id))
+        .returning();
+      await db.insert(documentEventLog).values({
+        documentEventId: updated!.id,
+        documentId: data.documentId,
+        documentType: data.documentType,
+        leadId: data.leadId,
+        quoteId: data.quoteId,
+        eventDetail: data.eventDetail,
+        viewTimeSeconds: data.viewTimeSeconds ?? null,
+        deviceType: data.deviceType,
+      });
+      return updated!;
+    }
+    const [inserted] = await db
+      .insert(documentEvents)
+      .values({
+        documentId: data.documentId,
+        documentType: data.documentType,
+        leadId: data.leadId,
+        quoteId: data.quoteId,
+        viewCount: 1,
+        firstViewedAt: now,
+        lastViewedAt: now,
+        totalViewTimeSeconds: addTime,
+        lastEventDetail: data.eventDetail,
+        deviceType: data.deviceType,
+        location: data.location,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await db.insert(documentEventLog).values({
+      documentEventId: inserted!.id,
+      documentId: data.documentId,
+      documentType: data.documentType,
+      leadId: data.leadId,
+      quoteId: data.quoteId,
+      eventDetail: data.eventDetail,
+      viewTimeSeconds: data.viewTimeSeconds ?? null,
+      deviceType: data.deviceType,
+    });
+    return inserted!;
+  }
+
+  async getDocumentEventsByLeadId(leadId: number): Promise<DocumentEvent[]> {
+    return db
+      .select()
+      .from(documentEvents)
+      .where(eq(documentEvents.leadId, leadId))
+      .orderBy(desc(documentEvents.lastViewedAt));
+  }
+
+  async getDocumentEventLogByLeadId(leadId: number): Promise<{ id: number; documentId: string; documentType: string; eventDetail: string; viewTimeSeconds: number | null; createdAt: Date }[]> {
+    const rows = await db
+      .select({
+        id: documentEventLog.id,
+        documentId: documentEventLog.documentId,
+        documentType: documentEventLog.documentType,
+        eventDetail: documentEventLog.eventDetail,
+        viewTimeSeconds: documentEventLog.viewTimeSeconds,
+        createdAt: documentEventLog.createdAt,
+      })
+      .from(documentEventLog)
+      .where(eq(documentEventLog.leadId, leadId))
+      .orderBy(desc(documentEventLog.createdAt));
+    return rows;
+  }
+
+  async createVisitorActivity(activity: InsertVisitorActivity): Promise<VisitorActivity> {
+    const [inserted] = await db.insert(visitorActivity).values(activity).returning();
+    return inserted;
+  }
+
+  async attachVisitorToLead(visitorId: string, leadId: number): Promise<void> {
+    await db
+      .update(visitorActivity)
+      .set({ leadId })
+      .where(eq(visitorActivity.visitorId, visitorId));
+  }
+
+  async getVisitorActivityByLeadId(leadId: number): Promise<VisitorActivity[]> {
+    return db
+      .select()
+      .from(visitorActivity)
+      .where(eq(visitorActivity.leadId, leadId))
+      .orderBy(desc(visitorActivity.createdAt));
+  }
+
+  async createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert> {
+    const [inserted] = await db.insert(crmAlerts).values(alert).returning();
+    return inserted;
+  }
+
+  async getCrmAlerts(leadId?: number, unreadOnly?: boolean): Promise<(CrmAlert & { lead?: CrmContact })[]> {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (leadId !== undefined) conditions.push(eq(crmAlerts.leadId, leadId));
+    if (unreadOnly) conditions.push(isNull(crmAlerts.readAt));
+    const alerts = conditions.length
+      ? await db.select().from(crmAlerts).where(and(...conditions)).orderBy(desc(crmAlerts.createdAt))
+      : await db.select().from(crmAlerts).orderBy(desc(crmAlerts.createdAt));
+    const contactIds = [...new Set(alerts.map((a) => a.leadId))];
+    const contacts = await Promise.all(contactIds.map((id) => this.getCrmContactById(id)));
+    const byId = Object.fromEntries(contactIds.map((id, i) => [id, contacts[i]]));
+    return alerts.map((a) => ({ ...a, lead: byId[a.leadId] }));
+  }
+
+  async markCrmAlertRead(id: number): Promise<void> {
+    await db.update(crmAlerts).set({ readAt: new Date() }).where(eq(crmAlerts.id, id));
+  }
+
+  async getCrmContactIdByQuoteId(quoteId: number): Promise<number | null> {
+    const [quote] = await db.select().from(clientQuotes).where(eq(clientQuotes.id, quoteId)).limit(1);
+    if (!quote?.assessmentId) return null;
+    const [assess] = await db
+      .select({ email: projectAssessments.email })
+      .from(projectAssessments)
+      .where(eq(projectAssessments.id, quote.assessmentId))
+      .limit(1);
+    if (!assess?.email) return null;
+    const contacts = await this.getCrmContactsByEmails([assess.email]);
+    return contacts[0]?.id ?? null;
+  }
+
+  async getCrmEngagementStats(): Promise<{
+    emailOpens: number;
+    emailClicks: number;
+    documentViews: number;
+    highIntentLeadsCount: number;
+    unreadAlertsCount: number;
+  }> {
+    const [opens] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(communicationEvents)
+      .where(eq(communicationEvents.eventType, "open"));
+    const [clicks] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(communicationEvents)
+      .where(eq(communicationEvents.eventType, "click"));
+    const [docViews] = await db
+      .select({ total: sql<number>`coalesce(sum(${documentEvents.viewCount}), 0)::int` })
+      .from(documentEvents);
+    const contacts = await this.getCrmContacts();
+    const highIntentLeadsCount = contacts.filter(
+      (c) => c.intentLevel === "high_intent" || c.intentLevel === "hot_lead"
+    ).length;
+    const alerts = await this.getCrmAlerts(undefined, true);
+    return {
+      emailOpens: opens?.count ?? 0,
+      emailClicks: clicks?.count ?? 0,
+      documentViews: docViews?.total ?? 0,
+      highIntentLeadsCount,
+      unreadAlertsCount: alerts.length,
+    };
+  }
+
+  async createCrmTask(task: InsertCrmTask): Promise<CrmTask> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmTasks).values({ ...task, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async updateCrmTask(id: number, updates: Partial<InsertCrmTask>): Promise<CrmTask> {
+    const [updated] = await db.update(crmTasks).set({ ...updates, updatedAt: new Date() }).where(eq(crmTasks.id, id)).returning();
+    if (!updated) throw new Error("Task not found");
+    return updated;
+  }
+
+  async deleteCrmTask(id: number): Promise<void> {
+    await db.delete(crmTasks).where(eq(crmTasks.id, id));
+  }
+
+  async getCrmTasksByContactId(contactId: number): Promise<CrmTask[]> {
+    return db.select().from(crmTasks).where(eq(crmTasks.contactId, contactId)).orderBy(desc(crmTasks.dueAt));
+  }
+
+  async getCrmTasks(filters: { contactId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]> {
+    const conditions = [];
+    if (filters.contactId != null) conditions.push(eq(crmTasks.contactId, filters.contactId));
+    if (filters.overdueOnly) conditions.push(and(isNull(crmTasks.completedAt), isNotNull(crmTasks.dueAt), lt(crmTasks.dueAt, new Date()))!);
+    if (filters.incompleteOnly) conditions.push(isNull(crmTasks.completedAt));
+    const rows = await db
+      .select()
+      .from(crmTasks)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(crmTasks.dueAt));
+    const contactIds = [...new Set(rows.map((r) => r.contactId))];
+    const contacts = await Promise.all(contactIds.map((id) => this.getCrmContactById(id)));
+    const byId = Object.fromEntries(contactIds.map((id, i) => [id, contacts[i]]));
+    return rows.map((r) => ({ ...r, contact: byId[r.contactId] }));
+  }
+
+  async createCrmSequence(seq: InsertCrmSequence): Promise<CrmSequence> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmSequences).values({ ...seq, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async getCrmSequences(): Promise<CrmSequence[]> {
+    return db.select().from(crmSequences).orderBy(desc(crmSequences.updatedAt));
+  }
+
+  async getCrmSequenceById(id: number): Promise<CrmSequence | undefined> {
+    const [row] = await db.select().from(crmSequences).where(eq(crmSequences.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async updateCrmSequence(id: number, updates: Partial<InsertCrmSequence>): Promise<CrmSequence> {
+    const [updated] = await db.update(crmSequences).set({ ...updates, updatedAt: new Date() }).where(eq(crmSequences.id, id)).returning();
+    if (!updated) throw new Error("Sequence not found");
+    return updated;
+  }
+
+  async createCrmSequenceEnrollment(enrollment: InsertCrmSequenceEnrollment): Promise<CrmSequenceEnrollment> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmSequenceEnrollments).values({ ...enrollment, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async getCrmSequenceEnrollments(contactId?: number, sequenceId?: number): Promise<(CrmSequenceEnrollment & { contact?: CrmContact; sequence?: CrmSequence })[]> {
+    const conditions = [];
+    if (contactId != null) conditions.push(eq(crmSequenceEnrollments.contactId, contactId));
+    if (sequenceId != null) conditions.push(eq(crmSequenceEnrollments.sequenceId, sequenceId));
+    const rows = await db
+      .select()
+      .from(crmSequenceEnrollments)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(crmSequenceEnrollments.enrolledAt));
+    const cIds = [...new Set(rows.map((r) => r.contactId))];
+    const sIds = [...new Set(rows.map((r) => r.sequenceId))];
+    const contacts = await Promise.all(cIds.map((id) => this.getCrmContactById(id)));
+    const sequences = await Promise.all(sIds.map((id) => this.getCrmSequenceById(id)));
+    const contactById = Object.fromEntries(cIds.map((id, i) => [id, contacts[i]]));
+    const sequenceById = Object.fromEntries(sIds.map((id, i) => [id, sequences[i]]));
+    return rows.map((r) => ({ ...r, contact: contactById[r.contactId], sequence: sequenceById[r.sequenceId] }));
+  }
+
+  async updateCrmSequenceEnrollment(id: number, updates: Partial<InsertCrmSequenceEnrollment>): Promise<CrmSequenceEnrollment> {
+    const [updated] = await db
+      .update(crmSequenceEnrollments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmSequenceEnrollments.id, id))
+      .returning();
+    if (!updated) throw new Error("Enrollment not found");
+    return updated;
+  }
+
+  async createCrmSavedList(list: InsertCrmSavedList): Promise<CrmSavedList> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmSavedLists).values({ ...list, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async getCrmSavedLists(): Promise<CrmSavedList[]> {
+    return db.select().from(crmSavedLists).orderBy(desc(crmSavedLists.updatedAt));
+  }
+
+  async getCrmSavedListById(id: number): Promise<CrmSavedList | undefined> {
+    const [row] = await db.select().from(crmSavedLists).where(eq(crmSavedLists.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async updateCrmSavedList(id: number, updates: Partial<InsertCrmSavedList>): Promise<CrmSavedList> {
+    const [updated] = await db.update(crmSavedLists).set({ ...updates, updatedAt: new Date() }).where(eq(crmSavedLists.id, id)).returning();
+    if (!updated) throw new Error("Saved list not found");
+    return updated;
+  }
+
+  async deleteCrmSavedList(id: number): Promise<void> {
+    await db.delete(crmSavedLists).where(eq(crmSavedLists.id, id));
+  }
+
+  async getCrmContactsBySavedListFilters(filters: NonNullable<CrmSavedList["filters"]>): Promise<CrmContact[]> {
+    let contacts = await this.getCrmContacts();
+    if (filters.type) contacts = contacts.filter((c) => c.type === filters.type);
+    if (filters.status) contacts = contacts.filter((c) => c.status === filters.status);
+    if (filters.intentLevel) contacts = contacts.filter((c) => c.intentLevel === filters.intentLevel);
+    if (filters.source) contacts = contacts.filter((c) => c.source === filters.source);
+    if (filters.noContactSinceDays != null) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - filters.noContactSinceDays);
+      contacts = contacts.filter((c) => {
+        const u = c.updatedAt instanceof Date ? c.updatedAt : new Date(c.updatedAt as string);
+        return u < cutoff;
+      });
+    }
+    if (filters.hasOpenTasks) {
+      const taskRows = await db.select({ contactId: crmTasks.contactId }).from(crmTasks).where(isNull(crmTasks.completedAt));
+      const withTasks = new Set(taskRows.map((t) => t.contactId));
+      contacts = contacts.filter((c) => withTasks.has(c.id));
+    }
+    return contacts;
   }
 }
 

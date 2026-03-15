@@ -13,16 +13,20 @@ import { Badge } from "@/components/ui/badge";
 interface AIAssistantProps {
   type: 'generate-ideas' | 'suggest-features' | 'clarify-requirements' | 'improve-description';
   context: string;
-  currentAnswers?: Record<string, any>;
+  currentAnswers?: Record<string, unknown>;
+  /** When provided, single suggestion (e.g. improved text) can be applied to the form */
+  onApplySuggestion?: (text: string) => void;
 }
 
-export function AIAssistant({ type, context, currentAnswers }: AIAssistantProps) {
+export function AIAssistant({ type, context, currentAnswers, onApplySuggestion }: AIAssistantProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [improvedText, setImprovedText] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const handleGenerate = async () => {
     setIsLoading(true);
+    setImprovedText(null);
     try {
       const response = await fetch("/api/assessment/ai-assist", {
         method: "POST",
@@ -34,7 +38,12 @@ export function AIAssistant({ type, context, currentAnswers }: AIAssistantProps)
         }),
       });
       const data = await response.json();
-      setSuggestions(data.suggestions || [data.improvedText] || []);
+      if (data.improvedText) {
+        setImprovedText(data.improvedText);
+        setSuggestions([data.improvedText]);
+      } else {
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+      }
       setIsOpen(true);
     } catch (error) {
       console.error("Error fetching AI assistance:", error);
@@ -86,13 +95,27 @@ export function AIAssistant({ type, context, currentAnswers }: AIAssistantProps)
           {suggestions.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {suggestions.map((suggestion, idx) => (
-                <li key={idx} className="p-2 bg-primary/5 rounded border border-primary/10">
-                  {suggestion}
+                <li key={idx} className="p-2 bg-primary/5 rounded border border-primary/10 flex items-start justify-between gap-2">
+                  <span className="flex-1 min-w-0">{suggestion}</span>
+                  {onApplySuggestion && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => {
+                        onApplySuggestion(suggestion);
+                        setIsOpen(false);
+                      }}
+                    >
+                      Use this
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-500">No suggestions available</p>
+            <p className="text-sm text-muted-foreground">No suggestions available. Try adding more context.</p>
           )}
         </div>
       </PopoverContent>

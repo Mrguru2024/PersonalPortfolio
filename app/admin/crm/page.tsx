@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -16,6 +16,11 @@ import {
   Edit,
   Phone,
   Target,
+  Bell,
+  BarChart3,
+  FileText,
+  Zap,
+  Lightbulb,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +61,8 @@ interface CrmContact {
   estimatedValue?: number | null;
   notes?: string | null;
   tags?: string[] | null;
+  leadScore?: number | null;
+  intentLevel?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +85,8 @@ const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiat
 export default function CrmPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listId = searchParams.get("listId");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [typeFilter, setTypeFilter] = useState<"lead" | "client" | "">("");
@@ -102,20 +111,43 @@ export default function CrmPage() {
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
 
-  const { data: contacts = [], isLoading: contactsLoading } = useQuery<CrmContact[]>({
+  const { data: contactsFromApi = [], isLoading: contactsLoading } = useQuery<CrmContact[]>({
     queryKey: ["/api/admin/crm/contacts", typeFilter || undefined],
     queryFn: async () => {
       const url = typeFilter ? `/api/admin/crm/contacts?type=${typeFilter}` : "/api/admin/crm/contacts";
       const res = await apiRequest("GET", url);
       return res.json();
     },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
+    enabled: !!user?.isAdmin && !!user?.adminApproved && !listId,
   });
+
+  const { data: savedListData, isLoading: savedListLoading } = useQuery<{ contacts: CrmContact[]; name: string }>({
+    queryKey: ["/api/admin/crm/saved-lists", listId],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/crm/saved-lists/${listId}`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && !!listId,
+  });
+
+  const contacts = listId ? (savedListData?.contacts ?? []) : contactsFromApi;
+  const contactsLoadingState = listId ? savedListLoading : contactsLoading;
 
   const { data: deals = [], isLoading: dealsLoading } = useQuery<CrmDeal[]>({
     queryKey: ["/api/admin/crm/deals"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/crm/deals");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const { data: engagement } = useQuery<EngagementStats>({
+    queryKey: ["/api/admin/crm/analytics/engagement"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/analytics/engagement");
+      if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
@@ -241,10 +273,105 @@ export default function CrmPage() {
         </Button>
         <h1 className="text-3xl font-bold mt-2">CRM</h1>
         <p className="text-muted-foreground">Leads, clients, and deals</p>
-        <Button variant="link" className="px-0 mt-2" asChild>
-          <Link href="/admin/crm/personas">Personas &amp; Insights →</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2 mt-2">
+          <Button variant="link" className="px-0" asChild>
+            <Link href="/admin/crm/personas">Personas &amp; Insights</Link>
+          </Button>
+          <Button variant="link" className="px-0" asChild>
+            <Link href="/admin/crm/tasks">Tasks</Link>
+          </Button>
+          <Button variant="link" className="px-0" asChild>
+            <Link href="/admin/crm/sequences">Sequences</Link>
+          </Button>
+          <Button variant="link" className="px-0" asChild>
+            <Link href="/admin/crm/saved-lists">Saved lists</Link>
+          </Button>
+        </div>
       </div>
+
+      {engagement && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Email opens</CardTitle>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{engagement.emailOpens}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Email clicks</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{engagement.emailClicks}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Proposal views</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{engagement.documentViews}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">High intent leads</CardTitle>
+              <Zap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{engagement.highIntentLeadsCount}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {engagement?.recentUnreadAlerts && engagement.recentUnreadAlerts.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Bell className="h-4 w-4" /> Recent activity</CardTitle>
+            <CardDescription>Proposal opens, site revisits, and engagement alerts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {engagement.recentUnreadAlerts.slice(0, 5).map((a) => (
+                <li key={a.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
+                  <span>{a.title}</span>
+                  <Link href={`/admin/crm/${a.leadId}`} className="text-primary hover:underline">
+                    {a.lead?.name ?? `Lead #${a.leadId}`}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {engagement?.insights && engagement.insights.length > 0 && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><Lightbulb className="h-4 w-4" /> Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {engagement.insights.map((s, i) => (
+                <li key={i}>• {s}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {listId && savedListData?.name && (
+        <div className="mb-4 rounded-lg border bg-muted/30 px-4 py-2 flex items-center justify-between">
+          <span className="text-sm">Viewing saved list: <strong>{savedListData.name}</strong></span>
+          <Button variant="ghost" size="sm" asChild><Link href="/admin/crm">Show all contacts</Link></Button>
+        </div>
+      )}
 
       <Tabs defaultValue="contacts">
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -270,7 +397,7 @@ export default function CrmPage() {
             </Button>
           </div>
 
-          {contactsLoading ? (
+          {contactsLoadingState ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
@@ -288,9 +415,14 @@ export default function CrmPage() {
                     <div className="flex flex-wrap items-center gap-4">
                       <div>
                         <div className="font-medium flex items-center gap-2">
-                          {c.name}
+                          <Link href={`/admin/crm/${c.id}`} className="hover:underline">
+                            {c.name}
+                          </Link>
                           <Badge variant={c.type === "client" ? "default" : "secondary"}>{c.type}</Badge>
                           {c.status && <Badge variant="outline">{c.status}</Badge>}
+                          {c.intentLevel && (
+                            <Badge variant="secondary">{c.intentLevel.replace(/_/g, " ")}</Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
                           <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {c.email}</span>
@@ -306,6 +438,9 @@ export default function CrmPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/crm/${c.id}`}>View</Link>
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
                         <Edit className="h-4 w-4" />
                       </Button>

@@ -11,6 +11,9 @@ import {
   Mail,
   ArrowLeft,
   UserPlus,
+  Sparkles,
+  ThumbsUp,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +53,13 @@ function AssessmentResultsContent() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [requiresAccount, setRequiresAccount] = useState(false);
   const lastFetchedIdRef = useRef<string | null>(null);
+  const [gradeResult, setGradeResult] = useState<{
+    score: number;
+    summary: string;
+    strengths: string[];
+    improvements: string[];
+  } | null>(null);
+  const [gradeLoading, setGradeLoading] = useState(false);
 
   useEffect(() => {
     if (!assessmentId) {
@@ -259,7 +269,7 @@ function AssessmentResultsContent() {
                     Set up your account to view all your quotes, track project progress, receive announcements, and manage invoices in one place.
                   </p>
                   <Button
-                    onClick={() => router.push("/auth?redirect=/dashboard")}
+                    onClick={() => router.push("/login?redirect=/dashboard")}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -270,6 +280,91 @@ function AssessmentResultsContent() {
             </div>
           )}
         </motion.div>
+
+        {/* AI Assessment Feedback */}
+        <Card className="mb-6 border-primary/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Assessment readiness feedback
+            </CardTitle>
+            <CardDescription>
+              Get AI-generated feedback on clarity and completeness of your assessment (accurate, based only on your answers).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!gradeResult ? (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setGradeLoading(true);
+                  try {
+                    const res = await fetch("/api/assessment/grade", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ assessmentData }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.score != null) setGradeResult(data);
+                  } catch {
+                    // ignore
+                  } finally {
+                    setGradeLoading(false);
+                  }
+                }}
+                disabled={gradeLoading}
+              >
+                {gradeLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Get AI feedback
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-center p-4 rounded-lg border bg-muted/50 min-w-[80px]">
+                    <p className="text-2xl font-bold text-primary">{gradeResult.score}</p>
+                    <p className="text-xs text-muted-foreground">/ 100</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground flex-1">{gradeResult.summary}</p>
+                </div>
+                {gradeResult.strengths.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                      <ThumbsUp className="h-4 w-4 text-green-600" />
+                      Strengths
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                      {gradeResult.strengths.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {gradeResult.improvements.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                      <Lightbulb className="h-4 w-4 text-amber-600" />
+                      Suggestions
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                      {gradeResult.improvements.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Pricing Summary Card */}
         <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5">

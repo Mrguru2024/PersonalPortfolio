@@ -18,7 +18,7 @@ async function hashPassword(password: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, email, password } = await req.json();
+    const { username, email, password, requestAdmin } = await req.json();
 
     if (!username || !email || !password) {
       return NextResponse.json(
@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if username already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
       return NextResponse.json(
@@ -36,13 +35,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create new user (adminApproved is always false by default)
+    // requestAdmin: founder requests backend access; must be approved by developer
+    const wantsAdmin = !!requestAdmin;
     const user = await storage.createUser({
       username,
       email,
       password: await hashPassword(password),
-      isAdmin: false,
+      isAdmin: wantsAdmin,
       adminApproved: false,
+      role: wantsAdmin ? "admin" : "user",
     });
 
     // Create session

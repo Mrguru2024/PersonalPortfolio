@@ -121,6 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
       });
+      if (user?.isAdmin && !user?.adminApproved) {
+        toast({
+          title: "Admin access pending",
+          description: "Your founder admin request is awaiting approval. You’ll get access once approved.",
+          variant: "default",
+        });
+      }
       // Handle redirect if present in URL
       if (typeof window !== "undefined") {
         const searchParams = new URLSearchParams(window.location.search);

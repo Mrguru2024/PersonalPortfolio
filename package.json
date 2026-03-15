@@ -23,6 +23,8 @@
     "db:add-newsletter-tables": "tsx scripts/add-newsletter-tables.ts",
     "db:add-password-reset": "tsx scripts/add-password-reset-columns.ts",
     "db:add-admin-approved": "tsx scripts/add-admin-approved-column.ts",
+    "db:add-permissions": "tsx scripts/add-user-permissions-column.ts",
+    "db:add-funnel-content": "tsx scripts/add-funnel-content-table.ts",
     "db:add-customer-dashboard": "tsx scripts/add-customer-dashboard-tables.ts",
     "db:add-invoice-stripe": "tsx scripts/add-invoice-stripe-columns.ts",
     "approve-admin": "tsx scripts/approve-admin.ts",

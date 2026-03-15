@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Loader2, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,35 @@ export default function ProposalViewByTokenPage() {
     },
     enabled: !!token,
   });
+
+  const trackedView = useRef(false);
+  const viewStart = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!token || !data) return;
+    if (!trackedView.current) {
+      trackedView.current = true;
+      viewStart.current = Date.now();
+      fetch("/api/track/document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewToken: token, eventDetail: "viewed" }),
+      }).catch(() => {});
+    }
+  }, [token, data]);
+
+  useEffect(() => {
+    if (!token || !data) return;
+    const t = setTimeout(() => {
+      const elapsed = viewStart.current != null ? Math.round((Date.now() - viewStart.current) / 1000) : 30;
+      fetch("/api/track/document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewToken: token, eventDetail: "heartbeat", viewTimeSeconds: elapsed }),
+      }).catch(() => {});
+    }, 30000);
+    return () => clearTimeout(t);
+  }, [token, data]);
 
   if (!token) {
     return (
@@ -152,7 +182,7 @@ export default function ProposalViewByTokenPage() {
                 <p className="text-sm font-medium mb-3">Sign in to accept or decline this proposal.</p>
                 <div className="flex flex-wrap gap-2">
                   <Button asChild>
-                    <Link href={`/auth?redirect=${encodeURIComponent(`/dashboard/proposals/${data.quoteId}`)}`}>
+                    <Link href={`/login?redirect=${encodeURIComponent(`/dashboard/proposals/${data.quoteId}`)}`}>
                       Sign in to respond
                     </Link>
                   </Button>

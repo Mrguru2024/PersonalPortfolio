@@ -33,7 +33,7 @@ export default function ClientProposalDetailPage() {
   const id = params?.id ? String(params.id) : null;
 
   useEffect(() => {
-    if (!authLoading && !user) router.push("/auth");
+    if (!authLoading && !user) router.push("/login");
   }, [user, authLoading, router]);
 
   const { data: quote, isLoading, error } = useQuery<QuoteResponse>({

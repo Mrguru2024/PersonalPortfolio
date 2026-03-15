@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AIAssistant } from "@/app/components/assessment/AIAssistant";
 import type { ProjectAssessment } from "@shared/assessmentSchema";
 
 const PROJECT_TYPES = [
@@ -245,7 +246,22 @@ export function ProjectAssessmentWizard({
                 </select>
               </div>
               <div className="grid gap-2">
-                <Label>Project description * (min 50 characters)</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Project description * (min 50 characters)</Label>
+                  <div className="flex gap-1">
+                    <AIAssistant
+                      type="generate-ideas"
+                      context={form.projectDescription || form.projectName}
+                      currentAnswers={{ projectType: form.projectType }}
+                    />
+                    <AIAssistant
+                      type="improve-description"
+                      context={form.projectDescription}
+                      currentAnswers={{ projectType: form.projectType }}
+                      onApplySuggestion={(text) => setForm((f) => ({ ...f, projectDescription: text }))}
+                    />
+                  </div>
+                </div>
                 <Textarea
                   value={form.projectDescription}
                   onChange={(e) =>
@@ -386,9 +402,17 @@ export function ProjectAssessmentWizard({
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label>Must-have features * (select at least one)</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Must-have features * (select at least one)</Label>
+                  <AIAssistant
+                    type="suggest-features"
+                    context={form.projectDescription || form.projectType}
+                    currentAnswers={{ projectType: form.projectType, mustHaveFeatures: form.mustHaveFeatures }}
+                    onApplySuggestion={(text) => setForm((f) => ({ ...f, mustHaveFeatures: [...f.mustHaveFeatures, text] }))}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {FEATURES.map((f) => (
+                  {[...FEATURES, ...form.mustHaveFeatures.filter((f) => !FEATURES.includes(f))].map((f) => (
                     <Button
                       key={f}
                       type="button"

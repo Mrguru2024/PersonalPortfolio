@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   adminApproved: boolean("admin_approved").default(false), // Must be manually approved by admin
   role: text("role").default("user").notNull(),
+  permissions: json("permissions").$type<Record<string, boolean> | null>(),
   full_name: text("full_name"),
   // GitHub OAuth related fields
   githubId: text("github_id"),
@@ -29,6 +30,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   isAdmin: true,
   adminApproved: true,
   role: true,
+  permissions: true,
   full_name: true,
   githubId: true,
   githubUsername: true,
@@ -46,6 +48,16 @@ export const session = pgTable("session", {
   sess: json("sess").notNull(),
   expire: timestamp("expire", { withTimezone: true, precision: 6 }).notNull(),
 });
+
+// Funnel content (admin-editable copy for startup funnel pages)
+export const funnelContent = pgTable("funnel_content", {
+  slug: text("slug").primaryKey(),
+  data: json("data").$type<Record<string, unknown>>().notNull(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export type FunnelContent = typeof funnelContent.$inferSelect;
+export type InsertFunnelContent = typeof funnelContent.$inferInsert;
 
 // Portfolio schemas
 export const projects = pgTable("projects", {

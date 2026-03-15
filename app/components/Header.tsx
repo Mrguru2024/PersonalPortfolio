@@ -19,6 +19,8 @@ import {
   BarChart3,
   Users,
   Contact,
+  Filter,
+  UserCog,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -28,10 +30,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
@@ -133,23 +133,33 @@ export default function Header(_props: HeaderProps) {
   const getLinkHref = (item: (typeof primaryNav)[0]) => ("scrollOnHome" in item && item.scrollOnHome ? item.scrollOnHome : item.href);
 
   const adminPages = [
-    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "CRM", href: "/admin/crm", icon: Contact },
-    { name: "Blog", href: "/admin/blog", icon: FileText },
-    { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3 },
-    { name: "Invoices", href: "/admin/invoices", icon: Receipt },
-    { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
-    { name: "Feedback", href: "/admin/feedback", icon: MessageSquare },
-    { name: "Newsletters", href: "/admin/newsletters", icon: Mail },
-    {
-      name: "Newsletter Subscribers",
-      href: "/admin/newsletters/subscribers",
-      icon: Users,
-    },
+    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
+    { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
+    { name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
+    { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
+    { name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
+    { name: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
+    { name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
+    { name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
+    { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
+    { name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
+    { name: "User management", href: "/admin/users", icon: UserCog, developerOnly: true },
   ];
 
   const isApprovedAdmin =
     user?.isAdmin === true && user?.adminApproved === true;
+
+  const isSuperUser = user?.role === "developer" || user?.username === "5epmgllc";
+  const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
+
+  const visibleAdminPages = adminPages.filter((page) => {
+    if ("developerOnly" in page && page.developerOnly)
+      return isSuperUser;
+    if (!isApprovedAdmin) return false;
+    if (isSuperUser) return true;
+    const perm = "permission" in page ? page.permission : undefined;
+    return perm ? permissions[perm] === true : true;
+  });
 
   // Lock body scroll when mobile menu is open so background doesn't scroll
   useEffect(() => {
@@ -306,37 +316,42 @@ export default function Header(_props: HeaderProps) {
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[200px]">
-                  <DropdownMenuItem className="cursor-default">
-                    <span className="text-sm font-medium">
-                      @{user.username}
-                    </span>
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="min-w-[220px] max-h-[85vh] overflow-y-auto">
+                  <DropdownMenuLabel className="font-normal">
+                    @{user.username}
+                  </DropdownMenuLabel>
+                  {!isApprovedAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
+                          <LayoutDashboard className="h-4 w-4 shrink-0" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {isApprovedAdmin && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="cursor-pointer">
-                          <LayoutDashboard className="h-4 w-4 shrink-0" />
-                          <span>Admin</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="min-w-[200px]">
-                          {adminPages.map((page) => {
-                            const Icon = page.icon;
-                            return (
-                              <DropdownMenuItem key={page.href} asChild>
-                                <Link
-                                  href={page.href}
-                                  className="cursor-pointer flex items-center gap-2"
-                                >
-                                  <Icon className="h-4 w-4 shrink-0" />
-                                  <span>{page.name}</span>
-                                </Link>
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
+                      <DropdownMenuLabel className="text-muted-foreground text-xs font-medium py-1">
+                        Admin
+                      </DropdownMenuLabel>
+                      {visibleAdminPages.map((page) => {
+                        const Icon = page.icon;
+                        return (
+                          <DropdownMenuItem key={page.href} asChild>
+                            <Link
+                              href={page.href}
+                              className="cursor-pointer flex items-center gap-2 py-2"
+                            >
+                              <Icon className="h-4 w-4 shrink-0" />
+                              <span>{page.name}</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
                       <DropdownMenuSeparator />
                     </>
                   )}
@@ -351,7 +366,7 @@ export default function Header(_props: HeaderProps) {
               </DropdownMenu>
             ) : (
               <Link
-                href="/auth"
+                href="/login"
                 className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 min-h-[44px] sm:min-h-[36px] px-3 shrink-0 whitespace-nowrap"
               >
                 <LogIn className="h-4 w-4 shrink-0" />
@@ -526,13 +541,23 @@ export default function Header(_props: HeaderProps) {
                       <div className="px-4 py-2 text-sm font-medium text-foreground/80">
                         Logged in as @{user.username}
                       </div>
+                      {!isApprovedAdmin && (
+                        <Link
+                          href="/dashboard"
+                          className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          onClick={closeMobileMenu}
+                        >
+                          <LayoutDashboard className="h-4 w-4 shrink-0" />
+                          <span>Dashboard</span>
+                        </Link>
+                      )}
                       {isApprovedAdmin && (
                         <div className="space-y-0.5">
                           <div className="px-4 py-1 text-xs font-medium text-muted-foreground">
                             Admin
                           </div>
                           <ul className="flex flex-col gap-0.5">
-                            {adminPages.map((page) => {
+                            {visibleAdminPages.map((page) => {
                               const Icon = page.icon;
                               return (
                                 <li key={page.href}>
@@ -563,11 +588,11 @@ export default function Header(_props: HeaderProps) {
                     </div>
                   ) : (
                     <Link
-                      href="/auth"
+                      href="/login"
                       className="flex items-center text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       onClick={closeMobileMenu}
                     >
-                      <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login / Register
+                      <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login
                     </Link>
                   )}
                 </div>
