@@ -14,6 +14,7 @@ import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Layout, Zap, Cpu } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 import { projects } from "@/lib/data";
+import { EcosystemProjectsSection } from "@/components/ecosystem/EcosystemProjectsSection";
 
 const ASCENDRA_LOGO = "/ascendra-logo.svg";
 
@@ -120,24 +121,12 @@ export default function AscendraTechnologiesPartnerPage() {
         </section>
 
         <section id="projects" className="scroll-mt-20 w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/20 dark:bg-muted/5">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-6xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
-              Our work
+              Our work — from the ecosystem
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
-              {projects.slice(0, 6).map((project) => (
-                <Link key={project.id} href={`/projects/${project.id}`} className="min-w-0">
-                  <Card className="border-border bg-card shadow-sm hover:border-primary/30 transition-all overflow-hidden h-full min-w-0">
-                    <CardContent className="p-4 sm:p-5 min-w-0">
-                      <p className="text-xs font-medium text-primary uppercase tracking-wide">{project.category}</p>
-                      <h3 className="font-semibold text-foreground mt-1 break-words">{project.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2 break-words">{project.description}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-            <div className="text-center mt-8">
+            <EcosystemProjectsSection ascendraProjects={projects.slice(0, 6)} />
+            <div className="text-center mt-10">
               <Button asChild variant="outline" size="sm" className="min-h-[44px]">
                 <Link href="/results">View all results</Link>
               </Button>
