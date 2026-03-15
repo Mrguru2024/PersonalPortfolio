@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AIAssistant } from "@/app/components/assessment/AIAssistant";
+import { AIAssistant } from "@/components/assessment/AIAssistant";
 import type { ProjectAssessment } from "@shared/assessmentSchema";
 
 const PROJECT_TYPES = [

@@ -130,7 +130,7 @@ export default function BlogAnalyticsPage() {
                 <div className="space-y-2">
                   {posts.map((post) => (
                     <button
-                      key={post.id}
+                      key={post.slug ?? post.id}
                       onClick={() => setSelectedPost(post.slug)}
                       className={`
                         w-full text-left p-3 rounded-lg border transition-all

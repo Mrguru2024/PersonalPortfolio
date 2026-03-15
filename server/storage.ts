@@ -395,7 +395,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(insertUser as typeof users.$inferInsert)
       .returning();
     return user;
   }
@@ -403,7 +403,7 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, updates: Partial<InsertUser> & { resetToken?: string | null; resetTokenExpiry?: Date | null }): Promise<User> {
     const [updated] = await db
       .update(users)
-      .set(updates)
+      .set(updates as Partial<User> & { resetToken?: string | null; resetTokenExpiry?: Date | null })
       .where(eq(users.id, id))
       .returning();
     return updated;

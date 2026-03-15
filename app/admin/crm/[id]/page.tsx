@@ -47,6 +47,7 @@ interface CrmContact {
   notes?: string | null;
   leadScore?: number | null;
   intentLevel?: string | null;
+  linkedinUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +77,20 @@ interface CommunicationEvent {
   eventType: string;
   emailId?: string | null;
   createdAt: string;
+}
+
+interface CrmTask {
+  id: number;
+  contactId: number;
+  type: string;
+  title: string;
+  description?: string | null;
+  priority?: string | null;
+  dueAt?: string | null;
+  completedAt?: string | null;
+  completedNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function CrmLeadProfilePage() {
@@ -267,13 +282,13 @@ export default function CrmLeadProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(contact.source || contact.industry || contact.jobTitle || (contact as { linkedinUrl?: string }).linkedinUrl) && (
+            {(contact.source || contact.industry || contact.jobTitle || contact.linkedinUrl) && (
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
                 {contact.source && <span>Source: {contact.source}</span>}
                 {contact.industry && <span>Industry: {contact.industry}</span>}
                 {contact.jobTitle && <span>Role: {contact.jobTitle}</span>}
-                {(contact as { linkedinUrl?: string }).linkedinUrl && (
-                  <a href={(contact as { linkedinUrl: string }).linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                {contact.linkedinUrl && (
+                  <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                     <Linkedin className="h-3 w-3" /> LinkedIn
                   </a>
                 )}

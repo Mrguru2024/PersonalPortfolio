@@ -79,6 +79,16 @@ interface CrmDeal {
   contact?: CrmContact;
 }
 
+interface EngagementStats {
+  emailOpens: number;
+  emailClicks: number;
+  documentViews: number;
+  highIntentLeadsCount: number;
+  unreadAlertsCount: number;
+  recentUnreadAlerts?: { id: number; title: string; leadId: number; lead?: { name: string } }[];
+  insights?: string[];
+}
+
 const DEAL_STAGES = ["qualification", "proposal", "negotiation", "won", "lost"];
 const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 

@@ -163,7 +163,7 @@ export default function AdminFunnelEditPage() {
       if (!res.ok) throw new Error("Failed to load");
       return res.json() as Promise<{ data: Record<string, unknown> | null }>;
     },
-    enabled: !!user && !!slug && isValidSlug,
+    enabled: Boolean(user && slug && isValidSlug),
   });
 
   useEffect(() => {

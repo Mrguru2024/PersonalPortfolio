@@ -836,18 +836,19 @@ const AdminBlog = () => {
                 />
               </TabsContent>
             </Tabs>
-            
-            <Card>
-              <CardFooter className="flex justify-end space-x-4 pt-6">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+
+            {/* Sticky action bar: always visible at bottom when scrolling */}
+            <div className="sticky bottom-0 left-0 right-0 z-10 mt-8 -mx-4 px-4 py-4 bg-background/95 dark:bg-background/95 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <div className="max-w-6xl mx-auto flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => router.push("/blog")}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={mutation.isPending}
                   className="min-w-[100px]"
                 >
@@ -858,8 +859,8 @@ const AdminBlog = () => {
                     </>
                   ) : "Save Post"}
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           </form>
         </Form>
       </div>

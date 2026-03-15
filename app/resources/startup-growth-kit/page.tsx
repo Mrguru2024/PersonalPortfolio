@@ -17,7 +17,7 @@ import {
   REVENUE_CALCULATOR_PATH,
   STARTUP_ACTION_PLAN_PATH,
 } from "@/lib/funnelCtas";
-import { getFunnelContent } from "@/lib/funnelContent";
+import { getFunnelContent } from "@/lib/funnelContent.server";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -50,13 +50,13 @@ const FOUR_LAYERS = [
 
 export default async function StartupGrowthKitPage() {
   const stored = await getFunnelContent("growth-kit");
-  const heroTitle =
+  const heroTitle: string =
     (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroTitle === "string")
-      ? (stored as Record<string, unknown>).heroTitle
+      ? (stored as Record<string, unknown>).heroTitle as string
       : "Where to begin when building a business online";
-  const heroSubtitle =
+  const heroSubtitle: string =
     (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroSubtitle === "string")
-      ? (stored as Record<string, unknown>).heroSubtitle
+      ? (stored as Record<string, unknown>).heroSubtitle as string
       : "A practical guide for new business owners with little or no budget. Learn why most startup websites fail, what to build first, and how to grow without a full agency.";
 
   return (
