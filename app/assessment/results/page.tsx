@@ -47,6 +47,7 @@ function AssessmentResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { track } = useVisitorTracking();
   const assessmentId = searchParams.get("id");
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);

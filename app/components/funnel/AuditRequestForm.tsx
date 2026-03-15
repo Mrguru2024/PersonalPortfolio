@@ -69,10 +69,6 @@ export function AuditRequestForm() {
     }
   };
 
-  useEffect(() => {
-    track("page_view", { pageVisited: "/digital-growth-audit" });
-  }, [track]);
-
   const form = useForm<AuditRequestValues>({
     resolver: zodResolver(auditRequestSchema),
     defaultValues: {

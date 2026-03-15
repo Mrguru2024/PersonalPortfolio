@@ -392,7 +392,7 @@ export default function AdminAnalyticsPage() {
                     )}
                   </CardContent>
                 </Card>
-              </Card>
+              </div>
               {data.traffic.byReferrer.length > 0 && (
                 <Card>
                   <CardHeader>

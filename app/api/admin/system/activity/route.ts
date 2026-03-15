@@ -33,11 +33,11 @@ export async function GET(req: NextRequest) {
       createdAt: typeof c.createdAt === "string" ? c.createdAt : (c.createdAt as Date)?.toISOString?.() ?? String(c.createdAt),
     });
 
-    const formatAssessment = (a: { id: number; name: string; email: string; status: string; createdAt: unknown }) => ({
+    const formatAssessment = (a: { id: number; name: string; email: string; status?: string | null; createdAt: unknown }) => ({
       id: a.id,
       name: a.name,
       email: a.email,
-      status: a.status,
+      status: a.status ?? "",
       createdAt: (a.createdAt as Date)?.toISOString?.() ?? String(a.createdAt),
     });
 

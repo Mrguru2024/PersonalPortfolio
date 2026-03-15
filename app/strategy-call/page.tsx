@@ -80,6 +80,11 @@ const TIMELINE_OPTIONS = [
 
 export default function StrategyCallPage() {
   const router = useRouter();
+  const { track } = useVisitorTracking();
+
+  useEffect(() => {
+    track("page_view", { pageVisited: "/strategy-call" });
+  }, [track]);
 
   const form = useForm<StrategyCallFormData>({
     resolver: zodResolver(strategyCallSchema),
