@@ -778,6 +778,68 @@ This endorsement was submitted from your portfolio website.
       return false;
     }
   }
+
+  /** Notify a user that their admin access has been approved and they can log in. */
+  async sendAdminApprovalNotification(data: { to: string; username: string }): Promise<boolean> {
+    if (!this.isConfigured) {
+      console.warn('Email service not configured. Skipping admin approval notification.');
+      return false;
+    }
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const loginUrl =
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Your admin access has been approved – Ascendra Technologies';
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>Admin access approved</h2>
+            </div>
+            <div class="content">
+              <p>Hi ${data.username},</p>
+              <p>Your request for founder admin access has been approved. You can now sign in to the admin dashboard.</p>
+              <p><a href="${loginUrl}/auth" class="button">Sign in</a></p>
+              <p>Or open this link in your browser: <span style="word-break: break-all; color: #667eea;">${loginUrl}/auth</span></p>
+              <p>Use the same username and password you used when you registered.</p>
+              <div class="footer">
+                <p>This is an automated message. If you did not request admin access, please contact support.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      sendSmtpEmail.textContent = `Hi ${data.username},\n\nYour request for founder admin access has been approved. You can now sign in to the admin dashboard.\n\nSign in: ${loginUrl}/auth\n\nUse the same username and password you used when you registered.\n\nThis is an automated message. If you did not request admin access, please contact support.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Admin approval notification sent to ${data.to}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending admin approval email:', error?.message ?? error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

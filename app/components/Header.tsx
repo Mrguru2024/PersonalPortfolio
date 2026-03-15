@@ -21,10 +21,13 @@ import {
   Contact,
   Filter,
   UserCog,
+  Activity,
+  TrendingUp,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
+import { isSuperAdminUser } from "@/lib/super-admin";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -137,6 +140,7 @@ export default function Header(_props: HeaderProps) {
     { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
     { name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
+    { name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
     { name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
@@ -144,12 +148,13 @@ export default function Header(_props: HeaderProps) {
     { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
     { name: "User management", href: "/admin/users", icon: UserCog, developerOnly: true },
+    { name: "System monitor", href: "/admin/system", icon: Activity, developerOnly: true },
   ];
 
   const isApprovedAdmin =
     user?.isAdmin === true && user?.adminApproved === true;
 
-  const isSuperUser = user?.role === "developer" || user?.username === "5epmgllc";
+  const isSuperUser = isSuperAdminUser(user ?? null);
   const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
 
   const visibleAdminPages = adminPages.filter((page) => {

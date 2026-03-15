@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -58,6 +59,19 @@ type AuditRequestValues = z.infer<typeof auditRequestSchema>;
 
 export function AuditRequestForm() {
   const [submitted, setSubmitted] = useState(false);
+  const formStartedSent = useRef(false);
+  const { track } = useVisitorTracking();
+
+  const onFormInteraction = () => {
+    if (!formStartedSent.current) {
+      formStartedSent.current = true;
+      track("form_started", { pageVisited: "/digital-growth-audit", metadata: { form: "audit" } });
+    }
+  };
+
+  useEffect(() => {
+    track("page_view", { pageVisited: "/digital-growth-audit" });
+  }, [track]);
 
   const form = useForm<AuditRequestValues>({
     resolver: zodResolver(auditRequestSchema),
@@ -98,6 +112,7 @@ export function AuditRequestForm() {
       return res.json();
     },
     onSuccess: () => {
+      track("form_completed", { pageVisited: "/digital-growth-audit", metadata: { form: "audit" } });
       setSubmitted(true);
       toast({
         title: "Audit request received",
@@ -160,7 +175,7 @@ export function AuditRequestForm() {
                   <FormItem>
                     <FormLabel>Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Your full name" {...field} />
+                      <Input placeholder="Your full name" {...field} onFocus={onFormInteraction} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

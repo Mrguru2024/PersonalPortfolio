@@ -97,9 +97,12 @@ export default function CrmPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listId = searchParams.get("listId");
+  const typeFromUrl = searchParams.get("type") as "lead" | "client" | null;
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [typeFilter, setTypeFilter] = useState<"lead" | "client" | "">("");
+  const [typeFilter, setTypeFilter] = useState<"lead" | "client" | "">(
+    typeFromUrl === "lead" || typeFromUrl === "client" ? typeFromUrl : ""
+  );
   const [addOpen, setAddOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<CrmContact | null>(null);
   const [form, setForm] = useState({
@@ -120,6 +123,10 @@ export default function CrmPage() {
     if (!authLoading && !user) router.push("/auth");
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (typeFromUrl === "lead" || typeFromUrl === "client") setTypeFilter(typeFromUrl);
+  }, [typeFromUrl]);
 
   const { data: contactsFromApi = [], isLoading: contactsLoading } = useQuery<CrmContact[]>({
     queryKey: ["/api/admin/crm/contacts", typeFilter || undefined],

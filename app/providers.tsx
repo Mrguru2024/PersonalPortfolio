@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/lib/view-mode-context";
+import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <AuthProvider>
             {children}
             <Toaster />
+            <SuperAdminErrorReporter />
           </AuthProvider>
         </ViewModeProvider>
       </ThemeProvider>

@@ -8,6 +8,7 @@ import { AuditRequestForm } from "@/components/funnel/AuditRequestForm";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightForPage } from "@/lib/partnerFounders";
+import { TrackPageView } from "@/components/TrackPageView";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Find out why your website isn't generating customers",
@@ -47,6 +48,7 @@ export default function DigitalGrowthAuditPage() {
         description="Get a Digital Growth Audit reviewing your brand, design, and website performance. One coordinated ecosystem—Style Studio, Macon Designs, Ascendra."
         canonicalPath="/digital-growth-audit"
       />
+      <TrackPageView path="/digital-growth-audit" />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">

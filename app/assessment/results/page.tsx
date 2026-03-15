@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { motion } from "framer-motion";
 import { 
   CheckCircle2, 
@@ -206,6 +207,10 @@ function AssessmentResultsContent() {
     return () => ac.abort();
   }, [assessmentId]);
 
+  useEffect(() => {
+    track("page_view", { pageVisited: "/assessment/results" });
+  }, [track]);
+
   if (!fetchDone) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -297,6 +302,7 @@ function AssessmentResultsContent() {
               <Button
                 variant="outline"
                 onClick={async () => {
+                  track("cta_click", { pageVisited: "/assessment/results", metadata: { cta: "get_ai_feedback" } });
                   setGradeLoading(true);
                   try {
                     const res = await fetch("/api/assessment/grade", {
@@ -305,7 +311,15 @@ function AssessmentResultsContent() {
                       body: JSON.stringify({ assessmentData }),
                     });
                     const data = await res.json();
-                    if (res.ok && data.score != null) setGradeResult(data);
+                    if (res.ok && data.score != null) {
+                      const score = Math.min(100, Math.max(0, Number(data.score)));
+                      setGradeResult({
+                        score,
+                        summary: typeof data.summary === "string" ? data.summary : "Assessment received. Review the breakdown and reach out to discuss.",
+                        strengths: Array.isArray(data.strengths) ? data.strengths : [],
+                        improvements: Array.isArray(data.improvements) ? data.improvements : [],
+                      });
+                    }
                   } catch {
                     // ignore
                   } finally {
@@ -390,7 +404,7 @@ function AssessmentResultsContent() {
               <div className="text-center p-4 bg-background rounded-lg border">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average Range</p>
                 <p className="text-3xl font-bold text-primary">
-                  ${pricingBreakdown?.estimatedRange?.min.toLocaleString()} - ${pricingBreakdown?.estimatedRange?.max.toLocaleString()}
+                  ${(pricingBreakdown?.estimatedRange?.min ?? 0).toLocaleString()} - ${(pricingBreakdown?.estimatedRange?.max ?? 0).toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">Industry reference only</p>
               </div>
@@ -404,7 +418,7 @@ function AssessmentResultsContent() {
               <div className="text-center p-4 bg-background rounded-lg border">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Market Average</p>
                 <p className="text-3xl font-bold">
-                  ${pricingBreakdown?.marketComparison?.average.toLocaleString()}
+                  ${(pricingBreakdown?.marketComparison?.average ?? 0).toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">Industry standard</p>
               </div>
@@ -434,7 +448,7 @@ function AssessmentResultsContent() {
                         {feature.category}
                       </Badge>
                     </div>
-                    <span className="font-semibold">+${feature.price.toLocaleString()}</span>
+                    <span className="font-semibold">+${(feature.price ?? 0).toLocaleString()}</span>
                   </div>
                 ))}
 
@@ -463,7 +477,7 @@ function AssessmentResultsContent() {
                 <div className="flex justify-between items-center p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <span className="text-lg font-bold">Market Average Total</span>
                   <span className="text-2xl font-bold text-primary">
-                    ${pricingBreakdown.estimatedRange.min.toLocaleString()} - ${pricingBreakdown.estimatedRange.max.toLocaleString()}
+                    ${(pricingBreakdown?.estimatedRange?.min ?? 0).toLocaleString()} - ${(pricingBreakdown?.estimatedRange?.max ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>

@@ -227,6 +227,21 @@ export interface IStorage {
     unreadAlertsCount: number;
   }>;
 
+  // Website analytics (traffic + lead magnets) for admin/super admin
+  getWebsiteTrafficAnalytics(since?: Date): Promise<{
+    totalEvents: number;
+    uniqueVisitors: number;
+    byPage: { page: string; count: number; unique: number }[];
+    byEventType: { eventType: string; count: number }[];
+    byDevice: { device: string; count: number }[];
+    byReferrer: { referrer: string; count: number }[];
+  }>;
+  getLeadMagnetPerformance(since?: Date): Promise<{
+    totalLeads: number;
+    bySource: { source: string; label: string; count: number }[];
+    recentCount: number;
+  }>;
+
   // Tasks (Apollo-style)
   createCrmTask(task: InsertCrmTask): Promise<CrmTask>;
   updateCrmTask(id: number, updates: Partial<InsertCrmTask>): Promise<CrmTask>;
@@ -1745,6 +1760,110 @@ export class DatabaseStorage implements IStorage {
       highIntentLeadsCount,
       unreadAlertsCount: alerts.length,
     };
+  }
+
+  async getWebsiteTrafficAnalytics(since?: Date): Promise<{
+    totalEvents: number;
+    uniqueVisitors: number;
+    byPage: { page: string; count: number; unique: number }[];
+    byEventType: { eventType: string; count: number }[];
+    byDevice: { device: string; count: number }[];
+    byReferrer: { referrer: string; count: number }[];
+  }> {
+    const conditions = since ? [gte(visitorActivity.createdAt, since)] : [];
+    const rows = await db
+      .select({
+        visitorId: visitorActivity.visitorId,
+        pageVisited: visitorActivity.pageVisited,
+        eventType: visitorActivity.eventType,
+        deviceType: visitorActivity.deviceType,
+        referrer: visitorActivity.referrer,
+      })
+      .from(visitorActivity)
+      .where(conditions.length ? and(...conditions) : sql`1=1`);
+
+    const totalEvents = rows.length;
+    const uniqueVisitors = new Set(rows.map((r) => r.visitorId)).size;
+
+    const pageMap = new Map<string, { count: number; visitors: Set<string> }>();
+    const eventMap = new Map<string, number>();
+    const deviceMap = new Map<string, number>();
+    const referrerMap = new Map<string, number>();
+
+    for (const r of rows) {
+      const page = r.pageVisited ?? "(unknown)";
+      if (!pageMap.has(page)) pageMap.set(page, { count: 0, visitors: new Set() });
+      const entry = pageMap.get(page)!;
+      entry.count += 1;
+      entry.visitors.add(r.visitorId);
+      eventMap.set(r.eventType, (eventMap.get(r.eventType) ?? 0) + 1);
+      const dev = r.deviceType ?? "(unknown)";
+      deviceMap.set(dev, (deviceMap.get(dev) ?? 0) + 1);
+      const ref = r.referrer?.trim() && r.referrer !== "" ? r.referrer : "(direct)";
+      referrerMap.set(ref, (referrerMap.get(ref) ?? 0) + 1);
+    }
+
+    const byPage = [...pageMap.entries()]
+      .map(([page, v]) => ({ page, count: v.count, unique: v.visitors.size }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 30);
+    const byEventType = [...eventMap.entries()].map(([eventType, count]) => ({ eventType, count })).sort((a, b) => b.count - a.count);
+    const byDevice = [...deviceMap.entries()].map(([device, count]) => ({ device, count })).sort((a, b) => b.count - a.count);
+    const byReferrer = [...referrerMap.entries()]
+      .map(([referrer, count]) => ({ referrer: referrer.length > 80 ? referrer.slice(0, 80) + "…" : referrer, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+
+    return { totalEvents, uniqueVisitors, byPage, byEventType, byDevice, byReferrer };
+  }
+
+  async getLeadMagnetPerformance(since?: Date): Promise<{
+    totalLeads: number;
+    bySource: { source: string; label: string; count: number }[];
+    recentCount: number;
+  }> {
+    const allContacts = await this.getAllContacts();
+    const sinceTime = since?.getTime();
+    const filter = (c: Contact) => {
+      if (!sinceTime) return true;
+      const created = typeof c.createdAt === "string" ? new Date(c.createdAt).getTime() : 0;
+      return created >= sinceTime;
+    };
+    const filtered = allContacts.filter(filter);
+    const totalLeads = filtered.length;
+    const last30 = new Date();
+    last30.setDate(last30.getDate() - 30);
+    const recentCount = filtered.filter((c) => {
+      const created = typeof c.createdAt === "string" ? new Date(c.createdAt).getTime() : 0;
+      return created >= last30.getTime();
+    }).length;
+
+    const bucket = (subject: string | null, projectType: string | null): string => {
+      const s = (subject ?? "").toLowerCase();
+      const p = (projectType ?? "").toLowerCase();
+      if (s.includes("audit") || s.includes("digital growth")) return "audit";
+      if (p.includes("strategy call") || s.includes("strategy call")) return "strategy_call";
+      if (s.includes("competitor") || s.includes("snapshot")) return "competitor_snapshot";
+      if (s.includes("quote") || p.includes("quote")) return "quote";
+      return "contact";
+    };
+    const label: Record<string, string> = {
+      audit: "Digital Growth Audit",
+      strategy_call: "Strategy Call",
+      competitor_snapshot: "Competitor Snapshot",
+      quote: "Quote / Project",
+      contact: "Contact / Other",
+    };
+    const sourceCount = new Map<string, number>();
+    for (const c of filtered) {
+      const key = bucket(c.subject, c.projectType);
+      sourceCount.set(key, (sourceCount.get(key) ?? 0) + 1);
+    }
+    const bySource = [...sourceCount.entries()]
+      .map(([source, count]) => ({ source, label: label[source] ?? source, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return { totalLeads, bySource, recentCount };
   }
 
   async createCrmTask(task: InsertCrmTask): Promise<CrmTask> {

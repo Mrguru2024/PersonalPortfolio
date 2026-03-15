@@ -84,18 +84,6 @@ export default function NewsletterViewPage() {
     },
   });
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
-
-  if (!user || !user.isAdmin || !user.adminApproved || !newsletter) {
-    return null;
-  }
-
   const [recipientMode, setRecipientMode] = useState<"subscribers" | "list">("subscribers");
   const [recipientList, setRecipientList] = useState<string>("");
   const [crmModalOpen, setCrmModalOpen] = useState(false);
@@ -130,6 +118,18 @@ export default function NewsletterViewPage() {
     },
     onError: (e: Error) => toast({ title: "Failed to save recipients", description: e.message, variant: "destructive" }),
   });
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  if (!user || !user.isAdmin || !user.adminApproved || !newsletter) {
+    return null;
+  }
 
   const saveRecipients = () => {
     if (recipientMode === "subscribers") {

@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "assessmentData required" }, { status: 400 });
     }
     const result = await aiAssistanceService.gradeAssessment(assessmentData);
-    return NextResponse.json(result);
+    const score = Math.min(100, Math.max(0, Number(result.score) ?? 50));
+    const summary = typeof result.summary === "string" ? result.summary.slice(0, 500) : "Assessment received. Review the breakdown and reach out to discuss.";
+    const strengths = Array.isArray(result.strengths) ? result.strengths.slice(0, 4).map(String) : [];
+    const improvements = Array.isArray(result.improvements) ? result.improvements.slice(0, 4).map(String) : [];
+    return NextResponse.json({ score, summary, strengths, improvements });
   } catch (error: any) {
     console.error("Assessment grade error:", error);
     return NextResponse.json(

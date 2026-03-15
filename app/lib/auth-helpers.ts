@@ -324,11 +324,16 @@ export async function isDeveloper(req?: NextRequest): Promise<boolean> {
   return user !== null && user.role === "developer";
 }
 
-// Super user: developer role or explicit username (e.g. 5epmgllc)
+// Super user: developer role, explicit username, or super admin email (see super-admin.ts)
+import { SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
 export async function isSuperUser(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-  return user.role === "developer" || user.username === "5epmgllc";
+  return (
+    user.role === "developer" ||
+    user.username === "5epmgllc" ||
+    (user.email && String(user.email).toLowerCase() === SUPER_ADMIN_EMAIL)
+  );
 }
 
 // Check if user has a specific privilege (super user has all)
@@ -338,7 +343,7 @@ export async function hasPermission(
 ): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-  if (user.role === "developer" || user.username === "5epmgllc") return true;
+  if (user.role === "developer" || user.username === "5epmgllc" || (user.email && String(user.email).toLowerCase() === SUPER_ADMIN_EMAIL)) return true;
   const perms = user.permissions as Record<string, boolean> | null | undefined;
   return perms?.[permission] === true;
 }

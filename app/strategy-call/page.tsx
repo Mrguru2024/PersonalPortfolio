@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -118,6 +120,7 @@ export default function StrategyCallPage() {
       return res.json();
     },
     onSuccess: () => {
+      track("form_completed", { pageVisited: "/strategy-call", metadata: { form: "strategy_call" } });
       toast({
         title: "Request received",
         description: "We'll be in touch to schedule your strategy call.",

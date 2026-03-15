@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { Loader2, ArrowRight, ArrowLeft, ClipboardList } from "lucide-react";
 import {
   Card,
@@ -69,7 +70,12 @@ export function ProjectAssessmentWizard({
   serviceId,
 }: Readonly<ProjectAssessmentWizardProps>) {
   const router = useRouter();
+  const { track } = useVisitorTracking();
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    track("page_view", { pageVisited: "/assessment" });
+  }, [track]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -162,8 +168,10 @@ export function ProjectAssessmentWizard({
       if (!res.ok)
         throw new Error(data.error || data.message || "Submission failed");
       const id = data.assessment?.id ?? data.id;
-      if (id) router.push(`/assessment/results?id=${id}`);
-      else setError("Submission succeeded but no assessment ID returned.");
+      if (id) {
+        track("form_completed", { pageVisited: "/assessment", metadata: { form: "assessment", assessmentId: id } });
+        router.push(`/assessment/results?id=${id}`);
+      } else setError("Submission succeeded but no assessment ID returned.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission failed.");
     } finally {

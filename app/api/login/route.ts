@@ -4,6 +4,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession } from "@/lib/auth-helpers";
+import { captureApiError } from "@/lib/systemMonitor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -216,6 +217,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (error: any) {
+    captureApiError(error, req);
     console.error("Unexpected login error:", error);
     console.error("Error stack:", error?.stack);
     console.error("Error details:", {
