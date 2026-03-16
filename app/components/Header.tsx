@@ -30,6 +30,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdminUser } from "@/lib/super-admin";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,6 +50,7 @@ export default function Header(_props: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  const { track } = useVisitorTracking();
   const { user, logoutMutation } = useAuth();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuPanelRef = useRef<HTMLDivElement>(null);
@@ -300,12 +302,25 @@ export default function Header(_props: HeaderProps) {
           <div className="flex items-center gap-2 shrink-0">
             {ctaButtons.map((cta) =>
               cta.isScroll ? (
-                <Button key={cta.label} type="button" size="sm" onClick={() => scrollToSection(cta.href)} className={cta.primary ? "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90" : "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap border border-border hover:bg-accent"}>
+                <Button
+                  key={cta.label}
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    track("cta_click", { pageVisited: pathname, metadata: { cta: "book_a_call" } });
+                    scrollToSection(cta.href);
+                  }}
+                  className={cta.primary ? "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90" : "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap border border-border hover:bg-accent"}
+                >
                   {cta.label}
                 </Button>
               ) : (
                 <Button asChild key={cta.label} size="sm" className={cta.primary ? "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90" : "min-h-[44px] sm:min-h-[36px] shrink-0 whitespace-nowrap border border-border hover:bg-accent"}>
-                  <Link href={cta.href} className="inline-flex items-center gap-1.5">
+                  <Link
+                    href={cta.href}
+                    className="inline-flex items-center gap-1.5"
+                    onClick={() => track("cta_click", { pageVisited: pathname, metadata: { cta: "book_a_call" } })}
+                  >
                     {cta.label}
                   </Link>
                 </Button>
@@ -530,7 +545,11 @@ export default function Header(_props: HeaderProps) {
                       <button
                         key={cta.label}
                         type="button"
-                        onClick={() => { scrollToSection(cta.href); closeMobileMenu(); }}
+                        onClick={() => {
+                          track("cta_click", { pageVisited: pathname, metadata: { cta: "book_a_call" } });
+                          scrollToSection(cta.href);
+                          closeMobileMenu();
+                        }}
                         className={`flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 rounded-lg font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${cta.primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border hover:bg-accent"}`}
                       >
                         {cta.label}
@@ -539,7 +558,10 @@ export default function Header(_props: HeaderProps) {
                       <Link
                         key={cta.label}
                         href={cta.href}
-                        onClick={closeMobileMenu}
+                        onClick={() => {
+                          track("cta_click", { pageVisited: pathname, metadata: { cta: "book_a_call" } });
+                          closeMobileMenu();
+                        }}
                         className={`flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 rounded-lg font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${cta.primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border hover:bg-accent"}`}
                       >
                         {cta.label}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
@@ -85,6 +85,8 @@ export default function StrategyCallPage() {
   useEffect(() => {
     track("page_view", { pageVisited: "/strategy-call" });
   }, [track]);
+
+  const formStartedRef = useRef(false);
 
   const form = useForm<StrategyCallFormData>({
     resolver: zodResolver(strategyCallSchema),
@@ -206,7 +208,16 @@ export default function StrategyCallPage() {
                       <FormItem>
                         <FormLabel>Your name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Full name" {...field} />
+                          <Input
+                            placeholder="Full name"
+                            {...field}
+                            onFocus={() => {
+                              if (!formStartedRef.current) {
+                                formStartedRef.current = true;
+                                track("form_started", { pageVisited: "/strategy-call", metadata: { form: "strategy_call" } });
+                              }
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

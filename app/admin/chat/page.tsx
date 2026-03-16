@@ -9,7 +9,6 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
@@ -34,8 +33,8 @@ export default function AdminChatPage() {
   const [alsoSendEmail, setAlsoSendEmail] = useState(false);
   const [alsoSendSms, setAlsoSendSms] = useState(false);
   const [alsoSendPush, setAlsoSendPush] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientEmails, setRecipientEmails] = useState("");
+  const [recipientPhones, setRecipientPhones] = useState("");
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +62,8 @@ export default function AdminChatPage() {
       alsoSendEmail?: boolean;
       alsoSendSms?: boolean;
       alsoSendPush?: boolean;
-      recipientEmail?: string;
-      recipientPhone?: string;
+      recipientEmails?: string;
+      recipientPhones?: string;
     }) => {
       const res = await apiRequest("POST", "/api/admin/chat/messages", payload);
       return res.json() as Promise<{
@@ -74,7 +73,7 @@ export default function AdminChatPage() {
         createdAt: string;
         senderUsername: string;
         senderEmail?: string;
-        delivery?: { email?: boolean; sms?: boolean; push?: number };
+        delivery?: { email?: number | boolean; sms?: number | boolean; push?: number };
       }>;
     },
     onSuccess: (data) => {
@@ -84,10 +83,16 @@ export default function AdminChatPage() {
       const d = data.delivery;
       if (d && (d.email !== undefined || d.sms !== undefined || (d.push !== undefined && d.push > 0))) {
         const parts: string[] = [];
-        if (d.email === true) parts.push("Email sent");
-        if (d.email === false) parts.push("Email failed");
-        if (d.sms === true) parts.push("SMS sent");
-        if (d.sms === false) parts.push("SMS failed or not configured");
+        if (d.email !== undefined) {
+          if (d.email === true) parts.push("Email sent");
+          else if (d.email === false) parts.push("Email failed");
+          else if (typeof d.email === "number") parts.push(d.email > 0 ? `Email sent to ${d.email} recipient(s)` : "Email failed");
+        }
+        if (d.sms !== undefined) {
+          if (d.sms === true) parts.push("SMS sent");
+          else if (d.sms === false) parts.push("SMS failed or not configured");
+          else if (typeof d.sms === "number") parts.push(d.sms > 0 ? `SMS sent to ${d.sms} recipient(s)` : "SMS failed or not configured");
+        }
         if (typeof d.push === "number" && d.push > 0) parts.push(`Push: ${d.push} device(s)`);
         if (parts.length) toast({ title: "Delivery", description: parts.join(". ") });
       }
@@ -132,8 +137,8 @@ export default function AdminChatPage() {
       alsoSendEmail: alsoSendEmail || undefined,
       alsoSendSms: alsoSendSms || undefined,
       alsoSendPush: alsoSendPush || undefined,
-      recipientEmail: recipientEmail.trim() || undefined,
-      recipientPhone: recipientPhone.trim() || undefined,
+      recipientEmails: recipientEmails.trim() || undefined,
+      recipientPhones: recipientPhones.trim() || undefined,
     });
   };
 
@@ -146,13 +151,10 @@ export default function AdminChatPage() {
       if (!keyRes.ok) throw new Error("Cannot get push key");
       const { vapidPublicKey } = await keyRes.json();
       if (!vapidPublicKey) throw new Error("Push not configured (VAPID keys missing)");
-      let reg: ServiceWorkerRegistration;
-      if (navigator.serviceWorker.controller) {
-        reg = await navigator.serviceWorker.ready;
-      } else {
-        reg = await navigator.serviceWorker.register("/sw.js");
-        await reg.ready;
+      if (!navigator.serviceWorker.controller) {
+        await navigator.serviceWorker.register("/sw.js");
       }
+      const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublicKey,
@@ -317,30 +319,30 @@ export default function AdminChatPage() {
                   </div>
                 </div>
                 {(alsoSendEmail || alsoSendSms) && (
-                  <div className="flex flex-wrap gap-3 pt-1 border-t border-border/50">
+                  <div className="flex flex-col gap-3 pt-1 border-t border-border/50">
                     {alsoSendEmail && (
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="recipient-email" className="text-xs whitespace-nowrap">Recipient email</Label>
-                        <Input
-                          id="recipient-email"
-                          type="email"
-                          placeholder="Blank = ADMIN_EMAIL"
-                          value={recipientEmail}
-                          onChange={(e) => setRecipientEmail(e.target.value)}
-                          className="h-8 w-48 text-sm"
+                      <div className="space-y-1">
+                        <Label htmlFor="recipient-emails" className="text-xs whitespace-nowrap">Recipient email(s)</Label>
+                        <Textarea
+                          id="recipient-emails"
+                          placeholder="One per line or comma-separated. Blank = ADMIN_EMAIL"
+                          value={recipientEmails}
+                          onChange={(e) => setRecipientEmails(e.target.value)}
+                          className="min-h-[60px] text-sm resize-y"
+                          rows={2}
                         />
                       </div>
                     )}
                     {alsoSendSms && (
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="recipient-phone" className="text-xs whitespace-nowrap">Recipient phone</Label>
-                        <Input
-                          id="recipient-phone"
-                          type="tel"
-                          placeholder="Blank = ADMIN_PHONE"
-                          value={recipientPhone}
-                          onChange={(e) => setRecipientPhone(e.target.value)}
-                          className="h-8 w-40 text-sm"
+                      <div className="space-y-1">
+                        <Label htmlFor="recipient-phones" className="text-xs whitespace-nowrap">Recipient phone(s)</Label>
+                        <Textarea
+                          id="recipient-phones"
+                          placeholder="One per line or comma-separated. Blank = ADMIN_PHONE"
+                          value={recipientPhones}
+                          onChange={(e) => setRecipientPhones(e.target.value)}
+                          className="min-h-[60px] text-sm resize-y"
+                          rows={2}
                         />
                       </div>
                     )}

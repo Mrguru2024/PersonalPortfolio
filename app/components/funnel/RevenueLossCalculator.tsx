@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { ArrowRight, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +34,7 @@ function clampSaleValue(n: number): number {
 }
 
 export function RevenueLossCalculator() {
+  const { track } = useVisitorTracking();
   const [monthlyVisitors, setMonthlyVisitors] = useState<string>("");
   const [conversionRate, setConversionRate] = useState<string>("");
   const [averageSaleValue, setAverageSaleValue] = useState<string>("");
@@ -49,7 +51,10 @@ export function RevenueLossCalculator() {
 
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (visitors > 0 && saleValue > 0) setHasCalculated(true);
+    if (visitors > 0 && saleValue > 0) {
+      track("tool_used", { pageVisited: "/website-revenue-calculator", metadata: { tool: "revenue_calculator" } });
+      setHasCalculated(true);
+    }
   };
 
   const showResults = hasCalculated && visitors > 0 && saleValue > 0;

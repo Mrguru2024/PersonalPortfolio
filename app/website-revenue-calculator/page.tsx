@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageSEO } from "@/components/SEO";
+import { TrackPageView } from "@/components/TrackPageView";
 import { RevenueLossCalculator } from "@/components/funnel/RevenueLossCalculator";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function WebsiteRevenueCalculatorPage() {
         description="Estimate monthly revenue loss from poor website conversion. Then get a Digital Growth Audit for next steps."
         canonicalPath="/website-revenue-calculator"
       />
+      <TrackPageView path="/website-revenue-calculator" />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-2xl">

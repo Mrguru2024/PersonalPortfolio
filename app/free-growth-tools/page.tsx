@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles } from "lucide-react";
+import { TrackPageView } from "@/components/TrackPageView";
+import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
@@ -88,6 +90,7 @@ const LEAD_MAGNETS = [
 export default function FreeGrowthToolsPage() {
   return (
     <>
+      <TrackPageView path="/free-growth-tools" />
       <PageSEO
         title="Free growth tools | Ascendra Technologies"
         description="Free tools to help you see where your business stands: growth audit, competitor snapshot, homepage blueprint, and more."
@@ -138,10 +141,10 @@ export default function FreeGrowthToolsPage() {
                         {magnet.get}
                       </p>
                       <Button asChild className="w-full sm:w-auto gap-2 min-h-[44px]">
-                        <Link href={magnet.href}>
+                        <TrackedCtaLink href={magnet.href} ctaLabel={magnet.id} pageVisited="/free-growth-tools" className="inline-flex items-center gap-2">
                           {magnet.cta}
                           <ArrowRight className="h-4 w-4" />
-                        </Link>
+                        </TrackedCtaLink>
                       </Button>
                     </CardContent>
                   </Card>

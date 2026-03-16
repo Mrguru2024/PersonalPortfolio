@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { Loader2, ArrowRight, ArrowLeft, ClipboardList } from "lucide-react";
@@ -71,6 +71,7 @@ export function ProjectAssessmentWizard({
 }: Readonly<ProjectAssessmentWizardProps>) {
   const router = useRouter();
   const { track } = useVisitorTracking();
+  const formStartedRef = useRef(false);
   const [step, setStep] = useState(1);
 
   useEffect(() => {
@@ -210,6 +211,12 @@ export function ProjectAssessmentWizard({
                     setForm((f) => ({ ...f, name: e.target.value }))
                   }
                   placeholder="Your name"
+                  onFocus={() => {
+                    if (!formStartedRef.current) {
+                      formStartedRef.current = true;
+                      track("form_started", { pageVisited: "/assessment", metadata: { form: "assessment" } });
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-2">

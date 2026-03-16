@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -48,6 +50,10 @@ type StrategyCallValues = z.infer<typeof strategyCallSchema>;
 
 export function StrategyCallForm() {
   const [submitted, setSubmitted] = useState(false);
+  const { track } = useVisitorTracking();
+  const pathname = usePathname();
+  const pageVisited = pathname || "/contact";
+  const formStartedRef = useRef(false);
 
   const form = useForm<StrategyCallValues>({
     resolver: zodResolver(strategyCallSchema),
@@ -99,6 +105,7 @@ export function StrategyCallForm() {
       return res.json();
     },
     onSuccess: () => {
+      track("form_completed", { pageVisited, metadata: { form: "strategy_call" } });
       setSubmitted(true);
       toast({
         title: "Request received",
@@ -158,7 +165,16 @@ export function StrategyCallForm() {
                   <FormItem>
                     <FormLabel>Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Your name" {...field} />
+                      <Input
+                        placeholder="Your name"
+                        {...field}
+                        onFocus={() => {
+                          if (!formStartedRef.current) {
+                            formStartedRef.current = true;
+                            track("form_started", { pageVisited, metadata: { form: "strategy_call" } });
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

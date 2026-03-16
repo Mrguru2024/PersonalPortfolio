@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { personalInfo } from "@/lib/data";
+import { getSiteBaseUrl } from "@/lib/siteUrl";
 
 interface BlogPost {
   id: number;
@@ -29,7 +30,7 @@ interface EnhancedStructuredDataProps {
  */
 export function EnhancedStructuredData({
   post,
-  baseUrl = "https://mrguru.dev",
+  baseUrl = getSiteBaseUrl(),
 }: EnhancedStructuredDataProps) {
   const postUrl = `${baseUrl}/blog/${post.slug}`;
   const imageUrl = post.coverImage || `${baseUrl}/images/blog-default.jpg`;

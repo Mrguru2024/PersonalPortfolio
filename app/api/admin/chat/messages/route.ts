@@ -122,14 +122,33 @@ export async function POST(req: NextRequest) {
     const alsoSendEmail = !!body?.alsoSendEmail;
     const alsoSendSms = !!body?.alsoSendSms;
     const alsoSendPush = !!body?.alsoSendPush;
-    const recipientEmail =
-      typeof body?.recipientEmail === "string"
-        ? body.recipientEmail.trim()
-        : null;
-    const recipientPhone =
-      typeof body?.recipientPhone === "string"
-        ? body.recipientPhone.trim()
-        : null;
+
+    const parseRecipients = (value: unknown): string[] => {
+      if (Array.isArray(value)) {
+        return value
+          .filter((v) => typeof v === "string")
+          .flatMap((v) => v.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean));
+      }
+      if (typeof value === "string") {
+        return value
+          .split(/[\n,;]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      return [];
+    };
+    const recipientEmailsRaw =
+      body?.recipientEmails != null
+        ? parseRecipients(body.recipientEmails)
+        : typeof body?.recipientEmail === "string" && body.recipientEmail.trim()
+          ? [body.recipientEmail.trim()]
+          : [];
+    const recipientPhonesRaw =
+      body?.recipientPhones != null
+        ? parseRecipients(body.recipientPhones)
+        : typeof body?.recipientPhone === "string" && body.recipientPhone.trim()
+          ? [body.recipientPhone.trim()]
+          : [];
 
     const [inserted] = await db
       .insert(adminChatMessages)
@@ -144,34 +163,43 @@ export async function POST(req: NextRequest) {
         createdAt: adminChatMessages.createdAt,
       });
 
-    const delivery: { email?: boolean; sms?: boolean; push?: number } = {};
+    const delivery: { email?: number | boolean; sms?: number | boolean; push?: number } = {};
 
     if (inserted) {
       if (alsoSendEmail) {
         const { emailService } = await import("@server/services/emailService");
-        const to =
-          recipientEmail ||
-          process.env.ADMIN_EMAIL ||
-          (user.email as string) ||
-          "";
-        if (to) {
-          const ok = await emailService.sendDirectMessageEmail({
-            to,
-            subject: `Direct message from ${user.username}`,
-            body: content,
-            senderName: user.username,
-          });
-          delivery.email = ok;
+        const emails =
+          recipientEmailsRaw.length > 0
+            ? [...new Set(recipientEmailsRaw)]
+            : [process.env.ADMIN_EMAIL || (user.email as string) || ""].filter(Boolean);
+        let emailSent = 0;
+        for (const to of emails) {
+          if (to) {
+            const ok = await emailService.sendDirectMessageEmail({
+              to,
+              subject: `Direct message from ${user.username}`,
+              body: content,
+              senderName: user.username,
+            });
+            if (ok) emailSent++;
+          }
         }
+        delivery.email = emails.length === 1 ? emailSent === 1 : emailSent;
       }
       if (alsoSendSms) {
         const { sendSms } = await import("@server/services/smsService");
-        const phone =
-          recipientPhone || process.env.ADMIN_PHONE || "";
-        if (phone) {
-          const result = await sendSms(phone, content.slice(0, 320));
-          delivery.sms = result.ok;
+        const phones =
+          recipientPhonesRaw.length > 0
+            ? [...new Set(recipientPhonesRaw)]
+            : (process.env.ADMIN_PHONE ? [process.env.ADMIN_PHONE] : []);
+        let smsSent = 0;
+        for (const phone of phones) {
+          if (phone) {
+            const result = await sendSms(phone, content.slice(0, 320));
+            if (result.ok) smsSent++;
+          }
         }
+        delivery.sms = phones.length === 1 ? smsSent === 1 : smsSent;
       }
       if (alsoSendPush) {
         const { pushNotificationService } = await import(

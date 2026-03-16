@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { BlogPost } from "@/lib/data";
+import { getSiteBaseUrl } from "@/lib/siteUrl";
 
 interface BlogPostSEOProps {
   post: BlogPost;
@@ -62,7 +63,7 @@ function updateJsonLdScript(data: object) {
 
 export function BlogPostSEO({
   post,
-  baseUrl = "https://mrguru.dev",
+  baseUrl = getSiteBaseUrl(),
 }: BlogPostSEOProps) {
   // Ensure slug exists
   const slug = post.slug || "";

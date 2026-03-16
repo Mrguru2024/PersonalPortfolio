@@ -4,8 +4,9 @@ import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
+import { getSiteBaseUrl } from "./lib/siteUrl";
 
-const baseUrl = "https://mrguru.dev";
+const baseUrl = getSiteBaseUrl();
 
 export const metadata: Metadata = {
   title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
         url: `${baseUrl}/ascendra-logo.svg`,
         width: 1200,
         height: 630,
-        alt: "Ascendra Technologies",
+        alt: "Ascendra Technologies — Brand Growth",
       },
     ],
   },

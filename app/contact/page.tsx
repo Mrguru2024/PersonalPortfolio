@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StrategyCallForm } from "@/components/funnel/StrategyCallForm";
+import { TrackPageView } from "@/components/TrackPageView";
 
 export const metadata: Metadata = {
   title: "Contact | Book a call | Ascendra Technologies",
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+      <TrackPageView path="/contact" />
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-5xl space-y-10 sm:space-y-12">
           <section className="text-center max-w-3xl mx-auto">

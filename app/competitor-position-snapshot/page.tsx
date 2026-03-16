@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -74,6 +75,12 @@ const SNAPSHOT_SECTIONS = [
 
 export default function CompetitorPositionSnapshotPage() {
   const [submitted, setSubmitted] = useState(false);
+  const { track } = useVisitorTracking();
+  const formStartedRef = useRef(false);
+
+  useEffect(() => {
+    track("page_view", { pageVisited: "/competitor-position-snapshot" });
+  }, [track]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -105,6 +112,7 @@ export default function CompetitorPositionSnapshotPage() {
       return res.json();
     },
     onSuccess: () => {
+      track("form_completed", { pageVisited: "/competitor-position-snapshot", metadata: { form: "competitor_snapshot" } });
       setSubmitted(true);
       toast({
         title: "Snapshot request received",
@@ -158,7 +166,16 @@ export default function CompetitorPositionSnapshotPage() {
                             <FormItem>
                               <FormLabel>Your name *</FormLabel>
                               <FormControl>
-                                <Input placeholder="Full name" {...field} />
+                                <Input
+                                  placeholder="Full name"
+                                  {...field}
+                                  onFocus={() => {
+                                    if (!formStartedRef.current) {
+                                      formStartedRef.current = true;
+                                      track("form_started", { pageVisited: "/competitor-position-snapshot", metadata: { form: "competitor_snapshot" } });
+                                    }
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

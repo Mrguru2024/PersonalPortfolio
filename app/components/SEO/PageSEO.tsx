@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getSiteBaseUrl } from "@/lib/siteUrl";
 
 interface PageSEOProps {
   title: string;
@@ -80,8 +81,8 @@ export function PageSEO({
   keywords = [],
   ogType = "website",
   ogImage = "/ascendra-logo.svg",
-  ogImageAlt = "Ascendra Technologies",
-  baseUrl = "https://mrguru.dev",
+  ogImageAlt = "Ascendra Technologies — Brand Growth",
+  baseUrl = getSiteBaseUrl(),
   noIndex = false,
   schemaType = "WebPage",
 }: PageSEOProps) {

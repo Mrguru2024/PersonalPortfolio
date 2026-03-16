@@ -86,10 +86,10 @@ export default function AdminAnalyticsPage() {
     }
   }, [user, authLoading, router]);
 
-  const since = getSince(timeRange);
   const { data: rawData, isLoading, error } = useQuery<WebsiteAnalyticsResponse>({
-    queryKey: ["/api/admin/analytics/website", timeRange, since ?? "all"],
+    queryKey: ["/api/admin/analytics/website", timeRange],
     queryFn: async () => {
+      const since = getSince(timeRange);
       const url = since ? `/api/admin/analytics/website?since=${encodeURIComponent(since)}` : "/api/admin/analytics/website";
       const res = await apiRequest("GET", url);
       if (!res.ok) {
@@ -99,6 +99,11 @@ export default function AdminAnalyticsPage() {
       return res.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
+    retry: (failureCount, error) => {
+      const msg = String(error?.message ?? "");
+      if (msg.includes("Admin access required") || msg.includes("403")) return false;
+      return failureCount < 2;
+    },
   });
 
   const data =
