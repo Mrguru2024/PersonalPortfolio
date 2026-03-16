@@ -499,15 +499,15 @@ export default function AdminDashboardPage() {
       {/* New admin: offer guided tour */}
       {showTourBanner && !tourActive && (
         <Card className="mb-4 border-primary/30 bg-primary/5">
-          <CardContent className="py-4 px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <CardContent className="py-4 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <p className="font-medium text-sm">New to the admin?</p>
                 <p className="text-xs text-muted-foreground">Take a short tour to see features and daily actions.</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0 sm:ml-4">
               <Button size="sm" onClick={() => setTourActive(true)}>
                 Start tour
               </Button>

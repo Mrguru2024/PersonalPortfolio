@@ -57,6 +57,7 @@ interface DealWithContact {
 }
 
 export default function CrmPipelinePage() {
+  const [mounted, setMounted] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -64,20 +65,25 @@ export default function CrmPipelinePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState("updatedAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [sourceFilter, setSourceFilter] = useState<string>("");
-  const [urgencyFilter, setUrgencyFilter] = useState<string>("");
+  const ALL_FILTER = "__all__";
+  const [sourceFilter, setSourceFilter] = useState<string>(ALL_FILTER);
+  const [urgencyFilter, setUrgencyFilter] = useState<string>(ALL_FILTER);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+  useEffect(() => {
+    if (!mounted) return;
     if (!authLoading && !user) router.push("/auth");
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams();
     if (sortBy) p.set("sortBy", sortBy);
     if (sortOrder) p.set("sortOrder", sortOrder);
-    if (sourceFilter) p.set("source", sourceFilter);
-    if (urgencyFilter) p.set("urgencyLevel", urgencyFilter);
+    if (sourceFilter && sourceFilter !== ALL_FILTER) p.set("source", sourceFilter);
+    if (urgencyFilter && urgencyFilter !== ALL_FILTER) p.set("urgencyLevel", urgencyFilter);
     return p.toString();
   }, [sortBy, sortOrder, sourceFilter, urgencyFilter]);
 
@@ -104,11 +110,15 @@ export default function CrmPipelinePage() {
   });
 
   const uniqueSources = useMemo(() => {
-    const set = new Set(deals.map((d) => d.source || "unknown").filter(Boolean));
+    const set = new Set(
+      deals.map((d) => (d.source && d.source.trim()) || "unknown").filter((s) => s.length > 0)
+    );
     return Array.from(set).sort();
   }, [deals]);
   const uniqueUrgency = useMemo(() => {
-    const set = new Set(deals.map((d) => d.urgencyLevel).filter(Boolean) as string[]);
+    const set = new Set(
+      (deals.map((d) => d.urgencyLevel).filter((u) => u != null && String(u).trim() !== "") as string[])
+    );
     return Array.from(set).sort();
   }, [deals]);
 
@@ -126,14 +136,23 @@ export default function CrmPipelinePage() {
 
   const stageTotalValue = (stage: string) =>
     (byStage[stage] ?? []).reduce((sum, d) => sum + (d.value ?? 0), 0);
-  const hasActiveFilters = sourceFilter || urgencyFilter;
+  const hasActiveFilters = (sourceFilter && sourceFilter !== ALL_FILTER) || (urgencyFilter && urgencyFilter !== ALL_FILTER);
 
   const scrollToStage = (stage: string) => {
     const el = document.getElementById(`stage-${stage}`);
     el?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
   };
 
-  if (authLoading || !user) return null;
+  const showContent = mounted && !authLoading && user && user.isAdmin && user.adminApproved;
+  if (!showContent) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="container max-w-[1600px] mx-auto px-4 py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -193,7 +212,7 @@ export default function CrmPipelinePage() {
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All sources</SelectItem>
+                  <SelectItem value={ALL_FILTER}>All sources</SelectItem>
                   {uniqueSources.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
@@ -204,9 +223,9 @@ export default function CrmPipelinePage() {
                   <SelectValue placeholder="Urgency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All urgency</SelectItem>
+                  <SelectItem value={ALL_FILTER}>All urgency</SelectItem>
                   {uniqueUrgency.map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                    <SelectItem key={u} value={u || "__unknown__"}>{u}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -217,8 +236,8 @@ export default function CrmPipelinePage() {
                 size="sm"
                 className="h-9 text-muted-foreground"
                 onClick={() => {
-                  setSourceFilter("");
-                  setUrgencyFilter("");
+                  setSourceFilter(ALL_FILTER);
+                  setUrgencyFilter(ALL_FILTER);
                 }}
               >
                 <X className="h-3.5 w-3.5 mr-1" />
@@ -360,21 +379,21 @@ function DealCard({
           </p>
         )}
       </Link>
-      <div className="flex flex-wrap gap-1 mt-2">
+      <div className="flex flex-wrap items-center gap-1.5 mt-2">
         {deal.value > 0 && (
-          <Badge variant="secondary" className="text-xs font-normal gap-0.5">
+          <Badge variant="secondary" className="text-xs font-normal gap-0.5 shrink-0">
             <DollarSign className="h-3 w-3" />
             {(deal.value / 100).toLocaleString()}
           </Badge>
         )}
         {deal.leadScore != null && (
-          <Badge variant="outline" className="text-xs font-normal gap-0.5">
+          <Badge variant="outline" className="text-xs font-normal gap-0.5 shrink-0">
             <Zap className="h-3 w-3" />
             {deal.leadScore}
           </Badge>
         )}
         {deal.expectedCloseAt && (
-          <Badge variant="outline" className="text-xs font-normal gap-0.5">
+          <Badge variant="outline" className="text-xs font-normal gap-0.5 shrink-0">
             <Calendar className="h-3 w-3" />
             {format(new Date(deal.expectedCloseAt), "MMM d")}
           </Badge>

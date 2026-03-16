@@ -328,6 +328,9 @@ export const crmSequences = pgTable("crm_sequences", {
   description: text("description"),
   steps: json("steps").$type<Array<{ type: "email" | "task"; waitDays: number; subject?: string; body?: string; taskType?: string; taskTitle?: string }>>().notNull(),
   isActive: boolean("is_active").default(true),
+  /** When to run: "now" = start as soon as contacts are enrolled; "scheduled" = first step at scheduledStartAt */
+  triggerType: text("trigger_type").$type<"now" | "scheduled">().default("now"),
+  scheduledStartAt: timestamp("scheduled_start_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
       description: body.description ?? null,
       steps: Array.isArray(body.steps) ? body.steps : [],
       isActive: body.isActive !== false,
+      triggerType: body.triggerType === "scheduled" ? "scheduled" : "now",
+      scheduledStartAt: body.triggerType === "scheduled" && body.scheduledStartAt ? new Date(body.scheduledStartAt) : null,
     });
     return NextResponse.json(sequence);
   } catch (error: any) {

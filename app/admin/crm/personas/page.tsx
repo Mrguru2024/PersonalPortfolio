@@ -87,9 +87,9 @@ export default function PersonasPage() {
         </div>
       ) : (
         <Tabs defaultValue="personas">
-          <TabsList className="grid grid-cols-2 gap-1 p-1.5 min-h-[44px] w-full max-w-[280px]">
-            <TabsTrigger value="personas" className="min-w-0">Personas</TabsTrigger>
-            <TabsTrigger value="insights" className="min-w-0">Insights (AI)</TabsTrigger>
+          <TabsList className="inline-flex flex-nowrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
+            <TabsTrigger value="personas">Personas</TabsTrigger>
+            <TabsTrigger value="insights">Insights (AI)</TabsTrigger>
           </TabsList>
           <TabsContent value="personas" className="mt-6 space-y-6">
             <Card>

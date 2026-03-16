@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -1281,97 +1282,132 @@ export default function AdminAnalyticsPage() {
                         if (pageFilter !== "all" && (e.pageVisited ?? "").trim() !== pageFilter) return false;
                         return true;
                       });
-                      return (
-                        <div className="overflow-x-auto rounded-md border">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b bg-muted/50">
-                                <th className="text-left py-2 px-2 font-medium w-8" />
-                                <th className="text-left py-2 px-2 font-medium">Time</th>
-                                <th className="text-left py-2 px-2 font-medium">Visitor</th>
-                                <th className="text-left py-2 px-2 font-medium">Event</th>
-                                <th className="text-left py-2 px-2 font-medium max-w-[180px]">Page</th>
-                                <th className="text-left py-2 px-2 font-medium">Device</th>
-                                <th className="text-left py-2 px-2 font-medium max-w-[100px]">Location</th>
-                                <th className="text-left py-2 px-2 font-medium max-w-[120px]">Referrer</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {filtered.slice(0, 150).map((e) => {
-                                const meta = e.metadata ?? {};
-                                const hasDetails = Object.keys(meta).length > 0;
-                                const isExpanded = expandedEventId === e.id;
-                                return (
-                                  <React.Fragment key={e.id}>
-                                    <tr
-                                      className="border-b border-border/50 hover:bg-muted/30"
-                                    >
-                                      <td className="py-1 px-2">
-                                        {hasDetails ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => setExpandedEventId(isExpanded ? null : e.id)}
-                                            className="p-0.5 rounded hover:bg-muted"
-                                            aria-label={isExpanded ? "Collapse" : "Expand details"}
-                                          >
-                                            {isExpanded ? (
-                                              <ChevronDown className="h-4 w-4" />
-                                            ) : (
-                                              <ChevronRight className="h-4 w-4" />
-                                            )}
-                                          </button>
-                                        ) : null}
-                                      </td>
-                                      <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">
-                                        {format(new Date(e.createdAt), "MMM d, HH:mm:ss")}
-                                      </td>
-                                      <td className="py-1 px-2 font-mono text-xs" title={e.visitorId}>
-                                        {e.visitorId.slice(0, 12)}…
-                                      </td>
-                                      <td className="py-1 px-2">
-                                        <Badge variant="secondary" className="font-normal">
-                                          {e.eventType}
-                                        </Badge>
-                                      </td>
-                                      <td className="py-1 px-2 truncate max-w-[180px]" title={e.pageVisited ?? ""}>
-                                        {e.pageVisited ?? "—"}
-                                      </td>
-                                      <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
-                                      <td className="py-1 px-2 truncate max-w-[100px] text-muted-foreground" title={[e?.city, e?.region, e?.country].filter(Boolean).join(", ") || "—"}>
-                                        {[e?.city, e?.country].filter(Boolean).join(", ") || (e?.country ?? "—")}
-                                      </td>
-                                      <td className="py-1 px-2 truncate max-w-[120px] text-muted-foreground" title={e.referrer ?? ""}>
-                                        {e.referrer ? (e.referrer.length > 20 ? e.referrer.slice(0, 20) + "…" : e.referrer) : "direct"}
-                                      </td>
-                                    </tr>
-                                    {isExpanded && hasDetails && (
-                                      <tr className="border-b bg-muted/20">
-                                        <td colSpan={8} className="py-2 px-3">
-                                          <div className="text-xs bg-background rounded p-3 border overflow-x-auto max-h-48 overflow-y-auto">
-                                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                                              {formatMetadataForDisplay(meta).map(({ label, value }) => (
-                                                <div key={label} className="flex flex-col gap-0.5">
-                                                  <dt className="font-medium text-muted-foreground">{label}</dt>
-                                                  <dd className="whitespace-pre-wrap break-all text-foreground">{value}</dd>
-                                                </div>
-                                              ))}
-                                            </dl>
-                                          </div>
-                                        </td>
-                                      </tr>
+                      const EVENT_LOG_INITIAL = 50;
+                      const initialEvents = filtered.slice(0, EVENT_LOG_INITIAL);
+                      const moreEvents = filtered.slice(EVENT_LOG_INITIAL);
+                      const renderEventRow = (e: VisitorActivityEvent) => {
+                        const meta = e.metadata ?? {};
+                        const hasDetails = Object.keys(meta).length > 0;
+                        const isExpanded = expandedEventId === e.id;
+                        return (
+                          <React.Fragment key={e.id}>
+                            <tr className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-1 px-2">
+                                {hasDetails ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedEventId(isExpanded ? null : e.id)}
+                                    className="p-0.5 rounded hover:bg-muted"
+                                    aria-label={isExpanded ? "Collapse" : "Expand details"}
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
                                     )}
-                                  </React.Fragment>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                                  </button>
+                                ) : null}
+                              </td>
+                              <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">
+                                {format(new Date(e.createdAt), "MMM d, HH:mm:ss")}
+                              </td>
+                              <td className="py-1 px-2 font-mono text-xs" title={e.visitorId}>
+                                {e.visitorId.slice(0, 12)}…
+                              </td>
+                              <td className="py-1 px-2">
+                                <Badge variant="secondary" className="font-normal">
+                                  {e.eventType}
+                                </Badge>
+                              </td>
+                              <td className="py-1 px-2 truncate max-w-[180px]" title={e.pageVisited ?? ""}>
+                                {e.pageVisited ?? "—"}
+                              </td>
+                              <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
+                              <td className="py-1 px-2 truncate max-w-[100px] text-muted-foreground" title={[e?.city, e?.region, e?.country].filter(Boolean).join(", ") || "—"}>
+                                {[e?.city, e?.country].filter(Boolean).join(", ") || (e?.country ?? "—")}
+                              </td>
+                              <td className="py-1 px-2 truncate max-w-[120px] text-muted-foreground" title={e.referrer ?? ""}>
+                                {e.referrer ? (e.referrer.length > 20 ? e.referrer.slice(0, 20) + "…" : e.referrer) : "direct"}
+                              </td>
+                            </tr>
+                            {isExpanded && hasDetails && (
+                              <tr className="border-b bg-muted/20">
+                                <td colSpan={8} className="py-2 px-3">
+                                  <div className="text-xs bg-background rounded p-3 border overflow-x-auto max-h-48 overflow-y-auto">
+                                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                                      {formatMetadataForDisplay(meta).map(({ label, value }) => (
+                                        <div key={label} className="flex flex-col gap-0.5">
+                                          <dt className="font-medium text-muted-foreground">{label}</dt>
+                                          <dd className="whitespace-pre-wrap break-all text-foreground">{value}</dd>
+                                        </div>
+                                      ))}
+                                    </dl>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      };
+                      return (
+                        <div className="space-y-2">
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b bg-muted/50">
+                                  <th className="text-left py-2 px-2 font-medium w-8" />
+                                  <th className="text-left py-2 px-2 font-medium">Time</th>
+                                  <th className="text-left py-2 px-2 font-medium">Visitor</th>
+                                  <th className="text-left py-2 px-2 font-medium">Event</th>
+                                  <th className="text-left py-2 px-2 font-medium max-w-[180px]">Page</th>
+                                  <th className="text-left py-2 px-2 font-medium">Device</th>
+                                  <th className="text-left py-2 px-2 font-medium max-w-[100px]">Location</th>
+                                  <th className="text-left py-2 px-2 font-medium max-w-[120px]">Referrer</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {initialEvents.map((e) => renderEventRow(e))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {moreEvents.length > 0 && (
+                            <Collapsible>
+                              <CollapsibleTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2 group">
+                                  <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                                  Show {moreEvents.length} more event{moreEvents.length !== 1 ? "s" : ""}
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="overflow-x-auto rounded-md border mt-2">
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="border-b bg-muted/50">
+                                        <th className="text-left py-2 px-2 font-medium w-8" />
+                                        <th className="text-left py-2 px-2 font-medium">Time</th>
+                                        <th className="text-left py-2 px-2 font-medium">Visitor</th>
+                                        <th className="text-left py-2 px-2 font-medium">Event</th>
+                                        <th className="text-left py-2 px-2 font-medium max-w-[180px]">Page</th>
+                                        <th className="text-left py-2 px-2 font-medium">Device</th>
+                                        <th className="text-left py-2 px-2 font-medium max-w-[100px]">Location</th>
+                                        <th className="text-left py-2 px-2 font-medium max-w-[120px]">Referrer</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {moreEvents.map((e) => renderEventRow(e))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                         </div>
                       );
                     })()
                   )}
                   {eventsData?.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Showing up to 150 filtered events. Full URL, viewport, UTM params, and interaction metadata are in the expandable details.
+                      First 50 events shown; use “Show more” to load the rest (up to 150). Full URL, viewport, UTM params, and interaction metadata are in the expandable row details.
                     </p>
                   )}
                 </CardContent>

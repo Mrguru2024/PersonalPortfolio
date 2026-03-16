@@ -197,9 +197,9 @@ export default function CrmDashboardPage() {
                   <CardDescription>Most used contact segments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {stats.topTags.slice(0, 12).map(({ tag, count }) => (
-                      <Badge key={tag} variant="secondary" className="rounded-md">{tag} ({count})</Badge>
+                      <Badge key={tag} variant="secondary" className="rounded-md shrink-0">{tag} ({count})</Badge>
                     ))}
                   </div>
                 </CardContent>
@@ -216,9 +216,9 @@ export default function CrmDashboardPage() {
                 <CardDescription>Pipeline stage counts</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {stats.leadsByPipelineStage.map(({ stage, count }) => (
-                    <Badge key={stage} variant={count > 0 ? "default" : "secondary"} className="rounded-md">
+                    <Badge key={stage} variant={count > 0 ? "default" : "secondary"} className="rounded-md shrink-0">
                       {getPipelineStageLabel(stage)}: {count}
                     </Badge>
                   ))}

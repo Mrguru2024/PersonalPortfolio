@@ -320,14 +320,24 @@ export default function AdminSystemPage() {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Config: {Object.entries(health.config).filter(([, v]) => v).length} / {Object.keys(health.config).length} keys set
-                  <ul className="mt-1 space-y-0.5">
-                    {Object.entries(health.config).map(([key, set]) => (
-                      <li key={key} className="flex items-center gap-1">
-                        {set ? <CheckCircle2 className="h-3 w-3 shrink-0 text-green-600" /> : <XCircle className="h-3 w-3 shrink-0 text-muted-foreground" />}
-                        <span>{key}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-auto py-1 px-0 mt-1 gap-1 text-xs group">
+                        <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
+                        {Object.keys(health.config).length} keys
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <ul className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
+                        {Object.entries(health.config).map(([key, set]) => (
+                          <li key={key} className="flex items-center gap-1">
+                            {set ? <CheckCircle2 className="h-3 w-3 shrink-0 text-green-600" /> : <XCircle className="h-3 w-3 shrink-0 text-muted-foreground" />}
+                            <span>{key}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
                 <p className="text-xs">Logs: {health.logStats.total} total, {health.logStats.errors} errors · {health.nodeEnv}</p>
               </>
@@ -440,49 +450,90 @@ export default function AdminSystemPage() {
               No activity log entries yet. Logins, logouts, and errors will appear here.
             </p>
           ) : (
-            <div className="overflow-x-auto -mx-2">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
-                    <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
-                    <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
-                    <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
-                    <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
-                    <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activityLogEntries.map((entry) => (
-                    <tr key={entry.id} className="border-b border-border/50">
-                      <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
-                        {new Date(entry.createdAt).toLocaleString()}
-                      </td>
-                      <td className="py-2 px-2">
-                        <Badge variant={entry.eventType === "login_failure" || entry.eventType === "error" || entry.eventType === "client_error" ? "destructive" : "secondary"}>
-                          {entry.eventType}
-                        </Badge>
-                      </td>
-                      <td className="py-2 px-2">
-                        {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")}
-                      </td>
-                      <td className="py-2 px-2">
-                        {entry.success ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-destructive" />
-                        )}
-                      </td>
-                      <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground" title={entry.message ?? undefined}>
-                        {entry.message ?? "—"}
-                      </td>
-                      <td className="py-2 px-2 text-muted-foreground font-mono text-xs">
-                        {entry.ipAddress ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto -mx-2 space-y-2">
+              {(() => {
+                const ACTIVITY_INITIAL = 25;
+                const initialRows = activityLogEntries.slice(0, ACTIVITY_INITIAL);
+                const moreRows = activityLogEntries.slice(ACTIVITY_INITIAL);
+                const TableBody = ({ entries }: { entries: ActivityLogEntry[] }) => (
+                  <>
+                    {entries.map((entry) => (
+                      <tr key={entry.id} className="border-b border-border/50">
+                        <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2">
+                          <Badge variant={entry.eventType === "login_failure" || entry.eventType === "error" || entry.eventType === "client_error" ? "destructive" : "secondary"}>
+                            {entry.eventType}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-2">
+                          {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")}
+                        </td>
+                        <td className="py-2 px-2">
+                          {entry.success ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-destructive" />
+                          )}
+                        </td>
+                        <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground" title={entry.message ?? undefined}>
+                          {entry.message ?? "—"}
+                        </td>
+                        <td className="py-2 px-2 text-muted-foreground font-mono text-xs">
+                          {entry.ipAddress ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                );
+                return (
+                  <>
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b text-left">
+                          <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
+                          <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
+                          <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
+                          <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
+                          <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
+                          <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <TableBody entries={initialRows} />
+                      </tbody>
+                    </table>
+                    {moreRows.length > 0 && (
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2 group">
+                            <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                            Show {moreRows.length} more activit{moreRows.length !== 1 ? "ies" : "y"}
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <table className="w-full text-sm border-collapse rounded-md border">
+                            <thead>
+                              <tr className="border-b text-left bg-muted/30">
+                                <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
+                                <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
+                                <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
+                                <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
+                                <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
+                                <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <TableBody entries={moreRows} />
+                            </tbody>
+                          </table>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </CardContent>
@@ -500,9 +551,52 @@ export default function AdminSystemPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {logs.map((entry) => (
+          {(() => {
+            const INITIAL_SHOW = 15;
+            const initial = logs.slice(0, INITIAL_SHOW);
+            const remaining = logs.slice(INITIAL_SHOW);
+            return (
+              <>
+                {initial.map((entry) => (
+                  <LogEntryCard key={entry.id} entry={entry} formatTime={formatTime} />
+                ))}
+                {remaining.length > 0 && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full gap-2 group">
+                        <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                        Show {remaining.length} more log{remaining.length !== 1 ? "s" : ""}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 mt-4">
+                      {remaining.map((entry) => (
+                        <LogEntryCard key={entry.id} entry={entry} formatTime={formatTime} />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LogEntryCard({
+  entry,
+  formatTime,
+}: {
+  entry: LogEntryWithFix;
+  formatTime: (ts: number) => string;
+}) {
+  const [messageExpanded, setMessageExpanded] = useState(false);
+  const LONG_MSG = 100;
+  const isLongMessage = (entry.message?.length ?? 0) > LONG_MSG;
+  const showMessage = isLongMessage && !messageExpanded ? entry.message!.slice(0, LONG_MSG) + "…" : entry.message;
+  return (
             <Card
-              key={entry.id}
               className={
                 entry.type === "error"
                   ? "border-destructive/50 dark:border-destructive/50"
@@ -535,7 +629,12 @@ export default function AdminSystemPage() {
                   </span>
                 </div>
                 <CardTitle className="text-base font-medium mt-1">
-                  {entry.message}
+                  {showMessage}
+                  {isLongMessage && (
+                    <Button variant="link" size="sm" className="h-auto p-0 ml-1 text-xs" onClick={() => setMessageExpanded((v) => !v)}>
+                      {messageExpanded ? "Show less" : "Show more"}
+                    </Button>
+                  )}
                 </CardTitle>
                 {(entry.route || entry.url) && (
                   <CardDescription className="text-xs">
@@ -583,9 +682,5 @@ export default function AdminSystemPage() {
                 )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
