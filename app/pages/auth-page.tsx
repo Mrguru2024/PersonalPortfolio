@@ -222,9 +222,9 @@ const AuthPage = () => {
             }
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 gap-1 p-1 min-h-[44px] rounded-lg">
+              <TabsTrigger value="login" className="min-w-0">Login</TabsTrigger>
+              <TabsTrigger value="register" className="min-w-0">Register</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">

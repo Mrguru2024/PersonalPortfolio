@@ -221,17 +221,17 @@ function ResetPasswordForm() {
                   </>
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                asChild
-              >
-                <Link href="/auth">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
-                </Link>
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button variant="ghost" className="w-full" asChild>
+                  <Link href="/auth">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Admin / main login
+                  </Link>
+                </Button>
+                <Button variant="ghost" className="w-full" asChild>
+                  <Link href="/login">Client sign in</Link>
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

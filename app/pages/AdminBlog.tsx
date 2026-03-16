@@ -227,9 +227,9 @@ const AdminBlog = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <Tabs defaultValue="content" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="content">Content</TabsTrigger>
-                <TabsTrigger value="seo">SEO & Optimization</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 gap-1 p-1.5 min-h-[44px] rounded-lg">
+                <TabsTrigger value="content" className="min-w-0">Content</TabsTrigger>
+                <TabsTrigger value="seo" className="min-w-0">SEO</TabsTrigger>
               </TabsList>
               
               <TabsContent value="content" className="space-y-8">

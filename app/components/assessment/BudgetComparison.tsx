@@ -228,10 +228,10 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
 
       {/* Tabs for Detailed Comparison */}
       <Tabs defaultValue="features" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="flex flex-wrap gap-1.5 p-1.5 w-full min-h-[44px] rounded-lg [&>button]:flex-1 [&>button]:min-w-[80px]">
           <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="cost">Cost Breakdown</TabsTrigger>
-          <TabsTrigger value="value">Value Analysis</TabsTrigger>
+          <TabsTrigger value="cost">Cost</TabsTrigger>
+          <TabsTrigger value="value">Value</TabsTrigger>
         </TabsList>
 
         {/* Features Comparison */}

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { getGeoFromRequest } from "@/lib/geo-from-request";
+import { isLeadTrackingEventType, DEFAULT_TRACKING_EVENT_TYPE } from "@/lib/lead-tracking-types";
+import { addScoreFromEvent } from "@server/services/leadScoringService";
 
 export const dynamic = "force-dynamic";
-
-const ALLOWED_EVENT_TYPES = ["page_view", "form_started", "form_completed", "cta_click", "tool_used"];
 const METADATA_MAX_STRING = 1024;
 const GEO_MAX_LENGTH = 128;
 
@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const visitorId = typeof body.visitorId === "string" ? body.visitorId.trim().slice(0, 128) : null;
-    const eventType = typeof body.eventType === "string" && ALLOWED_EVENT_TYPES.includes(body.eventType) ? body.eventType : "page_view";
+    const eventType =
+      typeof body.eventType === "string" && isLeadTrackingEventType(body.eventType)
+        ? body.eventType
+        : DEFAULT_TRACKING_EVENT_TYPE;
     const pageVisited = typeof body.pageVisited === "string" ? body.pageVisited.trim().slice(0, 512) : undefined;
     const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim().slice(0, 128) : undefined;
     const referrer = typeof body.referrer === "string" ? body.referrer.trim().slice(0, 512) : undefined;
@@ -69,6 +72,15 @@ export async function POST(req: NextRequest) {
       timezone,
       metadata: Object.keys(metadata).length ? metadata : undefined,
     });
+
+    if (leadId != null && eventType !== "page_view") {
+      addScoreFromEvent(storage, leadId, eventType, {
+        page: pageVisited ?? undefined,
+        component: baseMeta?.component as string | undefined,
+      }).catch(() => {});
+    } else if (leadId != null && eventType === "page_view" && pageVisited) {
+      addScoreFromEvent(storage, leadId, "page_view", { page: pageVisited }).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true, id: activity.id });
   } catch (e) {

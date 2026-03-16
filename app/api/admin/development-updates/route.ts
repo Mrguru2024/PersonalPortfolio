@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { isAdmin } from "@/lib/auth-helpers";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const CONTENT_PATH = join(process.cwd(), "content", "development-updates.md");
+
+export interface DevelopmentUpdateEntry {
+  date: string;
+  title: string;
+  items: string[];
+}
+
+/** Parse markdown-style log into entries. Format: ## YYYY-MM-DD — Title, then - item lines. */
+function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
+  const entries: DevelopmentUpdateEntry[] = [];
+  const blocks = raw.split(/\n##\s+/).filter(Boolean);
+  for (const block of blocks) {
+    const firstLine = block.trim().split("\n")[0] ?? "";
+    const match = firstLine.match(/^(\d{4}-\d{2}-\d{2})\s*[—–-]\s*(.+)$/);
+    if (!match) continue;
+    const [, date, title] = match;
+    const rest = block.slice(firstLine.length).trim();
+    const items = rest
+      .split(/\n/)
+      .map((line) => line.replace(/^\s*[-*]\s+/, "").trim())
+      .filter(Boolean);
+    entries.push({ date: date ?? "", title: (title ?? "").trim(), items });
+  }
+  return entries;
+}
+
+/**
+ * GET /api/admin/development-updates
+ * Returns parsed development log for the admin dashboard. Auto-updates when the content file changes (no cache).
+ */
+export async function GET(req: NextRequest) {
+  try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
+    }
+    if (!existsSync(CONTENT_PATH)) {
+      return NextResponse.json({ updates: [], source: "file" });
+    }
+    const raw = readFileSync(CONTENT_PATH, "utf-8");
+    const updates = parseUpdatesMarkdown(raw);
+    return NextResponse.json({ updates, source: "file" });
+  } catch (error) {
+    console.error("Development updates read error:", error);
+    return NextResponse.json({ updates: [], error: "Failed to load updates" }, { status: 500 });
+  }
+}

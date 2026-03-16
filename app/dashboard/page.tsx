@@ -183,7 +183,7 @@ export default function ClientDashboardPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-        <TabsList className="w-full sm:max-w-2xl grid grid-cols-2 sm:grid-cols-4 h-11 sm:h-12 p-1 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">
+        <TabsList className="w-full sm:max-w-2xl grid grid-cols-2 sm:grid-cols-4 min-h-[44px] h-auto sm:h-12 gap-1 p-1.5 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button]:min-w-0 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="proposals">Proposals</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>

@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { randomBytes } from "crypto";
-import { emailService } from "@server/services/emailService";
+
+function getBaseUrl(req: NextRequest): string {
+  const origin = req.headers.get("origin") || req.headers.get("x-forwarded-host");
+  if (origin) {
+    const protocol = req.headers.get("x-forwarded-proto") || "https";
+    return origin.startsWith("http") ? origin : `${protocol}://${origin}`;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,9 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Don't reveal if user exists or not (security best practice)
-    // But we still need to send email, so we'll check if user exists
     if (!user || !user.email) {
-      // Return success even if user doesn't exist (security)
       return NextResponse.json({
         message:
           "If an account exists with that email, a password reset link has been sent.",
@@ -35,20 +44,15 @@ export async function POST(req: NextRequest) {
     // Generate reset token
     const resetToken = randomBytes(32).toString("hex");
     const resetTokenExpiry = new Date();
-    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // Token expires in 1 hour
+    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hour
 
-    // Save reset token to user
     await storage.updateUser(user.id, {
       resetToken,
       resetTokenExpiry,
     });
 
-    // Send reset email
-    const resetUrl = `${
-      process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000"
-    }/auth/reset-password?token=${resetToken}`;
+    const baseUrl = getBaseUrl(req);
+    const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
 
     try {
       const brevoModule = await import("@getbrevo/brevo");

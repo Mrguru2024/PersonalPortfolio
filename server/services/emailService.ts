@@ -16,10 +16,13 @@ interface DataDeletionPayload {
   message?: string;
 }
 
-interface EmailNotification {
-  type: 'contact' | 'quote' | 'resume' | 'recommendation' | 'skill-endorsement' | 'data-deletion';
-  data: Record<string, any>;
-}
+type EmailNotification =
+  | { type: 'contact'; data: Record<string, any> }
+  | { type: 'quote'; data: Record<string, any> }
+  | { type: 'resume'; data: Record<string, any> }
+  | { type: 'recommendation'; data: Record<string, any> }
+  | { type: 'skill-endorsement'; data: Record<string, any> }
+  | { type: 'data-deletion'; data: DataDeletionPayload };
 
 export class EmailService {
   private adminEmail: string;
@@ -492,7 +495,7 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
           emailContent = this.formatContactEmail(notification.data);
           break;
         case 'data-deletion':
-          emailContent = this.formatDataDeletionEmail(notification.data as DataDeletionPayload);
+          emailContent = this.formatDataDeletionEmail(notification.data);
           break;
         case 'quote':
           emailContent = this.formatQuoteRequestEmail(notification.data);

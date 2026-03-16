@@ -10,6 +10,7 @@ import {
   Skill,
 } from "@shared/schema";
 import { storage } from "../storage";
+import { ensureCrmLeadFromFormSubmission } from "../services/leadFromFormService";
 import { ZodError } from "zod";
 import { format } from "date-fns";
 import path from "path";
@@ -465,6 +466,26 @@ export const portfolioController = {
       console.log(
         `[Contact form] Saved id=${savedContact.id} email=${savedContact.email} name=${savedContact.name}`
       );
+
+      try {
+        await ensureCrmLeadFromFormSubmission({
+          email: savedContact.email,
+          name: savedContact.name,
+          phone: savedContact.phone ?? undefined,
+          company: savedContact.company ?? undefined,
+          contactId: savedContact.id,
+          attribution: {
+            utm_source: body.utm_source ?? null,
+            utm_medium: body.utm_medium ?? null,
+            utm_campaign: body.utm_campaign ?? null,
+            referrer: body.referrer ?? null,
+            landing_page: body.landing_page ?? body.landingPage ?? null,
+            visitorId: body.visitorId ?? null,
+          },
+        });
+      } catch (err) {
+        console.warn("[Contact form] CRM lead ensure failed:", err);
+      }
 
       // Send email notification to admin
       const emailSent = isQuoteRequest

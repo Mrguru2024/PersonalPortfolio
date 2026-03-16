@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       type: body.type,
       subject: body.subject ?? null,
       body: body.body ?? null,
+      metadata: body.metadata ?? null,
     });
     return NextResponse.json(activity);
   } catch (error: any) {

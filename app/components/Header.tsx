@@ -22,6 +22,7 @@ import {
   Filter,
   UserCog,
   Activity,
+  Link2,
   TrendingUp,
   Bell,
 } from "lucide-react";
@@ -152,6 +153,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
+    { name: "Integrations", href: "/admin/integrations", icon: Link2, developerOnly: true },
     { name: "User management", href: "/admin/users", icon: UserCog, developerOnly: true },
     { name: "System monitor", href: "/admin/system", icon: Activity, developerOnly: true },
   ];

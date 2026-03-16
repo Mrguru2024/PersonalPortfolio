@@ -141,9 +141,9 @@ export default function Projects() {
               value={activeTab}
               onValueChange={setActiveTab}
             >
-              <div className="flex justify-center mb-12">
-                <TabsList className="bg-background/50 border border-border">
-                  <TabsTrigger value="all">All Projects</TabsTrigger>
+              <div className="flex justify-center mb-12 overflow-x-auto">
+                <TabsList className="bg-background/50 border border-border flex flex-nowrap sm:flex-wrap overflow-x-auto gap-1 p-1.5 min-h-[44px] [&>button]:shrink-0">
+                  <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="frontend">Frontend</TabsTrigger>
                   <TabsTrigger value="backend">Backend</TabsTrigger>
                   <TabsTrigger value="fullstack">Full Stack</TabsTrigger>

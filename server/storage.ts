@@ -21,13 +21,17 @@ import {
   newsletterSends, type NewsletterSend, type InsertNewsletterSend
 } from "@shared/newsletterSchema";
 import {
+  crmAccounts, type CrmAccount, type InsertCrmAccount,
   crmContacts, type CrmContact, type InsertCrmContact,
   crmDeals, type CrmDeal, type InsertCrmDeal,
   crmActivities, type CrmActivity, type InsertCrmActivity,
+  crmActivityLog, type CrmActivityLog, type InsertCrmActivityLog,
+  crmResearchProfiles, type CrmResearchProfile, type InsertCrmResearchProfile,
   communicationEvents, type CommunicationEvent, type InsertCommunicationEvent,
   documentEvents, documentEventLog, type DocumentEvent, type InsertDocumentEvent, type InsertDocumentEventLog,
   visitorActivity, type VisitorActivity, type InsertVisitorActivity,
   crmAlerts, type CrmAlert, type InsertCrmAlert,
+  leadScoreEvents, type LeadScoreEvent, type InsertLeadScoreEvent,
   crmTasks, type CrmTask, type InsertCrmTask,
   crmSequences, type CrmSequence, type InsertCrmSequence,
   crmSequenceEnrollments, type CrmSequenceEnrollment, type InsertCrmSequenceEnrollment,
@@ -174,18 +178,53 @@ export interface IStorage {
 
   // CRM operations
   getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
+  getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]>;
   getCrmContactById(id: number): Promise<CrmContact | undefined>;
   createCrmContact(contact: InsertCrmContact): Promise<CrmContact>;
   updateCrmContact(id: number, updates: Partial<InsertCrmContact>): Promise<CrmContact>;
   deleteCrmContact(id: number): Promise<void>;
-  getCrmDeals(contactId?: number): Promise<(CrmDeal & { contact?: CrmContact })[]>;
-  getCrmDealById(id: number): Promise<CrmDeal | undefined>;
+  getCrmDeals(contactId?: number, accountId?: number, pipelineStage?: string): Promise<(CrmDeal & { contact?: CrmContact; account?: CrmAccount })[]>;
+  getCrmDealById(id: number): Promise<(CrmDeal & { contact?: CrmContact; account?: CrmAccount }) | undefined>;
   createCrmDeal(deal: InsertCrmDeal): Promise<CrmDeal>;
   updateCrmDeal(id: number, updates: Partial<InsertCrmDeal>): Promise<CrmDeal>;
   deleteCrmDeal(id: number): Promise<void>;
   getCrmActivities(contactId: number): Promise<CrmActivity[]>;
   createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
   getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
+
+  // CRM accounts (Stage 1)
+  getCrmAccounts(): Promise<CrmAccount[]>;
+  getCrmAccountById(id: number): Promise<CrmAccount | undefined>;
+  createCrmAccount(account: InsertCrmAccount): Promise<CrmAccount>;
+  updateCrmAccount(id: number, updates: Partial<InsertCrmAccount>): Promise<CrmAccount>;
+  deleteCrmAccount(id: number): Promise<void>;
+
+  // CRM activity log (Stage 1)
+  createCrmActivityLog(entry: InsertCrmActivityLog): Promise<CrmActivityLog>;
+  getCrmActivityLogByContactId(contactId: number, limit?: number): Promise<CrmActivityLog[]>;
+  getCrmActivityLogByAccountId(accountId: number, limit?: number): Promise<CrmActivityLog[]>;
+  getCrmActivityLogByDealId(dealId: number, limit?: number): Promise<CrmActivityLog[]>;
+
+  // CRM research profiles (Stage 1)
+  getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined>;
+  getCrmResearchProfiles(accountId?: number): Promise<CrmResearchProfile[]>;
+  createCrmResearchProfile(profile: InsertCrmResearchProfile): Promise<CrmResearchProfile>;
+  updateCrmResearchProfile(id: number, updates: Partial<InsertCrmResearchProfile>): Promise<CrmResearchProfile>;
+
+  // CRM dashboard (Stage 1)
+  getCrmDashboardStats(): Promise<{
+    totalContacts: number;
+    totalAccounts: number;
+    totalActiveLeads: number;
+    leadsMissingData: number;
+    leadsByPipelineStage: { stage: string; count: number }[];
+    recentTasks: (CrmTask & { contact?: CrmContact })[];
+    overdueTasks: (CrmTask & { contact?: CrmContact })[];
+    recentActivity: CrmActivityLog[];
+    accountsNeedingResearch: number;
+    topSources: { source: string; count: number }[];
+    topTags: { tag: string; count: number }[];
+  }>;
 
   // Lead intelligence: communication events
   createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent>;
@@ -215,6 +254,10 @@ export interface IStorage {
   createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert>;
   getCrmAlerts(leadId?: number, unreadOnly?: boolean): Promise<(CrmAlert & { lead?: CrmContact })[]>;
   markCrmAlertRead(id: number): Promise<void>;
+
+  // Lead score history
+  createLeadScoreEvent(event: InsertLeadScoreEvent): Promise<LeadScoreEvent>;
+  getLeadScoreEventsByLeadId(leadId: number): Promise<LeadScoreEvent[]>;
 
   // Resolve CRM lead from quote (assessment email)
   getCrmContactIdByQuoteId(quoteId: number): Promise<number | null>;
@@ -259,7 +302,7 @@ export interface IStorage {
   updateCrmTask(id: number, updates: Partial<InsertCrmTask>): Promise<CrmTask>;
   deleteCrmTask(id: number): Promise<void>;
   getCrmTasksByContactId(contactId: number): Promise<CrmTask[]>;
-  getCrmTasks(filters: { contactId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]>;
+  getCrmTasks(filters: { contactId?: number; relatedDealId?: number; relatedAccountId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]>;
 
   // Sequences
   createCrmSequence(seq: InsertCrmSequence): Promise<CrmSequence>;
@@ -1483,6 +1526,14 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt));
   }
 
+  async getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]> {
+    return db
+      .select()
+      .from(crmContacts)
+      .where(eq(crmContacts.accountId, accountId))
+      .orderBy(desc(crmContacts.updatedAt));
+  }
+
   async getCrmContactById(id: number): Promise<CrmContact | undefined> {
     const [row] = await db.select().from(crmContacts).where(eq(crmContacts.id, id));
     return row || undefined;
@@ -1510,26 +1561,190 @@ export class DatabaseStorage implements IStorage {
     await db.delete(crmContacts).where(eq(crmContacts.id, id));
   }
 
-  async getCrmDeals(contactId?: number): Promise<(CrmDeal & { contact?: CrmContact })[]> {
-    if (contactId) {
-      const deals = await db
-        .select()
-        .from(crmDeals)
-        .where(eq(crmDeals.contactId, contactId))
-        .orderBy(desc(crmDeals.updatedAt));
-      const contact = await this.getCrmContactById(contactId);
-      return deals.map((d) => ({ ...d, contact: contact || undefined }));
-    }
-    const deals = await db.select().from(crmDeals).orderBy(desc(crmDeals.updatedAt));
+  async getCrmDeals(contactId?: number, accountId?: number, pipelineStage?: string): Promise<(CrmDeal & { contact?: CrmContact; account?: CrmAccount })[]> {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (contactId != null) conditions.push(eq(crmDeals.contactId, contactId));
+    if (accountId != null) conditions.push(eq(crmDeals.accountId, accountId));
+    if (pipelineStage != null) conditions.push(eq(crmDeals.pipelineStage, pipelineStage));
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const deals = whereClause
+      ? await db.select().from(crmDeals).where(whereClause).orderBy(desc(crmDeals.updatedAt))
+      : await db.select().from(crmDeals).orderBy(desc(crmDeals.updatedAt));
     const contactIds = [...new Set(deals.map((d) => d.contactId))];
+    const accountIds = [...new Set(deals.map((d) => d.accountId).filter((id): id is number => id != null))];
     const contacts = await Promise.all(contactIds.map((id) => this.getCrmContactById(id)));
-    const byId = Object.fromEntries(contactIds.map((id, i) => [id, contacts[i]]));
-    return deals.map((d) => ({ ...d, contact: byId[d.contactId] }));
+    const accounts = accountIds.length ? await Promise.all(accountIds.map((id) => this.getCrmAccountById(id))) : [];
+    const contactById = Object.fromEntries(contactIds.map((id, i) => [id, contacts[i]]));
+    const accountById = Object.fromEntries(accountIds.map((id, i) => [id, accounts[i]]));
+    return deals.map((d) => ({
+      ...d,
+      contact: contactById[d.contactId],
+      account: d.accountId != null ? accountById[d.accountId] : undefined,
+    }));
   }
 
-  async getCrmDealById(id: number): Promise<CrmDeal | undefined> {
+  async getCrmDealById(id: number): Promise<(CrmDeal & { contact?: CrmContact; account?: CrmAccount }) | undefined> {
     const [row] = await db.select().from(crmDeals).where(eq(crmDeals.id, id));
-    return row || undefined;
+    if (!row) return undefined;
+    const contact = await this.getCrmContactById(row.contactId);
+    const account = row.accountId != null ? await this.getCrmAccountById(row.accountId) : undefined;
+    return { ...row, contact: contact ?? undefined, account };
+  }
+
+  async getCrmAccounts(): Promise<CrmAccount[]> {
+    return db.select().from(crmAccounts).orderBy(desc(crmAccounts.updatedAt));
+  }
+
+  async getCrmAccountById(id: number): Promise<CrmAccount | undefined> {
+    const [row] = await db.select().from(crmAccounts).where(eq(crmAccounts.id, id));
+    return row ?? undefined;
+  }
+
+  async createCrmAccount(account: InsertCrmAccount): Promise<CrmAccount> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmAccounts).values({ ...account, createdAt: now, updatedAt: now }).returning();
+    return inserted;
+  }
+
+  async updateCrmAccount(id: number, updates: Partial<InsertCrmAccount>): Promise<CrmAccount> {
+    const [updated] = await db.update(crmAccounts).set({ ...updates, updatedAt: new Date() }).where(eq(crmAccounts.id, id)).returning();
+    return updated;
+  }
+
+  async deleteCrmAccount(id: number): Promise<void> {
+    await db.delete(crmAccounts).where(eq(crmAccounts.id, id));
+  }
+
+  async createCrmActivityLog(entry: InsertCrmActivityLog): Promise<CrmActivityLog> {
+    const [inserted] = await db.insert(crmActivityLog).values(entry).returning();
+    return inserted;
+  }
+
+  async getCrmActivityLogByContactId(contactId: number, limit = 50): Promise<CrmActivityLog[]> {
+    return db
+      .select()
+      .from(crmActivityLog)
+      .where(eq(crmActivityLog.contactId, contactId))
+      .orderBy(desc(crmActivityLog.createdAt))
+      .limit(Math.min(limit, 100));
+  }
+
+  async getCrmActivityLogByAccountId(accountId: number, limit = 50): Promise<CrmActivityLog[]> {
+    return db
+      .select()
+      .from(crmActivityLog)
+      .where(eq(crmActivityLog.accountId, accountId))
+      .orderBy(desc(crmActivityLog.createdAt))
+      .limit(Math.min(limit, 100));
+  }
+
+  async getCrmActivityLogByDealId(dealId: number, limit = 50): Promise<CrmActivityLog[]> {
+    return db
+      .select()
+      .from(crmActivityLog)
+      .where(eq(crmActivityLog.dealId, dealId))
+      .orderBy(desc(crmActivityLog.createdAt))
+      .limit(Math.min(limit, 100));
+  }
+
+  async getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined> {
+    const [row] = await db.select().from(crmResearchProfiles).where(eq(crmResearchProfiles.accountId, accountId));
+    return row ?? undefined;
+  }
+
+  async getCrmResearchProfiles(accountId?: number): Promise<CrmResearchProfile[]> {
+    if (accountId != null) {
+      return db.select().from(crmResearchProfiles).where(eq(crmResearchProfiles.accountId, accountId));
+    }
+    return db.select().from(crmResearchProfiles).orderBy(desc(crmResearchProfiles.updatedAt));
+  }
+
+  async createCrmResearchProfile(profile: InsertCrmResearchProfile): Promise<CrmResearchProfile> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmResearchProfiles).values({ ...profile, createdAt: now, updatedAt: now }).returning();
+    return inserted;
+  }
+
+  async updateCrmResearchProfile(id: number, updates: Partial<InsertCrmResearchProfile>): Promise<CrmResearchProfile> {
+    const [updated] = await db.update(crmResearchProfiles).set({ ...updates, updatedAt: new Date() }).where(eq(crmResearchProfiles.id, id)).returning();
+    return updated;
+  }
+
+  async getCrmDashboardStats(): Promise<{
+    totalContacts: number;
+    totalAccounts: number;
+    totalActiveLeads: number;
+    leadsMissingData: number;
+    leadsByPipelineStage: { stage: string; count: number }[];
+    recentTasks: (CrmTask & { contact?: CrmContact })[];
+    overdueTasks: (CrmTask & { contact?: CrmContact })[];
+    recentActivity: CrmActivityLog[];
+    accountsNeedingResearch: number;
+    topSources: { source: string; count: number }[];
+    topTags: { tag: string; count: number }[];
+  }> {
+    const [contacts, accounts, deals, allTasks, activityRows, researchProfiles] = await Promise.all([
+      this.getCrmContacts(),
+      this.getCrmAccounts(),
+      this.getCrmDeals(),
+      this.getCrmTasks({ incompleteOnly: true }),
+      db.select().from(crmActivityLog).orderBy(desc(crmActivityLog.createdAt)).limit(20),
+      this.getCrmResearchProfiles(),
+    ]);
+    const accountIdsWithResearch = new Set(researchProfiles.map((r) => r.accountId));
+    const accountsNeedingResearch = accounts.filter((a) => !accountIdsWithResearch.has(a.id)).length;
+    const activeStages = ["new_lead", "researching", "qualified", "proposal_ready", "follow_up", "negotiation"];
+    const activeLeads = deals.filter((d) => d.pipelineStage && activeStages.includes(d.pipelineStage));
+    const leadsMissingData = activeLeads.filter(
+      (d) =>
+        !d.primaryPainPoint ||
+        !d.budgetRange ||
+        ((d.pipelineStage === "qualified" || d.pipelineStage === "proposal_ready" || d.pipelineStage === "negotiation") && !d.expectedCloseAt)
+    ).length;
+    const stages = ["new_lead", "researching", "qualified", "proposal_ready", "follow_up", "negotiation", "won", "lost", "nurture"];
+    const leadsByPipelineStage = stages.map((stage) => ({
+      stage,
+      count: deals.filter((d) => d.pipelineStage === stage).length,
+    }));
+    const now = new Date();
+    const overdueTasks = allTasks.filter((t) => t.dueAt && !t.completedAt && new Date(t.dueAt) < now);
+    const recentTasks = allTasks.slice(0, 10);
+    const contactIds = [...new Set(allTasks.map((t) => t.contactId))];
+    const contactsForTasks = await Promise.all(contactIds.map((id) => this.getCrmContactById(id)));
+    const contactById = Object.fromEntries(contactIds.map((id, i) => [id, contactsForTasks[i]]));
+    const sourceCounts: Record<string, number> = {};
+    for (const c of contacts) {
+      const s = c.source?.trim() || c.utmSource?.trim() || "unknown";
+      sourceCounts[s] = (sourceCounts[s] ?? 0) + 1;
+    }
+    const topSources = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    const tagCounts: Record<string, number> = {};
+    for (const c of contacts) {
+      const tags = c.tags ?? [];
+      for (const t of tags) {
+        if (typeof t === "string") tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      }
+    }
+    const topTags = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    return {
+      totalContacts: contacts.length,
+      totalAccounts: accounts.length,
+      totalActiveLeads: activeLeads.length,
+      leadsMissingData,
+      leadsByPipelineStage,
+      recentTasks: recentTasks.map((t) => ({ ...t, contact: contactById[t.contactId] })),
+      overdueTasks: overdueTasks.map((t) => ({ ...t, contact: contactById[t.contactId] })),
+      recentActivity: activityRows,
+      accountsNeedingResearch,
+      topSources,
+      topTags,
+    };
   }
 
   async createCrmDeal(deal: InsertCrmDeal): Promise<CrmDeal> {
@@ -1766,6 +1981,19 @@ export class DatabaseStorage implements IStorage {
   async createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert> {
     const [inserted] = await db.insert(crmAlerts).values(alert).returning();
     return inserted;
+  }
+
+  async createLeadScoreEvent(event: InsertLeadScoreEvent): Promise<LeadScoreEvent> {
+    const [inserted] = await db.insert(leadScoreEvents).values(event).returning();
+    return inserted;
+  }
+
+  async getLeadScoreEventsByLeadId(leadId: number): Promise<LeadScoreEvent[]> {
+    return db
+      .select()
+      .from(leadScoreEvents)
+      .where(eq(leadScoreEvents.leadId, leadId))
+      .orderBy(desc(leadScoreEvents.createdAt));
   }
 
   async getCrmAlerts(leadId?: number, unreadOnly?: boolean): Promise<(CrmAlert & { lead?: CrmContact })[]> {
@@ -2072,9 +2300,11 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(crmTasks).where(eq(crmTasks.contactId, contactId)).orderBy(desc(crmTasks.dueAt));
   }
 
-  async getCrmTasks(filters: { contactId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]> {
-    const conditions = [];
+  async getCrmTasks(filters: { contactId?: number; relatedDealId?: number; relatedAccountId?: number; overdueOnly?: boolean; incompleteOnly?: boolean }): Promise<(CrmTask & { contact?: CrmContact })[]> {
+    const conditions: ReturnType<typeof eq>[] = [];
     if (filters.contactId != null) conditions.push(eq(crmTasks.contactId, filters.contactId));
+    if (filters.relatedDealId != null) conditions.push(eq(crmTasks.relatedDealId, filters.relatedDealId));
+    if (filters.relatedAccountId != null) conditions.push(eq(crmTasks.relatedAccountId, filters.relatedAccountId));
     if (filters.overdueOnly) conditions.push(and(isNull(crmTasks.completedAt), isNotNull(crmTasks.dueAt), lt(crmTasks.dueAt, new Date()))!);
     if (filters.incompleteOnly) conditions.push(isNull(crmTasks.completedAt));
     const rows = await db
@@ -2174,6 +2404,14 @@ export class DatabaseStorage implements IStorage {
     if (filters.status) contacts = contacts.filter((c) => c.status === filters.status);
     if (filters.intentLevel) contacts = contacts.filter((c) => c.intentLevel === filters.intentLevel);
     if (filters.source) contacts = contacts.filter((c) => c.source === filters.source);
+    if (filters.lifecycleStage) contacts = contacts.filter((c) => c.lifecycleStage === filters.lifecycleStage);
+    if (filters.tags && filters.tags.length > 0) {
+      const tagSet = new Set(filters.tags);
+      contacts = contacts.filter((c) => {
+        const ct = c.tags ?? [];
+        return ct.some((t) => typeof t === "string" && tagSet.has(t));
+      });
+    }
     if (filters.noContactSinceDays != null) {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - filters.noContactSinceDays);
@@ -2186,6 +2424,20 @@ export class DatabaseStorage implements IStorage {
       const taskRows = await db.select({ contactId: crmTasks.contactId }).from(crmTasks).where(isNull(crmTasks.completedAt));
       const withTasks = new Set(taskRows.map((t) => t.contactId));
       contacts = contacts.filter((c) => withTasks.has(c.id));
+    }
+    if (filters.pipelineStage) {
+      const deals = await this.getCrmDeals(undefined, undefined, filters.pipelineStage);
+      const contactIds = new Set(deals.map((d) => d.contactId));
+      contacts = contacts.filter((c) => contactIds.has(c.id));
+    }
+    if (filters.hasResearch === true) {
+      const profiles = await this.getCrmResearchProfiles();
+      const accountIdsWithResearch = new Set(profiles.map((r) => r.accountId));
+      contacts = contacts.filter((c) => c.accountId != null && accountIdsWithResearch.has(c.accountId));
+    } else if (filters.hasResearch === false) {
+      const profiles = await this.getCrmResearchProfiles();
+      const accountIdsWithResearch = new Set(profiles.map((r) => r.accountId));
+      contacts = contacts.filter((c) => c.accountId == null || !accountIdsWithResearch.has(c.accountId));
     }
     return contacts;
   }

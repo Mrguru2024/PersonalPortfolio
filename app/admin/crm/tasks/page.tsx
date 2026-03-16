@@ -75,9 +75,9 @@ export default function CrmTasksPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="all">My tasks</TabsTrigger>
-          <TabsTrigger value="overdue">Overdue</TabsTrigger>
+        <TabsList className="grid grid-cols-2 gap-1 p-1.5 min-h-[44px] w-full max-w-[280px]">
+          <TabsTrigger value="all" className="min-w-0">My tasks</TabsTrigger>
+          <TabsTrigger value="overdue" className="min-w-0">Overdue</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
           {allLoading ? (

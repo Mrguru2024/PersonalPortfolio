@@ -37,13 +37,22 @@ export async function GET(
     const items: TimelineItem[] = [];
 
     for (const a of activities) {
+      const meta = a.metadata as { meetingUrl?: string; startUrl?: string; meetingId?: string; scheduledAt?: string } | null;
       items.push({
         id: `activity-${a.id}`,
         type: "activity",
-        title: a.type.charAt(0).toUpperCase() + a.type.slice(1),
-        description: a.subject || a.body?.slice(0, 200),
+        title: a.subject || (a.type.charAt(0).toUpperCase() + a.type.slice(1)),
+        description: a.body?.slice(0, 200),
         createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt),
-        metadata: { dealId: a.dealId },
+        metadata: {
+          dealId: a.dealId,
+          activityType: a.type,
+          meetingUrl: meta?.meetingUrl,
+          startUrl: meta?.startUrl,
+          meetingId: meta?.meetingId,
+          scheduledAt: meta?.scheduledAt,
+          body: a.body,
+        },
       });
     }
     for (const e of commEvents) {

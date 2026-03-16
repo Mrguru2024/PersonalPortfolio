@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -21,12 +21,27 @@ import {
   CheckSquare,
   Linkedin,
   Sparkles,
+  ChevronDown,
+  ArrowRight,
+  ClipboardCheck,
+  Video,
+  ExternalLink,
+  Camera,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
@@ -48,6 +63,13 @@ interface CrmContact {
   leadScore?: number | null;
   intentLevel?: string | null;
   linkedinUrl?: string | null;
+  customFields?: Record<string, unknown> | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  referringPage?: string | null;
+  landingPage?: string | null;
+  lifecycleStage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,7 +80,15 @@ interface TimelineItem {
   title: string;
   description?: string;
   createdAt: string;
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    dealId?: number;
+    activityType?: string;
+    meetingUrl?: string;
+    startUrl?: string;
+    meetingId?: string;
+    scheduledAt?: string;
+    body?: string;
+  };
 }
 
 interface DocumentEvent {
@@ -151,6 +181,21 @@ export default function CrmLeadProfilePage() {
     enabled: !!id,
   });
 
+  const { data: insights } = useQuery<{
+    contactCompleteness: { score: number; missingFields: string[]; label: string };
+    researchCompleteness: { score: number; missingFields: string[]; label: string };
+    aiFitScore: number;
+    nextBestActions: { action: string; reason: string; priority: string }[];
+  }>({
+    queryKey: ["/api/admin/crm/insights/contact", id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/crm/insights/contact/${id}`);
+      if (!res.ok) throw new Error("Failed to load insights");
+      return res.json();
+    },
+    enabled: !!id,
+  });
+
   const enrichMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/admin/crm/contacts/${id}/enrich`);
@@ -192,6 +237,39 @@ export default function CrmLeadProfilePage() {
   });
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [activeTab, setActiveTab] = useState("timeline");
+  const [meetingTitle, setMeetingTitle] = useState("");
+  const [meetingUrl, setMeetingUrl] = useState("");
+  const [meetingNotes, setMeetingNotes] = useState("");
+  const [scheduleTopic, setScheduleTopic] = useState("");
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("14:00");
+  const [scheduleDuration, setScheduleDuration] = useState(60);
+  const [scheduleAgenda, setScheduleAgenda] = useState("");
+  const [createdMeetingLinks, setCreatedMeetingLinks] = useState<{
+    joinUrl?: string;
+    startUrl?: string;
+    startTime?: string;
+  } | null>(null);
+  const cardInputRef = useRef<HTMLInputElement>(null);
+  const [cardScanning, setCardScanning] = useState(false);
+
+  const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, { status });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
+      toast({ title: "Status updated" });
+    },
+    onError: () => toast({ title: "Failed to update status", variant: "destructive" }),
+  });
 
   const addNoteMutation = useMutation({
     mutationFn: async (body: { subject: string; body: string }) => {
@@ -212,6 +290,104 @@ export default function CrmLeadProfilePage() {
     },
   });
 
+  const addMeetingMutation = useMutation({
+    mutationFn: async (payload: { subject: string; body: string; meetingUrl: string }) => {
+      const res = await apiRequest("POST", "/api/admin/crm/activities", {
+        contactId: id,
+        type: "meeting",
+        subject: payload.subject,
+        body: payload.body || null,
+        metadata: { meetingUrl: payload.meetingUrl },
+      });
+      if (!res.ok) throw new Error("Failed to log meeting");
+      return res.json();
+    },
+    onSuccess: () => {
+      setMeetingTitle("");
+      setMeetingUrl("");
+      setMeetingNotes("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({ title: "Zoom meeting logged" });
+    },
+    onError: () => toast({ title: "Failed to log meeting", variant: "destructive" }),
+  });
+
+  const { data: zoomConfigured = false } = useQuery<{ configured: boolean }>({
+    queryKey: ["/api/admin/zoom/status"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/zoom/status");
+      return res.ok ? res.json() : { configured: false };
+    },
+    enabled: !!id,
+  });
+
+  const createZoomMeetingMutation = useMutation({
+    mutationFn: async (payload: { topic: string; startTime: string; durationMinutes: number; agenda?: string }) => {
+      const res = await apiRequest("POST", "/api/admin/zoom/create-meeting", {
+        ...payload,
+        contactId: id,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to create meeting");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setScheduleTopic("");
+      setScheduleDate("");
+      setScheduleTime("14:00");
+      setScheduleAgenda("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({
+        title: "Meeting scheduled",
+        description: "Use Start meeting (host) or share the Join link with the lead.",
+      });
+      setCreatedMeetingLinks(data);
+    },
+    onError: (e: Error) => toast({ title: "Schedule failed", description: e.message, variant: "destructive" }),
+  });
+
+  const scanCardMutation = useMutation({
+    mutationFn: async (imageDataUrl: string) => {
+      const res = await apiRequest("POST", "/api/admin/crm/business-card", {
+        image: imageDataUrl,
+        contactId: id,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Scan failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      if (cardInputRef.current) cardInputRef.current.value = "";
+      setCardScanning(false);
+      toast({ title: "Contact updated from card", description: "Data and card image saved." });
+    },
+    onError: (e: Error) => {
+      setCardScanning(false);
+      toast({ title: "Card scan failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const handleCardFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setCardScanning(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      scanCardMutation.mutate(dataUrl);
+    };
+    reader.onerror = () => {
+      setCardScanning(false);
+      toast({ title: "Could not read image", variant: "destructive" });
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (contact === null || (contact && !contact.id)) router.push("/admin/crm");
   }, [contact, router]);
@@ -227,23 +403,63 @@ export default function CrmLeadProfilePage() {
   const timeline = timelineData?.timeline ?? [];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/crm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to CRM
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => enrichMutation.mutate()}
-          disabled={enrichMutation.isPending}
-        >
-          {enrichMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-          Enrich contact
-        </Button>
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/crm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to CRM
+            </Link>
+          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Status:</span>
+          <Select
+            value={contact.status ?? "new"}
+            onValueChange={(v) => updateStatusMutation.mutate(v)}
+            disabled={updateStatusMutation.isPending}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CONTACT_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => enrichMutation.mutate()}
+            disabled={enrichMutation.isPending}
+          >
+            {enrichMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Enrich contact
+          </Button>
+          <input
+            ref={cardInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            aria-label="Scan business card"
+            onChange={handleCardFile}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => cardInputRef.current?.click()}
+            disabled={cardScanning || scanCardMutation.isPending}
+          >
+            {cardScanning || scanCardMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4 mr-2" />
+            )}
+            Scan business card
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -266,10 +482,26 @@ export default function CrmLeadProfilePage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                {insights?.contactCompleteness && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Profile</p>
+                    <p className="text-sm font-medium">
+                      <Badge variant={insights.contactCompleteness.label === "complete" ? "default" : insights.contactCompleteness.label === "good" ? "secondary" : "outline"}>
+                        {insights.contactCompleteness.score}% {insights.contactCompleteness.label}
+                      </Badge>
+                    </p>
+                  </div>
+                )}
                 {contact.leadScore != null && (
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Lead score</p>
                     <p className="text-xl font-semibold">{contact.leadScore}</p>
+                  </div>
+                )}
+                {insights?.aiFitScore != null && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">AI fit</p>
+                    <p className="text-xl font-semibold">{insights.aiFitScore}</p>
                   </div>
                 )}
                 {contact.estimatedValue != null && (
@@ -294,25 +526,131 @@ export default function CrmLeadProfilePage() {
                 )}
               </div>
             )}
+            {(insights?.contactCompleteness?.missingFields?.length ?? 0) > 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-200">Missing data</p>
+                <p className="text-muted-foreground mt-0.5">Add: {insights!.contactCompleteness.missingFields.join(", ")}</p>
+              </div>
+            )}
+            {insights?.researchCompleteness && insights.researchCompleteness.score < 100 && (insights.researchCompleteness.missingFields?.length ?? 0) > 0 && (
+              <div className="rounded-md border border-blue-500/40 bg-blue-500/10 p-3 text-sm">
+                <p className="font-medium text-blue-800 dark:text-blue-200">Research profile incomplete</p>
+                <p className="text-muted-foreground mt-0.5">Missing: {insights.researchCompleteness.missingFields.join(", ")}</p>
+              </div>
+            )}
             {contact.notes && (
               <p className="text-sm border-l-2 border-muted pl-3">{contact.notes}</p>
             )}
+            {contact.customFields?.businessCardImage && typeof contact.customFields.businessCardImage === "string" ? (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Business card</p>
+                <img
+                  src={contact.customFields.businessCardImage as string}
+                  alt="Saved business card"
+                  className="rounded border max-h-40 object-contain bg-muted/30"
+                />
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="timeline">
-          <TabsList className="flex flex-wrap gap-1">
+        {/* Next best actions & qualification */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Next best actions
+              </CardTitle>
+              <CardDescription>Prioritized recommendations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {insights?.nextBestActions && insights.nextBestActions.length > 0 ? (
+                <ul className="space-y-2 mb-3">
+                  {insights.nextBestActions.slice(0, 5).map((a, i) => (
+                    <li key={i} className="flex gap-2 text-sm">
+                      <Badge variant={a.priority === "high" ? "default" : "secondary"} className="shrink-0 h-5">
+                        {a.priority}
+                      </Badge>
+                      <span><strong>{a.action}</strong>{a.reason ? ` — ${a.reason}` : ""}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-3">
+                  {(() => {
+                    const s = contact.status ?? "new";
+                    if (s === "new") return "Reach out with a discovery call or intro email.";
+                    if (s === "contacted") return "Send proposal or schedule a follow-up call.";
+                    if (s === "qualified") return "Create deal and send proposal.";
+                    if (s === "proposal") return "Follow up on proposal; address questions.";
+                    if (s === "negotiation") return "Close terms and send contract.";
+                    if (s === "won") return "Onboard and deliver.";
+                    if (s === "lost") return "Log reason; consider re-engagement later.";
+                    return "Move to next stage in your pipeline.";
+                  })()}
+                </p>
+              )}
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => setActiveTab("tasks")}>
+                Open tasks <ArrowRight className="h-3 w-3" />
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                Qualification
+              </CardTitle>
+              <CardDescription>Budget, authority, need, timeline</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                Record qualification notes in the Add note tab (e.g. Budget: confirmed, Decision-maker: yes, Timeline: Q2).
+              </p>
+              <Button variant="ghost" size="sm" className="gap-1" onClick={() => setActiveTab("notes")}>
+                Add note
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {(contact.source || contact.utmSource || contact.utmMedium || contact.utmCampaign || contact.referringPage || contact.landingPage) && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Source & attribution
+              </CardTitle>
+              <CardDescription>Where this lead came from</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                {contact.source && <><dt className="text-muted-foreground">Source</dt><dd>{contact.source}</dd></>}
+                {contact.utmSource && <><dt className="text-muted-foreground">UTM source</dt><dd>{contact.utmSource}</dd></>}
+                {contact.utmMedium && <><dt className="text-muted-foreground">UTM medium</dt><dd>{contact.utmMedium}</dd></>}
+                {contact.utmCampaign && <><dt className="text-muted-foreground">UTM campaign</dt><dd>{contact.utmCampaign}</dd></>}
+                {contact.referringPage && <><dt className="text-muted-foreground">Referring page</dt><dd className="truncate" title={contact.referringPage}>{contact.referringPage}</dd></>}
+                {contact.landingPage && <><dt className="text-muted-foreground">Landing page</dt><dd className="truncate" title={contact.landingPage}>{contact.landingPage}</dd></>}
+              </dl>
+            </CardContent>
+          </Card>
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="flex flex-nowrap overflow-x-auto overflow-y-hidden gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="proposal">Proposal activity</TabsTrigger>
-            <TabsTrigger value="email">Email engagement</TabsTrigger>
-            <TabsTrigger value="notes">Add note</TabsTrigger>
+            <TabsTrigger value="meetings">Meetings</TabsTrigger>
+            <TabsTrigger value="tasks" id="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="proposal">Proposal</TabsTrigger>
+            <TabsTrigger value="email">Email</TabsTrigger>
+            <TabsTrigger value="notes">Note</TabsTrigger>
           </TabsList>
           <TabsContent value="timeline" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Activity className="h-4 w-4" /> Activity timeline</CardTitle>
-                <CardDescription>Form submissions, emails, document views, and site visits</CardDescription>
+                <CardDescription>Form submissions, emails, meetings, document views, and site visits</CardDescription>
               </CardHeader>
               <CardContent>
                 {timeline.length === 0 ? (
@@ -322,14 +660,230 @@ export default function CrmLeadProfilePage() {
                     {timeline.map((item) => (
                       <li key={item.id} className="flex gap-3 border-l-2 border-muted pl-4 py-1">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{item.title}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-sm">{item.title}</p>
+                            {item.metadata?.startUrl && (
+                              <Button size="sm" className="h-7 text-xs gap-1" asChild>
+                                <a href={item.metadata.startUrl} target="_blank" rel="noopener noreferrer">
+                                  <Video className="h-3 w-3" /> Start meeting
+                                </a>
+                              </Button>
+                            )}
+                            {item.metadata?.meetingUrl && (
+                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                                <a href={item.metadata.meetingUrl} target="_blank" rel="noopener noreferrer">
+                                  Join Zoom
+                                </a>
+                              </Button>
+                            )}
+                          </div>
                           {item.description && <p className="text-xs text-muted-foreground truncate">{item.description}</p>}
+                          {item.metadata?.body && item.metadata.activityType === "meeting" && (
+                            <div className="mt-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground whitespace-pre-wrap">{item.metadata.body}</div>
+                          )}
                           <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(item.createdAt), "PPp")}</p>
                         </div>
                       </li>
                     ))}
                   </ul>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="meetings" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Video className="h-4 w-4" /> Zoom meetings</CardTitle>
+                <CardDescription>Schedule or log Zoom meetings and conversation notes for this lead</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {zoomConfigured && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-4">
+                    <h4 className="text-sm font-medium">Schedule with Zoom</h4>
+                    <p className="text-xs text-muted-foreground">Create a scheduled meeting and add it to this lead. You can start the meeting from here or share the join link.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs">Meeting topic</Label>
+                        <Input
+                          placeholder="e.g. Discovery call with {contact.name}"
+                          value={scheduleTopic}
+                          onChange={(e) => setScheduleTopic(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Date</Label>
+                        <Input
+                          type="date"
+                          value={scheduleDate}
+                          onChange={(e) => setScheduleDate(e.target.value)}
+                          className="mt-1"
+                          min={new Date().toISOString().slice(0, 10)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Time</Label>
+                        <Input
+                          type="time"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Duration (minutes)</Label>
+                        <Select
+                          value={String(scheduleDuration)}
+                          onValueChange={(v) => setScheduleDuration(Number(v))}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[30, 45, 60, 90, 120].map((m) => (
+                              <SelectItem key={m} value={String(m)}>{m} min</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs">Agenda (optional)</Label>
+                        <Textarea
+                          placeholder="Meeting agenda or notes..."
+                          value={scheduleAgenda}
+                          onChange={(e) => setScheduleAgenda(e.target.value)}
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => {
+                            const date = scheduleDate || new Date().toISOString().slice(0, 10);
+                            const startTime = new Date(`${date}T${scheduleTime}`).toISOString();
+                            createZoomMeetingMutation.mutate({
+                              topic: scheduleTopic.trim() || `Call with ${contact.name}`,
+                              startTime,
+                              durationMinutes: scheduleDuration,
+                              agenda: scheduleAgenda.trim() || undefined,
+                            });
+                          }}
+                          disabled={!scheduleDate || createZoomMeetingMutation.isPending}
+                        >
+                          {createZoomMeetingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Schedule meeting
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCreatedMeetingLinks(null)}>
+                          Dismiss links
+                        </Button>
+                      </div>
+                    </div>
+                    {createdMeetingLinks && (
+                      <div className="rounded-md border bg-background p-3 space-y-2">
+                        <p className="text-sm font-medium">Meeting created — use these links:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {createdMeetingLinks.startUrl && (
+                            <Button size="sm" className="gap-1" asChild>
+                              <a href={createdMeetingLinks.startUrl} target="_blank" rel="noopener noreferrer">
+                                <Video className="h-3 w-3" /> Start meeting (host)
+                              </a>
+                            </Button>
+                          )}
+                          {createdMeetingLinks.joinUrl && (
+                            <Button variant="outline" size="sm" className="gap-1" asChild>
+                              <a href={createdMeetingLinks.joinUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-3 w-3" /> Join link (share with lead)
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+                  <h4 className="text-sm font-medium">Log a Zoom meeting</h4>
+                  <div className="grid gap-3">
+                    <div>
+                      <Label className="text-xs">Meeting title</Label>
+                      <Input
+                        placeholder="e.g. Discovery call, Follow-up"
+                        value={meetingTitle}
+                        onChange={(e) => setMeetingTitle(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Zoom meeting link</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://zoom.us/j/..."
+                        value={meetingUrl}
+                        onChange={(e) => setMeetingUrl(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Conversation notes</Label>
+                      <Textarea
+                        placeholder="Key points, next steps, objections, timeline..."
+                        value={meetingNotes}
+                        onChange={(e) => setMeetingNotes(e.target.value)}
+                        rows={4}
+                        className="mt-1"
+                      />
+                    </div>
+                    <Button
+                      onClick={() => addMeetingMutation.mutate({
+                        subject: meetingTitle.trim() || "Zoom meeting",
+                        body: meetingNotes.trim() || "",
+                        meetingUrl: meetingUrl.trim(),
+                      })}
+                      disabled={!meetingUrl.trim() || addMeetingMutation.isPending}
+                    >
+                      {addMeetingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Log meeting
+                    </Button>
+                  </div>
+                </div>
+                {(() => {
+                  const meetings = timeline.filter((i) => i.metadata?.activityType === "meeting");
+                  if (meetings.length === 0) return <p className="text-sm text-muted-foreground">No meetings logged yet.</p>;
+                  return (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Past meetings</h4>
+                      <ul className="space-y-3">
+                        {meetings.map((item) => (
+                          <li key={item.id} className="rounded-lg border p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-medium text-sm">{item.title}</span>
+                              <span className="text-xs text-muted-foreground">{format(new Date(item.createdAt), "PPp")}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {item.metadata?.startUrl && (
+                                <Button size="sm" className="gap-1" asChild>
+                                  <a href={item.metadata.startUrl} target="_blank" rel="noopener noreferrer">
+                                    <Video className="h-3 w-3" /> Start meeting
+                                  </a>
+                                </Button>
+                              )}
+                              {item.metadata?.meetingUrl && (
+                                <Button variant="outline" size="sm" className="gap-1" asChild>
+                                  <a href={item.metadata.meetingUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-3 w-3" /> Join link
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                            {item.metadata?.body && (
+                              <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap border-t pt-2">{item.metadata.body}</div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -457,6 +1011,7 @@ export default function CrmLeadProfilePage() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </div>
   );

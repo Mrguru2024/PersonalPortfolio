@@ -11,6 +11,41 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// ——— Accounts / Companies (Stage 1 CRM foundation) ———
+
+export const crmAccounts = pgTable("crm_accounts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  website: text("website"),
+  domain: text("domain"),
+  industry: text("industry"),
+  businessType: text("business_type"),
+  companySize: text("company_size"),
+  estimatedRevenueRange: text("estimated_revenue_range"),
+  location: text("location"),
+  serviceArea: text("service_area"),
+  currentWebsiteStatus: text("current_website_status"),
+  currentMarketingMaturity: text("current_marketing_maturity"),
+  growthPainPoints: text("growth_pain_points"),
+  leadSource: text("lead_source"),
+  accountStatus: text("account_status").default("active"), // active | inactive | prospect
+  tags: json("tags").$type<string[]>(),
+  notesSummary: text("notes_summary"),
+  ownerUserId: integer("owner_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCrmAccountSchema = createInsertSchema(crmAccounts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCrmAccount = z.infer<typeof insertCrmAccountSchema>;
+export type CrmAccount = typeof crmAccounts.$inferSelect;
+
+// ——— Contacts ———
+
 /** CRM contact/lead: unified record for leads and clients with high-value fields */
 export const crmContacts = pgTable("crm_contacts", {
   id: serial("id").primaryKey(),
@@ -21,6 +56,14 @@ export const crmContacts = pgTable("crm_contacts", {
   company: text("company"),
   jobTitle: text("job_title"),
   industry: text("industry"),
+  accountId: integer("account_id"), // FK to crm_accounts
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  notesSummary: text("notes_summary"),
+  ownerUserId: integer("owner_user_id"),
+  lastContactedAt: timestamp("last_contacted_at"),
+  nextActionAt: timestamp("next_action_at"),
+  aiFitScore: integer("ai_fit_score"), // 0–100, ideal client fit
   /** Lead qualifying / demographics (for acquisition analytics) */
   ageRange: text("age_range"),
   gender: text("gender"),
@@ -37,6 +80,16 @@ export const crmContacts = pgTable("crm_contacts", {
   // Lead intelligence: score 0–100, intent label for prioritization
   leadScore: integer("lead_score"), // 0–100, updated from engagement signals
   intentLevel: text("intent_level"), // low_intent | moderate_intent | high_intent | hot_lead
+  // Lifecycle and attribution (lead intelligence)
+  lifecycleStage: text("lifecycle_stage"), // cold | warm | qualified | sales_ready
+  lastActivityAt: timestamp("last_activity_at"),
+  bookedCallAt: timestamp("booked_call_at"),
+  websiteUrl: text("website_url"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  referringPage: text("referring_page"),
+  landingPage: text("landing_page"),
   // Apollo-style: LinkedIn and enrichment
   linkedinUrl: text("linkedin_url"),
   enrichmentStatus: text("enrichment_status"), // pending | enriched | failed | none
@@ -53,16 +106,34 @@ export const insertCrmContactSchema = createInsertSchema(crmContacts).omit({
 export type InsertCrmContact = z.infer<typeof insertCrmContactSchema>;
 export type CrmContact = typeof crmContacts.$inferSelect;
 
-/** Deals pipeline */
+/** Deals / Leads / Opportunities pipeline */
 export const crmDeals = pgTable("crm_deals", {
   id: serial("id").primaryKey(),
   contactId: integer("contact_id").notNull(),
+  accountId: integer("account_id"),
   title: text("title").notNull(),
-  value: integer("value").notNull(), // cents
-  stage: text("stage").notNull().default("qualification"), // qualification, proposal, negotiation, won, lost
+  value: integer("value").notNull(), // cents (estimatedValue)
+  stage: text("stage").notNull().default("qualification"), // legacy
+  pipelineStage: text("pipeline_stage").default("new_lead"), // new_lead | researching | qualified | proposal_ready | follow_up | negotiation | won | lost | nurture
+  serviceInterest: text("service_interest"),
+  primaryPainPoint: text("primary_pain_point"),
+  businessGoal: text("business_goal"),
+  urgencyLevel: text("urgency_level"),
+  budgetRange: text("budget_range"),
+  confidenceLevel: text("confidence_level"),
+  lifecycleStage: text("lifecycle_stage"),
+  leadScore: integer("lead_score"),
+  aiPriorityScore: integer("ai_priority_score"),
+  estimatedCloseProbability: integer("estimated_close_probability"), // 0–100
   expectedCloseAt: timestamp("expected_close_at"),
   closedAt: timestamp("closed_at"),
+  source: text("source"),
+  campaign: text("campaign"),
+  medium: text("medium"),
+  referringPage: text("referring_page"),
+  landingPage: text("landing_page"),
   notes: text("notes"),
+  notesSummary: text("notes_summary"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -75,7 +146,7 @@ export const insertCrmDealSchema = createInsertSchema(crmDeals).omit({
 export type InsertCrmDeal = z.infer<typeof insertCrmDealSchema>;
 export type CrmDeal = typeof crmDeals.$inferSelect;
 
-/** Communication / activity log */
+/** Communication / activity log (contact-centric; legacy) */
 export const crmActivities = pgTable("crm_activities", {
   id: serial("id").primaryKey(),
   contactId: integer("contact_id").notNull(),
@@ -83,8 +154,28 @@ export const crmActivities = pgTable("crm_activities", {
   type: text("type").notNull(), // email, call, meeting, note
   subject: text("subject"),
   body: text("body"),
+  /** For type=meeting: { meetingUrl?: string; startUrl?: string; meetingId?: string; scheduledAt?: string } */
+  metadata: json("metadata").$type<{ meetingUrl?: string; startUrl?: string; meetingId?: string; scheduledAt?: string }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/** Unified activity log for all CRM entities (Stage 1). */
+export const crmActivityLog = pgTable("crm_activity_log", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id"),
+  accountId: integer("account_id"),
+  dealId: integer("deal_id"),
+  taskId: integer("task_id"),
+  type: text("type").notNull(), // note | form_submission | status_change | stage_change | task_created | task_completed | research_updated | score_recalculated
+  title: text("title").notNull(),
+  content: text("content"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdByUserId: integer("created_by_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CrmActivityLog = typeof crmActivityLog.$inferSelect;
+export type InsertCrmActivityLog = typeof crmActivityLog.$inferInsert;
 
 export const insertCrmActivitySchema = createInsertSchema(crmActivities).omit({
   id: true,
@@ -187,21 +278,42 @@ export const crmAlerts = pgTable("crm_alerts", {
 export type CrmAlert = typeof crmAlerts.$inferSelect;
 export type InsertCrmAlert = typeof crmAlerts.$inferInsert;
 
+/** Lead score change history for analytics and auditing. */
+export const leadScoreEvents = pgTable("lead_score_events", {
+  id: serial("id").primaryKey(),
+  leadId: integer("lead_id").notNull(),
+  previousScore: integer("previous_score"),
+  newScore: integer("new_score").notNull(),
+  pointsDelta: integer("points_delta").notNull(),
+  reason: text("reason").notNull(), // e.g. "pricing_page_view" | "form_completed"
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type LeadScoreEvent = typeof leadScoreEvents.$inferSelect;
+export type InsertLeadScoreEvent = typeof leadScoreEvents.$inferInsert;
+
 // ——— Apollo-style: Tasks, Sequences, Saved Lists, Enrichment ———
 
-/** Tasks / follow-ups linked to leads (call, email, research, proposal prep). */
+/** Tasks / follow-ups linked to contacts, deals, or accounts. */
 export const crmTasks = pgTable("crm_tasks", {
   id: serial("id").primaryKey(),
   contactId: integer("contact_id").notNull(),
+  relatedDealId: integer("related_deal_id"),
+  relatedAccountId: integer("related_account_id"),
+  assignedToUserId: integer("assigned_to_user_id"),
   type: text("type").notNull().default("follow_up"), // call | email | follow_up | research | proposal_prep
+  taskType: text("task_type"), // alias for type; keep type for compat
   title: text("title").notNull(),
   description: text("description"),
   priority: text("priority").default("medium"), // low | medium | high | urgent
   dueAt: timestamp("due_at"),
+  status: text("status").default("pending"), // pending | in_progress | completed | cancelled
   completedAt: timestamp("completed_at"),
   completedNotes: text("completed_notes"),
-  ownerId: integer("owner_id"), // users.id when we have multi-user
-  sequenceEnrollmentId: integer("sequence_enrollment_id"), // if created by a sequence step
+  aiSuggested: boolean("ai_suggested").default(false),
+  ownerId: integer("owner_id"),
+  sequenceEnrollmentId: integer("sequence_enrollment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -251,6 +363,10 @@ export const crmSavedLists = pgTable("crm_saved_lists", {
     source?: string;
     noContactSinceDays?: number;
     hasOpenTasks?: boolean;
+    pipelineStage?: string;
+    lifecycleStage?: string;
+    tags?: string[];
+    hasResearch?: boolean;
   }>().notNull(),
   createdById: integer("created_by_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -259,3 +375,29 @@ export const crmSavedLists = pgTable("crm_saved_lists", {
 
 export type CrmSavedList = typeof crmSavedLists.$inferSelect;
 export type InsertCrmSavedList = typeof crmSavedLists.$inferInsert;
+
+// ——— Research profiles (Stage 1) ———
+
+export const crmResearchProfiles = pgTable("crm_research_profiles", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull(),
+  contactId: integer("contact_id"),
+  companySummary: text("company_summary"),
+  websiteFindings: text("website_findings"),
+  designUxNotes: text("design_ux_notes"),
+  messagingNotes: text("messaging_notes"),
+  conversionNotes: text("conversion_notes"),
+  seoVisibilityNotes: text("seo_visibility_notes"),
+  automationOpportunityNotes: text("automation_opportunity_notes"),
+  technicalIssuesNotes: text("technical_issues_notes"),
+  likelyPainPoints: text("likely_pain_points"),
+  suggestedServiceFit: text("suggested_service_fit"),
+  suggestedOutreachAngle: text("suggested_outreach_angle"),
+  aiGeneratedSummary: text("ai_generated_summary"),
+  researchConfidence: text("research_confidence"), // low | medium | high
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CrmResearchProfile = typeof crmResearchProfiles.$inferSelect;
+export type InsertCrmResearchProfile = typeof crmResearchProfiles.$inferInsert;

@@ -721,19 +721,19 @@ const ProjectDemo = ({ project }: ProjectDemoProps) => {
           className="w-full"
           onValueChange={setActiveTab}
         >
-          <div className="bg-muted p-2">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="demo" className="flex items-center gap-2">
-                <Rocket className="h-4 w-4" />
-                <span className="hidden sm:inline">Live Demo</span>
+          <div className="bg-muted p-2 overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-3 min-w-0 gap-1 p-1 [&>button]:min-w-0 [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm sm:[&>button]:px-3">
+              <TabsTrigger value="demo" className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <Rocket className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">Live Demo</span>
               </TabsTrigger>
-              <TabsTrigger value="code" className="flex items-center gap-2">
-                <Code className="h-4 w-4" />
-                <span className="hidden sm:inline">Code</span>
+              <TabsTrigger value="code" className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <Code className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">Code</span>
               </TabsTrigger>
-              <TabsTrigger value="tech" className="flex items-center gap-2">
-                <FileCode className="h-4 w-4" />
-                <span className="hidden sm:inline">Technologies</span>
+              <TabsTrigger value="tech" className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <FileCode className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">Tech</span>
               </TabsTrigger>
             </TabsList>
           </div>

@@ -544,19 +544,19 @@ export default function AdminAnalyticsPage() {
           </Card>
 
           <Tabs defaultValue="traffic" className="space-y-4">
-            <TabsList className="flex flex-wrap h-auto gap-1 p-1">
-              <TabsTrigger value="traffic" className="flex-1 min-w-0">Traffic</TabsTrigger>
-              <TabsTrigger value="location" className="flex-1 min-w-0">
-                <Globe className="h-4 w-4 mr-1.5 shrink-0" />
+            <TabsList className="flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
+              <TabsTrigger value="traffic">Traffic</TabsTrigger>
+              <TabsTrigger value="location" className="flex items-center gap-1.5">
+                <Globe className="h-4 w-4 shrink-0" />
                 Location
               </TabsTrigger>
-              <TabsTrigger value="demographics" className="flex-1 min-w-0">
-                <Users className="h-4 w-4 mr-1.5 shrink-0" />
+              <TabsTrigger value="demographics" className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 shrink-0" />
                 Demographics
               </TabsTrigger>
-              <TabsTrigger value="leads" className="flex-1 min-w-0">Lead magnets</TabsTrigger>
-              <TabsTrigger value="crm" className="flex-1 min-w-0">CRM engagement</TabsTrigger>
-              <TabsTrigger value="events" className="flex-1 min-w-0">Event log</TabsTrigger>
+              <TabsTrigger value="leads">Lead magnets</TabsTrigger>
+              <TabsTrigger value="crm">CRM engagement</TabsTrigger>
+              <TabsTrigger value="events">Event log</TabsTrigger>
             </TabsList>
             <TabsContent value="traffic" className="space-y-4">
               <Card>

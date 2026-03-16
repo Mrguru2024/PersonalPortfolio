@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { logActivity } from "@server/services/crmFoundationService";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,11 @@ export async function GET(req: NextRequest) {
     }
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") as "lead" | "client" | null;
+    const accountId = searchParams.get("accountId");
+    if (accountId != null && accountId !== "") {
+      const contacts = await storage.getCrmContactsByAccountId(Number(accountId));
+      return NextResponse.json(contacts);
+    }
     const contacts = await storage.getCrmContacts(type ?? undefined);
     return NextResponse.json(contacts);
   } catch (error: any) {
@@ -42,6 +48,11 @@ export async function POST(req: NextRequest) {
       company: body.company ?? null,
       jobTitle: body.jobTitle ?? null,
       industry: body.industry ?? null,
+      accountId: body.accountId ?? null,
+      firstName: body.firstName ?? null,
+      lastName: body.lastName ?? null,
+      notesSummary: body.notesSummary ?? null,
+      ownerUserId: body.ownerUserId ?? null,
       source: body.source ?? null,
       status: body.status ?? "new",
       estimatedValue: body.estimatedValue ?? null,
@@ -51,6 +62,15 @@ export async function POST(req: NextRequest) {
       contactId: body.contactId ?? null,
       stripeCustomerId: body.stripeCustomerId ?? null,
     });
+    const user = await getSessionUser(req);
+    logActivity(storage, {
+      contactId: contact.id,
+      accountId: contact.accountId ?? undefined,
+      type: "contact_created",
+      title: "Contact created",
+      content: contact.name,
+      createdByUserId: user?.id,
+    }).catch(() => {});
     return NextResponse.json(contact);
   } catch (error: any) {
     console.error("Error creating CRM contact:", error);

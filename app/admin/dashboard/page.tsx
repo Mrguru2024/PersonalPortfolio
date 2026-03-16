@@ -4,12 +4,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -38,6 +40,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AdminGuideTour } from "@/components/admin/AdminGuideTour";
+import { AdminDailyNudge, buildNudgeItems } from "@/components/admin/AdminDailyNudge";
+import {
+  getTourCompleted,
+  setTourCompleted,
+  getTourDismissed,
+  setTourDismissed,
+  getStepsForRole,
+} from "@/lib/adminTourConfig";
+import { isSuperAdminUser } from "@/lib/super-admin";
 
 /** Summary row for list (lightweight for fast load on mobile). */
 interface AssessmentSummary {
@@ -157,7 +169,36 @@ export default function AdminDashboardPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [deleteAssessmentId, setDeleteAssessmentId] = useState<number | null>(null);
   const [createProposalResult, setCreateProposalResult] = useState<{ viewUrl: string; quoteNumber: string } | null>(null);
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const [showTourBanner, setShowTourBanner] = useState(false);
+  const [tourCompletedOrDismissed, setTourCompletedOrDismissed] = useState(false);
+  const [passwordResetEmail, setPasswordResetEmail] = useState("");
   const handled403 = useRef(false);
+
+  const sendPasswordResetMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/admin/users/send-password-reset", { email: email.trim() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { message?: string }).message ?? "Failed to send");
+      }
+      return res.json();
+    },
+    onSuccess: (_, email) => {
+      toast({ title: "Reset email sent", description: `If an account exists for ${email}, they will receive a link.` });
+      setPasswordResetEmail("");
+    },
+    onError: (e: Error) => toast({ title: "Could not send reset email", description: e.message, variant: "destructive" }),
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const completed = getTourCompleted();
+    const dismissed = getTourDismissed();
+    setShowTourBanner(!completed && !dismissed);
+    setTourCompletedOrDismissed(completed || dismissed);
+  }, []);
 
   const handleAdmin403 = (errorMessage?: string) => {
     if (handled403.current) return;
@@ -305,6 +346,18 @@ export default function AdminDashboardPage() {
     },
   });
 
+  // Development updates log (digest; auto-refresh when new features ship)
+  const { data: devUpdatesData, isLoading: devUpdatesLoading, refetch: refetchDevUpdates } = useQuery<{ updates: { date: string; title: string; items: string[] }[] }>({
+    queryKey: ["/api/admin/development-updates"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/development-updates");
+      return await response.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+    refetchInterval: 60 * 1000,
+    staleTime: 30 * 1000,
+  });
+
   // Handle 403 from any admin query (onError was removed in TanStack Query v5)
   useEffect(() => {
     const err = assessmentsError ?? contactsError ?? resumeError;
@@ -423,6 +476,14 @@ export default function AdminDashboardPage() {
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
+  const isSuperAdmin = user ? isSuperAdminUser(user) : false;
+  const tourSteps = getStepsForRole(isSuperAdmin);
+  const nudgeItems = buildNudgeItems({
+    pendingAssessments,
+    totalContacts: contacts.length,
+    unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
+    isSuperAdmin,
+  });
 
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -435,8 +496,67 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
+      {/* New admin: offer guided tour */}
+      {showTourBanner && !tourActive && (
+        <Card className="mb-4 border-primary/30 bg-primary/5">
+          <CardContent className="py-4 px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <p className="font-medium text-sm">New to the admin?</p>
+                <p className="text-xs text-muted-foreground">Take a short tour to see features and daily actions.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setTourActive(true)}>
+                Start tour
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setTourDismissed();
+                  setShowTourBanner(false);
+                }}
+              >
+                Maybe later
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Daily nudge: suggested actions by role */}
+      <div className="mb-4">
+        <AdminDailyNudge
+          items={nudgeItems}
+          onStartTour={() => setTourActive(true)}
+          showTourCta={tourCompletedOrDismissed}
+        />
+      </div>
+
+      {/* Guided tour overlay */}
+      {tourActive && tourSteps.length > 0 && (
+        <AdminGuideTour
+          steps={tourSteps}
+          currentStep={tourStep}
+          onNext={() => setTourStep((s) => (s >= tourSteps.length - 1 ? s : s + 1))}
+          onBack={() => setTourStep((s) => (s <= 0 ? 0 : s - 1))}
+          onEnd={() => {
+            setTourCompleted();
+            setTourActive(false);
+            setTourStep(0);
+          }}
+          onDismiss={() => {
+            setTourDismissed();
+            setTourActive(false);
+            setTourStep(0);
+          }}
+        />
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Card className="border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-sm font-medium">Assessments</CardTitle>
@@ -477,28 +597,135 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
+      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/invoices">
             <Receipt className="h-4 w-4 mr-2 shrink-0" />
             <span className="truncate">Invoices</span>
           </Link>
         </Button>
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/announcements">
             <span className="truncate">Project updates</span>
           </Link>
         </Button>
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/feedback">
             <span className="truncate">Feedback</span>
           </Link>
         </Button>
       </div>
 
+      {/* Password reset control — send reset link to any user by email */}
+      <Card className="mb-6 border bg-card shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardTitle className="text-base flex items-center gap-2">
+            <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+            Password reset
+          </CardTitle>
+          <CardDescription>
+            Send a password reset link to any user or subscriber by email. They will receive a link valid for 1 hour.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[200px] max-w-sm space-y-1">
+              <Label htmlFor="password-reset-email" className="text-sm">Email address</Label>
+              <Input
+                id="password-reset-email"
+                type="email"
+                placeholder="user@example.com"
+                value={passwordResetEmail}
+                onChange={(e) => setPasswordResetEmail(e.target.value)}
+                disabled={sendPasswordResetMutation.isPending}
+                className="max-w-xs"
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={() => sendPasswordResetMutation.mutate(passwordResetEmail)}
+              disabled={!passwordResetEmail.trim() || sendPasswordResetMutation.isPending}
+            >
+              {sendPasswordResetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Send reset email
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Users can also request a reset from the sign-in page via &quot;Forgot password?&quot; — same link, same expiry.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Development updates log — digestible, auto-updates from content/development-updates.md */}
+      <Card data-tour="development-updates" className="mb-6 sm:mb-8 border bg-card shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                Development updates
+              </CardTitle>
+              <CardDescription className="mt-0.5">
+                Features and fixes approved to production. Updates when <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> changes (refreshes every minute).
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => refetchDevUpdates()}
+              disabled={devUpdatesLoading}
+            >
+              {devUpdatesLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span className="sr-only">Refresh</span>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          {devUpdatesLoading && !devUpdatesData ? (
+            <div className="flex items-center gap-2 py-6 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              <span className="text-sm">Loading updates…</span>
+            </div>
+          ) : !devUpdatesData?.updates?.length ? (
+            <p className="text-sm text-muted-foreground py-4">
+              No entries yet. Add sections to <code className="bg-muted px-1 rounded text-xs">content/development-updates.md</code> in the format: <code className="bg-muted px-1 rounded text-xs">## YYYY-MM-DD — Title</code> then bullet points.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {devUpdatesData.updates.map((entry, idx) => (
+                <div key={idx} className="border-b border-muted/60 pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date}>
+                      {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
+                    </time>
+                    <span className="text-muted-foreground">—</span>
+                    <span className="text-sm font-semibold text-foreground">{entry.title}</span>
+                  </div>
+                  {entry.items.length > 0 && (
+                    <ul className="mt-2 space-y-1 list-none pl-0 text-sm text-muted-foreground">
+                      {entry.items.map((item, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-primary shrink-0">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Tabs */}
-      <Tabs defaultValue="assessments" className="space-y-4">
-        <TabsList className="w-full sm:w-auto flex h-10 sm:h-10 overflow-x-auto overflow-y-hidden gap-0.5 p-1 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
+      <Tabs defaultValue="assessments" className="space-y-4" data-tour="tabs">
+        <TabsList className="w-full sm:w-auto flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
           <TabsTrigger value="assessments">
             Assessments ({assessments.length})
           </TabsTrigger>

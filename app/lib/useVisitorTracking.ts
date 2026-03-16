@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import type { LeadTrackingEventType } from "@/lib/lead-tracking-types";
 
 const VISITOR_ID_KEY = "v_id";
 const SESSION_ID_KEY = "v_sid";
 const LAST_PAGE_VIEW_KEY = "v_last_pv";
 const PAGE_VIEW_DEBOUNCE_MS = 30_000; // only one page_view per path per 30s per session
-const ALLOWED_EVENT_TYPES = ["page_view", "form_started", "form_completed", "cta_click", "tool_used"] as const;
-export type VisitorEventType = (typeof ALLOWED_EVENT_TYPES)[number];
+
+/** @deprecated Use LeadTrackingEventType from @/lib/lead-tracking-types */
+export type VisitorEventType = LeadTrackingEventType;
 
 function getOrSetId(key: string, generator: () => string): string {
   if (typeof window === "undefined") return "";
@@ -67,8 +69,13 @@ export function useVisitorTracking() {
 
   const track = useCallback(
     (
-      eventType: VisitorEventType,
-      options?: { pageVisited?: string; metadata?: Record<string, unknown> }
+      eventType: LeadTrackingEventType,
+      options?: {
+        pageVisited?: string;
+        component?: string;
+        section?: string;
+        metadata?: Record<string, unknown>;
+      }
     ) => {
       const pageVisited =
         options?.pageVisited ?? (typeof window !== "undefined" ? window.location.pathname || "/" : "/");
@@ -106,6 +113,8 @@ export function useVisitorTracking() {
       const metadata = { ...options?.metadata };
       if (url) metadata.url = url;
       if (utm && Object.keys(utm).length) Object.assign(metadata, utm);
+      if (options?.component) metadata.component = options.component;
+      if (options?.section) metadata.section = options.section;
 
       if (eventType === "page_view") markPageViewSent(pageVisited);
 

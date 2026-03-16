@@ -97,9 +97,9 @@ export default function ImageGeneratorPage() {
 
       <div className="max-w-4xl mx-auto">
         <Tabs defaultValue="generator" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="generator">Image Generator</TabsTrigger>
-            <TabsTrigger value="examples">Example Prompts</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 gap-1 p-1.5 min-h-[44px] rounded-lg">
+            <TabsTrigger value="generator" className="min-w-0 text-xs sm:text-sm">Generator</TabsTrigger>
+            <TabsTrigger value="examples" className="min-w-0 text-xs sm:text-sm">Examples</TabsTrigger>
           </TabsList>
           <TabsContent value="generator" className="p-4 border rounded-md mt-2">
             {user ? (

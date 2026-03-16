@@ -83,8 +83,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const allUsers = await storage.getAllUsers?.();
-    const user = allUsers?.find(u => u.resetToken === token);
+    const allUsers = await storage.getAllUsers();
+    const user = allUsers.find((u) => u.resetToken === token);
 
     if (!user) {
       return NextResponse.json({ valid: false, message: "Invalid token" });
