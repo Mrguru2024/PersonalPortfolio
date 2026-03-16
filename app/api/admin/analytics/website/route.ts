@@ -157,7 +157,9 @@ export async function GET(req: NextRequest) {
       nextActions,
     });
   } catch (error: unknown) {
-    console.error("Website analytics error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("Website analytics error:", message, stack ?? "");
     return NextResponse.json(
       { error: "Failed to load website analytics" },
       { status: 500 }
