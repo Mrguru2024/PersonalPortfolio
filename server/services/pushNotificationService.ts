@@ -27,11 +27,13 @@ export class PushNotificationService {
     this.vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || null;
     this.isConfigured = !!(this.vapidPublicKey && this.vapidPrivateKey);
 
-    if (this.isConfigured) {
+    const publicKey = this.vapidPublicKey;
+    const privateKey = this.vapidPrivateKey;
+    if (publicKey && privateKey) {
       webpush.setVapidDetails(
         "mailto:" + (process.env.ADMIN_EMAIL || "admin@localhost"),
-        this.vapidPublicKey,
-        this.vapidPrivateKey!
+        publicKey,
+        privateKey
       );
     } else {
       console.warn(
