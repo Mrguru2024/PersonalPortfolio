@@ -37,6 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
@@ -104,6 +106,9 @@ interface WebsiteAnalyticsResponse {
     byRegion?: { region: string; country: string; count: number }[];
     byCity?: { city: string; region: string; country: string; count: number }[];
     byTimezone?: { timezone: string; count: number }[];
+    byUtmSource?: { value: string; count: number }[];
+    byUtmMedium?: { value: string; count: number }[];
+    byUtmCampaign?: { value: string; count: number }[];
   };
   leadMagnets: {
     totalLeads: number;
@@ -122,7 +127,15 @@ interface WebsiteAnalyticsResponse {
     byGender: { value: string; count: number }[];
     byOccupation: { value: string; count: number }[];
     byCompanySize: { value: string; count: number }[];
+    byIndustry?: { value: string; count: number }[];
     totalWithDemographics: number;
+    sources?: string[];
+  };
+  /** Demographics from Google Analytics 4 and Facebook when configured; Vercel has no pull API. */
+  externalDemographics?: {
+    google_analytics: { byAgeRange: { value: string; count: number }[]; byGender: { value: string; count: number }[]; byCountry?: { value: string; count: number }[]; source: string; fetchedAt: string } | null;
+    facebook_insights: { byAgeRange: { value: string; count: number }[]; byGender: { value: string; count: number }[]; byCountry?: { value: string; count: number }[]; source: string; fetchedAt: string } | null;
+    vercel: null;
   };
   insights: string[];
   nextActions: { action: string; priority: "high" | "medium" | "low"; reason: string }[];
@@ -156,6 +169,9 @@ const defaultDisplayData = {
     byRegion: [] as { region: string; country: string; count: number }[],
     byCity: [] as { city: string; region: string; country: string; count: number }[],
     byTimezone: [] as { timezone: string; count: number }[],
+    byUtmSource: [] as { value: string; count: number }[],
+    byUtmMedium: [] as { value: string; count: number }[],
+    byUtmCampaign: [] as { value: string; count: number }[],
   },
   leadMagnets: { totalLeads: 0, bySource: [], recentCount: 0 },
   crmEngagement: { emailOpens: 0, emailClicks: 0, documentViews: 0, highIntentLeadsCount: 0, unreadAlertsCount: 0 },
@@ -164,7 +180,9 @@ const defaultDisplayData = {
     byGender: [],
     byOccupation: [],
     byCompanySize: [],
+    byIndustry: [] as { value: string; count: number }[],
     totalWithDemographics: 0,
+    sources: [] as string[],
   },
   insights: [] as string[],
   nextActions: [] as { action: string; priority: "high" | "medium" | "low"; reason: string }[],
@@ -194,6 +212,23 @@ export default function AdminAnalyticsPage() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [pageFilter, setPageFilter] = useState<string>("all");
   const [expandedEventId, setExpandedEventId] = useState<number | null>(null);
+  const [reportSince, setReportSince] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [reportUntil, setReportUntil] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [reportEventType, setReportEventType] = useState<string>("");
+  const [reportPage, setReportPage] = useState<string>("");
+  const [reportDevice, setReportDevice] = useState<string>("");
+  const [reportCountry, setReportCountry] = useState<string>("");
+  const [reportUtmSource, setReportUtmSource] = useState<string>("");
+  const [reportUtmMedium, setReportUtmMedium] = useState<string>("");
+  const [reportUtmCampaign, setReportUtmCampaign] = useState<string>("");
+  const [reportRegion, setReportRegion] = useState<string>("");
+  const [reportCity, setReportCity] = useState<string>("");
+  const [reportTimezone, setReportTimezone] = useState<string>("");
+  const [reportApplied, setReportApplied] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -278,6 +313,32 @@ export default function AdminAnalyticsPage() {
     refetchEvents();
   };
 
+  const reportParams = new URLSearchParams();
+  if (reportSince) reportParams.set("since", new Date(reportSince).toISOString());
+  if (reportUntil) reportParams.set("until", new Date(reportUntil).toISOString());
+  if (reportEventType) reportParams.set("eventType", reportEventType);
+  if (reportPage) reportParams.set("page", reportPage);
+  if (reportDevice) reportParams.set("deviceType", reportDevice);
+  if (reportCountry) reportParams.set("country", reportCountry);
+  if (reportRegion) reportParams.set("region", reportRegion);
+  if (reportCity) reportParams.set("city", reportCity);
+  if (reportTimezone) reportParams.set("timezone", reportTimezone);
+  if (reportUtmSource) reportParams.set("utm_source", reportUtmSource);
+  if (reportUtmMedium) reportParams.set("utm_medium", reportUtmMedium);
+  if (reportUtmCampaign) reportParams.set("utm_campaign", reportUtmCampaign);
+  reportParams.set("limit", "500");
+
+  const { data: reportData, isLoading: reportLoading, isFetching: reportFetching } = useQuery<{ summary: { total: number; returned: number; filtersApplied: Record<string, string | null> }; events: { id: number; visitorId: string; pageVisited: string | null; eventType: string; deviceType: string | null; country: string | null; region: string | null; referrer: string | null; createdAt: string }[] }>({
+    queryKey: ["/api/admin/analytics/reports", reportSince, reportUntil, reportEventType, reportPage, reportDevice, reportCountry, reportRegion, reportCity, reportTimezone, reportUtmSource, reportUtmMedium, reportUtmCampaign],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/analytics/reports?${reportParams.toString()}`);
+      if (!res.ok) throw new Error("Failed to load report");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && reportApplied,
+    staleTime: 60 * 1000,
+  });
+
   const data =
     rawData && typeof rawData.traffic === "object"
       ? {
@@ -292,6 +353,9 @@ export default function AdminAnalyticsPage() {
             byRegion: rawData.traffic?.byRegion ?? [],
             byCity: rawData.traffic?.byCity ?? [],
             byTimezone: rawData.traffic?.byTimezone ?? [],
+            byUtmSource: rawData.traffic?.byUtmSource ?? [],
+            byUtmMedium: rawData.traffic?.byUtmMedium ?? [],
+            byUtmCampaign: rawData.traffic?.byUtmCampaign ?? [],
           },
           leadMagnets: {
             totalLeads: rawData.leadMagnets?.totalLeads ?? 0,
@@ -313,9 +377,12 @@ export default function AdminAnalyticsPage() {
                 byGender: Array.isArray(rawData.leadDemographics.byGender) ? rawData.leadDemographics.byGender : [],
                 byOccupation: Array.isArray(rawData.leadDemographics.byOccupation) ? rawData.leadDemographics.byOccupation : [],
                 byCompanySize: Array.isArray(rawData.leadDemographics.byCompanySize) ? rawData.leadDemographics.byCompanySize : [],
+                byIndustry: Array.isArray(rawData.leadDemographics.byIndustry) ? rawData.leadDemographics.byIndustry : [],
                 totalWithDemographics: rawData.leadDemographics.totalWithDemographics ?? 0,
+                sources: Array.isArray(rawData.leadDemographics.sources) ? rawData.leadDemographics.sources : [],
               }
             : defaultDisplayData.leadDemographics,
+          externalDemographics: rawData.externalDemographics ?? { google_analytics: null, facebook_insights: null, vercel: null },
           insights: Array.isArray(rawData.insights) ? rawData.insights : [],
           nextActions: Array.isArray(rawData.nextActions) ? rawData.nextActions : [],
         }
@@ -557,6 +624,7 @@ export default function AdminAnalyticsPage() {
               <TabsTrigger value="leads">Lead magnets</TabsTrigger>
               <TabsTrigger value="crm">CRM engagement</TabsTrigger>
               <TabsTrigger value="events">Event log</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
             <TabsContent value="traffic" className="space-y-4">
               <Card>
@@ -655,6 +723,62 @@ export default function AdminAnalyticsPage() {
                     </ul>
                   </CardContent>
                 </Card>
+              )}
+              {(displayData.traffic.byUtmSource?.length > 0 || displayData.traffic.byUtmMedium?.length > 0 || displayData.traffic.byUtmCampaign?.length > 0) && (
+                <div className="grid md:grid-cols-3 gap-4">
+                  {displayData.traffic.byUtmSource && displayData.traffic.byUtmSource.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">UTM Source</CardTitle>
+                        <CardDescription>Attribution from tracking params</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 text-sm">
+                          {displayData.traffic.byUtmSource.slice(0, 8).map((u, i) => (
+                            <li key={i} className="flex justify-between">
+                              <span className="truncate">{u.value}</span>
+                              <span className="font-medium">{u.count}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {displayData.traffic.byUtmMedium && displayData.traffic.byUtmMedium.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">UTM Medium</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 text-sm">
+                          {displayData.traffic.byUtmMedium.slice(0, 8).map((u, i) => (
+                            <li key={i} className="flex justify-between">
+                              <span className="truncate">{u.value}</span>
+                              <span className="font-medium">{u.count}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {displayData.traffic.byUtmCampaign && displayData.traffic.byUtmCampaign.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">UTM Campaign</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 text-sm">
+                          {displayData.traffic.byUtmCampaign.slice(0, 8).map((u, i) => (
+                            <li key={i} className="flex justify-between">
+                              <span className="truncate">{u.value}</span>
+                              <span className="font-medium">{u.count}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               )}
             </TabsContent>
             <TabsContent value="location" className="space-y-4">
@@ -786,7 +910,10 @@ export default function AdminAnalyticsPage() {
                     Lead qualifying & demographics
                   </CardTitle>
                   <CardDescription>
-                    Age, gender, occupation, and company size from form submissions. Use this to understand who converts and where to improve messaging for underperforming segments.
+                    Age, gender, occupation, company size, and industry from contact forms and CRM contacts. Use this to understand who converts and where to improve messaging for underperforming segments.
+                    {displayData.leadDemographics.sources && displayData.leadDemographics.sources.length > 0 && (
+                      <span className="block mt-1 text-xs">Sources: {displayData.leadDemographics.sources.join(", ").replace(/_/g, " ")}.</span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -892,11 +1019,122 @@ export default function AdminAnalyticsPage() {
                             </div>
                           </div>
                         )}
+                        {displayData.leadDemographics.byIndustry && displayData.leadDemographics.byIndustry.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3">By industry</h4>
+                            <div className="overflow-x-auto rounded-md border">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    <th className="text-left py-2 px-2 font-medium">Industry</th>
+                                    <th className="text-right py-2 px-2 font-medium">Leads</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayData.leadDemographics.byIndustry.map((row, i) => (
+                                    <tr key={`ind-${row.value}-${i}`} className="border-b border-border/50">
+                                      <td className="py-2 px-2">{row.value}</td>
+                                      <td className="text-right py-2 px-2">{row.count}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
                 </CardContent>
               </Card>
+              {data?.externalDemographics && (data.externalDemographics.google_analytics || data.externalDemographics.facebook_insights) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">External demographics (GA4 &amp; Facebook)</CardTitle>
+                    <CardDescription>
+                      Audience demographics from Google Analytics 4 and Facebook Insights when configured. Vercel Analytics has no pull API — use the Traffic tab for internal visitor data.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {data.externalDemographics.google_analytics && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <Globe className="h-4 w-4" /> Google Analytics 4
+                        </h4>
+                        <div className="grid sm:grid-cols-3 gap-4">
+                          {(data.externalDemographics.google_analytics.byAgeRange?.length ?? 0) > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Age</p>
+                              <ul className="text-sm space-y-1">
+                                {(data.externalDemographics.google_analytics.byAgeRange ?? []).slice(0, 6).map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {(data.externalDemographics.google_analytics.byGender?.length ?? 0) > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Gender</p>
+                              <ul className="text-sm space-y-1">
+                                {(data.externalDemographics.google_analytics.byGender ?? []).map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {(data.externalDemographics.google_analytics.byCountry?.length ?? 0) > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Country</p>
+                              <ul className="text-sm space-y-1">
+                                {(data.externalDemographics.google_analytics.byCountry ?? []).slice(0, 6).map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {data.externalDemographics.facebook_insights && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">Facebook Insights</h4>
+                        <div className="grid sm:grid-cols-3 gap-4">
+                          {(data.externalDemographics.facebook_insights.byAgeRange?.length ?? 0) > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Age</p>
+                              <ul className="text-sm space-y-1">
+                                {(data.externalDemographics.facebook_insights.byAgeRange ?? []).slice(0, 6).map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {data.externalDemographics.facebook_insights.byGender?.length > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Gender</p>
+                              <ul className="text-sm space-y-1">
+                                {data.externalDemographics.facebook_insights.byGender.map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {(data.externalDemographics.facebook_insights.byCountry?.length ?? 0) > 0 && (
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Country</p>
+                              <ul className="text-sm space-y-1">
+                                {(data.externalDemographics.facebook_insights.byCountry ?? []).slice(0, 6).map((r, i) => (
+                                  <li key={i} className="flex justify-between"><span>{r.value}</span><span>{r.count}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
             <TabsContent value="leads" className="space-y-4">
               <Card>
@@ -1135,6 +1373,142 @@ export default function AdminAnalyticsPage() {
                     <p className="text-xs text-muted-foreground">
                       Showing up to 150 filtered events. Full URL, viewport, UTM params, and interaction metadata are in the expandable details.
                     </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="reports" className="space-y-4">
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    Purpose &amp; insights
+                  </CardTitle>
+                  <CardDescription>
+                    <strong>Purpose:</strong> Crunch data fast with full advanced filtering to understand which segments convert, where traffic comes from, and how device/location/UTM affect outcomes. <strong>Advantages:</strong> Single source of truth (internal tracking + optional GA4/Facebook demographics), export to CSV/JSON for deeper analysis, filter by date, event, page (partial match), device, country, region, city, timezone, and UTM. <strong>Disadvantages:</strong> Internal data depends on POST /api/track/visitor being called on key pages; external demographics require GA4 and Facebook credentials.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Detailed reports with advanced filtering</CardTitle>
+                  <CardDescription>
+                    Filter by date range, event type, page (partial), device, country, region, city, timezone, and UTM. Export to CSV or JSON to crunch data and understand advantages and disadvantages by segment.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-xs">From date</Label>
+                      <Input type="date" value={reportSince} onChange={(e) => setReportSince(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">To date</Label>
+                      <Input type="date" value={reportUntil} onChange={(e) => setReportUntil(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Event type</Label>
+                      <Input placeholder="e.g. page_view" value={reportEventType} onChange={(e) => setReportEventType(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Page (path)</Label>
+                      <Input placeholder="e.g. /contact" value={reportPage} onChange={(e) => setReportPage(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Device</Label>
+                      <Input placeholder="mobile | desktop" value={reportDevice} onChange={(e) => setReportDevice(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Country</Label>
+                      <Input placeholder="e.g. US" value={reportCountry} onChange={(e) => setReportCountry(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Region</Label>
+                      <Input placeholder="e.g. CA" value={reportRegion} onChange={(e) => setReportRegion(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">City</Label>
+                      <Input placeholder="e.g. San Francisco" value={reportCity} onChange={(e) => setReportCity(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Timezone</Label>
+                      <Input placeholder="e.g. America/Los_Angeles" value={reportTimezone} onChange={(e) => setReportTimezone(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">UTM Source</Label>
+                      <Input placeholder="e.g. google" value={reportUtmSource} onChange={(e) => setReportUtmSource(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">UTM Medium</Label>
+                      <Input placeholder="e.g. cpc" value={reportUtmMedium} onChange={(e) => setReportUtmMedium(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">UTM Campaign</Label>
+                      <Input placeholder="e.g. spring2024" value={reportUtmCampaign} onChange={(e) => setReportUtmCampaign(e.target.value)} className="mt-1" />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Button size="sm" onClick={() => setReportApplied(true)} disabled={reportFetching}>
+                      {reportFetching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Apply filters
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/api/admin/analytics/export?format=csv&${reportParams.toString()}`} download>
+                        Export CSV
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/api/admin/analytics/export?format=json&${reportParams.toString()}`} download>
+                        Export JSON
+                      </a>
+                    </Button>
+                  </div>
+                  {reportApplied && (
+                    reportLoading && !reportData ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : reportData ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Total matching: <strong>{reportData.summary.total}</strong> · Showing: <strong>{reportData.summary.returned}</strong>
+                        </p>
+                        <div className="overflow-x-auto rounded-md border">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="text-left py-2 px-2 font-medium">Time</th>
+                                <th className="text-left py-2 px-2 font-medium">Visitor</th>
+                                <th className="text-left py-2 px-2 font-medium">Event</th>
+                                <th className="text-left py-2 px-2 font-medium">Page</th>
+                                <th className="text-left py-2 px-2 font-medium">Device</th>
+                                <th className="text-left py-2 px-2 font-medium">Country</th>
+                                <th className="text-left py-2 px-2 font-medium">Referrer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {reportData.events.slice(0, 200).map((e) => (
+                                <tr key={e.id} className="border-b border-border/50">
+                                  <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">{format(new Date(e.createdAt), "MMM d, HH:mm")}</td>
+                                  <td className="py-1 px-2 font-mono text-xs truncate max-w-[100px]" title={e.visitorId}>{e.visitorId.slice(0, 10)}…</td>
+                                  <td className="py-1 px-2">{e.eventType}</td>
+                                  <td className="py-1 px-2 truncate max-w-[140px]" title={e.pageVisited ?? ""}>{e.pageVisited ?? "—"}</td>
+                                  <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
+                                  <td className="py-1 px-2">{e.country ?? "—"}</td>
+                                  <td className="py-1 px-2 truncate max-w-[120px]" title={e.referrer ?? ""}>{e.referrer ? (e.referrer.length > 15 ? e.referrer.slice(0, 15) + "…" : e.referrer) : "direct"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {reportData.summary.total > 200 && (
+                          <p className="text-xs text-muted-foreground">Showing first 200 rows. Use Export CSV/JSON for the full dataset (up to 10,000 rows).</p>
+                        )}
+                      </div>
+                    ) : null
+                  )}
+                  {reportApplied && !reportLoading && !reportData && (
+                    <p className="text-sm text-muted-foreground">No data returned. Adjust filters and try again.</p>
                   )}
                 </CardContent>
               </Card>

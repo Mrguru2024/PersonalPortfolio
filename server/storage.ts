@@ -283,7 +283,27 @@ export interface IStorage {
     byRegion: { region: string; country: string; count: number }[];
     byCity: { city: string; region: string; country: string; count: number }[];
     byTimezone: { timezone: string; count: number }[];
+    byUtmSource: { value: string; count: number }[];
+    byUtmMedium: { value: string; count: number }[];
+    byUtmCampaign: { value: string; count: number }[];
   }>;
+  getVisitorActivityFiltered(filters: {
+    since?: Date;
+    until?: Date;
+    eventType?: string;
+    page?: string;
+    deviceType?: string;
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    referrer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ events: VisitorActivity[]; total: number }>;
   getLeadMagnetPerformance(since?: Date): Promise<{
     totalLeads: number;
     bySource: { source: string; label: string; count: number }[];
@@ -294,7 +314,9 @@ export interface IStorage {
     byGender: { value: string; count: number }[];
     byOccupation: { value: string; count: number }[];
     byCompanySize: { value: string; count: number }[];
+    byIndustry: { value: string; count: number }[];
     totalWithDemographics: number;
+    sources: string[];
   }>;
 
   // Tasks (Apollo-style)
@@ -2069,6 +2091,9 @@ export class DatabaseStorage implements IStorage {
     byRegion: { region: string; country: string; count: number }[];
     byCity: { city: string; region: string; country: string; count: number }[];
     byTimezone: { timezone: string; count: number }[];
+    byUtmSource: { value: string; count: number }[];
+    byUtmMedium: { value: string; count: number }[];
+    byUtmCampaign: { value: string; count: number }[];
   }> {
     const conditions = since ? [gte(visitorActivity.createdAt, since)] : [];
     const rows = await db
@@ -2082,6 +2107,7 @@ export class DatabaseStorage implements IStorage {
         region: visitorActivity.region,
         city: visitorActivity.city,
         timezone: visitorActivity.timezone,
+        metadata: visitorActivity.metadata,
       })
       .from(visitorActivity)
       .where(conditions.length ? and(...conditions) : sql`1=1`);
@@ -2097,6 +2123,9 @@ export class DatabaseStorage implements IStorage {
     const regionMap = new Map<string, number>();
     const cityMap = new Map<string, number>();
     const timezoneMap = new Map<string, number>();
+    const utmSourceMap = new Map<string, number>();
+    const utmMediumMap = new Map<string, number>();
+    const utmCampaignMap = new Map<string, number>();
 
     for (const r of rows) {
       const page = (r.pageVisited ?? "").trim();
@@ -2132,6 +2161,13 @@ export class DatabaseStorage implements IStorage {
       }
       const tz = (r.timezone ?? "").trim();
       if (tz) timezoneMap.set(tz, (timezoneMap.get(tz) ?? 0) + 1);
+      const meta = (r.metadata as Record<string, unknown> | null) ?? {};
+      const uSource = (meta.utm_source as string)?.trim?.();
+      const uMedium = (meta.utm_medium as string)?.trim?.();
+      const uCampaign = (meta.utm_campaign as string)?.trim?.();
+      if (uSource) utmSourceMap.set(uSource, (utmSourceMap.get(uSource) ?? 0) + 1);
+      if (uMedium) utmMediumMap.set(uMedium, (utmMediumMap.get(uMedium) ?? 0) + 1);
+      if (uCampaign) utmCampaignMap.set(uCampaign, (utmCampaignMap.get(uCampaign) ?? 0) + 1);
     }
 
     const byPage = [...pageMap.entries()]
@@ -2168,6 +2204,18 @@ export class DatabaseStorage implements IStorage {
       .map(([timezone, count]) => ({ timezone, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
+    const byUtmSource = [...utmSourceMap.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+    const byUtmMedium = [...utmMediumMap.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+    const byUtmCampaign = [...utmCampaignMap.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
 
     return {
       totalEvents,
@@ -2180,6 +2228,9 @@ export class DatabaseStorage implements IStorage {
       byRegion,
       byCity,
       byTimezone,
+      byUtmSource,
+      byUtmMedium,
+      byUtmCampaign,
     };
   }
 
@@ -2237,47 +2288,119 @@ export class DatabaseStorage implements IStorage {
     byGender: { value: string; count: number }[];
     byOccupation: { value: string; count: number }[];
     byCompanySize: { value: string; count: number }[];
+    byIndustry: { value: string; count: number }[];
     totalWithDemographics: number;
+    sources: string[];
   }> {
-    const allContacts = await this.getAllContacts();
+    const [legacyContacts, crmContacts] = await Promise.all([this.getAllContacts(), this.getCrmContacts().catch(() => [])]);
     const sinceTime = since?.getTime();
-    const filtered = sinceTime
-      ? allContacts.filter((c) => {
-          const t = typeof c.createdAt === "string" ? new Date(c.createdAt).getTime() : 0;
-          return t >= sinceTime;
-        })
-      : allContacts;
+    const filterLegacy = (c: Contact) => {
+      if (!sinceTime) return true;
+      const t = typeof c.createdAt === "string" ? new Date(c.createdAt).getTime() : 0;
+      return t >= sinceTime;
+    };
+    const filterCrm = (c: CrmContact) => {
+      if (!sinceTime) return true;
+      const t = c.createdAt instanceof Date ? c.createdAt.getTime() : new Date(c.createdAt as string).getTime();
+      return t >= sinceTime;
+    };
+    const filteredLegacy = legacyContacts.filter(filterLegacy);
+    const filteredCrm = crmContacts.filter(filterCrm);
 
     const ageMap = new Map<string, number>();
     const genderMap = new Map<string, number>();
     const occupationMap = new Map<string, number>();
     const companySizeMap = new Map<string, number>();
+    const industryMap = new Map<string, number>();
 
-    for (const c of filtered) {
+    const inc = (map: Map<string, number>, key: string) => {
+      if (!key) return;
+      map.set(key, (map.get(key) ?? 0) + 1);
+    };
+
+    for (const c of filteredLegacy) {
       const age = (c as Contact & { ageRange?: string | null }).ageRange?.trim();
       const gender = (c as Contact & { gender?: string | null }).gender?.trim();
       const occupation = (c as Contact & { occupation?: string | null }).occupation?.trim();
       const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
-      if (age) ageMap.set(age, (ageMap.get(age) ?? 0) + 1);
-      if (gender) genderMap.set(gender, (genderMap.get(gender) ?? 0) + 1);
-      if (occupation) occupationMap.set(occupation, (occupationMap.get(occupation) ?? 0) + 1);
-      if (companySize) companySizeMap.set(companySize, (companySizeMap.get(companySize) ?? 0) + 1);
+      inc(ageMap, age ?? "");
+      inc(genderMap, gender ?? "");
+      inc(occupationMap, occupation ?? "");
+      inc(companySizeMap, companySize ?? "");
+    }
+    for (const c of filteredCrm) {
+      inc(ageMap, c.ageRange?.trim() ?? "");
+      inc(genderMap, c.gender?.trim() ?? "");
+      inc(occupationMap, c.jobTitle?.trim() ?? "");
+      inc(companySizeMap, c.companySize?.trim() ?? "");
+      inc(industryMap, c.industry?.trim() ?? "");
     }
 
-    const totalWithDemographics = filtered.filter((c) => {
-      const age = (c as Contact & { ageRange?: string | null }).ageRange?.trim();
-      const gender = (c as Contact & { gender?: string | null }).gender?.trim();
-      const occupation = (c as Contact & { occupation?: string | null }).occupation?.trim();
-      const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
-      return !!(age || gender || occupation || companySize);
-    }).length;
+    const totalWithDemographics =
+      filteredLegacy.filter((c) => {
+        const age = (c as Contact & { ageRange?: string | null }).ageRange?.trim();
+        const gender = (c as Contact & { gender?: string | null }).gender?.trim();
+        const occupation = (c as Contact & { occupation?: string | null }).occupation?.trim();
+        const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
+        return !!(age || gender || occupation || companySize);
+      }).length +
+      filteredCrm.filter((c) => !!(c.ageRange || c.gender || c.jobTitle || c.companySize || c.industry)).length;
 
-    const byAgeRange = [...ageMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
-    const byGender = [...genderMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
-    const byOccupation = [...occupationMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
-    const byCompanySize = [...companySizeMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byAgeRange = [...ageMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byGender = [...genderMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byOccupation = [...occupationMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byCompanySize = [...companySizeMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byIndustry = [...industryMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
 
-    return { byAgeRange, byGender, byOccupation, byCompanySize, totalWithDemographics };
+    const sources: string[] = [];
+    if (filteredLegacy.length > 0) sources.push("contact_forms");
+    if (filteredCrm.length > 0) sources.push("crm_contacts");
+
+    return { byAgeRange, byGender, byOccupation, byCompanySize, byIndustry, totalWithDemographics, sources };
+  }
+
+  async getVisitorActivityFiltered(filters: {
+    since?: Date;
+    until?: Date;
+    eventType?: string;
+    page?: string;
+    deviceType?: string;
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    referrer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ events: VisitorActivity[]; total: number }> {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (filters.since) conditions.push(gte(visitorActivity.createdAt, filters.since));
+    if (filters.until) conditions.push(lte(visitorActivity.createdAt, filters.until));
+    if (filters.eventType) conditions.push(eq(visitorActivity.eventType, filters.eventType));
+    if (filters.page) conditions.push(eq(visitorActivity.pageVisited, filters.page));
+    if (filters.deviceType) conditions.push(eq(visitorActivity.deviceType, filters.deviceType));
+    if (filters.country) conditions.push(eq(visitorActivity.country, filters.country));
+    if (filters.region) conditions.push(eq(visitorActivity.region, filters.region));
+    if (filters.city) conditions.push(eq(visitorActivity.city, filters.city));
+    if (filters.timezone) conditions.push(eq(visitorActivity.timezone, filters.timezone));
+    if (filters.referrer) conditions.push(eq(visitorActivity.referrer, filters.referrer));
+    if (filters.utmSource) conditions.push(sql`${visitorActivity.metadata}->>'utm_source' = ${filters.utmSource}`);
+    if (filters.utmMedium) conditions.push(sql`${visitorActivity.metadata}->>'utm_medium' = ${filters.utmMedium}`);
+    if (filters.utmCampaign) conditions.push(sql`${visitorActivity.metadata}->>'utm_campaign' = ${filters.utmCampaign}`);
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const limit = Math.min(5000, Math.max(1, filters.limit ?? 500));
+    const offset = Math.max(0, filters.offset ?? 0);
+
+    const [totalRows, events] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(visitorActivity).where(whereClause ?? sql`1=1`),
+      db.select().from(visitorActivity).where(whereClause ?? sql`1=1`).orderBy(desc(visitorActivity.createdAt)).limit(limit).offset(offset),
+    ]);
+    const total = Number(totalRows[0]?.count ?? 0);
+    return { events, total };
   }
 
   async createCrmTask(task: InsertCrmTask): Promise<CrmTask> {

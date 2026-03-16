@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { getExternalDemographics } from "@/lib/analytics-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export async function GET(req: NextRequest) {
       byRegion: [] as { region: string; country: string; count: number }[],
       byCity: [] as { city: string; region: string; country: string; count: number }[],
       byTimezone: [] as { timezone: string; count: number }[],
+      byUtmSource: [] as { value: string; count: number }[],
+      byUtmMedium: [] as { value: string; count: number }[],
+      byUtmCampaign: [] as { value: string; count: number }[],
     };
     const emptyLeadMagnets = {
       totalLeads: 0,
@@ -46,10 +50,12 @@ export async function GET(req: NextRequest) {
       byGender: [] as { value: string; count: number }[],
       byOccupation: [] as { value: string; count: number }[],
       byCompanySize: [] as { value: string; count: number }[],
+      byIndustry: [] as { value: string; count: number }[],
       totalWithDemographics: 0,
+      sources: [] as string[],
     };
 
-    const [traffic, leadMagnets, crmEngagement, leadDemographics] = await Promise.all([
+    const [traffic, leadMagnets, crmEngagement, leadDemographics, externalDemographics] = await Promise.all([
       storage.getWebsiteTrafficAnalytics(since).catch((e) => {
         console.warn("Website traffic analytics failed:", e);
         return emptyTraffic;
@@ -66,8 +72,11 @@ export async function GET(req: NextRequest) {
         console.warn("Lead demographics failed:", e);
         return emptyDemographics;
       }),
+      getExternalDemographics(since).catch((e) => {
+        console.warn("External demographics (GA4/Facebook) failed:", e);
+        return { google_analytics: null, facebook_insights: null, vercel: null };
+      }),
     ]);
-
     const t = traffic ?? emptyTraffic;
     const lm = leadMagnets ?? emptyLeadMagnets;
     const crm = crmEngagement ?? emptyCrm;
@@ -142,6 +151,8 @@ export async function GET(req: NextRequest) {
       leadMagnets: lm,
       crmEngagement: crm,
       leadDemographics: demographics,
+      /** Demographics from GA4 and Facebook when configured; Vercel has no pull API. */
+      externalDemographics: externalDemographics ?? { google_analytics: null, facebook_insights: null, vercel: null },
       insights,
       nextActions,
     });

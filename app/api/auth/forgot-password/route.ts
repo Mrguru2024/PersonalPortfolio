@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { randomBytes } from "crypto";
-
-function getBaseUrl(req: NextRequest): string {
-  const origin = req.headers.get("origin") || req.headers.get("x-forwarded-host");
-  if (origin) {
-    const protocol = req.headers.get("x-forwarded-proto") || "https";
-    return origin.startsWith("http") ? origin : `${protocol}://${origin}`;
-  }
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
-}
+import { getBaseUrlForResetLink } from "@/lib/reset-link-base-url";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,8 +40,8 @@ export async function POST(req: NextRequest) {
       resetTokenExpiry,
     });
 
-    const baseUrl = getBaseUrl(req);
-    const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+    const baseUrl = getBaseUrlForResetLink(req);
+    const resetUrl = `${baseUrl}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {
       const brevoModule = await import("@getbrevo/brevo");

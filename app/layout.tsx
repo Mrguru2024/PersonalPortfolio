@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
@@ -6,6 +7,9 @@ import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import { getSiteBaseUrl } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
+
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
+const gaEnabled = GA_MEASUREMENT_ID.length > 0;
 
 const baseUrl = getSiteBaseUrl();
 
@@ -59,6 +63,13 @@ export const metadata: Metadata = {
       "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team.",
     images: [`${baseUrl}/ascendra-logo.svg`],
   },
+  // PWA: install as app on mobile; standalone display and offline-capable
+  manifest: `${baseUrl}/manifest.json`,
+  appleWebApp: {
+    capable: true,
+    title: "Ascendra",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -84,6 +95,23 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
+        {/* Google Analytics (gtag.js) — loads on every page when NEXT_PUBLIC_GA_MEASUREMENT_ID is set (default: G-5FTCQF2JH4) */}
+        {gaEnabled && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
+        )}
         {/* Very soft full-page gradient – blends hero/particles with page, no harsh line at top */}
         <div className="fixed inset-0 -z-10 hero-page-gradient pointer-events-none" aria-hidden />
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">

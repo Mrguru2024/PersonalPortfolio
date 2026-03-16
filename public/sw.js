@@ -1,17 +1,18 @@
-// Empty service worker - no functionality
-// This file exists to prevent 404 errors when browsers try to fetch
-// a previously registered service worker that no longer exists.
-// To unregister any existing service workers, users can clear their browser cache
-// or use browser dev tools to unregister service workers.
+// PWA service worker: push notifications + offline caching for admin/CRM app use
+const CACHE_VERSION = 'v1';
+const STATIC_CACHE = `static-${CACHE_VERSION}`;
+const PAGES_CACHE = `pages-${CACHE_VERSION}`;
 
-self.addEventListener('install', () => {
-  // Skip waiting to activate immediately
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // Take control of all pages immediately
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => (k.startsWith('static-') || k.startsWith('pages-')) && k !== STATIC_CACHE && k !== PAGES_CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 // Push notifications (admin direct message)
@@ -50,4 +51,65 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// No fetch handler - all requests pass through to the network
+// Offline: cache admin/CRM pages and static assets; API stays network-only
+function isSameOrigin(url) {
+  try {
+    return new URL(url).origin === self.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+function isAdminPage(url) {
+  try {
+    const path = new URL(url).pathname;
+    return path.startsWith('/admin') || path === '/' || path === '/auth' || path === '/login';
+  } catch {
+    return false;
+  }
+}
+
+function isStaticAsset(url) {
+  try {
+    const path = new URL(url).pathname;
+    return path.startsWith('/_next/static/') || path.startsWith('/favicon') || path === '/manifest.json' || path.endsWith('.svg') || path.endsWith('.ico');
+  } catch {
+    return false;
+  }
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET' || !isSameOrigin(request.url)) return;
+
+  // Static assets: cache-first for fast repeat loads
+  if (isStaticAsset(request.url)) {
+    event.respondWith(
+      caches.open(STATIC_CACHE).then((cache) =>
+        cache.match(request).then((cached) => cached || fetch(request).then((res) => {
+          if (res.ok) cache.put(request, res.clone());
+          return res;
+        }))
+      )
+    );
+    return;
+  }
+
+  // Admin/app pages: network-first, fallback to cache for offline
+  if (isAdminPage(request.url)) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          const clone = res.clone();
+          if (res.ok && res.type === 'basic') {
+            caches.open(PAGES_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.open(PAGES_CACHE).then((cache) => cache.match(request)).then((cached) => cached || new Response('Offline', { status: 503, statusText: 'Offline' }))
+        )
+    );
+    return;
+  }
+});

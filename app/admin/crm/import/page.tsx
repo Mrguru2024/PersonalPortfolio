@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Loader2, ArrowLeft, Upload, ClipboardPaste, FileSpreadsheet, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, ClipboardPaste, FileSpreadsheet, CheckCircle2, AlertCircle, Smartphone } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,6 +90,52 @@ export default function CrmImportPage() {
       return;
     }
     importMutation.mutate({ pasted: text, source });
+  };
+
+  // Contact Picker API: pull contacts from device with user permission (Android Chrome, some mobile browsers)
+  const contactPickerSupported =
+    typeof navigator !== "undefined" && "contacts" in navigator && "ContactsManager" in window;
+  const [contactPickerLoading, setContactPickerLoading] = useState(false);
+
+  const handleDeviceContacts = async () => {
+    if (!contactPickerSupported) {
+      toast({
+        title: "Not supported",
+        description: "Use Chrome on Android or a browser that supports the Contact Picker.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setContactPickerLoading(true);
+    try {
+      const contacts = await (navigator as Navigator & { contacts: { select: (props: string[], opts: { multiple: boolean }) => Promise<{ name?: string[]; email?: string[]; tel?: string[] }[]> } }).contacts.select(
+        ["name", "email", "tel"],
+        { multiple: true }
+      );
+      if (!contacts.length) {
+        toast({ title: "No contacts selected", variant: "default" });
+        setContactPickerLoading(false);
+        return;
+      }
+      const escapeCsv = (s: string) => (s.includes(",") || s.includes('"') ? `"${String(s).replace(/"/g, '""')}"` : s);
+      const rows = contacts.map((c) => {
+        const name = c.name?.[0]?.trim() ?? "";
+        const email = c.email?.[0]?.trim() ?? "";
+        const tel = c.tel?.[0]?.trim() ?? "";
+        return [escapeCsv(name), escapeCsv(email), escapeCsv(tel)].join(",");
+      });
+      const csvText = "Name,Email,Phone\n" + rows.join("\n");
+      importMutation.mutate({ pasted: csvText, source: "device" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("cancel") || msg.includes("abort") || msg.includes("User")) {
+        toast({ title: "Selection cancelled", variant: "default" });
+      } else {
+        toast({ title: "Could not read contacts", description: msg, variant: "destructive" });
+      }
+    } finally {
+      setContactPickerLoading(false);
+    }
   };
 
   if (authLoading) {
@@ -195,6 +241,46 @@ export default function CrmImportPage() {
               <Upload className="h-4 w-4 mr-2" />
               Choose file
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              From phone contacts
+            </CardTitle>
+            <CardDescription>
+              {contactPickerSupported
+                ? "Add leads from your device contacts. You choose which contacts to share; only selected names, emails, and numbers are sent."
+                : "Pull contacts from your phone with your permission. Supported in Chrome on Android and some other mobile browsers. On unsupported devices, use paste or file upload above."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="text-sm text-muted-foreground">Source label for imported leads</Label>
+              <Input
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="e.g. device"
+                className="mt-1 max-w-xs"
+              />
+            </div>
+            {contactPickerSupported ? (
+              <Button
+                variant="outline"
+                onClick={handleDeviceContacts}
+                disabled={importMutation.isPending || contactPickerLoading}
+                className="min-h-11 w-full sm:w-auto"
+              >
+                {contactPickerLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Smartphone className="h-4 w-4 mr-2" />}
+                Choose from device
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Not available in this browser. Try Chrome on Android, or use paste/file upload.
+              </p>
+            )}
           </CardContent>
         </Card>
 

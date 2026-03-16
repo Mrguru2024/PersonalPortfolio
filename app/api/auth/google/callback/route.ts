@@ -25,9 +25,10 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
-    // Build base URL for redirects
-    const isProduction = process.env.NODE_ENV === 'production';
-    const baseUrl = isProduction ? 'https://mrguru.dev' : (req.headers.get('origin') || 'http://localhost:3000');
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+      req.headers.get("origin")?.replace(/\/$/, "") ||
+      (process.env.NODE_ENV === "production" ? "https://mrguru.dev" : "http://localhost:3000");
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     if (error) {
@@ -218,8 +219,7 @@ export async function GET(req: NextRequest) {
 
     // Redirect to home page
     console.log("Google OAuth - Authentication successful, redirecting to home");
-    const homeUrl = isProduction ? 'https://mrguru.dev' : (req.headers.get('origin') || 'http://localhost:3000');
-    return NextResponse.redirect(homeUrl);
+    return NextResponse.redirect(baseUrl);
   } catch (error: any) {
     console.error("Google OAuth callback error:", error);
     console.error("Error stack:", error?.stack);

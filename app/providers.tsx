@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/lib/view-mode-context";
 import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
+import PwaRegistration from "@/components/PwaRegistration";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
         <ViewModeProvider>
           <AuthProvider>
+            <PwaRegistration />
             {children}
             <Toaster />
             <SuperAdminErrorReporter />
