@@ -19,6 +19,7 @@ import {
   User,
   FileCheck,
   Contact,
+  ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdminUser } from "@/lib/super-admin";
@@ -31,6 +32,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HealthData {
   db: "ok" | "error";
@@ -69,6 +77,20 @@ interface LogEntryWithFix {
   fixHint?: FixHint[];
 }
 
+interface ActivityLogEntry {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  eventType: string;
+  success: boolean;
+  message: string | null;
+  identifier: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export default function AdminSystemPage() {
   const [mounted, setMounted] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
@@ -83,6 +105,9 @@ export default function AdminSystemPage() {
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [loadingHealth, setLoadingHealth] = useState(false);
   const [loadingActivity, setLoadingActivity] = useState(false);
+  const [activityLogEntries, setActivityLogEntries] = useState<ActivityLogEntry[]>([]);
+  const [loadingActivityLog, setLoadingActivityLog] = useState(false);
+  const [activityLogFilter, setActivityLogFilter] = useState<string>("");
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
@@ -142,6 +167,19 @@ export default function AdminSystemPage() {
       .catch(() => setActivity(null))
       .finally(() => setLoadingActivity(false));
   }, [user, isSuperUser, refreshTick]);
+
+  useEffect(() => {
+    if (!user || !isSuperUser) return;
+    setLoadingActivityLog(true);
+    const url = activityLogFilter
+      ? `/api/admin/system/activity-log?limit=100&eventType=${encodeURIComponent(activityLogFilter)}`
+      : "/api/admin/system/activity-log?limit=100";
+    apiRequest("GET", url)
+      .then((r) => (r.ok ? r.json() : { entries: [] }))
+      .then((data) => setActivityLogEntries(data.entries ?? []))
+      .catch(() => setActivityLogEntries([]))
+      .finally(() => setLoadingActivityLog(false));
+  }, [user, isSuperUser, refreshTick, activityLogFilter]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -363,6 +401,92 @@ export default function AdminSystemPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Login & user activity log */}
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ScrollText className="h-4 w-4" />
+                Login & user activity log
+              </CardTitle>
+              <CardDescription>
+                User events: logins, failures, logout, and captured errors (persisted)
+              </CardDescription>
+            </div>
+            <Select value={activityLogFilter || "all"} onValueChange={(v) => setActivityLogFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Event type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                <SelectItem value="login_success">Login success</SelectItem>
+                <SelectItem value="login_failure">Login failure</SelectItem>
+                <SelectItem value="logout">Logout</SelectItem>
+                <SelectItem value="error">Server error</SelectItem>
+                <SelectItem value="client_error">Client / bug</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingActivityLog ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : activityLogEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No activity log entries yet. Logins, logouts, and errors will appear here.
+            </p>
+          ) : (
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
+                    <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
+                    <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
+                    <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
+                    <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
+                    <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activityLogEntries.map((entry) => (
+                    <tr key={entry.id} className="border-b border-border/50">
+                      <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-2 px-2">
+                        <Badge variant={entry.eventType === "login_failure" || entry.eventType === "error" || entry.eventType === "client_error" ? "destructive" : "secondary"}>
+                          {entry.eventType}
+                        </Badge>
+                      </td>
+                      <td className="py-2 px-2">
+                        {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")}
+                      </td>
+                      <td className="py-2 px-2">
+                        {entry.success ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-destructive" />
+                        )}
+                      </td>
+                      <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground" title={entry.message ?? undefined}>
+                        {entry.message ?? "—"}
+                      </td>
+                      <td className="py-2 px-2 text-muted-foreground font-mono text-xs">
+                        {entry.ipAddress ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">

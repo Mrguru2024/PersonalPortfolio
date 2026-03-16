@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { setSession, getIpAddress } from "@/lib/auth-helpers";
 
 const scryptAsync = promisify(scrypt);
 
@@ -206,6 +207,14 @@ export async function GET(req: NextRequest) {
       // Don't continue - session must be stored
       return NextResponse.redirect(`${baseUrl}/auth?error=google_auth_failed&message=Failed to create session`);
     }
+
+    recordActivityLog("login_success", true, {
+      userId: user.id,
+      identifier: user.username,
+      message: "Google OAuth",
+      ipAddress: getIpAddress(req),
+      userAgent: req.headers.get("user-agent") ?? undefined,
+    }).catch(() => {});
 
     // Redirect to home page
     console.log("Google OAuth - Authentication successful, redirecting to home");

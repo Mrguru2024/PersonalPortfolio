@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { setSession, getIpAddress } from "@/lib/auth-helpers";
 
 const scryptAsync = promisify(scrypt);
 
@@ -152,6 +153,14 @@ export async function GET(req: NextRequest) {
       console.error("Warning: Failed to store session:", sessionError);
       // Continue anyway - cookie is set
     }
+
+    recordActivityLog("login_success", true, {
+      userId: user.id,
+      identifier: user.username,
+      message: "GitHub OAuth",
+      ipAddress: getIpAddress(req),
+      userAgent: req.headers.get("user-agent") ?? undefined,
+    }).catch(() => {});
 
     // Redirect to home page
     return NextResponse.redirect(baseUrl);

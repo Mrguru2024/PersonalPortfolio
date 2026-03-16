@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
-import { setSession } from "@/lib/auth-helpers";
+import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { captureApiError } from "@/lib/systemMonitor";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,12 @@ export async function POST(req: NextRequest) {
     // Step 3: Verify password
     if (!user) {
       console.log("Login failed: User not found");
+      recordActivityLog("login_failure", false, {
+        identifier: username,
+        message: "User not found",
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+      }).catch(() => {});
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 },
@@ -101,6 +108,13 @@ export async function POST(req: NextRequest) {
 
     if (!passwordMatch) {
       console.log("Login failed: Password does not match");
+      recordActivityLog("login_failure", false, {
+        userId: user.id,
+        identifier: user.username,
+        message: "Invalid password",
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+      }).catch(() => {});
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 },
@@ -200,7 +214,14 @@ export async function POST(req: NextRequest) {
       // Continue with login - the cookie is set, session can be stored on next request
     }
 
-    // Step 6: Return user data
+    // Step 6: Record success and return user data
+    recordActivityLog("login_success", true, {
+      userId: user.id,
+      identifier: user.username,
+      ipAddress: getIpAddress(req),
+      userAgent: req.headers.get("user-agent") ?? undefined,
+    }).catch(() => {});
+
     try {
       const { password: _, ...userWithoutPassword } = user;
       return NextResponse.json(userWithoutPassword);
@@ -218,6 +239,12 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     captureApiError(error, req);
+    recordActivityLog("error", false, {
+      message: error?.message || "Login error",
+      ipAddress: getIpAddress(req),
+      userAgent: req.headers.get("user-agent") ?? undefined,
+      metadata: { stack: error?.stack?.slice(0, 2000) },
+    }).catch(() => {});
     console.error("Unexpected login error:", error);
     console.error("Error stack:", error?.stack);
     console.error("Error details:", {

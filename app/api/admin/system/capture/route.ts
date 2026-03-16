@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isSuperUser, getSessionUser, getIpAddress } from "@/lib/auth-helpers";
 import { captureError } from "@/lib/systemMonitor";
+import { recordActivityLog } from "@server/activityLog";
 
 /**
  * POST /api/admin/system/capture
@@ -22,6 +23,16 @@ export async function POST(req: NextRequest) {
     const err = new Error(message);
     if (stack) (err as Error & { stack: string }).stack = stack;
     captureError(err, { route, url, method: "client" });
+
+    const user = await getSessionUser(req);
+    await recordActivityLog("client_error", false, {
+      userId: user?.id ?? undefined,
+      message: message.slice(0, 2000),
+      ipAddress: getIpAddress(req),
+      userAgent: req.headers.get("user-agent") ?? undefined,
+      metadata: { route, url, stack: stack?.slice(0, 2000) },
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("System capture POST error:", error);

@@ -355,6 +355,55 @@ export type BlogComment = typeof blogComments.$inferSelect;
 export type InsertBlogPostContribution = z.infer<typeof insertBlogPostContributionSchema>;
 export type BlogPostContribution = typeof blogPostContributions.$inferSelect;
 
+// Admin internal chat (single room for all approved admins)
+export const adminChatMessages = pgTable("admin_chat_messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tracks last read message per admin for unread count / notifications
+export const adminChatReadCursor = pgTable("admin_chat_read_cursor", {
+  userId: integer("user_id").references(() => users.id).primaryKey(),
+  lastReadMessageId: integer("last_read_message_id").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminChatMessage = typeof adminChatMessages.$inferSelect;
+export type InsertAdminChatMessage = typeof adminChatMessages.$inferInsert;
+export type AdminChatReadCursor = typeof adminChatReadCursor.$inferSelect;
+
+// User activity / login audit log (admin monitoring: logins, failures, errors)
+export const userActivityLog = pgTable("user_activity_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  eventType: text("event_type").notNull(), // login_success, login_failure, logout, error, client_error
+  success: boolean("success").notNull(),
+  message: text("message"),
+  identifier: text("identifier"), // e.g. username/email for failed login (no userId)
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type UserActivityLogEntry = typeof userActivityLog.$inferSelect;
+export type InsertUserActivityLog = typeof userActivityLog.$inferInsert;
+
+// Push notification subscriptions (for admin direct message / push to device)
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  endpoint: text("endpoint").notNull(),
+  keys: json("keys").$type<{ p256dh: string; auth: string }>().notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
 // Client Quotes schema (from assessments/proposals)
 export const clientQuotes = pgTable("client_quotes", {
   id: serial("id").primaryKey(),

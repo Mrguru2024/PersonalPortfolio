@@ -17,22 +17,50 @@ export async function GET(req: NextRequest) {
     const sinceParam = req.nextUrl.searchParams.get("since");
     const since = sinceParam ? new Date(sinceParam) : undefined;
 
+    const emptyTraffic = {
+      totalEvents: 0,
+      uniqueVisitors: 0,
+      byPage: [] as { page: string; count: number; unique: number }[],
+      byEventType: [] as { eventType: string; count: number }[],
+      byDevice: [] as { device: string; count: number }[],
+      byReferrer: [] as { referrer: string; count: number }[],
+    };
+    const emptyLeadMagnets = {
+      totalLeads: 0,
+      bySource: [] as { source: string; label: string; count: number }[],
+      recentCount: 0,
+    };
+    const emptyCrm = {
+      emailOpens: 0,
+      emailClicks: 0,
+      documentViews: 0,
+      highIntentLeadsCount: 0,
+      unreadAlertsCount: 0,
+    };
+
     const [traffic, leadMagnets, crmEngagement] = await Promise.all([
-      storage.getWebsiteTrafficAnalytics(since),
-      storage.getLeadMagnetPerformance(since),
-      storage.getCrmEngagementStats().catch(() => ({
-        emailOpens: 0,
-        emailClicks: 0,
-        documentViews: 0,
-        highIntentLeadsCount: 0,
-        unreadAlertsCount: 0,
-      })),
+      storage.getWebsiteTrafficAnalytics(since).catch((e) => {
+        console.warn("Website traffic analytics failed:", e);
+        return emptyTraffic;
+      }),
+      storage.getLeadMagnetPerformance(since).catch((e) => {
+        console.warn("Lead magnet performance failed:", e);
+        return emptyLeadMagnets;
+      }),
+      storage.getCrmEngagementStats().catch((e) => {
+        console.warn("CRM engagement stats failed:", e);
+        return emptyCrm;
+      }),
     ]);
+
+    const t = traffic ?? emptyTraffic;
+    const lm = leadMagnets ?? emptyLeadMagnets;
+    const crm = crmEngagement ?? emptyCrm;
 
     const insights: string[] = [];
     const nextActions: { action: string; priority: "high" | "medium" | "low"; reason: string }[] = [];
 
-    if (traffic.totalEvents === 0 && traffic.uniqueVisitors === 0) {
+    if (t.totalEvents === 0 && t.uniqueVisitors === 0) {
       insights.push("No visitor tracking data yet. Ensure the site calls POST /api/track/visitor on key pages and CTAs.");
       nextActions.push({
         action: "Add visitor tracking to key pages (audit, strategy-call, contact, funnel pages)",
@@ -40,17 +68,17 @@ export async function GET(req: NextRequest) {
         reason: "Traffic and lead-magnet analytics depend on it.",
       });
     } else {
-      if (traffic.byPage.length > 0) {
-        const topPage = traffic.byPage[0];
+      const topPage = t.byPage?.[0];
+      if (topPage) {
         insights.push(`Top page: ${topPage.page} (${topPage.count} views, ${topPage.unique} unique visitors).`);
       }
-      if (traffic.byEventType.some((e) => e.eventType === "form_completed")) {
-        const completed = traffic.byEventType.find((e) => e.eventType === "form_completed")?.count ?? 0;
+      if (t.byEventType?.some((e) => e.eventType === "form_completed")) {
+        const completed = t.byEventType.find((e) => e.eventType === "form_completed")?.count ?? 0;
         insights.push(`Form completions recorded: ${completed}. Compare with lead magnet counts to validate funnel.`);
       }
     }
 
-    if (leadMagnets.totalLeads === 0) {
+    if (lm.totalLeads === 0) {
       insights.push("No contact form submissions in the selected period. Check audit, strategy-call, and contact flows.");
       nextActions.push({
         action: "Promote audit and strategy-call CTAs on homepage and high-traffic pages",
@@ -58,7 +86,7 @@ export async function GET(req: NextRequest) {
         reason: "More visibility increases lead capture.",
       });
     } else {
-      const topSource = leadMagnets.bySource[0];
+      const topSource = lm.bySource?.[0];
       if (topSource) {
         insights.push(`Best-performing lead source: ${topSource.label} (${topSource.count} leads).`);
         nextActions.push({
@@ -67,7 +95,7 @@ export async function GET(req: NextRequest) {
           reason: "It’s already converting; amplify it.",
         });
       }
-      const weak = leadMagnets.bySource.filter((s) => s.count === 0);
+      const weak = (lm.bySource ?? []).filter((s) => s.count === 0);
       if (weak.length > 0) {
         nextActions.push({
           action: `Consider promoting or simplifying: ${weak.map((s) => s.label).join(", ")}`,
@@ -77,26 +105,26 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    if (crmEngagement.highIntentLeadsCount > 0) {
-      insights.push(`${crmEngagement.highIntentLeadsCount} high-intent/hot leads in CRM. Prioritize follow-up.`);
+    if (crm.highIntentLeadsCount > 0) {
+      insights.push(`${crm.highIntentLeadsCount} high-intent/hot leads in CRM. Prioritize follow-up.`);
       nextActions.push({
         action: "Review CRM for high-intent and hot leads; schedule follow-up",
         priority: "high",
         reason: "These leads are most likely to convert.",
       });
     }
-    if (crmEngagement.unreadAlertsCount > 0) {
+    if (crm.unreadAlertsCount > 0) {
       nextActions.push({
-        action: `Review ${crmEngagement.unreadAlertsCount} unread CRM alerts (e.g. proposal views)`,
+        action: `Review ${crm.unreadAlertsCount} unread CRM alerts (e.g. proposal views)`,
         priority: "medium",
         reason: "Alerts indicate engagement; timely response improves conversion.",
       });
     }
 
     return NextResponse.json({
-      traffic,
-      leadMagnets,
-      crmEngagement,
+      traffic: t,
+      leadMagnets: lm,
+      crmEngagement: crm,
       insights,
       nextActions,
     });

@@ -23,9 +23,11 @@ import {
   UserCog,
   Activity,
   TrendingUp,
+  Bell,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdminUser } from "@/lib/super-admin";
 import { Button } from "@/components/ui/button";
@@ -143,6 +145,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
+    { name: "Chat", href: "/admin/chat", icon: MessageSquare, permission: "dashboard" as const },
     { name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
     { name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
@@ -309,66 +312,71 @@ export default function Header(_props: HeaderProps) {
               )
             )}
             {mounted && user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full"
-                  >
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <User className="h-4 w-4" />
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[220px] max-h-[85vh] overflow-y-auto">
-                  <DropdownMenuLabel className="font-normal">
-                    @{user.username}
-                  </DropdownMenuLabel>
-                  {!isApprovedAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
-                          <LayoutDashboard className="h-4 w-4 shrink-0" />
-                          <span>Dashboard</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  {isApprovedAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-muted-foreground text-xs font-medium py-1">
-                        Admin
-                      </DropdownMenuLabel>
-                      {visibleAdminPages.map((page) => {
-                        const Icon = page.icon;
-                        return (
-                          <DropdownMenuItem key={page.href} asChild>
-                            <Link
-                              href={page.href}
-                              className="cursor-pointer flex items-center gap-2 py-2"
-                            >
-                              <Icon className="h-4 w-4 shrink-0" />
-                              <span>{page.name}</span>
-                            </Link>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem
-                    onClick={() => logoutMutation.mutate()}
-                    className="cursor-pointer"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {isApprovedAdmin && (
+                  <AdminChatNotificationBell />
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full"
+                    >
+                      <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <User className="h-4 w-4" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[220px] max-h-[85vh] overflow-y-auto">
+                    <DropdownMenuLabel className="font-normal">
+                      @{user.username}
+                    </DropdownMenuLabel>
+                    {!isApprovedAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
+                            <LayoutDashboard className="h-4 w-4 shrink-0" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {isApprovedAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="text-muted-foreground text-xs font-medium py-1">
+                          Admin
+                        </DropdownMenuLabel>
+                        {visibleAdminPages.map((page) => {
+                          const Icon = page.icon;
+                          return (
+                            <DropdownMenuItem key={page.href} asChild>
+                              <Link
+                                href={page.href}
+                                className="cursor-pointer flex items-center gap-2 py-2"
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span>{page.name}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() => logoutMutation.mutate()}
+                      className="cursor-pointer"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <Link
                 href="/login"

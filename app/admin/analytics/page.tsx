@@ -87,7 +87,7 @@ export default function AdminAnalyticsPage() {
   }, [user, authLoading, router]);
 
   const since = getSince(timeRange);
-  const { data, isLoading, error } = useQuery<WebsiteAnalyticsResponse>({
+  const { data: rawData, isLoading, error } = useQuery<WebsiteAnalyticsResponse>({
     queryKey: ["/api/admin/analytics/website", timeRange, since ?? "all"],
     queryFn: async () => {
       const url = since ? `/api/admin/analytics/website?since=${encodeURIComponent(since)}` : "/api/admin/analytics/website";
@@ -100,6 +100,36 @@ export default function AdminAnalyticsPage() {
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
+
+  const data =
+    rawData && typeof rawData.traffic === "object"
+      ? {
+          traffic: {
+            totalEvents: rawData.traffic?.totalEvents ?? 0,
+            uniqueVisitors: rawData.traffic?.uniqueVisitors ?? 0,
+            byPage: rawData.traffic?.byPage ?? [],
+            byEventType: rawData.traffic?.byEventType ?? [],
+            byDevice: rawData.traffic?.byDevice ?? [],
+            byReferrer: rawData.traffic?.byReferrer ?? [],
+          },
+          leadMagnets: {
+            totalLeads: rawData.leadMagnets?.totalLeads ?? 0,
+            bySource: rawData.leadMagnets?.bySource ?? [],
+            recentCount: rawData.leadMagnets?.recentCount ?? 0,
+          },
+          crmEngagement: rawData.crmEngagement
+            ? {
+                emailOpens: rawData.crmEngagement.emailOpens ?? 0,
+                emailClicks: rawData.crmEngagement.emailClicks ?? 0,
+                documentViews: rawData.crmEngagement.documentViews ?? 0,
+                highIntentLeadsCount: rawData.crmEngagement.highIntentLeadsCount ?? 0,
+                unreadAlertsCount: rawData.crmEngagement.unreadAlertsCount ?? 0,
+              }
+            : { emailOpens: 0, emailClicks: 0, documentViews: 0, highIntentLeadsCount: 0, unreadAlertsCount: 0 },
+          insights: Array.isArray(rawData.insights) ? rawData.insights : [],
+          nextActions: Array.isArray(rawData.nextActions) ? rawData.nextActions : [],
+        }
+      : null;
 
   if (authLoading) {
     return (
@@ -156,7 +186,13 @@ export default function AdminAnalyticsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : data ? (
+      ) : !data ? (
+        <Card className="border-muted">
+          <CardContent className="py-8 text-center text-muted-foreground">
+            {error ? null : "No data available. Try again later."}
+          </CardContent>
+        </Card>
+      ) : (
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -484,7 +520,7 @@ export default function AdminAnalyticsPage() {
             </TabsContent>
           </Tabs>
         </>
-      ) : null}
+      )}
     </div>
   );
 }

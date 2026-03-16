@@ -840,6 +840,40 @@ This endorsement was submitted from your portfolio website.
       return false;
     }
   }
+
+  /** Send a direct message (admin → recipient). Used for admin chat + email/SMS/push delivery. */
+  async sendDirectMessageEmail(data: { to: string; subject: string; body: string; senderName?: string }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = data.subject;
+      const safeBody = (data.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;}</style></head>
+        <body>
+          <p>${safeBody}</p>
+          <p style="margin-top:24px;font-size:12px;color:#666;">Direct message from ${data.senderName || this.fromName}</p>
+        </body>
+        </html>`;
+      sendSmtpEmail.textContent = data.body || '';
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Direct message email sent to ${data.to}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending direct message email:', error?.message ?? error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

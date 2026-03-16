@@ -1,12 +1,18 @@
-// Push Notification Service using Web Push API
-// This service can send browser push notifications when enabled
+// Push Notification Service using Web Push API (web-push)
+
+import * as webpush from "web-push";
+
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
 
 interface PushNotificationPayload {
   title: string;
   body: string;
   icon?: string;
   badge?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   tag?: string;
   requireInteraction?: boolean;
 }
@@ -21,38 +27,61 @@ export class PushNotificationService {
     this.vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || null;
     this.isConfigured = !!(this.vapidPublicKey && this.vapidPrivateKey);
 
-    if (!this.isConfigured) {
-      console.warn(
-        "⚠️  VAPID keys not found. Push notifications will be disabled."
+    if (this.isConfigured) {
+      webpush.setVapidDetails(
+        "mailto:" + (process.env.ADMIN_EMAIL || "admin@localhost"),
+        this.vapidPublicKey,
+        this.vapidPrivateKey!
       );
+    } else {
       console.warn(
-        "   Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in your .env.local file to enable push notifications."
+        "⚠️  VAPID keys not found. Push notifications will be disabled. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY. Generate: npx web-push generate-vapid-keys"
       );
-      console.warn("   Generate keys using: npx web-push generate-vapid-keys");
     }
   }
 
   async sendNotification(
-    subscription: any,
+    subscription: PushSubscriptionPayload,
     payload: PushNotificationPayload
   ): Promise<boolean> {
-    if (!this.isConfigured) {
-      return false;
-    }
-
+    if (!this.isConfigured) return false;
     try {
-      console.log(
-        "📱 Push notification logged (web-push not yet integrated):",
-        {
-          subscription: subscription.endpoint,
-          payload,
-        }
-      );
+      const pushSubscription = {
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      };
+      const payloadStr = JSON.stringify({
+        title: payload.title,
+        body: payload.body,
+        icon: payload.icon,
+        data: payload.data,
+        tag: payload.tag,
+        requireInteraction: payload.requireInteraction,
+      });
+      await webpush.sendNotification(pushSubscription, payloadStr);
       return true;
-    } catch (error) {
-      console.error("❌ Error sending push notification:", error);
+    } catch (error: unknown) {
+      const err = error as { statusCode?: number };
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        console.warn("Push subscription expired or invalid:", subscription.endpoint);
+      } else {
+        console.error("Error sending push notification:", error);
+      }
       return false;
     }
+  }
+
+  /** Send to multiple subscriptions; returns count of successful sends. */
+  async sendToSubscriptions(
+    subscriptions: PushSubscriptionPayload[],
+    payload: PushNotificationPayload
+  ): Promise<number> {
+    let sent = 0;
+    for (const sub of subscriptions) {
+      const ok = await this.sendNotification(sub, payload);
+      if (ok) sent++;
+    }
+    return sent;
   }
 
   getPublicKey(): string | null {
