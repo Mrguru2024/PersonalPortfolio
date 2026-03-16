@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { getGeoFromRequest } from "@/lib/geo-from-request";
 
 export const dynamic = "force-dynamic";
 
 const ALLOWED_EVENT_TYPES = ["page_view", "form_started", "form_completed", "cta_click", "tool_used"];
 const METADATA_MAX_STRING = 1024;
+const GEO_MAX_LENGTH = 128;
 
 function sanitizeMetadata(obj: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -35,6 +37,12 @@ export async function POST(req: NextRequest) {
     const ua = req.headers.get("user-agent") || undefined;
     const deviceType = ua && /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
 
+    const geo = getGeoFromRequest(req);
+    const country = geo.country ? geo.country.slice(0, GEO_MAX_LENGTH) : null;
+    const region = geo.region ? geo.region.slice(0, GEO_MAX_LENGTH) : null;
+    const city = geo.city ? geo.city.slice(0, GEO_MAX_LENGTH) : null;
+    const timezone = geo.timezone ? geo.timezone.slice(0, GEO_MAX_LENGTH) : null;
+
     const viewport = body.viewport;
     const vw = viewport && (typeof viewport.width === "number" || typeof viewport.w === "number") ? (viewport.width ?? viewport.w) : undefined;
     const vh = viewport && (typeof viewport.height === "number" || typeof viewport.h === "number") ? (viewport.height ?? viewport.h) : undefined;
@@ -55,6 +63,10 @@ export async function POST(req: NextRequest) {
       eventType,
       referrer: referrer ?? null,
       deviceType: deviceType ?? null,
+      country,
+      region,
+      city,
+      timezone,
       metadata: Object.keys(metadata).length ? metadata : undefined,
     });
 

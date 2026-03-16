@@ -359,6 +359,12 @@ export const portfolioController = {
 
       // For quote requests, we'll use a more flexible validation
       let validatedData;
+      const demographicFields = {
+        ageRange: body.ageRange ?? body.age_range ?? null,
+        gender: body.gender ?? null,
+        occupation: body.occupation ?? null,
+        companySize: body.companySize ?? body.company_size ?? null,
+      };
       if (isQuoteRequest) {
         // Quote request validation
         validatedData = {
@@ -372,6 +378,7 @@ export const portfolioController = {
           message: body.message || "",
           newsletter: body.newsletter || false,
           subject: `Quote Request: ${body.projectType || "Project"}`,
+          ...demographicFields,
         };
       } else {
         // Regular contact form validation
@@ -448,6 +455,10 @@ export const portfolioController = {
         timeframe: "timeframe" in validatedData ? validatedData.timeframe || null : null,
         newsletter: "newsletter" in validatedData ? Boolean(validatedData.newsletter) : false,
         pricingEstimate: isQuoteRequest ? pricingSummary : null,
+        ageRange: "ageRange" in validatedData ? (validatedData.ageRange ?? null) : demographicFields.ageRange,
+        gender: "gender" in validatedData ? (validatedData.gender ?? null) : demographicFields.gender,
+        occupation: "occupation" in validatedData ? (validatedData.occupation ?? null) : demographicFields.occupation,
+        companySize: "companySize" in validatedData ? (validatedData.companySize ?? null) : demographicFields.companySize,
       };
 
       const savedContact = await storage.createContact(contactData);

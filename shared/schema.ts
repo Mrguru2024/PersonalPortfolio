@@ -167,6 +167,11 @@ export const contacts = pgTable("contacts", {
   budget: text("budget"),
   timeframe: text("timeframe"),
   newsletter: boolean("newsletter").default(false),
+  /** Lead qualifying / demographics (for acquisition analytics) */
+  ageRange: text("age_range"), // e.g. 18-24, 25-34, 35-44, 45-54, 55+
+  gender: text("gender"),
+  occupation: text("occupation"), // job role / title category
+  companySize: text("company_size"), // e.g. 1-10, 11-50, 51-200, 201+
   pricingEstimate: json("pricing_estimate").$type<{
     estimatedRange: { min: number; max: number; average: number };
     marketComparison: { lowEnd: number; highEnd: number; average: number };

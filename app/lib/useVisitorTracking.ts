@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef } from "react";
 
 const VISITOR_ID_KEY = "v_id";
 const SESSION_ID_KEY = "v_sid";
+const LAST_PAGE_VIEW_KEY = "v_last_pv";
+const PAGE_VIEW_DEBOUNCE_MS = 30_000; // only one page_view per path per 30s per session
 const ALLOWED_EVENT_TYPES = ["page_view", "form_started", "form_completed", "cta_click", "tool_used"] as const;
 export type VisitorEventType = (typeof ALLOWED_EVENT_TYPES)[number];
 
@@ -29,9 +31,30 @@ function getSessionId(): string {
   return getOrSetId(SESSION_ID_KEY, () => `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
 }
 
+/** Returns true if we should skip this page_view to avoid redundant API calls. */
+function shouldSkipPageView(path: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(LAST_PAGE_VIEW_KEY);
+    if (!raw) return false;
+    const { path: lastPath, time } = JSON.parse(raw) as { path: string; time: number };
+    if (lastPath !== path) return false;
+    return Date.now() - time < PAGE_VIEW_DEBOUNCE_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markPageViewSent(path: string): void {
+  try {
+    sessionStorage.setItem(LAST_PAGE_VIEW_KEY, JSON.stringify({ path, time: Date.now() }));
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Fire-and-forget visitor tracking to POST /api/track/visitor.
- * Use for page views, form_started, form_completed, cta_click, tool_used.
+ * Page views are deduped: at most one per path per 30s per session. Other events are sent as-is.
  */
 export function useVisitorTracking() {
   const visitorIdRef = useRef<string>("");
@@ -47,10 +70,15 @@ export function useVisitorTracking() {
       eventType: VisitorEventType,
       options?: { pageVisited?: string; metadata?: Record<string, unknown> }
     ) => {
-      const visitorId = visitorIdRef.current || getVisitorId();
-      const sessionId = sessionIdRef.current || getSessionId();
       const pageVisited =
         options?.pageVisited ?? (typeof window !== "undefined" ? window.location.pathname || "/" : "/");
+
+      if (eventType === "page_view" && typeof sessionStorage !== "undefined" && shouldSkipPageView(pageVisited)) {
+        return;
+      }
+
+      const visitorId = visitorIdRef.current || getVisitorId();
+      const sessionId = sessionIdRef.current || getSessionId();
       const referrer = typeof document !== "undefined" ? document.referrer || undefined : undefined;
 
       let viewport: { width: number; height: number } | undefined;
@@ -78,6 +106,8 @@ export function useVisitorTracking() {
       const metadata = { ...options?.metadata };
       if (url) metadata.url = url;
       if (utm && Object.keys(utm).length) Object.assign(metadata, utm);
+
+      if (eventType === "page_view") markPageViewSent(pageVisited);
 
       fetch("/api/track/visitor", {
         method: "POST",

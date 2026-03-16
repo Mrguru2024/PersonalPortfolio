@@ -140,6 +140,38 @@ export const TIMELINE_OPTIONS = [
   "3+ months",
 ] as const;
 
+/** Lead qualifying / demographics for analytics (optional on forms) */
+export const AGE_RANGE_OPTIONS = [
+  "18-24",
+  "25-34",
+  "35-44",
+  "45-54",
+  "55+",
+] as const;
+
+export const GENDER_OPTIONS = [
+  "Female",
+  "Male",
+  "Non-binary",
+  "Prefer not to say",
+] as const;
+
+export const OCCUPATION_OPTIONS = [
+  "Founder / Owner",
+  "Marketing lead",
+  "Operations",
+  "Sales",
+  "Other",
+] as const;
+
+export const COMPANY_SIZE_OPTIONS = [
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "500+",
+] as const;
+
 /** Steps for sticky scroll storytelling: traffic → lead → customer */
 export const FUNNEL_STORY_STEPS = [
   {

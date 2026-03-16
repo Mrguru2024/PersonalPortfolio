@@ -59,6 +59,10 @@ export async function POST(req: NextRequest) {
       message: message || "Digital Growth Audit request",
       newsletter: false,
       subject: AUDIT_SUBJECT,
+      ageRange: (body.ageRange ?? body.age_range ?? "").trim() || undefined,
+      gender: (body.gender ?? "").trim() || undefined,
+      occupation: (body.occupation ?? "").trim() || undefined,
+      companySize: (body.companySize ?? body.company_size ?? "").trim() || undefined,
     };
 
     const mockReq = {

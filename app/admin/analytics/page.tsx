@@ -22,6 +22,8 @@ import {
   ListOrdered,
   ChevronDown,
   ChevronRight,
+  Globe,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +42,56 @@ import { format } from "date-fns";
 
 type TimeRange = "7d" | "30d" | "90d" | "all";
 
+/** Human-readable labels for event metadata keys */
+const METADATA_LABELS: Record<string, string> = {
+  url: "Page URL",
+  viewport: "Viewport",
+  userAgent: "Browser",
+  utm_source: "UTM Source",
+  utm_medium: "UTM Medium",
+  utm_campaign: "UTM Campaign",
+  utm_term: "UTM Term",
+  utm_content: "UTM Content",
+  cta: "CTA",
+  form: "Form",
+  tool: "Tool",
+  referrer: "Referrer",
+};
+
+function formatMetadataForDisplay(meta: Record<string, unknown>): { label: string; value: string }[] {
+  return Object.entries(meta).map(([key, val]) => {
+    const label = METADATA_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    let value: string;
+    if (val == null) value = "—";
+    else if (typeof val === "string") value = val;
+    else if (typeof val === "number" || typeof val === "boolean") value = String(val);
+    else if (Array.isArray(val)) value = val.map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v))).join(", ");
+    else if (typeof val === "object") value = JSON.stringify(val).slice(0, 200) + (JSON.stringify(val).length > 200 ? "…" : "");
+    else value = String(val);
+    return { label, value };
+  });
+}
+
+/** Never show raw JSON to the user; return a short digestible message */
+function formatErrorMessage(raw: unknown): string {
+  if (raw == null) return "Something went wrong.";
+  if (raw instanceof Error && raw.message?.trim()) return raw.message.trim().slice(0, 200);
+  const s = typeof raw === "string" ? raw : String(raw);
+  const t = s.trim();
+  if (t === "[object Object]" || !t) return "Something went wrong.";
+  if ((t.startsWith("{") && t.includes("}")) || (t.startsWith("[") && t.includes("]"))) {
+    try {
+      const parsed = JSON.parse(t) as Record<string, unknown>;
+      if (typeof parsed?.message === "string" && parsed.message.trim()) return parsed.message.trim();
+      if (typeof parsed?.error === "string" && parsed.error.trim()) return parsed.error.trim();
+    } catch {
+      // ignore
+    }
+    return "Something went wrong. Try again.";
+  }
+  return t.slice(0, 200) + (t.length > 200 ? "…" : "");
+}
+
 interface WebsiteAnalyticsResponse {
   traffic: {
     totalEvents: number;
@@ -48,6 +100,10 @@ interface WebsiteAnalyticsResponse {
     byEventType: { eventType: string; count: number }[];
     byDevice: { device: string; count: number }[];
     byReferrer: { referrer: string; count: number }[];
+    byCountry?: { country: string; count: number; unique: number }[];
+    byRegion?: { region: string; country: string; count: number }[];
+    byCity?: { city: string; region: string; country: string; count: number }[];
+    byTimezone?: { timezone: string; count: number }[];
   };
   leadMagnets: {
     totalLeads: number;
@@ -61,6 +117,13 @@ interface WebsiteAnalyticsResponse {
     highIntentLeadsCount: number;
     unreadAlertsCount: number;
   };
+  leadDemographics?: {
+    byAgeRange: { value: string; count: number }[];
+    byGender: { value: string; count: number }[];
+    byOccupation: { value: string; count: number }[];
+    byCompanySize: { value: string; count: number }[];
+    totalWithDemographics: number;
+  };
   insights: string[];
   nextActions: { action: string; priority: "high" | "medium" | "low"; reason: string }[];
 }
@@ -73,9 +136,39 @@ interface VisitorActivityEvent {
   eventType: string;
   referrer: string | null;
   deviceType: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  timezone: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
 }
+
+const defaultDisplayData = {
+  traffic: {
+    totalEvents: 0,
+    uniqueVisitors: 0,
+    byPage: [] as { page: string; count: number; unique: number }[],
+    byEventType: [] as { eventType: string; count: number }[],
+    byDevice: [] as { device: string; count: number }[],
+    byReferrer: [] as { referrer: string; count: number }[],
+    byCountry: [] as { country: string; count: number; unique: number }[],
+    byRegion: [] as { region: string; country: string; count: number }[],
+    byCity: [] as { city: string; region: string; country: string; count: number }[],
+    byTimezone: [] as { timezone: string; count: number }[],
+  },
+  leadMagnets: { totalLeads: 0, bySource: [], recentCount: 0 },
+  crmEngagement: { emailOpens: 0, emailClicks: 0, documentViews: 0, highIntentLeadsCount: 0, unreadAlertsCount: 0 },
+  leadDemographics: {
+    byAgeRange: [],
+    byGender: [],
+    byOccupation: [],
+    byCompanySize: [],
+    totalWithDemographics: 0,
+  },
+  insights: [] as string[],
+  nextActions: [] as { action: string; priority: "high" | "medium" | "low"; reason: string }[],
+};
 
 function getSince(range: TimeRange): string | null {
   const d = new Date();
@@ -112,8 +205,11 @@ export default function AdminAnalyticsPage() {
     }
   }, [user, authLoading, router]);
 
-  const { data: rawData, isLoading, error } = useQuery<WebsiteAnalyticsResponse>({
-    queryKey: ["/api/admin/analytics/website", timeRange],
+  const queryKeyWebsite = ["/api/admin/analytics/website", timeRange];
+  const queryKeyEvents = ["/api/admin/analytics/website/events", timeRange];
+
+  const { data: rawData, isLoading, error, refetch: refetchWebsite, isFetching: isFetchingWebsite } = useQuery<WebsiteAnalyticsResponse>({
+    queryKey: queryKeyWebsite,
     queryFn: async () => {
       const since = getSince(timeRange);
       const url = since ? `/api/admin/analytics/website?since=${encodeURIComponent(since)}` : "/api/admin/analytics/website";
@@ -125,26 +221,62 @@ export default function AdminAnalyticsPage() {
       return res.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
-    retry: (failureCount, error) => {
-      const msg = String(error?.message ?? "");
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: () => (typeof document !== "undefined" && document.visibilityState === "visible" ? 5 * 60 * 1000 : false),
+    retry: (failureCount, err) => {
+      const msg = String(err?.message ?? "");
       if (msg.includes("Admin access required") || msg.includes("403")) return false;
       return failureCount < 2;
     },
   });
 
-  const sinceForEvents = getSince(timeRange);
-  const { data: eventsData = [], isLoading: eventsLoading } = useQuery<VisitorActivityEvent[]>({
-    queryKey: ["/api/admin/analytics/website/events", sinceForEvents],
-    queryFn: async () => {
-      const url = sinceForEvents
-        ? `/api/admin/analytics/website/events?since=${encodeURIComponent(sinceForEvents)}&limit=200`
+  const {
+    data: eventsData = [],
+    isLoading: eventsLoading,
+    isError: eventsError,
+    error: eventsErrorDetail,
+    refetch: refetchEvents,
+    isFetching: isFetchingEvents,
+  } = useQuery<VisitorActivityEvent[]>({
+    queryKey: queryKeyEvents,
+    queryFn: async ({ signal, queryKey }) => {
+      const since = getSince(queryKey[1] as TimeRange);
+      const url = since
+        ? `/api/admin/analytics/website/events?since=${encodeURIComponent(since)}&limit=200`
         : "/api/admin/analytics/website/events?limit=200";
-      const res = await apiRequest("GET", url);
-      if (!res.ok) throw new Error("Failed to load events");
-      return res.json();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      if (signal) {
+        signal.addEventListener("abort", () => {
+          clearTimeout(timeoutId);
+          controller.abort();
+        });
+      }
+      try {
+        const res = await fetch(url, { credentials: "include", signal: controller.signal });
+        clearTimeout(timeoutId);
+        const json = await res.json().catch(() => []);
+        if (!res.ok) throw new Error("Failed to load events");
+        return Array.isArray(json) ? json : [];
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (e instanceof Error && e.name === "AbortError") throw new Error("Request timed out");
+        throw e;
+      }
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: () => (typeof document !== "undefined" && document.visibilityState === "visible" ? 5 * 60 * 1000 : false),
+    retry: 1,
+    retryDelay: 2000,
   });
+
+  const handleRefresh = () => {
+    refetchWebsite();
+    refetchEvents();
+  };
 
   const data =
     rawData && typeof rawData.traffic === "object"
@@ -156,6 +288,10 @@ export default function AdminAnalyticsPage() {
             byEventType: rawData.traffic?.byEventType ?? [],
             byDevice: rawData.traffic?.byDevice ?? [],
             byReferrer: rawData.traffic?.byReferrer ?? [],
+            byCountry: rawData.traffic?.byCountry ?? [],
+            byRegion: rawData.traffic?.byRegion ?? [],
+            byCity: rawData.traffic?.byCity ?? [],
+            byTimezone: rawData.traffic?.byTimezone ?? [],
           },
           leadMagnets: {
             totalLeads: rawData.leadMagnets?.totalLeads ?? 0,
@@ -171,10 +307,21 @@ export default function AdminAnalyticsPage() {
                 unreadAlertsCount: rawData.crmEngagement.unreadAlertsCount ?? 0,
               }
             : { emailOpens: 0, emailClicks: 0, documentViews: 0, highIntentLeadsCount: 0, unreadAlertsCount: 0 },
+          leadDemographics: rawData.leadDemographics
+            ? {
+                byAgeRange: Array.isArray(rawData.leadDemographics.byAgeRange) ? rawData.leadDemographics.byAgeRange : [],
+                byGender: Array.isArray(rawData.leadDemographics.byGender) ? rawData.leadDemographics.byGender : [],
+                byOccupation: Array.isArray(rawData.leadDemographics.byOccupation) ? rawData.leadDemographics.byOccupation : [],
+                byCompanySize: Array.isArray(rawData.leadDemographics.byCompanySize) ? rawData.leadDemographics.byCompanySize : [],
+                totalWithDemographics: rawData.leadDemographics.totalWithDemographics ?? 0,
+              }
+            : defaultDisplayData.leadDemographics,
           insights: Array.isArray(rawData.insights) ? rawData.insights : [],
           nextActions: Array.isArray(rawData.nextActions) ? rawData.nextActions : [],
         }
       : null;
+
+  const displayData = data ?? defaultDisplayData;
 
   if (authLoading) {
     return (
@@ -204,7 +351,17 @@ export default function AdminAnalyticsPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetchingWebsite || isFetchingEvents}
+            className="gap-1.5"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetchingWebsite || isFetchingEvents ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
           {(["7d", "30d", "90d", "all"] as const).map((r) => (
             <Button
               key={r}
@@ -222,7 +379,7 @@ export default function AdminAnalyticsPage() {
         <Card className="border-destructive/50 mb-6">
           <CardContent className="py-4 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            {(error as Error).message}
+            {formatErrorMessage(error)}
           </CardContent>
         </Card>
       )}
@@ -231,15 +388,12 @@ export default function AdminAnalyticsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : !data ? (
-        <Card className="border-muted">
-          <CardContent className="py-8 text-center text-muted-foreground">
-            {error ? null : "No data available. Try again later."}
-          </CardContent>
-        </Card>
       ) : (
         <>
-          {/* Summary cards */}
+          {!data && !error && (
+            <p className="text-sm text-muted-foreground mb-4">Traffic summary unavailable. Event log and other tabs may still load.</p>
+          )}
+          {/* Summary cards — displayData so tabs (e.g. Event log) always render */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">
@@ -249,7 +403,7 @@ export default function AdminAnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.traffic.totalEvents.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{displayData.traffic.totalEvents.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">Page views, form starts, CTAs</p>
               </CardContent>
             </Card>
@@ -261,7 +415,7 @@ export default function AdminAnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.traffic.uniqueVisitors.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{displayData.traffic.uniqueVisitors.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">In selected period</p>
               </CardContent>
             </Card>
@@ -273,7 +427,7 @@ export default function AdminAnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.leadMagnets.totalLeads.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{displayData.leadMagnets.totalLeads.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">Form submissions</p>
               </CardContent>
             </Card>
@@ -285,14 +439,14 @@ export default function AdminAnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.leadMagnets.recentCount.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{displayData.leadMagnets.recentCount.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">Leads (recent)</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Next actions — prominent */}
-          {data.nextActions.length > 0 && (
+          {displayData.nextActions.length > 0 && (
             <Card className="mb-6 border-primary/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -302,7 +456,7 @@ export default function AdminAnalyticsPage() {
                 <CardDescription>Prioritized steps to improve traffic and conversions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.nextActions.map((item, i) => (
+                {displayData.nextActions.map((item, i) => (
                   <div
                     key={i}
                     className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border p-3 bg-muted/30"
@@ -330,7 +484,7 @@ export default function AdminAnalyticsPage() {
           )}
 
           {/* Insights */}
-          {data.insights.length > 0 && (
+          {displayData.insights.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -341,7 +495,7 @@ export default function AdminAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  {data.insights.map((line, i) => (
+                  {displayData.insights.map((line, i) => (
                     <li key={i}>{line}</li>
                   ))}
                 </ul>
@@ -390,11 +544,19 @@ export default function AdminAnalyticsPage() {
           </Card>
 
           <Tabs defaultValue="traffic" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="traffic">Traffic</TabsTrigger>
-              <TabsTrigger value="leads">Lead magnets</TabsTrigger>
-              <TabsTrigger value="crm">CRM engagement</TabsTrigger>
-              <TabsTrigger value="events">Event log</TabsTrigger>
+            <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+              <TabsTrigger value="traffic" className="flex-1 min-w-0">Traffic</TabsTrigger>
+              <TabsTrigger value="location" className="flex-1 min-w-0">
+                <Globe className="h-4 w-4 mr-1.5 shrink-0" />
+                Location
+              </TabsTrigger>
+              <TabsTrigger value="demographics" className="flex-1 min-w-0">
+                <Users className="h-4 w-4 mr-1.5 shrink-0" />
+                Demographics
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="flex-1 min-w-0">Lead magnets</TabsTrigger>
+              <TabsTrigger value="crm" className="flex-1 min-w-0">CRM engagement</TabsTrigger>
+              <TabsTrigger value="events" className="flex-1 min-w-0">Event log</TabsTrigger>
             </TabsList>
             <TabsContent value="traffic" className="space-y-4">
               <Card>
@@ -403,7 +565,7 @@ export default function AdminAnalyticsPage() {
                   <CardDescription>By views and unique visitors</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {data.traffic.byPage.length === 0 ? (
+                  {displayData.traffic.byPage.length === 0 ? (
                     <p className="text-muted-foreground text-sm">No page data. Add visitor tracking to key pages.</p>
                   ) : (
                     <div className="overflow-x-auto">
@@ -416,7 +578,7 @@ export default function AdminAnalyticsPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {data.traffic.byPage.slice(0, 15).map((row, i) => (
+                          {displayData.traffic.byPage.slice(0, 15).map((row, i) => (
                             <tr key={i} className="border-b border-border/50">
                               <td className="py-2 font-mono text-xs truncate max-w-[200px]" title={row.page}>
                                 {row.page}
@@ -437,11 +599,11 @@ export default function AdminAnalyticsPage() {
                     <CardTitle className="text-base">By event type</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {data.traffic.byEventType.length === 0 ? (
+                    {displayData.traffic.byEventType.length === 0 ? (
                       <p className="text-muted-foreground text-sm">No events</p>
                     ) : (
                       <ul className="space-y-2">
-                        {data.traffic.byEventType.map((e, i) => (
+                        {displayData.traffic.byEventType.map((e, i) => (
                           <li key={i} className="flex justify-between text-sm">
                             <span>{e.eventType.replace(/_/g, " ")}</span>
                             <span className="font-medium">{e.count}</span>
@@ -460,11 +622,11 @@ export default function AdminAnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {data.traffic.byDevice.length === 0 ? (
+                    {displayData.traffic.byDevice.length === 0 ? (
                       <p className="text-muted-foreground text-sm">No device data</p>
                     ) : (
                       <ul className="space-y-2">
-                        {data.traffic.byDevice.map((d, i) => (
+                        {displayData.traffic.byDevice.map((d, i) => (
                           <li key={i} className="flex justify-between text-sm">
                             <span>{d.device}</span>
                             <span className="font-medium">{d.count}</span>
@@ -475,14 +637,14 @@ export default function AdminAnalyticsPage() {
                   </CardContent>
                 </Card>
               </div>
-              {data.traffic.byReferrer.length > 0 && (
+              {displayData.traffic.byReferrer.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Top referrers</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2 text-sm">
-                      {data.traffic.byReferrer.slice(0, 10).map((r, i) => (
+                      {displayData.traffic.byReferrer.slice(0, 10).map((r, i) => (
                         <li key={i} className="flex justify-between gap-2">
                           <span className="truncate" title={r.referrer}>
                             {r.referrer}
@@ -495,6 +657,247 @@ export default function AdminAnalyticsPage() {
                 </Card>
               )}
             </TabsContent>
+            <TabsContent value="location" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Location & demographics
+                  </CardTitle>
+                  <CardDescription>
+                    Visitor location from request geo (Vercel/Cloudflare headers). Country, region, city, and timezone.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {displayData.traffic.byCountry && displayData.traffic.byCountry.length > 0 ? (
+                    <>
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">By country</h4>
+                        <div className="overflow-x-auto rounded-md border">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="text-left py-2 px-2 font-medium">Country</th>
+                                <th className="text-right py-2 px-2 font-medium">Events</th>
+                                <th className="text-right py-2 px-2 font-medium">Unique visitors</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {displayData.traffic.byCountry.slice(0, 25).map((row, i) => (
+                                <tr key={i} className="border-b border-border/50">
+                                  <td className="py-2 px-2">{row.country}</td>
+                                  <td className="text-right py-2 px-2">{row.count.toLocaleString()}</td>
+                                  <td className="text-right py-2 px-2">{row.unique.toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      {displayData.traffic.byRegion && displayData.traffic.byRegion.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">By region</h4>
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b bg-muted/50">
+                                  <th className="text-left py-2 px-2 font-medium">Region</th>
+                                  <th className="text-left py-2 px-2 font-medium">Country</th>
+                                  <th className="text-right py-2 px-2 font-medium">Events</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayData.traffic.byRegion.slice(0, 30).map((row, i) => (
+                                  <tr key={i} className="border-b border-border/50">
+                                    <td className="py-2 px-2">{row.region}</td>
+                                    <td className="py-2 px-2">{row.country}</td>
+                                    <td className="text-right py-2 px-2">{row.count.toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {displayData.traffic.byCity && displayData.traffic.byCity.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">By city</h4>
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b bg-muted/50">
+                                  <th className="text-left py-2 px-2 font-medium">City</th>
+                                  <th className="text-left py-2 px-2 font-medium">Region</th>
+                                  <th className="text-left py-2 px-2 font-medium">Country</th>
+                                  <th className="text-right py-2 px-2 font-medium">Events</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayData.traffic.byCity.slice(0, 40).map((row, i) => (
+                                  <tr key={i} className="border-b border-border/50">
+                                    <td className="py-2 px-2">{row.city}</td>
+                                    <td className="py-2 px-2">{row.region}</td>
+                                    <td className="py-2 px-2">{row.country}</td>
+                                    <td className="text-right py-2 px-2">{row.count.toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                      {displayData.traffic.byTimezone && displayData.traffic.byTimezone.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">By timezone</h4>
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b bg-muted/50">
+                                  <th className="text-left py-2 px-2 font-medium">Timezone</th>
+                                  <th className="text-right py-2 px-2 font-medium">Events</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayData.traffic.byTimezone.slice(0, 20).map((row, i) => (
+                                  <tr key={i} className="border-b border-border/50">
+                                    <td className="py-2 px-2 font-mono text-xs">{row.timezone}</td>
+                                    <td className="text-right py-2 px-2">{row.count.toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      No location data yet. Geo is set from Vercel or Cloudflare request headers when visitors hit the site; events recorded after deployment will include country/region/city when available.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="demographics" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Lead qualifying & demographics
+                  </CardTitle>
+                  <CardDescription>
+                    Age, gender, occupation, and company size from form submissions. Use this to understand who converts and where to improve messaging for underperforming segments.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {displayData.leadDemographics.totalWithDemographics === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      No demographic data yet. Add optional fields (age range, gender, occupation, company size) to your contact, audit, and strategy-call forms so new leads are tagged. Existing leads won’t have this data until you re-collect or import it.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        <strong>{displayData.leadDemographics.totalWithDemographics}</strong> leads in this period have at least one demographic field. Breakdowns below show only collected values.
+                      </p>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {displayData.leadDemographics.byAgeRange.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3">By age range</h4>
+                            <div className="overflow-x-auto rounded-md border">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    <th className="text-left py-2 px-2 font-medium">Age range</th>
+                                    <th className="text-right py-2 px-2 font-medium">Leads</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayData.leadDemographics.byAgeRange.map((row, i) => (
+                                    <tr key={`age-${row.value}-${i}`} className="border-b border-border/50">
+                                      <td className="py-2 px-2">{row.value}</td>
+                                      <td className="text-right py-2 px-2">{row.count}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {displayData.leadDemographics.byGender.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3">By gender</h4>
+                            <div className="overflow-x-auto rounded-md border">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    <th className="text-left py-2 px-2 font-medium">Gender</th>
+                                    <th className="text-right py-2 px-2 font-medium">Leads</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayData.leadDemographics.byGender.map((row, i) => (
+                                    <tr key={`gender-${row.value}-${i}`} className="border-b border-border/50">
+                                      <td className="py-2 px-2">{row.value}</td>
+                                      <td className="text-right py-2 px-2">{row.count}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {displayData.leadDemographics.byOccupation.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3">By occupation</h4>
+                            <div className="overflow-x-auto rounded-md border">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    <th className="text-left py-2 px-2 font-medium">Occupation</th>
+                                    <th className="text-right py-2 px-2 font-medium">Leads</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayData.leadDemographics.byOccupation.map((row, i) => (
+                                    <tr key={`occ-${row.value}-${i}`} className="border-b border-border/50">
+                                      <td className="py-2 px-2">{row.value}</td>
+                                      <td className="text-right py-2 px-2">{row.count}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        {displayData.leadDemographics.byCompanySize.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3">By company size</h4>
+                            <div className="overflow-x-auto rounded-md border">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    <th className="text-left py-2 px-2 font-medium">Company size</th>
+                                    <th className="text-right py-2 px-2 font-medium">Leads</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayData.leadDemographics.byCompanySize.map((row, i) => (
+                                    <tr key={`size-${row.value}-${i}`} className="border-b border-border/50">
+                                      <td className="py-2 px-2">{row.value}</td>
+                                      <td className="text-right py-2 px-2">{row.count}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
             <TabsContent value="leads" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -502,11 +905,11 @@ export default function AdminAnalyticsPage() {
                   <CardDescription>Where leads come from (contact form subject / type)</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {data.leadMagnets.bySource.length === 0 ? (
+                  {displayData.leadMagnets.bySource.length === 0 ? (
                     <p className="text-muted-foreground text-sm">No leads in this period.</p>
                   ) : (
                     <div className="space-y-3">
-                      {data.leadMagnets.bySource.map((s, i) => (
+                      {displayData.leadMagnets.bySource.map((s, i) => (
                         <div
                           key={i}
                           className="flex items-center justify-between rounded-lg border p-3"
@@ -535,11 +938,11 @@ export default function AdminAnalyticsPage() {
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Opens</span>
-                      <span className="font-medium">{data.crmEngagement.emailOpens}</span>
+                      <span className="font-medium">{displayData.crmEngagement.emailOpens}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Clicks</span>
-                      <span className="font-medium">{data.crmEngagement.emailClicks}</span>
+                      <span className="font-medium">{displayData.crmEngagement.emailClicks}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -550,15 +953,15 @@ export default function AdminAnalyticsPage() {
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Proposal/document views</span>
-                      <span className="font-medium">{data.crmEngagement.documentViews}</span>
+                      <span className="font-medium">{displayData.crmEngagement.documentViews}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>High-intent / hot leads</span>
-                      <span className="font-medium">{data.crmEngagement.highIntentLeadsCount}</span>
+                      <span className="font-medium">{displayData.crmEngagement.highIntentLeadsCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Unread CRM alerts</span>
-                      <span className="font-medium">{data.crmEngagement.unreadAlertsCount}</span>
+                      <span className="font-medium">{displayData.crmEngagement.unreadAlertsCount}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -604,7 +1007,7 @@ export default function AdminAnalyticsPage() {
                           {Array.from(
                             new Set(
                               (eventsData as VisitorActivityEvent[])
-                                .map((e) => e.pageVisited ?? "(unknown)")
+                                .map((e) => (e.pageVisited ?? "").trim())
                                 .filter(Boolean)
                             )
                           )
@@ -618,7 +1021,16 @@ export default function AdminAnalyticsPage() {
                       </Select>
                     </div>
                   </div>
-                  {eventsLoading ? (
+                  {eventsError ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
+                      <p className="text-muted-foreground text-sm text-center">
+                        {formatErrorMessage(eventsErrorDetail?.message ?? "Couldn’t load events.")}
+                      </p>
+                      <Button variant="outline" size="sm" onClick={() => refetchEvents()}>
+                        Try again
+                      </Button>
+                    </div>
+                  ) : eventsLoading && !eventsData?.length ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -628,7 +1040,7 @@ export default function AdminAnalyticsPage() {
                     (() => {
                       const filtered = (eventsData as VisitorActivityEvent[]).filter((e) => {
                         if (eventTypeFilter !== "all" && e.eventType !== eventTypeFilter) return false;
-                        if (pageFilter !== "all" && (e.pageVisited ?? "(unknown)") !== pageFilter) return false;
+                        if (pageFilter !== "all" && (e.pageVisited ?? "").trim() !== pageFilter) return false;
                         return true;
                       });
                       return (
@@ -642,6 +1054,7 @@ export default function AdminAnalyticsPage() {
                                 <th className="text-left py-2 px-2 font-medium">Event</th>
                                 <th className="text-left py-2 px-2 font-medium max-w-[180px]">Page</th>
                                 <th className="text-left py-2 px-2 font-medium">Device</th>
+                                <th className="text-left py-2 px-2 font-medium max-w-[100px]">Location</th>
                                 <th className="text-left py-2 px-2 font-medium max-w-[120px]">Referrer</th>
                               </tr>
                             </thead>
@@ -686,20 +1099,25 @@ export default function AdminAnalyticsPage() {
                                         {e.pageVisited ?? "—"}
                                       </td>
                                       <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
+                                      <td className="py-1 px-2 truncate max-w-[100px] text-muted-foreground" title={[e?.city, e?.region, e?.country].filter(Boolean).join(", ") || "—"}>
+                                        {[e?.city, e?.country].filter(Boolean).join(", ") || (e?.country ?? "—")}
+                                      </td>
                                       <td className="py-1 px-2 truncate max-w-[120px] text-muted-foreground" title={e.referrer ?? ""}>
                                         {e.referrer ? (e.referrer.length > 20 ? e.referrer.slice(0, 20) + "…" : e.referrer) : "direct"}
                                       </td>
                                     </tr>
                                     {isExpanded && hasDetails && (
                                       <tr className="border-b bg-muted/20">
-                                        <td colSpan={7} className="py-2 px-3">
-                                          <div className="text-xs font-mono bg-background rounded p-3 border overflow-x-auto max-h-40 overflow-y-auto">
-                                            <pre className="whitespace-pre-wrap break-all">
-                                              {JSON.stringify(meta, null, 2)}
-                                            </pre>
-                                            <p className="text-muted-foreground mt-2 text-[11px]">
-                                              userAgent, viewport, url, utm_*, cta, form, tool, etc.
-                                            </p>
+                                        <td colSpan={8} className="py-2 px-3">
+                                          <div className="text-xs bg-background rounded p-3 border overflow-x-auto max-h-48 overflow-y-auto">
+                                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                                              {formatMetadataForDisplay(meta).map(({ label, value }) => (
+                                                <div key={label} className="flex flex-col gap-0.5">
+                                                  <dt className="font-medium text-muted-foreground">{label}</dt>
+                                                  <dd className="whitespace-pre-wrap break-all text-foreground">{value}</dd>
+                                                </div>
+                                              ))}
+                                            </dl>
                                           </div>
                                         </td>
                                       </tr>

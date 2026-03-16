@@ -21,6 +21,10 @@ export const crmContacts = pgTable("crm_contacts", {
   company: text("company"),
   jobTitle: text("job_title"),
   industry: text("industry"),
+  /** Lead qualifying / demographics (for acquisition analytics) */
+  ageRange: text("age_range"),
+  gender: text("gender"),
+  companySize: text("company_size"),
   source: text("source"), // website, referral, linkedin, etc.
   status: text("status").default("new"), // new, contacted, qualified, proposal, negotiation, won, lost
   estimatedValue: integer("estimated_value"), // cents or deal size
@@ -156,6 +160,11 @@ export const visitorActivity = pgTable("visitor_activity", {
   eventType: text("event_type").notNull(), // page_view | form_started | form_completed | cta_click | tool_used
   referrer: text("referrer"),
   deviceType: text("device_type"),
+  /** Geo/demographics from request (Vercel/Cloudflare headers or IP lookup) */
+  country: text("country"),
+  region: text("region"),
+  city: text("city"),
+  timezone: text("timezone"),
   metadata: json("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

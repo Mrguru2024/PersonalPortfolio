@@ -24,6 +24,10 @@ export async function GET(req: NextRequest) {
       byEventType: [] as { eventType: string; count: number }[],
       byDevice: [] as { device: string; count: number }[],
       byReferrer: [] as { referrer: string; count: number }[],
+      byCountry: [] as { country: string; count: number; unique: number }[],
+      byRegion: [] as { region: string; country: string; count: number }[],
+      byCity: [] as { city: string; region: string; country: string; count: number }[],
+      byTimezone: [] as { timezone: string; count: number }[],
     };
     const emptyLeadMagnets = {
       totalLeads: 0,
@@ -37,8 +41,15 @@ export async function GET(req: NextRequest) {
       highIntentLeadsCount: 0,
       unreadAlertsCount: 0,
     };
+    const emptyDemographics = {
+      byAgeRange: [] as { value: string; count: number }[],
+      byGender: [] as { value: string; count: number }[],
+      byOccupation: [] as { value: string; count: number }[],
+      byCompanySize: [] as { value: string; count: number }[],
+      totalWithDemographics: 0,
+    };
 
-    const [traffic, leadMagnets, crmEngagement] = await Promise.all([
+    const [traffic, leadMagnets, crmEngagement, leadDemographics] = await Promise.all([
       storage.getWebsiteTrafficAnalytics(since).catch((e) => {
         console.warn("Website traffic analytics failed:", e);
         return emptyTraffic;
@@ -51,11 +62,16 @@ export async function GET(req: NextRequest) {
         console.warn("CRM engagement stats failed:", e);
         return emptyCrm;
       }),
+      storage.getLeadDemographics(since).catch((e) => {
+        console.warn("Lead demographics failed:", e);
+        return emptyDemographics;
+      }),
     ]);
 
     const t = traffic ?? emptyTraffic;
     const lm = leadMagnets ?? emptyLeadMagnets;
     const crm = crmEngagement ?? emptyCrm;
+    const demographics = leadDemographics ?? emptyDemographics;
 
     const insights: string[] = [];
     const nextActions: { action: string; priority: "high" | "medium" | "low"; reason: string }[] = [];
@@ -125,6 +141,7 @@ export async function GET(req: NextRequest) {
       traffic: t,
       leadMagnets: lm,
       crmEngagement: crm,
+      leadDemographics: demographics,
       insights,
       nextActions,
     });

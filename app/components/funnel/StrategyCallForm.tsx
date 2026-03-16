@@ -29,7 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { TIMELINE_OPTIONS, BUDGET_OPTIONS_WITH_FLEXIBLE } from "@/lib/funnel-content";
+import {
+  AGE_RANGE_OPTIONS,
+  BUDGET_OPTIONS_WITH_FLEXIBLE,
+  COMPANY_SIZE_OPTIONS,
+  GENDER_OPTIONS,
+  OCCUPATION_OPTIONS,
+  TIMELINE_OPTIONS,
+} from "@/lib/funnel-content";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -44,6 +51,10 @@ const strategyCallSchema = z.object({
   budgetRange: z.string().optional(),
   timeline: z.string().min(1, "Select a timeline"),
   notes: z.string().optional(),
+  ageRange: z.string().optional(),
+  gender: z.string().optional(),
+  occupation: z.string().optional(),
+  companySize: z.string().optional(),
 });
 
 type StrategyCallValues = z.infer<typeof strategyCallSchema>;
@@ -67,6 +78,10 @@ export function StrategyCallForm() {
       budgetRange: "",
       timeline: "",
       notes: "",
+      ageRange: "",
+      gender: "",
+      occupation: "",
+      companySize: "",
     },
   });
 
@@ -94,6 +109,10 @@ export function StrategyCallForm() {
           timeframe: values.timeline,
           message,
           newsletter: false,
+          ageRange: values.ageRange || undefined,
+          gender: values.gender || undefined,
+          occupation: values.occupation || undefined,
+          companySize: values.companySize || undefined,
         }),
       });
 
@@ -325,6 +344,96 @@ export function StrategyCallForm() {
                 </FormItem>
               )}
             />
+
+            <div className="rounded-lg border border-dashed border-border p-4 space-y-4">
+              <p className="text-sm font-medium text-muted-foreground">Optional — help us personalize</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="ageRange"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Age range</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AGE_RANGE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Gender</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {GENDER_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="occupation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Role / occupation</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {OCCUPATION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="companySize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Company size</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {COMPANY_SIZE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
               {isPending ? "Submitting..." : "Book my free call"}

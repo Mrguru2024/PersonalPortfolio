@@ -20,12 +20,10 @@ export async function GET(req: NextRequest) {
     const limit = limitParam ? Math.min(500, Math.max(1, Number.parseInt(limitParam, 10) || 100)) : 100;
 
     const events = await storage.getVisitorActivityRecent(since, limit);
-    return NextResponse.json(events);
+    const list = Array.isArray(events) ? events : [];
+    return NextResponse.json(list);
   } catch (error: unknown) {
     console.error("Website analytics events error:", error);
-    return NextResponse.json(
-      { error: "Failed to load events" },
-      { status: 500 }
-    );
+    return NextResponse.json([], { status: 200 });
   }
 }

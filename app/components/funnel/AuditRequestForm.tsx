@@ -30,9 +30,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import {
+  AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS,
   CHALLENGE_OPTIONS,
+  COMPANY_SIZE_OPTIONS,
+  GENDER_OPTIONS,
   HELP_OPTIONS,
+  OCCUPATION_OPTIONS,
   STAGE_OPTIONS,
   TIMELINE_OPTIONS,
 } from "@/lib/funnel-content";
@@ -53,6 +57,10 @@ const auditRequestSchema = z.object({
   budgetRange: z.string().min(1, "Select a budget range"),
   timeline: z.string().min(1, "Select a timeline"),
   notes: z.string().optional(),
+  ageRange: z.string().optional(),
+  gender: z.string().optional(),
+  occupation: z.string().optional(),
+  companySize: z.string().optional(),
 });
 
 type AuditRequestValues = z.infer<typeof auditRequestSchema>;
@@ -97,6 +105,10 @@ export function AuditRequestForm() {
           phone: values.phone || undefined,
           revenueRange: values.budgetRange,
           mainChallenge: values.currentChallenge,
+          ageRange: values.ageRange || undefined,
+          gender: values.gender || undefined,
+          occupation: values.occupation || undefined,
+          companySize: values.companySize || undefined,
         }),
       });
 
@@ -421,6 +433,96 @@ export function AuditRequestForm() {
                 </FormItem>
               )}
             />
+
+            <div className="rounded-lg border border-dashed border-border p-4 space-y-4">
+              <p className="text-sm font-medium text-muted-foreground">Optional — help us personalize</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="ageRange"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Age range</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {AGE_RANGE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Gender</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {GENDER_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="occupation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Role / occupation</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {OCCUPATION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="companySize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Company size</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {COMPANY_SIZE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
               {isPending ? "Submitting..." : "Submit Audit Request"}

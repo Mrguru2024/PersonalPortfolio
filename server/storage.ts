@@ -236,11 +236,22 @@ export interface IStorage {
     byEventType: { eventType: string; count: number }[];
     byDevice: { device: string; count: number }[];
     byReferrer: { referrer: string; count: number }[];
+    byCountry: { country: string; count: number; unique: number }[];
+    byRegion: { region: string; country: string; count: number }[];
+    byCity: { city: string; region: string; country: string; count: number }[];
+    byTimezone: { timezone: string; count: number }[];
   }>;
   getLeadMagnetPerformance(since?: Date): Promise<{
     totalLeads: number;
     bySource: { source: string; label: string; count: number }[];
     recentCount: number;
+  }>;
+  getLeadDemographics(since?: Date): Promise<{
+    byAgeRange: { value: string; count: number }[];
+    byGender: { value: string; count: number }[];
+    byOccupation: { value: string; count: number }[];
+    byCompanySize: { value: string; count: number }[];
+    totalWithDemographics: number;
   }>;
 
   // Tasks (Apollo-style)
@@ -1714,13 +1725,42 @@ export class DatabaseStorage implements IStorage {
 
   async getVisitorActivityRecent(since?: Date, limit = 200): Promise<VisitorActivity[]> {
     const conditions = since ? [gte(visitorActivity.createdAt, since)] : [];
-    const q = db
-      .select()
-      .from(visitorActivity)
-      .where(conditions.length ? and(...conditions) : sql`1=1`)
-      .orderBy(desc(visitorActivity.createdAt))
-      .limit(Math.min(limit, 500));
-    return q;
+    const maxLimit = Math.min(limit, 500);
+    const baseSelect = {
+      id: visitorActivity.id,
+      visitorId: visitorActivity.visitorId,
+      leadId: visitorActivity.leadId,
+      sessionId: visitorActivity.sessionId,
+      pageVisited: visitorActivity.pageVisited,
+      eventType: visitorActivity.eventType,
+      referrer: visitorActivity.referrer,
+      deviceType: visitorActivity.deviceType,
+      metadata: visitorActivity.metadata,
+      createdAt: visitorActivity.createdAt,
+    };
+    try {
+      const rows = await db
+        .select({
+          ...baseSelect,
+          country: visitorActivity.country,
+          region: visitorActivity.region,
+          city: visitorActivity.city,
+          timezone: visitorActivity.timezone,
+        })
+        .from(visitorActivity)
+        .where(conditions.length ? and(...conditions) : sql`1=1`)
+        .orderBy(desc(visitorActivity.createdAt))
+        .limit(maxLimit);
+      return rows as VisitorActivity[];
+    } catch {
+      const baseRows = await db
+        .select(baseSelect)
+        .from(visitorActivity)
+        .where(conditions.length ? and(...conditions) : sql`1=1`)
+        .orderBy(desc(visitorActivity.createdAt))
+        .limit(maxLimit);
+      return baseRows.map((r) => ({ ...r, country: null, region: null, city: null, timezone: null })) as VisitorActivity[];
+    }
   }
 
   async createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert> {
@@ -1797,6 +1837,10 @@ export class DatabaseStorage implements IStorage {
     byEventType: { eventType: string; count: number }[];
     byDevice: { device: string; count: number }[];
     byReferrer: { referrer: string; count: number }[];
+    byCountry: { country: string; count: number; unique: number }[];
+    byRegion: { region: string; country: string; count: number }[];
+    byCity: { city: string; region: string; country: string; count: number }[];
+    byTimezone: { timezone: string; count: number }[];
   }> {
     const conditions = since ? [gte(visitorActivity.createdAt, since)] : [];
     const rows = await db
@@ -1806,6 +1850,10 @@ export class DatabaseStorage implements IStorage {
         eventType: visitorActivity.eventType,
         deviceType: visitorActivity.deviceType,
         referrer: visitorActivity.referrer,
+        country: visitorActivity.country,
+        region: visitorActivity.region,
+        city: visitorActivity.city,
+        timezone: visitorActivity.timezone,
       })
       .from(visitorActivity)
       .where(conditions.length ? and(...conditions) : sql`1=1`);
@@ -1817,18 +1865,43 @@ export class DatabaseStorage implements IStorage {
     const eventMap = new Map<string, number>();
     const deviceMap = new Map<string, number>();
     const referrerMap = new Map<string, number>();
+    const countryMap = new Map<string, { count: number; visitors: Set<string> }>();
+    const regionMap = new Map<string, { count: number }>();
+    const cityMap = new Map<string, { count: number }>();
+    const timezoneMap = new Map<string, number>();
 
     for (const r of rows) {
-      const page = r.pageVisited ?? "(unknown)";
-      if (!pageMap.has(page)) pageMap.set(page, { count: 0, visitors: new Set() });
-      const entry = pageMap.get(page)!;
-      entry.count += 1;
-      entry.visitors.add(r.visitorId);
+      const page = (r.pageVisited ?? "").trim();
+      if (page) {
+        if (!pageMap.has(page)) pageMap.set(page, { count: 0, visitors: new Set() });
+        const entry = pageMap.get(page)!;
+        entry.count += 1;
+        entry.visitors.add(r.visitorId);
+      }
       eventMap.set(r.eventType, (eventMap.get(r.eventType) ?? 0) + 1);
-      const dev = r.deviceType ?? "(unknown)";
-      deviceMap.set(dev, (deviceMap.get(dev) ?? 0) + 1);
+      const dev = (r.deviceType ?? "").trim();
+      if (dev) deviceMap.set(dev, (deviceMap.get(dev) ?? 0) + 1);
       const ref = r.referrer?.trim() && r.referrer !== "" ? r.referrer : "(direct)";
       referrerMap.set(ref, (referrerMap.get(ref) ?? 0) + 1);
+      const country = (r.country ?? "").trim();
+      if (country) {
+        if (!countryMap.has(country)) countryMap.set(country, { count: 0, visitors: new Set() });
+        countryMap.get(country)!.count += 1;
+        countryMap.get(country)!.visitors.add(r.visitorId);
+        const region = (r.region ?? "").trim();
+        if (region) {
+          const regionKey = `${country}|${region}`;
+          regionMap.set(regionKey, (regionMap.get(regionKey) ?? 0) + 1);
+        }
+        const city = (r.city ?? "").trim();
+        if (city) {
+          const region = (r.region ?? "").trim();
+          const cityKey = `${country}|${region}|${city}`;
+          cityMap.set(cityKey, (cityMap.get(cityKey) ?? 0) + 1);
+        }
+      }
+      const tz = (r.timezone ?? "").trim();
+      if (tz) timezoneMap.set(tz, (timezoneMap.get(tz) ?? 0) + 1);
     }
 
     const byPage = [...pageMap.entries()]
@@ -1841,8 +1914,43 @@ export class DatabaseStorage implements IStorage {
       .map(([referrer, count]) => ({ referrer: referrer.length > 80 ? referrer.slice(0, 80) + "…" : referrer, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
+    const byCountry = [...countryMap.entries()]
+      .map(([country, v]) => ({ country, count: v.count, unique: v.visitors.size }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 30);
+    const byRegion = [...regionMap.entries()]
+      .map(([key, count]) => {
+        const [country, region] = key.split("|");
+        return { region: region ?? "", country: country ?? "", count };
+      })
+      .filter((r) => r.region && r.country)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 40);
+    const byCity = [...cityMap.entries()]
+      .map(([key, count]) => {
+        const parts = key.split("|");
+        return { city: parts[2] ?? "", region: parts[1] ?? "", country: parts[0] ?? "", count };
+      })
+      .filter((r) => r.city && r.country)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 50);
+    const byTimezone = [...timezoneMap.entries()]
+      .map(([timezone, count]) => ({ timezone, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
 
-    return { totalEvents, uniqueVisitors, byPage, byEventType, byDevice, byReferrer };
+    return {
+      totalEvents,
+      uniqueVisitors,
+      byPage,
+      byEventType,
+      byDevice,
+      byReferrer,
+      byCountry,
+      byRegion,
+      byCity,
+      byTimezone,
+    };
   }
 
   async getLeadMagnetPerformance(since?: Date): Promise<{
@@ -1892,6 +2000,54 @@ export class DatabaseStorage implements IStorage {
       .sort((a, b) => b.count - a.count);
 
     return { totalLeads, bySource, recentCount };
+  }
+
+  async getLeadDemographics(since?: Date): Promise<{
+    byAgeRange: { value: string; count: number }[];
+    byGender: { value: string; count: number }[];
+    byOccupation: { value: string; count: number }[];
+    byCompanySize: { value: string; count: number }[];
+    totalWithDemographics: number;
+  }> {
+    const allContacts = await this.getAllContacts();
+    const sinceTime = since?.getTime();
+    const filtered = sinceTime
+      ? allContacts.filter((c) => {
+          const t = typeof c.createdAt === "string" ? new Date(c.createdAt).getTime() : 0;
+          return t >= sinceTime;
+        })
+      : allContacts;
+
+    const ageMap = new Map<string, number>();
+    const genderMap = new Map<string, number>();
+    const occupationMap = new Map<string, number>();
+    const companySizeMap = new Map<string, number>();
+
+    for (const c of filtered) {
+      const age = (c as Contact & { ageRange?: string | null }).ageRange?.trim();
+      const gender = (c as Contact & { gender?: string | null }).gender?.trim();
+      const occupation = (c as Contact & { occupation?: string | null }).occupation?.trim();
+      const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
+      if (age) ageMap.set(age, (ageMap.get(age) ?? 0) + 1);
+      if (gender) genderMap.set(gender, (genderMap.get(gender) ?? 0) + 1);
+      if (occupation) occupationMap.set(occupation, (occupationMap.get(occupation) ?? 0) + 1);
+      if (companySize) companySizeMap.set(companySize, (companySizeMap.get(companySize) ?? 0) + 1);
+    }
+
+    const totalWithDemographics = filtered.filter((c) => {
+      const age = (c as Contact & { ageRange?: string | null }).ageRange?.trim();
+      const gender = (c as Contact & { gender?: string | null }).gender?.trim();
+      const occupation = (c as Contact & { occupation?: string | null }).occupation?.trim();
+      const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
+      return !!(age || gender || occupation || companySize);
+    }).length;
+
+    const byAgeRange = [...ageMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byGender = [...genderMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byOccupation = [...occupationMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+    const byCompanySize = [...companySizeMap.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+
+    return { byAgeRange, byGender, byOccupation, byCompanySize, totalWithDemographics };
   }
 
   async createCrmTask(task: InsertCrmTask): Promise<CrmTask> {
