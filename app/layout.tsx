@@ -5,13 +5,14 @@ import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
-import { getSiteBaseUrl } from "./lib/siteUrl";
+import { getSiteBaseUrl, ensureAbsoluteUrl } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
 const gaEnabled = GA_MEASUREMENT_ID.length > 0;
 
-const baseUrl = getSiteBaseUrl();
+/** Absolute base URL (with https://) so manifest, OG, etc. resolve correctly and don't double-path. */
+const baseUrl = ensureAbsoluteUrl(getSiteBaseUrl());
 
 const organizationSchema = {
   "@context": "https://schema.org",

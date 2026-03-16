@@ -10,3 +10,11 @@ export function getSiteBaseUrl(): string {
     "https://mrguru.dev"
   );
 }
+
+/** Ensures URL has a scheme (https:// or http://). Required for OAuth redirect_uri. */
+export function ensureAbsoluteUrl(url: string): string {
+  const trimmed = url.replace(/\/$/, "").trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed === "localhost" || /^localhost:\d+$/.test(trimmed)) return `http://${trimmed}`;
+  return `https://${trimmed}`;
+}

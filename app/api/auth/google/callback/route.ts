@@ -5,6 +5,7 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
+import { ensureAbsoluteUrl } from "@/lib/siteUrl";
 
 const scryptAsync = promisify(scrypt);
 
@@ -25,10 +26,11 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
-    const baseUrl =
+    const rawBase =
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
       req.headers.get("origin")?.replace(/\/$/, "") ||
       (process.env.NODE_ENV === "production" ? "https://mrguru.dev" : "http://localhost:3000");
+    const baseUrl = ensureAbsoluteUrl(rawBase);
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     if (error) {

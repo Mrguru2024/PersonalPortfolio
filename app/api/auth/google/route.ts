@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureAbsoluteUrl } from "@/lib/siteUrl";
 
 /**
  * Google OAuth initiation route
@@ -12,9 +13,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const baseUrl =
+  const rawBase =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
     (process.env.NODE_ENV === "production" ? "https://mrguru.dev" : "http://localhost:3000");
+  const baseUrl = ensureAbsoluteUrl(rawBase);
   const callbackUrl = `${baseUrl}/api/auth/google/callback`;
   
   const redirectUri = encodeURIComponent(callbackUrl);
