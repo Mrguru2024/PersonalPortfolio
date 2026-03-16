@@ -9,15 +9,17 @@ function toPlainError(e: unknown): Error {
 }
 
 export async function register() {
-  // Convert ErrorEvent or any error with read-only .message to plain Error so Next.js/Node never try to set .message
-  process.on('uncaughtException', function onUncaught(err: unknown) {
-    const isPlainError = err instanceof Error && err.constructor?.name === 'Error';
-    const isErrorLike = err != null && typeof err === 'object' && 'message' in err;
-    if (isErrorLike && !isPlainError) {
-      process.removeListener('uncaughtException', onUncaught);
-      throw toPlainError(err);
-    }
-  });
+  // Only in Node.js (not Edge): convert ErrorEvent / read-only .message to plain Error so Next.js/Node don't throw when setting .message
+  if (typeof process !== 'undefined' && typeof process.on === 'function' && typeof process.removeListener === 'function') {
+    process.on('uncaughtException', function onUncaught(err: unknown) {
+      const isPlainError = err instanceof Error && err.constructor?.name === 'Error';
+      const isErrorLike = err != null && typeof err === 'object' && 'message' in err;
+      if (isErrorLike && !isPlainError) {
+        process.removeListener('uncaughtException', onUncaught);
+        throw toPlainError(err);
+      }
+    });
+  }
   const { neonConfig } = await import('@neondatabase/serverless');
 
   const dbUrl = process.env.DATABASE_URL || '';
