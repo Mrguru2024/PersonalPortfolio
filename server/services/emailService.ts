@@ -11,7 +11,7 @@ async function getBrevo() {
 }
 
 interface EmailNotification {
-  type: 'contact' | 'quote' | 'resume' | 'recommendation' | 'skill-endorsement';
+  type: 'contact' | 'quote' | 'resume' | 'recommendation' | 'skill-endorsement' | 'data-deletion';
   data: Record<string, any>;
 }
 
@@ -403,6 +403,66 @@ This endorsement was submitted from your portfolio website.
     };
   }
 
+  private formatDataDeletionEmail(data: { email: string; name?: string; message?: string }): { subject: string; html: string; text: string } {
+    const name = data.name || 'Not provided';
+    return {
+      subject: `🗑️ Data deletion request from ${data.email}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc2626; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+            .content { background: #fef2f2; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #fecaca; border-top: none; }
+            .field { margin: 15px 0; }
+            .label { font-weight: bold; color: #991b1b; }
+            .value { margin-top: 5px; padding: 10px; background: white; border-radius: 4px; }
+            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #fecaca; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>🗑️ Data deletion request</h2>
+            </div>
+            <div class="content">
+              <p><strong>A user has requested that their personal data be removed.</strong></p>
+              <div class="field">
+                <div class="label">Email (required for processing):</div>
+                <div class="value"><a href="mailto:${data.email}">${data.email}</a></div>
+              </div>
+              <div class="field">
+                <div class="label">Name:</div>
+                <div class="value">${name}</div>
+              </div>
+              ${data.message ? `
+              <div class="field">
+                <div class="label">Additional message:</div>
+                <div class="value">${data.message.replace(/\n/g, '<br>')}</div>
+              </div>
+              ` : ''}
+              <div class="footer">
+                <p>Process this request in line with your Privacy Policy and data retention procedures. Reply to the user at the email above to confirm once completed.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Data deletion request
+
+Email: ${data.email}
+Name: ${name}
+${data.message ? `Message:\n${data.message}\n` : ''}
+---
+Process this request per your Privacy Policy. Reply to the user to confirm when done.
+      `.trim()
+    };
+  }
+
   async sendNotification(notification: EmailNotification): Promise<boolean> {
     if (!this.isConfigured) {
       console.warn('Email service not configured. Skipping email notification (set BREVO_API_KEY and ADMIN_EMAIL).');
@@ -424,6 +484,9 @@ This endorsement was submitted from your portfolio website.
       switch (notification.type) {
         case 'contact':
           emailContent = this.formatContactEmail(notification.data);
+          break;
+        case 'data-deletion':
+          emailContent = this.formatDataDeletionEmail(notification.data);
           break;
         case 'quote':
           emailContent = this.formatQuoteRequestEmail(notification.data);

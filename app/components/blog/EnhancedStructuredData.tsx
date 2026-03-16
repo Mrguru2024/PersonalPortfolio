@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { personalInfo } from "@/lib/data";
 import { getSiteBaseUrl } from "@/lib/siteUrl";
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "@/lib/company";
 
 interface BlogPost {
   id: number;
@@ -57,8 +58,17 @@ export function EnhancedStructuredData({
     },
     publisher: {
       "@type": "Organization",
-      name: "Ascendra Technologies",
+      name: COMPANY_NAME,
       url: baseUrl,
+      telephone: COMPANY_PHONE_E164,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: COMPANY_ADDRESS.street,
+        addressLocality: COMPANY_ADDRESS.city,
+        addressRegion: COMPANY_ADDRESS.region,
+        postalCode: COMPANY_ADDRESS.postalCode,
+        addressCountry: "US",
+      },
       logo: {
         "@type": "ImageObject",
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -94,7 +104,17 @@ export function EnhancedStructuredData({
     },
     publisher: {
       "@type": "Organization",
-      name: "Ascendra Technologies",
+      name: COMPANY_NAME,
+      url: baseUrl,
+      telephone: COMPANY_PHONE_E164,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: COMPANY_ADDRESS.street,
+        addressLocality: COMPANY_ADDRESS.city,
+        addressRegion: COMPANY_ADDRESS.region,
+        postalCode: COMPANY_ADDRESS.postalCode,
+        addressCountry: "US",
+      },
       logo: {
         "@type": "ImageObject",
         url: `${baseUrl}/ascendra-logo.svg`,
@@ -133,12 +153,19 @@ export function EnhancedStructuredData({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Ascendra Technologies",
+    name: COMPANY_NAME,
     url: baseUrl,
+    telephone: COMPANY_PHONE_E164,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: COMPANY_ADDRESS.street,
+      addressLocality: COMPANY_ADDRESS.city,
+      addressRegion: COMPANY_ADDRESS.region,
+      postalCode: COMPANY_ADDRESS.postalCode,
+      addressCountry: "US",
+    },
     logo: `${baseUrl}/ascendra-logo.svg`,
-    sameAs: [
-      // Add social media links if available
-    ],
+    sameAs: [],
   };
 
   return (

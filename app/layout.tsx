@@ -5,8 +5,26 @@ import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import { getSiteBaseUrl } from "./lib/siteUrl";
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 
 const baseUrl = getSiteBaseUrl();
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: COMPANY_NAME,
+  url: baseUrl,
+  telephone: COMPANY_PHONE_E164,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: COMPANY_ADDRESS.street,
+    addressLocality: COMPANY_ADDRESS.city,
+    addressRegion: COMPANY_ADDRESS.region,
+    postalCode: COMPANY_ADDRESS.postalCode,
+    addressCountry: "US",
+  },
+  logo: `${baseUrl}/ascendra-logo.svg`,
+};
 
 export const metadata: Metadata = {
   title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
@@ -62,6 +80,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
       <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         {/* Very soft full-page gradient – blends hero/particles with page, no harsh line at top */}
         <div className="fixed inset-0 -z-10 hero-page-gradient pointer-events-none" aria-hidden />
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">

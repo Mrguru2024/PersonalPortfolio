@@ -1,3 +1,5 @@
+import { COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY } from "./company";
+
 export interface Project {
   id: string;
   title: string;
@@ -153,8 +155,8 @@ export const socialLinks: SocialLink[] = [
 
 export const contactInfo: ContactInfo = {
   email: "5epmgllc@gmail.com",
-  location: "Atlanta, Georgia",
-  phone: "+1 (678) 216-5112",
+  location: COMPANY_ADDRESS.line,
+  phone: COMPANY_PHONE_DISPLAY,
 };
 
 export const frontendSkills: Skill[] = [

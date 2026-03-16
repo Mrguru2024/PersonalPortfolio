@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { getSiteBaseUrl } from "@/lib/siteUrl";
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "@/lib/company";
 
 interface PageSEOProps {
   title: string;
@@ -152,7 +153,17 @@ export function PageSEO({
         },
         publisher: {
           "@type": "Organization",
-          name: "Ascendra Technologies",
+          name: COMPANY_NAME,
+          url: baseUrl,
+          telephone: COMPANY_PHONE_E164,
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: COMPANY_ADDRESS.street,
+            addressLocality: COMPANY_ADDRESS.city,
+            addressRegion: COMPANY_ADDRESS.region,
+            postalCode: COMPANY_ADDRESS.postalCode,
+            addressCountry: "US",
+          },
           logo: {
             "@type": "ImageObject",
             url: `${baseUrl}/favicon.svg`,

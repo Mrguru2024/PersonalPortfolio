@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, FREE_GROWTH_TOOLS_PATH, STARTUP_GROWTH_KIT_PATH } from "@/lib/funnelCtas";
+import { COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_E164 } from "@/lib/company";
 import { Search } from "lucide-react";
 
 const MAIN_LINKS = [
@@ -26,6 +27,12 @@ const WHO_WE_SERVE_LINKS = [
   { label: "For Contractors", href: "/contractor-systems" },
   { label: "Local Business", href: "/local-business-growth" },
   { label: "Startup MVP", href: "/startup-mvp-development" },
+];
+
+const LEGAL_LINKS = [
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Request data deletion", href: "/data-deletion-request" },
 ];
 
 function LinkGroup({
@@ -75,12 +82,35 @@ export default function SiteFooter() {
             </div>
           </div>
           <nav
-            className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8"
+            className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8"
             aria-label="Footer navigation"
           >
             <LinkGroup title="Main" links={MAIN_LINKS} />
             <LinkGroup title="Growth" links={GROWTH_LINKS} />
             <LinkGroup title="Who we serve" links={WHO_WE_SERVE_LINKS} />
+            <LinkGroup title="Legal" links={LEGAL_LINKS} />
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Contact
+              </span>
+              <address className="not-italic text-sm text-muted-foreground space-y-1">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(COMPANY_ADDRESS.line)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors block"
+                >
+                  {COMPANY_ADDRESS.street}
+                  <br />
+                  {COMPANY_ADDRESS.city}, {COMPANY_ADDRESS.region} {COMPANY_ADDRESS.postalCode}
+                  <br />
+                  {COMPANY_ADDRESS.country}
+                </a>
+                <a href={`tel:${COMPANY_PHONE_E164}`} className="hover:text-foreground transition-colors block">
+                  {COMPANY_PHONE_DISPLAY}
+                </a>
+              </address>
+            </div>
           </nav>
           <p className="text-xs text-muted-foreground">
             Built in partnership with Style Studio Branding and Macon Designs®.

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { COMPANY_ADDRESS, COMPANY_PHONE_E164 } from '@/lib/company';
 
 interface PersonSchema {
   name: string;
@@ -148,6 +149,15 @@ export const StructuredData: React.FC<StructuredDataProps> = ({ schema }) => {
             '@type': 'Organization',
             name: schema.data.publisher.name,
             url: schema.data.publisher.url,
+            telephone: COMPANY_PHONE_E164,
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: COMPANY_ADDRESS.street,
+              addressLocality: COMPANY_ADDRESS.city,
+              addressRegion: COMPANY_ADDRESS.region,
+              postalCode: COMPANY_ADDRESS.postalCode,
+              addressCountry: 'US',
+            },
             ...(schema.data.publisher.logo && {
               logo: {
                 '@type': 'ImageObject',
