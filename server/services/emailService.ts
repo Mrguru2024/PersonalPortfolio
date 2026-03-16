@@ -10,6 +10,12 @@ async function getBrevo() {
   return brevo;
 }
 
+interface DataDeletionPayload {
+  email: string;
+  name?: string;
+  message?: string;
+}
+
 interface EmailNotification {
   type: 'contact' | 'quote' | 'resume' | 'recommendation' | 'skill-endorsement' | 'data-deletion';
   data: Record<string, any>;
@@ -403,7 +409,7 @@ This endorsement was submitted from your portfolio website.
     };
   }
 
-  private formatDataDeletionEmail(data: { email: string; name?: string; message?: string }): { subject: string; html: string; text: string } {
+  private formatDataDeletionEmail(data: DataDeletionPayload): { subject: string; html: string; text: string } {
     const name = data.name || 'Not provided';
     return {
       subject: `🗑️ Data deletion request from ${data.email}`,
@@ -486,7 +492,7 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
           emailContent = this.formatContactEmail(notification.data);
           break;
         case 'data-deletion':
-          emailContent = this.formatDataDeletionEmail(notification.data);
+          emailContent = this.formatDataDeletionEmail(notification.data as DataDeletionPayload);
           break;
         case 'quote':
           emailContent = this.formatQuoteRequestEmail(notification.data);
