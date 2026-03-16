@@ -290,8 +290,10 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   id: true,
   authorId: true,
   isPublished: true,
+  publishedAt: true,
 }).extend({
   coverImage: z.string().optional(),
+  publishedAt: z.union([z.string().datetime(), z.date(), z.string()]).optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   keywords: z.array(z.string()).optional(),

@@ -90,6 +90,12 @@ export const blogController = {
 
       const validatedData = insertBlogPostSchema.parse(req.body);
       const now = new Date();
+      const isPublished = req.body.isPublished === true;
+      const rawPublishAt = req.body.publishedAt ?? req.body.scheduledPublishAt;
+      const publishedAt = rawPublishAt ? new Date(rawPublishAt) : now;
+      if (Number.isNaN(publishedAt.getTime())) {
+        return res.status(400).json({ message: "Invalid publish date/time" });
+      }
 
       // Check if a cover image was provided, if not, generate one using AI
       let coverImage = validatedData.coverImage;
@@ -115,8 +121,9 @@ export const blogController = {
         {
           ...validatedData,
           coverImage, // Use the provided or AI-generated image
-          publishedAt: now,
+          publishedAt,
           updatedAt: now,
+          isPublished,
         },
         authorId
       );

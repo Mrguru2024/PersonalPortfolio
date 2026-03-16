@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 
 const EXPECTED_CONVERSION_RATE = 3;
 
@@ -40,9 +41,9 @@ export function RevenueLossCalculator() {
   const [averageSaleValue, setAverageSaleValue] = useState<string>("");
   const [hasCalculated, setHasCalculated] = useState(false);
 
-  const visitors = clampVisitors(parseInt(monthlyVisitors, 10));
-  const rate = clampRate(parseFloat(conversionRate));
-  const saleValue = clampSaleValue(parseFloat(averageSaleValue));
+  const visitors = clampVisitors(Number.parseInt(monthlyVisitors, 10));
+  const rate = clampRate(Number.parseFloat(conversionRate));
+  const saleValue = clampSaleValue(Number.parseFloat(averageSaleValue));
 
   const currentRevenue = visitors * (rate / 100) * saleValue;
   const potentialRevenue = visitors * (EXPECTED_CONVERSION_RATE / 100) * saleValue;
@@ -128,7 +129,15 @@ export function RevenueLossCalculator() {
                   : "Estimated monthly revenue loss"}
               </p>
               <p className="text-2xl font-bold text-primary">
-                {atOrAboveBenchmark ? "—" : formatCurrency(revenueLoss)}
+                {atOrAboveBenchmark ? (
+                  "—"
+                ) : (
+                  <AnimatedCounter
+                    end={Math.round(revenueLoss)}
+                    format={formatCurrency}
+                    duration={1200}
+                  />
+                )}
               </p>
               {atOrAboveBenchmark ? (
                 <p className="text-sm text-muted-foreground mt-2">
@@ -137,7 +146,14 @@ export function RevenueLossCalculator() {
               ) : (
                 <p className="text-sm text-muted-foreground mt-2">
                   Based on your inputs, your website could be missing approximately{" "}
-                  <strong className="text-foreground">{formatCurrency(revenueLoss)}</strong> per month in potential revenue.
+                  <strong className="text-foreground">
+                    <AnimatedCounter
+                      end={Math.round(revenueLoss)}
+                      format={formatCurrency}
+                      duration={1200}
+                    />
+                  </strong>{" "}
+                  per month in potential revenue.
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-2">

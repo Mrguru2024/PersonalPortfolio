@@ -139,3 +139,37 @@ export const TIMELINE_OPTIONS = [
   "1-3 months",
   "3+ months",
 ] as const;
+
+/** Steps for sticky scroll storytelling: traffic → lead → customer */
+export const FUNNEL_STORY_STEPS = [
+  {
+    id: "traffic",
+    title: "Traffic",
+    problem: "Visitors land on your site but leave without a clear path.",
+    solution: "Clarity in messaging and structure so people know where to go next.",
+  },
+  {
+    id: "capture",
+    title: "Capture",
+    problem: "No lead capture or weak forms mean opportunities slip away.",
+    solution: "Strategic lead capture and low-friction next steps that fit your offer.",
+  },
+  {
+    id: "qualify",
+    title: "Qualify",
+    problem: "Leads are mixed quality; follow-up is manual and inconsistent.",
+    solution: "Clear qualification paths and systems so the right leads get the right attention.",
+  },
+  {
+    id: "convert",
+    title: "Convert",
+    problem: "Meetings booked but don't show; proposals get no response.",
+    solution: "Conversion-focused presentation and follow-up that builds trust and action.",
+  },
+  {
+    id: "retain",
+    title: "Retain",
+    problem: "One-off projects; no ongoing growth or referral system.",
+    solution: "Ongoing alignment so your digital presence keeps working as you grow.",
+  },
+] as const;

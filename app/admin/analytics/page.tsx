@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
@@ -19,13 +19,24 @@ import {
   Mail,
   AlertCircle,
   BookOpen,
+  ListOrdered,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 
 type TimeRange = "7d" | "30d" | "90d" | "all";
 
@@ -54,6 +65,18 @@ interface WebsiteAnalyticsResponse {
   nextActions: { action: string; priority: "high" | "medium" | "low"; reason: string }[];
 }
 
+interface VisitorActivityEvent {
+  id: number;
+  visitorId: string;
+  sessionId: string | null;
+  pageVisited: string | null;
+  eventType: string;
+  referrer: string | null;
+  deviceType: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 function getSince(range: TimeRange): string | null {
   const d = new Date();
   if (range === "7d") {
@@ -75,6 +98,9 @@ export default function AdminAnalyticsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+  const [pageFilter, setPageFilter] = useState<string>("all");
+  const [expandedEventId, setExpandedEventId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -104,6 +130,20 @@ export default function AdminAnalyticsPage() {
       if (msg.includes("Admin access required") || msg.includes("403")) return false;
       return failureCount < 2;
     },
+  });
+
+  const sinceForEvents = getSince(timeRange);
+  const { data: eventsData = [], isLoading: eventsLoading } = useQuery<VisitorActivityEvent[]>({
+    queryKey: ["/api/admin/analytics/website/events", sinceForEvents],
+    queryFn: async () => {
+      const url = sinceForEvents
+        ? `/api/admin/analytics/website/events?since=${encodeURIComponent(sinceForEvents)}&limit=200`
+        : "/api/admin/analytics/website/events?limit=200";
+      const res = await apiRequest("GET", url);
+      if (!res.ok) throw new Error("Failed to load events");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   const data =
@@ -350,10 +390,11 @@ export default function AdminAnalyticsPage() {
           </Card>
 
           <Tabs defaultValue="traffic" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="traffic">Traffic</TabsTrigger>
               <TabsTrigger value="leads">Lead magnets</TabsTrigger>
               <TabsTrigger value="crm">CRM engagement</TabsTrigger>
+              <TabsTrigger value="events">Event log</TabsTrigger>
             </TabsList>
             <TabsContent value="traffic" className="space-y-4">
               <Card>
@@ -522,6 +563,163 @@ export default function AdminAnalyticsPage() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+            <TabsContent value="events" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ListOrdered className="h-5 w-5" />
+                    Event log — full visitor interaction details
+                  </CardTitle>
+                  <CardDescription>
+                    Every tracked event: page views, form starts/completions, CTA clicks, tool use. Includes device, referrer, viewport, UTM, and custom metadata. Use filters to narrow by event type or page.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Event type</span>
+                      <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="page_view">page_view</SelectItem>
+                          <SelectItem value="form_started">form_started</SelectItem>
+                          <SelectItem value="form_completed">form_completed</SelectItem>
+                          <SelectItem value="cta_click">cta_click</SelectItem>
+                          <SelectItem value="tool_used">tool_used</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Page</span>
+                      <Select value={pageFilter} onValueChange={setPageFilter}>
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All pages</SelectItem>
+                          {Array.from(
+                            new Set(
+                              (eventsData as VisitorActivityEvent[])
+                                .map((e) => e.pageVisited ?? "(unknown)")
+                                .filter(Boolean)
+                            )
+                          )
+                            .sort()
+                            .map((p) => (
+                              <SelectItem key={p} value={p}>
+                                {p.length > 35 ? p.slice(0, 35) + "…" : p}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {eventsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : !eventsData?.length ? (
+                    <p className="text-muted-foreground text-sm py-4">No events in this period. Tracking runs when visitors load key pages and interact with forms/CTAs.</p>
+                  ) : (
+                    (() => {
+                      const filtered = (eventsData as VisitorActivityEvent[]).filter((e) => {
+                        if (eventTypeFilter !== "all" && e.eventType !== eventTypeFilter) return false;
+                        if (pageFilter !== "all" && (e.pageVisited ?? "(unknown)") !== pageFilter) return false;
+                        return true;
+                      });
+                      return (
+                        <div className="overflow-x-auto rounded-md border">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="text-left py-2 px-2 font-medium w-8" />
+                                <th className="text-left py-2 px-2 font-medium">Time</th>
+                                <th className="text-left py-2 px-2 font-medium">Visitor</th>
+                                <th className="text-left py-2 px-2 font-medium">Event</th>
+                                <th className="text-left py-2 px-2 font-medium max-w-[180px]">Page</th>
+                                <th className="text-left py-2 px-2 font-medium">Device</th>
+                                <th className="text-left py-2 px-2 font-medium max-w-[120px]">Referrer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filtered.slice(0, 150).map((e) => {
+                                const meta = e.metadata ?? {};
+                                const hasDetails = Object.keys(meta).length > 0;
+                                const isExpanded = expandedEventId === e.id;
+                                return (
+                                  <React.Fragment key={e.id}>
+                                    <tr
+                                      className="border-b border-border/50 hover:bg-muted/30"
+                                    >
+                                      <td className="py-1 px-2">
+                                        {hasDetails ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setExpandedEventId(isExpanded ? null : e.id)}
+                                            className="p-0.5 rounded hover:bg-muted"
+                                            aria-label={isExpanded ? "Collapse" : "Expand details"}
+                                          >
+                                            {isExpanded ? (
+                                              <ChevronDown className="h-4 w-4" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4" />
+                                            )}
+                                          </button>
+                                        ) : null}
+                                      </td>
+                                      <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">
+                                        {format(new Date(e.createdAt), "MMM d, HH:mm:ss")}
+                                      </td>
+                                      <td className="py-1 px-2 font-mono text-xs" title={e.visitorId}>
+                                        {e.visitorId.slice(0, 12)}…
+                                      </td>
+                                      <td className="py-1 px-2">
+                                        <Badge variant="secondary" className="font-normal">
+                                          {e.eventType}
+                                        </Badge>
+                                      </td>
+                                      <td className="py-1 px-2 truncate max-w-[180px]" title={e.pageVisited ?? ""}>
+                                        {e.pageVisited ?? "—"}
+                                      </td>
+                                      <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
+                                      <td className="py-1 px-2 truncate max-w-[120px] text-muted-foreground" title={e.referrer ?? ""}>
+                                        {e.referrer ? (e.referrer.length > 20 ? e.referrer.slice(0, 20) + "…" : e.referrer) : "direct"}
+                                      </td>
+                                    </tr>
+                                    {isExpanded && hasDetails && (
+                                      <tr className="border-b bg-muted/20">
+                                        <td colSpan={7} className="py-2 px-3">
+                                          <div className="text-xs font-mono bg-background rounded p-3 border overflow-x-auto max-h-40 overflow-y-auto">
+                                            <pre className="whitespace-pre-wrap break-all">
+                                              {JSON.stringify(meta, null, 2)}
+                                            </pre>
+                                            <p className="text-muted-foreground mt-2 text-[11px]">
+                                              userAgent, viewport, url, utm_*, cta, form, tool, etc.
+                                            </p>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })()
+                  )}
+                  {eventsData?.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Showing up to 150 filtered events. Full URL, viewport, UTM params, and interaction metadata are in the expandable details.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>

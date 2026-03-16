@@ -55,6 +55,7 @@ const formSchema = z.object({
     return val.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
   }),
   isPublished: z.boolean().default(false),
+  scheduleFor: z.string().optional(), // "YYYY-MM-DDTHH:mm" from datetime-local, or "" for publish now
   // SEO fields
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
@@ -105,6 +106,7 @@ const AdminBlog = () => {
       coverImage: "",
       tags: [] as string[],
       isPublished: false,
+      scheduleFor: "",
       metaTitle: "",
       metaDescription: "",
       keywords: [],
@@ -121,12 +123,23 @@ const AdminBlog = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      return apiRequest('/api/blog', 'POST', data);
+      const payload: Record<string, unknown> = { ...data };
+      if (data.isPublished && data.scheduleFor?.trim()) {
+        payload.publishedAt = new Date(data.scheduleFor.trim()).toISOString();
+      } else if (data.isPublished) {
+        payload.publishedAt = new Date().toISOString();
+      }
+      return apiRequest('/api/blog', 'POST', payload);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const scheduled = variables.isPublished && variables.scheduleFor?.trim();
+      const at = scheduled ? new Date(variables.scheduleFor!.trim()) : null;
+      const isFuture = at && at.getTime() > Date.now();
       toast({
         title: "Success!",
-        description: "Blog post created successfully.",
+        description: isFuture
+          ? `Post scheduled for ${at.toLocaleString()}. It will appear on the blog at that time.`
+          : "Blog post created successfully.",
       });
       router.push("/blog");
     },
@@ -364,14 +377,39 @@ const AdminBlog = () => {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Publish immediately</FormLabel>
+                          <FormLabel>Publish (or schedule)</FormLabel>
                           <FormDescription>
-                            If unchecked, the post will be saved as a draft.
+                            If unchecked, the post will be saved as a draft. If checked, publish now or pick a date and time below to schedule.
                           </FormDescription>
                         </div>
                       </FormItem>
                     )}
                   />
+                  {form.watch("isPublished") && (
+                    <FormField
+                      control={form.control}
+                      name="scheduleFor"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2 rounded-md border p-4">
+                          <FormLabel>Publish date & time</FormLabel>
+                          <FormControl>
+                            <input
+                              type="datetime-local"
+                              {...field}
+                              min={new Date().toISOString().slice(0, 16)}
+                              aria-label="Schedule publish date and time"
+                              title="Schedule publish date and time"
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Leave empty to publish immediately. Pick a future date and time to schedule the post; it will appear on the blog when that time is reached.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </CardContent>
               </Card>
               

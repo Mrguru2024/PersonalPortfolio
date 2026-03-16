@@ -53,6 +53,32 @@ export function useVisitorTracking() {
         options?.pageVisited ?? (typeof window !== "undefined" ? window.location.pathname || "/" : "/");
       const referrer = typeof document !== "undefined" ? document.referrer || undefined : undefined;
 
+      let viewport: { width: number; height: number } | undefined;
+      let url: string | undefined;
+      let utm: Record<string, string> | undefined;
+      if (typeof window !== "undefined") {
+        viewport = { width: window.innerWidth, height: window.innerHeight };
+        url = window.location.href;
+        const params = new URLSearchParams(window.location.search);
+        const utmSource = params.get("utm_source");
+        const utmMedium = params.get("utm_medium");
+        const utmCampaign = params.get("utm_campaign");
+        const utmTerm = params.get("utm_term");
+        const utmContent = params.get("utm_content");
+        if (utmSource || utmMedium || utmCampaign || utmTerm || utmContent) {
+          utm = {};
+          if (utmSource) utm.utm_source = utmSource;
+          if (utmMedium) utm.utm_medium = utmMedium;
+          if (utmCampaign) utm.utm_campaign = utmCampaign;
+          if (utmTerm) utm.utm_term = utmTerm;
+          if (utmContent) utm.utm_content = utmContent;
+        }
+      }
+
+      const metadata = { ...options?.metadata };
+      if (url) metadata.url = url;
+      if (utm && Object.keys(utm).length) Object.assign(metadata, utm);
+
       fetch("/api/track/visitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,7 +88,8 @@ export function useVisitorTracking() {
           eventType,
           pageVisited,
           referrer: referrer && referrer !== "" ? referrer : undefined,
-          metadata: options?.metadata,
+          viewport,
+          metadata: Object.keys(metadata).length ? metadata : undefined,
         }),
       }).catch(() => {});
     },

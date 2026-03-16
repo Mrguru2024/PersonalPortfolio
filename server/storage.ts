@@ -34,7 +34,7 @@ import {
   crmSavedLists, type CrmSavedList, type InsertCrmSavedList,
 } from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -209,6 +209,7 @@ export interface IStorage {
   createVisitorActivity(activity: InsertVisitorActivity): Promise<VisitorActivity>;
   attachVisitorToLead(visitorId: string, leadId: number): Promise<void>;
   getVisitorActivityByLeadId(leadId: number): Promise<VisitorActivity[]>;
+  getVisitorActivityRecent(since?: Date, limit?: number): Promise<VisitorActivity[]>;
 
   // Lead intelligence: alerts
   createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert>;
@@ -746,9 +747,10 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPublishedBlogPosts(): Promise<BlogPost[]> {
+    const now = new Date();
     return db.select()
       .from(blogPosts)
-      .where(eq(blogPosts.isPublished, true))
+      .where(and(eq(blogPosts.isPublished, true), lte(blogPosts.publishedAt, now)))
       .orderBy(desc(blogPosts.publishedAt));
   }
   
@@ -768,14 +770,21 @@ export class DatabaseStorage implements IStorage {
     return post || undefined;
   }
   
-  async createBlogPost(post: InsertBlogPost, authorId: number): Promise<BlogPost> {
+  async createBlogPost(post: InsertBlogPost & { isPublished?: boolean }, authorId: number): Promise<BlogPost> {
+    const publishedAt =
+      post.publishedAt != null
+        ? typeof post.publishedAt === "string"
+          ? new Date(post.publishedAt)
+          : post.publishedAt
+        : new Date();
     const [insertedPost] = await db
       .insert(blogPosts)
       .values({
         ...post,
-        coverImage: post.coverImage || '',
+        coverImage: post.coverImage ?? "",
+        publishedAt,
         authorId,
-        isPublished: false
+        isPublished: post.isPublished ?? false,
       })
       .returning();
     return insertedPost;
@@ -783,11 +792,19 @@ export class DatabaseStorage implements IStorage {
   
   async updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost> {
     const now = new Date();
+    const publishedAt =
+      post.publishedAt != null
+        ? typeof post.publishedAt === "string"
+          ? new Date(post.publishedAt)
+          : post.publishedAt
+        : undefined;
+    const { publishedAt: _omit, ...rest } = post;
     const [updatedPost] = await db
       .update(blogPosts)
       .set({
-        ...post,
-        updatedAt: now
+        ...rest,
+        ...(publishedAt !== undefined && { publishedAt }),
+        updatedAt: now,
       })
       .where(eq(blogPosts.id, id))
       .returning();
@@ -1693,6 +1710,17 @@ export class DatabaseStorage implements IStorage {
       .from(visitorActivity)
       .where(eq(visitorActivity.leadId, leadId))
       .orderBy(desc(visitorActivity.createdAt));
+  }
+
+  async getVisitorActivityRecent(since?: Date, limit = 200): Promise<VisitorActivity[]> {
+    const conditions = since ? [gte(visitorActivity.createdAt, since)] : [];
+    const q = db
+      .select()
+      .from(visitorActivity)
+      .where(conditions.length ? and(...conditions) : sql`1=1`)
+      .orderBy(desc(visitorActivity.createdAt))
+      .limit(Math.min(limit, 500));
+    return q;
   }
 
   async createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert> {

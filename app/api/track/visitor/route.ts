@@ -3,8 +3,19 @@ import { storage } from "@server/storage";
 
 export const dynamic = "force-dynamic";
 
-const MAX_BODY = 1024;
 const ALLOWED_EVENT_TYPES = ["page_view", "form_started", "form_completed", "cta_click", "tool_used"];
+const METADATA_MAX_STRING = 1024;
+
+function sanitizeMetadata(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k.length > 64) continue;
+    if (typeof v === "string") out[k] = v.slice(0, METADATA_MAX_STRING);
+    else if (typeof v === "number" || typeof v === "boolean") out[k] = v;
+    else if (v !== null && typeof v === "object" && !Array.isArray(v)) out[k] = sanitizeMetadata(v as Record<string, unknown>);
+  }
+  return out;
+}
 
 /** POST /api/track/visitor — record anonymous/attributed visitor activity. Public, rate-limit by IP in production. */
 export async function POST(req: NextRequest) {
@@ -24,6 +35,18 @@ export async function POST(req: NextRequest) {
     const ua = req.headers.get("user-agent") || undefined;
     const deviceType = ua && /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
 
+    const viewport = body.viewport;
+    const vw = viewport && (typeof viewport.width === "number" || typeof viewport.w === "number") ? (viewport.width ?? viewport.w) : undefined;
+    const vh = viewport && (typeof viewport.height === "number" || typeof viewport.h === "number") ? (viewport.height ?? viewport.h) : undefined;
+    const viewportStr = typeof vw === "number" && typeof vh === "number" ? `${vw}x${vh}` : undefined;
+
+    const baseMeta = typeof body.metadata === "object" && body.metadata !== null ? sanitizeMetadata(body.metadata as Record<string, unknown>) : {};
+    const metadata: Record<string, unknown> = {
+      ...baseMeta,
+      ...(ua ? { userAgent: ua.slice(0, 512) } : {}),
+      ...(viewportStr ? { viewport: viewportStr } : {}),
+    };
+
     const activity = await storage.createVisitorActivity({
       visitorId,
       leadId: leadId ?? null,
@@ -32,7 +55,7 @@ export async function POST(req: NextRequest) {
       eventType,
       referrer: referrer ?? null,
       deviceType: deviceType ?? null,
-      metadata: typeof body.metadata === "object" && body.metadata !== null ? body.metadata : undefined,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
     });
 
     return NextResponse.json({ ok: true, id: activity.id });
