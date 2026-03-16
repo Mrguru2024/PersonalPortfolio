@@ -1866,8 +1866,8 @@ export class DatabaseStorage implements IStorage {
     const deviceMap = new Map<string, number>();
     const referrerMap = new Map<string, number>();
     const countryMap = new Map<string, { count: number; visitors: Set<string> }>();
-    const regionMap = new Map<string, { count: number }>();
-    const cityMap = new Map<string, { count: number }>();
+    const regionMap = new Map<string, number>();
+    const cityMap = new Map<string, number>();
     const timezoneMap = new Map<string, number>();
 
     for (const r of rows) {
@@ -1891,13 +1891,15 @@ export class DatabaseStorage implements IStorage {
         const region = (r.region ?? "").trim();
         if (region) {
           const regionKey = `${country}|${region}`;
-          regionMap.set(regionKey, (regionMap.get(regionKey) ?? 0) + 1);
+          const prevRegion = regionMap.get(regionKey);
+          regionMap.set(regionKey, (typeof prevRegion === "number" ? prevRegion : 0) + 1);
         }
         const city = (r.city ?? "").trim();
         if (city) {
           const region = (r.region ?? "").trim();
           const cityKey = `${country}|${region}|${city}`;
-          cityMap.set(cityKey, (cityMap.get(cityKey) ?? 0) + 1);
+          const prevCity = cityMap.get(cityKey);
+          cityMap.set(cityKey, (typeof prevCity === "number" ? prevCity : 0) + 1);
         }
       }
       const tz = (r.timezone ?? "").trim();
