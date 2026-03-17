@@ -36,6 +36,11 @@ import {
   crmSequences, type CrmSequence, type InsertCrmSequence,
   crmSequenceEnrollments, type CrmSequenceEnrollment, type InsertCrmSequenceEnrollment,
   crmSavedLists, type CrmSavedList, type InsertCrmSavedList,
+  crmAiGuidance, type CrmAiGuidance, type InsertCrmAiGuidance,
+  crmWorkflowExecutions, type CrmWorkflowExecution, type InsertCrmWorkflowExecution,
+  crmDiscoveryWorkspaces, type CrmDiscoveryWorkspace, type InsertCrmDiscoveryWorkspace,
+  crmProposalPrepWorkspaces, type CrmProposalPrepWorkspace, type InsertCrmProposalPrepWorkspace,
+  crmSalesPlaybooks, type CrmSalesPlaybook, type InsertCrmSalesPlaybook,
 } from "@shared/crmSchema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte } from "drizzle-orm";
@@ -211,12 +216,41 @@ export interface IStorage {
   createCrmResearchProfile(profile: InsertCrmResearchProfile): Promise<CrmResearchProfile>;
   updateCrmResearchProfile(id: number, updates: Partial<InsertCrmResearchProfile>): Promise<CrmResearchProfile>;
 
+  // CRM AI Guidance (Stage 3)
+  createCrmAiGuidance(entry: InsertCrmAiGuidance): Promise<CrmAiGuidance>;
+  getCrmAiGuidanceByEntity(entityType: string, entityId: number): Promise<CrmAiGuidance[]>;
+  getCrmAiGuidanceByEntityAndType(entityType: string, entityId: number, outputType: string): Promise<CrmAiGuidance | undefined>;
+  updateCrmAiGuidance(id: number, updates: Partial<Pick<InsertCrmAiGuidance, "content" | "providerType" | "version" | "generatedAt" | "staleAt" | "updatedAt">>): Promise<CrmAiGuidance>;
+
+  // CRM workflow executions (Stage 4)
+  createCrmWorkflowExecution(entry: InsertCrmWorkflowExecution): Promise<CrmWorkflowExecution>;
+  getCrmWorkflowExecutionsByEntity(entityType: string, entityId: number, limit?: number): Promise<CrmWorkflowExecution[]>;
+
+  // CRM Stage 3.5: Discovery workspace, proposal prep, playbook
+  createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace>;
+  getCrmDiscoveryWorkspaceById(id: number): Promise<CrmDiscoveryWorkspace | undefined>;
+  getCrmDiscoveryWorkspacesByContactId(contactId: number): Promise<CrmDiscoveryWorkspace[]>;
+  getCrmDiscoveryWorkspacesByDealId(dealId: number): Promise<CrmDiscoveryWorkspace[]>;
+  updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace>;
+  createCrmProposalPrepWorkspace(entry: InsertCrmProposalPrepWorkspace): Promise<CrmProposalPrepWorkspace>;
+  getCrmProposalPrepWorkspaceById(id: number): Promise<CrmProposalPrepWorkspace | undefined>;
+  getCrmProposalPrepWorkspacesByContactId(contactId: number): Promise<CrmProposalPrepWorkspace[]>;
+  getCrmProposalPrepWorkspacesByDealId(dealId: number): Promise<CrmProposalPrepWorkspace[]>;
+  updateCrmProposalPrepWorkspace(id: number, updates: Partial<InsertCrmProposalPrepWorkspace>): Promise<CrmProposalPrepWorkspace>;
+  createCrmSalesPlaybook(entry: InsertCrmSalesPlaybook): Promise<CrmSalesPlaybook>;
+  getCrmSalesPlaybookById(id: number): Promise<CrmSalesPlaybook | undefined>;
+  getCrmSalesPlaybooks(activeOnly?: boolean): Promise<CrmSalesPlaybook[]>;
+  updateCrmSalesPlaybook(id: number, updates: Partial<InsertCrmSalesPlaybook>): Promise<CrmSalesPlaybook>;
+
   // CRM dashboard (Stage 1)
   getCrmDashboardStats(): Promise<{
     totalContacts: number;
     totalAccounts: number;
     totalActiveLeads: number;
     leadsMissingData: number;
+    proposalReadyCount: number;
+    followUpNeededCount: number;
+    sequenceReadyCount: number;
     leadsByPipelineStage: { stage: string; count: number }[];
     recentTasks: (CrmTask & { contact?: CrmContact })[];
     overdueTasks: (CrmTask & { contact?: CrmContact })[];
@@ -224,6 +258,8 @@ export interface IStorage {
     accountsNeedingResearch: number;
     topSources: { source: string; count: number }[];
     topTags: { tag: string; count: number }[];
+    discoveryWorkspacesIncomplete?: number;
+    proposalPrepNeedingAttention?: number;
   }>;
 
   // Lead intelligence: communication events
@@ -1692,11 +1728,162 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async createCrmAiGuidance(entry: InsertCrmAiGuidance): Promise<CrmAiGuidance> {
+    const now = new Date();
+    const [inserted] = await db.insert(crmAiGuidance).values({ ...entry, createdAt: now, updatedAt: now }).returning();
+    return inserted;
+  }
+
+  async getCrmAiGuidanceByEntity(entityType: string, entityId: number): Promise<CrmAiGuidance[]> {
+    return db
+      .select()
+      .from(crmAiGuidance)
+      .where(and(eq(crmAiGuidance.entityType, entityType), eq(crmAiGuidance.entityId, entityId)))
+      .orderBy(desc(crmAiGuidance.generatedAt));
+  }
+
+  async getCrmAiGuidanceByEntityAndType(entityType: string, entityId: number, outputType: string): Promise<CrmAiGuidance | undefined> {
+    const [row] = await db
+      .select()
+      .from(crmAiGuidance)
+      .where(
+        and(
+          eq(crmAiGuidance.entityType, entityType),
+          eq(crmAiGuidance.entityId, entityId),
+          eq(crmAiGuidance.outputType, outputType)
+        )
+      )
+      .orderBy(desc(crmAiGuidance.generatedAt))
+      .limit(1);
+    return row;
+  }
+
+  async updateCrmAiGuidance(
+    id: number,
+    updates: Partial<Pick<InsertCrmAiGuidance, "content" | "providerType" | "version" | "generatedAt" | "staleAt" | "updatedAt">>
+  ): Promise<CrmAiGuidance> {
+    const [updated] = await db.update(crmAiGuidance).set({ ...updates, updatedAt: new Date() }).where(eq(crmAiGuidance.id, id)).returning();
+    return updated;
+  }
+
+  async createCrmWorkflowExecution(entry: InsertCrmWorkflowExecution): Promise<CrmWorkflowExecution> {
+    const [inserted] = await db.insert(crmWorkflowExecutions).values(entry).returning();
+    return inserted;
+  }
+
+  async getCrmWorkflowExecutionsByEntity(entityType: string, entityId: number, limit = 20): Promise<CrmWorkflowExecution[]> {
+    return db
+      .select()
+      .from(crmWorkflowExecutions)
+      .where(and(eq(crmWorkflowExecutions.relatedEntityType, entityType), eq(crmWorkflowExecutions.relatedEntityId, entityId)))
+      .orderBy(desc(crmWorkflowExecutions.startedAt))
+      .limit(limit);
+  }
+
+  async createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace> {
+    const [inserted] = await db.insert(crmDiscoveryWorkspaces).values(entry).returning();
+    return inserted;
+  }
+
+  async getCrmDiscoveryWorkspaceById(id: number): Promise<CrmDiscoveryWorkspace | undefined> {
+    const [row] = await db.select().from(crmDiscoveryWorkspaces).where(eq(crmDiscoveryWorkspaces.id, id));
+    return row;
+  }
+
+  async getCrmDiscoveryWorkspacesByContactId(contactId: number): Promise<CrmDiscoveryWorkspace[]> {
+    return db
+      .select()
+      .from(crmDiscoveryWorkspaces)
+      .where(eq(crmDiscoveryWorkspaces.contactId, contactId))
+      .orderBy(desc(crmDiscoveryWorkspaces.updatedAt));
+  }
+
+  async getCrmDiscoveryWorkspacesByDealId(dealId: number): Promise<CrmDiscoveryWorkspace[]> {
+    return db
+      .select()
+      .from(crmDiscoveryWorkspaces)
+      .where(eq(crmDiscoveryWorkspaces.dealId, dealId))
+      .orderBy(desc(crmDiscoveryWorkspaces.updatedAt));
+  }
+
+  async updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace> {
+    const [updated] = await db
+      .update(crmDiscoveryWorkspaces)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmDiscoveryWorkspaces.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createCrmProposalPrepWorkspace(entry: InsertCrmProposalPrepWorkspace): Promise<CrmProposalPrepWorkspace> {
+    const [inserted] = await db.insert(crmProposalPrepWorkspaces).values(entry).returning();
+    return inserted;
+  }
+
+  async getCrmProposalPrepWorkspaceById(id: number): Promise<CrmProposalPrepWorkspace | undefined> {
+    const [row] = await db.select().from(crmProposalPrepWorkspaces).where(eq(crmProposalPrepWorkspaces.id, id));
+    return row;
+  }
+
+  async getCrmProposalPrepWorkspacesByContactId(contactId: number): Promise<CrmProposalPrepWorkspace[]> {
+    return db
+      .select()
+      .from(crmProposalPrepWorkspaces)
+      .where(eq(crmProposalPrepWorkspaces.contactId, contactId))
+      .orderBy(desc(crmProposalPrepWorkspaces.updatedAt));
+  }
+
+  async getCrmProposalPrepWorkspacesByDealId(dealId: number): Promise<CrmProposalPrepWorkspace[]> {
+    return db
+      .select()
+      .from(crmProposalPrepWorkspaces)
+      .where(eq(crmProposalPrepWorkspaces.dealId, dealId))
+      .orderBy(desc(crmProposalPrepWorkspaces.updatedAt));
+  }
+
+  async updateCrmProposalPrepWorkspace(id: number, updates: Partial<InsertCrmProposalPrepWorkspace>): Promise<CrmProposalPrepWorkspace> {
+    const [updated] = await db
+      .update(crmProposalPrepWorkspaces)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmProposalPrepWorkspaces.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createCrmSalesPlaybook(entry: InsertCrmSalesPlaybook): Promise<CrmSalesPlaybook> {
+    const [inserted] = await db.insert(crmSalesPlaybooks).values(entry).returning();
+    return inserted;
+  }
+
+  async getCrmSalesPlaybookById(id: number): Promise<CrmSalesPlaybook | undefined> {
+    const [row] = await db.select().from(crmSalesPlaybooks).where(eq(crmSalesPlaybooks.id, id));
+    return row;
+  }
+
+  async getCrmSalesPlaybooks(activeOnly = true): Promise<CrmSalesPlaybook[]> {
+    if (activeOnly) {
+      return db.select().from(crmSalesPlaybooks).where(eq(crmSalesPlaybooks.active, true)).orderBy(crmSalesPlaybooks.title);
+    }
+    return db.select().from(crmSalesPlaybooks).orderBy(crmSalesPlaybooks.title);
+  }
+
+  async updateCrmSalesPlaybook(id: number, updates: Partial<InsertCrmSalesPlaybook>): Promise<CrmSalesPlaybook> {
+    const [updated] = await db
+      .update(crmSalesPlaybooks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmSalesPlaybooks.id, id))
+      .returning();
+    return updated;
+  }
+
   async getCrmDashboardStats(): Promise<{
     totalContacts: number;
     totalAccounts: number;
     totalActiveLeads: number;
     leadsMissingData: number;
+    proposalReadyCount: number;
+    followUpNeededCount: number;
+    sequenceReadyCount: number;
     leadsByPipelineStage: { stage: string; count: number }[];
     recentTasks: (CrmTask & { contact?: CrmContact })[];
     overdueTasks: (CrmTask & { contact?: CrmContact })[];
@@ -1704,6 +1891,8 @@ export class DatabaseStorage implements IStorage {
     accountsNeedingResearch: number;
     topSources: { source: string; count: number }[];
     topTags: { tag: string; count: number }[];
+    discoveryWorkspacesIncomplete?: number;
+    proposalPrepNeedingAttention?: number;
   }> {
     const [contacts, accounts, deals, allTasks, activityRows, researchProfiles] = await Promise.all([
       this.getCrmContacts(),
@@ -1723,6 +1912,14 @@ export class DatabaseStorage implements IStorage {
         !d.budgetRange ||
         ((d.pipelineStage === "qualified" || d.pipelineStage === "proposal_ready" || d.pipelineStage === "negotiation") && !d.expectedCloseAt)
     ).length;
+    const proposalReadyCount = deals.filter((d) => d.pipelineStage === "proposal_ready").length;
+    const nowForFollowUp = new Date();
+    const followUpNeededCount = contacts.filter(
+      (c) =>
+        (c.nextFollowUpAt && new Date(c.nextFollowUpAt) < nowForFollowUp) ||
+        c.outreachState === "follow_up_due"
+    ).length;
+    const sequenceReadyCount = contacts.filter((c) => c.sequenceReady === true).length;
     const stages = ["new_lead", "researching", "qualified", "proposal_ready", "follow_up", "negotiation", "won", "lost", "nurture"];
     const leadsByPipelineStage = stages.map((stage) => ({
       stage,
@@ -1754,11 +1951,32 @@ export class DatabaseStorage implements IStorage {
       .map(([tag, count]) => ({ tag, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
+
+    let discoveryWorkspacesIncomplete = 0;
+    let proposalPrepNeedingAttention = 0;
+    try {
+      const [dCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(crmDiscoveryWorkspaces)
+        .where(inArray(crmDiscoveryWorkspaces.status, ["draft", "scheduled"]));
+      discoveryWorkspacesIncomplete = dCount?.count ?? 0;
+      const [pCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(crmProposalPrepWorkspaces)
+        .where(inArray(crmProposalPrepWorkspaces.status, ["draft", "needs_clarification"]));
+      proposalPrepNeedingAttention = pCount?.count ?? 0;
+    } catch {
+      // Tables may not exist in older DBs
+    }
+
     return {
       totalContacts: contacts.length,
       totalAccounts: accounts.length,
       totalActiveLeads: activeLeads.length,
       leadsMissingData,
+      proposalReadyCount,
+      followUpNeededCount,
+      sequenceReadyCount,
       leadsByPipelineStage,
       recentTasks: recentTasks.map((t) => ({ ...t, contact: contactById[t.contactId] })),
       overdueTasks: overdueTasks.map((t) => ({ ...t, contact: contactById[t.contactId] })),
@@ -1766,6 +1984,8 @@ export class DatabaseStorage implements IStorage {
       accountsNeedingResearch,
       topSources,
       topTags,
+      discoveryWorkspacesIncomplete,
+      proposalPrepNeedingAttention,
     };
   }
 

@@ -27,11 +27,13 @@ import {
   Video,
   ExternalLink,
   Camera,
+  BookOpen,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -70,6 +72,13 @@ interface CrmContact {
   referringPage?: string | null;
   landingPage?: string | null;
   lifecycleStage?: string | null;
+  outreachState?: string | null;
+  nurtureState?: string | null;
+  sequenceReady?: boolean | null;
+  nextFollowUpAt?: string | null;
+  doNotContact?: boolean | null;
+  nurtureReason?: string | null;
+  accountId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +130,71 @@ interface CrmTask {
   completedNotes?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+function PinnedPlaybookCard({
+  contact,
+  onUpdate,
+}: {
+  contact: CrmContact;
+  onUpdate: () => void;
+}) {
+  const { toast } = useToast();
+  const { data: playbooksData } = useQuery<{ playbooks: Array<{ id: number; title: string }> }>({
+    queryKey: ["/api/admin/crm/playbooks"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/playbooks");
+      return res.ok ? res.json() : { playbooks: [] };
+    },
+  });
+  const pinnedId = contact.customFields?.pinnedPlaybookId as number | undefined;
+  const updateMutation = useMutation({
+    mutationFn: async (playbookId: number | null) => {
+      const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${contact.id}`, {
+        customFields: { ...(contact.customFields || {}), pinnedPlaybookId: playbookId },
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      onUpdate();
+      toast({ title: "Playbook updated" });
+    },
+    onError: () => toast({ title: "Failed to update", variant: "destructive" }),
+  });
+  const playbooks = playbooksData?.playbooks ?? [];
+  const pinnedPlaybook = pinnedId ? playbooks.find((p) => p.id === pinnedId) : null;
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <BookOpen className="h-4 w-4" />
+          Recommended playbook
+        </CardTitle>
+        <CardDescription>Pin a sales playbook for this lead</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Select
+          value={pinnedId != null ? String(pinnedId) : "none"}
+          onValueChange={(v) => updateMutation.mutate(v === "none" ? null : Number(v))}
+          disabled={updateMutation.isPending}
+        >
+          <SelectTrigger className="w-full max-w-xs"><SelectValue placeholder="None" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {playbooks.map((pb) => (
+              <SelectItem key={pb.id} value={String(pb.id)}>{pb.title}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {pinnedPlaybook && (
+          <Button variant="link" className="p-0 h-auto text-primary" asChild>
+            <Link href={`/admin/crm/playbooks/${pinnedId}`}>Open &quot;{pinnedPlaybook.title}&quot; →</Link>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function CrmLeadProfilePage() {
@@ -191,6 +265,57 @@ export default function CrmLeadProfilePage() {
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/admin/crm/insights/contact/${id}`);
       if (!res.ok) throw new Error("Failed to load insights");
+      return res.json();
+    },
+    enabled: !!id,
+  });
+
+  const { data: guidanceData, refetch: refetchGuidance } = useQuery<{
+    guidance: Record<string, { content: Record<string, unknown>; providerType: string; generatedAt: string }>;
+  }>({
+    queryKey: ["/api/admin/crm/guidance/contact", id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/crm/guidance/contact/${id}`);
+      if (!res.ok) return { guidance: {} };
+      return res.json();
+    },
+    enabled: !!id,
+  });
+
+  const generateGuidanceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/crm/guidance/contact/${id}`);
+      if (!res.ok) throw new Error("Failed to generate");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchGuidance();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({ title: "AI guidance generated" });
+    },
+    onError: () => toast({ title: "Failed to generate guidance", variant: "destructive" }),
+  });
+
+  const acceptRecommendationMutation = useMutation({
+    mutationFn: async (payload: { label: string; reason?: string; dealId?: number; accountId?: number }) => {
+      const res = await apiRequest("POST", "/api/admin/crm/guidance/recommendation/accept", { contactId: id, ...payload });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchTasks();
+      refetchGuidance();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({ title: "Task created from recommendation" });
+    },
+    onError: () => toast({ title: "Failed to create task", variant: "destructive" }),
+  });
+
+  const { data: workflowExecutions = [] } = useQuery<Array<{ id: number; workflowKey: string; triggerType: string; status: string; startedAt?: string }>>({
+    queryKey: ["/api/admin/crm/workflows/executions", "contact", id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/crm/workflows/executions?entityType=contact&entityId=${id}&limit=5`);
+      if (!res.ok) return [];
       return res.json();
     },
     enabled: !!id,
@@ -459,6 +584,18 @@ export default function CrmLeadProfilePage() {
             )}
             Scan business card
           </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/crm/discovery?contactId=${id}`}>
+              <Video className="h-4 w-4 mr-2" />
+              Discovery workspace
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/crm/proposal-prep?contactId=${id}`}>
+              <FileText className="h-4 w-4 mr-2" />
+              Proposal prep
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -615,6 +752,8 @@ export default function CrmLeadProfilePage() {
           </Card>
         </div>
 
+        <PinnedPlaybookCard contact={contact} onUpdate={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] })} />
+
         {(contact.source || contact.utmSource || contact.utmMedium || contact.utmCampaign || contact.referringPage || contact.landingPage) && (
           <Card>
             <CardHeader className="pb-2">
@@ -636,6 +775,218 @@ export default function CrmLeadProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Stage 4: Workflow & outreach state */}
+        <Card className="border-muted">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Workflow & outreach
+            </CardTitle>
+            <CardDescription>Automation state and last workflow run</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex flex-wrap gap-2">
+              {contact.outreachState && <Badge variant="secondary">Outreach: {contact.outreachState.replace(/_/g, " ")}</Badge>}
+              {contact.nurtureState && <Badge variant="outline">Nurture: {contact.nurtureState.replace(/_/g, " ")}</Badge>}
+              {contact.sequenceReady && <Badge variant="default">Sequence ready</Badge>}
+              {contact.doNotContact && <Badge variant="destructive">Do not contact</Badge>}
+            </div>
+            {contact.nextFollowUpAt && (
+              <p className="text-muted-foreground">Next follow-up: {format(new Date(contact.nextFollowUpAt), "PPp")}</p>
+            )}
+            {contact.nurtureReason && <p className="text-muted-foreground">{contact.nurtureReason}</p>}
+            {workflowExecutions.length > 0 && (
+              <p className="text-muted-foreground pt-1">
+                Last automation: {workflowExecutions[0].workflowKey} ({workflowExecutions[0].status}) — {workflowExecutions[0].startedAt ? format(new Date(workflowExecutions[0].startedAt), "PP") : ""}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Stage 3: AI Guidance */}
+        <Card className="border-primary/20 bg-muted/30">
+          <CardHeader className="pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  AI Guidance
+                </CardTitle>
+                <CardDescription>
+                  {guidanceData?.guidance && Object.keys(guidanceData.guidance).length > 0
+                    ? `Generated ${Object.keys(guidanceData.guidance).length} outputs · ${guidanceData.guidance.lead_summary?.providerType ?? "rule"}-based`
+                    : "Generate summaries, next actions, discovery questions, and proposal prep from CRM data."}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generateGuidanceMutation.mutate()}
+                disabled={generateGuidanceMutation.isPending}
+              >
+                {generateGuidanceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {guidanceData?.guidance && Object.keys(guidanceData.guidance).length > 0 ? "Refresh guidance" : "Generate guidance"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {guidanceData?.guidance && Object.keys(guidanceData.guidance).length > 0 ? (
+              <>
+                {guidanceData.guidance.lead_summary && (
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Lead summary
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm space-y-2">
+                        <p>{(guidanceData.guidance.lead_summary.content as { shortSummary?: string }).shortSummary}</p>
+                        <p className="text-muted-foreground">{(guidanceData.guidance.lead_summary.content as { whyThisLeadMatters?: string }).whyThisLeadMatters}</p>
+                        {((guidanceData.guidance.lead_summary.content as { suggestedNext3Actions?: string[] }).suggestedNext3Actions?.length ?? 0) > 0 && (
+                          <ul className="list-disc pl-4">
+                            {(guidanceData.guidance.lead_summary.content as { suggestedNext3Actions?: string[] }).suggestedNext3Actions?.map((a, i) => (
+                              <li key={i}>{a}</li>
+                            ))}
+                          </ul>
+                        )}
+                        <p className="text-xs text-muted-foreground">{guidanceData.guidance.lead_summary.generatedAt ? format(new Date(guidanceData.guidance.lead_summary.generatedAt), "PPp") : ""} · {guidanceData.guidance.lead_summary.providerType}</p>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.opportunity_assessment && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Opportunity assessment
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm space-y-2">
+                        <p>{(guidanceData.guidance.opportunity_assessment.content as { summary?: string }).summary}</p>
+                        {((guidanceData.guidance.opportunity_assessment.content as { strengthSignals?: string[] }).strengthSignals?.length ?? 0) > 0 && (
+                          <p><strong>Signals:</strong> {(guidanceData.guidance.opportunity_assessment.content as { strengthSignals?: string[] }).strengthSignals?.join("; ")}</p>
+                        )}
+                        {((guidanceData.guidance.opportunity_assessment.content as { risks?: string[] }).risks?.length ?? 0) > 0 && (
+                          <p className="text-amber-700 dark:text-amber-400"><strong>Risks:</strong> {(guidanceData.guidance.opportunity_assessment.content as { risks?: string[] }).risks?.join("; ")}</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.qualification_gaps && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Qualification gaps
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm">
+                        <p>Completeness: {(guidanceData.guidance.qualification_gaps.content as { overallCompletenessScore?: number }).overallCompletenessScore ?? 0}%</p>
+                        {((guidanceData.guidance.qualification_gaps.content as { missingFields?: string[] }).missingFields?.length ?? 0) > 0 && (
+                          <p className="text-muted-foreground">Missing: {(guidanceData.guidance.qualification_gaps.content as { missingFields?: string[] }).missingFields?.join(", ")}</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.next_best_actions && (
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Next best actions
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm space-y-2">
+                        {((guidanceData.guidance.next_best_actions.content as { actions?: Array<{ id: string; label: string; reason: string; priority: string }> }).actions ?? []).map((a) => (
+                          <div key={a.id} className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="font-medium">{a.label}</span>
+                              {a.reason && <span className="text-muted-foreground"> — {a.reason}</span>}
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => acceptRecommendationMutation.mutate({ label: a.label, reason: a.reason })}
+                                disabled={acceptRecommendationMutation.isPending}
+                              >
+                                Add task
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.discovery_questions && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Discovery questions
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm space-y-2">
+                        {((guidanceData.guidance.discovery_questions.content as { topQuestions?: string[] }).topQuestions ?? []).map((q, i) => (
+                          <p key={i}>· {q}</p>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.proposal_prep && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Proposal prep notes
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm space-y-2">
+                        <p><strong>Offer direction:</strong> {(guidanceData.guidance.proposal_prep.content as { likelyOfferDirection?: string }).likelyOfferDirection}</p>
+                        {((guidanceData.guidance.proposal_prep.content as { assumptionsRequiringValidation?: string[] }).assumptionsRequiringValidation?.length ?? 0) > 0 && (
+                          <p className="text-muted-foreground">Validate: {(guidanceData.guidance.proposal_prep.content as { assumptionsRequiringValidation?: string[] }).assumptionsRequiringValidation?.join(", ")}</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                {guidanceData.guidance.risk_warnings && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between font-medium">
+                        Risk warnings
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-md border bg-background p-3 text-sm">
+                        {((guidanceData.guidance.risk_warnings.content as { warnings?: Array<{ label: string; severity: string }> }).warnings ?? []).map((w, i) => (
+                          <p key={i} className={w.severity === "high" ? "text-amber-700 dark:text-amber-400" : ""}>· {w.label}</p>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">Click &quot;Generate guidance&quot; to build lead summary, next actions, discovery questions, and proposal prep from current CRM data.</p>
+            )}
+          </CardContent>
+        </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex flex-nowrap overflow-x-auto overflow-y-hidden gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">

@@ -26,16 +26,27 @@ export async function GET(
     const contact = await storage.getCrmContactById(id);
     if (!contact) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const [activities, commEvents, docEvents, docLog, visitorRows] = await Promise.all([
+    const [activities, commEvents, docEvents, docLog, visitorRows, activityLogRows] = await Promise.all([
       storage.getCrmActivities(id),
       storage.getCommunicationEventsByLeadId(id),
       storage.getDocumentEventsByLeadId(id),
       storage.getDocumentEventLogByLeadId(id),
       storage.getVisitorActivityByLeadId(id),
+      storage.getCrmActivityLogByContactId(id, 50),
     ]);
 
     const items: TimelineItem[] = [];
 
+    for (const a of activityLogRows) {
+      items.push({
+        id: `log-${a.id}`,
+        type: a.type,
+        title: a.title,
+        description: a.content ?? undefined,
+        createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt),
+        metadata: (a.metadata as Record<string, unknown>) ?? undefined,
+      });
+    }
     for (const a of activities) {
       const meta = a.metadata as { meetingUrl?: string; startUrl?: string; meetingId?: string; scheduledAt?: string } | null;
       items.push({

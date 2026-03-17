@@ -14,6 +14,8 @@ import {
   Activity,
   Search,
   ArrowRight,
+  Video,
+  FileText,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,9 @@ interface DashboardStats {
   totalAccounts: number;
   totalActiveLeads: number;
   leadsMissingData: number;
+  proposalReadyCount?: number;
+  followUpNeededCount?: number;
+  sequenceReadyCount?: number;
   leadsByPipelineStage: { stage: string; count: number }[];
   topSources?: { source: string; count: number }[];
   topTags?: { tag: string; count: number }[];
@@ -51,6 +56,8 @@ interface DashboardStats {
     createdAt: string;
   }>;
   accountsNeedingResearch: number;
+  discoveryWorkspacesIncomplete?: number;
+  proposalPrepNeedingAttention?: number;
 }
 
 export default function CrmDashboardPage() {
@@ -165,6 +172,70 @@ export default function CrmDashboardPage() {
               <CardContent>
                 <div className="text-2xl font-bold tabular-nums">{stats.leadsMissingData ?? 0}</div>
                 <p className="text-xs text-muted-foreground mt-1">Pain point, budget, or timeline</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-0 shadow-sm overflow-hidden hover:shadow-md hover:border-primary/20 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Proposal ready</CardTitle>
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Target className="h-4 w-4 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stats.proposalReadyCount ?? 0}</div>
+                <Button variant="link" className="p-0 h-auto mt-1 text-primary" asChild>
+                  <Link href="/admin/crm/pipeline?stage=proposal_ready">View pipeline <ArrowRight className="inline h-3 w-3 ml-1" /></Link>
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-0 shadow-sm overflow-hidden hover:shadow-md hover:border-amber-500/30 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Follow-up needed</CardTitle>
+                <div className="rounded-lg bg-amber-500/10 p-2">
+                  <ListTodo className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stats.followUpNeededCount ?? 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Outreach due or overdue</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-0 shadow-sm overflow-hidden hover:shadow-md hover:border-primary/20 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Sequence ready</CardTitle>
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Target className="h-4 w-4 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stats.sequenceReadyCount ?? 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Ready for outreach</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-0 shadow-sm overflow-hidden hover:shadow-md hover:border-primary/20 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Discovery (draft/scheduled)</CardTitle>
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Video className="h-4 w-4 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stats.discoveryWorkspacesIncomplete ?? 0}</div>
+                <Button variant="link" className="p-0 h-auto mt-1 text-primary" asChild>
+                  <Link href="/admin/crm">From lead <ArrowRight className="inline h-3 w-3 ml-1" /></Link>
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-0 shadow-sm overflow-hidden hover:shadow-md hover:border-amber-500/30 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Proposal prep (needs attention)</CardTitle>
+                <div className="rounded-lg bg-amber-500/10 p-2">
+                  <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stats.proposalPrepNeedingAttention ?? 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Draft or needs clarification</p>
               </CardContent>
             </Card>
           </div>

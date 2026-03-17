@@ -20,6 +20,9 @@ export async function GET(req: NextRequest) {
         totalAccounts: 0,
         totalActiveLeads: 0,
         leadsMissingData: 0,
+        proposalReadyCount: 0,
+        followUpNeededCount: 0,
+        sequenceReadyCount: 0,
         leadsByPipelineStage: [],
         recentTasks: [],
         overdueTasks: [],
@@ -27,6 +30,8 @@ export async function GET(req: NextRequest) {
         accountsNeedingResearch: 0,
         topSources: [],
         topTags: [],
+        discoveryWorkspacesIncomplete: 0,
+        proposalPrepNeedingAttention: 0,
       });
     }
     console.error("Error fetching CRM dashboard:", error);

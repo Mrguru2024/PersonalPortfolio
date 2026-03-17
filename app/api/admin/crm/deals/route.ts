@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { logActivity } from "@server/services/crmFoundationService";
+import { fireWorkflows, buildPayloadFromDealId } from "@server/services/workflows/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,8 @@ export async function POST(req: NextRequest) {
       content: deal.title,
       createdByUserId: user?.id,
     }).catch(() => {});
+    const payload = await buildPayloadFromDealId(storage, deal.id).catch(() => ({ dealId: deal.id, contactId: deal.contactId, deal }));
+    fireWorkflows(storage, "lead_created", payload).catch(() => {});
     return NextResponse.json(deal);
   } catch (error: any) {
     console.error("Error creating CRM deal:", error);

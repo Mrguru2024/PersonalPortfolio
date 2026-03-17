@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { fireWorkflows, buildPayloadFromDealId } from "@server/services/workflows/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,17 @@ export async function PATCH(
     }
     const id = Number((await params).id);
     const body = await req.json();
+    const previous = await storage.getCrmDealById(id);
     const deal = await storage.updateCrmDeal(id, body);
+    const newStage = body.pipelineStage ?? deal.pipelineStage;
+    const previousStage = previous?.pipelineStage ?? null;
+    if (newStage && newStage !== previousStage) {
+      const payload = await buildPayloadFromDealId(storage, id).catch(() => ({ dealId: id, contactId: deal.contactId, deal, previousStage: previousStage ?? undefined, newStage: newStage ?? undefined }));
+      const meta = { previousStage: previousStage ?? undefined, newStage: newStage ?? undefined };
+      if (newStage === "proposal_ready") fireWorkflows(storage, "opportunity_marked_proposal_ready", { ...payload, ...meta }).catch(() => {});
+      else if (newStage === "won") fireWorkflows(storage, "opportunity_marked_won", { ...payload, ...meta }).catch(() => {});
+      else if (newStage === "lost") fireWorkflows(storage, "opportunity_marked_lost", { ...payload, ...meta }).catch(() => {});
+    }
     return NextResponse.json(deal);
   } catch (error: any) {
     console.error("Error updating CRM deal:", error);

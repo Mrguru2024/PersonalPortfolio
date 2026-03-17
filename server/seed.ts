@@ -32,6 +32,7 @@ import {
   blogPosts,
   blogComments,
   users,
+  crmSalesPlaybooks,
 } from "@shared/schema";
 import {
   projects as staticProjects,
@@ -688,6 +689,67 @@ async function seedBlogPosts() {
   console.log(`Seeded ${blogPostsToSeed.length} blog posts`);
 }
 
+async function seedCrmPlaybooks() {
+  try {
+    const existing = await db.select().from(crmSalesPlaybooks).limit(1);
+    if (existing.length > 0) {
+      console.log("CRM playbooks already seeded, skipping.");
+      return;
+    }
+    const playbooks = [
+      {
+        title: "Qualify web design leads",
+        slug: "qualify-web-design",
+        category: "qualification",
+        serviceType: "web_design",
+        description: "Use this playbook when qualifying leads interested in website design or redesign.",
+        checklistItems: ["Current website URL reviewed", "Business goals captured", "Budget range discussed", "Timeline confirmed", "Decision-maker identified"],
+        qualificationRules: "Lead must have a clear business goal tied to the site. Budget and timeline should be confirmed before proposal.",
+        redFlags: "No website or 'just need a site' with no goals. Unclear budget. No single decision-maker.",
+        proposalRequirements: "Website URL reviewed, goals documented, budget and timeline confirmed.",
+        followUpGuidance: "Send discovery prep summary before the call. After call, capture fit and readiness; create proposal prep if qualified.",
+        active: true,
+      },
+      {
+        title: "Qualify funnel optimization leads",
+        slug: "qualify-funnel",
+        category: "qualification",
+        serviceType: "funnel_optimization",
+        description: "Use for leads focused on lead generation, conversion, or funnel performance.",
+        checklistItems: ["Current funnel/lead process documented", "Conversion data or analytics available", "Goals and success metrics defined", "Budget and timeline confirmed"],
+        qualificationRules: "Must have existing traffic or funnel to optimize. Clear success metrics (leads, conversions, revenue).",
+        redFlags: "No current funnel or traffic. Unwilling to share data. Unrealistic expectations on timeline.",
+        proposalRequirements: "Funnel overview, key metrics, and goals documented. Budget and timeline confirmed.",
+        followUpGuidance: "Request analytics access before proposal. Schedule follow-up to validate assumptions.",
+        active: true,
+      },
+      {
+        title: "Discovery call runbook",
+        slug: "discovery-call",
+        category: "discovery",
+        serviceType: null,
+        description: "Standard runbook for running discovery calls.",
+        checklistItems: ["Send prep summary and agenda", "Review recommended questions by category", "Capture business overview and pain points", "Confirm budget, timeline, decision-maker", "Document fit and readiness", "Set next step"],
+        qualificationRules: null,
+        redFlags: "Watch for scope creep, unclear authority, or misaligned expectations.",
+        proposalRequirements: "Discovery summary and outcome (fit, readiness) completed before moving to proposal prep.",
+        followUpGuidance: "Create proposal prep workspace if outcome is proposal_ready. Create tasks for any follow-up items.",
+        active: true,
+      },
+    ];
+    for (const pb of playbooks) {
+      await db.insert(crmSalesPlaybooks).values(pb);
+    }
+    console.log(`Seeded ${playbooks.length} CRM sales playbooks`);
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("CRM playbooks table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
@@ -695,6 +757,7 @@ async function seedDatabase() {
     await seedProjects();
     await seedSkills();
     await seedBlogPosts();
+    await seedCrmPlaybooks();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

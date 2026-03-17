@@ -94,6 +94,17 @@ export const crmContacts = pgTable("crm_contacts", {
   linkedinUrl: text("linkedin_url"),
   enrichmentStatus: text("enrichment_status"), // pending | enriched | failed | none
   enrichedAt: timestamp("enriched_at"),
+  // Stage 4: outreach / nurture / sequence-ready
+  outreachState: text("outreach_state"), // not_started | research_first | ready_for_follow_up | waiting_for_response | follow_up_due | nurture_only | do_not_contact
+  nurtureState: text("nurture_state"), // new_nurture | educational | case_study_ready | follow_up_later | dormant | reactivation_candidate
+  sequenceReady: boolean("sequence_ready").default(false),
+  lastOutreachAt: timestamp("last_outreach_at"),
+  nextFollowUpAt: timestamp("next_follow_up_at"),
+  doNotContact: boolean("do_not_contact").default(false),
+  nurtureReason: text("nurture_reason"),
+  lostReason: text("lost_reason"),
+  responseStatus: text("response_status"), // e.g. awaiting_reply | replied | no_response
+  reactivationEligible: boolean("reactivation_eligible").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -134,6 +145,7 @@ export const crmDeals = pgTable("crm_deals", {
   landingPage: text("landing_page"),
   notes: text("notes"),
   notesSummary: text("notes_summary"),
+  lostReason: text("lost_reason"), // Stage 4: when pipelineStage = lost
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -404,3 +416,129 @@ export const crmResearchProfiles = pgTable("crm_research_profiles", {
 
 export type CrmResearchProfile = typeof crmResearchProfiles.$inferSelect;
 export type InsertCrmResearchProfile = typeof crmResearchProfiles.$inferInsert;
+
+// ——— AI Guidance (Stage 3): persisted summaries, recommendations, discovery/proposal prep ———
+
+export const crmAiGuidance = pgTable("crm_ai_guidance", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // contact | account | deal
+  entityId: integer("entity_id").notNull(),
+  outputType: text("output_type").notNull(), // lead_summary | account_summary | contact_summary | opportunity_assessment | research_summary | next_best_actions | discovery_questions | proposal_prep | risk_warnings | qualification_gaps | follow_up_angle
+  content: json("content").$type<Record<string, unknown>>().notNull(),
+  providerType: text("provider_type").notNull().default("rule"), // rule | llm
+  version: integer("version").notNull().default(1),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+  generatedBySystem: boolean("generated_by_system").default(true),
+  staleAt: timestamp("stale_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CrmAiGuidance = typeof crmAiGuidance.$inferSelect;
+export type InsertCrmAiGuidance = typeof crmAiGuidance.$inferInsert;
+
+// ——— Workflow automation (Stage 4): execution log ———
+
+export const crmWorkflowExecutions = pgTable("crm_workflow_executions", {
+  id: serial("id").primaryKey(),
+  workflowKey: text("workflow_key").notNull(),
+  triggerType: text("trigger_type").notNull(),
+  relatedEntityType: text("related_entity_type").notNull(), // contact | account | deal
+  relatedEntityId: integer("related_entity_id").notNull(),
+  executedActions: json("executed_actions").$type<string[]>().default([]),
+  status: text("status").notNull().default("success"), // success | partial | failed
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  finishedAt: timestamp("finished_at"),
+  errorMessage: text("error_message"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CrmWorkflowExecution = typeof crmWorkflowExecutions.$inferSelect;
+export type InsertCrmWorkflowExecution = typeof crmWorkflowExecutions.$inferInsert;
+
+// ——— Stage 3.5: Discovery workspace, proposal prep, sales playbook ———
+
+/** Discovery call workspace: linked to lead/opportunity for structured prep and notes. */
+export const crmDiscoveryWorkspaces = pgTable("crm_discovery_workspaces", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").notNull(),
+  dealId: integer("deal_id"),
+  accountId: integer("account_id"),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("draft"), // draft | scheduled | completed | cancelled
+  callDate: timestamp("call_date"),
+  meetingType: text("meeting_type"), // discovery | follow_up | kickoff
+  attendedBy: text("attended_by"),
+  preparednessScore: integer("preparedness_score"), // 0-100
+  fitAssessment: text("fit_assessment"), // low_fit | unclear_fit | promising | high_fit | nurture
+  readinessAssessment: text("readiness_assessment"), // missing_key_data | early | qualified | proposal_ready
+  summary: text("summary"),
+  riskSummary: text("risk_summary"),
+  recommendedOfferDirection: text("recommended_offer_direction"),
+  nextStepRecommendation: text("next_step_recommendation"),
+  createdByUserId: integer("created_by_user_id"),
+  /** Structured notes: business overview, pain points, goals, budget, timeline, objections, etc. */
+  notesSections: json("notes_sections").$type<Record<string, string>>(),
+  /** Discovery outcome: nurture recommendation, disqualify reason, follow-up items */
+  outcome: json("outcome").$type<{ fitVerdict?: string; urgencyVerdict?: string; budgetConfidence?: string; proposalReadiness?: string; nurtureRecommendation?: string; disqualifyReason?: string; followUpItems?: string[] }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CrmDiscoveryWorkspace = typeof crmDiscoveryWorkspaces.$inferSelect;
+export type InsertCrmDiscoveryWorkspace = typeof crmDiscoveryWorkspaces.$inferInsert;
+
+/** Proposal prep workspace: internal prep before writing proposal. */
+export const crmProposalPrepWorkspaces = pgTable("crm_proposal_prep_workspaces", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").notNull(),
+  dealId: integer("deal_id"),
+  accountId: integer("account_id"),
+  discoveryWorkspaceId: integer("discovery_workspace_id"),
+  status: text("status").notNull().default("draft"), // draft | needs_clarification | internal_review | ready_to_write
+  offerDirection: text("offer_direction"),
+  scopeSummary: text("scope_summary"),
+  deliverablesDraft: text("deliverables_draft"),
+  assumptions: text("assumptions"),
+  exclusions: text("exclusions"),
+  pricingNotes: text("pricing_notes"),
+  timelineNotes: text("timeline_notes"),
+  risks: text("risks"),
+  dependencies: text("dependencies"),
+  crossSellOpportunities: text("cross_sell_opportunities"),
+  decisionFactors: text("decision_factors"),
+  proposalReadinessScore: integer("proposal_readiness_score"), // 0-100
+  aiSummary: text("ai_summary"),
+  createdByUserId: integer("created_by_user_id"),
+  /** Linked sales playbook for reference */
+  playbookId: integer("playbook_id"),
+  /** Checklist: items like budget confirmed, timeline discussed, etc. */
+  checklist: json("checklist").$type<Array<{ id: string; label: string; done: boolean }>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CrmProposalPrepWorkspace = typeof crmProposalPrepWorkspaces.$inferSelect;
+export type InsertCrmProposalPrepWorkspace = typeof crmProposalPrepWorkspaces.$inferInsert;
+
+/** Sales playbook: reusable internal guidance per service/category. */
+export const crmSalesPlaybooks = pgTable("crm_sales_playbooks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull(),
+  category: text("category"), // qualification | discovery | proposal | follow_up
+  serviceType: text("service_type"), // web_design | funnel_optimization | branding | etc.
+  description: text("description"),
+  checklistItems: json("checklist_items").$type<string[]>(),
+  qualificationRules: text("qualification_rules"),
+  redFlags: text("red_flags"),
+  proposalRequirements: text("proposal_requirements"),
+  followUpGuidance: text("follow_up_guidance"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CrmSalesPlaybook = typeof crmSalesPlaybooks.$inferSelect;
+export type InsertCrmSalesPlaybook = typeof crmSalesPlaybooks.$inferInsert;

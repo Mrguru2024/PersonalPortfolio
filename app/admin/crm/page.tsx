@@ -469,6 +469,9 @@ export default function CrmPage() {
               <Link href="/admin/crm/sequences">Sequences</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
+              <Link href="/admin/crm/playbooks">Playbooks</Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/saved-lists">Saved lists</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>

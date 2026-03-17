@@ -5,11 +5,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Building2, ArrowLeft, User, Target, FileText, Activity } from "lucide-react";
+import { Building2, ArrowLeft, User, Target, FileText, Activity, Sparkles, Loader2, Video } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 
 interface CrmAccount {
@@ -117,6 +119,34 @@ export default function CrmAccountDetailPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved && !Number.isNaN(id),
   });
 
+  const { data: guidanceData, refetch: refetchGuidance } = useQuery<{
+    guidance: Record<string, { content: Record<string, unknown>; providerType: string; generatedAt: string }>;
+  }>({
+    queryKey: ["/api/admin/crm/guidance/account", id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/crm/guidance/account/${id}`);
+      if (!res.ok) return { guidance: {} };
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && !Number.isNaN(id),
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const generateGuidanceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/crm/guidance/account/${id}`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchGuidance();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/activity-log", "accountId", id] });
+      toast({ title: "AI guidance generated" });
+    },
+    onError: () => toast({ title: "Failed to generate guidance", variant: "destructive" }),
+  });
+
   if (authLoading || !user) return null;
   if (accountLoading && !account) return <p className="p-6">Loading…</p>;
   if (!account) return <p className="p-6">Account not found.</p>;
@@ -137,6 +167,16 @@ export default function CrmAccountDetailPage() {
           </p>
         </div>
         {account.accountStatus && <Badge variant="secondary">{account.accountStatus}</Badge>}
+        {contacts.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/admin/crm/discovery?contactId=${contacts[0].id}`}><Video className="h-4 w-4 mr-2" />Discovery</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/admin/crm/proposal-prep?contactId=${contacts[0].id}`}><FileText className="h-4 w-4 mr-2" />Proposal prep</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -221,6 +261,45 @@ export default function CrmAccountDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Stage 3: AI Account Guidance */}
+      <Card className="mt-6 border-primary/20 bg-muted/30">
+        <CardHeader className="pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                AI Account Summary
+              </CardTitle>
+              <CardDescription>
+                {guidanceData?.guidance?.account_summary
+                  ? `Generated · ${guidanceData.guidance.account_summary.providerType}-based`
+                  : "Generate business summary, website maturity, and service fit from account and research data."}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateGuidanceMutation.mutate()}
+              disabled={generateGuidanceMutation.isPending}
+            >
+              {generateGuidanceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {guidanceData?.guidance?.account_summary ? "Refresh" : "Generate"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {guidanceData?.guidance?.account_summary ? (
+            <div className="text-sm space-y-2">
+              <p>{(guidanceData.guidance.account_summary.content as { businessSummary?: string }).businessSummary}</p>
+              <p className="text-muted-foreground">{(guidanceData.guidance.account_summary.content as { websiteMaturitySummary?: string }).websiteMaturitySummary}</p>
+              <p><strong>Service fit:</strong> {(guidanceData.guidance.account_summary.content as { serviceFitSummary?: string }).serviceFitSummary}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Click Generate to build an AI summary from this account and its research profile.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="mt-6">
         <CardHeader>

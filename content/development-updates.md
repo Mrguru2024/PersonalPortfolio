@@ -4,6 +4,16 @@ Log of features and fixes approved to production. Edit this file when you ship; 
 
 ---
 
+## 2025-03-15 — CRM Stage 3 (AI guidance) and Stage 4 (workflow automation)
+
+- **Stage 3 — AI guidance**: Rule-based AI provider and guidance service. Lead/account summaries, opportunity assessment, next-best actions, discovery questions, proposal prep notes, risk warnings, and qualification gaps generated from CRM data and persisted. Lead and account detail pages: “AI Guidance” / “AI Account Summary” cards with Generate/Refresh; next-best actions can be converted to tasks. Activity log and timeline show AI guidance and recommendation events. Dashboard: “Proposal ready” count.
+- **Stage 4 — Workflow automation**: Workflow engine (triggers, conditions, actions, registry) with execution logging. Triggers on contact create, deal create, deal stage change (proposal_ready / won / lost), AI guidance generated, recommendation accepted. Default workflows: new qualified lead, form completed, proposal ready, stale lead, missing qualification, missing research, opportunity won/lost. Actions: create task, update outreach/nurture state, mark sequence ready, generate AI summary, create internal alert, etc.
+- **Sequence-ready / outreach state**: Contact fields for outreachState, nurtureState, sequenceReady, nextFollowUpAt, doNotContact, nurtureReason. Lead detail: “Workflow & outreach” card and last automation run. Dashboard: “Follow-up needed” and “Sequence ready” counts.
+- **Stale-check**: Manual run via POST `/api/admin/crm/workflows/run-stale-check` (admin). Detects stale leads, missing research, missing qualification and fires workflows (capped per category). Ready for future cron/scheduler.
+- **Workflow execution log**: `crm_workflow_executions` table; GET `/api/admin/crm/workflows/executions?entityType=&entityId=` for history. Internal alerts created by workflows appear in existing CRM alerts.
+
+---
+
 ## 2025-03-15 — CRM pipeline and UI
 
 - Pipeline board: sticky toolbar, filters, and stage quick-jump. Move deals between stages without leaving the page.

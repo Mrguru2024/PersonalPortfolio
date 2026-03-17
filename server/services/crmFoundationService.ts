@@ -151,7 +151,14 @@ export type ActivityLogType =
   | "score_recalculated"
   | "contact_created"
   | "account_created"
-  | "lead_created";
+  | "lead_created"
+  | "ai_guidance_generated"
+  | "ai_recommendation_accepted"
+  | "ai_recommendation_dismissed"
+  | "discovery_workspace_created"
+  | "discovery_workspace_updated"
+  | "proposal_prep_created"
+  | "proposal_prep_updated";
 
 export interface LogActivityPayload {
   contactId?: number;
