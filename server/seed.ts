@@ -34,6 +34,7 @@ import {
   users,
   crmSalesPlaybooks,
   siteOffers,
+  businessGoalPresets,
 } from "@shared/schema";
 import {
   projects as staticProjects,
@@ -751,6 +752,113 @@ async function seedCrmPlaybooks() {
   }
 }
 
+async function seedBusinessGoalPresets() {
+  console.log("Seeding business goal presets...");
+  try {
+    const presets = [
+      {
+        key: "overdue_tasks",
+        name: "Overdue task",
+        category: "sales",
+        description: "Complete or reschedule overdue CRM tasks to keep pipeline moving.",
+        criteria: { type: "overdue_tasks" },
+        roleFilter: "all",
+        priority: 10,
+        active: true,
+      },
+      {
+        key: "tasks_due_soon",
+        name: "Tasks due soon",
+        category: "sales",
+        description: "Tasks due in the next 2 days need attention.",
+        criteria: { type: "tasks_due_soon" },
+        roleFilter: "all",
+        priority: 7,
+        active: true,
+      },
+      {
+        key: "unread_alerts",
+        name: "Unread lead alerts",
+        category: "sales",
+        description: "Review high-engagement and other unread lead alerts.",
+        criteria: { type: "unread_alerts" },
+        roleFilter: "all",
+        priority: 9,
+        active: true,
+      },
+      {
+        key: "follow_up_due",
+        name: "Follow-up due",
+        category: "sales",
+        description: "Leads marked for follow-up need contact to stay on track.",
+        criteria: { type: "follow_up_due" },
+        roleFilter: "all",
+        priority: 8,
+        active: true,
+      },
+      {
+        key: "discovery_incomplete",
+        name: "Discovery prep incomplete",
+        category: "sales",
+        description: "Discovery workspaces in draft or scheduled need completion or scheduling.",
+        criteria: { type: "discovery_incomplete" },
+        roleFilter: "all",
+        priority: 6,
+        active: true,
+      },
+      {
+        key: "proposal_prep_attention",
+        name: "Proposal prep needs attention",
+        category: "sales",
+        description: "Proposal prep workspaces in draft or needing clarification.",
+        criteria: { type: "proposal_prep_attention" },
+        roleFilter: "all",
+        priority: 6,
+        active: true,
+      },
+      {
+        key: "leads_missing_data",
+        name: "Leads missing key data",
+        category: "growth",
+        description: "Active leads missing budget, timeline, or pain point—qualify to move deals forward.",
+        criteria: { type: "leads_missing_data" },
+        roleFilter: "all",
+        priority: 5,
+        active: true,
+      },
+    ];
+    for (const p of presets) {
+      await db
+        .insert(businessGoalPresets)
+        .values({
+          ...p,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: businessGoalPresets.key,
+          set: {
+            name: p.name,
+            category: p.category,
+            description: p.description,
+            criteria: p.criteria as unknown as { type: string; [k: string]: unknown },
+            roleFilter: p.roleFilter,
+            priority: p.priority,
+            active: p.active,
+            updatedAt: new Date(),
+          },
+        });
+    }
+    console.log(`Seeded ${presets.length} business goal presets`);
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("business_goal_presets table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedSiteOffers() {
   console.log("Seeding site offers...");
   try {
@@ -796,6 +904,7 @@ async function seedDatabase() {
     await seedBlogPosts();
     await seedCrmPlaybooks();
     await seedSiteOffers();
+    await seedBusinessGoalPresets();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

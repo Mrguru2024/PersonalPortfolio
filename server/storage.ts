@@ -14,6 +14,8 @@ import { users, type User, type InsertUser,
   clientFeedback, type ClientFeedback, type InsertClientFeedback,
   funnelContent, type FunnelContent, type InsertFunnelContent,
   siteOffers, type SiteOffer, type InsertSiteOffer,
+  businessGoalPresets, type BusinessGoalPreset, type InsertBusinessGoalPreset,
+  adminReminders, type AdminReminder, type InsertAdminReminder,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -383,6 +385,15 @@ export interface IStorage {
   updateCrmSavedList(id: number, updates: Partial<InsertCrmSavedList>): Promise<CrmSavedList>;
   deleteCrmSavedList(id: number): Promise<void>;
   getCrmContactsBySavedListFilters(filters: CrmSavedList["filters"]): Promise<CrmContact[]>;
+
+  // Business goal presets & admin reminders
+  getBusinessGoalPresets(activeOnly?: boolean): Promise<BusinessGoalPreset[]>;
+  getAdminReminders(filters: { userId?: number | null; status?: string; includeSnoozedDue?: boolean }): Promise<AdminReminder[]>;
+  getAdminReminderById(id: number): Promise<AdminReminder | undefined>;
+  createAdminReminder(reminder: InsertAdminReminder): Promise<AdminReminder>;
+  updateAdminReminder(id: number, updates: Partial<InsertAdminReminder>): Promise<AdminReminder>;
+  getAdminReminderByKey(userId: number | null, reminderKey: string): Promise<AdminReminder | undefined>;
+  getApprovedAdmins(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2825,6 +2836,78 @@ export class DatabaseStorage implements IStorage {
       contacts = contacts.filter((c) => c.accountId == null || !accountIdsWithResearch.has(c.accountId));
     }
     return contacts;
+  }
+
+  async getBusinessGoalPresets(activeOnly = true): Promise<BusinessGoalPreset[]> {
+    const conditions = activeOnly ? [eq(businessGoalPresets.active, true)] : [];
+    return db
+      .select()
+      .from(businessGoalPresets)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(businessGoalPresets.priority), businessGoalPresets.key);
+  }
+
+  async getAdminReminders(filters: {
+    userId?: number | null;
+    status?: string;
+    includeSnoozedDue?: boolean;
+  }): Promise<AdminReminder[]> {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (filters.userId !== undefined) {
+      if (filters.userId == null) {
+        conditions.push(isNull(adminReminders.userId));
+      } else {
+        conditions.push(or(eq(adminReminders.userId, filters.userId), isNull(adminReminders.userId))!);
+      }
+    }
+    if (filters.status) {
+      conditions.push(eq(adminReminders.status, filters.status));
+    }
+    if (filters.includeSnoozedDue) {
+      const now = new Date();
+      conditions.push(
+        or(
+          eq(adminReminders.status, "new"),
+          and(eq(adminReminders.status, "snoozed"), lte(adminReminders.snoozedUntil, now))!
+        )!
+      );
+    }
+    const rows = await db
+      .select()
+      .from(adminReminders)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(adminReminders.createdAt));
+    return rows;
+  }
+
+  async getAdminReminderById(id: number): Promise<AdminReminder | undefined> {
+    const [row] = await db.select().from(adminReminders).where(eq(adminReminders.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createAdminReminder(reminder: InsertAdminReminder): Promise<AdminReminder> {
+    const now = new Date();
+    const [inserted] = await db.insert(adminReminders).values({ ...reminder, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async updateAdminReminder(id: number, updates: Partial<InsertAdminReminder>): Promise<AdminReminder> {
+    const [updated] = await db.update(adminReminders).set({ ...updates, updatedAt: new Date() }).where(eq(adminReminders.id, id)).returning();
+    if (!updated) throw new Error("Admin reminder not found");
+    return updated;
+  }
+
+  async getAdminReminderByKey(userId: number | null, reminderKey: string): Promise<AdminReminder | undefined> {
+    const keyMatch = eq(adminReminders.reminderKey, reminderKey);
+    const userMatch =
+      userId != null ? or(eq(adminReminders.userId, userId), isNull(adminReminders.userId))! : isNull(adminReminders.userId);
+    const [row] = await db.select().from(adminReminders).where(and(keyMatch, userMatch)).limit(1);
+    return row ?? undefined;
+  }
+
+  async getApprovedAdmins(): Promise<User[]> {
+    const rows = await db.select().from(users).where(and(eq(users.isAdmin, true), eq(users.adminApproved, true)));
+    return rows;
   }
 }
 

@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AdminGuideTour } from "@/components/admin/AdminGuideTour";
 import { AdminDailyNudge, buildNudgeItems } from "@/components/admin/AdminDailyNudge";
+import { AdminRemindersCard } from "@/components/admin/AdminRemindersCard";
 import {
   getTourCompleted,
   setTourCompleted,
@@ -533,6 +534,11 @@ export default function AdminDashboardPage() {
           onStartTour={() => setTourActive(true)}
           showTourCta={tourCompletedOrDismissed}
         />
+      </div>
+
+      {/* Growth reminders: goals + platform-driven tasks */}
+      <div className="mb-4">
+        <AdminRemindersCard compact maxItems={5} showGenerate />
       </div>
 
       {/* Guided tour overlay */}

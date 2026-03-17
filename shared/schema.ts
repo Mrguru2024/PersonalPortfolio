@@ -72,6 +72,45 @@ export const siteOffers = pgTable("site_offers", {
 export type SiteOffer = typeof siteOffers.$inferSelect;
 export type InsertSiteOffer = typeof siteOffers.$inferInsert;
 
+/** Business goal presets: drive what reminders are generated (overdue tasks, stale leads, etc.). */
+export const businessGoalPresets = pgTable("business_goal_presets", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // sales | marketing | operations | growth
+  description: text("description"),
+  criteria: json("criteria").$type<{ type: string; [k: string]: unknown }>().notNull(),
+  roleFilter: text("role_filter").default("all"), // all | sales | marketing | operations
+  priority: integer("priority").default(5).notNull(), // 1-10, higher = more urgent
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BusinessGoalPreset = typeof businessGoalPresets.$inferSelect;
+export type InsertBusinessGoalPreset = typeof businessGoalPresets.$inferInsert;
+
+/** Admin reminders: task-like nudges derived from goals and platform state; interactive (dismiss/snooze/done). */
+export const adminReminders = pgTable("admin_reminders", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id), // null = applies to all admins
+  reminderKey: text("reminder_key").notNull(), // e.g. overdue_task_123, stale_lead_45
+  title: text("title").notNull(),
+  body: text("body"),
+  priority: text("priority").default("medium").notNull(), // low | medium | high | urgent
+  actionUrl: text("action_url"),
+  relatedType: text("related_type"), // task | contact | deal | discovery | proposal_prep | alert
+  relatedId: integer("related_id"),
+  sourcePresetKey: text("source_preset_key"),
+  status: text("status").default("new").notNull(), // new | dismissed | done | snoozed
+  snoozedUntil: timestamp("snoozed_until"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminReminder = typeof adminReminders.$inferSelect;
+export type InsertAdminReminder = typeof adminReminders.$inferInsert;
+
 // Portfolio schemas
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
