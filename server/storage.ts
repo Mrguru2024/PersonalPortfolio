@@ -12,7 +12,8 @@ import { users, type User, type InsertUser,
   clientInvoices, type ClientInvoice, type InsertClientInvoice,
   clientAnnouncements, type ClientAnnouncement, type InsertClientAnnouncement,
   clientFeedback, type ClientFeedback, type InsertClientFeedback,
-  funnelContent, type FunnelContent, type InsertFunnelContent
+  funnelContent, type FunnelContent, type InsertFunnelContent,
+  siteOffers, type SiteOffer, type InsertSiteOffer,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -62,7 +63,11 @@ export interface IStorage {
   
   getFunnelContent(slug: string): Promise<FunnelContent | undefined>;
   setFunnelContent(slug: string, data: Record<string, unknown>): Promise<FunnelContent>;
-  
+
+  getSiteOffer(slug: string): Promise<SiteOffer | undefined>;
+  listSiteOffers(): Promise<SiteOffer[]>;
+  setSiteOffer(slug: string, data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }): Promise<SiteOffer>;
+
   // Project operations
   getProjects(): Promise<Project[]>;
   getProjectById(id: string): Promise<Project | undefined>;
@@ -553,7 +558,44 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return row;
   }
-  
+
+  async getSiteOffer(slug: string): Promise<SiteOffer | undefined> {
+    const [row] = await db.select().from(siteOffers).where(eq(siteOffers.slug, slug));
+    return row ?? undefined;
+  }
+
+  async listSiteOffers(): Promise<SiteOffer[]> {
+    return db.select().from(siteOffers).orderBy(siteOffers.slug);
+  }
+
+  async setSiteOffer(
+    slug: string,
+    data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }
+  ): Promise<SiteOffer> {
+    const [row] = await db
+      .insert(siteOffers)
+      .values({
+        slug,
+        name: data.name,
+        metaTitle: data.metaTitle ?? null,
+        metaDescription: data.metaDescription ?? null,
+        sections: data.sections,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: siteOffers.slug,
+        set: {
+          name: data.name,
+          metaTitle: data.metaTitle ?? null,
+          metaDescription: data.metaDescription ?? null,
+          sections: data.sections,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return row;
+  }
+
   // Project operations
   async getProjects(): Promise<Project[]> {
     return db.select().from(projects);

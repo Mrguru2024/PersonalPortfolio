@@ -9,6 +9,8 @@ coverage
 # Next.js
 .next/
 out/
+# User-uploaded images (created at runtime)
+public/uploads/
 build
 dist
 

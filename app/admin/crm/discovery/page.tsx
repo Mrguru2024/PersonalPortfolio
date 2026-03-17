@@ -62,22 +62,25 @@ export default function DiscoveryListPage() {
 
   if (!contactId) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/crm"><ArrowLeft className="h-4 w-4 mr-2" />Back to CRM</Link>
-        </Button>
-        <Card className="mt-4">
+      <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/crm"><ArrowLeft className="h-4 w-4 mr-2" />Back to CRM</Link>
+          </Button>
+          <Card className="mt-4">
           <CardContent className="pt-6">
             <p className="text-muted-foreground">Open a lead first, then use Discovery workspace from the lead detail page.</p>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/admin/crm/${contactId}`}><ArrowLeft className="h-4 w-4 mr-2" />Back to lead</Link>
         </Button>
@@ -127,6 +130,7 @@ export default function DiscoveryListPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

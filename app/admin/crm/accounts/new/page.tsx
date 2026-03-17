@@ -54,13 +54,14 @@ export default function NewAccountPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="container max-w-xl py-6">
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/crm/accounts"><ArrowLeft className="h-4 w-4 mr-1" /> Accounts</Link>
-        </Button>
-      </div>
-      <Card>
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/crm/accounts"><ArrowLeft className="h-4 w-4 mr-2" />Back to accounts</Link>
+          </Button>
+        </div>
+        <Card>
         <CardHeader>
           <CardTitle>Add account</CardTitle>
           <CardDescription>Create a new company/organization record.</CardDescription>
@@ -117,6 +118,7 @@ export default function NewAccountPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

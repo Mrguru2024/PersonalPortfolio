@@ -33,6 +33,7 @@ import {
   blogComments,
   users,
   crmSalesPlaybooks,
+  siteOffers,
 } from "@shared/schema";
 import {
   projects as staticProjects,
@@ -750,6 +751,42 @@ async function seedCrmPlaybooks() {
   }
 }
 
+async function seedSiteOffers() {
+  console.log("Seeding site offers...");
+  try {
+    const { DEFAULT_OFFER_SECTIONS } = await import("../app/lib/offerSections");
+    await db
+      .insert(siteOffers)
+      .values({
+        slug: "startup-growth-system",
+        name: "Startup growth system",
+        metaTitle: "Startup growth system | Affordable audit for founders",
+        metaDescription:
+          "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.",
+        sections: DEFAULT_OFFER_SECTIONS as unknown as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: siteOffers.slug,
+        set: {
+          name: "Startup growth system",
+          metaTitle: "Startup growth system | Affordable audit for founders",
+          metaDescription:
+            "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.",
+          sections: DEFAULT_OFFER_SECTIONS as unknown as Record<string, unknown>,
+          updatedAt: new Date(),
+        },
+      });
+    console.log("Seeded site offer: startup-growth-system");
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("site_offers table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
@@ -758,6 +795,7 @@ async function seedDatabase() {
     await seedSkills();
     await seedBlogPosts();
     await seedCrmPlaybooks();
+    await seedSiteOffers();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

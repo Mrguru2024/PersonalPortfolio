@@ -11,6 +11,7 @@ import {
   User,
   Filter,
   ArrowUpDown,
+  ArrowLeft,
   ChevronRight,
   MoreHorizontal,
   X,
@@ -163,12 +164,12 @@ export default function CrmPipelinePage() {
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/admin/crm">
-                  <ChevronRight className="h-4 w-4 rotate-180 mr-1" />
-                  CRM
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to CRM
                 </Link>
               </Button>
               <div>
-                <h1 className="text-xl font-semibold">Pipeline</h1>
+                <h1 className="text-2xl font-bold">Pipeline</h1>
                 <p className="text-xs text-muted-foreground">Move deals between stages</p>
               </div>
             </div>

@@ -152,12 +152,15 @@ export default function CrmAccountDetailPage() {
   if (!account) return <p className="p-6">Account not found.</p>;
 
   return (
-    <div className="container max-w-4xl py-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/crm/accounts"><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div className="flex-1">
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/crm/accounts"><ArrowLeft className="h-4 w-4 mr-2" />Back to accounts</Link>
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <Building2 className="h-6 w-6" />
             {account.name}
@@ -177,9 +180,9 @@ export default function CrmAccountDetailPage() {
             </Button>
           </div>
         )}
-      </div>
+        </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Details</CardTitle>
@@ -321,13 +324,14 @@ export default function CrmAccountDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 flex gap-2">
-        <Button variant="outline" asChild>
-          <Link href="/admin/crm/accounts">← Accounts</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/admin/crm/dashboard">Dashboard</Link>
-        </Button>
+        <div className="mt-6 flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/crm/accounts">← Accounts</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/crm/dashboard">Dashboard</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );

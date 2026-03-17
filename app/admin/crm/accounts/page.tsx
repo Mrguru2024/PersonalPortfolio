@@ -56,8 +56,9 @@ export default function CrmAccountsPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="container max-w-5xl py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Accounts</h1>
           <p className="text-muted-foreground">Companies and organizations</p>
@@ -134,10 +135,11 @@ export default function CrmAccountsPage() {
         </div>
       )}
 
-      <div className="mt-6">
-        <Button variant="outline" asChild>
-          <Link href="/admin/crm">← Contacts</Link>
-        </Button>
+        <div className="mt-6">
+          <Button variant="outline" asChild>
+            <Link href="/admin/crm">← Contacts</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );

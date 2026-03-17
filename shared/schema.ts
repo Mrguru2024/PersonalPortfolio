@@ -59,6 +59,19 @@ export const funnelContent = pgTable("funnel_content", {
 export type FunnelContent = typeof funnelContent.$inferSelect;
 export type InsertFunnelContent = typeof funnelContent.$inferInsert;
 
+/** Admin-editable site offers (e.g. /offers/startup-growth-system). Sections define hero, price, deliverables, CTA, graphics. */
+export const siteOffers = pgTable("site_offers", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  sections: json("sections").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type SiteOffer = typeof siteOffers.$inferSelect;
+export type InsertSiteOffer = typeof siteOffers.$inferInsert;
+
 // Portfolio schemas
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),

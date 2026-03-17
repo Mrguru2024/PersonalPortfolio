@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,9 +51,12 @@ export default function PlaybookDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="mb-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/crm/playbooks"><ArrowLeft className="h-4 w-4 mr-2" />Back to playbooks</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/crm/playbooks/${pb.id}/edit`}><Pencil className="h-4 w-4 mr-2" />Edit playbook</Link>
           </Button>
         </div>
 
