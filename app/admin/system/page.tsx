@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Activity,
   ChevronRight,
+  ChevronDown,
   FileCode,
   Database,
   CheckCircle2,
@@ -108,6 +109,7 @@ export default function AdminSystemPage() {
   const [activityLogEntries, setActivityLogEntries] = useState<ActivityLogEntry[]>([]);
   const [loadingActivityLog, setLoadingActivityLog] = useState(false);
   const [activityLogFilter, setActivityLogFilter] = useState<string>("");
+  const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
@@ -455,36 +457,123 @@ export default function AdminSystemPage() {
                 const ACTIVITY_INITIAL = 25;
                 const initialRows = activityLogEntries.slice(0, ACTIVITY_INITIAL);
                 const moreRows = activityLogEntries.slice(ACTIVITY_INITIAL);
+                const isErrorType = (e: ActivityLogEntry) =>
+                  e.eventType === "login_failure" || e.eventType === "error" || e.eventType === "client_error";
+                const getErrorBreakdown = (entry: ActivityLogEntry) => {
+                  const meta = entry.metadata ?? {};
+                  const stack = (meta.stack as string) ?? "";
+                  const route = (meta.route as string) ?? "";
+                  const url = (meta.url as string) ?? "";
+                  const firstStackLine = stack.split("\n")[1]?.trim(); // second line often has file:line
+                  let where = "—";
+                  if (entry.eventType === "client_error") {
+                    if (url) where = `URL: ${url}`;
+                    if (route) where = (where !== "—" ? where + "\n" : "") + `Route: ${route}`;
+                    if (firstStackLine) where = (where !== "—" ? where + "\n" : "") + `At: ${firstStackLine}`;
+                  } else if (entry.eventType === "login_failure") {
+                    where = entry.identifier ? `Identifier: ${entry.identifier}` : "—";
+                  } else if (entry.eventType === "error") {
+                    where = url ? `URL: ${url}` : route ? `Route: ${route}` : "—";
+                  }
+                  let fix = "—";
+                  if (entry.eventType === "login_failure") fix = "Check credentials, lockout, or auth config (e.g. /api/login, OAuth).";
+                  else if (entry.eventType === "client_error") fix = "Inspect stack below; fix the component or page at the route/URL.";
+                  else if (entry.eventType === "error") fix = "Check server logs and the route/API that produced this error.";
+                  return { where, fix };
+                };
                 const TableBody = ({ entries }: { entries: ActivityLogEntry[] }) => (
                   <>
-                    {entries.map((entry) => (
-                      <tr key={entry.id} className="border-b border-border/50">
-                        <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
-                          {new Date(entry.createdAt).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-2">
-                          <Badge variant={entry.eventType === "login_failure" || entry.eventType === "error" || entry.eventType === "client_error" ? "destructive" : "secondary"}>
-                            {entry.eventType}
-                          </Badge>
-                        </td>
-                        <td className="py-2 px-2">
-                          {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")}
-                        </td>
-                        <td className="py-2 px-2">
-                          {entry.success ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-destructive" />
+                    {entries.map((entry) => {
+                      const expanded = expandedActivityId === entry.id;
+                      const breakdown = isErrorType(entry) ? getErrorBreakdown(entry) : null;
+                      return (
+                        <Fragment key={entry.id}>
+                          <tr
+                            className={`border-b border-border/50 ${expanded ? "bg-muted/30" : ""} ${isErrorType(entry) ? "border-l-2 border-l-destructive/50" : ""}`}
+                          >
+                            <td className="py-1 px-2 w-8 align-top">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setExpandedActivityId((id) => (id === entry.id ? null : entry.id))}
+                                aria-label={expanded ? "Collapse details" : "Expand details"}
+                              >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                              </Button>
+                            </td>
+                            <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
+                              {new Date(entry.createdAt).toLocaleString()}
+                            </td>
+                            <td className="py-2 px-2">
+                              <Badge variant={isErrorType(entry) ? "destructive" : "secondary"}>
+                                {entry.eventType}
+                              </Badge>
+                            </td>
+                            <td className="py-2 px-2">
+                              {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")}
+                            </td>
+                            <td className="py-2 px-2">
+                              {entry.success ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-destructive" />
+                              )}
+                            </td>
+                            <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground" title={entry.message ?? undefined}>
+                              {entry.message ?? "—"}
+                            </td>
+                            <td className="py-2 px-2 text-muted-foreground font-mono text-xs">
+                              {entry.ipAddress ?? "—"}
+                            </td>
+                          </tr>
+                          {expanded && (
+                            <tr>
+                              <td colSpan={7} className="py-3 px-3 bg-muted/20 border-b border-border/50">
+                                <div className="text-sm space-y-3">
+                                  <div>
+                                    <p className="font-medium text-muted-foreground mb-1">Full message</p>
+                                    <p className="whitespace-pre-wrap break-words rounded bg-background p-2 border text-muted-foreground">
+                                      {entry.message ?? "—"}
+                                    </p>
+                                  </div>
+                                  {entry.userAgent && (
+                                    <div>
+                                      <p className="font-medium text-muted-foreground mb-1">User agent</p>
+                                      <p className="font-mono text-xs text-muted-foreground break-all">{entry.userAgent}</p>
+                                    </div>
+                                  )}
+                                  {breakdown && (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      <div>
+                                        <p className="font-medium text-muted-foreground mb-1">Where to find it</p>
+                                        <p className="whitespace-pre-wrap text-muted-foreground rounded bg-background p-2 border font-mono text-xs">
+                                          {breakdown.where}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-muted-foreground mb-1">Suggested fix</p>
+                                        <p className="text-muted-foreground rounded bg-background p-2 border text-xs">
+                                          {breakdown.fix}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {entry.metadata && Object.keys(entry.metadata).length > 0 && (
+                                    <div>
+                                      <p className="font-medium text-muted-foreground mb-1">Metadata (stack, route, url, etc.)</p>
+                                      <pre className="whitespace-pre-wrap break-words rounded bg-background p-2 border font-mono text-xs text-muted-foreground overflow-x-auto max-h-48 overflow-y-auto">
+                                        {JSON.stringify(entry.metadata, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        <td className="py-2 px-2 max-w-[200px] truncate text-muted-foreground" title={entry.message ?? undefined}>
-                          {entry.message ?? "—"}
-                        </td>
-                        <td className="py-2 px-2 text-muted-foreground font-mono text-xs">
-                          {entry.ipAddress ?? "—"}
-                        </td>
-                      </tr>
-                    ))}
+                        </Fragment>
+                      );
+                    })}
                   </>
                 );
                 return (
@@ -492,6 +581,7 @@ export default function AdminSystemPage() {
                     <table className="w-full text-sm border-collapse">
                       <thead>
                         <tr className="border-b text-left">
+                          <th className="py-2 px-2 w-8 font-medium text-muted-foreground" aria-label="Expand" />
                           <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
                           <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
                           <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
@@ -516,6 +606,7 @@ export default function AdminSystemPage() {
                           <table className="w-full text-sm border-collapse rounded-md border">
                             <thead>
                               <tr className="border-b text-left bg-muted/30">
+                                <th className="py-2 px-2 w-8 font-medium text-muted-foreground" aria-label="Expand" />
                                 <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
                                 <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
                                 <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
