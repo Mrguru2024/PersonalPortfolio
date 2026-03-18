@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -59,6 +59,16 @@ export const funnelContent = pgTable("funnel_content", {
 export type FunnelContent = typeof funnelContent.$inferSelect;
 export type InsertFunnelContent = typeof funnelContent.$inferInsert;
 
+/** Content grading result for an offer (SEO, design readiness, copy clarity). */
+export interface OfferContentGrading {
+  seoScore: number;       // 0-100
+  designScore: number;    // 0-100
+  copyScore: number;      // 0-100
+  overallGrade: string;   // A | B | C | D | F
+  gradedAt: string;       // ISO date
+  feedback?: { seo?: string[]; design?: string[]; copy?: string[] };
+}
+
 /** Admin-editable site offers (e.g. /offers/startup-growth-system). Sections define hero, price, deliverables, CTA, graphics. */
 export const siteOffers = pgTable("site_offers", {
   slug: text("slug").primaryKey(),
@@ -66,11 +76,50 @@ export const siteOffers = pgTable("site_offers", {
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
   sections: json("sections").$type<Record<string, unknown>>().notNull(),
+  /** Optional content grading (SEO, design, copy). Set by admin "Grade content" action. */
+  grading: json("grading").$type<OfferContentGrading | null>(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type SiteOffer = typeof siteOffers.$inferSelect;
 export type InsertSiteOffer = typeof siteOffers.$inferInsert;
+
+/** Paid challenge registrations. Links to CRM contact when created. */
+export const challengeRegistrations = pgTable("challenge_registrations", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id"), // FK to crm_contacts, set after CRM lead created
+  email: text("email").notNull(),
+  fullName: text("full_name").notNull(),
+  businessName: text("business_name"),
+  website: text("website"),
+  businessType: text("business_type"),
+  source: text("source"),
+  orderBumpPurchased: boolean("order_bump_purchased").default(false),
+  amountCents: integer("amount_cents"),
+  stripePaymentId: text("stripe_payment_id"),
+  status: text("status").default("joined").notNull(), // joined | active | completed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ChallengeRegistration = typeof challengeRegistrations.$inferSelect;
+export type InsertChallengeRegistration = typeof challengeRegistrations.$inferInsert;
+
+/** Per-day lesson completion for a challenge registration. */
+export const challengeLessonProgress = pgTable(
+  "challenge_lesson_progress",
+  {
+    id: serial("id").primaryKey(),
+    registrationId: integer("registration_id").notNull().references(() => challengeRegistrations.id, { onDelete: "cascade" }),
+    day: integer("day").notNull(), // 1-5
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [unique("challenge_progress_reg_day").on(t.registrationId, t.day)]
+);
+
+export type ChallengeLessonProgress = typeof challengeLessonProgress.$inferSelect;
+export type InsertChallengeLessonProgress = typeof challengeLessonProgress.$inferInsert;
 
 /** Business goal presets: drive what reminders are generated (overdue tasks, stale leads, etc.). */
 export const businessGoalPresets = pgTable("business_goal_presets", {

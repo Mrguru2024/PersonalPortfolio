@@ -14,7 +14,12 @@ export interface DevelopmentUpdateEntry {
   items: string[];
 }
 
-/** Parse markdown-style log into entries. Format: ## YYYY-MM-DD — Title, then - item lines. */
+/** Strip markdown bold and extra asterisks for digestible plain text. */
+function toPlainText(s: string): string {
+  return s.replace(/\*\*/g, "").trim();
+}
+
+/** Parse markdown-style log into entries. Format: ## YYYY-MM-DD — Title, then - item lines. Output is plain text (no **). */
 function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
   const entries: DevelopmentUpdateEntry[] = [];
   const blocks = raw.split(/\n##\s+/).filter(Boolean);
@@ -26,9 +31,13 @@ function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
     const rest = block.slice(firstLine.length).trim();
     const items = rest
       .split(/\n/)
-      .map((line) => line.replace(/^\s*[-*]\s+/, "").trim())
+      .map((line) => toPlainText(line.replace(/^\s*[-*]\s+/, "")))
       .filter(Boolean);
-    entries.push({ date: date ?? "", title: (title ?? "").trim(), items });
+    entries.push({
+      date: date ?? "",
+      title: toPlainText((title ?? "").trim()),
+      items,
+    });
   }
   return entries;
 }
@@ -47,7 +56,9 @@ export async function GET(req: NextRequest) {
     }
     const raw = readFileSync(CONTENT_PATH, "utf-8");
     const updates = parseUpdatesMarkdown(raw);
-    return NextResponse.json({ updates, source: "file" });
+    const res = NextResponse.json({ updates, source: "file" });
+    res.headers.set("Cache-Control", "no-store, max-age=0");
+    return res;
   } catch (error) {
     console.error("Development updates read error:", error);
     return NextResponse.json({ updates: [], error: "Failed to load updates" }, { status: 500 });

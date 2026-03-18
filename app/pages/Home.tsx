@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ClipboardCheck, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import HeroSection from "@/sections/HeroSection";
@@ -68,7 +68,126 @@ export default function Home() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-10 sm:space-y-12 pb-10 sm:pb-14">
       <HeroSection />
+      {/* Growth Diagnosis funnel hero — high-conversion CTA */}
+      <section id="growth-diagnosis" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <SectionReveal className="mx-auto max-w-4xl">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-background p-6 sm:p-8 md:p-10 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+              Discover What&apos;s Slowing Your Business Growth
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mb-6 sm:mb-8">
+              Get a personalized diagnosis across your brand, website, and lead system.
+            </p>
+            <MagneticButton>
+              <Button asChild size="lg" className="gap-2 min-h-[48px] bg-primary text-primary-foreground">
+                <Link href="/diagnosis">
+                  Run Growth Diagnosis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </MagneticButton>
+          </div>
+        </SectionReveal>
+      </section>
       <SectionConnector variant="gradient" />
+
+      {/* Problem: why most businesses don't convert; disconnect brand / design / systems */}
+      <section id="funnel-problem" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
+            Why most businesses don&apos;t convert
+          </h2>
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto">
+            There&apos;s often a disconnect between <strong className="text-foreground">brand</strong> (who you are and who you serve), <strong className="text-foreground">design</strong> (how you look and feel), and <strong className="text-foreground">systems</strong> (how you capture and follow up with leads). When one is weak, growth stalls.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link href="/diagnosis">Run Growth Diagnosis</Link>
+            </Button>
+          </div>
+        </SectionReveal>
+      </section>
+      <SectionConnector />
+
+      {/* Authority: branding (Macon), strategy (Style Studio), systems (Ascendra) */}
+      <section id="funnel-authority" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
+            Built by specialists in brand, design, and systems
+          </h2>
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-6">
+            Branding work by Macon Designs®, strategy and positioning by Style Studio Branding, and web systems and automation by Ascendra Technologies.
+          </p>
+          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {ECOSYSTEM_PILLARS.map((pillar) => (
+              <SectionRevealItem key={pillar.name}>
+                <AnimatedCard className="h-full">
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-semibold text-foreground">{pillar.name}</h3>
+                    <p className="mt-1 text-sm font-medium text-primary">{pillar.role}</p>
+                    <p className="mt-3 text-sm text-muted-foreground">{pillar.summary}</p>
+                    {pillar.href && (
+                      <Button asChild variant="ghost" size="sm" className="mt-3 p-0 h-auto text-primary">
+                        <Link href={pillar.href}>Learn more</Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </AnimatedCard>
+              </SectionRevealItem>
+            ))}
+          </SectionRevealStagger>
+        </SectionReveal>
+      </section>
+      <SectionConnector />
+
+      {/* How the Growth Diagnosis works: 3 steps + CTA */}
+      <section id="funnel-how-it-works" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <SectionReveal className="mx-auto max-w-5xl space-y-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
+            How it works
+          </h2>
+          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <SectionRevealItem>
+              <div className="flex flex-col items-center text-center">
+                <div className="rounded-full bg-primary/10 p-4 mb-3">
+                  <ClipboardCheck className="h-8 w-8 text-primary" />
+                </div>
+                <p className="font-semibold text-foreground">Step 1: Answer questions</p>
+                <p className="text-sm text-muted-foreground mt-1">Quick questions across brand clarity, visual identity, website, leads, and automation.</p>
+              </div>
+            </SectionRevealItem>
+            <SectionRevealItem>
+              <div className="flex flex-col items-center text-center">
+                <div className="rounded-full bg-primary/10 p-4 mb-3">
+                  <BarChart3 className="h-8 w-8 text-primary" />
+                </div>
+                <p className="font-semibold text-foreground">Step 2: Get your growth score</p>
+                <p className="text-sm text-muted-foreground mt-1">See where you stand (0–100) and your primary bottleneck.</p>
+              </div>
+            </SectionRevealItem>
+            <SectionRevealItem>
+              <div className="flex flex-col items-center text-center">
+                <div className="rounded-full bg-primary/10 p-4 mb-3">
+                  <Target className="h-8 w-8 text-primary" />
+                </div>
+                <p className="font-semibold text-foreground">Step 3: Get your solution</p>
+                <p className="text-sm text-muted-foreground mt-1">We recommend the right next step—Style Studio, Macon Designs, or Ascendra.</p>
+              </div>
+            </SectionRevealItem>
+          </SectionRevealStagger>
+          <div className="text-center pt-4">
+            <MagneticButton>
+              <Button asChild size="lg" className="gap-2 min-h-[48px]">
+                <Link href="/diagnosis">
+                  Run Growth Diagnosis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </MagneticButton>
+          </div>
+        </SectionReveal>
+      </section>
+      <SectionConnector />
 
       <section id="skills" className="container mx-auto px-3 fold:px-4 sm:px-6">
         <SectionReveal className="mx-auto max-w-5xl space-y-6">

@@ -16,6 +16,7 @@ import {
   ListChecks,
   MousePointer,
   Image as ImageIcon,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,6 +108,19 @@ export default function EditOfferPage() {
     setMetaDescription(offer.metaDescription ?? "");
     setSections(mergeSections(offer.sections));
   }, [offer, slug, isFetched]);
+
+  const gradeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/offers/${slug}/grade`);
+      if (!res.ok) throw new Error("Failed to grade");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/offers", slug] });
+      toast({ title: "Content graded" });
+    },
+    onError: (e: Error) => toast({ title: "Grade failed", description: e.message, variant: "destructive" }),
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -370,6 +384,40 @@ export default function EditOfferPage() {
               <Label>Footnote</Label>
               <Textarea value={sections.cta?.footnote ?? ""} onChange={(e) => setCta({ footnote: e.target.value })} rows={2} placeholder="You'll be taken to book..." />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Content grading */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Award className="h-4 w-4" />Content grading</CardTitle>
+            <CardDescription>SEO, design readiness, and copy clarity. Grade after editing to ensure agency-grade content.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {offer?.grading && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span><strong>SEO:</strong> {offer.grading.seoScore}/100</span>
+                  <span><strong>Design:</strong> {offer.grading.designScore}/100</span>
+                  <span><strong>Copy:</strong> {offer.grading.copyScore}/100</span>
+                  <span><strong>Grade:</strong> {offer.grading.overallGrade}</span>
+                </div>
+                {offer.grading.gradedAt && (
+                  <p className="text-xs text-muted-foreground">Graded {new Date(offer.grading.gradedAt).toLocaleString()}</p>
+                )}
+                {(offer.grading.feedback?.seo?.length || offer.grading.feedback?.design?.length || offer.grading.feedback?.copy?.length) ? (
+                  <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                    {[...(offer.grading.feedback?.seo ?? []), ...(offer.grading.feedback?.design ?? []), ...(offer.grading.feedback?.copy ?? [])].slice(0, 6).map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            )}
+            <Button variant="outline" onClick={() => gradeMutation.mutate()} disabled={gradeMutation.isPending || !offer}>
+              {gradeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Award className="h-4 w-4 mr-2" />}
+              Grade content
+            </Button>
           </CardContent>
         </Card>
 

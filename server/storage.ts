@@ -14,6 +14,8 @@ import { users, type User, type InsertUser,
   clientFeedback, type ClientFeedback, type InsertClientFeedback,
   funnelContent, type FunnelContent, type InsertFunnelContent,
   siteOffers, type SiteOffer, type InsertSiteOffer,
+  challengeRegistrations, type ChallengeRegistration, type InsertChallengeRegistration,
+  challengeLessonProgress, type ChallengeLessonProgress, type InsertChallengeLessonProgress,
   businessGoalPresets, type BusinessGoalPreset, type InsertBusinessGoalPreset,
   adminReminders, type AdminReminder, type InsertAdminReminder,
   adminSettings, type AdminSettings, type InsertAdminSettings,
@@ -70,6 +72,14 @@ export interface IStorage {
   getSiteOffer(slug: string): Promise<SiteOffer | undefined>;
   listSiteOffers(): Promise<SiteOffer[]>;
   setSiteOffer(slug: string, data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }): Promise<SiteOffer>;
+  updateSiteOfferGrading(slug: string, grading: import("@shared/schema").OfferContentGrading): Promise<SiteOffer>;
+  createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration>;
+  getChallengeRegistrationByEmail(email: string): Promise<ChallengeRegistration | undefined>;
+  getChallengeRegistrationById(id: number): Promise<ChallengeRegistration | undefined>;
+  updateChallengeRegistration(id: number, updates: Partial<InsertChallengeRegistration>): Promise<ChallengeRegistration>;
+  getChallengeLessonProgress(registrationId: number): Promise<{ day: number; completedAt: Date | null }[]>;
+  setChallengeLessonCompleted(registrationId: number, day: number): Promise<void>;
+  listChallengeRegistrations(): Promise<ChallengeRegistration[]>;
 
   // Project operations
   getProjects(): Promise<Project[]>;
@@ -609,6 +619,85 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return row;
+  }
+
+  async updateSiteOfferGrading(slug: string, grading: import("@shared/schema").OfferContentGrading): Promise<SiteOffer> {
+    const [row] = await db
+      .update(siteOffers)
+      .set({ grading, updatedAt: new Date() })
+      .where(eq(siteOffers.slug, slug))
+      .returning();
+    if (!row) throw new Error(`Offer not found: ${slug}`);
+    return row;
+  }
+
+  async createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration> {
+    const [row] = await db.insert(challengeRegistrations).values(data).returning();
+    if (!row) throw new Error("Failed to create challenge registration");
+    return row;
+  }
+
+  async getChallengeRegistrationByEmail(email: string): Promise<ChallengeRegistration | undefined> {
+    const [row] = await db
+      .select()
+      .from(challengeRegistrations)
+      .where(eq(challengeRegistrations.email, email.toLowerCase().trim()))
+      .orderBy(desc(challengeRegistrations.createdAt))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async getChallengeRegistrationById(id: number): Promise<ChallengeRegistration | undefined> {
+    const [row] = await db.select().from(challengeRegistrations).where(eq(challengeRegistrations.id, id));
+    return row ?? undefined;
+  }
+
+  async updateChallengeRegistration(id: number, updates: Partial<InsertChallengeRegistration>): Promise<ChallengeRegistration> {
+    const [row] = await db
+      .update(challengeRegistrations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(challengeRegistrations.id, id))
+      .returning();
+    if (!row) throw new Error(`Challenge registration not found: ${id}`);
+    return row;
+  }
+
+  async getChallengeLessonProgress(registrationId: number): Promise<{ day: number; completedAt: Date | null }[]> {
+    const rows = await db
+      .select({ day: challengeLessonProgress.day, completedAt: challengeLessonProgress.completedAt })
+      .from(challengeLessonProgress)
+      .where(eq(challengeLessonProgress.registrationId, registrationId));
+    const byDay = new Map(rows.map((r) => [r.day, r.completedAt]));
+    return [1, 2, 3, 4, 5].map((day) => ({ day, completedAt: byDay.get(day) ?? null }));
+  }
+
+  async setChallengeLessonCompleted(registrationId: number, day: number): Promise<void> {
+    const existing = await db
+      .select()
+      .from(challengeLessonProgress)
+      .where(
+        and(
+          eq(challengeLessonProgress.registrationId, registrationId),
+          eq(challengeLessonProgress.day, day)
+        )
+      )
+      .limit(1);
+    const now = new Date();
+    if (existing.length > 0) {
+      await db
+        .update(challengeLessonProgress)
+        .set({ completedAt: now })
+        .where(eq(challengeLessonProgress.id, existing[0].id));
+    } else {
+      await db.insert(challengeLessonProgress).values({ registrationId, day, completedAt: now });
+    }
+  }
+
+  async listChallengeRegistrations(): Promise<ChallengeRegistration[]> {
+    return db
+      .select()
+      .from(challengeRegistrations)
+      .orderBy(desc(challengeRegistrations.createdAt));
   }
 
   // Project operations

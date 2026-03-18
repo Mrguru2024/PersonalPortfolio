@@ -26,6 +26,24 @@ const RECOMMENDATION_DESCRIPTIONS: Record<DiagnosisScores["recommendation"], str
   ascendra: "Web systems, funnels, and automation to capture and convert more leads.",
 };
 
+/** Animated progress bar: value counts up from 0 to target for a brief reveal. */
+function AnimatedProgress({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    setDisplay(0);
+    const step = 4;
+    const interval = setInterval(() => {
+      setDisplay((prev) => {
+        const next = Math.min(prev + step, value);
+        if (next >= value) clearInterval(interval);
+        return next;
+      });
+    }, 24);
+    return () => clearInterval(interval);
+  }, [value]);
+  return <Progress value={display} className="h-3" />;
+}
+
 export default function ResultsPage() {
   const router = useRouter();
   const { scores, answers } = useFunnel();
@@ -82,7 +100,7 @@ export default function ResultsPage() {
                   <span className="font-medium">Overall</span>
                   <span>{totalScore}/100</span>
                 </div>
-                <Progress value={totalScore} className="h-3" />
+                <AnimatedProgress value={totalScore} />
               </div>
 
               <div className="space-y-3">
@@ -91,39 +109,49 @@ export default function ResultsPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Brand</p>
-                  <p className="text-xl font-semibold text-foreground">{brandScore}</p>
-                </div>
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Design</p>
-                  <p className="text-xl font-semibold text-foreground">{designScore}</p>
-                </div>
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">System</p>
-                  <p className="text-xl font-semibold text-foreground">{systemScore}</p>
-                </div>
+                {[
+                  { label: "Brand", value: brandScore },
+                  { label: "Design", value: designScore },
+                  { label: "System", value: systemScore },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 * (i + 1), duration: 0.25 }}
+                    className="rounded-lg border bg-muted/30 p-3"
+                  >
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{item.label}</p>
+                    <p className="text-xl font-semibold text-foreground">{item.value}</p>
+                  </motion.div>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-primary/30 bg-primary/5">
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-foreground">Recommended next step</h2>
-              <p className="text-primary font-medium">{RECOMMENDATION_LABELS[recommendation]}</p>
-              <p className="text-sm text-muted-foreground">
-                {RECOMMENDATION_DESCRIPTIONS[recommendation]}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <Button asChild className="w-full sm:w-auto gap-2">
-                <Link href="/apply">
-                  Get Your Growth Plan
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+          >
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader>
+                <h2 className="text-lg font-semibold text-foreground">Recommended next step</h2>
+                <p className="text-primary font-medium">{RECOMMENDATION_LABELS[recommendation]}</p>
+                <p className="text-sm text-muted-foreground">
+                  {RECOMMENDATION_DESCRIPTIONS[recommendation]}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full sm:w-auto gap-2">
+                  <Link href="/apply">
+                    Get Your Growth Plan
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
       </div>
     </div>

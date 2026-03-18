@@ -1,6 +1,6 @@
 # Development updates
 
-Log of features and fixes approved to production. Edit this file when you ship; the admin dashboard shows it in digest form.
+Log of features and fixes shipped to production. Edit this file when you ship and push; the admin dashboard shows it in digest form (plain text, no markdown formatting).
 
 ---
 

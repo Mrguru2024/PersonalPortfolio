@@ -27,6 +27,24 @@ export interface LeadCustomFields {
   firstTouchCampaign?: string;
   /** Nurture state for sequences */
   nurtureState?: string;
+  /** Paid challenge: joined | active | completed */
+  challengeStatus?: string;
+  orderBumpPurchased?: boolean;
+  /** Growth diagnosis total 0–100 */
+  diagnosisScore?: number;
+  diagnosisBreakdown?: { brand: number; design: number; system: number };
+  /** ascendra | style-studio | macon-designs */
+  recommendedBrandPath?: string;
+  qualificationSubmitted?: boolean;
+  readyForCall?: boolean;
+  /** Challenge qualification form */
+  mainGoal?: string;
+  websiteStatus?: string;
+  leadGenProblem?: string;
+  budgetRange?: string;
+  timeline?: string;
+  implementationInterest?: string;
+  notes?: string;
   [key: string]: unknown;
 }
 

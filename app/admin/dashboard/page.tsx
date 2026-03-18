@@ -628,6 +628,11 @@ export default function AdminDashboardPage() {
             <span className="truncate">Site offers</span>
           </Link>
         </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/challenge/leads">
+            <span className="truncate">Challenge leads</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Password reset control — send reset link to any user by email */}
@@ -680,7 +685,7 @@ export default function AdminDashboardPage() {
                 Development updates
               </CardTitle>
               <CardDescription className="mt-0.5">
-                Features and fixes approved to production. Updates when <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> changes (refreshes every minute).
+                Features and fixes shipped to production. Edit content/development-updates.md in the repo and push; the dashboard refreshes automatically.
               </CardDescription>
             </div>
             <Button
@@ -707,7 +712,7 @@ export default function AdminDashboardPage() {
             </div>
           ) : !devUpdatesData?.updates?.length ? (
             <p className="text-sm text-muted-foreground py-4">
-              No entries yet. Add sections to <code className="bg-muted px-1 rounded text-xs">content/development-updates.md</code> in the format: <code className="bg-muted px-1 rounded text-xs">## YYYY-MM-DD — Title</code> then bullet points.
+              No entries yet. Add sections to content/development-updates.md: start each section with ## YYYY-MM-DD — Title then bullet points. Push to production to see them here.
             </p>
           ) : (
             <div className="space-y-6">
