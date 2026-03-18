@@ -126,3 +126,21 @@ export const ACCURACY_NOTICE_VARIANTS: string[] = [
   "Your results are based on a structured review of your site. For deeper strategic insight and a custom action plan, we recommend a human diagnosis session with our team.",
   "This tool gives you a clear snapshot of where your site stands. For the highest level of accuracy and tailored next steps, book a human growth diagnosis with Ascendra.",
 ];
+
+/** Rule criteria (targets) shown in results to confirm what we check — supports accuracy/audits. */
+export const RULE_CRITERIA: Record<string, string> = {
+  "title-missing-weak": "Page title present and at least 10 characters",
+  "meta-description-weak": "Meta description 30+ characters (ideal 150–160)",
+  "h1-missing": "Exactly one H1 heading",
+  "h1-multiple": "Single H1; use H2/H3 for sections",
+  "cta-missing": "At least one clear CTA button or link",
+  "cta-weak": "CTA text clear and specific (3+ chars)",
+  "form-missing-contact": "Form present on contact/quote/book pages",
+  "trust-signals-missing": "Trust elements (testimonials, reviews, credentials)",
+  "content-thin": "150+ words on main/service pages",
+  "viewport-missing": "Viewport meta tag for mobile",
+  "images-alt-missing": "All images have alt text",
+  "schema-missing": "Structured data (JSON-LD) on main page",
+  "phone-not-clickable": "Click-to-call (tel:) link present",
+  "internal-links-weak": "At least 3 internal links when site has multiple pages",
+};

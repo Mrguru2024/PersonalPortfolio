@@ -719,7 +719,7 @@ export default function AdminDashboardPage() {
               {devUpdatesData.updates.map((entry, idx) => (
                 <div key={idx} className="border-b border-muted/60 pb-4 last:border-0 last:pb-0">
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date}>
+                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date} suppressHydrationWarning>
                       {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
                     </time>
                     <span className="text-muted-foreground">—</span>
@@ -840,7 +840,7 @@ export default function AdminDashboardPage() {
                             </Button>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                           Submitted: {format(new Date(assessment.createdAt), "PPp")}
                         </p>
                       </CardContent>
@@ -920,7 +920,7 @@ export default function AdminDashboardPage() {
                             </Button>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                           Submitted: {format(new Date(assessment.createdAt), "PPp")}
                         </p>
                       </CardContent>
@@ -970,7 +970,7 @@ export default function AdminDashboardPage() {
                         <div className="min-w-0">
                           <p className="font-medium truncate">{assessment.name}</p>
                           <p className="text-sm text-muted-foreground break-all">{assessment.email}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-1" suppressHydrationWarning>
                             Removed {assessment.deletedAt ? format(new Date(assessment.deletedAt), "PPp") : "—"}
                           </p>
                         </div>
@@ -1094,7 +1094,7 @@ export default function AdminDashboardPage() {
                       >
                         View Full Message
                       </Button>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                         Submitted:{" "}
                         {contact.createdAt
                           ? format(new Date(contact.createdAt), "PPp")
@@ -1159,7 +1159,7 @@ export default function AdminDashboardPage() {
                         <p className="text-sm text-muted-foreground line-clamp-3">{request.message}</p>
                       </div>
                     )}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                       Requested: {format(new Date(request.createdAt), "PPp")}
                       {request.accessedAt && ` • Accessed: ${format(new Date(request.accessedAt), "PPp")}`}
                     </p>

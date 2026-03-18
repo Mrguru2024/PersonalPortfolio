@@ -20,6 +20,7 @@ import { PerformanceScoreCard } from "@/components/growth-diagnosis/PerformanceS
 import { StartupScoreCard } from "@/components/growth-diagnosis/StartupScoreCard";
 import { BlockersAndQuickWins } from "@/components/growth-diagnosis/BlockersAndQuickWins";
 import { CategoryScores } from "@/components/growth-diagnosis/CategoryScores";
+import { CrawlAndAccuracy } from "@/components/growth-diagnosis/CrawlAndAccuracy";
 import { AccuracyNotice } from "@/components/growth-diagnosis/AccuracyNotice";
 import { PremiumUpsell } from "@/components/growth-diagnosis/PremiumUpsell";
 import { BUSINESS_TYPES, PRIMARY_GOALS } from "@/lib/growth-diagnosis/constants";
@@ -278,6 +279,12 @@ export default function GrowthDiagnosisPage() {
               />
 
               <CategoryScores categoryScores={report.summary.categoryScores} />
+
+              <CrawlAndAccuracy
+                crawlTargets={report.crawlTargets}
+                verificationSummary={report.verificationSummary}
+                extractedSummaries={report.extractedSummaries}
+              />
 
               <AccuracyNotice variantIndex={0} />
 

@@ -23,6 +23,7 @@ import {
   afnLeadSignals,
   afnNotifications,
   afnModerationReports,
+  afnConnections,
   type InsertAfnProfile,
   type InsertAfnProfileSettings,
   type InsertAfnDiscussionPost,
@@ -36,8 +37,9 @@ import {
   type InsertAfnLeadSignal,
   type InsertAfnNotification,
   type InsertAfnModerationReport,
+  type InsertAfnConnection,
 } from "@shared/schema";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, ne, notInArray } from "drizzle-orm";
 
 // —— Profiles ——
 export async function getAfnProfileByUserId(userId: number) {
@@ -147,6 +149,86 @@ export function canMessageTarget(settings: { messagePermission: string; openToCo
   if (settings.messagePermission === "allow") return true;
   if (settings.messagePermission === "collab_only" && settings.openToCollaborate) return true;
   return false;
+}
+
+// —— Connections ——
+/** User IDs that the current user is connected with (either direction). */
+export async function getAfnConnectionUserIds(userId: number): Promise<number[]> {
+  const rows = await db
+    .select({ connectedUserId: afnConnections.connectedUserId })
+    .from(afnConnections)
+    .where(eq(afnConnections.userId, userId));
+  const rows2 = await db
+    .select({ userId: afnConnections.userId })
+    .from(afnConnections)
+    .where(eq(afnConnections.connectedUserId, userId));
+  const ids = new Set<number>();
+  rows.forEach((r) => ids.add(r.connectedUserId));
+  rows2.forEach((r) => ids.add(r.userId));
+  return Array.from(ids);
+}
+
+/** User IDs that the current user has at least one message thread with. */
+export async function getAfnAlreadyMessagedUserIds(userId: number): Promise<number[]> {
+  const myThreads = await db
+    .select({ threadId: afnMessageThreadParticipants.threadId })
+    .from(afnMessageThreadParticipants)
+    .where(eq(afnMessageThreadParticipants.userId, userId));
+  const threadIds = myThreads.map((t) => t.threadId);
+  if (threadIds.length === 0) return [];
+  const others = await db
+    .select({ userId: afnMessageThreadParticipants.userId })
+    .from(afnMessageThreadParticipants)
+    .where(inArray(afnMessageThreadParticipants.threadId, threadIds));
+  const ids = new Set<number>();
+  others.forEach((o) => { if (o.userId !== userId) ids.add(o.userId); });
+  return Array.from(ids);
+}
+
+export async function addAfnConnection(connection: InsertAfnConnection) {
+  const [inserted] = await db.insert(afnConnections).values(connection).returning();
+  return inserted!;
+}
+
+/** Candidate profiles for connection suggestions: completed, visible, excluding self and optionally connected/messaged. */
+export async function getAfnCandidateProfilesForSuggestions(options: {
+  currentUserId: number;
+  limit?: number;
+  excludeConnected?: boolean;
+  excludeAlreadyMessaged?: boolean;
+}) {
+  const limit = Math.min(options.limit ?? 30, 100);
+  const excludeConnected = options.excludeConnected !== false;
+  const excludeAlreadyMessaged = options.excludeAlreadyMessaged !== false;
+
+  let excludeUserIds: number[] = [options.currentUserId];
+  if (excludeConnected) {
+    const connected = await getAfnConnectionUserIds(options.currentUserId);
+    excludeUserIds = [...excludeUserIds, ...connected];
+  }
+  if (excludeAlreadyMessaged) {
+    const messaged = await getAfnAlreadyMessagedUserIds(options.currentUserId);
+    excludeUserIds = [...new Set([...excludeUserIds, ...messaged])];
+  }
+
+  const settingsRows = await db.select().from(afnProfileSettings).where(eq(afnProfileSettings.profileVisibility, "public"));
+  const publicUserIds = new Set(settingsRows.map((s) => s.userId));
+
+  const conditions = [
+    eq(afnProfiles.isOnboardingComplete, true),
+    ne(afnProfiles.userId, options.currentUserId),
+  ];
+  if (excludeUserIds.length > 0) conditions.push(notInArray(afnProfiles.userId, excludeUserIds));
+
+  const rows = await db
+    .select()
+    .from(afnProfiles)
+    .where(and(...conditions))
+    .orderBy(desc(afnProfiles.updatedAt))
+    .limit(limit * 2);
+
+  const filtered = rows.filter((p) => publicUserIds.has(p.userId) && !excludeUserIds.includes(p.userId));
+  return filtered.slice(0, limit);
 }
 
 // —— Member tags ——

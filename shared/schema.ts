@@ -59,6 +59,20 @@ export const funnelContent = pgTable("funnel_content", {
 export type FunnelContent = typeof funnelContent.$inferSelect;
 export type InsertFunnelContent = typeof funnelContent.$inferInsert;
 
+/** Target criteria for grading (shown in results for accuracy/audits). */
+export interface GradingTargetsStored {
+  seo?: { metaTitleMin: number; metaTitleMax: number; metaDescMin: number; metaDescMax: number };
+  design?: { heroTitleRequired: boolean; heroSubtitleRequired: boolean; heroImageRecommended: boolean; minDeliverables: number; deliverablesNeedDesc: boolean };
+  copy?: { ctaButtonRequired: boolean; ctaHrefRequired: boolean; minBullets: number; heroSubtitleMinChars: number };
+}
+
+/** Measured values from content (your content vs targets). */
+export interface GradingMeasuredStored {
+  seo?: { metaTitleLength: number; metaDescLength: number };
+  design?: { hasHeroTitle: boolean; hasHeroSubtitle: boolean; hasHeroImage: boolean; deliverableCount: number; deliverableWithDescCount: number };
+  copy?: { hasCtaButton: boolean; hasCtaHref: boolean; bulletCount: number; heroSubtitleLength: number };
+}
+
 /** Content grading result for an offer (SEO, design readiness, copy clarity). */
 export interface OfferContentGrading {
   seoScore: number;       // 0-100
@@ -67,6 +81,10 @@ export interface OfferContentGrading {
   overallGrade: string;   // A | B | C | D | F
   gradedAt: string;       // ISO date
   feedback?: { seo?: string[]; design?: string[]; copy?: string[] };
+  /** Target criteria (for diagnostics/audits). */
+  targets?: GradingTargetsStored;
+  /** Measured values (confirms accuracy of grading). */
+  measured?: GradingMeasuredStored;
 }
 
 /** Admin-editable site offers (e.g. /offers/startup-growth-system). Sections define hero, price, deliverables, CTA, graphics. */

@@ -395,7 +395,7 @@ export default function EditOfferPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {offer?.grading && (
-              <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
                 <div className="flex flex-wrap gap-4 text-sm">
                   <span><strong>SEO:</strong> {offer.grading.seoScore}/100</span>
                   <span><strong>Design:</strong> {offer.grading.designScore}/100</span>
@@ -403,7 +403,30 @@ export default function EditOfferPage() {
                   <span><strong>Grade:</strong> {offer.grading.overallGrade}</span>
                 </div>
                 {offer.grading.gradedAt && (
-                  <p className="text-xs text-muted-foreground">Graded {new Date(offer.grading.gradedAt).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>Graded {new Date(offer.grading.gradedAt).toLocaleString()}</p>
+                )}
+                {/* Targets & measured — confirms grading accuracy for diagnostics/audits */}
+                {offer.grading.targets && offer.grading.measured && (
+                  <div className="border-t border-border/60 pt-3 space-y-3">
+                    <p className="text-xs font-medium text-foreground">Targets & your content (accuracy)</p>
+                    <div className="grid gap-2 text-xs text-muted-foreground">
+                      {offer.grading.targets.seo && offer.grading.measured.seo && (
+                        <>
+                          <div>Meta title: target {offer.grading.targets.seo.metaTitleMin}–{offer.grading.targets.seo.metaTitleMax} chars → yours: {offer.grading.measured.seo.metaTitleLength}</div>
+                          <div>Meta description: target {offer.grading.targets.seo.metaDescMin}–{offer.grading.targets.seo.metaDescMax} chars → yours: {offer.grading.measured.seo.metaDescLength}</div>
+                        </>
+                      )}
+                      {offer.grading.targets.design && offer.grading.measured.design && (
+                        <>
+                          <div>Hero: title {offer.grading.measured.design.hasHeroTitle ? "✓" : "✗"}, subtitle {offer.grading.measured.design.hasHeroSubtitle ? "✓" : "✗"}, image {offer.grading.measured.design.hasHeroImage ? "✓" : "✗"}</div>
+                          <div>Deliverables: {offer.grading.measured.design.deliverableCount} (with desc: {offer.grading.measured.design.deliverableWithDescCount})</div>
+                        </>
+                      )}
+                      {offer.grading.targets.copy && offer.grading.measured.copy && (
+                        <div>CTA: button {offer.grading.measured.copy.hasCtaButton ? "✓" : "✗"}, link {offer.grading.measured.copy.hasCtaHref ? "✓" : "✗"} · Bullets: {offer.grading.measured.copy.bulletCount} (min {offer.grading.targets.copy.minBullets}) · Subtitle: {offer.grading.measured.copy.heroSubtitleLength} chars (min {offer.grading.targets.copy.heroSubtitleMinChars})</div>
+                      )}
+                    </div>
+                  </div>
                 )}
                 {(offer.grading.feedback?.seo?.length || offer.grading.feedback?.design?.length || offer.grading.feedback?.copy?.length) ? (
                   <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">

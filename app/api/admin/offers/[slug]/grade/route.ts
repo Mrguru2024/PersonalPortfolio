@@ -40,6 +40,8 @@ export async function POST(
       overallGrade: result.overallGrade,
       gradedAt: new Date().toISOString(),
       feedback: result.feedback,
+      targets: result.targets ?? undefined,
+      measured: result.measured ?? undefined,
     };
 
     await storage.updateSiteOfferGrading(slug, grading);

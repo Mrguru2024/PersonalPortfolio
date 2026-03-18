@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractFromHtml, getDefaultUrlsToCrawl } from "@/lib/growth-diagnosis/extract";
 import { runRules, rulesToIssues } from "@/lib/growth-diagnosis/rules";
-import { verifyIssues } from "@/lib/growth-diagnosis/verification";
+import { verifyIssues, getVerificationSummary } from "@/lib/growth-diagnosis/verification";
 import {
   computeCategoryScores,
   computeWebsitePerformanceScore,
@@ -14,7 +14,7 @@ import {
   buildSummary,
 } from "@/lib/growth-diagnosis/scoring";
 import { buildDemoReport } from "@/lib/growth-diagnosis/demo-report";
-import type { AuditRequest, ExtractedPage } from "@/lib/growth-diagnosis/types";
+import type { AuditRequest, ExtractedPage, CrawlTargets, ExtractedPageSummary } from "@/lib/growth-diagnosis/types";
 import { db } from "@server/db";
 import { growthDiagnosisReports } from "@shared/schema";
 
@@ -106,6 +106,36 @@ export async function POST(req: NextRequest) {
       businessProfile
     );
 
+    const urlsRequested = getDefaultUrlsToCrawl(origin).slice(0, MAX_PAGES);
+    const crawlTargets: CrawlTargets = {
+      urlsRequested,
+      urlsAnalyzed: pages.map((p) => p.url),
+      pagesAnalyzed: pages.length,
+    };
+
+    const verificationSummary = getVerificationSummary(verifiedIssues);
+    const verificationSummaryWithLow = {
+      ...verificationSummary,
+      lowConfidence: verificationSummary.failed,
+    };
+
+    const extractedSummaries: ExtractedPageSummary[] = pages.map((p) => ({
+      url: p.url,
+      titleLength: p.title?.length ?? 0,
+      metaDescLength: p.metaDescription?.length ?? 0,
+      h1Count: p.h1Count,
+      wordCount: p.wordCount,
+      ctaCount: p.ctaButtons.length,
+      hasForm: p.hasForm,
+      hasPhoneLink: p.hasPhoneLink,
+      viewportMeta: p.viewportMeta,
+      imageCount: p.imageCount,
+      imagesWithAlt: p.imagesWithAlt,
+      internalLinks: p.internalLinks,
+      hasSchema: p.hasSchema,
+      trustSignalCount: p.trustSignals.length,
+    }));
+
     const reportId = `audit-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const report = {
       id: reportId,
@@ -118,6 +148,9 @@ export async function POST(req: NextRequest) {
       summary,
       websitePerformanceScore,
       startupWebsiteScore,
+      crawlTargets,
+      verificationSummary: verificationSummaryWithLow,
+      extractedSummaries,
     };
 
     try {

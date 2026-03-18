@@ -259,6 +259,22 @@ export const afnUserResourceViews = pgTable("afn_user_resource_views", {
 export type AfnUserResourceView = typeof afnUserResourceViews.$inferSelect;
 export type InsertAfnUserResourceView = typeof afnUserResourceViews.$inferInsert;
 
+// —— Connections (for friend suggestions and "already connected" exclusion) ——
+export const afnConnections = pgTable(
+  "afn_connections",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    connectedUserId: integer("connected_user_id").notNull(),
+    status: text("status").default("accepted").notNull(), // pending | accepted
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("afn_connections_pair").on(t.userId, t.connectedUserId)]
+);
+
+export type AfnConnection = typeof afnConnections.$inferSelect;
+export type InsertAfnConnection = typeof afnConnections.$inferInsert;
+
 // —— Lead signals ——
 export const afnLeadSignals = pgTable("afn_lead_signals", {
   id: serial("id").primaryKey(),

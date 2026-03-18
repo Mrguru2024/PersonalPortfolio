@@ -20,12 +20,30 @@ export interface ContentGradeResult {
   copyScore: number;
   overallGrade: "A" | "B" | "C" | "D" | "F";
   feedback: { seo: string[]; design: string[]; copy: string[] };
+  /** Target criteria used (for audits/diagnostics). */
+  targets?: GradingTargets;
+  /** Measured values (for accuracy confirmation in results). */
+  measured?: GradingMeasured;
 }
 
-const SEO_TITLE_MIN = 30;
-const SEO_TITLE_MAX = 60;
-const SEO_DESC_MIN = 120;
-const SEO_DESC_MAX = 160;
+/** Target criteria shown in results to confirm grading accuracy. */
+export interface GradingTargets {
+  seo: { metaTitleMin: number; metaTitleMax: number; metaDescMin: number; metaDescMax: number };
+  design: { heroTitleRequired: boolean; heroSubtitleRequired: boolean; heroImageRecommended: boolean; minDeliverables: number; deliverablesNeedDesc: boolean };
+  copy: { ctaButtonRequired: boolean; ctaHrefRequired: boolean; minBullets: number; heroSubtitleMinChars: number };
+}
+
+/** Measured values from the content (for "your content" vs targets). */
+export interface GradingMeasured {
+  seo: { metaTitleLength: number; metaDescLength: number };
+  design: { hasHeroTitle: boolean; hasHeroSubtitle: boolean; hasHeroImage: boolean; deliverableCount: number; deliverableWithDescCount: number };
+  copy: { hasCtaButton: boolean; hasCtaHref: boolean; bulletCount: number; heroSubtitleLength: number };
+}
+
+export const SEO_TITLE_MIN = 30;
+export const SEO_TITLE_MAX = 60;
+export const SEO_DESC_MIN = 120;
+export const SEO_DESC_MAX = 160;
 
 function clampScore(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -147,15 +165,72 @@ function overallGrade(seo: number, design: number, copy: number): "A" | "B" | "C
   return "F";
 }
 
+/** Build targets and measured values for transparency in results/audits. */
+function buildTargetsAndMeasured(input: GradingInput): {
+  targets: GradingTargets;
+  measured: GradingMeasured;
+} {
+  const title = (input.metaTitle ?? "").trim();
+  const desc = (input.metaDescription ?? "").trim();
+  const hero = input.sections?.hero;
+  const deliverables = input.sections?.deliverables ?? [];
+  const cta = input.sections?.cta;
+  const bullets = input.sections?.bullets ?? [];
+  const subtitle = (hero?.subtitle ?? "").trim();
+
+  const deliverableWithDescCount = deliverables.filter((d) => (d.desc ?? "").trim().length > 0).length;
+
+  return {
+    targets: {
+      seo: {
+        metaTitleMin: SEO_TITLE_MIN,
+        metaTitleMax: SEO_TITLE_MAX,
+        metaDescMin: SEO_DESC_MIN,
+        metaDescMax: SEO_DESC_MAX,
+      },
+      design: {
+        heroTitleRequired: true,
+        heroSubtitleRequired: true,
+        heroImageRecommended: true,
+        minDeliverables: 1,
+        deliverablesNeedDesc: true,
+      },
+      copy: {
+        ctaButtonRequired: true,
+        ctaHrefRequired: true,
+        minBullets: 2,
+        heroSubtitleMinChars: 50,
+      },
+    },
+    measured: {
+      seo: { metaTitleLength: title.length, metaDescLength: desc.length },
+      design: {
+        hasHeroTitle: Boolean(hero?.title?.trim()),
+        hasHeroSubtitle: Boolean(hero?.subtitle?.trim()),
+        hasHeroImage: Boolean(hero?.imageUrl?.trim()),
+        deliverableCount: deliverables.length,
+        deliverableWithDescCount,
+      },
+      copy: {
+        hasCtaButton: Boolean(cta?.buttonText?.trim()),
+        hasCtaHref: Boolean(cta?.buttonHref?.trim()),
+        bulletCount: bullets.length,
+        heroSubtitleLength: subtitle.length,
+      },
+    },
+  };
+}
+
 /**
  * Grade offer content on SEO, design readiness, and copy clarity.
- * Returns scores 0–100 per category, overall letter grade, and feedback.
+ * Returns scores 0–100 per category, overall letter grade, feedback, targets, and measured values.
  */
 export function gradeOfferContent(input: GradingInput): ContentGradeResult {
   const seo = gradeSeo(input);
   const design = gradeDesign(input);
   const copy = gradeCopy(input);
   const overall = overallGrade(seo.score, design.score, copy.score);
+  const { targets, measured } = buildTargetsAndMeasured(input);
   return {
     seoScore: seo.score,
     designScore: design.score,
@@ -166,5 +241,7 @@ export function gradeOfferContent(input: GradingInput): ContentGradeResult {
       design: design.feedback,
       copy: copy.feedback,
     },
+    targets,
+    measured,
   };
 }

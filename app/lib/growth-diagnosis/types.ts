@@ -149,6 +149,12 @@ export interface AuditReport {
   summary: AuditSummary;
   websitePerformanceScore: WebsitePerformanceScore;
   startupWebsiteScore: StartupWebsiteScore;
+  /** URLs we attempted and successfully analyzed (for accuracy/diagnostics). */
+  crawlTargets?: CrawlTargets;
+  /** Verification counts: how many findings were verified vs low confidence. */
+  verificationSummary?: VerificationSummary;
+  /** Per-page extracted metrics (confirms crawling accuracy in results). */
+  extractedSummaries?: ExtractedPageSummary[];
 }
 
 export interface VerificationCheck {
@@ -163,6 +169,33 @@ export interface VerificationSummary {
   verified: number;
   partial: number;
   failed: number;
+  /** For display: low_confidence count (same as failed in our usage). */
+  lowConfidence?: number;
+}
+
+/** Crawl targets shown in results to confirm what was analyzed. */
+export interface CrawlTargets {
+  urlsRequested: string[];
+  urlsAnalyzed: string[];
+  pagesAnalyzed: number;
+}
+
+/** One-line extracted metrics per page (for accuracy/diagnostics in results). */
+export interface ExtractedPageSummary {
+  url: string;
+  titleLength: number;
+  metaDescLength: number;
+  h1Count: number;
+  wordCount: number;
+  ctaCount: number;
+  hasForm: boolean;
+  hasPhoneLink: boolean;
+  viewportMeta: boolean;
+  imageCount: number;
+  imagesWithAlt: number;
+  internalLinks: number;
+  hasSchema: boolean;
+  trustSignalCount: number;
 }
 
 export interface PremiumUpsellState {

@@ -57,6 +57,9 @@ export function CategoryScores({ categoryScores, className }: CategoryScoresProp
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
+                  {cat.evidenceSummary && (
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">Evidence: {cat.evidenceSummary}</p>
+                  )}
                   <p className="text-sm text-muted-foreground mb-2">{cat.explanation}</p>
                   {cat.recommendedFixes.length > 0 && (
                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
