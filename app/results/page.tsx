@@ -1,52 +1,130 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { projects } from "@/lib/data";
-import { EcosystemProjectsSection } from "@/components/ecosystem/EcosystemProjectsSection";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Results & Work | Ascendra Technologies",
-  description:
-    "Selected project examples showing challenge, solution direction, and the type of business each build is best suited for.",
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useFunnel } from "@/lib/funnel-store";
+import {
+  RECOMMENDATION_LABELS,
+  type DiagnosisScores,
+} from "@/lib/scoring";
+
+const BOTTLENECK_LABELS: Record<DiagnosisScores["primaryBottleneck"], string> = {
+  brand: "Brand clarity & messaging",
+  design: "Visual identity & design",
+  system: "Website & lead systems",
+};
+
+const RECOMMENDATION_DESCRIPTIONS: Record<DiagnosisScores["recommendation"], string> = {
+  style_studio: "Strategy and positioning to clarify your message and stand out in your market.",
+  macon_designs: "Visual identity and creative execution so your business looks professional and trustworthy.",
+  ascendra: "Web systems, funnels, and automation to capture and convert more leads.",
 };
 
 export default function ResultsPage() {
+  const router = useRouter();
+  const { scores, answers } = useFunnel();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !scores && Object.keys(answers).length === 0) {
+      router.replace("/diagnosis");
+    }
+  }, [mounted, scores, answers, router]);
+
+  if (!mounted || !scores) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading results…</div>
+      </div>
+    );
+  }
+
+  const { totalScore, brandScore, designScore, systemScore, primaryBottleneck, recommendation } = scores;
+
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
-          <section className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
-              Results and work examples
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground">
-              Real projects—what we did, why, and what changed for the business.
-            </p>
-          </section>
-
-          <EcosystemProjectsSection ascendraProjects={projects.slice(0, 6)} />
-
-          <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Ready to apply this to your business?
-            </h2>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              Start with a free audit, or book a call if you already know what you want. See how you stack up with a{" "}
-              <Link href="/competitor-position-snapshot" className="font-medium text-primary hover:underline">competitor position snapshot</Link>.
-            </p>
-            <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
-              <Button asChild className="min-h-[44px]">
-                <Link href="/audit">Get your free audit</Link>
-              </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/contact">Book a free call</Link>
-              </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/competitor-position-snapshot">Competitor snapshot</Link>
-              </Button>
-            </div>
-          </section>
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-6">
+          <Link href="/diagnosis" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Back to diagnosis
+          </Link>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-6"
+        >
+          <Card>
+            <CardHeader>
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                Your Growth Score
+              </h1>
+              <p className="text-muted-foreground">
+                Based on your answers, here’s where you stand and what we recommend.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">Overall</span>
+                  <span>{totalScore}/100</span>
+                </div>
+                <Progress value={totalScore} className="h-3" />
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">Primary bottleneck</p>
+                <p className="text-muted-foreground">{BOTTLENECK_LABELS[primaryBottleneck]}</p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Brand</p>
+                  <p className="text-xl font-semibold text-foreground">{brandScore}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Design</p>
+                  <p className="text-xl font-semibold text-foreground">{designScore}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">System</p>
+                  <p className="text-xl font-semibold text-foreground">{systemScore}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-foreground">Recommended next step</h2>
+              <p className="text-primary font-medium">{RECOMMENDATION_LABELS[recommendation]}</p>
+              <p className="text-sm text-muted-foreground">
+                {RECOMMENDATION_DESCRIPTIONS[recommendation]}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full sm:w-auto gap-2">
+                <Link href="/apply">
+                  Get Your Growth Plan
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

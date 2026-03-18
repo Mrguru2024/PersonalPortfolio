@@ -7,6 +7,11 @@ export const PRIMARY_CTA = "Request your Digital Growth Audit";
 export const PRIMARY_CTA_SHORT = "Request audit";
 export const SECONDARY_CTA = "Book a free call";
 export const SEE_GROWTH_SYSTEMS = "See growth systems";
+/** Growth diagnosis funnel: multi-step diagnosis → results → apply. */
+export const GROWTH_DIAGNOSIS_PATH = "/growth";
+/** Automated website growth diagnosis (crawl + score + report). */
+export const GROWTH_DIAGNOSIS_ENGINE_PATH = "/growth-diagnosis";
+
 /** Canonical lead magnet: Digital Growth Audit. */
 export const AUDIT_PATH = "/digital-growth-audit";
 export const DIGITAL_GROWTH_AUDIT_PATH = "/digital-growth-audit";

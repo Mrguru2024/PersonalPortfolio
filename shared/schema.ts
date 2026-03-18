@@ -463,6 +463,49 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
 export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
 
+/** Per-admin preferences: notifications, push, reminders, role-change alerts, AI agent permission. */
+export const adminSettings = pgTable("admin_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  emailNotifications: boolean("email_notifications").default(true).notNull(),
+  inAppNotifications: boolean("in_app_notifications").default(true).notNull(),
+  pushNotificationsEnabled: boolean("push_notifications_enabled").default(true).notNull(),
+  remindersEnabled: boolean("reminders_enabled").default(true).notNull(),
+  reminderFrequency: text("reminder_frequency").default("realtime").notNull(), // realtime | hourly | daily | weekly
+  notifyOnRoleChange: boolean("notify_on_role_change").default(true).notNull(),
+  aiAgentCanPerformActions: boolean("ai_agent_can_perform_actions").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminSettings = typeof adminSettings.$inferSelect;
+export type InsertAdminSettings = typeof adminSettings.$inferInsert;
+
+/** Growth diagnosis funnel: answers, scores, recommendation, and application form. */
+export const growthFunnelLeads = pgTable("growth_funnel_leads", {
+  id: serial("id").primaryKey(),
+  answers: json("answers").$type<Record<string, string>>().notNull(),
+  totalScore: integer("total_score").notNull(),
+  brandScore: integer("brand_score").notNull(),
+  designScore: integer("design_score").notNull(),
+  systemScore: integer("system_score").notNull(),
+  primaryBottleneck: text("primary_bottleneck").notNull(), // brand | design | system
+  recommendation: text("recommendation").notNull(), // style_studio | macon_designs | ascendra
+  name: text("name"),
+  email: text("email"),
+  businessName: text("business_name"),
+  website: text("website"),
+  monthlyRevenue: text("monthly_revenue"),
+  mainChallenge: text("main_challenge"),
+  timeline: text("timeline"),
+  budgetRange: text("budget_range"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type GrowthFunnelLead = typeof growthFunnelLeads.$inferSelect;
+export type InsertGrowthFunnelLead = typeof growthFunnelLeads.$inferInsert;
+
 // Client Quotes schema (from assessments/proposals)
 export const clientQuotes = pgTable("client_quotes", {
   id: serial("id").primaryKey(),
@@ -567,5 +610,24 @@ export type ClientAnnouncement = typeof clientAnnouncements.$inferSelect;
 export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
 export type ClientFeedback = typeof clientFeedback.$inferSelect;
 
+/** Growth Diagnosis Engine: persisted audit reports (for admin and email/export). */
+export const growthDiagnosisReports = pgTable("growth_diagnosis_reports", {
+  id: serial("id").primaryKey(),
+  reportId: text("report_id").notNull().unique(),
+  url: text("url").notNull(),
+  email: text("email"),
+  businessType: text("business_type"),
+  primaryGoal: text("primary_goal"),
+  requestPayload: json("request_payload").$type<Record<string, unknown>>(),
+  reportPayload: json("report_payload").$type<Record<string, unknown>>().notNull(),
+  status: text("status").notNull().default("completed"),
+  pagesAnalyzed: integer("pages_analyzed").default(0),
+  overallScore: integer("overall_score"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type GrowthDiagnosisReport = typeof growthDiagnosisReports.$inferSelect;
+export type InsertGrowthDiagnosisReport = typeof growthDiagnosisReports.$inferInsert;
+
 export * from "./crmSchema";
 export * from "./newsletterSchema";
+export * from "./afnSchema";

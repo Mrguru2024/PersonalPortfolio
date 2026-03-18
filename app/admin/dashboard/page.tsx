@@ -356,7 +356,9 @@ export default function AdminDashboardPage() {
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
     refetchInterval: 60 * 1000,
-    staleTime: 30 * 1000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   // Handle 403 from any admin query (onError was removed in TanStack Query v5)

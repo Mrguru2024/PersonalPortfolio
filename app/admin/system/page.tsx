@@ -21,6 +21,7 @@ import {
   FileCheck,
   Contact,
   ScrollText,
+  Gauge,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdminUser } from "@/lib/super-admin";
@@ -284,6 +285,12 @@ export default function AdminSystemPage() {
             <Trash2 className="h-4 w-4" />
           )}
           <span className="ml-2">Clear logs</span>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/growth-diagnosis" className="gap-2">
+            <Gauge className="h-4 w-4" />
+            Growth Diagnosis
+          </Link>
         </Button>
       </div>
 

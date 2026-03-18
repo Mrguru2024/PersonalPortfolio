@@ -35,6 +35,7 @@ import {
   crmSalesPlaybooks,
   siteOffers,
   businessGoalPresets,
+  afnDiscussionCategories,
 } from "@shared/schema";
 import {
   projects as staticProjects,
@@ -895,6 +896,36 @@ async function seedSiteOffers() {
   }
 }
 
+async function seedAfnDiscussionCategories() {
+  console.log("Seeding AFN discussion categories...");
+  try {
+    const categories = [
+      { slug: "startup-help", name: "Startup Help", description: "Building and scaling your startup", sortOrder: 1, isActive: true },
+      { slug: "getting-clients", name: "Getting Clients", description: "Lead gen, sales, and client acquisition", sortOrder: 2, isActive: true },
+      { slug: "marketing-funnels", name: "Marketing & Funnels", description: "Marketing strategy and conversion", sortOrder: 3, isActive: true },
+      { slug: "ai-automation", name: "AI & Automation", description: "Tools, AI, and workflow automation", sortOrder: 4, isActive: true },
+      { slug: "founder-mindset", name: "Founder Mindset", description: "Mindset, habits, and leadership", sortOrder: 5, isActive: true },
+      { slug: "collaboration", name: "Collaboration Board", description: "Find partners and collaborators", sortOrder: 6, isActive: true },
+    ];
+    for (const c of categories) {
+      await db
+        .insert(afnDiscussionCategories)
+        .values(c)
+        .onConflictDoUpdate({
+          target: afnDiscussionCategories.slug,
+          set: { name: c.name, description: c.description, sortOrder: c.sortOrder, isActive: c.isActive },
+        });
+    }
+    console.log(`Seeded ${categories.length} AFN discussion categories`);
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("afn_discussion_categories table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
@@ -905,6 +936,7 @@ async function seedDatabase() {
     await seedCrmPlaybooks();
     await seedSiteOffers();
     await seedBusinessGoalPresets();
+    await seedAfnDiscussionCategories();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

@@ -8,7 +8,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/reminders — list reminders for current admin (new + snoozed due). */
+/** GET /api/admin/reminders — list reminders for current admin (new + snoozed due). Respects admin_settings.remindersEnabled. */
 export async function GET(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) {
@@ -16,6 +16,13 @@ export async function GET(req: NextRequest) {
     }
     const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
+
+    if (userId != null) {
+      const settings = await storage.getAdminSettings(userId);
+      if (settings?.remindersEnabled === false) {
+        return NextResponse.json([]);
+      }
+    }
 
     const reminders = await storage.getAdminReminders({
       userId,
@@ -41,17 +48,29 @@ export async function POST(req: NextRequest) {
 
     const result = await runReminderEngine(storage, { userId, userRole });
 
-    // Optional: push notify admins when new reminders were created
+    // Optional: push notify admins when new reminders were created (only those with push enabled in admin settings)
     if (result.created > 0) {
       try {
         const { pushNotificationService } = await import("@server/services/pushNotificationService");
         const { pushSubscriptions } = await import("@shared/schema");
         const { db } = await import("@server/db");
         const subs = await db
-          .select({ endpoint: pushSubscriptions.endpoint, keys: pushSubscriptions.keys })
+          .select({ userId: pushSubscriptions.userId, endpoint: pushSubscriptions.endpoint, keys: pushSubscriptions.keys })
           .from(pushSubscriptions);
+        const userIdsWithPushEnabled = new Set<number>();
+        for (const s of subs) {
+          const settings = await storage.getAdminSettings(s.userId);
+          if (settings?.pushNotificationsEnabled !== false) userIdsWithPushEnabled.add(s.userId);
+        }
         const payloads = subs
-          .filter((s) => s.keys && typeof s.keys === "object" && "p256dh" in s.keys && "auth" in s.keys)
+          .filter(
+            (s) =>
+              userIdsWithPushEnabled.has(s.userId) &&
+              s.keys &&
+              typeof s.keys === "object" &&
+              "p256dh" in s.keys &&
+              "auth" in s.keys
+          )
           .map((s) => ({ endpoint: s.endpoint, keys: s.keys as { p256dh: string; auth: string } }));
         if (payloads.length > 0) {
           await pushNotificationService.sendToSubscriptions(payloads, {

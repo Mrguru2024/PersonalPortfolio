@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/lib/view-mode-context";
 import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
 import PwaRegistration from "@/components/PwaRegistration";
+import { FunnelProvider } from "@/lib/funnel-store";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,10 +16,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
         <ViewModeProvider>
           <AuthProvider>
+            <FunnelProvider>
             <PwaRegistration />
             {children}
             <Toaster />
             <SuperAdminErrorReporter />
+            </FunnelProvider>
           </AuthProvider>
         </ViewModeProvider>
       </ThemeProvider>

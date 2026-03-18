@@ -6,7 +6,7 @@ import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
-import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH } from "@/lib/funnelCtas";
+import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
 
 export const metadata: Metadata = {
   title: "Free growth tools | Ascendra Technologies",
@@ -15,6 +15,16 @@ export const metadata: Metadata = {
 };
 
 const LEAD_MAGNETS = [
+  {
+    id: "growth-diagnosis",
+    title: "Website growth diagnosis",
+    who: "Business owners who want a clear, automated audit of their site's performance and conversion readiness.",
+    problem: "You want to see where your site stands without waiting for a human review.",
+    get: "An automated scan and Growth Readiness Score: performance, SEO, conversion, trust, and mobile. Plus top blockers and quick wins.",
+    cta: "Run free diagnosis",
+    href: GROWTH_DIAGNOSIS_ENGINE_PATH,
+    icon: Sparkles,
+  },
   {
     id: "audit",
     title: "Digital growth audit",

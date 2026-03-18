@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -24,7 +24,7 @@ import {
   Activity,
   Link2,
   TrendingUp,
-  Bell,
+  Settings,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -32,6 +32,7 @@ import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBel
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdminUser } from "@/lib/super-admin";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
+import { useMobileNav } from "@/contexts/MobileNavContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +42,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 
 interface HeaderProps {
   currentSection?: string;
@@ -48,64 +53,17 @@ interface HeaderProps {
 }
 
 export default function Header(_props: HeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isOpen: mobileMenuOpen, close: closeMobileMenu, toggle: toggleMobileMenu } = useMobileNav();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { track } = useVisitorTracking();
   const { user, logoutMutation } = useAuth();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const menuPanelRef = useRef<HTMLDivElement>(null);
 
   // Avoid hydration mismatch: server has no session, client may have user from cookie
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const closeMobileMenu = useCallback(() => {
-    setMobileMenuOpen(false);
-    menuButtonRef.current?.focus({ preventScroll: true });
-  }, []);
-
-  // Focus trap and Escape key when mobile menu is open
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const panel = menuPanelRef.current;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const focusables = panel?.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), [tabindex="0"]'
-    );
-    const first = focusables?.[0];
-    const last = focusables?.[focusables.length - 1];
-    first?.focus({ preventScroll: true });
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeMobileMenu();
-        return;
-      }
-      if (e.key !== "Tab" || !panel) return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus({ preventScroll: true });
-    };
-  }, [mobileMenuOpen, closeMobileMenu]);
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen((prev) => !prev);
-  };
 
   const isHomePage = pathname === "/";
 
@@ -115,6 +73,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Brand Growth", href: "/brand-growth" },
     { name: "Free tools", href: FREE_GROWTH_TOOLS_PATH },
     { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
+    { name: "Community", href: "/community" },
   ];
   const servicesSubmenu = [
     { name: "Launch your brand", href: LAUNCH_YOUR_BRAND_PATH },
@@ -154,6 +113,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
     { name: "Integrations", href: "/admin/integrations", icon: Link2, developerOnly: true },
+    { name: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard" as const },
     { name: "User management", href: "/admin/users", icon: UserCog, developerOnly: true },
     { name: "System monitor", href: "/admin/system", icon: Activity, developerOnly: true },
   ];
@@ -173,28 +133,7 @@ export default function Header(_props: HeaderProps) {
     return perm ? permissions[perm] === true : true;
   });
 
-  // Lock body scroll when mobile menu is open so background doesn't scroll
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const prev = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-      document.documentElement.style.overflow = prevHtml;
-    };
-  }, [mobileMenuOpen]);
-
-  // Close menu on scroll (e.g. after section link tap or if scroll slips through)
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const handleScroll = () => closeMobileMenu();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [mobileMenuOpen, closeMobileMenu]);
-
-  // Close menu when route changes
+  // Close menu when route changes (smooth app-like navigation)
   useEffect(() => {
     closeMobileMenu();
   }, [pathname, closeMobileMenu]);
@@ -407,7 +346,7 @@ export default function Header(_props: HeaderProps) {
           </div>
         </div>
 
-        {/* Mobile: menu button + theme (nav links in dropdown below) */}
+        {/* Mobile: menu button + theme (opens sheet from right for app-like UX) */}
         <div className="flex items-center gap-3 md:hidden shrink-0">
           <ThemeToggle />
           <Button
@@ -415,7 +354,7 @@ export default function Header(_props: HeaderProps) {
             variant="ghost"
             size="sm"
             onClick={toggleMobileMenu}
-            className="h-10 min-h-[44px] min-w-[44px] px-3 gap-2 text-foreground font-medium border border-border/50"
+            className="h-10 min-h-[44px] min-w-[44px] px-3 gap-2 text-foreground font-medium border border-border/50 touch-manipulation"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
             aria-haspopup="true"
@@ -431,33 +370,15 @@ export default function Header(_props: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Navigation - visible when menu is open */}
-      {mobileMenuOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)]"
-          style={{ top: 0 }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Main menu"
+      {/* Mobile navigation sheet: slides in from right; same menu openable from header or bottom nav */}
+      <Sheet open={mobileMenuOpen} onOpenChange={(open) => { if (!open) closeMobileMenu(); }}>
+        <SheetContent
+          side="right"
+          id="mobile-nav-panel"
+          className="md:hidden w-[85vw] max-w-sm p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
+          style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          {/* Backdrop: tap to close, prevents touch scroll from hitting body */}
-          <button
-            type="button"
-            aria-label="Close menu"
-            tabIndex={-1}
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] touch-none min-h-[44px]"
-            onClick={closeMobileMenu}
-          />
-          <div className="container mx-auto px-4 pb-4 pt-3 relative z-10 flex-1 min-h-0 flex flex-col">
-            <div
-              ref={menuPanelRef}
-              id="mobile-nav-panel"
-              className="rounded-2xl border border-border/60 bg-muted/95 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur supports-[backdrop-filter]:bg-muted/85 overflow-hidden flex flex-col max-h-[min(calc(100vh-6rem),600px)]"
-              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-              role="navigation"
-              aria-label="Site navigation"
-            >
-              <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain py-1 -my-1">
+          <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
                 <ul className="flex flex-col gap-0.5" aria-label="Primary links">
                   {primaryNav.map((item) =>
                     isScrollLink(item) ? (
@@ -465,7 +386,7 @@ export default function Header(_props: HeaderProps) {
                         <button
                           type="button"
                           onClick={() => { scrollToSection(getLinkHref(item) as string); closeMobileMenu(); }}
-                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                         >
                           {item.name}
                         </button>
@@ -475,7 +396,7 @@ export default function Header(_props: HeaderProps) {
                         <Link
                           href={item.href}
                           onClick={closeMobileMenu}
-                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 block"
+                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 block touch-manipulation"
                         >
                           {item.name}
                         </Link>
@@ -494,7 +415,7 @@ export default function Header(_props: HeaderProps) {
                         <Link
                           href={item.href}
                           onClick={closeMobileMenu}
-                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block"
+                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block touch-manipulation"
                         >
                           {item.name}
                         </Link>
@@ -513,7 +434,7 @@ export default function Header(_props: HeaderProps) {
                         <Link
                           href={sub.href}
                           onClick={closeMobileMenu}
-                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block"
+                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block touch-manipulation"
                         >
                           {sub.name}
                         </Link>
@@ -532,7 +453,7 @@ export default function Header(_props: HeaderProps) {
                         <Link
                           href={sub.href}
                           onClick={closeMobileMenu}
-                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block"
+                          className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pl-6 block touch-manipulation"
                         >
                           {sub.name}
                         </Link>
@@ -581,7 +502,7 @@ export default function Header(_props: HeaderProps) {
                       {!isApprovedAdmin && (
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                           onClick={closeMobileMenu}
                         >
                           <LayoutDashboard className="h-4 w-4 shrink-0" />
@@ -600,7 +521,7 @@ export default function Header(_props: HeaderProps) {
                                 <li key={page.href}>
                                   <Link
                                     href={page.href}
-                                    className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                                     onClick={closeMobileMenu}
                                   >
                                     <Icon className="h-4 w-4 shrink-0" />
@@ -618,7 +539,7 @@ export default function Header(_props: HeaderProps) {
                           logoutMutation.mutate();
                           closeMobileMenu();
                         }}
-                        className="flex items-center w-full text-left text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex items-center w-full text-left text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                       >
                         <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
                       </button>
@@ -626,7 +547,7 @@ export default function Header(_props: HeaderProps) {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="flex items-center text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                       onClick={closeMobileMenu}
                     >
                       <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login
@@ -634,10 +555,8 @@ export default function Header(_props: HeaderProps) {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

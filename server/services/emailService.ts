@@ -946,6 +946,121 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       return false;
     }
   }
+
+  /** Send growth diagnosis results to the lead (user). */
+  async sendGrowthDiagnosisToUser(data: {
+    to: string;
+    name: string;
+    totalScore: number;
+    primaryBottleneck: string;
+    recommendation: string;
+    recommendationLabel: string;
+  }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Your Growth Diagnosis Results';
+      const bottleneckLabel = data.primaryBottleneck === 'brand' ? 'Brand clarity & messaging' : data.primaryBottleneck === 'design' ? 'Visual identity & design' : 'Website & lead systems';
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;}.container{max-width:600px;margin:0 auto;padding:20px;}.header{background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);color:white;padding:24px;border-radius:12px 12px 0 0;}.content{background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;}.score{font-size:2em;font-weight:700;color:#4f46e5;}.footer{margin-top:20px;font-size:12px;color:#64748b;}</style></head>
+        <body>
+          <div class="container">
+            <div class="header"><h2 style="margin:0;">Your Growth Diagnosis Results</h2></div>
+            <div class="content">
+              <p>Hi ${(data.name || 'there').replace(/</g, '&lt;')},</p>
+              <p>Here’s a quick summary of your growth diagnosis.</p>
+              <p><strong>Overall score:</strong> <span class="score">${data.totalScore}/100</span></p>
+              <p><strong>Primary bottleneck:</strong> ${bottleneckLabel.replace(/</g, '&lt;')}</p>
+              <p><strong>Recommended next step:</strong> ${(data.recommendationLabel || data.recommendation).replace(/</g, '&lt;')}</p>
+              <p>We’ll follow up with you shortly to discuss your growth plan. If you have any questions in the meantime, just reply to this email.</p>
+              <div class="footer"><p>— Ascendra Technologies & the Brand Growth ecosystem</p></div>
+            </div>
+          </div>
+        </body>
+        </html>`;
+      sendSmtpEmail.textContent = `Hi ${data.name},\n\nYour growth score: ${data.totalScore}/100.\nPrimary bottleneck: ${bottleneckLabel}\nRecommended next step: ${data.recommendationLabel}\n\nWe'll follow up shortly.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Growth diagnosis email sent to ${data.to}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending growth diagnosis email:', error?.message ?? error);
+      return false;
+    }
+  }
+
+  /** Notify admin of new growth funnel lead with full data. */
+  async sendGrowthLeadToAdmin(data: {
+    name: string;
+    email: string;
+    businessName: string;
+    website?: string;
+    monthlyRevenue: string;
+    mainChallenge: string;
+    timeline: string;
+    budgetRange: string;
+    totalScore: number;
+    brandScore: number;
+    designScore: number;
+    systemScore: number;
+    primaryBottleneck: string;
+    recommendation: string;
+  }): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      if (!this.apiInstance) {
+        await this.initializeBrevo();
+        if (!this.apiInstance) return false;
+      }
+      const brevoModule = await getBrevo();
+      const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+      sendSmtpEmail.subject = `New Growth Funnel Lead: ${(data.businessName || data.name || 'Unknown').slice(0, 50)}`;
+      const esc = (s: string | undefined) => (s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      sendSmtpEmail.htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;}.container{max-width:600px;margin:0 auto;padding:20px;}.header{background:#10b981;color:white;padding:20px;border-radius:8px 8px 0 0;}.content{background:#f9f9f9;padding:20px;border-radius:0 0 8px 8px;}.row{margin:8px 0;}.label{font-weight:bold;color:#0f766e;}.value{margin-top:2px;}</style></head>
+        <body>
+          <div class="container">
+            <div class="header"><h2 style="margin:0;">New Growth Funnel Lead</h2></div>
+            <div class="content">
+              <div class="row"><span class="label">Name:</span><div class="value">${esc(data.name)}</div></div>
+              <div class="row"><span class="label">Email:</span><div class="value"><a href="mailto:${esc(data.email)}">${esc(data.email)}</a></div></div>
+              <div class="row"><span class="label">Business:</span><div class="value">${esc(data.businessName)}</div></div>
+              ${data.website ? `<div class="row"><span class="label">Website:</span><div class="value">${esc(data.website)}</div></div>` : ''}
+              <div class="row"><span class="label">Monthly revenue:</span><div class="value">${esc(data.monthlyRevenue)}</div></div>
+              <div class="row"><span class="label">Main challenge:</span><div class="value">${esc(data.mainChallenge)}</div></div>
+              <div class="row"><span class="label">Timeline:</span><div class="value">${esc(data.timeline)}</div></div>
+              <div class="row"><span class="label">Budget:</span><div class="value">${esc(data.budgetRange)}</div></div>
+              <div class="row"><span class="label">Score (total / brand / design / system):</span><div class="value">${data.totalScore} / ${data.brandScore} / ${data.designScore} / ${data.systemScore}</div></div>
+              <div class="row"><span class="label">Bottleneck:</span><div class="value">${esc(data.primaryBottleneck)}</div></div>
+              <div class="row"><span class="label">Recommendation:</span><div class="value">${esc(data.recommendation)}</div></div>
+            </div>
+          </div>
+        </body>
+        </html>`;
+      sendSmtpEmail.textContent = `New lead: ${data.name} (${data.email}), ${data.businessName}. Score: ${data.totalScore}. Bottleneck: ${data.primaryBottleneck}. Recommendation: ${data.recommendation}.`;
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: this.adminEmail }];
+      sendSmtpEmail.replyTo = { email: data.email };
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Growth lead notification sent to admin`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending growth lead to admin:', error?.message ?? error);
+      return false;
+    }
+  }
 }
 
 export const emailService = new EmailService();

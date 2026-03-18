@@ -4,6 +4,8 @@ import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
+import MobileBottomNav from "./components/MobileBottomNav";
+import { MobileNavProvider } from "./contexts/MobileNavContext";
 import { getSiteBaseUrl, ensureAbsoluteUrl } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 
@@ -112,14 +114,18 @@ export default function RootLayout({
         <div className="fixed inset-0 -z-10 hero-page-gradient pointer-events-none" aria-hidden />
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
-            {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
-            <ScrollProgress />
-            {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
-            <FixedHeaderWrapper />
-            <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[150px] fold:pt-[170px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[env(safe-area-inset-bottom)]">
-              {children}
-            </main>
-            <SiteFooter />
+            <MobileNavProvider>
+              {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
+              <ScrollProgress />
+              {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
+              <FixedHeaderWrapper />
+              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[150px] fold:pt-[170px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px))] lg:pb-[env(safe-area-inset-bottom)]">
+                {children}
+              </main>
+              {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}
+              <MobileBottomNav />
+              <SiteFooter />
+            </MobileNavProvider>
           </Providers>
         </div>
       </body>

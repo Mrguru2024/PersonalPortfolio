@@ -16,6 +16,7 @@ import { users, type User, type InsertUser,
   siteOffers, type SiteOffer, type InsertSiteOffer,
   businessGoalPresets, type BusinessGoalPreset, type InsertBusinessGoalPreset,
   adminReminders, type AdminReminder, type InsertAdminReminder,
+  adminSettings, type AdminSettings, type InsertAdminSettings,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -394,6 +395,9 @@ export interface IStorage {
   updateAdminReminder(id: number, updates: Partial<InsertAdminReminder>): Promise<AdminReminder>;
   getAdminReminderByKey(userId: number | null, reminderKey: string): Promise<AdminReminder | undefined>;
   getApprovedAdmins(): Promise<User[]>;
+
+  getAdminSettings(userId: number): Promise<AdminSettings | undefined>;
+  upsertAdminSettings(userId: number, settings: Partial<Omit<InsertAdminSettings, "id" | "userId" | "createdAt">>): Promise<AdminSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2908,6 +2912,42 @@ export class DatabaseStorage implements IStorage {
   async getApprovedAdmins(): Promise<User[]> {
     const rows = await db.select().from(users).where(and(eq(users.isAdmin, true), eq(users.adminApproved, true)));
     return rows;
+  }
+
+  async getAdminSettings(userId: number): Promise<AdminSettings | undefined> {
+    const [row] = await db.select().from(adminSettings).where(eq(adminSettings.userId, userId)).limit(1);
+    return row ?? undefined;
+  }
+
+  async upsertAdminSettings(
+    userId: number,
+    settings: Partial<Omit<InsertAdminSettings, "id" | "userId" | "createdAt">>
+  ): Promise<AdminSettings> {
+    const now = new Date();
+    const existing = await this.getAdminSettings(userId);
+    const payload = {
+      emailNotifications: settings.emailNotifications,
+      inAppNotifications: settings.inAppNotifications,
+      pushNotificationsEnabled: settings.pushNotificationsEnabled,
+      remindersEnabled: settings.remindersEnabled,
+      reminderFrequency: settings.reminderFrequency,
+      notifyOnRoleChange: settings.notifyOnRoleChange,
+      aiAgentCanPerformActions: settings.aiAgentCanPerformActions,
+      updatedAt: now,
+    };
+    if (existing) {
+      const [updated] = await db
+        .update(adminSettings)
+        .set(payload)
+        .where(eq(adminSettings.userId, userId))
+        .returning();
+      return updated!;
+    }
+    const [inserted] = await db
+      .insert(adminSettings)
+      .values({ userId, ...payload, createdAt: now })
+      .returning();
+    return inserted!;
   }
 }
 

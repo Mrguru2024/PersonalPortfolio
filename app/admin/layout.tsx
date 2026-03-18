@@ -1,4 +1,5 @@
 import { AdminGlobalTips } from "@/components/admin/AdminGlobalTips";
+import { AdminAgentWidget } from "@/components/admin/AdminAgentWidget";
 
 export default function AdminLayout({
   children,
@@ -9,6 +10,7 @@ export default function AdminLayout({
     <>
       <AdminGlobalTips />
       {children}
+      <AdminAgentWidget />
     </>
   );
 }
