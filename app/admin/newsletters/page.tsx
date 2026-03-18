@@ -204,7 +204,7 @@ export default function NewslettersPage() {
               Create and manage email campaigns
             </p>
           </div>
-          <Button asChild className="w-full sm:w-auto">
+          <Button asChild className="self-start w-full sm:w-auto">
             <Link href="/admin/newsletters/create">
               <Plus className="h-4 w-4 mr-2" />
               Create Newsletter

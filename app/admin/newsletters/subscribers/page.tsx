@@ -211,7 +211,7 @@ export default function SubscribersPage() {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button className="self-start w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Subscriber
               </Button>
