@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { portfolioController } from "@server/controllers/portfolioController";
 import { createMockResponse } from "@/lib/api-helpers";
+import { extractRequestAttribution } from "@/lib/analytics/server-attribution";
 
 const SUBJECT = "Competitor Position Snapshot Request";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { attribution } = extractRequestAttribution(
+      req,
+      (body && typeof body === "object" ? body : {}) as Record<string, unknown>
+    );
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim();
     const businessName = String(body.businessName ?? "").trim();
@@ -50,12 +55,14 @@ export async function POST(req: NextRequest) {
       message: message || "Competitor snapshot request",
       newsletter: false,
       subject: SUBJECT,
+      ...attribution,
     };
 
     const mockReq = {
       body: contactBody,
       headers: {
         "x-forwarded-for": req.headers.get("x-forwarded-for") || "",
+        "user-agent": req.headers.get("user-agent") || "",
       },
       ip:
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||

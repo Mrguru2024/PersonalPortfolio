@@ -7,6 +7,9 @@ import { projectAssessments, clientQuotes } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
 import { storage } from "@server/storage";
 import { getSessionUser } from "@/lib/auth-helpers";
+import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
+import { extractRequestAttribution } from "@/lib/analytics/server-attribution";
+import { sendConversionSignals } from "@server/services/analytics/conversionRouterService";
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -38,6 +41,11 @@ export async function POST(req: NextRequest) {
     );
   }
   const validatedData = parseResult.data;
+  const trackingPayload =
+    body && typeof body === "object" && "tracking" in body && typeof (body as { tracking?: unknown }).tracking === "object"
+      ? ((body as { tracking?: Record<string, unknown> }).tracking ?? {})
+      : {};
+  const { attribution, firstTouch } = extractRequestAttribution(req, trackingPayload);
 
   try {
     const pricingBreakdown = pricingService.calculatePricing(validatedData);
@@ -67,6 +75,68 @@ export async function POST(req: NextRequest) {
     console.log(
       `[Assessment form] Saved id=${assessment.id} email=${assessment.email} name=${assessment.name}`
     );
+
+    try {
+      await ensureCrmLeadFromFormSubmission({
+        email: validatedData.email,
+        name: validatedData.name,
+        phone: validatedData.phone || undefined,
+        company: validatedData.company || undefined,
+        attribution: {
+          utm_source: attribution.utm_source ?? null,
+          utm_medium: attribution.utm_medium ?? null,
+          utm_campaign: attribution.utm_campaign ?? null,
+          utm_term: attribution.utm_term ?? null,
+          utm_content: attribution.utm_content ?? null,
+          gclid: attribution.gclid ?? null,
+          fbclid: attribution.fbclid ?? null,
+          msclkid: attribution.msclkid ?? null,
+          ttclid: attribution.ttclid ?? null,
+          referrer: attribution.referrer ?? null,
+          landing_page: attribution.landing_page ?? null,
+          visitorId: attribution.visitorId ?? null,
+          sessionId: attribution.sessionId ?? null,
+        },
+        customFields: {
+          sourceFlow: "project_assessment",
+          assessmentId: assessment.id,
+          projectType: validatedData.projectType,
+          projectName: validatedData.projectName,
+          preferredTimeline: validatedData.preferredTimeline,
+          budgetRange: validatedData.budgetRange || null,
+          platform: validatedData.platform,
+          mustHaveFeatures: validatedData.mustHaveFeatures,
+          firstTouchSource: firstTouch?.utm_source ?? null,
+          firstTouchMedium: firstTouch?.utm_medium ?? null,
+          firstTouchCampaign: firstTouch?.utm_campaign ?? null,
+        },
+      });
+    } catch (crmError) {
+      console.warn("[Assessment form] CRM upsert failed:", crmError);
+    }
+
+    sendConversionSignals({
+      eventName: "assessment_submitted",
+      visitorId: attribution.visitorId ?? null,
+      email: validatedData.email,
+      phone: validatedData.phone || null,
+      sourceUrl: attribution.url ?? attribution.landing_page ?? null,
+      userAgent: req.headers.get("user-agent"),
+      ipAddress:
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        req.headers.get("x-real-ip"),
+      attribution: {
+        utm_source: attribution.utm_source ?? null,
+        utm_medium: attribution.utm_medium ?? null,
+        utm_campaign: attribution.utm_campaign ?? null,
+        utm_term: attribution.utm_term ?? null,
+        utm_content: attribution.utm_content ?? null,
+      },
+      metadata: {
+        assessmentId: assessment.id,
+        projectType: validatedData.projectType,
+      },
+    }).catch(() => {});
 
     // Send email notification to admin
     const emailSent = await emailService.sendNotification({

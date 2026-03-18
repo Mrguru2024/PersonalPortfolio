@@ -11,6 +11,8 @@ import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
 const gaEnabled = GA_MEASUREMENT_ID.length > 0;
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() ?? "";
+const metaPixelEnabled = META_PIXEL_ID.length > 0;
 
 /** Absolute base URL (with https://) so manifest, OG, etc. resolve correctly and don't double-path. */
 const baseUrl = ensureAbsoluteUrl(getSiteBaseUrl());
@@ -104,8 +106,32 @@ export default function RootLayout({
             />
           </>
         )}
+        {metaPixelEnabled && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+                n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');fbq('init', '${META_PIXEL_ID}');fbq('track', 'PageView');`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
+        {metaPixelEnabled && (
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: "none" }}
+              src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+              alt=""
+            />
+          </noscript>
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}

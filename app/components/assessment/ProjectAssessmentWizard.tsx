@@ -70,7 +70,7 @@ export function ProjectAssessmentWizard({
   serviceId,
 }: Readonly<ProjectAssessmentWizardProps>) {
   const router = useRouter();
-  const { track } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
   const formStartedRef = useRef(false);
   const [step, setStep] = useState(1);
 
@@ -160,10 +160,18 @@ export function ProjectAssessmentWizard({
     }
     setSubmitting(true);
     try {
+      const attribution = getAttributionSnapshot();
       const res = await fetch("/api/assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify({
+          ...buildPayload(),
+          tracking: {
+            ...attribution.current,
+            first_touch: attribution.firstTouch,
+            last_touch: attribution.lastTouch,
+          },
+        }),
       });
       const data = await res.json();
       if (!res.ok)

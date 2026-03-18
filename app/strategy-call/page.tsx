@@ -38,6 +38,7 @@ import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { CALL_CONFIRMATION_PATH, BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { useExperimentVariant } from "@/lib/experiments/useExperimentVariant";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -80,7 +81,32 @@ const TIMELINE_OPTIONS = [
 
 export default function StrategyCallPage() {
   const router = useRouter();
-  const { track } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
+  const messagingExperiment = useExperimentVariant("strategy_call_messaging_v1", {
+    pageVisited: "/strategy-call",
+  });
+  const submitExperiment = useExperimentVariant("strategy_call_submit_cta_v1", {
+    pageVisited: "/strategy-call",
+  });
+
+  const heroTitleByVariant: Record<string, string> = {
+    control: "Book a free call",
+    speed: "Get clear next steps in one call",
+    clarity: "Book a strategy call for your growth plan",
+  };
+  const heroDescriptionByVariant: Record<string, string> = {
+    control:
+      "Share a few details. We’ll reach out to schedule a call and align on your goals—no pressure, no obligation.",
+    speed:
+      "Share a few details and we’ll map your fastest next move across brand, website, and lead growth.",
+    clarity:
+      "Tell us your context and we’ll return a focused call agenda so the conversation is practical from minute one.",
+  };
+  const submitCtaByVariant: Record<string, string> = {
+    control: "Submit + Schedule Call",
+    book_now: "Book my strategy call",
+    get_plan: "Get my growth call plan",
+  };
 
   useEffect(() => {
     track("page_view", { pageVisited: "/strategy-call" });
@@ -105,6 +131,7 @@ export default function StrategyCallPage() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: StrategyCallFormData) => {
+      const attribution = getAttributionSnapshot();
       const res = await fetch("/api/strategy-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -118,6 +145,9 @@ export default function StrategyCallPage() {
           budget: data.budget,
           timeline: data.timeline,
           projectGoals: data.projectGoals || undefined,
+          ...attribution.current,
+          first_touch: attribution.firstTouch,
+          last_touch: attribution.lastTouch,
         }),
       });
       if (!res.ok) {
@@ -127,7 +157,17 @@ export default function StrategyCallPage() {
       return res.json();
     },
     onSuccess: () => {
-      track("form_completed", { pageVisited: "/strategy-call", metadata: { form: "strategy_call" } });
+      track("form_completed", {
+        pageVisited: "/strategy-call",
+        metadata: {
+          form: "strategy_call",
+          experiment_key: messagingExperiment.definition.key,
+          experiment_variant: messagingExperiment.variant,
+          submit_cta_variant: submitExperiment.variant,
+        },
+      });
+      messagingExperiment.trackConversion("strategy_call_form_completed");
+      submitExperiment.trackConversion("strategy_call_form_completed");
       toast({
         title: "Request received",
         description: "We'll be in touch to schedule your strategy call.",
@@ -165,10 +205,10 @@ export default function StrategyCallPage() {
               <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h1 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Book a free call
+              {heroTitleByVariant[messagingExperiment.variant] ?? heroTitleByVariant.control}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
-              Share a few details. We’ll reach out to schedule a call and align on your goals—no pressure, no obligation.
+              {heroDescriptionByVariant[messagingExperiment.variant] ?? heroDescriptionByVariant.control}
             </p>
           </div>
 
@@ -382,7 +422,7 @@ export default function StrategyCallPage() {
                       className="gap-2 w-full sm:w-auto min-h-[48px] bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-md"
                       disabled={isPending}
                     >
-                      {isPending ? "Submitting…" : "Submit + Schedule Call"}
+                      {isPending ? "Submitting…" : (submitCtaByVariant[submitExperiment.variant] ?? submitCtaByVariant.control)}
                       <ArrowRight className="h-4 w-4 shrink-0" />
                     </Button>
                     <Button asChild variant="outline" size="lg" className="w-full sm:w-auto min-h-[44px]">

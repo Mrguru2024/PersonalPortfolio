@@ -40,6 +40,7 @@ import {
   STAGE_OPTIONS,
   TIMELINE_OPTIONS,
 } from "@/lib/funnel-content";
+import { useExperimentVariant } from "@/lib/experiments/useExperimentVariant";
 
 const auditRequestSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -68,7 +69,15 @@ type AuditRequestValues = z.infer<typeof auditRequestSchema>;
 export function AuditRequestForm() {
   const [submitted, setSubmitted] = useState(false);
   const formStartedSent = useRef(false);
-  const { track } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
+  const ctaExperiment = useExperimentVariant("audit_form_cta_v1", {
+    pageVisited: "/digital-growth-audit",
+  });
+  const ctaByVariant: Record<string, string> = {
+    control: "Submit Audit Request",
+    urgency: "Get My Audit Priority Review",
+    value: "Unlock My Growth Audit",
+  };
 
   const onFormInteraction = () => {
     if (!formStartedSent.current) {
@@ -97,6 +106,7 @@ export function AuditRequestForm() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (values: AuditRequestValues) => {
+      const attribution = getAttributionSnapshot();
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,6 +119,9 @@ export function AuditRequestForm() {
           gender: values.gender || undefined,
           occupation: values.occupation || undefined,
           companySize: values.companySize || undefined,
+          ...attribution.current,
+          first_touch: attribution.firstTouch,
+          last_touch: attribution.lastTouch,
         }),
       });
 
@@ -120,7 +133,15 @@ export function AuditRequestForm() {
       return res.json();
     },
     onSuccess: () => {
-      track("form_completed", { pageVisited: "/digital-growth-audit", metadata: { form: "audit" } });
+      track("form_completed", {
+        pageVisited: "/digital-growth-audit",
+        metadata: {
+          form: "audit",
+          experiment_key: ctaExperiment.definition.key,
+          experiment_variant: ctaExperiment.variant,
+        },
+      });
+      ctaExperiment.trackConversion("audit_form_completed");
       setSubmitted(true);
       toast({
         title: "Audit request received",
@@ -525,7 +546,7 @@ export function AuditRequestForm() {
             </div>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
-              {isPending ? "Submitting..." : "Submit Audit Request"}
+              {isPending ? "Submitting..." : (ctaByVariant[ctaExperiment.variant] ?? ctaByVariant.control)}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>

@@ -21,6 +21,9 @@ export const LEAD_TRACKING_EVENT_TYPES = [
   "video_play",
   "section_engagement",
   "return_visit",
+  "experiment_exposure",
+  "experiment_conversion",
+  "offer_variant_view",
   "tool_used", // legacy
 ] as const;
 
