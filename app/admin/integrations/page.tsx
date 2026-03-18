@@ -122,31 +122,36 @@ export default function AdminIntegrationsPage() {
 
   return (
     <div className="container max-w-4xl py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/dashboard">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">Integrations</h1>
-          <p className="text-muted-foreground text-sm">
-            Test and reconnect services used by Ascendra: Facebook App, email, and social posting.
-          </p>
+      <div className="mb-6 space-y-3">
+        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+          <Link href="/admin/dashboard">
+            <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold">Integrations</h1>
+            <p className="text-muted-foreground text-sm">
+              Test and reconnect services used by Ascendra: Facebook App, email, and social posting.
+            </p>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing || loading}
-        >
-          {refreshing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="ml-2">Refresh</span>
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="w-full sm:w-auto"
+          >
+            {refreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            <span className="ml-2">Refresh</span>
+          </Button>
+        </div>
       </div>
 
       {/* Integrated services */}

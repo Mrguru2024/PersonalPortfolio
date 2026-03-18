@@ -239,59 +239,66 @@ export default function AdminSystemPage() {
 
   return (
     <div className="container max-w-5xl py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/dashboard">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">System monitor</h1>
-          <p className="text-muted-foreground text-sm">
-            Errors, activity, and fix hints for 5epmgllc super admin. In-memory logs (per instance).
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing || loading}
-        >
-          {refreshing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="ml-2">Refresh</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadLogs}
-          disabled={logs.length === 0}
-        >
-          <Download className="h-4 w-4" />
-          <span className="ml-2">Download logs</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleClear}
-          disabled={clearing || logs.length === 0}
-        >
-          {clearing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-          <span className="ml-2">Clear logs</span>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/growth-diagnosis" className="gap-2">
-            <Gauge className="h-4 w-4" />
-            Growth Diagnosis
+      <div className="mb-6 space-y-3">
+        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+          <Link href="/admin/dashboard">
+            <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </Link>
-        </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold">System monitor</h1>
+            <p className="text-muted-foreground text-sm">
+              Errors, activity, and fix hints for 5epmgllc super admin. In-memory logs (per instance).
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="w-full sm:w-auto"
+          >
+            {refreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            <span className="ml-2">Refresh</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadLogs}
+            disabled={logs.length === 0}
+            className="w-full sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            <span className="ml-2">Download logs</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClear}
+            disabled={clearing || logs.length === 0}
+            className="w-full sm:w-auto"
+          >
+            {clearing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            <span className="ml-2">Clear logs</span>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+            <Link href="/admin/growth-diagnosis" className="gap-2">
+              <Gauge className="h-4 w-4" />
+              Growth Diagnosis
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Health & overview */}

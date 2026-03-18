@@ -102,24 +102,28 @@ export default function AdminGrowthDiagnosisPage() {
 
   return (
     <div className="container max-w-5xl py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/dashboard">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">Growth Diagnosis monitoring</h1>
-          <p className="text-muted-foreground text-sm">
-            View persisted audit reports, verification diagnostics, and export. Re-run from the public tool.
-          </p>
-        </div>
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link href="/growth-diagnosis" target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-4 w-4" />
-            Run diagnosis
+      <div className="mb-6 space-y-3">
+        <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+          <Link href="/admin/dashboard">
+            <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </Link>
-        </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold">Growth Diagnosis monitoring</h1>
+            <p className="text-muted-foreground text-sm">
+              View persisted audit reports, verification diagnostics, and export. Re-run from the public tool.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+            <Link href="/growth-diagnosis" target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4" />
+              Run diagnosis
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">

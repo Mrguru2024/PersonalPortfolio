@@ -40,12 +40,12 @@ export function AdminPlatformTips({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={cn("rounded-lg border bg-muted/40", className)}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-muted/60 rounded-lg transition-colors">
+      <CollapsibleTrigger className="flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-muted/60">
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <Lightbulb className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-        <span>Platform tips &amp; how to use this section</span>
+        <span className="min-w-0 flex-1 leading-snug">Platform tips &amp; how to use this section</span>
         {data?.source === "ai" && (
-          <span className="ml-auto text-xs text-muted-foreground">AI</span>
+          <span className="ml-2 shrink-0 text-xs text-muted-foreground">AI</span>
         )}
       </CollapsibleTrigger>
       <CollapsibleContent>

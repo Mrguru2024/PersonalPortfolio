@@ -202,16 +202,16 @@ export default function SubscribersPage() {
             </Link>
           </Button>
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Subscribers</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2">Subscribers</h1>
             <p className="text-muted-foreground">
               Manage your newsletter subscribers
             </p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Subscriber
               </Button>
