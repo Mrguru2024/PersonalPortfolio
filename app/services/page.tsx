@@ -116,7 +116,7 @@ export default function ServicesPage() {
                 <Link href="/website-revenue-calculator">Explore free growth tools</Link>
               </Button>
               <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/results">View recent work</Link>
+                <Link href="/partners/ascendra-technologies#projects">View our work</Link>
               </Button>
             </div>
           </section>

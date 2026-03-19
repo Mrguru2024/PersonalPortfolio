@@ -36,10 +36,8 @@ export default function AscendraTechnologiesPartnerPage() {
 
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-brand="ascendra">
         {/* Hero — brand accent: technical/systems */}
-        <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-primary">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.08),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.12),transparent)]" />
-          <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl flex flex-col items-center text-center">
+        <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-primary bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl flex flex-col items-center text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -128,7 +126,7 @@ export default function AscendraTechnologiesPartnerPage() {
             <EcosystemProjectsSection ascendraProjects={projects.slice(0, 6)} />
             <div className="text-center mt-10">
               <Button asChild variant="outline" size="sm" className="min-h-[44px]">
-                <Link href="/results">View all results</Link>
+                <Link href="/partners/ascendra-technologies#projects">View our work</Link>
               </Button>
             </div>
           </div>

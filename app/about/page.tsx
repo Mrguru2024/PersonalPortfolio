@@ -33,6 +33,22 @@ export default function AboutPage() {
             </p>
           </section>
 
+          {/* Ascendra Logo Reveal — contained video, ideal for About */}
+          <section className="max-w-md mx-auto" aria-label="Ascendra brand">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-contain"
+                aria-label="Ascendra logo reveal"
+              >
+                <source src="/Video Content_Ascendra_Files/Ascendra Dynamic Logo Reveal/Ascendra_Logo Reveal.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </section>
+
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 min-w-0">
             {ECOSYSTEM_PILLARS.map((pillar) => (
               <Card key={pillar.name} className="border-border bg-card h-full overflow-hidden">

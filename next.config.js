@@ -19,6 +19,7 @@ const nextConfig = {
       { source: '/favicon.ico', destination: '/favicon.svg', permanent: true },
       { source: '/insights', destination: '/blog', permanent: true },
       { source: '/insights/:path*', destination: '/blog', permanent: true },
+      { source: '/results', destination: '/diagnosis/results', permanent: true },
     ];
   },
   

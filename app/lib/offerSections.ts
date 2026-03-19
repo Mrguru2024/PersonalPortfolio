@@ -43,6 +43,10 @@ export const DEFAULT_OFFER_SECTIONS: OfferSections = {
     title: "Startup growth system",
     subtitle:
       "A practical startup growth audit designed for founders who cannot yet afford a full agency build. Get clarity, a roadmap, and an actionable plan—without the big-ticket price.",
+    imageUrl: "/stock images/Growth_11.jpeg",
+  },
+  graphics: {
+    bannerUrl: "/stock images/Web Design_4.jpeg",
   },
   price: {
     label: "Price range",

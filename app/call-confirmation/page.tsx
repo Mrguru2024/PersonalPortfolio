@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,11 +29,8 @@ export default function CallConfirmationPage() {
         canonicalPath="/call-confirmation"
       />
 
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-8 fold:py-10 xs:py-12 sm:py-16 md:py-20 relative">
-        <div className="absolute inset-0">
-          <Image src="/Ascendra images/shutterstock_535948222.jpg" alt="" fill className="object-cover opacity-[0.06] dark:opacity-[0.05]" sizes="100vw" />
-        </div>
-        <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-xl">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-8 fold:py-10 xs:py-12 sm:py-16 md:py-20">
+        <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-xl">
           <Card className="border-border bg-card shadow-lg overflow-hidden">
             <CardHeader className="text-center px-4 sm:px-6 md:px-8 pb-2">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-primary mx-auto mb-3 sm:mb-4 shrink-0">

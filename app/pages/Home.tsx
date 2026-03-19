@@ -64,10 +64,37 @@ const problemListItems = [
   "Lack of trust signals—no proof, credentials, or clear next step.",
 ];
 
+const PROMO_VIDEO_SRC = "/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/Ascendra_Business Launch_Promo.mp4";
+
 export default function Home() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-10 sm:space-y-12 pb-10 sm:pb-14">
       <HeroSection />
+      {/* Dedicated video section — Ascendra Business Launch Promo; full frame visible, agency-style container */}
+      <section id="see-ascendra" className="container mx-auto px-3 fold:px-4 sm:px-6" aria-label="See Ascendra in action">
+        <SectionReveal className="mx-auto max-w-5xl">
+          <div className="text-center mb-6">
+            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">See Ascendra in action</h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl mx-auto">
+              Brand, design, and technology—one coordinated ecosystem for growth.
+            </p>
+          </div>
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-muted/50 shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="absolute inset-0 w-full h-full object-cover"
+              aria-label="Ascendra Business Launch promo"
+            >
+              <source src={PROMO_VIDEO_SRC} type="video/mp4" />
+            </video>
+          </div>
+        </SectionReveal>
+      </section>
+      <SectionConnector variant="gradient" />
       {/* Growth Diagnosis funnel hero — high-conversion CTA */}
       <section id="growth-diagnosis" className="container mx-auto px-3 fold:px-4 sm:px-6">
         <SectionReveal className="mx-auto max-w-4xl">
@@ -387,7 +414,7 @@ export default function Home() {
           <ProcessExplorer
             steps={processStepItems}
             trustHighlights={trustHighlights}
-            trustCta={{ label: "Review results and work", href: "/results" }}
+            trustCta={{ label: "Run Growth Diagnosis", href: "/diagnosis" }}
           />
         </SectionReveal>
       </section>

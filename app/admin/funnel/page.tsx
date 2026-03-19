@@ -13,6 +13,7 @@ import {
   Pencil,
   Loader2,
   ArrowLeft,
+  FileStack,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,28 @@ export default function AdminFunnelPage() {
             Manage and review startup funnel content. View live pages or open content overview for each piece.
           </p>
         </div>
+
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <FileStack className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-lg">Content Library</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Upload PDF, PowerPoint, video for lead magnets. Publish and assign to page + section.
+                </CardDescription>
+              </div>
+            </div>
+            <Button asChild size="sm" className="shrink-0 gap-2">
+              <Link href="/admin/funnel/content-library">
+                <Pencil className="h-3.5 w-3.5" />
+                Manage content
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         <div className="space-y-4">
           {FUNNEL_ITEMS.map((item) => {

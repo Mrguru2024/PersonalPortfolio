@@ -142,8 +142,8 @@ export default function ApplyPage() {
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-4 py-8 max-w-xl">
         <div className="mb-6">
-          <Link href="/results" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Back to results
+          <Link href="/diagnosis/results" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Back to your growth score
           </Link>
         </div>
 

@@ -163,10 +163,10 @@ export default function BrandGrowthPage() {
         {/* 1. Hero */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">
           <div className="absolute inset-0">
-            <Image src="/Ascendra images/shutterstock_2659283389.jpg" alt="" fill className="object-cover opacity-[0.12] dark:opacity-[0.08]" sizes="100vw" priority />
+            <Image src="/stock images/Growth_9.jpeg" alt="" fill className="object-cover" sizes="100vw" priority />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background/95 to-secondary/5 dark:from-primary/10 dark:via-background/95 dark:to-secondary/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.15),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.25),transparent)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background dark:via-background/70 dark:to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,transparent_0%,hsl(var(--background)/0.4)_100%)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,transparent_0%,hsl(var(--background)/0.6)_100%)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl text-center">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -231,6 +231,10 @@ export default function BrandGrowthPage() {
         {/* 2. Problem */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
+            <div className="relative w-full max-w-2xl mx-auto aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-md mb-8">
+              <Image src="/stock images/Graphic Design_14.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
+              <div className="absolute inset-0 bg-gradient-to-t from-muted/90 via-muted/20 to-transparent" aria-hidden />
+            </div>
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why So Many Businesses Struggle to Grow
             </h2>
@@ -496,11 +500,8 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 7. Client transformation */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden">
-          <div className="absolute inset-0">
-            <Image src="/Ascendra images/shutterstock_297616661.jpg" alt="" fill className="object-cover opacity-[0.06] dark:opacity-[0.05]" sizes="100vw" />
-          </div>
-          <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/20 dark:bg-muted/10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               What Changes When Your Brand Is Aligned
             </h2>

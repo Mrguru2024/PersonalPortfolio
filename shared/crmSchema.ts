@@ -7,6 +7,7 @@ import {
   json,
   integer,
   real,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -542,3 +543,51 @@ export const crmSalesPlaybooks = pgTable("crm_sales_playbooks", {
 
 export type CrmSalesPlaybook = typeof crmSalesPlaybooks.$inferSelect;
 export type InsertCrmSalesPlaybook = typeof crmSalesPlaybooks.$inferInsert;
+
+// ——— Growth Intelligence: experiments and variant assignment ———
+
+/** A/B or multivariate experiments (e.g. hero CTA, offer headline). */
+export const growthExperiments = pgTable("growth_experiments", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // e.g. homepage_hero_cta
+  name: text("name").notNull(),
+  status: text("status").notNull().default("draft"), // draft | running | paused | ended
+  startAt: timestamp("start_at"),
+  endAt: timestamp("end_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type GrowthExperiment = typeof growthExperiments.$inferSelect;
+export type InsertGrowthExperiment = typeof growthExperiments.$inferInsert;
+
+/** Variants for an experiment (e.g. control, variant_a). */
+export const growthVariants = pgTable("growth_variants", {
+  id: serial("id").primaryKey(),
+  experimentId: integer("experiment_id").notNull().references(() => growthExperiments.id, { onDelete: "cascade" }),
+  key: text("key").notNull(), // e.g. control | variant_a
+  name: text("name").notNull(),
+  config: json("config").$type<Record<string, unknown>>(), // e.g. { label: "Get audit", href: "/audit" }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type GrowthVariant = typeof growthVariants.$inferSelect;
+export type InsertGrowthVariant = typeof growthVariants.$inferInsert;
+
+/** Sticky assignment: visitor/session -> variant (so same user sees same variant). */
+export const growthAssignments = pgTable(
+  "growth_assignments",
+  {
+    id: serial("id").primaryKey(),
+    experimentId: integer("experiment_id").notNull().references(() => growthExperiments.id, { onDelete: "cascade" }),
+    variantId: integer("variant_id").notNull().references(() => growthVariants.id, { onDelete: "cascade" }),
+    visitorId: text("visitor_id").notNull(),
+    sessionId: text("session_id"),
+    assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  },
+  (t) => [unique("growth_assignments_experiment_visitor").on(t.experimentId, t.visitorId)]
+);
+
+export type GrowthAssignment = typeof growthAssignments.$inferSelect;
+export type InsertGrowthAssignment = typeof growthAssignments.$inferInsert;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles } from "lucide-react";
 import { TrackPageView } from "@/components/TrackPageView";
@@ -113,9 +114,21 @@ export default function FreeGrowthToolsPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Free growth tools
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10">
                 Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
               </p>
+              {/* Hero visual: contained, professional focal point */}
+              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                <Image
+                  src="/stock images/Growth_10.jpeg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" aria-hidden />
+              </div>
             </section>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

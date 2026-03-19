@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, ChevronRight } from "lucide-react";
@@ -116,10 +117,14 @@ export default function GrowthDiagnosisPage() {
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
                   Website Growth Diagnosis
                 </h1>
-                <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
+                <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-6">
                   Get a clear picture of your site's performance, clarity, and growth opportunities. 
                   We'll scan your site and show you where you're strong and where to improve.
                 </p>
+                <div className="relative w-full max-w-2xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                  <Image src="/stock images/Web Design_2.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" aria-hidden />
+                </div>
               </section>
 
               <Card>

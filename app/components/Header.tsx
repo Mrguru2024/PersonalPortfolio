@@ -90,7 +90,7 @@ export default function Header(_props: HeaderProps) {
     { name: "About", href: "/about" },
     { name: "Ecosystem founders", href: "/ecosystem-founders" },
     { name: "Website breakdowns", href: "/website-breakdowns" },
-    { name: "Results", href: "/results" },
+    { name: "Your Growth Score", href: "/diagnosis/results" },
     { name: "Contact", href: "/contact" },
   ];
   const ctaButtons = [

@@ -14,6 +14,7 @@ import { users, type User, type InsertUser,
   clientFeedback, type ClientFeedback, type InsertClientFeedback,
   funnelContent, type FunnelContent, type InsertFunnelContent,
   siteOffers, type SiteOffer, type InsertSiteOffer,
+  funnelContentAssets, type FunnelContentAsset, type InsertFunnelContentAsset,
   challengeRegistrations, type ChallengeRegistration, type InsertChallengeRegistration,
   challengeLessonProgress, type ChallengeLessonProgress, type InsertChallengeLessonProgress,
   businessGoalPresets, type BusinessGoalPreset, type InsertBusinessGoalPreset,
@@ -47,6 +48,9 @@ import {
   crmDiscoveryWorkspaces, type CrmDiscoveryWorkspace, type InsertCrmDiscoveryWorkspace,
   crmProposalPrepWorkspaces, type CrmProposalPrepWorkspace, type InsertCrmProposalPrepWorkspace,
   crmSalesPlaybooks, type CrmSalesPlaybook, type InsertCrmSalesPlaybook,
+  growthExperiments, type GrowthExperiment, type InsertGrowthExperiment,
+  growthVariants, type GrowthVariant, type InsertGrowthVariant,
+  growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte } from "drizzle-orm";
@@ -73,6 +77,14 @@ export interface IStorage {
   listSiteOffers(): Promise<SiteOffer[]>;
   setSiteOffer(slug: string, data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }): Promise<SiteOffer>;
   updateSiteOfferGrading(slug: string, grading: import("@shared/schema").OfferContentGrading): Promise<SiteOffer>;
+
+  listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]>;
+  getFunnelContentAssetById(id: number): Promise<FunnelContentAsset | undefined>;
+  createFunnelContentAsset(data: InsertFunnelContentAsset): Promise<FunnelContentAsset>;
+  updateFunnelContentAsset(id: number, updates: Partial<InsertFunnelContentAsset>): Promise<FunnelContentAsset>;
+  deleteFunnelContentAsset(id: number): Promise<void>;
+  getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]>;
+
   createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration>;
   getChallengeRegistrationByEmail(email: string): Promise<ChallengeRegistration | undefined>;
   getChallengeRegistrationById(id: number): Promise<ChallengeRegistration | undefined>;
@@ -358,6 +370,18 @@ export interface IStorage {
     limit?: number;
     offset?: number;
   }): Promise<{ events: VisitorActivity[]; total: number }>;
+  /** Growth Intelligence: attribution aggregate by UTM (leads, deals, optional event counts). */
+  getAttributionAggregate(filters: { since?: Date; until?: Date }): Promise<{
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    leadCount: number;
+    dealCount: number;
+    wonCount: number;
+    avgLeadScore: number | null;
+  }[]>;
+  getGrowthExperimentByKey(key: string): Promise<(GrowthExperiment & { variants: GrowthVariant[] }) | undefined>;
+  getOrAssignVariant(experimentKey: string, visitorId: string, sessionId?: string | null): Promise<{ variantKey: string; config: Record<string, unknown> | null } | null>;
   getLeadMagnetPerformance(since?: Date): Promise<{
     totalLeads: number;
     bySource: { source: string; label: string; count: number }[];
@@ -629,6 +653,55 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!row) throw new Error(`Offer not found: ${slug}`);
     return row;
+  }
+
+  async listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]> {
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (filters?.status) conditions.push(eq(funnelContentAssets.status, filters.status));
+    if (filters?.leadMagnetSlug) conditions.push(eq(funnelContentAssets.leadMagnetSlug, filters.leadMagnetSlug));
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    return db
+      .select()
+      .from(funnelContentAssets)
+      .where(whereClause ?? sql`1=1`)
+      .orderBy(desc(funnelContentAssets.updatedAt));
+  }
+
+  async getFunnelContentAssetById(id: number): Promise<FunnelContentAsset | undefined> {
+    const [row] = await db.select().from(funnelContentAssets).where(eq(funnelContentAssets.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createFunnelContentAsset(data: InsertFunnelContentAsset): Promise<FunnelContentAsset> {
+    const now = new Date();
+    const [row] = await db
+      .insert(funnelContentAssets)
+      .values({ ...data, createdAt: now, updatedAt: now })
+      .returning();
+    if (!row) throw new Error("Failed to create funnel content asset");
+    return row;
+  }
+
+  async updateFunnelContentAsset(id: number, updates: Partial<InsertFunnelContentAsset>): Promise<FunnelContentAsset> {
+    const [row] = await db
+      .update(funnelContentAssets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(funnelContentAssets.id, id))
+      .returning();
+    if (!row) throw new Error("Funnel content asset not found");
+    return row;
+  }
+
+  async deleteFunnelContentAsset(id: number): Promise<void> {
+    await db.delete(funnelContentAssets).where(eq(funnelContentAssets.id, id));
+  }
+
+  async getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]> {
+    const rows = await db.select().from(funnelContentAssets).where(eq(funnelContentAssets.status, "published"));
+    return rows.filter((r) => {
+      const placements = (r.placements ?? []) as Array<{ pagePath: string; sectionId: string }>;
+      return placements.some((p) => p.pagePath === pagePath && p.sectionId === sectionId);
+    });
   }
 
   async createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration> {
@@ -2767,6 +2840,96 @@ export class DatabaseStorage implements IStorage {
     ]);
     const total = Number(totalRows[0]?.count ?? 0);
     return { events, total };
+  }
+
+  async getAttributionAggregate(filters: { since?: Date; until?: Date }): Promise<{
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    leadCount: number;
+    dealCount: number;
+    wonCount: number;
+    avgLeadScore: number | null;
+  }[]> {
+    const conditions: ReturnType<typeof sql>[] = [];
+    if (filters.since) conditions.push(sql`c.created_at >= ${filters.since}`);
+    if (filters.until) conditions.push(sql`c.created_at <= ${filters.until}`);
+    const whereClause = conditions.length ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+    const raw = await db.execute(sql`
+      SELECT
+        c.utm_source,
+        c.utm_medium,
+        c.utm_campaign,
+        count(DISTINCT c.id)::int AS lead_count,
+        count(DISTINCT d.id)::int AS deal_count,
+        count(DISTINCT CASE WHEN d.pipeline_stage = 'won' THEN d.id END)::int AS won_count,
+        avg(c.lead_score)::float AS avg_lead_score
+      FROM crm_contacts c
+      LEFT JOIN crm_deals d ON d.contact_id = c.id
+      ${whereClause}
+      GROUP BY c.utm_source, c.utm_medium, c.utm_campaign
+      ORDER BY lead_count DESC
+    `);
+    const list = (raw && typeof raw === "object" && "rows" in raw ? (raw as { rows: unknown[] }).rows : Array.isArray(raw) ? raw : []) as {
+      utm_source: string | null;
+      utm_medium: string | null;
+      utm_campaign: string | null;
+      lead_count: string | number;
+      deal_count: string | number;
+      won_count: string | number;
+      avg_lead_score: string | number | null;
+    }[];
+    return list.map((r) => ({
+      utm_source: r.utm_source ?? null,
+      utm_medium: r.utm_medium ?? null,
+      utm_campaign: r.utm_campaign ?? null,
+      leadCount: Number(r.lead_count ?? 0),
+      dealCount: Number(r.deal_count ?? 0),
+      wonCount: Number(r.won_count ?? 0),
+      avgLeadScore: r.avg_lead_score != null ? Number(r.avg_lead_score) : null,
+    }));
+  }
+
+  async getGrowthExperimentByKey(key: string): Promise<(GrowthExperiment & { variants: GrowthVariant[] }) | undefined> {
+    const [exp] = await db.select().from(growthExperiments).where(eq(growthExperiments.key, key)).limit(1);
+    if (!exp) return undefined;
+    const variants = await db.select().from(growthVariants).where(eq(growthVariants.experimentId, exp.id)).orderBy(growthVariants.id);
+    return { ...exp, variants };
+  }
+
+  async getOrAssignVariant(experimentKey: string, visitorId: string, sessionId?: string | null): Promise<{ variantKey: string; config: Record<string, unknown> | null } | null> {
+    const exp = await this.getGrowthExperimentByKey(experimentKey);
+    if (!exp || exp.status !== "running") return null;
+    if (!exp.variants.length) return null;
+    const existing = await db
+      .select()
+      .from(growthAssignments)
+      .where(and(eq(growthAssignments.experimentId, exp.id), eq(growthAssignments.visitorId, visitorId)))
+      .limit(1);
+    if (existing.length > 0) {
+      const variant = exp.variants.find((v) => v.id === existing[0]!.variantId);
+      return variant ? { variantKey: variant.key, config: (variant.config ?? null) as Record<string, unknown> | null } : null;
+    }
+    const idx = Math.floor(Math.random() * exp.variants.length);
+    const chosen = exp.variants[idx]!;
+    try {
+      await db.insert(growthAssignments).values({
+        experimentId: exp.id,
+        variantId: chosen.id,
+        visitorId,
+        sessionId: sessionId ?? null,
+      });
+    } catch {
+      // Race: another request already assigned; return existing
+      const existing = await db
+        .select()
+        .from(growthAssignments)
+        .where(and(eq(growthAssignments.experimentId, exp.id), eq(growthAssignments.visitorId, visitorId)))
+        .limit(1);
+      const variant = existing[0] ? exp.variants.find((v) => v.id === existing[0]!.variantId) : null;
+      return variant ? { variantKey: variant.key, config: (variant.config ?? null) as Record<string, unknown> | null } : null;
+    }
+    return { variantKey: chosen.key, config: (chosen.config ?? null) as Record<string, unknown> | null };
   }
 
   async createCrmTask(task: InsertCrmTask): Promise<CrmTask> {

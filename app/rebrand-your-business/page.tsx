@@ -83,11 +83,12 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10 relative overflow-hidden">
-          <div className="absolute inset-0">
-            <Image src="/Ascendra images/shutterstock_1847176111.jpg" alt="" fill className="object-cover opacity-[0.07] dark:opacity-[0.05]" sizes="100vw" />
-          </div>
-          <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
+            <div className="relative w-full max-w-2xl mx-auto aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-md mb-8">
+              <Image src="/stock images/Graphic Design_15.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
+              <div className="absolute inset-0 bg-gradient-to-t from-muted/80 via-muted/10 to-transparent" aria-hidden />
+            </div>
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Signs You've Outgrown Your Brand
             </h2>

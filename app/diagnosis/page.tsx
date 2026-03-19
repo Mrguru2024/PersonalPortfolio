@@ -41,7 +41,7 @@ export default function DiagnosisPage() {
       setSubmitting(true);
       const scores = calculateScores(answers);
       setScores(scores);
-      router.push("/results");
+      router.push("/diagnosis/results");
       return;
     }
     setStep((s) => Math.min(s + 1, totalSteps - 1));

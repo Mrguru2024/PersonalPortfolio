@@ -102,6 +102,30 @@ export const siteOffers = pgTable("site_offers", {
 export type SiteOffer = typeof siteOffers.$inferSelect;
 export type InsertSiteOffer = typeof siteOffers.$inferInsert;
 
+/** Funnel content assets: PDF, PPTX, video, slideshow — for lead magnets. Admin uploads and assigns to page/section. */
+export const funnelContentAssets = pgTable("funnel_content_assets", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  /** pdf | pptx | video | slideshow */
+  assetType: text("asset_type").notNull(),
+  /** URL to file (e.g. /uploads/content/...) */
+  fileUrl: text("file_url").notNull(),
+  mimeType: text("mime_type"),
+  fileSizeBytes: integer("file_size_bytes"),
+  /** draft | published — only published appear on live pages */
+  status: text("status").notNull().default("draft"),
+  /** Optional: which lead magnet this is for (e.g. digital-growth-audit, startup-growth-kit) */
+  leadMagnetSlug: text("lead_magnet_slug"),
+  /** Where to show: [{ pagePath, sectionId }, ...]. pagePath e.g. /digital-growth-audit; sectionId e.g. hero, lead_magnet_download */
+  placements: json("placements").$type<Array<{ pagePath: string; sectionId: string }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type FunnelContentAsset = typeof funnelContentAssets.$inferSelect;
+export type InsertFunnelContentAsset = typeof funnelContentAssets.$inferInsert;
+
 /** Paid challenge registrations. Links to CRM contact when created. */
 export const challengeRegistrations = pgTable("challenge_registrations", {
   id: serial("id").primaryKey(),

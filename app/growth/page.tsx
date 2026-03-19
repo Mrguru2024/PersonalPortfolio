@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, MessageSquare, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ export default function GrowthLandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-4 py-12 sm:py-16 max-w-4xl">
-        {/* Hero */}
+        {/* Hero with contained visual */}
         <section className="text-center mb-16 sm:mb-20">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Discover What&apos;s Slowing Your Business Growth
@@ -17,6 +18,10 @@ export default function GrowthLandingPage() {
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             Get a personalized diagnosis across your brand, website, and lead system.
           </p>
+          <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mb-8">
+            <Image src="/stock images/Growth_8.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent" aria-hidden />
+          </div>
           <Button asChild size="lg" className="min-h-[48px] px-8 text-base">
             <Link href="/diagnosis">
               Run Growth Diagnosis

@@ -21,7 +21,7 @@ export default function HeroSection() {
       className="relative w-full min-w-0 max-w-full min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex items-center justify-center overflow-hidden"
       aria-label="Hero"
     >
-      {/* Particle background */}
+      {/* Particle background only — no video here to avoid visual collision */}
       <div className="absolute inset-0 w-full h-full">
         <ParticleAnimation
           count={56}
@@ -48,7 +48,7 @@ export default function HeroSection() {
 
       {/* Gradient overlay so text stays readable */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-background/55 via-background/35 to-background/80 dark:from-background/28 dark:via-background/12 dark:to-background/62 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/40 to-background/85 dark:from-background/50 dark:via-background/20 dark:to-background/70 pointer-events-none"
         aria-hidden
       />
 
