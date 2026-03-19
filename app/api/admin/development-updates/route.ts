@@ -8,6 +8,11 @@ export const revalidate = 0;
 
 const CONTENT_PATH = join(process.cwd(), "content", "development-updates.md");
 
+/** Optional: fetch latest from GitHub raw so pushes show up without redeploy. Set in production to e.g. https://raw.githubusercontent.com/OWNER/REPO/main/content/development-updates.md */
+const GITHUB_RAW_URL =
+  process.env.DEVELOPMENT_UPDATES_RAW_URL ||
+  "https://raw.githubusercontent.com/Mrguru2024/PersonalPortfolio/main/content/development-updates.md";
+
 export interface DevelopmentUpdateEntry {
   date: string;
   title: string;
@@ -42,21 +47,52 @@ function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
   return entries;
 }
 
+async function fetchRawFromGitHub(): Promise<string | null> {
+  try {
+    const res = await fetch(GITHUB_RAW_URL, {
+      headers: { Accept: "text/plain" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * GET /api/admin/development-updates
- * Returns parsed development log for the admin dashboard. Auto-updates when the content file changes (no cache).
+ * Returns parsed development log for the admin dashboard.
+ * In production we fetch from GitHub raw first so pushes show up without redeploy; fallback to bundled file.
+ * Locally we read from the file; refresh button and refetchInterval still apply.
  */
 export async function GET(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    if (!existsSync(CONTENT_PATH)) {
-      return NextResponse.json({ updates: [], source: "file" });
+
+    const isProduction = process.env.NODE_ENV === "production" || !!process.env.VERCEL;
+    let raw: string | null = null;
+    let source: "file" | "github" = "file";
+
+    if (isProduction) {
+      raw = await fetchRawFromGitHub();
+      if (raw) source = "github";
     }
-    const raw = readFileSync(CONTENT_PATH, "utf-8");
+
+    if (!raw && existsSync(CONTENT_PATH)) {
+      raw = readFileSync(CONTENT_PATH, "utf-8");
+    }
+
+    if (!raw || !raw.trim()) {
+      const res = NextResponse.json({ updates: [], source: "file" });
+      res.headers.set("Cache-Control", "no-store, max-age=0");
+      return res;
+    }
+
     const updates = parseUpdatesMarkdown(raw);
-    const res = NextResponse.json({ updates, source: "file" });
+    const res = NextResponse.json({ updates, source });
     res.headers.set("Cache-Control", "no-store, max-age=0");
     return res;
   } catch (error) {
