@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -79,6 +80,17 @@ export default async function StartupGrowthKitPage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
                 {heroSubtitle}
               </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
+                <Image
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Web Design_4.jpg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
+              </div>
             </section>
 
             {/* Why most startup websites fail */}

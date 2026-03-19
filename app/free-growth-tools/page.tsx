@@ -120,7 +120,7 @@ export default function FreeGrowthToolsPage() {
               {/* Hero visual: contained, professional focal point */}
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
                 <Image
-                  src="/stock images/Growth_10.jpeg"
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Growth_10.jpg"
                   alt=""
                   fill
                   className="object-cover"

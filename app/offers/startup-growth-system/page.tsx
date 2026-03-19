@@ -73,6 +73,10 @@ export default function StartupGrowthSystemOfferPage() {
   const bullets = sections.bullets ?? DEFAULT_OFFER_SECTIONS.bullets!;
   const cta = sections.cta ?? DEFAULT_OFFER_SECTIONS.cta!;
 
+  // Fallback hero media when the CMS/DB entry doesn't provide an image.
+  const fallbackHeroImageUrl =
+    "/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Growth_11.jpg";
+
   return (
     <>
       <PageSEO
@@ -83,24 +87,26 @@ export default function StartupGrowthSystemOfferPage() {
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
-            {sections.graphics?.bannerUrl && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
+              <Image
+                src={sections.graphics?.bannerUrl ?? fallbackHeroImageUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 672px"
+              />
+            </div>
+
+            <section className="text-center">
+              <div className="relative w-full max-w-md mx-auto aspect-video mb-6 rounded-lg overflow-hidden bg-muted">
                 <Image
-                  src={sections.graphics.bannerUrl}
+                  src={hero.imageUrl ?? fallbackHeroImageUrl}
                   alt=""
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
+                  sizes="(max-width: 448px) 100vw, 448px"
                 />
               </div>
-            )}
-
-            <section className="text-center">
-              {hero.imageUrl && (
-                <div className="relative w-full max-w-md mx-auto aspect-video mb-6 rounded-lg overflow-hidden bg-muted">
-                  <Image src={hero.imageUrl} alt="" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" />
-                </div>
-              )}
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 {hero.title}
               </h1>

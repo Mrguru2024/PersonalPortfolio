@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { PageSEO } from "@/components/SEO";
 import { WebsiteScoreCard } from "@/components/funnel/WebsiteScoreCard";
 
@@ -26,6 +27,17 @@ export default function WebsitePerformanceScorePage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
                 See how your site stacks up on brand clarity, design, performance, conversion, and speed. A full audit gives you a real score and a clear improvement plan.
               </p>
+              <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
+                <Image
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Web Design_5.jpg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
+              </div>
             </section>
 
             <WebsiteScoreCard />

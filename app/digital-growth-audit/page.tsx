@@ -65,7 +65,13 @@ export default function DigitalGrowthAuditPage() {
                 Our Digital Growth Audit reviews your brand clarity, visual presentation, and website performance to uncover opportunities for improvement.
               </p>
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <Image src="/stock images/Web Design_1.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
+                <Image
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Digital_18.jpg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
               </div>
             </section>

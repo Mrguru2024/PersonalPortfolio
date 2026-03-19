@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Target, Layout, Mail, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,17 @@ export default function StartupActionPlanPage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
                 Practical steps to improve your online presence—without a full agency build. Work through these in order for the best results.
               </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
+                <Image
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Digital_18.jpg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
+              </div>
             </section>
 
             <section className="space-y-6">

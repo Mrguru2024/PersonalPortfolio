@@ -231,10 +231,6 @@ export default function BrandGrowthPage() {
         {/* 2. Problem */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
-            <div className="relative w-full max-w-2xl mx-auto aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-md mb-8">
-              <Image src="/stock images/Graphic Design_14.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
-              <div className="absolute inset-0 bg-gradient-to-t from-muted/90 via-muted/20 to-transparent" aria-hidden />
-            </div>
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why So Many Businesses Struggle to Grow
             </h2>

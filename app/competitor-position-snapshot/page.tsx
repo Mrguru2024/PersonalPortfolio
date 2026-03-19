@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,6 +149,17 @@ export default function CompetitorPositionSnapshotPage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
                 This snapshot helps identify how clearly your business is positioned online and where competitors may be gaining an advantage. It's a strategic review—not automated competitor scraping—covering brand clarity, presentation quality, website trust signals, and conversion readiness.
               </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
+                <Image
+                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Diversity_17.jpg"
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/65 via-transparent to-transparent" aria-hidden />
+              </div>
             </section>
 
             {!submitted ? (
