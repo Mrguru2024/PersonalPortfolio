@@ -54,6 +54,10 @@ vite.config.ts.*
 # vercel-build-static.cjs
 # vercel-static-api.cjs
 
+# Large binary / source assets (use LFS or host elsewhere if needed)
+*.aep
+public/Video Content_Ascendra_Files/**/03. Working files/
+
 # Backups (should not be in repo)
 backups/
 
