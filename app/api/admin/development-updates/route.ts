@@ -15,6 +15,8 @@ const GITHUB_RAW_URL =
 
 export interface DevelopmentUpdateEntry {
   date: string;
+  /** Optional time (e.g. "14:30" or "2:30 PM"). Omitted when not in source. */
+  time?: string;
   title: string;
   items: string[];
 }
@@ -24,23 +26,37 @@ function toPlainText(s: string): string {
   return s.replace(/\*\*/g, "").trim();
 }
 
-/** Parse markdown-style log into entries. Format: ## YYYY-MM-DD — Title, then - item lines. Output is plain text (no **). */
+/** Normalize time string to HH:mm for display (e.g. "14:30" or "2:30 PM" -> keep as-is for display). */
+function normalizeTime(t: string): string {
+  const trimmed = t.trim();
+  if (!trimmed) return "";
+  return trimmed;
+}
+
+/** Parse markdown-style log into entries. Format: ## YYYY-MM-DD [HH:MM] [—] Title. Optional time after date (space or T). */
 function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
   const entries: DevelopmentUpdateEntry[] = [];
   const blocks = raw.split(/\n##\s+/).filter(Boolean);
   for (const block of blocks) {
     const firstLine = block.trim().split("\n")[0] ?? "";
-    const match = firstLine.match(/^(\d{4}-\d{2}-\d{2})\s*[—–-]\s*(.+)$/);
+    // Match: date only "2025-03-15 — Title", or with time "2025-03-15 14:30 — Title" or "2025-03-15T14:30 — Title" or "2025-03-15 2:30 PM — Title"
+    const dateOnlyMatch = firstLine.match(/^(\d{4}-\d{2}-\d{2})\s*[—–-]\s*(.+)$/);
+    const dateTimeMatch = firstLine.match(/^(\d{4}-\d{2}-\d{2})(?:[\sT](\d{1,2}:\d{2}(?:\s*[AP]M)?|\d{2}:\d{2}))?\s*[—–-]\s*(.+)$/);
+    const match = dateTimeMatch || dateOnlyMatch;
     if (!match) continue;
-    const [, date, title] = match;
+    const date = match[1] ?? "";
+    const timeRaw = match[2]?.trim();
+    const title = (dateTimeMatch ? match[3] : match[2]) ?? "";
+    const time = timeRaw ? normalizeTime(timeRaw) : undefined;
     const rest = block.slice(firstLine.length).trim();
     const items = rest
       .split(/\n/)
       .map((line) => toPlainText(line.replace(/^\s*[-*]\s+/, "")))
       .filter(Boolean);
     entries.push({
-      date: date ?? "",
-      title: toPlainText((title ?? "").trim()),
+      date,
+      ...(time ? { time } : {}),
+      title: toPlainText(title.trim()),
       items,
     });
   }
@@ -49,9 +65,16 @@ function parseUpdatesMarkdown(raw: string): DevelopmentUpdateEntry[] {
 
 async function fetchRawFromGitHub(): Promise<string | null> {
   try {
-    const res = await fetch(GITHUB_RAW_URL, {
-      headers: { Accept: "text/plain" },
+    // Cache-bust so we don't get stale content from intermediaries (GitHub's own CDN may still cache ~5 min)
+    const url = GITHUB_RAW_URL + (GITHUB_RAW_URL.includes("?") ? "&" : "?") + "t=" + Date.now();
+    const res = await fetch(url, {
+      headers: {
+        Accept: "text/plain",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
       cache: "no-store",
+      next: { revalidate: 0 },
     });
     if (!res.ok) return null;
     return await res.text();
@@ -75,10 +98,15 @@ export async function GET(req: NextRequest) {
     const isProduction = process.env.NODE_ENV === "production" || !!process.env.VERCEL;
     let raw: string | null = null;
     let source: "file" | "github" = "file";
+    let sourceNote: string | undefined;
 
     if (isProduction) {
       raw = await fetchRawFromGitHub();
-      if (raw) source = "github";
+      if (raw) {
+        source = "github";
+      } else {
+        sourceNote = "GitHub fetch failed or repo is private; showing deployed file. Push may take ~5 min to appear on GitHub's CDN.";
+      }
     }
 
     if (!raw && existsSync(CONTENT_PATH)) {
@@ -86,13 +114,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (!raw || !raw.trim()) {
-      const res = NextResponse.json({ updates: [], source: "file" });
+      const res = NextResponse.json({ updates: [], source: "file", sourceNote: sourceNote ?? undefined });
       res.headers.set("Cache-Control", "no-store, max-age=0");
       return res;
     }
 
     const updates = parseUpdatesMarkdown(raw);
-    const res = NextResponse.json({ updates, source });
+    const res = NextResponse.json({ updates, source, sourceNote });
     res.headers.set("Cache-Control", "no-store, max-age=0");
     return res;
   } catch (error) {

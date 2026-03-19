@@ -2,6 +2,8 @@
 
 Log of features and fixes shipped to production. Edit this file when you ship and push; the admin dashboard shows it in digest form (plain text, no markdown formatting).
 
+**Format:** Each section is `## YYYY-MM-DD [time] — Title` then bullet points. Time is optional (e.g. `14:30` or `2:30 PM`). If omitted, the dashboard shows "—" for time.
+
 ---
 
 ## 2025-03-15 — CRM Stage 3 (AI guidance) and Stage 4 (workflow automation)

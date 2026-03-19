@@ -348,7 +348,7 @@ export default function AdminDashboardPage() {
   });
 
   // Development updates log (digest; auto-refresh when new features ship)
-  const { data: devUpdatesData, isLoading: devUpdatesLoading, refetch: refetchDevUpdates } = useQuery<{ updates: { date: string; title: string; items: string[] }[] }>({
+  const { data: devUpdatesData, isLoading: devUpdatesLoading, refetch: refetchDevUpdates, dataUpdatedAt: devUpdatesCheckedAt } = useQuery<{ updates: { date: string; time?: string; title: string; items: string[] }[]; source?: "file" | "github"; sourceNote?: string }>({
     queryKey: ["/api/admin/development-updates"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/development-updates");
@@ -705,6 +705,27 @@ export default function AdminDashboardPage() {
           </div>
         </CardHeader>
         <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          {/* Update time log: when data was last checked and source */}
+          {(devUpdatesData || devUpdatesCheckedAt) && (
+            <div className="space-y-1.5 mb-4 pb-3 border-b border-border/60">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                {devUpdatesCheckedAt > 0 && (
+                  <span suppressHydrationWarning>
+                    Last checked: {format(new Date(devUpdatesCheckedAt), "MMM d, yyyy · h:mm a")}
+                  </span>
+                )}
+                {devUpdatesData?.source && (
+                  <span>Source: {devUpdatesData.source === "github" ? "GitHub (live)" : "file"}</span>
+                )}
+                {devUpdatesData?.source === "github" && (
+                  <span>New pushes may take up to ~5 min to appear.</span>
+                )}
+              </div>
+              {devUpdatesData?.sourceNote && (
+                <p className="text-xs text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
+              )}
+            </div>
+          )}
           {devUpdatesLoading && !devUpdatesData ? (
             <div className="flex items-center gap-2 py-6 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin shrink-0" />
@@ -719,9 +740,13 @@ export default function AdminDashboardPage() {
               {devUpdatesData.updates.map((entry, idx) => (
                 <div key={idx} className="border-b border-muted/60 pb-4 last:border-0 last:pb-0">
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date} suppressHydrationWarning>
+                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date + "T12:00:00"} suppressHydrationWarning>
                       {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
                     </time>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-sm tabular-nums text-muted-foreground" suppressHydrationWarning>
+                      {entry.time ?? "—"}
+                    </span>
                     <span className="text-muted-foreground">—</span>
                     <span className="text-sm font-semibold text-foreground">{entry.title}</span>
                   </div>
