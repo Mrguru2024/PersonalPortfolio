@@ -41,6 +41,8 @@ export default function AboutPage() {
                 muted
                 loop
                 playsInline
+                controls
+                preload="metadata"
                 className="absolute inset-0 w-full h-full object-contain"
                 aria-label="Ascendra logo reveal"
               >
