@@ -220,30 +220,16 @@ export default function Home() {
       <SectionConnector />
 
       <section id="about" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
-          <h2 className="text-3xl font-semibold text-foreground text-center mb-4 sm:mb-6">
+        <SectionReveal className="mx-auto max-w-2xl text-center space-y-4">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
             A coordinated approach to improving your digital presence
           </h2>
-          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-6">
-            Three pillars work together: <strong className="text-foreground">Brand Strategy</strong> (messaging and positioning), <strong className="text-foreground">Visual Experience</strong> (design and presentation), and <strong className="text-foreground">Technology & Conversion Systems</strong> (websites and lead capture). Style Studio Branding, Macon Designs®, and Ascendra Technologies coordinate so your business improves how it looks, how it communicates, and how it converts visitors into customers.
+          <p className="text-muted-foreground">
+            Brand strategy, visual experience, and technology work together so your business improves how it looks, how it communicates, and how it converts visitors into customers.
           </p>
-          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {ECOSYSTEM_PILLARS.map((pillar) => (
-              <SectionRevealItem key={pillar.name}>
-                <AnimatedCard className="h-full">
-                  <CardContent className="p-5">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {pillar.name}
-                    </h3>
-                    <p className="mt-1 text-sm font-medium text-primary">{pillar.role}</p>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {pillar.summary}
-                    </p>
-                  </CardContent>
-                </AnimatedCard>
-              </SectionRevealItem>
-            ))}
-          </SectionRevealStagger>
+          <Button asChild variant="outline" className="min-h-[44px]">
+            <Link href="/about">How the ecosystem works</Link>
+          </Button>
         </SectionReveal>
       </section>
 
@@ -319,8 +305,8 @@ export default function Home() {
         <SectionReveal className="mx-auto max-w-5xl">
           <InsightsFromEcosystem
             insights={getOneInsightPerFounder()}
-            heading="Built by specialists in strategy, design, and technology"
-            subtext="Practical perspectives from the founders behind the ecosystem."
+            heading="From the founders"
+            subtext="Practical perspectives on strategy, design, and technology from the people behind the ecosystem."
             variant="card"
             showFoundersLink={true}
           />
