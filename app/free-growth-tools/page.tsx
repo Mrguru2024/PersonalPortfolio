@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
 import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
+import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 
 export const metadata: Metadata = {
   title: "Free growth tools | Ascendra Technologies",
@@ -120,7 +121,7 @@ export default function FreeGrowthToolsPage() {
               {/* Hero visual: contained, professional focal point */}
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Growth_10.jpg"
+                  src="/stock images/Growth_10.jpeg"
                   alt=""
                   fill
                   className="object-cover"
@@ -128,6 +129,24 @@ export default function FreeGrowthToolsPage() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" aria-hidden />
+              </div>
+            </section>
+
+            <section className="text-center" aria-label="Ascendra growth tips video">
+              <h2 className="text-xl sm:text-2xl font-semibold text-foreground mb-2">Quick tips from Ascendra</h2>
+              <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6">
+                Short, practical guidance before you dive into the tools below.
+              </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  aria-label="Ascendra tips video"
+                >
+                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
+                </video>
               </div>
             </section>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { ECOSYSTEM_PILLARS, POSITIONING_STATEMENT } from "@/lib/funnel-content";
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function AboutPage() {
             </p>
           </section>
 
-          {/* Ascendra Logo Reveal — contained video, ideal for About */}
+          {/* Ascendra logo reveal — committed MP4 in public/Video Content_Ascendra_Files */}
           <section className="max-w-md mx-auto" aria-label="Ascendra brand">
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
               <video
@@ -41,10 +42,11 @@ export default function AboutPage() {
                 muted
                 loop
                 playsInline
+                controls
                 className="absolute inset-0 w-full h-full object-contain"
                 aria-label="Ascendra logo reveal"
               >
-                <source src="/Video Content_Ascendra_Files/Ascendra Dynamic Logo Reveal/Ascendra_Logo Reveal.mp4" type="video/mp4" />
+                <source src={ASCENDRA_VIDEO.logoReveal} type="video/mp4" />
               </video>
             </div>
           </section>

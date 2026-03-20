@@ -27,6 +27,7 @@ import {
   SectionConnector,
   StatsStrip,
 } from "@/components/motion";
+import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 
 const processStepItems = [
   {
@@ -64,13 +65,11 @@ const problemListItems = [
   "Lack of trust signals—no proof, credentials, or clear next step.",
 ];
 
-const PROMO_VIDEO_SRC = "/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/Ascendra_Business Launch_Promo.mp4";
-
 export default function Home() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-10 sm:space-y-12 pb-10 sm:pb-14">
       <HeroSection />
-      {/* Dedicated video section — Ascendra Business Launch Promo; full frame visible, agency-style container */}
+      {/* Business Launch Promo — committed under public/Video Content_Ascendra_Files */}
       <section id="see-ascendra" className="container mx-auto px-3 fold:px-4 sm:px-6" aria-label="See Ascendra in action">
         <SectionReveal className="mx-auto max-w-5xl">
           <div className="text-center mb-6">
@@ -89,7 +88,7 @@ export default function Home() {
               className="absolute inset-0 w-full h-full object-cover"
               aria-label="Ascendra Business Launch promo"
             >
-              <source src={PROMO_VIDEO_SRC} type="video/mp4" />
+              <source src={ASCENDRA_VIDEO.businessLaunchPromo} type="video/mp4" />
             </video>
           </div>
         </SectionReveal>

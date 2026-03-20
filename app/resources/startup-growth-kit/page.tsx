@@ -19,6 +19,7 @@ import {
   STARTUP_ACTION_PLAN_PATH,
 } from "@/lib/funnelCtas";
 import { getFunnelContent } from "@/lib/funnelContent.server";
+import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -82,7 +83,7 @@ export default async function StartupGrowthKitPage() {
               </p>
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Web Design_4.jpg"
+                  src="/stock images/Web Design_4.jpeg"
                   alt=""
                   fill
                   className="object-cover"
@@ -122,6 +123,24 @@ export default async function StartupGrowthKitPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 AI and templates can speed up execution, but they work best when you’ve already decided on your message, audience, and conversion path. Use them to draft copy, suggest structures, or generate ideas—then edit for clarity and consistency. They don’t replace the work of knowing what you offer and who it’s for; they support it.
               </p>
+            </section>
+
+            <section aria-label="Ascendra tips for founders">
+              <h2 className="text-xl font-semibold text-foreground mb-2 text-center">Video tips</h2>
+              <p className="text-sm text-muted-foreground mb-4 text-center max-w-xl mx-auto">
+                A short walkthrough of ideas that pair well with this guide—watch before you build.
+              </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  aria-label="Ascendra tips video for startups"
+                >
+                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
+                </video>
+              </div>
             </section>
 
             {/* 4 layers */}

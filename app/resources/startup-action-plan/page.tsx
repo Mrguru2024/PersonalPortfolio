@@ -11,6 +11,7 @@ import {
   REVENUE_CALCULATOR_PATH,
   STARTUP_GROWTH_SYSTEM_OFFER_PATH,
 } from "@/lib/funnelCtas";
+import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 
 export const metadata: Metadata = {
   title: "Startup action plan | Practical steps to improve your online presence",
@@ -66,7 +67,7 @@ export default function StartupActionPlanPage() {
               </p>
               <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Digital_18.jpg"
+                  src="/stock images/Digital_18.jpeg"
                   alt=""
                   fill
                   className="object-cover"
@@ -74,6 +75,24 @@ export default function StartupActionPlanPage() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
+              </div>
+            </section>
+
+            <section className="text-center" aria-label="Ascendra tips video">
+              <h2 className="text-xl font-semibold text-foreground mb-2">Watch: quick tips</h2>
+              <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-4">
+                Short guidance that lines up with the steps below—play before you work through the list.
+              </p>
+              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  aria-label="Ascendra tips video"
+                >
+                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
+                </video>
               </div>
             </section>
 
