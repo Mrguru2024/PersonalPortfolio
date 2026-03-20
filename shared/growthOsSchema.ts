@@ -101,3 +101,25 @@ export const gosAccessAuditEvents = pgTable("gos_access_audit_events", {
 });
 
 export type GosAccessAuditEvent = typeof gosAccessAuditEvents.$inferSelect;
+
+/**
+ * Links CRM leads/contacts to internal content, blog posts, or calendar rows for dashboard attribution.
+ * No FK constraints — enforced in app layer (matches other GOS tables).
+ */
+export const gosLeadContentAttributions = pgTable("gos_lead_content_attributions", {
+  id: serial("id").primaryKey(),
+  projectKey: text("project_key").notNull().default("ascendra_main"),
+  contactId: integer("contact_id").notNull(),
+  dealId: integer("deal_id"),
+  documentId: integer("document_id"),
+  blogPostId: integer("blog_post_id"),
+  calendarEntryId: integer("calendar_entry_id"),
+  /** manual | utm | form | import | campaign */
+  channel: text("channel").notNull().default("manual"),
+  attributionLabel: text("attribution_label"),
+  metadataJson: json("metadata_json").$type<Record<string, unknown>>().default({}),
+  createdByUserId: integer("created_by_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type GosLeadContentAttribution = typeof gosLeadContentAttributions.$inferSelect;

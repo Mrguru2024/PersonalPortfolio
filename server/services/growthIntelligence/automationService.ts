@@ -1,6 +1,6 @@
 import { db } from "@server/db";
-import { internalAutomationRuns, internalCmsDocuments } from "@shared/schema";
-import { eq, desc, lt, and } from "drizzle-orm";
+import { internalAutomationRuns, internalCmsDocuments, crmContacts } from "@shared/schema";
+import { eq, desc, lt, and, isNotNull, isNull, or, notInArray } from "drizzle-orm";
 import { runContentInsightAnalysis } from "./contentInsightService";
 import { runResearchDiscovery, editorialGapDetection } from "./researchIntelligenceService";
 import { executeAuditRun } from "@server/services/internalStudio/auditService";
@@ -150,6 +150,43 @@ export async function runAutomationJob(
         });
         return { automationRunId: id, ok: true, message: "Insights generated" };
       }
+      case "repurposing_suggestions": {
+        if (!ctx.documentId) throw new Error("documentId required");
+        await runContentInsightAnalysis({
+          documentId: ctx.documentId,
+          triggerType: "automation",
+          triggeredByUserId: ctx.userId,
+        });
+        await completeRun(id, {
+          status: "completed",
+          resultSummary:
+            "AI insight run (repurpose/platform variants) — review suggestions in Content Studio document",
+        });
+        return { automationRunId: id, ok: true, message: "Repurposing suggestions generated" };
+      }
+      case "stale_followup_detection": {
+        const now = new Date();
+        const overdue = await db
+          .select({ id: crmContacts.id })
+          .from(crmContacts)
+          .where(
+            and(
+              isNotNull(crmContacts.nextFollowUpAt),
+              lt(crmContacts.nextFollowUpAt, now),
+              or(isNull(crmContacts.status), notInArray(crmContacts.status, ["won", "lost"])),
+            ),
+          )
+          .limit(500);
+        await completeRun(id, {
+          status: "completed",
+          resultSummary: `${overdue.length} CRM contacts with overdue nextFollowUpAt`,
+        });
+        return {
+          automationRunId: id,
+          ok: true,
+          message: `${overdue.length} stale follow-ups`,
+        };
+      }
       default:
         throw new Error(`Unknown job type: ${jobType}`);
     }
@@ -158,6 +195,32 @@ export async function runAutomationJob(
     await completeRun(id, { status: "failed", errorMessage: msg });
     return { automationRunId: id, ok: false, message: msg };
   }
+}
+
+/**
+ * Scheduled jobs for cron: stale content, editorial gaps daily; weekly research digest on Mondays (UTC).
+ */
+export async function runScheduledGrowthOsJobs(input: {
+  projectKey: string;
+  triggeredByUserId: number | null;
+}): Promise<{ steps: Array<{ job: string; ok: boolean; message: string }> }> {
+  const steps: Array<{ job: string; ok: boolean; message: string }> = [];
+  for (const job of ["stale_content_detection", "editorial_gap_detection", "stale_followup_detection"] as const) {
+    const r = await runAutomationJob(job, {
+      projectKey: input.projectKey,
+      userId: input.triggeredByUserId,
+    });
+    steps.push({ job, ok: r.ok, message: r.message });
+  }
+  const isMondayUtc = new Date().getUTCDay() === 1;
+  if (isMondayUtc) {
+    const r = await runAutomationJob("weekly_research_digest", {
+      projectKey: input.projectKey,
+      userId: input.triggeredByUserId,
+    });
+    steps.push({ job: "weekly_research_digest", ok: r.ok, message: r.message });
+  }
+  return { steps };
 }
 
 export async function listAutomationRuns(limit = 40) {

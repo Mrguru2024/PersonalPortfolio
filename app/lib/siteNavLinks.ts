@@ -21,7 +21,7 @@ export const MAIN_LINKS = [
 export const GROWTH_LINKS = [
   { label: "Growth Diagnosis", href: GROWTH_DIAGNOSIS_PATH },
   { label: "Brand Growth", href: BRAND_GROWTH_PATH },
-  { label: "Ecosystem founders", href: "/ecosystem-founders" },
+  { label: "About the ecosystem", href: "/about" },
   { label: "Free growth tools", href: FREE_GROWTH_TOOLS_PATH },
   { label: "Startup growth kit", href: STARTUP_GROWTH_KIT_PATH },
   { label: "Our work", href: "/partners/ascendra-technologies#projects" },

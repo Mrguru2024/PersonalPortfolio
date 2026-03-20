@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -43,6 +44,7 @@ interface FunnelContentAsset {
   mimeType: string | null;
   fileSizeBytes: number | null;
   status: string;
+  accessLevel: string;
   leadMagnetSlug: string | null;
   placements: Array<{ pagePath: string; sectionId: string }>;
   createdAt: string;
@@ -50,10 +52,12 @@ interface FunnelContentAsset {
 }
 
 const ASSET_TYPES = [
+  { value: "auto", label: "Auto-detect" },
   { value: "pdf", label: "PDF" },
   { value: "pptx", label: "PowerPoint (PPTX)" },
+  { value: "slideshow", label: "Slideshow (PPTX)" },
   { value: "video", label: "Video" },
-  { value: "slideshow", label: "Slideshow" },
+  { value: "image", label: "Image" },
 ] as const;
 
 function formatBytes(n: number | null): string {
@@ -119,6 +123,8 @@ export default function AdminFunnelContentLibraryPage() {
     const titleInput = form.querySelector<HTMLInputElement>('input[name="title"]');
     const assetTypeInput = form.querySelector<HTMLSelectElement>('select[name="assetType"]');
     const leadMagnetInput = form.querySelector<HTMLSelectElement>('select[name="leadMagnetSlug"]');
+    const accessInput = form.querySelector<HTMLSelectElement>('select[name="accessLevel"]');
+    const descriptionInput = form.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
     if (!fileInput?.files?.[0] || !titleInput?.value?.trim() || !assetTypeInput?.value) {
       setUploadError("File, title, and type are required.");
       return;
@@ -129,6 +135,8 @@ export default function AdminFunnelContentLibraryPage() {
       fd.append("file", fileInput.files[0]);
       fd.append("title", titleInput.value.trim());
       fd.append("assetType", assetTypeInput.value);
+      if (descriptionInput?.value?.trim()) fd.append("description", descriptionInput.value.trim());
+      if (accessInput?.value) fd.append("accessLevel", accessInput.value);
       if (leadMagnetInput?.value) fd.append("leadMagnetSlug", leadMagnetInput.value);
       const res = await fetch("/api/admin/upload-content", {
         method: "POST",
@@ -199,7 +207,7 @@ export default function AdminFunnelContentLibraryPage() {
             Content Library
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload PDF, PowerPoint, and video for lead magnets. Publish and assign each asset to a page and section so it appears on the live site.
+            Upload PDFs, decks, video, or images. Set <strong className="text-foreground">Members only</strong> for the signed-in downloads list; use <strong className="text-foreground">Publish</strong> to approve. Placements control where public funnel sections show files.
           </p>
         </div>
 
@@ -210,7 +218,7 @@ export default function AdminFunnelContentLibraryPage() {
               Upload content
             </CardTitle>
             <CardDescription>
-              PDF, PPTX, or video. Files are saved and linked to lead magnets; set status to Published and add placements to show on pages.
+              New uploads start as <strong className="text-foreground">Draft</strong> (pending approval). Publish when ready. Registered-only assets appear on Free growth tools for signed-in users after publish.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -218,7 +226,7 @@ export default function AdminFunnelContentLibraryPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
-                  <Input id="title" name="title" placeholder="e.g. Growth Audit One-Pager" required />
+                  <Input id="title" name="title" placeholder="e.g. FREE Startup Kit" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="assetType">Type</Label>
@@ -226,6 +234,7 @@ export default function AdminFunnelContentLibraryPage() {
                     id="assetType"
                     name="assetType"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    defaultValue="auto"
                     required
                   >
                     {ASSET_TYPES.map((t) => (
@@ -233,6 +242,28 @@ export default function AdminFunnelContentLibraryPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Short blurb shown on the member downloads list"
+                  rows={2}
+                  className="resize-y min-h-[72px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="accessLevel">Who can access</Label>
+                <select
+                  id="accessLevel"
+                  name="accessLevel"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue="registered"
+                >
+                  <option value="registered">Members only (signed-in downloads)</option>
+                  <option value="public">Public (funnel placements / public APIs)</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leadMagnetSlug">Lead magnet (optional)</Label>
@@ -249,8 +280,16 @@ export default function AdminFunnelContentLibraryPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="file">File</Label>
-                <Input id="file" name="file" type="file" accept=".pdf,.pptx,.ppt,video/mp4,video/webm,video/quicktime" required />
-                <p className="text-xs text-muted-foreground">PDF, PPTX, MP4, WebM, MOV. Max 80MB.</p>
+                <Input
+                  id="file"
+                  name="file"
+                  type="file"
+                  accept=".pdf,.ppt,.pptx,.mp4,.webm,.mov,.avi,.jpg,.jpeg,.png,.gif,.webp,.svg"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  PDF, PPT/PPTX, MP4, WebM, MOV, AVI, JPEG, PNG, GIF, WebP, SVG. Max 80MB.
+                </p>
               </div>
               {uploadError && (
                 <p className="text-sm text-destructive">{uploadError}</p>
@@ -273,7 +312,7 @@ export default function AdminFunnelContentLibraryPage() {
             <CardContent className="py-12 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground font-medium">No content yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Upload a PDF, PPTX, or video above to get started.</p>
+              <p className="text-sm text-muted-foreground mt-1">Upload a file above to get started.</p>
             </CardContent>
           </Card>
         ) : (
@@ -284,11 +323,25 @@ export default function AdminFunnelContentLibraryPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-foreground">{asset.title}</span>
-                      <Badge variant={asset.status === "published" ? "default" : "secondary"} className="text-xs">
-                        {asset.status}
+                      <Badge
+                        variant={asset.status === "published" ? "default" : "secondary"}
+                        className="text-xs"
+                        title={
+                          asset.status === "published"
+                            ? "Approved — visible where configured (e.g. member downloads if Members only)"
+                            : "Draft — not on member downloads until you Publish"
+                        }
+                      >
+                        {asset.status === "published" ? "Published" : "Draft"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {asset.accessLevel === "registered" ? "Members only" : "Public"}
                       </Badge>
                       <span className="text-xs text-muted-foreground uppercase">{asset.assetType}</span>
                     </div>
+                    {asset.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{asset.description}</p>
+                    )}
                     {asset.leadMagnetSlug && (
                       <p className="text-xs text-muted-foreground mt-0.5">Lead magnet: {asset.leadMagnetSlug}</p>
                     )}
@@ -382,7 +435,7 @@ export default function AdminFunnelContentLibraryPage() {
         <Card className="mt-8 border-muted bg-muted/30">
           <CardContent className="p-4 sm:p-5">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">How it works:</strong> Upload a file, set status to Published, then add placements (page + section). Public pages can request assets via <code className="text-xs bg-muted px-1 rounded">GET /api/funnel/content-assets?pagePath=...&sectionId=...</code> and render download links or embeds.
+              <strong className="text-foreground">How it works:</strong> Upload → optional description and <em>Members only</em> → <strong className="text-foreground">Publish</strong> to approve. Registered-only published assets appear on <Link href="/free-growth-tools#member-downloads" className="text-primary hover:underline">Free growth tools</Link> for signed-in users. For embedded funnel sections, add placements; public API: <code className="text-xs bg-muted px-1 rounded">GET /api/funnel/content-assets?pagePath=...&sectionId=...</code>.
             </p>
           </CardContent>
         </Card>

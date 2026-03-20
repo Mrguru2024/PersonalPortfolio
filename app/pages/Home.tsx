@@ -28,6 +28,7 @@ import {
   StatsStrip,
 } from "@/components/motion";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
+import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 
 const processStepItems = [
   {
@@ -78,19 +79,12 @@ export default function Home() {
               Brand, design, and technology—one coordinated ecosystem for growth.
             </p>
           </div>
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-muted/50 shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-              className="absolute inset-0 w-full h-full object-cover"
-              aria-label="Ascendra Business Launch promo"
-            >
-              <source src={ASCENDRA_VIDEO.businessLaunchPromo} type="video/mp4" />
-            </video>
-          </div>
+          <AscendraPromoVideo
+            src={ASCENDRA_VIDEO.businessLaunchPromo}
+            ariaLabel="Ascendra Business Launch promo"
+            objectFit="cover"
+            maxWidthClassName="max-w-5xl"
+          />
         </SectionReveal>
       </section>
       <SectionConnector variant="gradient" />

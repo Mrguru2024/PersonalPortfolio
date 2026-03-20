@@ -40,7 +40,13 @@ export default function GrowthOsSharesPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { message?: string }).message ?? "Failed");
       }
-      return res.json() as Promise<{ token: string; id: number; message: string }>;
+      return res.json() as Promise<{
+        token: string;
+        id: number;
+        message: string;
+        pageUrl?: string;
+        apiUrl?: string;
+      }>;
     },
     onSuccess: (out) => {
       setLastToken(out.token);
@@ -97,9 +103,22 @@ export default function GrowthOsSharesPage() {
             Generate share token
           </Button>
           {lastToken && (
-            <div className="rounded-lg bg-muted p-3 text-xs font-mono break-all border border-border">
-              <span className="text-muted-foreground block mb-1">Last token (copy now)</span>
-              {lastToken}
+            <div className="space-y-2">
+              <div className="rounded-lg bg-muted p-3 text-xs font-mono break-all border border-border">
+                <span className="text-muted-foreground block mb-1">Last token (copy now)</span>
+                {lastToken}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Client-friendly page:{" "}
+                <a
+                  className="text-primary underline font-medium break-all"
+                  href={`/gos/report/${encodeURIComponent(lastToken)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  /gos/report/…
+                </a>
+              </p>
             </div>
           )}
         </CardContent>

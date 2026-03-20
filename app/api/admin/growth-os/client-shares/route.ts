@@ -74,9 +74,12 @@ export async function POST(req: NextRequest) {
       metadata: { shareId: id },
     });
 
+    const enc = encodeURIComponent(rawToken);
     return NextResponse.json({
       id,
       token: rawToken,
+      apiUrl: `/api/public/gos/report/${enc}`,
+      pageUrl: `/gos/report/${enc}`,
       message:
         "Store this token securely; it cannot be retrieved again. Use hashed lookup server-side only.",
     });

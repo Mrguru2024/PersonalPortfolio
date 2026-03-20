@@ -45,8 +45,12 @@ Internal Ascendra Growth Operating System: AI content insights, provider-based r
 
 ## Performance dashboards
 
-- Aggregated JSON from CRM contacts/deals/tasks, blog posts, internal CMS documents, editorial calendar, audit runs, AI suggestion queue.
+- Aggregated JSON from CRM contacts/deals/tasks, blog posts, internal CMS documents, editorial calendar, audit runs, AI suggestion queue, lead–content attributions.
+- **Lead gen extras**: `conversionByCta` rolls up CRM contacts by `landing_page` (CTA/landing proxy).
+- **Content extras**: `topHeadlines` (blog views + internal `headline`/`hook` library), `topCtaPatterns` (internal `cta` documents by title), `personaEngagementTrends` (persona tag frequency on sampled CMS + calendar rows).
 - Endpoint: `GET /api/admin/growth-os/intelligence/dashboards?projectKey=...`
+
+**Runbook**: `Docs/implementation/GROWTH-OS-PHASE3-RUNBOOK.md`
 
 ## Client-safe summary layer
 
@@ -63,15 +67,16 @@ Internal Ascendra Growth Operating System: AI content insights, provider-based r
 
 ## Automation workflows
 
-- Jobs: `weekly_research_digest`, `audit_recommendation_engine`, `editorial_gap_detection`, `stale_content_detection`, plus content-insight variants via CMS hooks.
+- Jobs: `weekly_research_digest`, `audit_recommendation_engine`, `editorial_gap_detection`, `stale_content_detection`, `stale_followup_detection` (CRM overdue `next_follow_up_at`), `headline_hook_variants`, `repurposing_suggestions`, plus `content_insight_save` / `content_insight_schedule` and CMS/calendar hooks.
 - Persistence: `internal_automation_runs` with status + `resultSummary`.
 - API: `POST /api/admin/growth-os/intelligence/automation/run`, `GET .../automation/runs`.
+- Document-scoped jobs require `documentId` in the POST body (also exposed in the Intelligence → Automation UI).
 
 ## Rollout recommendations
 
 1. Run `npm run db:push` to create new tables.
 2. Keep `GOS_INTELLIGENCE_MODE=mock` in staging until copy review of model outputs.
-3. Add rate limiting / WAF rules on `/api/public/gos/report/*` in production.
+3. Per-IP rate limiting is applied in the report API when `NODE_ENV=production` (tune with `GOS_PUBLIC_REPORT_MAX_PER_MINUTE`); add WAF rules for extra protection.
 4. Rotate share tokens by expiry; never log raw tokens server-side beyond creation response.
 
 ## CMS / calendar usage
@@ -79,9 +84,30 @@ Internal Ascendra Growth Operating System: AI content insights, provider-based r
 - **CMS**: Content Studio document editor — AI card + “Save + queue insight”.
 - **Calendar**: Scheduling a row with linked document can trigger insight when env allows (see above).
 
+## Content import / export (Content Studio)
+
+- **Export**: `GET /api/admin/content-studio/export?kind=calendar|documents&format=csv|json&projectKey=&from=&to=`
+- **Paste import**: `POST /api/admin/content-studio/import` — `{ target, format, payload }`
+- **Google URL import** (allowlisted hosts only): `POST /api/admin/content-studio/import-url` — `{ url, kind: ical|sheet_csv }`
+- **UI**: Admin → Content Studio → **Import / export**
+
+## Scheduled automation (cron)
+
+- **Route**: `GET /api/cron/growth-os?projectKey=…` + `Authorization: Bearer $CRON_SECRET`
+- **Schedule**: `vercel.json` — daily 06:00 UTC; jobs include stale content, editorial gaps, stale follow-up detection; **Mondays** add weekly research digest
+
+## Lead ↔ content attribution
+
+- **Table**: `gos_lead_content_attributions`
+- **API**: `GET|POST /api/admin/growth-os/attributions`
+- **Dashboard**: explicit links + `leadsByUtmCampaign` from CRM
+
+## Public report UI
+
+- **Page**: `/gos/report/[token]` (in addition to JSON API)
+
 ## Next dependencies
 
-- Cron/worker for weekly digest without manual button.
 - Narrow **INTERNAL_TEAM** routes for research read-only.
-- Richer lead↔content attribution for “leads by content item”.
-- Client portal page that consumes public report token (currently API-only).
+- OAuth-based Google Calendar/Sheets (beyond public iCal / published CSV).
+- Optional **Upstash Redis**: set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` for global rate limits (`checkPublicApiRateLimitAsync` on `GET /api/public/gos/report/[token]` in production).

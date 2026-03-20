@@ -43,7 +43,7 @@ export function InsightsFromEcosystem({
         )}
         {showFoundersLink && (
           <Link
-            href="/ecosystem-founders"
+            href="/about#ecosystem-team"
             className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
           >
             Meet the founders

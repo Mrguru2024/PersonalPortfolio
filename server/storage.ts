@@ -84,6 +84,7 @@ export interface IStorage {
   updateFunnelContentAsset(id: number, updates: Partial<InsertFunnelContentAsset>): Promise<FunnelContentAsset>;
   deleteFunnelContentAsset(id: number): Promise<void>;
   getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]>;
+  listPublishedRegisteredFunnelAssets(): Promise<FunnelContentAsset[]>;
 
   createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration>;
   getChallengeRegistrationByEmail(email: string): Promise<ChallengeRegistration | undefined>;
@@ -699,9 +700,20 @@ export class DatabaseStorage implements IStorage {
   async getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]> {
     const rows = await db.select().from(funnelContentAssets).where(eq(funnelContentAssets.status, "published"));
     return rows.filter((r) => {
+      if (r.accessLevel === "registered") return false;
       const placements = (r.placements ?? []) as Array<{ pagePath: string; sectionId: string }>;
       return placements.some((p) => p.pagePath === pagePath && p.sectionId === sectionId);
     });
+  }
+
+  async listPublishedRegisteredFunnelAssets(): Promise<FunnelContentAsset[]> {
+    return db
+      .select()
+      .from(funnelContentAssets)
+      .where(
+        and(eq(funnelContentAssets.status, "published"), eq(funnelContentAssets.accessLevel, "registered")),
+      )
+      .orderBy(desc(funnelContentAssets.updatedAt));
   }
 
   async createChallengeRegistration(data: InsertChallengeRegistration): Promise<ChallengeRegistration> {

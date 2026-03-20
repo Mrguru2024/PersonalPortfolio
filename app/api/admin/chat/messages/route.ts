@@ -10,6 +10,16 @@ import { desc, eq, lt } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+/** Treat string "true" / "1" / "on" as true (some clients serialize oddly). */
+function coerceDeliveryFlag(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") {
+    const s = value.trim().toLowerCase();
+    return s === "true" || s === "1" || s === "yes" || s === "on";
+  }
+  return false;
+}
+
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 
@@ -119,9 +129,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const alsoSendEmail = !!body?.alsoSendEmail;
-    const alsoSendSms = !!body?.alsoSendSms;
-    const alsoSendPush = !!body?.alsoSendPush;
+    const alsoSendEmail = coerceDeliveryFlag(body?.alsoSendEmail);
+    const alsoSendSms = coerceDeliveryFlag(body?.alsoSendSms);
+    const alsoSendPush = coerceDeliveryFlag(body?.alsoSendPush);
 
     const parseRecipients = (value: unknown): string[] => {
       if (Array.isArray(value)) {
@@ -163,15 +173,35 @@ export async function POST(req: NextRequest) {
         createdAt: adminChatMessages.createdAt,
       });
 
-    const delivery: { email?: number | boolean; sms?: number | boolean; push?: number } = {};
+    if (!inserted) {
+      return NextResponse.json({ message: "Failed to save chat message" }, { status: 500 });
+    }
 
-    if (inserted) {
-      if (alsoSendEmail) {
+    const delivery: {
+      email?: number | boolean;
+      emailHint?: string;
+      sms?: number | boolean;
+      smsHint?: string;
+      push?: number;
+    } = {};
+
+    if (alsoSendEmail) {
+      const brevoConfigured = !!process.env.BREVO_API_KEY?.trim();
+      const emails =
+        recipientEmailsRaw.length > 0
+          ? [...new Set(recipientEmailsRaw)]
+          : [process.env.ADMIN_EMAIL?.trim() || (typeof user.email === "string" ? user.email.trim() : "") || ""].filter(
+              Boolean,
+            );
+
+      if (!brevoConfigured) {
+        delivery.email = false;
+        delivery.emailHint = "brevo_not_configured";
+      } else if (emails.length === 0) {
+        delivery.email = false;
+        delivery.emailHint = "no_recipients";
+      } else {
         const { emailService } = await import("@server/services/emailService");
-        const emails =
-          recipientEmailsRaw.length > 0
-            ? [...new Set(recipientEmailsRaw)]
-            : [process.env.ADMIN_EMAIL || (user.email as string) || ""].filter(Boolean);
         let emailSent = 0;
         for (const to of emails) {
           if (to) {
@@ -185,13 +215,28 @@ export async function POST(req: NextRequest) {
           }
         }
         delivery.email = emails.length === 1 ? emailSent === 1 : emailSent;
+        if (emailSent === 0) {
+          delivery.emailHint = "send_failed";
+        }
       }
-      if (alsoSendSms) {
-        const { sendSms } = await import("@server/services/smsService");
-        const phones =
-          recipientPhonesRaw.length > 0
-            ? [...new Set(recipientPhonesRaw)]
-            : (process.env.ADMIN_PHONE ? [process.env.ADMIN_PHONE] : []);
+    }
+
+    if (alsoSendSms) {
+      const { sendSms, isSmsConfigured } = await import("@server/services/smsService");
+      const phones =
+        recipientPhonesRaw.length > 0
+          ? [...new Set(recipientPhonesRaw)]
+          : process.env.ADMIN_PHONE?.trim()
+            ? [process.env.ADMIN_PHONE.trim()]
+            : [];
+
+      if (!isSmsConfigured()) {
+        delivery.sms = false;
+        delivery.smsHint = "twilio_not_configured";
+      } else if (phones.length === 0) {
+        delivery.sms = false;
+        delivery.smsHint = "no_recipients";
+      } else {
         let smsSent = 0;
         for (const phone of phones) {
           if (phone) {
@@ -200,34 +245,33 @@ export async function POST(req: NextRequest) {
           }
         }
         delivery.sms = phones.length === 1 ? smsSent === 1 : smsSent;
+        if (smsSent === 0) {
+          delivery.smsHint = "send_failed";
+        }
       }
-      if (alsoSendPush) {
-        const { pushNotificationService } = await import(
-          "@server/services/pushNotificationService"
-        );
-        const { pushSubscriptions } = await import("@shared/schema");
-        const subs = await db
-          .select({
-            endpoint: pushSubscriptions.endpoint,
-            keys: pushSubscriptions.keys,
-          })
-          .from(pushSubscriptions);
-        const payloads = subs
-          .filter((s) => s.keys && typeof s.keys === "object" && "p256dh" in s.keys && "auth" in s.keys)
-          .map((s) => ({
-            endpoint: s.endpoint,
-            keys: s.keys as { p256dh: string; auth: string },
-          }));
-        const sent = await pushNotificationService.sendToSubscriptions(
-          payloads,
-          {
-            title: `Message from ${user.username}`,
-            body: content.slice(0, 200),
-            tag: "admin-chat",
-          }
-        );
-        delivery.push = sent;
-      }
+    }
+
+    if (alsoSendPush) {
+      const { pushNotificationService } = await import("@server/services/pushNotificationService");
+      const { pushSubscriptions } = await import("@shared/schema");
+      const subs = await db
+        .select({
+          endpoint: pushSubscriptions.endpoint,
+          keys: pushSubscriptions.keys,
+        })
+        .from(pushSubscriptions);
+      const payloads = subs
+        .filter((s) => s.keys && typeof s.keys === "object" && "p256dh" in s.keys && "auth" in s.keys)
+        .map((s) => ({
+          endpoint: s.endpoint,
+          keys: s.keys as { p256dh: string; auth: string },
+        }));
+      const sent = await pushNotificationService.sendToSubscriptions(payloads, {
+        title: `Message from ${user.username}`,
+        body: content.slice(0, 200),
+        tag: "admin-chat",
+      });
+      delivery.push = sent;
     }
 
     return NextResponse.json({

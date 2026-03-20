@@ -25,6 +25,12 @@ import {
   notInArray,
 } from "drizzle-orm";
 import { countPendingSuggestionsForProject } from "./contentInsightService";
+import {
+  leadsByInternalDocument,
+  leadsByBlogPost,
+  leadsByCalendarEntry,
+  inferredLeadsByUtmCampaign,
+} from "./attributionService";
 
 function startOfWeek(d = new Date()) {
   const x = new Date(d);
@@ -77,53 +83,159 @@ export async function getLeadGenerationDashboard(projectKey: string) {
     .where(eq(crmTasks.status, "completed"))
     .then((r) => r[0]?.n ?? 0);
 
+  const [byDoc, byBlog, byCal, leadsByUtmCampaign, byLandingCta] = await Promise.all([
+    leadsByInternalDocument(projectKey),
+    leadsByBlogPost(projectKey),
+    leadsByCalendarEntry(projectKey),
+    inferredLeadsByUtmCampaign(),
+    db
+      .select({
+        cta: sql<string>`coalesce(nullif(trim(${crmContacts.landingPage}), ''), '(not set)')`,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(crmContacts)
+      .groupBy(sql`coalesce(nullif(trim(${crmContacts.landingPage}), ''), '(not set)')`),
+  ]);
+
+  const leadsByContentItem = [
+    ...byDoc.map((r) => ({
+      kind: "internal_document" as const,
+      id: r.documentId,
+      label: r.title,
+      n: r.n,
+    })),
+    ...byBlog.map((r) => ({
+      kind: "blog_post" as const,
+      id: r.blogPostId,
+      label: r.title,
+      slug: r.slug,
+      n: r.n,
+    })),
+    ...byCal.map((r) => ({
+      kind: "calendar_entry" as const,
+      id: r.calendarEntryId,
+      label: r.title,
+      n: r.n,
+    })),
+  ];
+
   return {
     projectKey,
     leadsBySource: bySource,
     leadsByCampaign: byCampaign,
-    leadsByContentItem: [] as { contentItem: string; n: number }[],
+    leadsByContentItem,
+    leadsByUtmCampaign,
     conversionByOffer: byOffer,
-    conversionByCta: [] as { cta: string; n: number }[],
+    conversionByCta: [...byLandingCta].sort((a, b) => b.n - a.n).slice(0, 20),
     followUpCompletionRate: tasksTotal === 0 ? null : Math.round((tasksDone / tasksTotal) * 1000) / 1000,
   };
 }
 
+function tallyPersonaTouches(
+  docRows: { personaTags: string[] | null }[],
+  calRows: { personaTags: string[] | null }[],
+): { persona: string; trend: string; n: number }[] {
+  const map = new Map<string, number>();
+  const bump = (tags: string[] | null | undefined) => {
+    for (const p of tags ?? []) {
+      const k = p.trim();
+      if (!k) continue;
+      map.set(k, (map.get(k) ?? 0) + 1);
+    }
+  };
+  for (const r of docRows) bump(r.personaTags);
+  for (const r of calRows) bump(r.personaTags);
+  return [...map.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([persona, n]) => ({
+      persona,
+      n,
+      trend: `${n} tagged document/calendar rows (sample)`,
+    }));
+}
+
 export async function getContentPerformanceDashboard(projectKey: string) {
-  const topPosts = await db
-    .select({
-      id: blogPosts.id,
-      title: blogPosts.title,
-      slug: blogPosts.slug,
-      viewCount: blogPosts.viewCount,
-      publishedAt: blogPosts.publishedAt,
-    })
-    .from(blogPosts)
-    .where(eq(blogPosts.isPublished, true))
-    .orderBy(desc(blogPosts.viewCount))
-    .limit(12);
+  const [
+    topPosts,
+    hookTypes,
+    funnelMix,
+    calRows,
+    libHeadlines,
+    ctaPatterns,
+    personaDocSample,
+    personaCalSample,
+  ] = await Promise.all([
+    db
+      .select({
+        id: blogPosts.id,
+        title: blogPosts.title,
+        slug: blogPosts.slug,
+        viewCount: blogPosts.viewCount,
+        publishedAt: blogPosts.publishedAt,
+      })
+      .from(blogPosts)
+      .where(eq(blogPosts.isPublished, true))
+      .orderBy(desc(blogPosts.viewCount))
+      .limit(12),
+    db
+      .select({
+        contentType: internalCmsDocuments.contentType,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(internalCmsDocuments)
+      .where(eq(internalCmsDocuments.projectKey, projectKey))
+      .groupBy(internalCmsDocuments.contentType),
+    db
+      .select({
+        funnelStage: sql<string>`coalesce(${internalCmsDocuments.funnelStage}, 'unset')`,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(internalCmsDocuments)
+      .where(eq(internalCmsDocuments.projectKey, projectKey))
+      .groupBy(sql`coalesce(${internalCmsDocuments.funnelStage}, 'unset')`),
+    db
+      .select({ scheduledAt: internalEditorialCalendarEntries.scheduledAt })
+      .from(internalEditorialCalendarEntries)
+      .where(eq(internalEditorialCalendarEntries.projectKey, projectKey)),
+    db
+      .select({
+        title: internalCmsDocuments.title,
+        updatedAt: internalCmsDocuments.updatedAt,
+      })
+      .from(internalCmsDocuments)
+      .where(
+        and(
+          eq(internalCmsDocuments.projectKey, projectKey),
+          inArray(internalCmsDocuments.contentType, ["headline", "hook"]),
+        ),
+      )
+      .orderBy(desc(internalCmsDocuments.updatedAt))
+      .limit(15),
+    db
+      .select({
+        pattern: internalCmsDocuments.title,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(internalCmsDocuments)
+      .where(
+        and(eq(internalCmsDocuments.projectKey, projectKey), eq(internalCmsDocuments.contentType, "cta")),
+      )
+      .groupBy(internalCmsDocuments.title)
+      .orderBy(desc(sql`count(*)`))
+      .limit(18),
+    db
+      .select({ personaTags: internalCmsDocuments.personaTags })
+      .from(internalCmsDocuments)
+      .where(eq(internalCmsDocuments.projectKey, projectKey))
+      .limit(400),
+    db
+      .select({ personaTags: internalEditorialCalendarEntries.personaTags })
+      .from(internalEditorialCalendarEntries)
+      .where(eq(internalEditorialCalendarEntries.projectKey, projectKey))
+      .limit(400),
+  ]);
 
-  const hookTypes = await db
-    .select({
-      contentType: internalCmsDocuments.contentType,
-      n: sql<number>`count(*)::int`,
-    })
-    .from(internalCmsDocuments)
-    .where(eq(internalCmsDocuments.projectKey, projectKey))
-    .groupBy(internalCmsDocuments.contentType);
-
-  const funnelMix = await db
-    .select({
-      funnelStage: sql<string>`coalesce(${internalCmsDocuments.funnelStage}, 'unset')`,
-      n: sql<number>`count(*)::int`,
-    })
-    .from(internalCmsDocuments)
-    .where(eq(internalCmsDocuments.projectKey, projectKey))
-    .groupBy(sql`coalesce(${internalCmsDocuments.funnelStage}, 'unset')`);
-
-  const calRows = await db
-    .select({ scheduledAt: internalEditorialCalendarEntries.scheduledAt })
-    .from(internalEditorialCalendarEntries)
-    .where(eq(internalEditorialCalendarEntries.projectKey, projectKey));
   const hourMap = new Map<number, number>();
   for (const r of calRows) {
     if (!r.scheduledAt) continue;
@@ -135,14 +247,29 @@ export async function getContentPerformanceDashboard(projectKey: string) {
     .slice(0, 8)
     .map(([hour, n]) => ({ hour, n }));
 
+  const topHeadlines = [
+    ...topPosts.slice(0, 8).map((p) => ({
+      title: p.title,
+      n: p.viewCount ?? 0,
+      source: "blog" as const,
+    })),
+    ...libHeadlines.map((h) => ({
+      title: h.title,
+      n: 1,
+      source: "internal_library" as const,
+    })),
+  ];
+
+  const personaEngagementTrends = tallyPersonaTouches(personaDocSample, personaCalSample);
+
   return {
     projectKey,
     topPosts,
-    topHeadlines: [] as { title: string; n: number }[],
+    topHeadlines,
     topHookTypes: hookTypes,
-    topCtaPatterns: [] as { pattern: string; n: number }[],
+    topCtaPatterns: ctaPatterns,
     bestPostingWindows,
-    personaEngagementTrends: [] as { persona: string; trend: string }[],
+    personaEngagementTrends,
     funnelStageContentMix: funnelMix,
   };
 }

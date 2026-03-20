@@ -29,7 +29,7 @@ export interface FounderProfile {
   imageAlt?: string;
   /** Use company logo instead of photo when true */
   useLogo?: boolean;
-  /** Intro for /ecosystem-founders profile */
+  /** Intro for About page / team section */
   intro: string;
   /** How they contribute to the ecosystem */
   roleInEcosystem: string;

@@ -84,6 +84,8 @@
     "@types/passport-github2": "^1.2.9",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/react-helmet": "^6.1.11",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^1.6.0",
     "@vercel/node": "^5.1.15",
     "class-variance-authority": "^0.7.1",

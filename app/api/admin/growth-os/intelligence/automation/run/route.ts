@@ -15,6 +15,8 @@ const bodySchema = z.object({
     "editorial_gap_detection",
     "stale_content_detection",
     "headline_hook_variants",
+    "repurposing_suggestions",
+    "stale_followup_detection",
   ]),
   projectKey: z.string().default("ascendra_main"),
   documentId: z.number().int().optional(),

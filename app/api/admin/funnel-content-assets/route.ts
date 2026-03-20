@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       mimeType: a.mimeType,
       fileSizeBytes: a.fileSizeBytes,
       status: a.status,
+      accessLevel: a.accessLevel,
       leadMagnetSlug: a.leadMagnetSlug,
       placements: a.placements,
       createdAt: a.createdAt,

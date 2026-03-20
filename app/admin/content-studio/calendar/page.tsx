@@ -3,11 +3,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
-  closestCenter,
+  DragOverlay,
+  MeasuringStrategy,
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragEndEvent,
+  type DragStartEvent,
+  type DropAnimation,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -35,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   addDays,
@@ -51,6 +55,8 @@ import {
 import { Loader2, Plus, GripVertical, Copy, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { calendarCollisionDetection, CALENDAR_SORTABLE_TRANSITION } from "@/components/content-studio/calendarDndConfig";
 
 type View = "month" | "week" | "day" | "agenda";
 
@@ -67,26 +73,121 @@ interface CalEntry {
   sortOrder?: number;
 }
 
+function dayDropId(d: Date) {
+  return `day-${format(d, "yyyy-MM-dd")}` as const;
+}
+
+function parseDayDropId(id: string): Date | null {
+  if (!id.startsWith("day-")) return null;
+  const part = id.slice(4);
+  const [y, m, d] = part.split("-").map((x) => parseInt(x, 10));
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+const dropAnimation: DropAnimation = {
+  duration: 280,
+  easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+};
+
+function DroppableMonthCell({
+  day,
+  cursorMonth,
+  selectedDay,
+  count,
+  onSelect,
+}: {
+  day: Date;
+  cursorMonth: Date;
+  selectedDay: Date;
+  count: number;
+  onSelect: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: dayDropId(day) });
+  const sel = isSameDay(day, selectedDay);
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg min-h-[76px] transition-[box-shadow,transform,background-color] duration-200 ease-out",
+        isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02] z-[1] bg-primary/10 shadow-md",
+        !isOver && sel && "ring-1 ring-primary/60 bg-primary/10",
+        !isOver && !sel && "border border-border/60 bg-muted/20",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className="w-full h-full min-h-[72px] rounded-md p-1.5 text-left text-sm transition-colors hover:bg-muted/30"
+      >
+        <div className="font-medium">{format(day, "d")}</div>
+        {count > 0 && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 mt-0.5">
+            {count}
+          </Badge>
+        )}
+        {isOver && <div className="text-[10px] font-medium text-primary mt-1">Drop here</div>}
+      </button>
+    </div>
+  );
+}
+
+/** Static card for DragOverlay — must not call useSortable (duplicate id breaks DnD). */
+function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
+  const warnings = entry.warningsJson ?? [];
+  return (
+    <div className="flex items-start gap-2 rounded-xl border-2 border-primary/50 p-3 bg-card shadow-xl ring-2 ring-primary/20 cursor-grabbing max-w-md">
+      <div className="mt-1 text-primary shrink-0 p-1" aria-hidden>
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium">{entry.title}</div>
+        <div className="text-xs text-muted-foreground">
+          {format(new Date(entry.scheduledAt), "PPp")} · {entry.calendarStatus}
+        </div>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {(entry.platformTargets ?? []).map((p) => (
+            <Badge key={p} variant="outline" className="text-xs">
+              {p}
+            </Badge>
+          ))}
+        </div>
+        {warnings.length > 0 && (
+          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            {warnings.join(", ")}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SortableRow({ entry }: { entry: CalEntry }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
+    transition: CALENDAR_SORTABLE_TRANSITION,
   });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.6 : 1,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
   };
   const warnings = entry.warningsJson ?? [];
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-start gap-2 rounded-lg border border-border/60 p-3 bg-card"
+      className={cn(
+        "flex items-start gap-2 rounded-xl border border-border/60 p-3 bg-card shadow-sm",
+        isDragging && "shadow-md border-primary/30",
+      )}
     >
       <button
         type="button"
-        className="mt-1 text-muted-foreground hover:text-foreground touch-none"
-        aria-label="Drag to reorder"
+        className="mt-1 text-muted-foreground hover:text-foreground touch-none cursor-grab active:cursor-grabbing shrink-0 rounded-md p-1 hover:bg-muted/80"
+        aria-label="Drag to reorder or move to another day"
         {...attributes}
         {...listeners}
       >
@@ -151,6 +252,7 @@ export default function ContentStudioCalendarPage() {
   const [qCta, setQCta] = useState("");
   const [qPersonas, setQPersonas] = useState("");
   const [qPlatforms, setQPlatforms] = useState("linkedin,x");
+  const [activeDragEntry, setActiveDragEntry] = useState<CalEntry | null>(null);
 
   const range = useMemo(() => {
     if (view === "month") {
@@ -165,8 +267,13 @@ export default function ContentStudioCalendarPage() {
     return { from: addDays(cursor, -14), to: addDays(cursor, 60) };
   }, [view, cursor]);
 
+  const calendarQueryKey = useMemo(
+    () => ["/api/admin/content-studio/calendar", range.from.toISOString(), range.to.toISOString()] as const,
+    [range.from, range.to],
+  );
+
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/admin/content-studio/calendar", range.from.toISOString(), range.to.toISOString()],
+    queryKey: calendarQueryKey,
     queryFn: async () => {
       const q = new URLSearchParams();
       q.set("from", range.from.toISOString());
@@ -191,8 +298,25 @@ export default function ContentStudioCalendarPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      activationConstraint: { distance: 8, tolerance: 5, delay: 0 },
     }),
+  );
+
+  const applyOptimisticReorder = useCallback(
+    (orderedIds: number[]) => {
+      qc.setQueryData<{ entries: CalEntry[] }>(calendarQueryKey, (old) => {
+        if (!old?.entries) return old;
+        const others = old.entries.filter((e) => !isSameDay(new Date(e.scheduledAt), selectedDay));
+        const map = new Map(old.entries.map((e) => [e.id, e]));
+        const reordered = orderedIds.map((id, i) => {
+          const e = map.get(id);
+          if (!e) return null;
+          return { ...e, sortOrder: i };
+        }).filter(Boolean) as CalEntry[];
+        return { entries: [...others, ...reordered] };
+      });
+    },
+    [qc, calendarQueryKey, selectedDay],
   );
 
   const reorderMutation = useMutation({
@@ -206,20 +330,89 @@ export default function ContentStudioCalendarPage() {
       if (!res.ok) throw new Error("Reorder failed");
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/admin/content-studio/calendar"] });
+      void qc.invalidateQueries({ queryKey: calendarQueryKey });
+    },
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: calendarQueryKey });
+      toast({ title: "Reorder failed", variant: "destructive" });
     },
   });
 
-  function onDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const ids = dayEntriesFixed.map((e) => e.id);
-    const oldIndex = ids.indexOf(Number(active.id));
-    const newIndex = ids.indexOf(Number(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-    const next = arrayMove(ids, oldIndex, newIndex);
-    reorderMutation.mutate(next);
-  }
+  const rescheduleMutation = useMutation({
+    mutationFn: async ({ id, scheduledAt }: { id: number; scheduledAt: string }) => {
+      const res = await fetch(`/api/admin/content-studio/calendar/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledAt }),
+      });
+      if (!res.ok) throw new Error("Could not move entry");
+      return res.json();
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: calendarQueryKey });
+      toast({ title: "Moved to new day" });
+    },
+    onError: (e: Error) => {
+      void qc.invalidateQueries({ queryKey: calendarQueryKey });
+      toast({ title: "Move failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const onDragStart = useCallback((event: DragStartEvent) => {
+    const id = event.active.id;
+    if (typeof id !== "number") return;
+    const entry = entries.find((e) => e.id === id);
+    setActiveDragEntry(entry ?? null);
+  }, [entries]);
+
+  const onDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragEntry(null);
+      const { active, over } = event;
+      if (!over) return;
+      const activeId = active.id;
+      if (typeof activeId !== "number") return;
+
+      const overId = over.id;
+
+      if (typeof overId === "string" && overId.startsWith("day-")) {
+        const targetDay = parseDayDropId(overId);
+        if (!targetDay) return;
+        const entry = entries.find((e) => e.id === activeId);
+        if (!entry) return;
+        const old = new Date(entry.scheduledAt);
+        const next = new Date(
+          targetDay.getFullYear(),
+          targetDay.getMonth(),
+          targetDay.getDate(),
+          old.getHours(),
+          old.getMinutes(),
+          old.getSeconds(),
+          old.getMilliseconds(),
+        );
+        if (isSameDay(old, next)) return;
+        setSelectedDay(next);
+        rescheduleMutation.mutate({ id: activeId, scheduledAt: next.toISOString() });
+        return;
+      }
+
+      if (typeof overId !== "number") return;
+      if (activeId === overId) return;
+      const ids = dayEntriesFixed.map((e) => e.id);
+      const oldIndex = ids.indexOf(activeId);
+      const newIndex = ids.indexOf(overId);
+      if (oldIndex < 0 || newIndex < 0) return;
+      const next = arrayMove(ids, oldIndex, newIndex);
+      applyOptimisticReorder(next);
+      reorderMutation.mutate(next);
+    },
+    [entries, dayEntriesFixed, applyOptimisticReorder, reorderMutation, rescheduleMutation],
+  );
+
+  const onDragCancel = useCallback(() => {
+    setActiveDragEntry(null);
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -246,7 +439,7 @@ export default function ContentStudioCalendarPage() {
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/admin/content-studio/calendar"] });
+      void qc.invalidateQueries({ queryKey: calendarQueryKey });
       setQuickOpen(false);
       setQTitle("");
       toast({ title: "Scheduled" });
@@ -260,143 +453,148 @@ export default function ContentStudioCalendarPage() {
     return eachDayOfInterval({ start, end });
   }, [cursor]);
 
+  const sortableIds = dayEntriesFixed.map((e) => e.id);
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>Editorial calendar</CardTitle>
-            <CardDescription>
-              Plan like Buffer/Hookle: draft → scheduled → published. Drag to reorder within a day.
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Select value={view} onValueChange={(v) => setView(v as View)}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-                <SelectItem value="agenda">Agenda</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? -30 : -7))}>
-              Prev
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
-              Today
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? 30 : 7))}>
-              Next
-            </Button>
-            <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Quick add
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>New calendar entry</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <Label>Title / headline</Label>
-                    <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>When (local → stored UTC)</Label>
-                    <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>CTA objective</Label>
-                    <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Personas (comma)</Label>
-                    <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Platforms (comma)</Label>
-                    <Input value={qPlatforms} onChange={(e) => setQPlatforms(e.target.value)} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => createMutation.mutate()} disabled={!qTitle.trim() || createMutation.isPending}>
-                    {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={calendarCollisionDetection}
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={onDragCancel}
+      >
+        <Card>
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Editorial calendar</CardTitle>
+              <CardDescription>
+                Drag the grip to <strong className="text-foreground">reorder</strong> the day queue, or drop onto a{" "}
+                <strong className="text-foreground">month cell</strong> to reschedule (time of day is preserved).
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={view} onValueChange={(v) => setView(v as View)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="day">Day</SelectItem>
+                  <SelectItem value="agenda">Agenda</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? -30 : -7))}>
+                Prev
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+                Today
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? 30 : 7))}>
+                Next
+              </Button>
+              <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Quick add
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Loader2 className="h-8 w-8 animate-spin" />
-          ) : view === "month" ? (
-            <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 text-muted-foreground">
-              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                <div key={d}>{d}</div>
-              ))}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>New calendar entry</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div className="space-y-1">
+                      <Label>Title / headline</Label>
+                      <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>When (local → stored UTC)</Label>
+                      <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>CTA objective</Label>
+                      <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Personas (comma)</Label>
+                      <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Platforms (comma)</Label>
+                      <Input value={qPlatforms} onChange={(e) => setQPlatforms(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => createMutation.mutate()} disabled={!qTitle.trim() || createMutation.isPending}>
+                      {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
-          ) : null}
-          {view === "month" && (
-            <div className="grid grid-cols-7 gap-1">
-              {monthDays.map((d) => {
-                const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
-                const sel = isSameDay(d, selectedDay);
-                return (
-                  <button
-                    key={d.toISOString()}
-                    type="button"
-                    onClick={() => setSelectedDay(d)}
-                    className={`min-h-[72px] rounded-md border p-1 text-left text-sm transition-colors ${
-                      sel ? "border-primary bg-primary/10" : "border-border/60 bg-muted/20"
-                    } ${!isSameMonth(d, cursor) ? "opacity-40" : ""}`}
-                  >
-                    <div className="font-medium">{format(d, "d")}</div>
-                    {count > 0 && (
-                      <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                        {count}
-                      </Badge>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {view === "agenda" && (
-            <ul className="space-y-2">
-              {[...entries]
-                .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
-                .map((e) => (
-                  <li key={e.id} className="rounded-lg border p-3 text-sm">
-                    <div className="font-medium">{e.title}</div>
-                    <div className="text-xs text-muted-foreground">{format(new Date(e.scheduledAt), "PPp")}</div>
-                  </li>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Loader2 className="h-8 w-8 animate-spin" />
+            ) : view === "month" ? (
+              <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 text-muted-foreground">
+                {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                  <div key={d}>{d}</div>
                 ))}
-            </ul>
-          )}
-          {(view === "week" || view === "day") && (
-            <p className="text-sm text-muted-foreground">
-              Use month or agenda for bulk planning; selected day panel below applies to all views.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ) : null}
+            {view === "month" && (
+              <div className="grid grid-cols-7 gap-1.5">
+                {monthDays.map((d) => {
+                  const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
+                  return (
+                    <DroppableMonthCell
+                      key={d.toISOString()}
+                      day={d}
+                      cursorMonth={cursor}
+                      selectedDay={selectedDay}
+                      count={count}
+                      onSelect={() => setSelectedDay(d)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+            {view === "agenda" && (
+              <ul className="space-y-2">
+                {[...entries]
+                  .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+                  .map((e) => (
+                    <li key={e.id} className="rounded-lg border p-3 text-sm">
+                      <div className="font-medium">{e.title}</div>
+                      <div className="text-xs text-muted-foreground">{format(new Date(e.scheduledAt), "PPp")}</div>
+                    </li>
+                  ))}
+              </ul>
+            )}
+            {(view === "week" || view === "day") && (
+              <p className="text-sm text-muted-foreground">
+                Use <strong className="text-foreground">Month</strong> to drag entries onto dates. The selected-day
+                queue below works in every view.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{format(selectedDay, "EEEE, MMM d")} — queue</CardTitle>
-          <CardDescription>Drag cards to reorder (sort order persists).</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={dayEntriesFixed.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{format(selectedDay, "EEEE, MMM d")} — queue</CardTitle>
+            <CardDescription>
+              Reorder with drag-and-drop; items animate into place. Drag onto a date in month view to reschedule.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2.5">
                 {dayEntriesFixed.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No entries this day.</p>
                 ) : (
@@ -404,9 +602,13 @@ export default function ContentStudioCalendarPage() {
                 )}
               </div>
             </SortableContext>
-          </DndContext>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeDragEntry ? <CalendarEntryDragPreview entry={activeDragEntry} /> : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

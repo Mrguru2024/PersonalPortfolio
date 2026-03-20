@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
 import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
+import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
+import { MemberFreeDownloads } from "@/components/MemberFreeDownloads";
 
 export const metadata: Metadata = {
   title: "Free growth tools | Ascendra Technologies",
@@ -137,17 +139,13 @@ export default function FreeGrowthToolsPage() {
               <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6">
                 Short, practical guidance before you dive into the tools below.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <video
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  aria-label="Ascendra tips video"
-                >
-                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
-                </video>
-              </div>
+              <AscendraPromoVideo
+                src={ASCENDRA_VIDEO.tips}
+                ariaLabel="Ascendra tips video"
+                objectFit="cover"
+                maxWidthClassName="max-w-5xl"
+                playback="clickToPlay"
+              />
             </section>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -193,6 +191,8 @@ export default function FreeGrowthToolsPage() {
                 );
               })}
             </section>
+
+            <MemberFreeDownloads className="shadow-sm" />
 
             <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">

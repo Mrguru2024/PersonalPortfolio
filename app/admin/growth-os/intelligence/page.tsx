@@ -28,6 +28,17 @@ export default function GrowthOsIntelligencePage() {
   const [focus, setFocus] = useState<"mixed" | "keyword" | "topic" | "phrase" | "headline">("mixed");
   const [genPhrase, setGenPhrase] = useState("");
   const [automationJob, setAutomationJob] = useState("weekly_research_digest");
+  const [automationDocumentId, setAutomationDocumentId] = useState("");
+
+  const automationNeedsDocumentId =
+    automationJob === "content_insight_save" ||
+    automationJob === "content_insight_schedule" ||
+    automationJob === "headline_hook_variants" ||
+    automationJob === "repurposing_suggestions";
+  const automationDocumentIdParsed = Number.parseInt(automationDocumentId, 10);
+  const automationDocumentOk =
+    !automationNeedsDocumentId ||
+    (Number.isFinite(automationDocumentIdParsed) && automationDocumentIdParsed > 0);
 
   const dash = useQuery({
     queryKey: ["/api/admin/growth-os/intelligence/dashboards", PROJECT],
@@ -381,25 +392,50 @@ export default function GrowthOsIntelligencePage() {
                 Content insight on save/schedule is also wired via CMS APIs (see provider tab for env flags).
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-3 items-end max-w-xl">
-              <div className="space-y-1 flex-1 min-w-[200px]">
-                <Label>Job type</Label>
-                <Select value={automationJob} onValueChange={setAutomationJob}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly_research_digest">Weekly research digest</SelectItem>
-                    <SelectItem value="audit_recommendation_engine">Audit recommendation engine</SelectItem>
-                    <SelectItem value="editorial_gap_detection">Editorial gap detection</SelectItem>
-                    <SelectItem value="stale_content_detection">Stale content detection</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={() => runAutomation.mutate()} disabled={runAutomation.isPending}>
+            <CardContent className="flex flex-col gap-3 max-w-xl">
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="space-y-1 flex-1 min-w-[200px]">
+                  <Label>Job type</Label>
+                  <Select value={automationJob} onValueChange={setAutomationJob}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly_research_digest">Weekly research digest</SelectItem>
+                      <SelectItem value="audit_recommendation_engine">Audit recommendation engine</SelectItem>
+                      <SelectItem value="editorial_gap_detection">Editorial gap detection</SelectItem>
+                      <SelectItem value="stale_content_detection">Stale content detection</SelectItem>
+                      <SelectItem value="stale_followup_detection">Stale follow-up detection (CRM)</SelectItem>
+                      <SelectItem value="content_insight_save">Content insight (on save style)</SelectItem>
+                      <SelectItem value="content_insight_schedule">Content insight (on schedule style)</SelectItem>
+                      <SelectItem value="headline_hook_variants">Headline / hook variants</SelectItem>
+                      <SelectItem value="repurposing_suggestions">Repurposing / platform variants</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={() => runAutomation.mutate()}
+                  disabled={runAutomation.isPending || !automationDocumentOk}
+                >
                 {runAutomation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Execute
-              </Button>
+                  Execute
+                </Button>
+              </div>
+              {automationNeedsDocumentId ? (
+                <div className="space-y-1">
+                  <Label>Internal CMS document ID</Label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="e.g. 42"
+                    value={automationDocumentId}
+                    onChange={(e) => setAutomationDocumentId(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Required for insight and variant jobs. Open the document in Content Studio to read its ID from
+                    the URL.
+                  </p>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
           <Card>
@@ -447,7 +483,19 @@ export default function GrowthOsIntelligencePage() {
               </p>
               <p>
                 Client token view:{" "}
-                <code className="text-foreground">GET /api/public/gos/report/[token]</code>
+                <code className="text-foreground">GET /api/public/gos/report/[token]</code> or human page{" "}
+                <code className="text-foreground">/gos/report/[token]</code>
+              </p>
+              <p>
+                <code className="text-foreground">GOS_PUBLIC_REPORT_MAX_PER_MINUTE</code> — per-IP cap in production
+                (default 60).
+              </p>
+              <p>
+                <code className="text-foreground">CRON_SECRET</code> — required for{" "}
+                <code className="text-foreground">GET /api/cron/growth-os</code> (Vercel Cron sends{" "}
+                <code className="text-foreground">Authorization: Bearer …</code>). Daily: stale content + editorial
+                gaps; Mondays UTC: weekly research digest. Configure <code className="text-foreground">vercel.json</code>{" "}
+                <code className="text-foreground">crons</code> (Pro plan on Vercel).
               </p>
               <p>
                 Policy share builder:{" "}

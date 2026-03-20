@@ -59,9 +59,9 @@ export default function AdminChatPage() {
   const sendMutation = useMutation({
     mutationFn: async (payload: {
       content: string;
-      alsoSendEmail?: boolean;
-      alsoSendSms?: boolean;
-      alsoSendPush?: boolean;
+      alsoSendEmail: boolean;
+      alsoSendSms: boolean;
+      alsoSendPush: boolean;
       recipientEmails?: string;
       recipientPhones?: string;
     }) => {
@@ -73,28 +73,70 @@ export default function AdminChatPage() {
         createdAt: string;
         senderUsername: string;
         senderEmail?: string;
-        delivery?: { email?: number | boolean; sms?: number | boolean; push?: number };
+        delivery?: {
+          email?: number | boolean;
+          emailHint?: string;
+          sms?: number | boolean;
+          smsHint?: string;
+          push?: number;
+        };
       }>;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       setContent("");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/chat/messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/chat/notifications"] });
       const d = data.delivery;
-      if (d && (d.email !== undefined || d.sms !== undefined || (d.push !== undefined && d.push > 0))) {
+      const wantedEmail = variables.alsoSendEmail === true;
+      const wantedSms = variables.alsoSendSms === true;
+      const wantedPush = variables.alsoSendPush === true;
+
+      const hintLabel = (hint?: string) => {
+        const map: Record<string, string> = {
+          brevo_not_configured: "Email: set BREVO_API_KEY (and verified sender) in server env.",
+          no_recipients: "Email/SMS: add recipient(s) in the fields or set ADMIN_EMAIL / ADMIN_PHONE.",
+          send_failed: "Provider rejected the send — check server logs or Brevo/Twilio dashboard.",
+          twilio_not_configured: "SMS: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER.",
+        };
+        return hint ? map[hint] ?? hint : "";
+      };
+
+      if (
+        d &&
+        (wantedEmail ||
+          wantedSms ||
+          wantedPush ||
+          d.email !== undefined ||
+          d.sms !== undefined ||
+          d.push !== undefined)
+      ) {
         const parts: string[] = [];
-        if (d.email !== undefined) {
+        if (wantedEmail || d.email !== undefined) {
           if (d.email === true) parts.push("Email sent");
-          else if (d.email === false) parts.push("Email failed");
-          else if (typeof d.email === "number") parts.push(d.email > 0 ? `Email sent to ${d.email} recipient(s)` : "Email failed");
+          else if (d.email === false) parts.push("Email not sent");
+          else if (typeof d.email === "number")
+            parts.push(d.email > 0 ? `Email sent to ${d.email} recipient(s)` : "Email not sent to any recipient");
+          if (d.emailHint) {
+            const h = hintLabel(d.emailHint);
+            if (h) parts.push(h);
+          }
         }
-        if (d.sms !== undefined) {
+        if (wantedSms || d.sms !== undefined) {
           if (d.sms === true) parts.push("SMS sent");
-          else if (d.sms === false) parts.push("SMS failed or not configured");
-          else if (typeof d.sms === "number") parts.push(d.sms > 0 ? `SMS sent to ${d.sms} recipient(s)` : "SMS failed or not configured");
+          else if (d.sms === false) parts.push("SMS not sent");
+          else if (typeof d.sms === "number")
+            parts.push(d.sms > 0 ? `SMS sent to ${d.sms} number(s)` : "SMS not sent");
+          if (d.smsHint) {
+            const h = hintLabel(d.smsHint);
+            if (h) parts.push(h);
+          }
         }
-        if (typeof d.push === "number" && d.push > 0) parts.push(`Push: ${d.push} device(s)`);
-        if (parts.length) toast({ title: "Delivery", description: parts.join(". ") });
+        if (wantedPush) {
+          if (typeof d.push === "number") {
+            parts.push(d.push > 0 ? `Push: ${d.push} device(s)` : "Push: no deliveries (subscribe this device or check VAPID)");
+          }
+        }
+        if (parts.length) toast({ title: "Delivery status", description: parts.join(" ") });
       }
     },
     onError: (err: Error) => {
@@ -134,9 +176,9 @@ export default function AdminChatPage() {
     if (!text || sendMutation.isPending) return;
     sendMutation.mutate({
       content: text,
-      alsoSendEmail: alsoSendEmail || undefined,
-      alsoSendSms: alsoSendSms || undefined,
-      alsoSendPush: alsoSendPush || undefined,
+      alsoSendEmail,
+      alsoSendSms,
+      alsoSendPush,
       recipientEmails: recipientEmails.trim() || undefined,
       recipientPhones: recipientPhones.trim() || undefined,
     });
@@ -280,7 +322,7 @@ export default function AdminChatPage() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox
                         checked={alsoSendEmail}
-                        onCheckedChange={(c) => setAlsoSendEmail(!!c)}
+                        onCheckedChange={(c) => setAlsoSendEmail(c === true)}
                       />
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>Email (Brevo)</span>
@@ -296,7 +338,7 @@ export default function AdminChatPage() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox
                         checked={alsoSendPush}
-                        onCheckedChange={(c) => setAlsoSendPush(!!c)}
+                        onCheckedChange={(c) => setAlsoSendPush(c === true)}
                       />
                       <Bell className="h-4 w-4 text-muted-foreground" />
                       <span>Push to device</span>

@@ -117,7 +117,7 @@ export default function AdminFunnelPage() {
               <div className="min-w-0">
                 <CardTitle className="text-lg">Content Library</CardTitle>
                 <CardDescription className="text-sm mt-0.5">
-                  Upload PDF, PowerPoint, video for lead magnets. Publish and assign to page + section.
+                  Upload PDFs, video, images, decks. Approve with Publish; set Members only for signed-in downloads on Free growth tools.
                 </CardDescription>
               </div>
             </div>

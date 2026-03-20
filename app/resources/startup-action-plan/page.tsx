@@ -12,6 +12,7 @@ import {
   STARTUP_GROWTH_SYSTEM_OFFER_PATH,
 } from "@/lib/funnelCtas";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
+import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 
 export const metadata: Metadata = {
   title: "Startup action plan | Practical steps to improve your online presence",
@@ -83,17 +84,13 @@ export default function StartupActionPlanPage() {
               <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-4">
                 Short guidance that lines up with the steps below—play before you work through the list.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <video
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  aria-label="Ascendra tips video"
-                >
-                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
-                </video>
-              </div>
+              <AscendraPromoVideo
+                src={ASCENDRA_VIDEO.tips}
+                ariaLabel="Ascendra tips video"
+                objectFit="cover"
+                maxWidthClassName="max-w-5xl"
+                playback="clickToPlay"
+              />
             </section>
 
             <section className="space-y-6">

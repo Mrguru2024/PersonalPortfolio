@@ -20,6 +20,7 @@ const nextConfig = {
       { source: '/insights', destination: '/blog', permanent: true },
       { source: '/insights/:path*', destination: '/blog', permanent: true },
       { source: '/results', destination: '/diagnosis/results', permanent: true },
+      { source: '/ecosystem-founders', destination: '/about?founders=1', permanent: true },
     ];
   },
   

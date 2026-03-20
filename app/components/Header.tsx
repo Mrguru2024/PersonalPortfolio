@@ -88,7 +88,6 @@ export default function Header(_props: HeaderProps) {
   ];
   const moreLinks = [
     { name: "About", href: "/about" },
-    { name: "Ecosystem founders", href: "/ecosystem-founders" },
     { name: "Website breakdowns", href: "/website-breakdowns" },
     { name: "Your Growth Score", href: "/diagnosis/results" },
     { name: "Contact", href: "/contact" },

@@ -61,10 +61,12 @@ export async function POST(req: NextRequest) {
       metadata: { shareId: out.id },
     });
 
+    const enc = encodeURIComponent(out.rawToken);
     return NextResponse.json({
       id: out.id,
       token: out.rawToken,
-      viewUrl: `/api/public/gos/report/${encodeURIComponent(out.rawToken)}`,
+      apiUrl: `/api/public/gos/report/${enc}`,
+      pageUrl: `/gos/report/${enc}`,
     });
   } catch (e: unknown) {
     console.error(e);

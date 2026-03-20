@@ -20,6 +20,7 @@ import {
 } from "@/lib/funnelCtas";
 import { getFunnelContent } from "@/lib/funnelContent.server";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
+import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -130,17 +131,13 @@ export default async function StartupGrowthKitPage() {
               <p className="text-sm text-muted-foreground mb-4 text-center max-w-xl mx-auto">
                 A short walkthrough of ideas that pair well with this guide—watch before you build.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <video
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  aria-label="Ascendra tips video for startups"
-                >
-                  <source src={ASCENDRA_VIDEO.tips} type="video/mp4" />
-                </video>
-              </div>
+              <AscendraPromoVideo
+                src={ASCENDRA_VIDEO.tips}
+                ariaLabel="Ascendra tips video for startups"
+                objectFit="cover"
+                maxWidthClassName="max-w-5xl"
+                playback="clickToPlay"
+              />
             </section>
 
             {/* 4 layers */}

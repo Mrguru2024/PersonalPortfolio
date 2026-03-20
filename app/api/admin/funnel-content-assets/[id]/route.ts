@@ -30,6 +30,7 @@ export async function GET(
       mimeType: asset.mimeType,
       fileSizeBytes: asset.fileSizeBytes,
       status: asset.status,
+      accessLevel: asset.accessLevel,
       leadMagnetSlug: asset.leadMagnetSlug,
       placements: asset.placements,
       createdAt: asset.createdAt,
@@ -54,17 +55,27 @@ export async function PATCH(
     if (!Number.isInteger(id) || id < 1) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
-    const body = await req.json();
+    const raw = (await req.json()) as Record<string, unknown>;
+    const body =
+      raw &&
+      typeof raw === "object" &&
+      raw.data !== null &&
+      typeof raw.data === "object" &&
+      !Array.isArray(raw.data)
+        ? ({ ...raw, ...(raw.data as Record<string, unknown>) } as Record<string, unknown>)
+        : raw;
     const updates: {
       title?: string;
       description?: string | null;
       status?: string;
+      accessLevel?: string;
       leadMagnetSlug?: string | null;
       placements?: Array<{ pagePath: string; sectionId: string }>;
     } = {};
     if (typeof body.title === "string") updates.title = body.title.trim();
     if (body.description !== undefined) updates.description = body.description ? String(body.description).trim() : null;
     if (body.status === "draft" || body.status === "published") updates.status = body.status;
+    if (body.accessLevel === "public" || body.accessLevel === "registered") updates.accessLevel = body.accessLevel;
     if (body.leadMagnetSlug !== undefined) updates.leadMagnetSlug = body.leadMagnetSlug ? String(body.leadMagnetSlug).trim() : null;
     if (Array.isArray(body.placements)) {
       updates.placements = body.placements.filter(
@@ -82,6 +93,7 @@ export async function PATCH(
       mimeType: asset.mimeType,
       fileSizeBytes: asset.fileSizeBytes,
       status: asset.status,
+      accessLevel: asset.accessLevel,
       leadMagnetSlug: asset.leadMagnetSlug,
       placements: asset.placements,
       createdAt: asset.createdAt,
