@@ -44,16 +44,17 @@ const nextConfig = {
     ],
   },
   
+  // Include content/development-updates.md in the serverless bundle for the admin API (Next 16+ top-level)
+  outputFileTracingIncludes: {
+    '/api/admin/development-updates': ['./content/development-updates.md'],
+  },
+
   // Enable experimental features if needed
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'framer-motion'],
-    // Include content/development-updates.md in the serverless bundle for the admin API so it's available at runtime
-    outputFileTracingIncludes: {
-      '/api/admin/development-updates': ['./content/development-updates.md'],
-    },
   },
   
   // Turbopack configuration (for dev mode with --turbo flag)

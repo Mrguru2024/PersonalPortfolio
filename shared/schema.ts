@@ -719,6 +719,9 @@ export const growthDiagnosisReports = pgTable("growth_diagnosis_reports", {
 export type GrowthDiagnosisReport = typeof growthDiagnosisReports.$inferSelect;
 export type InsertGrowthDiagnosisReport = typeof growthDiagnosisReports.$inferInsert;
 
+export * from "./growthOsSchema";
+export * from "./growthIntelligenceSchema";
+export * from "./internalStudioSchema";
 export * from "./crmSchema";
 export * from "./newsletterSchema";
 export * from "./afnSchema";

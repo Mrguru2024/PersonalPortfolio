@@ -12,6 +12,10 @@ const ALLOWED_KEYS = [
   "feedback",
   "crm",
   "dashboard",
+  /** Granular Growth OS admin (phase 2+; phase-1 hub still uses full admin). */
+  "growth_os",
+  /** Non-admin internal tooling; future phased surfaces. */
+  "internal_team",
 ] as const;
 
 function isValidPermissions(

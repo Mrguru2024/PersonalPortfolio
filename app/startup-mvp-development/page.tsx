@@ -92,7 +92,7 @@ export default function StartupMvpDevelopmentPage() {
             >
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Web Design_3.jpg"
+                  src="/stock images/Web Design_3.jpeg"
                   alt=""
                   fill
                   className="object-cover"

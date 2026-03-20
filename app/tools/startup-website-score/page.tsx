@@ -37,7 +37,7 @@ export default function StartupWebsiteScorePage() {
               </p>
               <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Web Design_2.jpg"
+                  src="/stock images/Web Design_2.jpeg"
                   alt=""
                   fill
                   className="object-cover"

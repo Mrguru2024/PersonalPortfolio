@@ -37,6 +37,8 @@ import {
 const PRIVILEGE_OPTIONS: { key: string; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
   { key: "crm", label: "CRM" },
+  { key: "growth_os", label: "Growth OS (granular)" },
+  { key: "internal_team", label: "Internal team tools" },
   { key: "blog", label: "Blog & Blog Analytics" },
   { key: "pages", label: "Edit page content" },
   { key: "announcements", label: "Announcements" },

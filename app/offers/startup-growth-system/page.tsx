@@ -74,8 +74,7 @@ export default function StartupGrowthSystemOfferPage() {
   const cta = sections.cta ?? DEFAULT_OFFER_SECTIONS.cta!;
 
   // Fallback hero media when the CMS/DB entry doesn't provide an image.
-  const fallbackHeroImageUrl =
-    "/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Growth_11.jpg";
+  const fallbackHeroImageUrl = "/stock images/Growth_11.jpeg";
 
   return (
     <>

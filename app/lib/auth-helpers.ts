@@ -1,6 +1,14 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { storage } from "@server/storage";
+import { SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
+import {
+  resolveAscendraAccessRole,
+  canAccessGrowthOsAdminPhase1,
+  canAccessGrowthOsInternalTools,
+  type AscendraAccessRole,
+  type SessionUserLike,
+} from "@shared/accessScope";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -325,7 +333,6 @@ export async function isDeveloper(req?: NextRequest): Promise<boolean> {
 }
 
 // Super user: developer role, explicit username, or super admin email (see super-admin.ts)
-import { SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
 export async function isSuperUser(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
@@ -371,6 +378,23 @@ export async function hasRole(
   return (
     user.role === role || (user.isAdmin === true && user.adminApproved === true)
   );
+}
+
+/** Coarse Growth OS / portal access role for API responses and UI. */
+export function resolveAscendraAccessFromSessionUser(
+  user: unknown,
+): AscendraAccessRole {
+  return resolveAscendraAccessRole(user as SessionUserLike);
+}
+
+/** Phase 1: Growth OS admin surfaces require approved admin (same as isAdmin). */
+export function userCanAccessGrowthOsAdminPhase1(user: unknown): boolean {
+  return canAccessGrowthOsAdminPhase1(user as SessionUserLike);
+}
+
+/** Future internal-team surfaces (not used for phase-1 GOS admin lock). */
+export function userCanAccessGrowthOsInternalTools(user: unknown): boolean {
+  return canAccessGrowthOsInternalTools(user as SessionUserLike);
 }
 
 // Get IP address from request

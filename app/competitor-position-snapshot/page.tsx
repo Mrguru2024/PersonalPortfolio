@@ -151,7 +151,7 @@ export default function CompetitorPositionSnapshotPage() {
               </p>
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
                 <Image
-                  src="/Video Content_Ascendra_Files/Ascendra_Business Launch Promo/(Footage)/Asset/Diversity_17.jpg"
+                  src="/stock images/Diversity_17.jpeg"
                   alt=""
                   fill
                   className="object-cover"
