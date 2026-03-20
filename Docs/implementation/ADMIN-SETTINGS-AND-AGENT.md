@@ -35,7 +35,18 @@
 - **Navigation**: open reminders, CRM, dashboard, settings, blog, invoices, chat (each has a fixed URL).
 - **Generate reminders**: calls `POST /api/admin/reminders` and invalidates reminder query.
 
-Intent is parsed by keyword in `server/services/adminAgentService.ts`. No OpenAI required; optional future: use OpenAI for richer replies.
+Intent is parsed by command + keyword matching in `server/services/adminAgentService.ts`.
+
+### Advanced command support
+
+- Natural language actions (e.g. `open content studio`, `go to growth os intelligence`, `open crm pipeline`).
+- Slash commands (e.g. `/help`, `/open crm pipeline`, `/run reminders`, `/where am i`, `/new`).
+- Question handling for:
+  - capabilities/commands (`what can you do?`, `list commands`)
+  - page context (`where am i?`)
+  - new feature discovery (`what's new?`, `new features`)
+  - action-mode status (`are actions enabled?`)
+- Interactive suggestion chips are returned by the API and rendered in the widget as one-click follow-up commands.
 
 ### Permissions
 
