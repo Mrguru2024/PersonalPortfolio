@@ -70,7 +70,7 @@ const DESTINATION_INTENTS: DestinationIntent[] = [
   { label: "CRM saved lists", url: "/admin/crm/saved-lists", keywords: ["crm saved lists", "saved lists"], command: "open crm saved lists" },
   { label: "CRM discovery", url: "/admin/crm/discovery", keywords: ["crm discovery", "discovery"], command: "open crm discovery", featureTag: "new" },
   { label: "CRM import", url: "/admin/crm/import", keywords: ["crm import", "import contacts"], command: "open crm import" },
-  { label: "Blog", url: "/admin/blog", keywords: ["blog", "posts", "content"], command: "open blog" },
+  { label: "Blog", url: "/admin/blog", keywords: ["blog", "posts"], command: "open blog" },
   { label: "Blog analytics", url: "/admin/blog/analytics", keywords: ["blog analytics", "post analytics"], command: "open blog analytics" },
   { label: "Website analytics", url: "/admin/analytics", keywords: ["website analytics", "analytics", "traffic"], command: "open analytics" },
   { label: "Invoices", url: "/admin/invoices", keywords: ["invoices", "invoice"], command: "open invoices" },
@@ -121,12 +121,17 @@ function parseSlashCommand(normalized: string): string | undefined {
 }
 
 function findDestination(query: string): DestinationIntent | undefined {
+  let bestMatch: { intent: DestinationIntent; keywordLength: number } | null = null;
   for (const destination of DESTINATION_INTENTS) {
-    if (destination.keywords.some((keyword) => query.includes(keyword))) {
-      return destination;
+    for (const keyword of destination.keywords) {
+      if (query.includes(keyword)) {
+        if (!bestMatch || keyword.length > bestMatch.keywordLength) {
+          bestMatch = { intent: destination, keywordLength: keyword.length };
+        }
+      }
     }
   }
-  return undefined;
+  return bestMatch?.intent;
 }
 
 function parseNavigationAction(rawMessage: string): AgentAction | undefined {
@@ -179,7 +184,9 @@ function parseNavigationAction(rawMessage: string): AgentAction | undefined {
 }
 
 function routeToReadableName(path: string): string {
-  const destination = DESTINATION_INTENTS.find((intent) => path.startsWith(intent.url));
+  const destination = DESTINATION_INTENTS.filter((intent) => path.startsWith(intent.url)).sort(
+    (a, b) => b.url.length - a.url.length,
+  )[0];
   return destination?.label ?? path;
 }
 
