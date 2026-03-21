@@ -120,19 +120,6 @@ export function AscendraPromoVideo({
           </div>
         ) : null}
       </div>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        {isAutoplay ? (
-          <>
-            16:9 cinematic layout · Use <strong className="text-foreground">Sound on</strong> or the player
-            volume control to hear audio.
-          </>
-        ) : (
-          <>
-            16:9 cinematic layout · Press <strong className="text-foreground">play</strong> on the video—audio is
-            enabled (tap the speaker icon in the bar if needed).
-          </>
-        )}
-      </p>
     </div>
   );
 }
