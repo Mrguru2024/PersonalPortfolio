@@ -120,8 +120,8 @@ export default function Home() {
           <p className="text-center text-muted-foreground max-w-2xl mx-auto">
             There&apos;s often a disconnect between <strong className="text-foreground">brand</strong> (who you are and who you serve), <strong className="text-foreground">design</strong> (how you look and feel), and <strong className="text-foreground">systems</strong> (how you capture and follow up with leads). When one is weak, growth stalls.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 pt-2">
-            <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 pt-2">
+            <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
               <Link href="/diagnosis">Run Growth Diagnosis</Link>
             </Button>
           </div>
@@ -284,14 +284,14 @@ export default function Home() {
               <li>• Website performance</li>
               <li>• Conversion opportunities</li>
             </ul>
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-              <Button asChild className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-3">
+              <Button asChild className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/digital-growth-audit">Request your audit</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+              <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/services">See growth systems</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+              <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/free-growth-tools">Explore free growth tools</Link>
               </Button>
             </div>
@@ -309,7 +309,7 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mb-4">
               <strong className="text-foreground">Competitor Position Snapshot</strong> — Understand how your business may be showing up compared to competitors.
             </p>
-            <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+            <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
               <Link href="/website-revenue-calculator">
                 Use revenue calculator
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -441,11 +441,11 @@ export default function Home() {
             <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
               Request a Digital Growth Audit for a clear view of brand, design, and conversion opportunities—then decide your next step.
             </p>
-            <div className="mt-6 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3">
-              <Button asChild className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+            <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-3">
+              <Button asChild className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/digital-growth-audit">Request Digital Growth Audit</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto !flex justify-center text-center">
+              <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/contact">Book a free call</Link>
               </Button>
             </div>
