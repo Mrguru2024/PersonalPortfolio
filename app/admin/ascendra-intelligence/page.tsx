@@ -71,8 +71,8 @@ export default function AscendraIntelligenceHubPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Offer + Persona Intelligence</h1>
             <p className="text-muted-foreground mt-1 max-w-2xl">
-              Internal admin only. Canonical customer personas (targets, not users), outreach scripts, lead
-              magnets, and previews—wired to existing offers and funnel assets.
+              Internal admin only. Customer personas (targets, not users), outreach scripts (including Generative AI),
+              typed lead magnets, and previews—wired to site offers and funnel assets.
             </p>
           </div>
         </div>
@@ -90,14 +90,20 @@ export default function AscendraIntelligenceHubPage() {
                   Personas
                 </CardTitle>
                 <CardDescription>
-                  Six core targets + Denishia (Macon Designs). Edit problems, goals, objections, signals.
+                  Core targets + partners. Add new personas, then attach scripts and magnets. Manage live pricing copy
+                  under Site offers.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex items-center justify-between">
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-2xl font-semibold tabular-nums">{summary?.personaCount ?? "—"}</span>
-                <Button asChild size="sm">
-                  <Link href="/admin/ascendra-intelligence/personas">Open</Link>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="secondary">
+                    <Link href="/admin/ascendra-intelligence/personas/new">New persona</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link href="/admin/ascendra-intelligence/personas">Open list</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -107,7 +113,9 @@ export default function AscendraIntelligenceHubPage() {
                   <FileText className="h-5 w-5 text-primary" />
                   Scripts
                 </CardTitle>
-                <CardDescription>Warm, cold, content, follow-up, objection—per persona.</CardDescription>
+                <CardDescription>
+                  Warm, cold, content, follow-up, objection, Generative AI—per persona.
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-between">
                 <span className="text-2xl font-semibold tabular-nums">{summary?.scriptCount ?? "—"}</span>
@@ -123,7 +131,9 @@ export default function AscendraIntelligenceHubPage() {
                   <Sparkles className="h-5 w-5 text-primary" />
                   Lead magnets
                 </CardTitle>
-                <CardDescription>Typed magnets; optional link to funnel content assets.</CardDescription>
+                <CardDescription>
+                  Typed magnets (including Generative AI); optional link to funnel content assets.
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-between">
                 <span className="text-2xl font-semibold tabular-nums">{summary?.leadMagnetCount ?? "—"}</span>

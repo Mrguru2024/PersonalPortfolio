@@ -4,9 +4,10 @@ import {
   internalAuditScores,
   internalAuditRecommendations,
 } from "@shared/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { runLeadAlignmentEngine } from "./leadAlignmentEngine";
 import { buildClientSafeAuditSummary } from "@/lib/internal-audit/buildClientSafeAuditSummary";
+import type { LeadAuditEvidenceItem } from "@/lib/internal-audit/leadAuditCategories";
 
 export async function listAuditRuns(filters: {
   projectKey?: string;
@@ -67,7 +68,11 @@ export async function executeAuditRun(input: {
   if (!run) throw new Error("Failed to create audit run");
 
   try {
-    const categories = await runLeadAlignmentEngine(input.projectKey);
+    const { categories, dbSnapshot } = await runLeadAlignmentEngine(input.projectKey);
+
+    const categoryEvidence = Object.fromEntries(
+      categories.map((c) => [c.categoryKey, c.evidence]),
+    ) as Record<string, unknown>;
 
     for (const c of categories) {
       await db.insert(internalAuditScores).values({
@@ -129,6 +134,9 @@ export async function executeAuditRun(input: {
           overallScore: overall,
           categoryCount: categories.length,
           recommendationCount: recRows.length,
+          dbSnapshot,
+          categoryEvidence,
+          evidenceVersion: 1,
         },
         clientSafeSummaryJson: clientSafe as unknown as Record<string, unknown>,
         errorMessage: null,
@@ -150,14 +158,33 @@ export async function executeAuditRun(input: {
   }
 }
 
+type SummaryJson = {
+  categoryEvidence?: Record<string, LeadAuditEvidenceItem[]>;
+  dbSnapshot?: Record<string, number>;
+};
+
+function attachEvidenceToScores(
+  run: NonNullable<Awaited<ReturnType<typeof getAuditRunById>>>["run"],
+  scores: NonNullable<Awaited<ReturnType<typeof getAuditRunById>>>["scores"],
+): Array<(typeof scores)[number] & { evidence: LeadAuditEvidenceItem[] }> {
+  const summary = run.summaryJson as SummaryJson | null | undefined;
+  const byCat = summary?.categoryEvidence;
+  return scores.map((s) => ({
+    ...s,
+    evidence: byCat?.[s.categoryKey] ?? [],
+  }));
+}
+
 /** Filter scores/recommendations in memory for dashboard (or extend with SQL ILIKE later). */
 export function filterAuditDetail(
   detail: NonNullable<Awaited<ReturnType<typeof getAuditRunById>>>,
   filters: { categoryKey?: string; pathSubstring?: string },
 ) {
   let { scores, recommendations } = detail;
+  let scoresWithEvidence = attachEvidenceToScores(detail.run, scores);
+
   if (filters.categoryKey) {
-    scores = scores.filter((s) => s.categoryKey === filters.categoryKey);
+    scoresWithEvidence = scoresWithEvidence.filter((s) => s.categoryKey === filters.categoryKey);
     recommendations = recommendations.filter((r) => r.categoryKey === filters.categoryKey);
   }
   if (filters.pathSubstring) {
@@ -166,5 +193,6 @@ export function filterAuditDetail(
       (r.relatedPaths as string[] | null)?.some((p) => p.toLowerCase().includes(sub)),
     );
   }
-  return { ...detail, scores, recommendations };
+
+  return { ...detail, scores: scoresWithEvidence, recommendations };
 }

@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
+import { LEAD_MAGNET_TYPE_LABELS, type LeadMagnetType } from "@shared/schema";
 
 interface Magnet {
   id: number;
@@ -93,7 +94,8 @@ export default function AscendraLeadMagnetsPage() {
                     <CardTitle className="text-base">{m.title}</CardTitle>
                     <CardDescription>
                       {m.magnetType.replace(/_/g, " ")} · {m.status}
-                      {m.primaryAssetId != null ? ` · asset #${m.primaryAssetId}` : ""}
+                      {LEAD_MAGNET_TYPE_LABELS[m.magnetType as LeadMagnetType] ?? m.magnetType.replace(/_/g, " ")} ·{" "}
+                      {m.status}
                       {m.personaIds?.length ? ` · ${m.personaIds.join(", ")}` : ""}
                     </CardDescription>
                   </CardHeader>

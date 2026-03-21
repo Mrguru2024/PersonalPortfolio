@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { getSiteBaseUrl } from "@/lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "@/lib/company";
+import {
+  updateJsonLdScript,
+  updateLinkTag,
+  updateMetaTag,
+} from "@shared/seo-head";
 
 interface PageSEOProps {
   title: string;
@@ -21,58 +26,6 @@ interface PageSEOProps {
     | "ProfilePage"
     | "ContactPage"
     | "CollectionPage";
-}
-
-// Helper function to update or create meta tag
-function updateMetaTag(property: string, content: string, isProperty = false) {
-  if (typeof document === "undefined") return;
-
-  const attribute = isProperty ? "property" : "name";
-  let element = document.querySelector(
-    `meta[${attribute}="${property}"]`
-  ) as HTMLMetaElement;
-
-  if (!element) {
-    element = document.createElement("meta");
-    element.setAttribute(attribute, property);
-    document.head.appendChild(element);
-  }
-
-  element.setAttribute("content", content);
-}
-
-// Helper function to update or create link tag
-function updateLinkTag(rel: string, href: string) {
-  if (typeof document === "undefined") return;
-
-  let element = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement;
-
-  if (!element) {
-    element = document.createElement("link");
-    element.setAttribute("rel", rel);
-    document.head.appendChild(element);
-  }
-
-  element.setAttribute("href", href);
-}
-
-// Helper function to update or create script tag for JSON-LD
-function updateJsonLdScript(data: object, id: string) {
-  if (typeof document === "undefined") return;
-
-  // Remove existing JSON-LD script for this page
-  const existingScript = document.querySelector(
-    `script[type="application/ld+json"][data-seo-id="${id}"]`
-  );
-  if (existingScript) {
-    existingScript.remove();
-  }
-
-  const script = document.createElement("script");
-  script.setAttribute("type", "application/ld+json");
-  script.setAttribute("data-seo-id", id);
-  script.textContent = JSON.stringify(data);
-  document.head.appendChild(script);
 }
 
 export function PageSEO({

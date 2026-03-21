@@ -65,7 +65,8 @@ const Home = ({ onSectionChange }: HomeProps) => {
       />
       
       {/* Add Person structured data */}
-      <StructuredData 
+      <StructuredData
+        jsonLdId="home-person"
         schema={{
           type: 'Person',
           data: {
@@ -83,7 +84,8 @@ const Home = ({ onSectionChange }: HomeProps) => {
       />
       
       {/* Add Website structured data */}
-      <StructuredData 
+      <StructuredData
+        jsonLdId="home-website"
         schema={{
           type: 'WebSite',
           data: {

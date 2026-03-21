@@ -31,8 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-const TYPES = ["reveal_problems", "sample_trial", "one_step_system"] as const;
+import { LEAD_MAGNET_TYPES, LEAD_MAGNET_TYPE_LABELS } from "@shared/schema";
 
 interface Magnet {
   id: number;
@@ -195,9 +194,9 @@ export default function EditLeadMagnetPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TYPES.map((t) => (
+                  {LEAD_MAGNET_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
-                      {t.replace(/_/g, " ")}
+                      {LEAD_MAGNET_TYPE_LABELS[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>

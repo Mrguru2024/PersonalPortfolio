@@ -45,11 +45,12 @@ export default function MouseReactiveGlow() {
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-[1.5s] ease-out"
+      className="pointer-events-none absolute inset-0 z-0 transition-opacity ease-out"
       aria-hidden
       style={{
         background: `radial-gradient(ellipse 120% 80% at ${position.x}% ${position.y}%, hsl(var(--primary) / 0.04) 0%, hsl(var(--primary) / 0.02) 35%, transparent 70%)`,
         opacity,
+        transitionDuration: "1.5s",
       }}
     />
   );

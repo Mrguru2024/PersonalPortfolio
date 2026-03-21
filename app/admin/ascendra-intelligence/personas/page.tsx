@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Loader2, ChevronRight, Users } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronRight, Package, Plus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,13 +49,27 @@ export default function AscendraPersonasListPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap items-center gap-2 justify-between">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/ascendra-intelligence">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Intelligence hub
             </Link>
           </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/offers">
+                <Package className="h-4 w-4 mr-2" />
+                Site offers
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/admin/ascendra-intelligence/personas/new">
+                <Plus className="h-4 w-4 mr-2" />
+                New persona
+              </Link>
+            </Button>
+          </div>
         </div>
         <h1 className="text-2xl font-bold flex items-center gap-2 mb-1">
           <Users className="h-7 w-7 text-primary" />

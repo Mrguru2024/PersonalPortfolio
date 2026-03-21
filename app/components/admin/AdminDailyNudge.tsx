@@ -1,7 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, FileCheck, MessageSquare, FileText, Users, Target, Receipt, Bell } from "lucide-react";
+import {
+  ChevronRight,
+  FileCheck,
+  MessageSquare,
+  FileText,
+  Users,
+  Target,
+  Receipt,
+  Bell,
+  Inbox,
+  Activity,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -66,14 +77,68 @@ export function AdminDailyNudge({ items, onStartTour, showTourCta }: AdminDailyN
   );
 }
 
+/** First nudge when operator profile role focus is set (drives admin “system” priority). */
+const OPERATOR_ROLE_NUDGES: Record<string, NudgeItem> = {
+  content: {
+    id: "op-focus-content",
+    label: "Content focus: blog or newsletter",
+    href: "/admin/blog",
+    icon: <FileText className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  growth_marketing: {
+    id: "op-focus-growth",
+    label: "Growth focus: analytics + funnel",
+    href: "/admin/analytics",
+    icon: <Target className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  client_success: {
+    id: "op-focus-cs",
+    label: "Client success: CRM tasks & pipeline",
+    href: "/admin/crm/tasks",
+    icon: <Users className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  technical: {
+    id: "op-focus-tech",
+    label: "Technical: integrations & health",
+    href: "/admin/integrations",
+    icon: <Activity className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  finance: {
+    id: "op-focus-finance",
+    label: "Finance: invoices & AR",
+    href: "/admin/invoices",
+    icon: <Receipt className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  operations: {
+    id: "op-focus-ops",
+    label: "Operations: lead intake & delivery",
+    href: "/admin/lead-intake",
+    icon: <Inbox className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  leadership: {
+    id: "op-focus-lead",
+    label: "Leadership: operator profile & priorities",
+    href: "/admin/operator-profile",
+    icon: <Target className="h-4 w-4 shrink-0 text-primary" />,
+  },
+  general: {
+    id: "op-focus-general",
+    label: "My operator profile & AI plan",
+    href: "/admin/operator-profile",
+    icon: <Target className="h-4 w-4 shrink-0 text-primary" />,
+  },
+};
+
 /** Build nudge list from dashboard counts and role. */
 export function buildNudgeItems(opts: {
   pendingAssessments: number;
   totalContacts: number;
   unaccessedResume: number;
   isSuperAdmin: boolean;
+  /** From /admin/operator-profile — reorders first suggestion by focus role. */
+  operatorRoleFocus?: string | null;
 }): NudgeItem[] {
-  const { pendingAssessments, totalContacts, unaccessedResume, isSuperAdmin } = opts;
+  const { pendingAssessments, totalContacts, unaccessedResume, isSuperAdmin, operatorRoleFocus } = opts;
   const items: NudgeItem[] = [];
 
   if (pendingAssessments > 0) {
@@ -126,6 +191,12 @@ export function buildNudgeItems(opts: {
       href: "/admin/system",
       icon: <Bell className="h-4 w-4 shrink-0 text-primary" />,
     });
+  }
+
+  const focus = (operatorRoleFocus || "general").trim();
+  const roleNudge = OPERATOR_ROLE_NUDGES[focus] ?? OPERATOR_ROLE_NUDGES.general;
+  if (roleNudge && !items.some((i) => i.id === roleNudge.id)) {
+    items.unshift(roleNudge);
   }
 
   return items;

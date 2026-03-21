@@ -13,6 +13,7 @@ import {
 import {
   LEAD_AUDIT_CATEGORY_KEYS,
   type LeadAuditCategoryResult,
+  type LeadAuditEvidenceItem,
   type LeadAuditRecommendationDraft,
   type ImplPriority,
   type StrengthState,
@@ -25,6 +26,14 @@ function fileOk(rel: string): boolean {
   } catch {
     return false;
   }
+}
+
+function pathProof(rel: string, ok: boolean): string {
+  return ok ? `Present in repo: ${rel}` : `Not found at: ${rel}`;
+}
+
+function ev(check: string, passed: boolean, proof: string): LeadAuditEvidenceItem {
+  return { check, passed, proof };
 }
 
 async function safeCountTable(table: object): Promise<number> {
@@ -62,10 +71,22 @@ function rec(
   return { title, detail, relatedPaths: paths, priority };
 }
 
+export interface LeadAlignmentDbSnapshot {
+  growthExperiments: number;
+  visitorActivity: number;
+  crmContacts: number;
+  funnelContentAssets: number;
+  siteOffers: number;
+  publishedBlogPosts: number;
+}
+
 /**
  * Rerunnable heuristic audit against this repo + live DB signals.
  */
-export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadAuditCategoryResult[]> {
+export async function runLeadAlignmentEngine(_projectKey: string): Promise<{
+  categories: LeadAuditCategoryResult[];
+  dbSnapshot: LeadAlignmentDbSnapshot;
+}> {
   const expCount = await safeCountTable(growthExperiments);
   const visitCount = await safeCountTable(visitorActivity);
   const contactCount = await safeCountTable(crmContacts);
@@ -88,16 +109,36 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
     publishedPosts = -1;
   }
 
+  const dbSnapshot: LeadAlignmentDbSnapshot = {
+    growthExperiments: expCount,
+    visitorActivity: visitCount,
+    crmContacts: contactCount,
+    funnelContentAssets: assetCount,
+    siteOffers: offersCount,
+    publishedBlogPosts: publishedPosts,
+  };
+
   const results: LeadAuditCategoryResult[] = [];
 
   for (const key of LEAD_AUDIT_CATEGORY_KEYS) {
     const recs: LeadAuditRecommendationDraft[] = [];
+    const evidence: LeadAuditEvidenceItem[] = [];
     let score = 55;
     let why = "";
     let risk = "";
 
     switch (key) {
       case "traffic_sources": {
+        const blogOk = fileOk(CRITICAL_APP_PATHS.blogRoute);
+        evidence.push(
+          ev(
+            "Growth experiments (DB)",
+            expCount > 0,
+            expCount < 0
+              ? "Table growth_experiments: query failed (check DB connection)."
+              : `Table growth_experiments: ${expCount} row(s).`,
+          ),
+        );
         if (expCount > 0) score += 15;
         if (expCount === 0) {
           recs.push(
@@ -109,7 +150,19 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
             ),
           );
         }
-        if (fileOk(CRITICAL_APP_PATHS.blogRoute)) score += 10;
+        evidence.push(
+          ev("Blog API route file", blogOk, pathProof(CRITICAL_APP_PATHS.blogRoute, blogOk)),
+        );
+        if (blogOk) score += 10;
+        evidence.push(
+          ev(
+            "Published blog posts (DB)",
+            publishedPosts > 0,
+            publishedPosts < 0
+              ? "Table blog_posts (published): query failed."
+              : `Published posts in blog_posts: ${publishedPosts}.`,
+          ),
+        );
         if (publishedPosts > 0) score += 10;
         if (publishedPosts >= 0 && publishedPosts === 0) {
           recs.push(
@@ -126,11 +179,19 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "lead_capture": {
-        if (fileOk(CRITICAL_APP_PATHS.funnelLeadApi)) score += 12;
-        if (fileOk(CRITICAL_APP_PATHS.leadsAliasApi)) score += 8;
-        if (fileOk(CRITICAL_APP_PATHS.strategyCall)) score += 10;
-        if (fileOk("app/api/assessment/route.ts")) score += 8;
-        if (!fileOk(CRITICAL_APP_PATHS.funnelLeadApi)) {
+        const funnelLead = fileOk(CRITICAL_APP_PATHS.funnelLeadApi);
+        const leadsAlias = fileOk(CRITICAL_APP_PATHS.leadsAliasApi);
+        const strategy = fileOk(CRITICAL_APP_PATHS.strategyCall);
+        const assessment = fileOk("app/api/assessment/route.ts");
+        evidence.push(ev("Funnel leads API", funnelLead, pathProof(CRITICAL_APP_PATHS.funnelLeadApi, funnelLead)));
+        evidence.push(ev("Leads alias API", leadsAlias, pathProof(CRITICAL_APP_PATHS.leadsAliasApi, leadsAlias)));
+        evidence.push(ev("Strategy call API", strategy, pathProof(CRITICAL_APP_PATHS.strategyCall, strategy)));
+        evidence.push(ev("Assessment API", assessment, pathProof("app/api/assessment/route.ts", assessment)));
+        if (funnelLead) score += 12;
+        if (leadsAlias) score += 8;
+        if (strategy) score += 10;
+        if (assessment) score += 8;
+        if (!funnelLead) {
           recs.push(
             rec(
               "Restore funnel lead API",
@@ -145,7 +206,20 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "offer_positioning": {
-        if (fileOk(CRITICAL_APP_PATHS.siteOffersAdmin)) score += 15;
+        const offersAdmin = fileOk(CRITICAL_APP_PATHS.siteOffersAdmin);
+        evidence.push(
+          ev("Site offers admin API", offersAdmin, pathProof(CRITICAL_APP_PATHS.siteOffersAdmin, offersAdmin)),
+        );
+        evidence.push(
+          ev(
+            "Offers in database",
+            offersCount > 0,
+            offersCount < 0
+              ? "Table site_offers: query failed."
+              : `Table site_offers: ${offersCount} row(s).`,
+          ),
+        );
+        if (offersAdmin) score += 15;
         if (offersCount > 0) score += 20;
         if (offersCount === 0) {
           recs.push(
@@ -162,8 +236,23 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "lead_management": {
-        if (fileOk(CRITICAL_APP_PATHS.crmContactsApi)) score += 20;
-        if (fileOk("app/api/admin/crm/deals/route.ts")) score += 10;
+        const contactsApi = fileOk(CRITICAL_APP_PATHS.crmContactsApi);
+        const dealsApi = fileOk("app/api/admin/crm/deals/route.ts");
+        evidence.push(
+          ev("CRM contacts API", contactsApi, pathProof(CRITICAL_APP_PATHS.crmContactsApi, contactsApi)),
+        );
+        evidence.push(ev("CRM deals API", dealsApi, pathProof("app/api/admin/crm/deals/route.ts", dealsApi)));
+        evidence.push(
+          ev(
+            "CRM contacts (DB)",
+            contactCount > 5,
+            contactCount < 0
+              ? "Table crm_contacts: query failed."
+              : `Table crm_contacts: ${contactCount} row(s) (threshold for “active pipeline” signal: >5).`,
+          ),
+        );
+        if (contactsApi) score += 20;
+        if (dealsApi) score += 10;
         if (contactCount > 5) score += 15;
         if (contactCount >= 0 && contactCount === 0) {
           recs.push(
@@ -180,17 +269,38 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "content_strategy_alignment": {
-        if (fileOk("app/api/funnel/[slug]/route.ts")) score += 15;
-        if (fileOk("app/admin/funnel/page.tsx")) score += 15;
+        const funnelSlug = fileOk("app/api/funnel/[slug]/route.ts");
+        const funnelAdmin = fileOk("app/admin/funnel/page.tsx");
+        evidence.push(
+          ev("Funnel slug API", funnelSlug, pathProof("app/api/funnel/[slug]/route.ts", funnelSlug)),
+        );
+        evidence.push(ev("Funnel admin UI", funnelAdmin, pathProof("app/admin/funnel/page.tsx", funnelAdmin)));
+        evidence.push(
+          ev(
+            "Published posts for content depth",
+            publishedPosts >= 3,
+            publishedPosts < 0
+              ? "Could not count published posts."
+              : `Published posts: ${publishedPosts} (target ≥3 for this signal).`,
+          ),
+        );
+        if (funnelSlug) score += 15;
+        if (funnelAdmin) score += 15;
         if (publishedPosts >= 3) score += 15;
         why = "Editorial and funnel copy must reinforce the same narrative and next steps.";
         risk = "Misaligned content confuses ICPs and splits attribution.";
         break;
       }
       case "follow_up_systems": {
-        if (fileOk(CRITICAL_APP_PATHS.crmSequencesApi)) score += 20;
-        if (fileOk("app/api/admin/crm/tasks/route.ts")) score += 15;
-        if (fileOk("app/api/admin/reminders/route.ts")) score += 10;
+        const seq = fileOk(CRITICAL_APP_PATHS.crmSequencesApi);
+        const tasks = fileOk("app/api/admin/crm/tasks/route.ts");
+        const reminders = fileOk("app/api/admin/reminders/route.ts");
+        evidence.push(ev("CRM sequences API", seq, pathProof(CRITICAL_APP_PATHS.crmSequencesApi, seq)));
+        evidence.push(ev("CRM tasks API", tasks, pathProof("app/api/admin/crm/tasks/route.ts", tasks)));
+        evidence.push(ev("Reminders API", reminders, pathProof("app/api/admin/reminders/route.ts", reminders)));
+        if (seq) score += 20;
+        if (tasks) score += 15;
+        if (reminders) score += 10;
         recs.push(
           rec(
             "Review sequence coverage",
@@ -204,8 +314,29 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "analytics_growth_intelligence": {
-        if (fileOk(CRITICAL_APP_PATHS.adminAnalytics)) score += 15;
-        if (fileOk(CRITICAL_APP_PATHS.growthIntelVariant)) score += 15;
+        const analytics = fileOk(CRITICAL_APP_PATHS.adminAnalytics);
+        const variant = fileOk(CRITICAL_APP_PATHS.growthIntelVariant);
+        evidence.push(
+          ev("Admin analytics API", analytics, pathProof(CRITICAL_APP_PATHS.adminAnalytics, analytics)),
+        );
+        evidence.push(
+          ev(
+            "Growth intelligence variant API",
+            variant,
+            pathProof(CRITICAL_APP_PATHS.growthIntelVariant, variant),
+          ),
+        );
+        evidence.push(
+          ev(
+            "Visitor activity events (DB)",
+            visitCount > 20,
+            visitCount < 0
+              ? "Table visitor_activity: query failed."
+              : `Table visitor_activity: ${visitCount} row(s) (threshold for “meaningful volume”: >20).`,
+          ),
+        );
+        if (analytics) score += 15;
+        if (variant) score += 15;
         if (visitCount > 20) score += 20;
         if (visitCount >= 0 && visitCount === 0) {
           recs.push(
@@ -222,8 +353,12 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "cta_visibility_density": {
-        if (fileOk(CRITICAL_APP_PATHS.funnelCtas)) score += 25;
-        if (fileOk("app/pages/Home.tsx")) score += 15;
+        const ctas = fileOk(CRITICAL_APP_PATHS.funnelCtas);
+        const home = fileOk("app/pages/Home.tsx");
+        evidence.push(ev("Shared funnel CTAs module", ctas, pathProof(CRITICAL_APP_PATHS.funnelCtas, ctas)));
+        evidence.push(ev("Home page module", home, pathProof("app/pages/Home.tsx", home)));
+        if (ctas) score += 25;
+        if (home) score += 15;
         recs.push(
           rec(
             "Audit CTA hierarchy per persona page",
@@ -237,15 +372,40 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
         break;
       }
       case "funnel_clarity": {
-        if (fileOk(CRITICAL_APP_PATHS.freeGrowthTools)) score += 15;
-        if (fileOk("app/resources/startup-growth-kit/page.tsx")) score += 15;
-        if (fileOk(CRITICAL_APP_PATHS.growthDiagnosis)) score += 15;
+        const freeTools = fileOk(CRITICAL_APP_PATHS.freeGrowthTools);
+        const kit = fileOk("app/resources/startup-growth-kit/page.tsx");
+        const diagnosis = fileOk(CRITICAL_APP_PATHS.growthDiagnosis);
+        evidence.push(
+          ev("Free growth tools page", freeTools, pathProof(CRITICAL_APP_PATHS.freeGrowthTools, freeTools)),
+        );
+        evidence.push(
+          ev("Startup growth kit page", kit, pathProof("app/resources/startup-growth-kit/page.tsx", kit)),
+        );
+        evidence.push(
+          ev("Growth diagnosis route", diagnosis, pathProof(CRITICAL_APP_PATHS.growthDiagnosis, diagnosis)),
+        );
+        if (freeTools) score += 15;
+        if (kit) score += 15;
+        if (diagnosis) score += 15;
         why = "Visitors should always know the next step for their stage.";
         risk = "Unclear funnels increase bounce and depress lead quality.";
         break;
       }
       case "lead_magnet_readiness": {
-        if (fileOk(CRITICAL_APP_PATHS.funnelContentAssets)) score += 20;
+        const assetsApi = fileOk(CRITICAL_APP_PATHS.funnelContentAssets);
+        evidence.push(
+          ev("Funnel content assets API", assetsApi, pathProof(CRITICAL_APP_PATHS.funnelContentAssets, assetsApi)),
+        );
+        evidence.push(
+          ev(
+            "Funnel content assets (DB)",
+            assetCount > 0,
+            assetCount < 0
+              ? "Table funnel_content_assets: query failed."
+              : `Table funnel_content_assets: ${assetCount} row(s).`,
+          ),
+        );
+        if (assetsApi) score += 20;
         if (assetCount > 0) score += 25;
         if (assetCount >= 0 && assetCount === 0) {
           recs.push(
@@ -277,8 +437,9 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<LeadA
       risk,
       implementationPriority,
       recommendations: recs,
+      evidence,
     });
   }
 
-  return results;
+  return { categories: results, dbSnapshot };
 }

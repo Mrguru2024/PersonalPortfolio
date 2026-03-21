@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdmin } from "@/lib/auth-helpers";
+import { LEAD_MAGNET_TYPES } from "@shared/schema";
 import {
   deleteLeadMagnet,
   getLeadMagnet,
@@ -10,7 +11,7 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const magnetTypeZ = z.enum(["reveal_problems", "sample_trial", "one_step_system"]);
+const magnetTypeZ = z.enum(LEAD_MAGNET_TYPES as unknown as [string, ...string[]]);
 
 const patchSchema = z
   .object({

@@ -16,6 +16,7 @@ function getSectionFromPath(pathname: string): string {
   if (p.startsWith("/crm/pipeline")) return "pipeline";
   if (p.startsWith("/crm/accounts") || p.startsWith("/crm/import") || p.startsWith("/crm/personas") || p.startsWith("/crm/sequences") || p.startsWith("/crm/saved-lists") || p.startsWith("/crm/tasks") || p.startsWith("/crm/dashboard")) return "contacts";
   if (p.startsWith("/crm") || p === "/crm") return "contacts"; // lead list, lead profile [id]
+  if (p.startsWith("/operator-profile")) return "dashboard";
   if (p.startsWith("/dashboard") || p === "/" || p === "") return "dashboard";
   if (p.startsWith("/blog")) return "blog";
   if (p.startsWith("/newsletters")) return "newsletters";

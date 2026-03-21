@@ -37,6 +37,15 @@ export interface LeadAuditRecommendationDraft {
   priority: ImplPriority;
 }
 
+/** Verifiable signal checked by the engine (file on disk or DB count). */
+export interface LeadAuditEvidenceItem {
+  /** Short name of the check */
+  check: string;
+  passed: boolean;
+  /** What was measured and the outcome (for audit trail) */
+  proof: string;
+}
+
 export interface LeadAuditCategoryResult {
   categoryKey: LeadAuditCategoryKey;
   score: number;
@@ -45,4 +54,5 @@ export interface LeadAuditCategoryResult {
   risk: string;
   implementationPriority: ImplPriority;
   recommendations: LeadAuditRecommendationDraft[];
+  evidence: LeadAuditEvidenceItem[];
 }

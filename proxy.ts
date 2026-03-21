@@ -39,7 +39,7 @@ function clientIp(req: NextRequest): string {
   return "unknown";
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const limiter = getAdminRatelimit();
   if (!limiter) return NextResponse.next();
 

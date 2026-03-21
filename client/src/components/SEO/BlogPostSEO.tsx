@@ -1,92 +1,122 @@
-import { Helmet } from 'react-helmet';
-import type { BlogPost } from '@/lib/data';
+import { useEffect } from "react";
+import type { BlogPost } from "@/lib/data";
+import { applyDefaultClientSiteSeo } from "@shared/default-client-seo";
+import {
+  clearArticleTagMetas,
+  removeJsonLdScript,
+  setArticleTagMetas,
+  updateJsonLdScript,
+  updateLinkTag,
+  updateMetaTag,
+} from "@shared/seo-head";
 
 interface BlogPostSEOProps {
   post: BlogPost;
   baseUrl?: string;
 }
 
-export function BlogPostSEO({ post, baseUrl = 'https://mrguru.dev' }: BlogPostSEOProps) {
+const BLOG_POST_JSON_LD_ID = "blog-post-seo";
+
+export function BlogPostSEO({
+  post,
+  baseUrl = "https://mrguru.dev",
+}: BlogPostSEOProps) {
   const postUrl = `${baseUrl}/blog/${post.slug}`;
   const imageUrl = post.coverImage || `${baseUrl}/images/mrguru-og-image.jpg`;
-  
-  // Extract plain text from HTML content for description (first 160 chars)
-  const plainTextDescription = post.content
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim()
-    .substring(0, 160) + '...';
-  
-  // Use summary if available, otherwise use extracted plain text
+
+  const plainTextDescription =
+    post.content
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .substring(0, 160) + "...";
+
   const description = post.summary || plainTextDescription;
-  
-  // Format publish date for schema
+
   const publishDate = new Date(post.publishedAt).toISOString();
-  const modifiedDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : publishDate;
-  
-  // Extract keywords from tags
-  const keywords = post.tags.join(', ');
+  const modifiedDate = post.updatedAt
+    ? new Date(post.updatedAt).toISOString()
+    : publishDate;
 
-  return (
-    <Helmet>
-      {/* Basic Meta Tags */}
-      <title>{post.title} | MrGuru.dev Blog</title>
-      <meta name="description" content={description} />
-      <meta name="keywords" content={`${keywords}, MrGuru.dev, Anthony MrGuru Feaster, blog, web development`} />
-      <link rel="canonical" href={postUrl} />
+  const keywords = post.tags.join(", ");
 
-      {/* Open Graph / Facebook */}
-      <meta property="og:type" content="article" />
-      <meta property="og:url" content={postUrl} />
-      <meta property="og:title" content={post.title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={imageUrl} />
-      <meta property="article:published_time" content={publishDate} />
-      <meta property="article:modified_time" content={modifiedDate} />
-      {post.tags.map((tag, index) => (
-        <meta key={index} property="article:tag" content={tag} />
-      ))}
+  useEffect(() => {
+    const pageTitle = `${post.title} | MrGuru.dev Blog`;
+    document.title = pageTitle;
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:url" content={postUrl} />
-      <meta name="twitter:title" content={post.title} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={imageUrl} />
+    updateMetaTag("description", description);
+    updateMetaTag(
+      "keywords",
+      `${keywords}, MrGuru.dev, Anthony MrGuru Feaster, blog, web development`,
+    );
+    updateLinkTag("canonical", postUrl);
 
-      {/* Schema.org / JSON-LD */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          'headline': post.title,
-          'description': description,
-          'image': imageUrl,
-          'url': postUrl,
-          'datePublished': publishDate,
-          'dateModified': modifiedDate,
-          'keywords': keywords,
-          'author': {
-            '@type': 'Person',
-            'name': 'Anthony MrGuru Feaster',
-            'url': baseUrl
+    updateMetaTag("og:type", "article", true);
+    updateMetaTag("og:url", postUrl, true);
+    updateMetaTag("og:title", post.title, true);
+    updateMetaTag("og:description", description, true);
+    updateMetaTag("og:image", imageUrl, true);
+    updateMetaTag("article:published_time", publishDate, true);
+    updateMetaTag("article:modified_time", modifiedDate, true);
+    setArticleTagMetas(post.tags);
+
+    updateMetaTag("twitter:card", "summary_large_image");
+    updateMetaTag("twitter:url", postUrl);
+    updateMetaTag("twitter:title", post.title);
+    updateMetaTag("twitter:description", description);
+    updateMetaTag("twitter:image", imageUrl);
+
+    updateJsonLdScript(
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: description,
+        image: imageUrl,
+        url: postUrl,
+        datePublished: publishDate,
+        dateModified: modifiedDate,
+        keywords: keywords,
+        author: {
+          "@type": "Person",
+          name: "Anthony MrGuru Feaster",
+          url: baseUrl,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Ascendra Technologies",
+          logo: {
+            "@type": "ImageObject",
+            url: `${baseUrl}/favicon-32x32.png`,
+            width: 32,
+            height: 32,
           },
-          'publisher': {
-            '@type': 'Organization',
-            'name': 'Ascendra Technologies',
-            'logo': {
-              '@type': 'ImageObject',
-              'url': `${baseUrl}/favicon-32x32.png`,
-              'width': 32,
-              'height': 32
-            }
-          },
-          'mainEntityOfPage': {
-            '@type': 'WebPage',
-            '@id': postUrl
-          }
-        })}
-      </script>
-    </Helmet>
-  );
+        },
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": postUrl,
+        },
+      },
+      BLOG_POST_JSON_LD_ID,
+    );
+
+    return () => {
+      removeJsonLdScript(BLOG_POST_JSON_LD_ID);
+      clearArticleTagMetas();
+      applyDefaultClientSiteSeo();
+    };
+  }, [
+    post.title,
+    post.slug,
+    post.tags,
+    description,
+    keywords,
+    imageUrl,
+    postUrl,
+    publishDate,
+    modifiedDate,
+    baseUrl,
+  ]);
+
+  return null;
 }

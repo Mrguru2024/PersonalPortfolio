@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
+import { SCRIPT_CATEGORY_LABELS, type ScriptTemplateCategory } from "@shared/schema";
 
 interface ScriptRow {
   id: number;
@@ -99,7 +100,9 @@ export default function AscendraScriptsListPage() {
           <FileText className="h-7 w-7 text-primary" />
           Outreach scripts
         </h1>
-        <p className="text-muted-foreground text-sm mb-4">Persona-specific templates (warm, cold, follow-up, etc.).</p>
+        <p className="text-muted-foreground text-sm mb-4">
+          Persona-specific templates — including Generative AI — for DMs, email, and outreach.
+        </p>
 
         <div className="mb-6 max-w-xs">
           <Select value={personaFilter} onValueChange={setPersonaFilter}>
@@ -138,7 +141,8 @@ export default function AscendraScriptsListPage() {
                       <span className="text-xs text-muted-foreground uppercase">{s.status}</span>
                     </div>
                     <CardDescription>
-                      {s.category.replace(/_/g, " ")} · {s.personaId} · updated{" "}
+                      {SCRIPT_CATEGORY_LABELS[s.category as ScriptTemplateCategory] ?? s.category.replace(/_/g, " ")} ·{" "}
+                      {s.personaId} · updated{" "}
                       {new Date(s.updatedAt).toLocaleDateString()}
                     </CardDescription>
                   </CardHeader>

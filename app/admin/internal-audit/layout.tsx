@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { InternalAuditShell } from "@/components/internal-audit/InternalAuditShell";
 
 export const metadata: Metadata = {
-  title: "Lead alignment audit | Admin",
+  title: "Website funnel audit | Admin",
   robots: { index: false, follow: false },
 };
 

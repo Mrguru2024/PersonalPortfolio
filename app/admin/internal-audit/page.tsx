@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, PlayCircle, ExternalLink } from "lucide-react";
+import { Loader2, PlayCircle, ExternalLink, ChevronDown, ListOrdered } from "lucide-react";
+import {
+  DEFAULT_INTERNAL_AUDIT_PROJECT_KEY,
+  workspaceLabelForProjectKey,
+} from "@/lib/internal-audit/defaultAuditProjectKey";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
@@ -29,17 +35,43 @@ interface AuditRunRow {
   summaryJson: Record<string, unknown> | null;
 }
 
+const AUDIT_PROJECT_STORAGE_KEY = "internal-audit-workspace-id";
+
 export default function InternalAuditDashboardPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const qc = useQueryClient();
-  const [projectKey, setProjectKey] = useState("ascendra_main");
+  const [projectKey, setProjectKey] = useState(DEFAULT_INTERNAL_AUDIT_PROJECT_KEY);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(AUDIT_PROJECT_STORAGE_KEY);
+      if (saved && saved.trim()) setProjectKey(saved.trim());
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const effectiveProjectKey = useMemo(
+    () => (projectKey.trim() ? projectKey.trim() : DEFAULT_INTERNAL_AUDIT_PROJECT_KEY),
+    [projectKey],
+  );
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(AUDIT_PROJECT_STORAGE_KEY, effectiveProjectKey);
+    } catch {
+      /* ignore */
+    }
+  }, [effectiveProjectKey]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/admin/internal-audit/runs", projectKey, statusFilter],
+    queryKey: ["/api/admin/internal-audit/runs", effectiveProjectKey, statusFilter],
     queryFn: async () => {
       const q = new URLSearchParams();
-      q.set("projectKey", projectKey);
+      q.set("projectKey", effectiveProjectKey);
       if (statusFilter !== "all") q.set("status", statusFilter);
       const res = await fetch(`/api/admin/internal-audit/runs?${q}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load runs");
@@ -59,46 +91,126 @@ export default function InternalAuditDashboardPage() {
         const j = await res.json().catch(() => ({}));
         throw new Error((j as { error?: string }).error ?? "Run failed");
       }
-      return res.json();
+      return res.json() as Promise<{ detail: { run: { id: number } } }>;
     },
-    onSuccess: () => {
+    onSuccess: (body) => {
       qc.invalidateQueries({ queryKey: ["/api/admin/internal-audit/runs"] });
-      toast({ title: "Audit completed" });
+      const id = body.detail?.run?.id;
+      toast({
+        title: "Audit finished",
+        description: id ? "Opening your latest report." : "Refresh the list to open a run.",
+      });
+      if (id) router.push(`/admin/internal-audit/${id}`);
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Could not run audit", description: e.message, variant: "destructive" }),
   });
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-8">
+      <Card className="border-primary/20 shadow-sm">
         <CardHeader>
-          <CardTitle>Run audit</CardTitle>
-          <CardDescription>
-            Executes a fresh pass across DB signals + repo path checks. Prior runs remain for comparison.
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ListOrdered className="h-5 w-5 text-primary shrink-0" />
+            How to use this audit
+          </CardTitle>
+          <CardDescription className="text-sm leading-relaxed">
+            Runs are saved so you can compare before-and-after. Results list concrete checks (files and database
+            counts), not guesses.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1">
-            <Label>Project key</Label>
-            <Input value={projectKey} onChange={(e) => setProjectKey(e.target.value)} className="w-56" />
-          </div>
-          <Button onClick={() => runMutation.mutate()} disabled={runMutation.isPending}>
-            {runMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PlayCircle className="h-4 w-4 mr-2" />}
-            Run now
-          </Button>
+        <CardContent>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>
+              <span className="text-foreground">Run an audit</span> using the button below (usually a few seconds).
+            </li>
+            <li>
+              <span className="text-foreground">Open the report</span> and read each category: score, what we
+              verified, then recommendations.
+            </li>
+            <li>
+              <span className="text-foreground">Filter</span> by category or file path when you are fixing a specific
+              area.
+            </li>
+            <li>
+              <span className="text-foreground">Run again</span> after changes to confirm checks pass and scores move.
+            </li>
+          </ol>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>Filter by status; open a run for category / path filters.</CardDescription>
+          <CardTitle>Run a new audit</CardTitle>
+          <CardDescription>
+            One click runs a check against this app&apos;s server files and your live database. You don&apos;t need to
+            configure anything for a normal single-site setup.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              size="lg"
+              onClick={() => runMutation.mutate()}
+              disabled={runMutation.isPending}
+              className="min-w-[160px]"
+            >
+              {runMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <PlayCircle className="h-4 w-4 mr-2" />
+              )}
+              Run audit now
+            </Button>
+            {runMutation.isPending && (
+              <span className="text-sm text-muted-foreground">Checking files and database…</span>
+            )}
+          </div>
+
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1 px-0 text-muted-foreground hover:text-foreground">
+                <ChevronDown className={`h-4 w-4 transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
+                Multiple workspaces? (advanced)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <div className="space-y-2 max-w-lg rounded-md border border-border/60 bg-muted/20 p-3">
+                <p className="text-sm text-foreground">
+                  <strong className="font-medium">Workspace ID</strong> is an internal label stored with each audit run.
+                  It matches the <code className="text-xs bg-muted px-1 rounded">project_key</code> used elsewhere in
+                  Growth OS and Content Studio so reports stay grouped in the database.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  For this portfolio app you almost always leave the default. Change it only if you intentionally run
+                  several isolated workspaces against one codebase.
+                </p>
+                <div className="space-y-1 pt-1">
+                  <Label htmlFor="project-key">Workspace ID</Label>
+                  <Input
+                    id="project-key"
+                    value={projectKey}
+                    onChange={(e) => setProjectKey(e.target.value)}
+                    className="font-mono text-sm"
+                    placeholder={DEFAULT_INTERNAL_AUDIT_PROJECT_KEY}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Past reports</CardTitle>
+          <CardDescription>Open any run to see verified checks, scores, and recommendations.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-3 items-center">
             <Label className="shrink-0">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -114,29 +226,40 @@ export default function InternalAuditDashboardPage() {
           ) : (
             <div className="rounded-lg border border-border/60 divide-y">
               {(data?.runs ?? []).length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">No runs yet.</p>
+                <p className="p-4 text-sm text-muted-foreground">
+                  No reports yet. Run an audit above to create the first one.
+                </p>
               ) : (
                 data!.runs.map((r) => {
                   const overall = (r.summaryJson as { overallScore?: number } | null)?.overallScore;
                   return (
                     <div
                       key={r.id}
-                      className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                      className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                     >
                       <div>
                         <div className="font-medium flex flex-wrap items-center gap-2">
-                          {r.label ?? `Run #${r.id}`}
-                          <Badge variant="secondary">{r.status}</Badge>
-                          {overall != null && <Badge variant="outline">Score {overall}</Badge>}
+                          {r.label ?? `Report #${r.id}`}
+                          <Badge variant="secondary" className="capitalize">
+                            {r.status}
+                          </Badge>
+                          {overall != null && (
+                            <Badge variant="outline">Overall {overall}/100</Badge>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {r.projectKey} · started {format(new Date(r.startedAt), "PPp")}
+                          {workspaceLabelForProjectKey(r.projectKey)}
+                          {r.projectKey !== DEFAULT_INTERNAL_AUDIT_PROJECT_KEY && (
+                            <span className="font-mono text-[10px] opacity-80"> ({r.projectKey})</span>
+                          )}
+                          <span className="text-muted-foreground/80"> · </span>
+                          {format(new Date(r.startedAt), "PPp")}
                         </div>
                       </div>
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/admin/internal-audit/${r.id}`}>
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Open
+                          View report
                         </Link>
                       </Button>
                     </div>

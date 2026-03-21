@@ -39,10 +39,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   addDays,
+  addMonths,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -51,13 +52,20 @@ import {
   format,
   isSameDay,
 } from "date-fns";
-import { Loader2, Plus, GripVertical, Copy, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { calendarCollisionDetection, CALENDAR_SORTABLE_TRANSITION } from "@/components/content-studio/calendarDndConfig";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const WEEK_START_LS_KEY = "content-studio-calendar-week-starts-on";
+const MONTH_DENSITY_LS_KEY = "content-studio-calendar-month-density";
 
 type View = "month" | "week" | "day" | "agenda";
+type WeekStartsOn = 0 | 1;
+type MonthCellDensity = "compact" | "comfortable";
 
 interface CalEntry {
   id: number;
@@ -91,6 +99,10 @@ const dropAnimation: DropAnimation = {
 
 type DroppableDayCellVariant = "month" | "week";
 
+function isCompactMonthCell(variant: DroppableDayCellVariant, monthDensity: MonthCellDensity): boolean {
+  return variant === "month" && monthDensity === "compact";
+}
+
 /** Month grid cell or week strip column — same `day-*` droppable id as month (reschedule on drop). */
 function DroppableDayCell({
   day,
@@ -98,22 +110,27 @@ function DroppableDayCell({
   count,
   onSelect,
   variant,
+  monthDensity = "compact",
 }: {
   day: Date;
   selectedDay: Date;
   count: number;
   onSelect: () => void;
   variant: DroppableDayCellVariant;
+  monthDensity?: MonthCellDensity;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayDropId(day) });
   const sel = isSameDay(day, selectedDay);
-  const compact = variant === "month";
+  const isMonthView = variant === "month";
+  const compactMonth = isCompactMonthCell(variant, monthDensity);
   return (
     <div
       ref={setNodeRef}
       className={cn(
         "rounded-lg transition-[box-shadow,transform,background-color] duration-200 ease-out",
-        compact ? "min-h-[76px]" : "min-h-[104px]",
+        isMonthView && compactMonth && "min-h-[76px]",
+        isMonthView && !compactMonth && "min-h-[104px]",
+        variant === "week" && "min-h-[104px]",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02] z-[1] bg-primary/10 shadow-md",
         !isOver && sel && "ring-1 ring-primary/60 bg-primary/10",
         !isOver && !sel && "border border-border/60 bg-muted/20",
@@ -124,26 +141,31 @@ function DroppableDayCell({
         onClick={onSelect}
         className={cn(
           "w-full h-full rounded-md text-left text-sm transition-colors hover:bg-muted/30",
-          compact ? "min-h-[72px] p-1.5" : "min-h-[96px] p-2 flex flex-col gap-0.5",
+          compactMonth && "min-h-[72px] p-1.5",
+          isMonthView && !compactMonth && "min-h-[98px] p-2 flex flex-col gap-0.5",
+          variant === "week" && "min-h-[96px] p-2 flex flex-col gap-0.5",
         )}
       >
-        {compact ? (
-          <div className="font-medium">{format(day, "d")}</div>
+        {compactMonth ? (
+          <div className="font-medium tabular-nums leading-none">{format(day, "d")}</div>
         ) : (
           <>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
               {format(day, "EEE")}
             </div>
             <div className="font-semibold text-base leading-none tabular-nums">{format(day, "d")}</div>
           </>
         )}
         {count > 0 && (
-          <Badge variant="secondary" className={cn("text-[10px] px-1 py-0 w-fit", compact ? "mt-0.5" : "mt-1")}>
+          <Badge
+            variant="secondary"
+            className={cn("text-[10px] px-1 py-0 w-fit", compactMonth ? "mt-0.5" : "mt-1")}
+          >
             {count}
           </Badge>
         )}
         {isOver && (
-          <div className={cn("text-[10px] font-medium text-primary", compact ? "mt-1" : "mt-auto pt-1")}>
+          <div className={cn("text-[10px] font-medium text-primary", compactMonth ? "mt-1" : "mt-auto pt-1")}>
             Drop here
           </div>
         )}
@@ -266,6 +288,9 @@ export default function ContentStudioCalendarPage() {
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState(() => new Date());
+  const [weekStartsOn, setWeekStartsOn] = useState<WeekStartsOn>(0);
+  const [monthCellDensity, setMonthCellDensity] = useState<MonthCellDensity>("compact");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [qTitle, setQTitle] = useState("");
   const [qWhen, setQWhen] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -273,6 +298,35 @@ export default function ContentStudioCalendarPage() {
   const [qPersonas, setQPersonas] = useState("");
   const [qPlatforms, setQPlatforms] = useState("linkedin,x");
   const [activeDragEntry, setActiveDragEntry] = useState<CalEntry | null>(null);
+
+  useEffect(() => {
+    try {
+      const w = localStorage.getItem(WEEK_START_LS_KEY);
+      if (w === "1") setWeekStartsOn(1);
+      const d = localStorage.getItem(MONTH_DENSITY_LS_KEY);
+      if (d === "comfortable") setMonthCellDensity("comfortable");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WEEK_START_LS_KEY, String(weekStartsOn));
+    } catch {
+      /* ignore */
+    }
+  }, [weekStartsOn]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MONTH_DENSITY_LS_KEY, monthCellDensity);
+    } catch {
+      /* ignore */
+    }
+  }, [monthCellDensity]);
+
+  const weekOptions = useMemo(() => ({ weekStartsOn }) as const, [weekStartsOn]);
 
   const range = useMemo(() => {
     if (view === "month") {
@@ -468,17 +522,38 @@ export default function ContentStudioCalendarPage() {
   });
 
   const monthDays = useMemo(() => {
-    const start = startOfWeek(startOfMonth(cursor));
-    const end = endOfWeek(endOfMonth(cursor));
+    const start = startOfWeek(startOfMonth(cursor), weekOptions);
+    const end = endOfWeek(endOfMonth(cursor), weekOptions);
     return eachDayOfInterval({ start, end });
-  }, [cursor]);
+  }, [cursor, weekOptions]);
+
+  const monthWeekdayHeaders = useMemo(() => {
+    const gridStart = startOfWeek(startOfMonth(cursor), weekOptions);
+    return eachDayOfInterval({ start: gridStart, end: addDays(gridStart, 6) });
+  }, [cursor, weekOptions]);
 
   const weekDays = useMemo(
-    () => eachDayOfInterval({ start: startOfWeek(cursor), end: endOfWeek(cursor) }),
-    [cursor],
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(cursor, weekOptions),
+        end: endOfWeek(cursor, weekOptions),
+      }),
+    [cursor, weekOptions],
   );
 
-  const cursorStepDays = view === "month" ? 30 : view === "day" ? 1 : 7;
+  function shiftCursorPrev() {
+    if (view === "month") setCursor((c) => addMonths(c, -1));
+    else if (view === "day") setCursor((c) => addDays(c, -1));
+    else if (view === "agenda") setCursor((c) => addDays(c, -14));
+    else setCursor((c) => addDays(c, -7));
+  }
+
+  function shiftCursorNext() {
+    if (view === "month") setCursor((c) => addMonths(c, 1));
+    else if (view === "day") setCursor((c) => addDays(c, 1));
+    else if (view === "agenda") setCursor((c) => addDays(c, 14));
+    else setCursor((c) => addDays(c, 7));
+  }
 
   const sortableIds = dayEntriesFixed.map((e) => e.id);
 
@@ -502,102 +577,191 @@ export default function ContentStudioCalendarPage() {
                 preserved).
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Select value={view} onValueChange={(v) => setView(v as View)}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="agenda">Agenda</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, -cursorStepDays))}>
-                Prev
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
-                Today
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, cursorStepDays))}>
-                Next
-              </Button>
-              <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Quick add
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>New calendar entry</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-3 py-2">
-                    <div className="space-y-1">
-                      <Label>Title / headline</Label>
-                      <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>When (local → stored UTC)</Label>
-                      <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>CTA objective</Label>
-                      <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Personas (comma)</Label>
-                      <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Platforms (comma)</Label>
-                      <Input value={qPlatforms} onChange={(e) => setQPlatforms(e.target.value)} />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => createMutation.mutate()} disabled={!qTitle.trim() || createMutation.isPending}>
-                      {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+            <div className="flex flex-col gap-3 w-full lg:max-w-none">
+              <Tabs value={view} onValueChange={(v) => setView(v as View)} className="w-full">
+                <TabsList className="w-full sm:w-auto h-auto min-h-10 flex flex-wrap justify-start gap-1 p-1">
+                  <TabsTrigger value="month" className="text-xs sm:text-sm">
+                    Month
+                  </TabsTrigger>
+                  <TabsTrigger value="week" className="text-xs sm:text-sm">
+                    Week
+                  </TabsTrigger>
+                  <TabsTrigger value="day" className="text-xs sm:text-sm">
+                    Day
+                  </TabsTrigger>
+                  <TabsTrigger value="agenda" className="text-xs sm:text-sm">
+                    Agenda
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm text-muted-foreground min-w-0 mr-auto sm:mr-0">
+                  {view === "month" && <span className="font-medium text-foreground">{format(cursor, "MMMM yyyy")}</span>}
+                  {view === "week" && (
+                    <span className="font-medium text-foreground">
+                      Week of {format(startOfWeek(cursor, weekOptions), "MMM d")} –{" "}
+                      {format(endOfWeek(cursor, weekOptions), "MMM d, yyyy")}
+                    </span>
+                  )}
+                  {view === "day" && (
+                    <span className="font-medium text-foreground">{format(cursor, "EEEE, MMM d, yyyy")}</span>
+                  )}
+                  {view === "agenda" && (
+                    <span className="font-medium text-foreground">
+                      {format(range.from, "MMM d")} – {format(range.to, "MMM d, yyyy")}
+                    </span>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" onClick={shiftCursorPrev}>
+                  Prev
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+                  Today
+                </Button>
+                <Button variant="outline" size="sm" onClick={shiftCursorNext}>
+                  Next
+                </Button>
+                <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" aria-label="Calendar display settings">
+                      <Settings2 className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">View options</span>
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Week starts on
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Aligns weekday headers and grid columns. Applies to month and week views.
+                      </p>
+                      <Select
+                        value={String(weekStartsOn)}
+                        onValueChange={(v) => setWeekStartsOn(v === "1" ? 1 : 0)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Sunday</SelectItem>
+                          <SelectItem value="1">Monday (ISO)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Month cells
+                      </Label>
+                      <Select
+                        value={monthCellDensity}
+                        onValueChange={(v) => setMonthCellDensity(v as MonthCellDensity)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compact">Compact (date only)</SelectItem>
+                          <SelectItem value="comfortable">Comfortable (weekday + date)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Quick add
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>New calendar entry</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                      <div className="space-y-1">
+                        <Label>Title / headline</Label>
+                        <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>When (local → stored UTC)</Label>
+                        <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>CTA objective</Label>
+                        <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Personas (comma)</Label>
+                        <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Platforms (comma)</Label>
+                        <Input value={qPlatforms} onChange={(e) => setQPlatforms(e.target.value)} />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={() => createMutation.mutate()}
+                        disabled={!qTitle.trim() || createMutation.isPending}
+                      >
+                        {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Loader2 className="h-8 w-8 animate-spin" />
             ) : view === "month" ? (
-              <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 text-muted-foreground">
-                {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                  <div key={d}>{d}</div>
+              <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-medium text-muted-foreground mb-1.5">
+                {monthWeekdayHeaders.map((d) => (
+                  <div key={d.toISOString()} className="py-1 truncate">
+                    {format(d, "EEE")}
+                  </div>
                 ))}
               </div>
             ) : null}
             {view === "month" && (
               <div className="grid grid-cols-7 gap-1.5">
                 {monthDays.map((d) => {
+                  const inMonth =
+                    d.getMonth() === cursor.getMonth() && d.getFullYear() === cursor.getFullYear();
                   const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
                   return (
-                    <DroppableDayCell
+                    <div
                       key={d.toISOString()}
-                      day={d}
-                      selectedDay={selectedDay}
-                      count={count}
-                      onSelect={() => setSelectedDay(d)}
-                      variant="month"
-                    />
+                      className={cn(!inMonth && "opacity-45")}
+                    >
+                      <DroppableDayCell
+                        day={d}
+                        selectedDay={selectedDay}
+                        count={count}
+                        onSelect={() => {
+                          setSelectedDay(d);
+                          if (!inMonth) setCursor(d);
+                        }}
+                        variant="month"
+                        monthDensity={monthCellDensity}
+                      />
+                    </div>
                   );
                 })}
               </div>
             )}
             {view === "week" && (
               <div className="overflow-x-auto -mx-1 px-1 pb-1">
-                <div className="min-w-[36rem] space-y-1">
-                  <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                <div className="min-w-[36rem] space-y-1.5">
+                  <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-muted-foreground">
                     {weekDays.map((d) => (
-                      <div key={`h-${d.toISOString()}`}>{format(d, "EEE")}</div>
+                      <div key={`h-${d.toISOString()}`} className="py-1">
+                        <div>{format(d, "EEE")}</div>
+                        <div className="tabular-nums text-[10px] opacity-80">{format(d, "MMM d")}</div>
+                      </div>
                     ))}
                   </div>
                   <div className="grid grid-cols-7 gap-2">

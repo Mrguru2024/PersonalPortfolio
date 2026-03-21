@@ -78,11 +78,14 @@ export async function POST(req: NextRequest) {
 
     const safeNote =
       "Scripts removed; this is an internal preview only—not a full sanitizer for untrusted HTML.";
+    const htmlSanitized = stripScriptTags(b.html);
     return NextResponse.json({
       mode: "email",
       subject: b.subject ?? "(no subject)",
       htmlSanitizedNote: safeNote,
       previewTextPlain: htmlToPlainPreview(b.html),
+      /** Safe for sandboxed iframe preview (no script tags). */
+      htmlSanitized,
     });
   } catch (e) {
     console.error("[POST ascendra-intelligence/preview]", e);

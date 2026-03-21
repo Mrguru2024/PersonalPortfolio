@@ -15,11 +15,6 @@ const octokit = new Octokit({
   auth: isValidToken ? githubToken : undefined
 });
 
-// Log warning if no valid token
-if (!isValidToken) {
-  console.warn('Warning: No valid GitHub token found. Using unauthenticated requests which have lower rate limits.');
-}
-
 // The GitHub username to fetch data for (from env or default)
 const GITHUB_USERNAME = process.env.GITHUB_USERNAME || 'Mrguru2024';
 

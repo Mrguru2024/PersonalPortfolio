@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,24 +17,35 @@ const NAV = [
   { href: "/admin/content-studio/workflow", label: "Workflow & logs" },
 ] as const;
 
+function AuthLoadingFallback() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
+    </div>
+  );
+}
+
 export function ContentStudioShell({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (!isLoading && !user) router.replace("/auth");
     else if (!isLoading && user && (!user.isAdmin || !user.adminApproved)) {
       router.replace("/admin/dashboard");
     }
-  }, [user, isLoading, router]);
+  }, [mounted, user, isLoading, router]);
 
-  if (isLoading || !user) {
-    return (
-      <div className="min-h-[40vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
-      </div>
-    );
+  /** Auth is client-only; first paint must match SSR to avoid hydration mismatch. */
+  if (!mounted || isLoading || !user) {
+    return <AuthLoadingFallback />;
   }
   if (!user.isAdmin || !user.adminApproved) return null;
 

@@ -68,7 +68,10 @@ export function MagneticButton({
       {asChild ? (
         children
       ) : (
-        <span className="inline-block transition-transform duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98]">
+        <span
+          className="inline-block transition-transform duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98]"
+          style={{ transitionTimingFunction: "cubic-bezier(0.25, 0.1, 0.25, 1)" }}
+        >
           {children}
         </span>
       )}

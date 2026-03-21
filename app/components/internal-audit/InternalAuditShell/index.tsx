@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,15 +11,21 @@ import { Badge } from "@/components/ui/badge";
 export function InternalAuditShell({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (!isLoading && !user) router.replace("/auth");
     else if (!isLoading && user && (!user.isAdmin || !user.adminApproved)) {
       router.replace("/admin/dashboard");
     }
-  }, [user, isLoading, router]);
+  }, [mounted, user, isLoading, router]);
 
-  if (isLoading || !user) {
+  if (!mounted || isLoading || !user) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -39,14 +45,15 @@ export function InternalAuditShell({ children }: { children: ReactNode }) {
             </Link>
           </Button>
           <Badge variant="outline" className="text-xs">
-            $100M Leads alignment · Internal
+            Admin · Funnel health
           </Badge>
         </div>
-        <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Lead alignment audit</h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Rerunnable engine against Ascendra codebase + DB signals. Full detail is admin-only; client-safe summaries
-            are stored on each run for a future API.
+        <header className="mb-8 border-b border-border/60 pb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Website funnel audit</h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
+            Compare your live site and database against a fixed checklist (lead capture, CRM, content, analytics,
+            and CTAs). Each run shows scores, the exact files and tables that were checked, and prioritized
+            recommendations you can act on.
           </p>
         </header>
         {children}

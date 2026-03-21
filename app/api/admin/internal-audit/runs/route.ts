@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Validation", details: parsed.error.flatten() }, { status: 400 });
     }
     if (!parsed.data.execute) {
-      return NextResponse.json({ error: "Only execute:true supported in phase 2" }, { status: 400 });
+      return NextResponse.json({ error: "Run audits with execute: true (default)." }, { status: 400 });
     }
     const detail = await executeAuditRun({
       projectKey: parsed.data.projectKey ?? "ascendra_main",

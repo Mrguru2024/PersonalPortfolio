@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AdminGuideTour } from "@/components/admin/AdminGuideTour";
 import { AdminDailyNudge, buildNudgeItems } from "@/components/admin/AdminDailyNudge";
+import { AdminOperatorIntelligenceCard } from "@/components/admin/AdminOperatorIntelligenceCard";
 import { AdminRemindersCard } from "@/components/admin/AdminRemindersCard";
 import {
   getTourCompleted,
@@ -347,8 +348,24 @@ export default function AdminDashboardPage() {
     },
   });
 
+  const { data: operatorProfileData } = useQuery<{ profile: { roleSelection: string } }>({
+    queryKey: ["/api/admin/operator-profile"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/operator-profile");
+      if (!res.ok) throw new Error("Failed to load operator profile");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+    staleTime: 60_000,
+  });
+
   // Development updates log (digest; auto-refresh when new features ship)
-  const { data: devUpdatesData, isLoading: devUpdatesLoading, refetch: refetchDevUpdates, dataUpdatedAt: devUpdatesCheckedAt } = useQuery<{ updates: { date: string; time?: string; title: string; items: string[] }[]; source?: "file" | "github"; sourceNote?: string }>({
+  const { data: devUpdatesData, isLoading: devUpdatesLoading, refetch: refetchDevUpdates, dataUpdatedAt: devUpdatesCheckedAt } = useQuery<{
+    updates: { date: string; time?: string; title: string; items: string[]; sourceBranches?: string[] }[];
+    source?: "file" | "github";
+    sourceNote?: string;
+    mergeInfo?: { branchesScanned: number; branchesWithFile: number; mode: "multi_branch" | "single_branch" };
+  }>({
     queryKey: ["/api/admin/development-updates"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/development-updates");
@@ -486,6 +503,7 @@ export default function AdminDashboardPage() {
     totalContacts: contacts.length,
     unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
     isSuperAdmin,
+    operatorRoleFocus: operatorProfileData?.profile?.roleSelection,
   });
 
   return (
@@ -535,6 +553,17 @@ export default function AdminDashboardPage() {
           items={nudgeItems}
           onStartTour={() => setTourActive(true)}
           showTourCta={tourCompletedOrDismissed}
+        />
+      </div>
+
+      {/* Operator profile + AI daily/weekly plan */}
+      <div className="mb-4">
+        <AdminOperatorIntelligenceCard
+          dashboardStats={{
+            pendingAssessments,
+            totalContacts: contacts.length,
+            unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
+          }}
         />
       </div>
 
@@ -642,7 +671,7 @@ export default function AdminDashboardPage() {
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/internal-audit">
             <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Lead audit</span>
+            <span className="truncate">Funnel audit</span>
           </Link>
         </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
@@ -703,7 +732,11 @@ export default function AdminDashboardPage() {
                 Development updates
               </CardTitle>
               <CardDescription className="mt-0.5">
-                Features and fixes shipped to production. Edit content/development-updates.md in the repo and push; the dashboard refreshes automatically.
+                Features and fixes shipped to production. In production, the list loads from{" "}
+                <code className="text-xs bg-muted px-1 rounded">development-updates.md</code> on your GitHub{" "}
+                <code className="text-xs bg-muted px-1 rounded">main</code> branch (or whichever branch is set in{" "}
+                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>). Edit that file on
+                that branch and push; this panel refreshes automatically.
               </CardDescription>
             </div>
             <Button
@@ -733,7 +766,20 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
                 {devUpdatesData?.source && (
-                  <span>Source: {devUpdatesData.source === "github" ? "GitHub (live)" : "file"}</span>
+                  <span>
+                    Source:{" "}
+                    {devUpdatesData.source === "github"
+                      ? devUpdatesData.mergeInfo?.mode === "multi_branch"
+                        ? "GitHub (live, merged branches)"
+                        : "GitHub (live)"
+                      : "file"}
+                  </span>
+                )}
+                {devUpdatesData?.source === "github" && devUpdatesData.mergeInfo?.mode === "multi_branch" && (
+                  <span>
+                    · {devUpdatesData.mergeInfo.branchesWithFile}/{devUpdatesData.mergeInfo.branchesScanned} branches
+                    had the file
+                  </span>
                 )}
                 {devUpdatesData?.source === "github" && (
                   <span>New pushes may take up to ~5 min to appear.</span>
@@ -768,6 +814,11 @@ export default function AdminDashboardPage() {
                     <span className="text-muted-foreground">—</span>
                     <span className="text-sm font-semibold text-foreground">{entry.title}</span>
                   </div>
+                  {entry.sourceBranches && entry.sourceBranches.length > 1 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Also on branches: {entry.sourceBranches.join(", ")}
+                    </p>
+                  )}
                   {entry.items.length > 0 && (
                     <ul className="mt-2 space-y-1 list-none pl-0 text-sm text-muted-foreground">
                       {entry.items.map((item, i) => (

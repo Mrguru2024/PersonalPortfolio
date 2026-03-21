@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdmin } from "@/lib/auth-helpers";
+import { SCRIPT_TEMPLATE_CATEGORIES } from "@shared/schema";
 import {
   createScriptTemplate,
   getMarketingPersona,
@@ -10,7 +11,7 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const scriptCategoryZ = z.enum(["warm", "cold", "content", "follow_up", "objection"]);
+const scriptCategoryZ = z.enum(SCRIPT_TEMPLATE_CATEGORIES as unknown as [string, ...string[]]);
 
 const postSchema = z
   .object({

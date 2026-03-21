@@ -35,8 +35,19 @@ export const SCRIPT_TEMPLATE_CATEGORIES = [
   "content",
   "follow_up",
   "objection",
+  "generative_ai",
 ] as const;
 export type ScriptTemplateCategory = (typeof SCRIPT_TEMPLATE_CATEGORIES)[number];
+
+/** User-facing labels for script categories (admin UI). */
+export const SCRIPT_CATEGORY_LABELS: Record<ScriptTemplateCategory, string> = {
+  warm: "Warm",
+  cold: "Cold",
+  content: "Content",
+  follow_up: "Follow-up",
+  objection: "Objection",
+  generative_ai: "Generative AI",
+};
 
 export const ascendraScriptTemplates = pgTable("ascendra_script_templates", {
   id: serial("id").primaryKey(),
@@ -60,8 +71,17 @@ export const LEAD_MAGNET_TYPES = [
   "reveal_problems",
   "sample_trial",
   "one_step_system",
+  "generative_ai",
 ] as const;
 export type LeadMagnetType = (typeof LEAD_MAGNET_TYPES)[number];
+
+/** User-facing labels for lead magnet types (admin UI). */
+export const LEAD_MAGNET_TYPE_LABELS: Record<LeadMagnetType, string> = {
+  reveal_problems: "Reveal problems",
+  sample_trial: "Sample / trial",
+  one_step_system: "One-step system",
+  generative_ai: "Generative AI",
+};
 
 export const ascendraLeadMagnets = pgTable("ascendra_lead_magnets", {
   id: serial("id").primaryKey(),

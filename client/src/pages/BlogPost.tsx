@@ -267,7 +267,8 @@ const BlogPostPage = () => {
           <BlogPostSEO post={post} />
           
           {/* Add BlogPosting structured data */}
-          <StructuredData 
+          <StructuredData
+            jsonLdId="blog-post-structured-extra"
             schema={{
               type: 'BlogPosting',
               data: {

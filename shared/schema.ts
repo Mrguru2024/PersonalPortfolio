@@ -41,6 +41,57 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+/** Admin workspace focus — drives AI task plans and optional dashboard nudge ordering. */
+export const ADMIN_OPERATOR_ROLE_OPTIONS = [
+  "general",
+  "operations",
+  "growth_marketing",
+  "content",
+  "client_success",
+  "technical",
+  "leadership",
+  "finance",
+] as const;
+export type AdminOperatorRoleSelection = (typeof ADMIN_OPERATOR_ROLE_OPTIONS)[number];
+
+export const ADMIN_OPERATOR_ROLE_LABELS: Record<AdminOperatorRoleSelection, string> = {
+  general: "General / multi-hat",
+  operations: "Operations & delivery",
+  growth_marketing: "Growth & marketing",
+  content: "Content & creative",
+  client_success: "Client success & CRM",
+  technical: "Technical & integrations",
+  leadership: "Leadership & strategy",
+  finance: "Finance & billing",
+};
+
+/** Cached AI output for daily/weekly focus (regenerated on demand). */
+export type AdminOperatorIntelligencePayload = {
+  dailyTasks: Array<{ id: string; title: string; rationale?: string; href?: string | null }>;
+  weeklyTasks: Array<{ id: string; title: string; rationale?: string; href?: string | null }>;
+  tips: string[];
+  generatedAt: string;
+  source: "openai" | "fallback";
+};
+
+export const adminOperatorProfiles = pgTable("admin_operator_profiles", {
+  userId: integer("user_id")
+    .primaryKey()
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  roleSelection: text("role_selection").notNull().default("general"),
+  mission: text("mission"),
+  vision: text("vision"),
+  goals: text("goals"),
+  /** Short note for AI context (e.g. current sprint, launch). */
+  taskFocus: text("task_focus"),
+  intelligenceJson: json("intelligence_json").$type<AdminOperatorIntelligencePayload | null>(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminOperatorProfileRow = typeof adminOperatorProfiles.$inferSelect;
+export type InsertAdminOperatorProfileRow = typeof adminOperatorProfiles.$inferInsert;
+
 // Session table (used by connect-pg-simple; created by scripts/create-session-table.ts)
 // Included in schema so drizzle-kit push does not propose to drop it.
 export const session = pgTable("session", {

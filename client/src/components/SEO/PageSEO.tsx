@@ -1,4 +1,11 @@
-import { Helmet } from 'react-helmet';
+import { useEffect } from "react";
+import { applyDefaultClientSiteSeo } from "@shared/default-client-seo";
+import {
+  removeJsonLdScript,
+  updateJsonLdScript,
+  updateLinkTag,
+  updateMetaTag,
+} from "@shared/seo-head";
 
 interface PageSEOProps {
   title: string;
@@ -10,75 +17,114 @@ interface PageSEOProps {
   ogImageAlt?: string;
   baseUrl?: string;
   noIndex?: boolean;
-  schemaType?: 'WebPage' | 'AboutPage' | 'ProfilePage' | 'ContactPage' | 'CollectionPage';
+  schemaType?:
+    | "WebPage"
+    | "AboutPage"
+    | "ProfilePage"
+    | "ContactPage"
+    | "CollectionPage";
 }
+
+const PAGE_JSON_LD_ID = "page-seo";
 
 export function PageSEO({
   title,
   description,
-  canonicalPath = '',
+  canonicalPath = "",
   keywords = [],
-  ogType = 'website',
-  ogImage = '/images/mrguru-og-image.jpg',
-  ogImageAlt = 'Anthony MrGuru Feaster - Senior Full Stack Developer',
-  baseUrl = 'https://mrguru.dev',
+  ogType = "website",
+  ogImage = "/images/mrguru-og-image.jpg",
+  ogImageAlt = "Anthony MrGuru Feaster - Senior Full Stack Developer",
+  baseUrl = "https://mrguru.dev",
   noIndex = false,
-  schemaType = 'WebPage'
+  schemaType = "WebPage",
 }: PageSEOProps) {
-  const fullTitle = title.includes('MrGuru.dev') ? title : `${title} | MrGuru.dev`;
+  const fullTitle = title.includes("MrGuru.dev") ? title : `${title} | MrGuru.dev`;
   const url = `${baseUrl}${canonicalPath}`;
-  const keywordsString = [...keywords, 'MrGuru', 'Anthony MrGuru Feaster', 'web developer', 'portfolio'].join(', ');
+  const keywordsString = [
+    ...keywords,
+    "MrGuru",
+    "Anthony MrGuru Feaster",
+    "web developer",
+    "portfolio",
+  ].join(", ");
 
-  return (
-    <Helmet>
-      {/* Basic Meta Tags */}
-      <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywordsString} />
-      {noIndex && <meta name="robots" content="noindex, nofollow" />}
-      <link rel="canonical" href={url} />
+  useEffect(() => {
+    document.title = fullTitle;
 
-      {/* Open Graph / Facebook */}
-      <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={url} />
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={`${baseUrl}${ogImage}`} />
-      <meta property="og:image:alt" content={ogImageAlt} />
+    updateMetaTag("description", description);
+    updateMetaTag("keywords", keywordsString);
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:url" content={url} />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={`${baseUrl}${ogImage}`} />
-      <meta name="twitter:image:alt" content={ogImageAlt} />
+    if (noIndex) {
+      updateMetaTag("robots", "noindex, nofollow");
+    } else {
+      const robotsMeta = document.querySelector('meta[name="robots"]');
+      if (
+        robotsMeta &&
+        robotsMeta.getAttribute("content") === "noindex, nofollow"
+      ) {
+        robotsMeta.remove();
+      }
+    }
 
-      {/* Schema.org / JSON-LD */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': schemaType,
-          'name': fullTitle,
-          'description': description,
-          'url': url,
-          'author': {
-            '@type': 'Person',
-            'name': 'Anthony MrGuru Feaster',
-            'url': baseUrl
+    updateLinkTag("canonical", url);
+
+    updateMetaTag("og:type", ogType, true);
+    updateMetaTag("og:url", url, true);
+    updateMetaTag("og:title", fullTitle, true);
+    updateMetaTag("og:description", description, true);
+    updateMetaTag("og:image", `${baseUrl}${ogImage}`, true);
+    updateMetaTag("og:image:alt", ogImageAlt, true);
+
+    updateMetaTag("twitter:card", "summary_large_image");
+    updateMetaTag("twitter:url", url);
+    updateMetaTag("twitter:title", fullTitle);
+    updateMetaTag("twitter:description", description);
+    updateMetaTag("twitter:image", `${baseUrl}${ogImage}`);
+    updateMetaTag("twitter:image:alt", ogImageAlt);
+
+    updateJsonLdScript(
+      {
+        "@context": "https://schema.org",
+        "@type": schemaType,
+        name: fullTitle,
+        description: description,
+        url: url,
+        author: {
+          "@type": "Person",
+          name: "Anthony MrGuru Feaster",
+          url: baseUrl,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Ascendra Technologies",
+          logo: {
+            "@type": "ImageObject",
+            url: `${baseUrl}/favicon-32x32.png`,
+            width: 32,
+            height: 32,
           },
-          'publisher': {
-            '@type': 'Organization',
-            'name': 'Ascendra Technologies',
-            'logo': {
-              '@type': 'ImageObject',
-              'url': `${baseUrl}/favicon-32x32.png`,
-              'width': 32,
-              'height': 32
-            }
-          }
-        })}
-      </script>
-    </Helmet>
-  );
+        },
+      },
+      PAGE_JSON_LD_ID,
+    );
+
+    return () => {
+      removeJsonLdScript(PAGE_JSON_LD_ID);
+      applyDefaultClientSiteSeo();
+    };
+  }, [
+    fullTitle,
+    description,
+    keywordsString,
+    url,
+    ogType,
+    ogImage,
+    ogImageAlt,
+    baseUrl,
+    noIndex,
+    schemaType,
+  ]);
+
+  return null;
 }

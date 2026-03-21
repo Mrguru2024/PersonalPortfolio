@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-const CATEGORIES = ["warm", "cold", "content", "follow_up", "objection"] as const;
+import { SCRIPT_TEMPLATE_CATEGORIES, SCRIPT_CATEGORY_LABELS } from "@shared/schema";
 
 interface PersonaOpt {
   id: string;
@@ -104,7 +103,10 @@ export default function NewAscendraScriptPage() {
         <Card>
           <CardHeader>
             <CardTitle>New script template</CardTitle>
-            <CardDescription>Use {"{{variable}}"} in body if you track variables later.</CardDescription>
+            <CardDescription>
+              Categories include Generative AI for model-assisted drafts. Use {"{{variable}}"} in body if you track
+              variables later.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingPersonas ? (
@@ -133,9 +135,9 @@ export default function NewAscendraScriptPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((c) => (
+                      {SCRIPT_TEMPLATE_CATEGORIES.map((c) => (
                         <SelectItem key={c} value={c}>
-                          {c.replace(/_/g, " ")}
+                          {SCRIPT_CATEGORY_LABELS[c]}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -12,7 +12,7 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os/intelligence", label: "Intelligence", icon: Brain },
   { href: "/admin/growth-os/security", label: "Security & audit", icon: Shield },
   { href: "/admin/growth-os/shares", label: "Client shares", icon: FileKey },
-  { href: "/admin/internal-audit", label: "Lead audit", icon: ClipboardList },
+  { href: "/admin/internal-audit", label: "Funnel audit", icon: ClipboardList },
   { href: "/admin/content-studio", label: "Content studio", icon: PenLine },
 ];
 

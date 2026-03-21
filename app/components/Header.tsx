@@ -27,6 +27,7 @@ import {
   Settings,
   Brain,
   Inbox,
+  Target,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -102,6 +103,7 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
+    { name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
     { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
     { name: "Lead intake", href: "/admin/lead-intake", icon: Inbox, permission: "crm" as const },
     { name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },

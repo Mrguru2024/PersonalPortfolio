@@ -53,6 +53,40 @@ export async function getMarketingPersona(id: string): Promise<MarketingPersonaD
   return r ? rowToPersona(r) : null;
 }
 
+export async function createMarketingPersona(data: {
+  id: string;
+  displayName: string;
+  segment?: string | null;
+  revenueBand?: string | null;
+  summary?: string | null;
+  strategicNote?: string | null;
+  problems?: string[];
+  goals?: string[];
+  objections?: string[];
+  dynamicSignals?: string[];
+}): Promise<MarketingPersonaDTO | null> {
+  const id = data.id.trim().toLowerCase();
+  if (!id) return null;
+  const taken = await getMarketingPersona(id);
+  if (taken) return null;
+
+  await db.insert(marketingPersonas).values({
+    id,
+    displayName: data.displayName.trim(),
+    segment: data.segment ?? null,
+    revenueBand: data.revenueBand ?? null,
+    summary: data.summary ?? null,
+    strategicNote: data.strategicNote ?? null,
+    problemsJson: data.problems ?? [],
+    goalsJson: data.goals ?? [],
+    objectionsJson: data.objections ?? [],
+    dynamicSignalsJson: data.dynamicSignals ?? [],
+    updatedAt: new Date(),
+  });
+
+  return getMarketingPersona(id);
+}
+
 export async function updateMarketingPersona(
   id: string,
   patch: Partial<{
