@@ -1,7 +1,7 @@
 import type { CollisionDetection } from "@dnd-kit/core";
 import { closestCenter, pointerWithin, rectIntersection } from "@dnd-kit/core";
 
-/** Prefer pointer hit on month cells; fall back to closest center for list reordering. */
+/** Prefer pointer hit on month/week day cells; fall back to closest center for list reordering. */
 export const calendarCollisionDetection: CollisionDetection = (args) => {
   const pointer = pointerWithin(args);
   if (pointer.length > 0) return pointer;

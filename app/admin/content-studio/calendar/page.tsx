@@ -50,7 +50,6 @@ import {
   eachDayOfInterval,
   format,
   isSameDay,
-  isSameMonth,
 } from "date-fns";
 import { Loader2, Plus, GripVertical, Copy, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -90,26 +89,31 @@ const dropAnimation: DropAnimation = {
   easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
 };
 
-function DroppableMonthCell({
+type DroppableDayCellVariant = "month" | "week";
+
+/** Month grid cell or week strip column — same `day-*` droppable id as month (reschedule on drop). */
+function DroppableDayCell({
   day,
-  cursorMonth,
   selectedDay,
   count,
   onSelect,
+  variant,
 }: {
   day: Date;
-  cursorMonth: Date;
   selectedDay: Date;
   count: number;
   onSelect: () => void;
+  variant: DroppableDayCellVariant;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayDropId(day) });
   const sel = isSameDay(day, selectedDay);
+  const compact = variant === "month";
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-lg min-h-[76px] transition-[box-shadow,transform,background-color] duration-200 ease-out",
+        "rounded-lg transition-[box-shadow,transform,background-color] duration-200 ease-out",
+        compact ? "min-h-[76px]" : "min-h-[104px]",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02] z-[1] bg-primary/10 shadow-md",
         !isOver && sel && "ring-1 ring-primary/60 bg-primary/10",
         !isOver && !sel && "border border-border/60 bg-muted/20",
@@ -118,15 +122,31 @@ function DroppableMonthCell({
       <button
         type="button"
         onClick={onSelect}
-        className="w-full h-full min-h-[72px] rounded-md p-1.5 text-left text-sm transition-colors hover:bg-muted/30"
+        className={cn(
+          "w-full h-full rounded-md text-left text-sm transition-colors hover:bg-muted/30",
+          compact ? "min-h-[72px] p-1.5" : "min-h-[96px] p-2 flex flex-col gap-0.5",
+        )}
       >
-        <div className="font-medium">{format(day, "d")}</div>
+        {compact ? (
+          <div className="font-medium">{format(day, "d")}</div>
+        ) : (
+          <>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {format(day, "EEE")}
+            </div>
+            <div className="font-semibold text-base leading-none tabular-nums">{format(day, "d")}</div>
+          </>
+        )}
         {count > 0 && (
-          <Badge variant="secondary" className="text-[10px] px-1 py-0 mt-0.5">
+          <Badge variant="secondary" className={cn("text-[10px] px-1 py-0 w-fit", compact ? "mt-0.5" : "mt-1")}>
             {count}
           </Badge>
         )}
-        {isOver && <div className="text-[10px] font-medium text-primary mt-1">Drop here</div>}
+        {isOver && (
+          <div className={cn("text-[10px] font-medium text-primary", compact ? "mt-1" : "mt-auto pt-1")}>
+            Drop here
+          </div>
+        )}
       </button>
     </div>
   );
@@ -453,6 +473,13 @@ export default function ContentStudioCalendarPage() {
     return eachDayOfInterval({ start, end });
   }, [cursor]);
 
+  const weekDays = useMemo(
+    () => eachDayOfInterval({ start: startOfWeek(cursor), end: endOfWeek(cursor) }),
+    [cursor],
+  );
+
+  const cursorStepDays = view === "month" ? 30 : view === "day" ? 1 : 7;
+
   const sortableIds = dayEntriesFixed.map((e) => e.id);
 
   return (
@@ -471,7 +498,8 @@ export default function ContentStudioCalendarPage() {
               <CardTitle>Editorial calendar</CardTitle>
               <CardDescription>
                 Drag the grip to <strong className="text-foreground">reorder</strong> the day queue, or drop onto a{" "}
-                <strong className="text-foreground">month cell</strong> to reschedule (time of day is preserved).
+                <strong className="text-foreground">day</strong> in month or week view to reschedule (time of day is
+                preserved).
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -486,13 +514,13 @@ export default function ContentStudioCalendarPage() {
                   <SelectItem value="agenda">Agenda</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? -30 : -7))}>
+              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, -cursorStepDays))}>
                 Prev
               </Button>
               <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
                 Today
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, view === "month" ? 30 : 7))}>
+              <Button variant="outline" size="sm" onClick={() => setCursor(addDays(cursor, cursorStepDays))}>
                 Next
               </Button>
               <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
@@ -552,16 +580,56 @@ export default function ContentStudioCalendarPage() {
                 {monthDays.map((d) => {
                   const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
                   return (
-                    <DroppableMonthCell
+                    <DroppableDayCell
                       key={d.toISOString()}
                       day={d}
-                      cursorMonth={cursor}
                       selectedDay={selectedDay}
                       count={count}
                       onSelect={() => setSelectedDay(d)}
+                      variant="month"
                     />
                   );
                 })}
+              </div>
+            )}
+            {view === "week" && (
+              <div className="overflow-x-auto -mx-1 px-1 pb-1">
+                <div className="min-w-[36rem] space-y-1">
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                    {weekDays.map((d) => (
+                      <div key={`h-${d.toISOString()}`}>{format(d, "EEE")}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {weekDays.map((d) => {
+                      const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
+                      return (
+                        <DroppableDayCell
+                          key={d.toISOString()}
+                          day={d}
+                          selectedDay={selectedDay}
+                          count={count}
+                          onSelect={() => setSelectedDay(d)}
+                          variant="week"
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+            {view === "day" && (
+              <div className="max-w-xs">
+                <DroppableDayCell
+                  day={cursor}
+                  selectedDay={selectedDay}
+                  count={entries.filter((e) => isSameDay(new Date(e.scheduledAt), cursor)).length}
+                  onSelect={() => setSelectedDay(cursor)}
+                  variant="week"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Drop an entry here to move it to this day (same as week/month cells).
+                </p>
               </div>
             )}
             {view === "agenda" && (
@@ -576,12 +644,6 @@ export default function ContentStudioCalendarPage() {
                   ))}
               </ul>
             )}
-            {(view === "week" || view === "day") && (
-              <p className="text-sm text-muted-foreground">
-                Use <strong className="text-foreground">Month</strong> to drag entries onto dates. The selected-day
-                queue below works in every view.
-              </p>
-            )}
           </CardContent>
         </Card>
 
@@ -589,7 +651,8 @@ export default function ContentStudioCalendarPage() {
           <CardHeader>
             <CardTitle>{format(selectedDay, "EEEE, MMM d")} — queue</CardTitle>
             <CardDescription>
-              Reorder with drag-and-drop; items animate into place. Drag onto a date in month view to reschedule.
+              Reorder with drag-and-drop; items animate into place. Drag onto a day in month or week view (or the day
+              card in day view) to reschedule.
             </CardDescription>
           </CardHeader>
           <CardContent>
