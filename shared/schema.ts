@@ -602,6 +602,131 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
 export type GrowthFunnelLead = typeof growthFunnelLeads.$inferSelect;
 export type InsertGrowthFunnelLead = typeof growthFunnelLeads.$inferInsert;
 
+export interface RevenueDiagnosticCategoryScores {
+  visibility: number;
+  conversion: number;
+  trust: number;
+  followUp: number;
+  capture: number;
+  retention: number;
+}
+
+export interface RevenueDiagnosticSystemRecommendation {
+  systemKey: "lead_system" | "authority_system" | "validation_funnel" | "revenue_system";
+  label: string;
+  reason: string;
+  primaryCtaLabel: string;
+  primaryCtaHref: string;
+}
+
+/** Connected revenue diagnostic submissions (public funnel -> CRM + recommendations). */
+export const revenueDiagnostics = pgTable("revenue_diagnostics", {
+  id: serial("id").primaryKey(),
+  crmContactId: integer("crm_contact_id"),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
+  companyName: text("company_name"),
+  businessType: text("business_type"),
+  persona: text("persona"),
+  monthlyRevenue: integer("monthly_revenue"),
+  avgDealValue: integer("avg_deal_value"),
+  monthlyLeads: integer("monthly_leads"),
+  closeRatePercent: integer("close_rate_percent"),
+  categoryScores: json("category_scores").$type<RevenueDiagnosticCategoryScores>().notNull(),
+  websitePerformanceScore: integer("website_performance_score").notNull(),
+  startupWebsiteScore: integer("startup_website_score").notNull(),
+  overallScore: integer("overall_score").notNull(),
+  revenueOpportunityEstimate: integer("revenue_opportunity_estimate").notNull(),
+  topBottlenecks: json("top_bottlenecks").$type<string[]>().notNull().default([]),
+  recommendation: json("recommendation").$type<RevenueDiagnosticSystemRecommendation>().notNull(),
+  answers: json("answers").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").notNull().default("completed"), // completed | contacted
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export type RevenueDiagnostic = typeof revenueDiagnostics.$inferSelect;
+export type InsertRevenueDiagnostic = typeof revenueDiagnostics.$inferInsert;
+
+export type CaseStudyPublishState = "draft" | "preview" | "published" | "archived";
+
+export interface CaseStudySectionContent {
+  hero: string;
+  overview: string;
+  problem: string;
+  diagnosis: string;
+  solution: string;
+  results: string;
+  visualProof: string;
+  takeaways: string;
+  cta: string;
+}
+
+export interface CaseStudyBlock {
+  id: string;
+  type:
+    | "heading"
+    | "image"
+    | "gallery"
+    | "before_after"
+    | "metrics_card"
+    | "testimonial"
+    | "cta_block";
+  title?: string;
+  content?: string;
+  imageUrl?: string;
+  galleryImages?: string[];
+  beforeLabel?: string;
+  beforeValue?: string;
+  afterLabel?: string;
+  afterValue?: string;
+  metricLabel?: string;
+  metricValue?: string;
+  testimonialAuthor?: string;
+  testimonialRole?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+export interface CaseStudyFormats {
+  full: string;
+  short: string;
+  social: string;
+  email: string;
+  proposal: string;
+  landingProof: string;
+}
+
+/** Public + admin case study studio records (structured proof pages, not blog posts). */
+export const caseStudies = pgTable("case_studies", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  summary: text("summary").notNull().default(""),
+  persona: text("persona").notNull().default("operators"), // trades | freelancers | founders | operators
+  recommendedSystem: text("recommended_system").notNull().default("revenue_system"),
+  publishState: text("publish_state").notNull().default("draft"),
+  featured: boolean("featured").notNull().default(false),
+  sections: json("sections").$type<CaseStudySectionContent>().notNull(),
+  blocks: json("blocks").$type<CaseStudyBlock[]>().notNull().default([]),
+  formats: json("formats").$type<CaseStudyFormats | null>(),
+  completenessScore: integer("completeness_score").notNull().default(0),
+  ctaLabel: text("cta_label"),
+  ctaHref: text("cta_href"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  ogImage: text("og_image"),
+  noIndex: boolean("no_index").notNull().default(false),
+  createdByUserId: integer("created_by_user_id"),
+  updatedByUserId: integer("updated_by_user_id"),
+  publishedAt: timestamp("published_at"),
+  archivedAt: timestamp("archived_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export type CaseStudy = typeof caseStudies.$inferSelect;
+export type InsertCaseStudy = typeof caseStudies.$inferInsert;
+
 // Client Quotes schema (from assessments/proposals)
 export const clientQuotes = pgTable("client_quotes", {
   id: serial("id").primaryKey(),

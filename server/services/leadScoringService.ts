@@ -27,6 +27,11 @@ export const SCORING_RULES: Partial<Record<LeadTrackingEventType | string, numbe
   section_engagement: 2,
   return_visit: 10,
   tool_used: 5,
+  diagnostic_start: 4,
+  diagnostic_complete: 25,
+  case_study_view: 3,
+  case_study_cta_click: 8,
+  conversion_complete: 50,
 };
 
 /** Service page path pattern: viewing a service page adds points. */

@@ -46,6 +46,7 @@ import {
   socialLinks,
   contactInfo,
 } from "../app/lib/data";
+import { ensureSeedCaseStudies } from "./services/caseStudyService";
 
 async function seedProjects() {
   console.log("Seeding projects...");
@@ -926,6 +927,20 @@ async function seedAfnDiscussionCategories() {
   }
 }
 
+async function seedCaseStudyDrafts() {
+  console.log("Seeding case study drafts...");
+  try {
+    await ensureSeedCaseStudies();
+    console.log("Seeded default case study drafts");
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("case_studies table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
@@ -937,6 +952,7 @@ async function seedDatabase() {
     await seedSiteOffers();
     await seedBusinessGoalPresets();
     await seedAfnDiscussionCategories();
+    await seedCaseStudyDrafts();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

@@ -88,6 +88,8 @@ export default function Header(_props: HeaderProps) {
   ];
   const moreLinks = [
     { name: "About", href: "/about" },
+    { name: "Case studies", href: "/case-studies" },
+    { name: "Revenue diagnostic", href: "/revenue-diagnostic" },
     { name: "Website breakdowns", href: "/website-breakdowns" },
     { name: "Your Growth Score", href: "/diagnosis/results" },
     { name: "Contact", href: "/contact" },
@@ -102,6 +104,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
     { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
     { name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
+    { name: "Case studies", href: "/admin/case-studies", icon: FileText },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
     { name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },

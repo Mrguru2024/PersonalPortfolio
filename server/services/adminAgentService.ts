@@ -87,6 +87,7 @@ const DESTINATION_INTENTS: DestinationIntent[] = [
   { label: "Growth OS shares", url: "/admin/growth-os/shares", keywords: ["growth os shares", "client shares"], command: "open growth os shares", featureTag: "new" },
   { label: "Internal audit", url: "/admin/internal-audit", keywords: ["internal audit", "lead audit", "audit"], command: "open internal audit", featureTag: "new" },
   { label: "Content studio", url: "/admin/content-studio", keywords: ["content studio"], command: "open content studio", featureTag: "new" },
+  { label: "Case studies", url: "/admin/case-studies", keywords: ["case studies", "case study studio", "case study"], command: "open case studies", featureTag: "new" },
   { label: "Growth diagnosis", url: "/admin/growth-diagnosis", keywords: ["growth diagnosis", "diagnosis"], command: "open growth diagnosis" },
   { label: "Settings", url: "/admin/settings", keywords: ["settings", "preferences"], command: "open settings" },
   { label: "Integrations", url: "/admin/integrations", keywords: ["integrations", "integration"], command: "open integrations" },
