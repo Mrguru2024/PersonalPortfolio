@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
@@ -88,7 +86,7 @@ export default function SiteFooter() {
           <p className="text-xs text-muted-foreground">
             Built in partnership with Style Studio Branding and Macon Designs®.
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground" suppressHydrationWarning>
             © {new Date().getFullYear()} Ascendra Technologies. All rights reserved.
           </p>
         </div>
