@@ -25,12 +25,14 @@ import {
   Link2,
   TrendingUp,
   Settings,
+  Brain,
+  Inbox,
 } from "lucide-react";
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@/lib/super-admin";
+import { isSuperAdminUser } from "@shared/super-admin-identities";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { useMobileNav } from "@/contexts/MobileNavContext";
 import { Button } from "@/components/ui/button";
@@ -101,6 +103,7 @@ export default function Header(_props: HeaderProps) {
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
     { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
+    { name: "Lead intake", href: "/admin/lead-intake", icon: Inbox, permission: "crm" as const },
     { name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
     { name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
     { name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
@@ -110,6 +113,7 @@ export default function Header(_props: HeaderProps) {
     { name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
     { name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
+    { name: "Offer + Persona IQ", href: "/admin/ascendra-intelligence", icon: Brain },
     { name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
     { name: "Integrations", href: "/admin/integrations", icon: Link2, developerOnly: true },
     { name: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard" as const },

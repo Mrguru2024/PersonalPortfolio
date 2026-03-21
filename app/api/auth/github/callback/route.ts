@@ -154,13 +154,17 @@ export async function GET(req: NextRequest) {
       // Continue anyway - cookie is set
     }
 
-    recordActivityLog("login_success", true, {
-      userId: user.id,
-      identifier: user.username,
-      message: "GitHub OAuth",
-      ipAddress: getIpAddress(req),
-      userAgent: req.headers.get("user-agent") ?? undefined,
-    }).catch(() => {});
+    try {
+      await recordActivityLog("login_success", true, {
+        userId: user.id,
+        identifier: user.username,
+        message: "GitHub OAuth",
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+      });
+    } catch {
+      /* logged inside recordActivityLog */
+    }
 
     // Redirect to home page
     return NextResponse.redirect(baseUrl);

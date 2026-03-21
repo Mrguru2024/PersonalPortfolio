@@ -14,6 +14,7 @@ import {
   Loader2,
   ArrowLeft,
   FileStack,
+  Inbox,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,25 @@ export default function AdminFunnelPage() {
                 <Pencil className="h-3.5 w-3.5" />
                 Manage content
               </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6 border-border">
+          <CardContent className="p-4 flex flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+                <Inbox className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-lg">Lead intake hub</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Diagnosis reports, funnel quiz leads, and assessments in one list — import to CRM with optional AI classification.
+                </CardDescription>
+              </div>
+            </div>
+            <Button asChild variant="secondary" size="sm" className="shrink-0">
+              <Link href="/admin/lead-intake">Open hub</Link>
             </Button>
           </CardContent>
         </Card>

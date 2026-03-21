@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { motionTokens, heroChoreography } from "@/lib/motion";
 
+/** Single class string for CTA row — must match in reduced-motion and animated branches (hydration). */
+const HERO_ACTIONS_ROW_CLASS =
+  "mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap justify-center items-stretch sm:items-center gap-3 w-full min-w-0";
+
 interface HeroMotionProps {
   /** Brand/eyebrow line */
   eyebrow?: React.ReactNode;
@@ -36,7 +40,11 @@ export function HeroMotion({
           {headline}
         </h1>
         {subline && <div className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">{subline}</div>}
-        {actions && <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3">{actions}</div>}
+        {actions && (
+          <div className={HERO_ACTIONS_ROW_CLASS}>
+            {actions}
+          </div>
+        )}
         {children}
       </div>
     );
@@ -93,7 +101,7 @@ export function HeroMotion({
           initial={{ opacity: 0, y: heroChoreography.ctas.y }}
           animate={{ opacity: 1, y: 0 }}
           transition={ctasTransition}
-          className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3"
+          className={HERO_ACTIONS_ROW_CLASS}
         >
           {actions}
         </motion.div>

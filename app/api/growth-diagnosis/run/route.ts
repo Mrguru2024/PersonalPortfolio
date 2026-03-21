@@ -58,12 +58,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
+    const rawCompetitor = body?.competitorUrl ? String(body.competitorUrl).trim() : "";
+    let competitorUrl: string | undefined;
+    if (rawCompetitor) {
+      try {
+        competitorUrl = normalizeAuditUrl(rawCompetitor);
+        new URL(competitorUrl);
+      } catch {
+        competitorUrl = undefined;
+      }
+    }
+
     const request: AuditRequest = {
       url: normalizeAuditUrl(url),
       businessType: body?.businessType || undefined,
       primaryGoal: body?.primaryGoal || undefined,
       email: body?.email ? String(body.email).trim() : undefined,
       demoMode: Boolean(body?.demoMode),
+      businessName: body?.businessName ? String(body.businessName).trim().slice(0, 200) || undefined : undefined,
+      competitorUrl,
+      contextNotes: body?.contextNotes ? String(body.contextNotes).trim().slice(0, 4000) || undefined : undefined,
     };
 
     if (request.demoMode) {

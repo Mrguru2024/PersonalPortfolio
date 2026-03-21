@@ -7,6 +7,10 @@ import {
   BRAND_GROWTH_PATH,
   FREE_GROWTH_TOOLS_PATH,
   STARTUP_GROWTH_KIT_PATH,
+  FREE_TRIAL_PATH,
+  CHALLENGE_LANDING_PATH,
+  GROWTH_DIAGNOSIS_ENGINE_PATH,
+  DIGITAL_GROWTH_AUDIT_PATH,
 } from "@/lib/funnelCtas";
 
 export const MAIN_LINKS = [
@@ -19,10 +23,14 @@ export const MAIN_LINKS = [
 ] as const;
 
 export const GROWTH_LINKS = [
-  { label: "Growth Diagnosis", href: GROWTH_DIAGNOSIS_PATH },
+  { label: "Free trial", href: FREE_TRIAL_PATH },
+  { label: "Free diagnosis", href: GROWTH_DIAGNOSIS_ENGINE_PATH },
+  { label: "Free audit", href: DIGITAL_GROWTH_AUDIT_PATH },
+  { label: "Free toolkit", href: FREE_GROWTH_TOOLS_PATH },
+  { label: "5-day challenge (paid)", href: CHALLENGE_LANDING_PATH },
+  { label: "Growth assessment (full)", href: GROWTH_DIAGNOSIS_PATH },
   { label: "Brand Growth", href: BRAND_GROWTH_PATH },
   { label: "About the ecosystem", href: "/about" },
-  { label: "Free growth tools", href: FREE_GROWTH_TOOLS_PATH },
   { label: "Startup growth kit", href: STARTUP_GROWTH_KIT_PATH },
   { label: "Our work", href: "/partners/ascendra-technologies#projects" },
 ] as const;

@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, ChevronRight } from "lucide-react";
+import { Search, Loader2, ChevronRight, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { DIGITAL_GROWTH_AUDIT_PATH, FREE_TRIAL_PATH } from "@/lib/funnelCtas";
 import {
   Select,
   SelectContent,
@@ -42,6 +46,9 @@ export default function GrowthDiagnosisPage() {
   const [businessType, setBusinessType] = useState("");
   const [primaryGoal, setPrimaryGoal] = useState("");
   const [email, setEmail] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [competitorUrl, setCompetitorUrl] = useState("");
+  const [contextNotes, setContextNotes] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [report, setReport] = useState<AuditReport | null>(null);
@@ -71,6 +78,9 @@ export default function GrowthDiagnosisPage() {
           businessType: businessType || undefined,
           primaryGoal: primaryGoal || undefined,
           email: email || undefined,
+          businessName: businessName.trim() || undefined,
+          competitorUrl: competitorUrl.trim() || undefined,
+          contextNotes: contextNotes.trim() || undefined,
           demoMode: demoMode || !url.trim(),
         }),
       });
@@ -131,10 +141,34 @@ export default function GrowthDiagnosisPage() {
                 <CardHeader>
                   <h2 className="text-xl font-semibold text-foreground">Run your diagnosis</h2>
                   <p className="text-sm text-muted-foreground">
-                    Enter your website URL. Optionally tell us your business type and goal so we can tailor the results.
+                    Automated scan: we fetch your pages, extract structure and content signals, then run rule-based checks
+                    (SEO basics, conversion, trust, imagery alt text, mobile signals, and more)—not an AI “opinion.”
                   </p>
                 </CardHeader>
                 <CardContent>
+                  <Alert className="mb-5 border-primary/25 bg-primary/5">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle className="text-sm">Not the Digital Growth Audit</AlertTitle>
+                    <AlertDescription className="text-sm text-muted-foreground">
+                      This tool is the{" "}
+                      <strong className="text-foreground">Website Growth Diagnosis</strong> (instant, machine checklist).
+                      For a human review of brand, design, and website together, request the{" "}
+                      <Link
+                        href={DIGITAL_GROWTH_AUDIT_PATH}
+                        className="font-medium text-primary underline-offset-4 hover:underline"
+                      >
+                        Digital Growth Audit
+                      </Link>
+                      .
+                    </AlertDescription>
+                  </Alert>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Want the value-first trial (call + audit) before more self-serve scans? Start on the{" "}
+                    <Link href={FREE_TRIAL_PATH} className="font-medium text-primary underline-offset-4 hover:underline">
+                      free trial
+                    </Link>{" "}
+                    page—then come back here if you still want automated benchmarks.
+                  </p>
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
                       <Label htmlFor="url">Website URL</Label>
@@ -188,6 +222,44 @@ export default function GrowthDiagnosisPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="max-w-md"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="biz">Business or site name (optional)</Label>
+                      <Input
+                        id="biz"
+                        placeholder="e.g. Smith Electric"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        className="max-w-md"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Helps our team label your report in admin and client exports.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="competitor">Competitor URL (optional)</Label>
+                      <Input
+                        id="competitor"
+                        type="url"
+                        placeholder="https://competitor.com"
+                        value={competitorUrl}
+                        onChange={(e) => setCompetitorUrl(e.target.value)}
+                        className="max-w-md"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Stored on your report for context; we do not crawl this URL automatically yet.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ctx">Context for reviewers (optional)</Label>
+                      <Textarea
+                        id="ctx"
+                        placeholder="e.g. Staging site, focus on local SEO, known slow LCP on homepage…"
+                        value={contextNotes}
+                        onChange={(e) => setContextNotes(e.target.value)}
+                        rows={3}
+                        className="max-w-xl resize-y"
                       />
                     </div>
                     <div className="flex items-center gap-2">

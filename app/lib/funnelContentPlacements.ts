@@ -8,6 +8,7 @@ export const CONTENT_PLACEMENT_PAGES = [
   { path: "/free-growth-tools", label: "Free Growth Tools" },
   { path: "/growth", label: "Growth (Diagnosis entry)" },
   { path: "/growth-diagnosis", label: "Website Growth Diagnosis" },
+  { path: "/free-trial", label: "Free trial" },
   { path: "/resources/startup-growth-kit", label: "Startup Growth Kit" },
   { path: "/resources/startup-action-plan", label: "Startup Action Plan" },
   { path: "/tools/startup-website-score", label: "Startup Website Score" },

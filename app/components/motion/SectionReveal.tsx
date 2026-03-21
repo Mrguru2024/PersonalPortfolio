@@ -19,10 +19,16 @@ export function SectionReveal({
 }: Readonly<SectionRevealProps>) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  /** Avoid Framer Motion on the server + first client paint so SSR HTML matches hydration (see react.dev/link/hydration-mismatch). */
+  const [motionReady, setMotionReady] = useState(false);
   const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (reduced || !ref.current) return;
+    setMotionReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (reduced || !motionReady || !ref.current) return;
     const el = ref.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -32,9 +38,9 @@ export function SectionReveal({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [reduced]);
+  }, [reduced, motionReady]);
 
-  if (reduced) {
+  if (reduced || !motionReady) {
     return <div className={className}>{children}</div>;
   }
 
@@ -69,10 +75,15 @@ export function SectionRevealStagger({
 }: Readonly<SectionRevealStaggerProps>) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  const [motionReady, setMotionReady] = useState(false);
   const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (reduced || !ref.current) return;
+    setMotionReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (reduced || !motionReady || !ref.current) return;
     const el = ref.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -82,9 +93,9 @@ export function SectionRevealStagger({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [reduced]);
+  }, [reduced, motionReady]);
 
-  if (reduced) {
+  if (reduced || !motionReady) {
     return <div className={className}>{children}</div>;
   }
 

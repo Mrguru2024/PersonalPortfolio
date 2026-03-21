@@ -31,13 +31,7 @@ export interface SessionUserLike {
   permissions?: Record<string, boolean> | null;
 }
 
-import { SUPER_ADMIN_EMAIL } from "./super-admin-email";
-
-/** Resolve email-based super user without importing Next-only code. */
-function isSuperAdminUserLike(user: SessionUserLike): boolean {
-  const email = user.email?.trim().toLowerCase();
-  return email === SUPER_ADMIN_EMAIL;
-}
+import { userMatchesSuperAdminIdentity } from "./super-admin-identities";
 
 /**
  * Maps session user to coarse access role for UI and policy checks.
@@ -51,16 +45,9 @@ export function resolveAscendraAccessRole(
 ): AscendraAccessRole {
   if (!user) return "PUBLIC";
 
-  const isDevRole = user.role === "developer";
-  const isLegacySuperUsername = user.username === "5epmgllc";
   const isApprovedAdmin = user.isAdmin === true && user.adminApproved === true;
 
-  if (
-    isApprovedAdmin ||
-    isDevRole ||
-    isLegacySuperUsername ||
-    isSuperAdminUserLike(user)
-  ) {
+  if (isApprovedAdmin || userMatchesSuperAdminIdentity(user)) {
     return "ADMIN";
   }
 

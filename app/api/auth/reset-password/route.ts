@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
 
 const scryptAsync = promisify(scrypt);
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -13,6 +17,19 @@ async function hashPassword(password: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rl = await checkPublicApiRateLimitAsync(`reset-password:${ip}`, 25, 60 * 60_000);
+    if (!rl.ok) {
+      const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+      return NextResponse.json(
+        { message: "Too many attempts. Try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfter) },
+        },
+      );
+    }
+
     const { token, password } = await req.json();
 
     if (!token || !password) {

@@ -24,6 +24,12 @@ export interface AuditRequest {
   primaryGoal?: AuditPrimaryGoal;
   email?: string;
   demoMode?: boolean;
+  /** Display name for admin / exports (does not affect automated rules today). */
+  businessName?: string;
+  /** Optional competitor site for context; stored on the report—not crawled automatically yet. */
+  competitorUrl?: string;
+  /** Free text: priorities, known issues, staging notes—improves human follow-up and admin review. */
+  contextNotes?: string;
 }
 
 export interface ExtractedPage {

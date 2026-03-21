@@ -59,10 +59,17 @@ export async function POST(req: NextRequest) {
       message: message || "Digital Growth Audit request",
       newsletter: false,
       subject: AUDIT_SUBJECT,
+      industry: industry || undefined,
       ageRange: (body.ageRange ?? body.age_range ?? "").trim() || undefined,
       gender: (body.gender ?? "").trim() || undefined,
       occupation: (body.occupation ?? "").trim() || undefined,
       companySize: (body.companySize ?? body.company_size ?? "").trim() || undefined,
+      utm_source: body.utm_source ?? undefined,
+      utm_medium: body.utm_medium ?? undefined,
+      utm_campaign: body.utm_campaign ?? undefined,
+      referrer: body.referrer ?? undefined,
+      landing_page: body.landing_page ?? body.landingPage ?? undefined,
+      visitorId: body.visitorId ?? undefined,
     };
 
     const mockReq = {

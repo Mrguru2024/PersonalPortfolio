@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@/lib/super-admin";
+import { isSuperAdminUser } from "@shared/super-admin-identities";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";

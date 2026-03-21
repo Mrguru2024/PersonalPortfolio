@@ -16,7 +16,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@/lib/super-admin";
+import { isSuperAdminUser } from "@shared/super-admin-identities";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

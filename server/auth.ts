@@ -8,6 +8,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { resolveSessionSecretForRuntime } from "@shared/production-security-env";
 
 declare global {
   namespace Express {
@@ -32,7 +33,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'mrguru-portfolio-session-secret',
+    secret: resolveSessionSecretForRuntime(),
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,

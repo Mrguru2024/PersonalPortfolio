@@ -730,3 +730,4 @@ export * from "./internalStudioSchema";
 export * from "./crmSchema";
 export * from "./newsletterSchema";
 export * from "./afnSchema";
+export * from "./ascendraIntelligenceSchema";

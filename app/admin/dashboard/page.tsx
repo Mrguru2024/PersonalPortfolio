@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,7 +50,7 @@ import {
   setTourDismissed,
   getStepsForRole,
 } from "@/lib/adminTourConfig";
-import { isSuperAdminUser } from "@/lib/super-admin";
+import { isSuperAdminUser } from "@shared/super-admin-identities";
 
 /** Summary row for list (lightweight for fast load on mobile). */
 interface AssessmentSummary {
@@ -798,6 +798,13 @@ export default function AdminDashboardPage() {
             Resume ({resumeRequests.length})
           </TabsTrigger>
         </TabsList>
+        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+          <Inbox className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <Link href="/admin/lead-intake" className="text-primary font-medium hover:underline">
+            Lead intake hub
+          </Link>
+          <span>— unified diagnosis, funnel quiz, and assessments with CRM import (optional AI).</span>
+        </p>
 
         {/* Assessments Tab */}
         <TabsContent value="assessments" className="space-y-6 mt-4">

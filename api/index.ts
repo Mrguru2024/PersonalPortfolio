@@ -19,6 +19,7 @@ import { storage } from '../server/storage';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import * as schema from "../shared/schema";
+import { resolveSessionSecretForRuntime } from "../shared/production-security-env";
 
 declare global {
   namespace Express {
@@ -57,14 +58,16 @@ app.use(cors({
 
 // Setup session
 const sessionSettings: session.SessionOptions = {
-  secret: process.env.SESSION_SECRET || 'keyboard cat',
+  secret: resolveSessionSecretForRuntime(),
   resave: false,
   saveUninitialized: false,
   store: storage.sessionStore,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
-  }
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+  },
 };
 
 app.use(session(sessionSettings));

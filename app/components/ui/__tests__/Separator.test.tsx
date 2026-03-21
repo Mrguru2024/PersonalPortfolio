@@ -5,21 +5,21 @@ import { Separator } from '../separator';
 describe('Separator', () => {
   it('renders by default', () => {
     const { container } = render(<Separator />);
-    expect(container.firstChild).toBeInTheDocument();
+    expect(container.firstElementChild).toBeInTheDocument();
   });
 
   it('applies horizontal orientation class by default', () => {
     const { container } = render(<Separator />);
-    expect(container.firstChild).toHaveClass('h-[1px]', 'w-full');
+    expect(container.firstElementChild).toHaveClass('h-[1px]', 'w-full');
   });
 
   it('applies vertical orientation when specified', () => {
     const { container } = render(<Separator orientation="vertical" />);
-    expect(container.firstChild).toHaveClass('h-full', 'w-[1px]');
+    expect(container.firstElementChild).toHaveClass('h-full', 'w-[1px]');
   });
 
   it('applies custom className', () => {
     const { container } = render(<Separator className="my-4" />);
-    expect(container.firstChild).toHaveClass('my-4');
+    expect(container.firstElementChild).toHaveClass('my-4');
   });
 });

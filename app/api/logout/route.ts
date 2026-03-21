@@ -19,12 +19,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (user?.id) {
-      recordActivityLog("logout", true, {
-        userId: user.id,
-        identifier: user.username,
-        ipAddress: getIpAddress(req),
-        userAgent: req.headers.get("user-agent") ?? undefined,
-      }).catch(() => {});
+      try {
+        await recordActivityLog("logout", true, {
+          userId: user.id,
+          identifier: user.username,
+          ipAddress: getIpAddress(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+        });
+      } catch {
+        /* logged inside recordActivityLog */
+      }
     }
 
     const response = NextResponse.json({ message: "Logged out successfully" });

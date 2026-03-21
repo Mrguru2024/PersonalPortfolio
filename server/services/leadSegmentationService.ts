@@ -19,9 +19,33 @@ export const SEGMENT_TAGS = [
   "low_intent",
   "nurture_only",
   "sales_ready",
+  /** Self-reported CRM fields present (forms → crm_contacts) */
+  "demographics_partial",
+  "demographics_rich",
+  /** First-party visitor snapshot merged into customFields */
+  "visitor_geo_enriched",
+  "visitor_device_enriched",
+  /** Parsed from crm_contacts.company_size */
+  "company_band_micro",
+  "company_band_smb",
+  "company_band_midmarket",
+  "company_band_enterprise",
 ] as const;
 
 export type SegmentTag = (typeof SEGMENT_TAGS)[number];
+
+/** Map common company-size form values to stable segment tags */
+function companySizeBandTag(size: string | null | undefined): string | null {
+  const raw = (size ?? "").trim().toLowerCase();
+  if (!raw) return null;
+  if (/^(1[-–]9|1[-–]10|solo|micro|just me|only me|freelancer|freelance)$/.test(raw) || /\b1[-–]10\b/.test(raw)) {
+    return "company_band_micro";
+  }
+  if (/\b11[-–]50\b|\b10[-–]50\b|small\s*business/.test(raw)) return "company_band_smb";
+  if (/\b51[-–]200\b|\b201[-–]500\b|mid\s*market|midmarket/.test(raw)) return "company_band_midmarket";
+  if (/\b501\b|\b1000\b|enterprise|\b201\+|\b500\+|\b100\+/.test(raw)) return "company_band_enterprise";
+  return null;
+}
 
 export interface SegmentationInput {
   contact: CrmContact;
@@ -76,6 +100,23 @@ export function computeSegmentTags(input: SegmentationInput): string[] {
     tags.add("high_intent");
   }
   if (recentSignals.bookedCall || contact.bookedCallAt) tags.add("sales_ready");
+
+  // Demographics & inferred enrichment (CRM columns + customFields from visitor tracking)
+  const selfReportedCount = [
+    contact.ageRange,
+    contact.gender,
+    contact.occupation,
+    contact.companySize,
+    contact.industry,
+  ].filter((v) => typeof v === "string" && v.trim().length > 0).length;
+  if (selfReportedCount >= 1) tags.add("demographics_partial");
+  if (selfReportedCount >= 3) tags.add("demographics_rich");
+  const band = companySizeBandTag(contact.companySize);
+  if (band) tags.add(band);
+  if (custom.inferredCountry && String(custom.inferredCountry).trim()) tags.add("visitor_geo_enriched");
+  if (custom.inferredDeviceType && String(custom.inferredDeviceType).trim()) {
+    tags.add("visitor_device_enriched");
+  }
 
   return [...tags];
 }

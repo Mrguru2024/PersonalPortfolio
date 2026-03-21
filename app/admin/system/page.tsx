@@ -24,7 +24,7 @@ import {
   Gauge,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@/lib/super-admin";
+import { isSuperAdminUser } from "@shared/super-admin-identities";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -287,9 +287,9 @@ export default function AdminSystemPage() {
           <span className="ml-2">Clear logs</span>
         </Button>
         <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/growth-diagnosis" className="gap-2">
+          <Link href="/admin/lead-intake?tab=growth_diagnosis" className="gap-2">
             <Gauge className="h-4 w-4" />
-            Growth Diagnosis
+            Lead intake (diagnosis)
           </Link>
         </Button>
       </div>

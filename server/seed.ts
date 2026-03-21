@@ -36,7 +36,9 @@ import {
   siteOffers,
   businessGoalPresets,
   afnDiscussionCategories,
+  marketingPersonas,
 } from "@shared/schema";
+import { DEFAULT_MARKETING_PERSONAS } from "@shared/ascendraPersonaSeed";
 import {
   projects as staticProjects,
   frontendSkills,
@@ -896,6 +898,42 @@ async function seedSiteOffers() {
   }
 }
 
+async function seedMarketingPersonas() {
+  console.log("Seeding marketing personas (Ascendra Offer + Persona IQ)...");
+  try {
+    for (const p of DEFAULT_MARKETING_PERSONAS) {
+      await db
+        .insert(marketingPersonas)
+        .values({
+          ...p,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: marketingPersonas.id,
+          set: {
+            displayName: p.displayName,
+            segment: p.segment,
+            revenueBand: p.revenueBand,
+            summary: p.summary,
+            strategicNote: p.strategicNote,
+            problemsJson: p.problemsJson,
+            goalsJson: p.goalsJson,
+            objectionsJson: p.objectionsJson,
+            dynamicSignalsJson: p.dynamicSignalsJson,
+            updatedAt: new Date(),
+          },
+        });
+    }
+    console.log(`Upserted ${DEFAULT_MARKETING_PERSONAS.length} marketing personas`);
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("marketing_personas table does not exist. Run: npm run db:push");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedAfnDiscussionCategories() {
   console.log("Seeding AFN discussion categories...");
   try {
@@ -935,6 +973,7 @@ async function seedDatabase() {
     await seedBlogPosts();
     await seedCrmPlaybooks();
     await seedSiteOffers();
+    await seedMarketingPersonas();
     await seedBusinessGoalPresets();
     await seedAfnDiscussionCategories();
 

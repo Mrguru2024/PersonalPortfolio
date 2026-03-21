@@ -911,13 +911,91 @@ export default function AdminAnalyticsPage() {
                     Lead qualifying & demographics
                   </CardTitle>
                   <CardDescription>
-                    Age, gender, occupation, company size, and industry from contact forms and CRM contacts. Use this to understand who converts and where to improve messaging for underperforming segments.
+                    Self-reported and CRM-backed fields for people who identify on your forms. Compare with anonymous traffic on the Traffic and Location tabs.
                     {displayData.leadDemographics.sources && displayData.leadDemographics.sources.length > 0 && (
-                      <span className="block mt-1 text-xs">Sources: {displayData.leadDemographics.sources.join(", ").replace(/_/g, " ")}.</span>
+                      <span className="block mt-1 text-xs">Aggregated from: {displayData.leadDemographics.sources.join(", ").replace(/_/g, " ")}.</span>
                     )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-3">
+                    <h3 className="font-semibold text-foreground">Data sources and accuracy</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                      <li>
+                        <span className="text-foreground font-medium">CRM and forms (this tab)</span> — Values come from optional form fields and are stored on{" "}
+                        <code className="text-xs bg-muted px-1 rounded">crm_contacts</code> (and legacy contact rows). This is first-party, lead-level data: best for
+                        segments and messaging, but only where you collect it.
+                      </li>
+                      <li>
+                        <span className="text-foreground font-medium">Visitor tracking (Location / Device)</span> — Country, region, city, device, and timezone are inferred
+                        from requests when events are recorded. They describe anonymous sessions, not confirmed identity; use them to sanity-check geography and device mix
+                        against these lead breakdowns.
+                      </li>
+                      <li>
+                        <span className="text-foreground font-medium">Google Analytics (GA4)</span> — Demographic and interest reports in GA are aggregate and depend on
+                        signals such as signed-in users and modeling; they do not sync automatically into this CRM. Use GA’s Audience reports for site-wide trends; use this
+                        admin view for identifiable leads when forms include those fields.
+                        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+                          <span className="block mt-1 text-xs">
+                            Measurement ID is set (<code className="bg-muted px-1 rounded">{process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}</code>); enable Google signals in GA
+                            if you want modeled age/gender in the GA UI. When the GA Data API is configured server-side, aggregate age/gender/country may also appear in the
+                            &quot;External demographics&quot; card below.
+                          </span>
+                        ) : (
+                          <span className="block mt-1 text-xs">
+                            When the GA Data API is configured, aggregate breakdowns may appear in the &quot;External demographics&quot; card below.
+                          </span>
+                        )}
+                      </li>
+                      <li>
+                        <span className="text-foreground font-medium">Vercel Analytics</span> — Does not expose a per-lead or per-session demographics API tied to your CRM.
+                        Use the{" "}
+                        <a
+                          href="https://vercel.com/docs/analytics"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline underline-offset-2"
+                        >
+                          Vercel Analytics
+                        </a>{" "}
+                        dashboard for Web Analytics at the project level; pair it with the Location/Device tables here for first-party event context.
+                      </li>
+                    </ul>
+                  </div>
+
+                  {(displayData.traffic.byCountry?.length > 0 || displayData.traffic.byDevice?.length > 0) && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {displayData.traffic.byCountry && displayData.traffic.byCountry.length > 0 && (
+                        <div className="rounded-md border p-3">
+                          <h4 className="text-sm font-semibold mb-2">Anonymous traffic: top countries</h4>
+                          <p className="text-xs text-muted-foreground mb-2">Same time range as above; not joined to CRM leads.</p>
+                          <ul className="text-sm space-y-1">
+                            {displayData.traffic.byCountry.slice(0, 6).map((row, i) => (
+                              <li key={i} className="flex justify-between gap-2">
+                                <span className="truncate">{row.country}</span>
+                                <span className="tabular-nums text-muted-foreground">{row.count.toLocaleString()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {displayData.traffic.byDevice && displayData.traffic.byDevice.length > 0 && (
+                        <div className="rounded-md border p-3">
+                          <h4 className="text-sm font-semibold mb-2">Anonymous traffic: devices</h4>
+                          <p className="text-xs text-muted-foreground mb-2">From recorded events; compare to lead-level device hints in CRM custom fields when present.</p>
+                          <ul className="text-sm space-y-1">
+                            {displayData.traffic.byDevice.map((row, i) => (
+                              <li key={i} className="flex justify-between gap-2">
+                                <span className="truncate">{row.device}</span>
+                                <span className="tabular-nums text-muted-foreground">{row.count.toLocaleString()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {displayData.leadDemographics.totalWithDemographics === 0 ? (
                     <p className="text-muted-foreground text-sm">
                       No demographic data yet. Add optional fields (age range, gender, occupation, company size) to your contact, audit, and strategy-call forms so new leads are tagged. Existing leads won’t have this data until you re-collect or import it.

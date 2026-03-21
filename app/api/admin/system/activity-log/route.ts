@@ -40,7 +40,14 @@ export async function GET(req: NextRequest) {
       conditions.push(eq(userActivityLog.eventType, eventType));
     }
 
-    const base = db
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
+
+    const baseQuery = db
       .select({
         id: userActivityLog.id,
         userId: userActivityLog.userId,
@@ -55,11 +62,11 @@ export async function GET(req: NextRequest) {
         username: users.username,
       })
       .from(userActivityLog)
-      .leftJoin(users, eq(userActivityLog.userId, users.id))
-      .orderBy(desc(userActivityLog.id))
-      .limit(limit);
+      .leftJoin(users, eq(userActivityLog.userId, users.id));
 
-    const rows = conditions.length > 0 ? await base.where(and(...conditions)) : await base;
+    const rows = await (whereClause
+      ? baseQuery.where(whereClause).orderBy(desc(userActivityLog.id)).limit(limit)
+      : baseQuery.orderBy(desc(userActivityLog.id)).limit(limit));
 
     const entries = rows.map((r) => ({
       id: r.id,

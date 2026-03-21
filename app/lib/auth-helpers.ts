@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { storage } from "@server/storage";
-import { SUPER_ADMIN_EMAIL } from "@/lib/super-admin";
+import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import {
   resolveAscendraAccessRole,
   canAccessGrowthOsAdminPhase1,
@@ -332,15 +332,11 @@ export async function isDeveloper(req?: NextRequest): Promise<boolean> {
   return user !== null && user.role === "developer";
 }
 
-// Super user: developer role, explicit username, or super admin email (see super-admin.ts)
+// Super user: developer role, SUPER_ADMIN_USERNAMES / SUPER_ADMIN_EMAILS, or defaults (see super-admin-identities.ts)
 export async function isSuperUser(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-  return (
-    user.role === "developer" ||
-    user.username === "5epmgllc" ||
-    (user.email && String(user.email).toLowerCase() === SUPER_ADMIN_EMAIL)
-  );
+  return userMatchesSuperAdminIdentity(user);
 }
 
 // Check if user has a specific privilege (super user has all)
@@ -350,7 +346,7 @@ export async function hasPermission(
 ): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-  if (user.role === "developer" || user.username === "5epmgllc" || (user.email && String(user.email).toLowerCase() === SUPER_ADMIN_EMAIL)) return true;
+  if (userMatchesSuperAdminIdentity(user)) return true;
   const perms = user.permissions as Record<string, boolean> | null | undefined;
   return perms?.[permission] === true;
 }

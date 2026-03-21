@@ -482,6 +482,16 @@ export const portfolioController = {
             landing_page: body.landing_page ?? body.landingPage ?? null,
             visitorId: body.visitorId ?? null,
           },
+          demographics: {
+            ageRange: savedContact.ageRange ?? undefined,
+            gender: savedContact.gender ?? undefined,
+            occupation: savedContact.occupation ?? undefined,
+            companySize: savedContact.companySize ?? undefined,
+            industry:
+              typeof body.industry === "string" && body.industry.trim()
+                ? body.industry.trim()
+                : undefined,
+          },
         });
       } catch (err) {
         console.warn("[Contact form] CRM lead ensure failed:", err);

@@ -10,6 +10,9 @@ import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { TrackPageView } from "@/components/TrackPageView";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Find out why your website isn't generating customers",
@@ -112,13 +115,36 @@ export default function DigitalGrowthAuditPage() {
               </ul>
             </section>
 
-            {/* Qualification form */}
+            {/* Qualification form — human-led audit (not the automated URL crawler) */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
                 Request Your Digital Growth Audit
               </h2>
               <p className="text-center text-sm text-muted-foreground max-w-xl mx-auto mb-6">
                 Share a few details. We'll review your brand, design, and website and send you clear next steps.
+              </p>
+              <Alert className="max-w-2xl mx-auto mb-6 border-primary/25 bg-primary/5">
+                <Info className="h-4 w-4" />
+                <AlertTitle className="text-sm">Different from the instant website scan</AlertTitle>
+                <AlertDescription className="text-sm text-muted-foreground">
+                  This form is for the{" "}
+                  <strong className="text-foreground">Digital Growth Audit</strong>—a human-led review across
+                  brand, design, and conversion. For an{" "}
+                  <strong className="text-foreground">automated URL diagnosis</strong> (crawl, SEO, imagery, and
+                  rule-based findings), use{" "}
+                  <Link href={GROWTH_DIAGNOSIS_ENGINE_PATH} className="font-medium text-primary underline-offset-4 hover:underline">
+                    Website Growth Diagnosis
+                  </Link>
+                  .
+                </AlertDescription>
+              </Alert>
+              <p className="text-center text-sm text-muted-foreground max-w-xl mx-auto mb-6">
+                New to Ascendra? The{" "}
+                <Link href={FREE_TRIAL_PATH} className="font-medium text-primary underline-offset-4 hover:underline">
+                  free trial
+                </Link>{" "}
+                page puts the strategy call and this audit ahead of self-serve tools so you feel the full value story
+                first.
               </p>
               <AuditRequestForm />
             </section>

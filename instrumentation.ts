@@ -1,5 +1,10 @@
 export async function register() {
-  const { neonConfig } = await import('@neondatabase/serverless');
+  const { assertProductionSecurityEnv } = await import(
+    "@shared/production-security-env"
+  );
+  assertProductionSecurityEnv();
+
+  const { neonConfig } = await import("@neondatabase/serverless");
 
   const dbUrl = process.env.DATABASE_URL || '';
   const isLocal = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');

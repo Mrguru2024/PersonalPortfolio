@@ -11,6 +11,7 @@ import {
   FUNNEL_STORY_STEPS,
 } from "@/lib/funnel-content";
 import { projects } from "@/lib/data";
+import { FREE_TRIAL_PATH } from "@/lib/funnelCtas";
 import { getLatestBlogPostsForBusiness } from "@/lib/blogSeedData";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightPerFounder } from "@/lib/partnerFounders";
@@ -106,6 +107,13 @@ export default function Home() {
                 </Link>
               </Button>
             </MagneticButton>
+            <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
+              Want a value-first trial (how we work—not just more free files)?{" "}
+              <Link href={FREE_TRIAL_PATH} className="font-medium text-primary underline-offset-4 hover:underline">
+                Start the free trial
+              </Link>
+              .
+            </p>
           </div>
         </SectionReveal>
       </section>

@@ -68,6 +68,8 @@ export const crmContacts = pgTable("crm_contacts", {
   /** Lead qualifying / demographics (for acquisition analytics) */
   ageRange: text("age_range"),
   gender: text("gender"),
+  /** Self-reported role category from forms (distinct from job title / LinkedIn title) */
+  occupation: text("occupation"),
   companySize: text("company_size"),
   source: text("source"), // website, referral, linkedin, etc.
   status: text("status").default("new"), // new, contacted, qualified, proposal, negotiation, won, lost

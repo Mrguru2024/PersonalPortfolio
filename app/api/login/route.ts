@@ -6,6 +6,7 @@ import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { captureApiError } from "@/lib/systemMonitor";
+import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -42,6 +43,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ip = getClientIp(req);
+    const rl = await checkPublicApiRateLimitAsync(`login:${ip}`, 40, 15 * 60_000);
+    if (!rl.ok) {
+      const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+      return NextResponse.json(
+        { message: "Too many login attempts. Try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfter) },
+        },
+      );
+    }
+
     // Step 2: Get user from database (try username first, then email)
     let user;
     try {
@@ -72,12 +86,16 @@ export async function POST(req: NextRequest) {
     // Step 3: Verify password
     if (!user) {
       console.log("Login failed: User not found");
-      recordActivityLog("login_failure", false, {
-        identifier: username,
-        message: "User not found",
-        ipAddress: getIpAddress(req),
-        userAgent: req.headers.get("user-agent") ?? undefined,
-      }).catch(() => {});
+      try {
+        await recordActivityLog("login_failure", false, {
+          identifier: username,
+          message: "User not found",
+          ipAddress: getIpAddress(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+        });
+      } catch {
+        /* logged inside recordActivityLog */
+      }
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 },
@@ -108,13 +126,17 @@ export async function POST(req: NextRequest) {
 
     if (!passwordMatch) {
       console.log("Login failed: Password does not match");
-      recordActivityLog("login_failure", false, {
-        userId: user.id,
-        identifier: user.username,
-        message: "Invalid password",
-        ipAddress: getIpAddress(req),
-        userAgent: req.headers.get("user-agent") ?? undefined,
-      }).catch(() => {});
+      try {
+        await recordActivityLog("login_failure", false, {
+          userId: user.id,
+          identifier: user.username,
+          message: "Invalid password",
+          ipAddress: getIpAddress(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+        });
+      } catch {
+        /* logged inside recordActivityLog */
+      }
       return NextResponse.json(
         { message: "Invalid username or password" },
         { status: 401 },
@@ -239,12 +261,16 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     captureApiError(error, req);
-    recordActivityLog("error", false, {
-      message: error?.message || "Login error",
-      ipAddress: getIpAddress(req),
-      userAgent: req.headers.get("user-agent") ?? undefined,
-      metadata: { stack: error?.stack?.slice(0, 2000) },
-    }).catch(() => {});
+    try {
+      await recordActivityLog("error", false, {
+        message: error?.message || "Login error",
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+        metadata: { stack: error?.stack?.slice(0, 2000) },
+      });
+    } catch {
+      /* logged inside recordActivityLog */
+    }
     console.error("Unexpected login error:", error);
     console.error("Error stack:", error?.stack);
     console.error("Error details:", {

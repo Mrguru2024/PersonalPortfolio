@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
         referrer: body.referrer ?? undefined,
       },
       customFields,
+      demographics: businessType ? { industry: businessType } : undefined,
     });
 
     if (!crmLead) {

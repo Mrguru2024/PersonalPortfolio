@@ -211,13 +211,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${baseUrl}/auth?error=google_auth_failed&message=Failed to create session`);
     }
 
-    recordActivityLog("login_success", true, {
-      userId: user.id,
-      identifier: user.username,
-      message: "Google OAuth",
-      ipAddress: getIpAddress(req),
-      userAgent: req.headers.get("user-agent") ?? undefined,
-    }).catch(() => {});
+    try {
+      await recordActivityLog("login_success", true, {
+        userId: user.id,
+        identifier: user.username,
+        message: "Google OAuth",
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+      });
+    } catch {
+      /* logged inside recordActivityLog */
+    }
 
     // Redirect to home page
     console.log("Google OAuth - Authentication successful, redirecting to home");

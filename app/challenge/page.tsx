@@ -169,6 +169,17 @@ export default function ChallengeLandingPage() {
               <p className="font-medium text-foreground">What if I want implementation help after?</p>
               <p className="text-sm text-muted-foreground">At the end you can apply for a strategy call. We&apos;ll use your challenge results and growth diagnosis to route you to the right support—Ascendra, Style Studio, or Macon Designs.</p>
             </div>
+            <div>
+              <p className="font-medium text-foreground">Is this the same as your free trial?</p>
+              <p className="text-sm text-muted-foreground">
+                No. The{" "}
+                <Link href="/free-trial" className="font-medium text-primary underline-offset-4 hover:underline">
+                  free trial path
+                </Link>{" "}
+                leads with a strategy call and human audit (value first); self-serve tools are optional after. This page
+                is the paid, guided 5-day program.
+              </p>
+            </div>
           </div>
         </motion.section>
 

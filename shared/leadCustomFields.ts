@@ -23,6 +23,8 @@ export interface LeadCustomFields {
   landingPage?: string;
   /** First-touch attribution (source) */
   firstTouchSource?: string;
+  /** Admin CRM import: growth_diagnosis_engine | growth_funnel_quiz | project_assessment */
+  intakeSource?: string;
   firstTouchMedium?: string;
   firstTouchCampaign?: string;
   /** Nurture state for sequences */
@@ -37,6 +39,21 @@ export interface LeadCustomFields {
   recommendedBrandPath?: string;
   qualificationSubmitted?: boolean;
   readyForCall?: boolean;
+  /** Free growth tools hub — optional note on which tools they want */
+  freeToolsInterest?: string;
+  /** ISO timestamp when hub qualification was submitted */
+  freeToolsHubSubmittedAt?: string;
+  /**
+   * Inferred from first-party visitor tracking (headers / edge) when `visitorId` is present on form submit.
+   * Stored on the CRM lead’s `customFields`; not a substitute for GA4 aggregates or self-reported form answers.
+   */
+  inferredCountry?: string;
+  inferredRegion?: string;
+  inferredCity?: string;
+  inferredDeviceType?: string;
+  inferredTimezone?: string;
+  /** ISO time when inferred* snapshot was merged from visitor activity */
+  inferredFromVisitorTrackingAt?: string;
   /** Challenge qualification form */
   mainGoal?: string;
   websiteStatus?: string;

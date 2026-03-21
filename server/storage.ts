@@ -316,6 +316,14 @@ export interface IStorage {
   attachVisitorToLead(visitorId: string, leadId: number): Promise<void>;
   getVisitorActivityByLeadId(leadId: number): Promise<VisitorActivity[]>;
   getVisitorActivityRecent(since?: Date, limit?: number): Promise<VisitorActivity[]>;
+  /** Latest geo/device row for a visitor id (before or after lead attach) — enriches CRM from first-party tracking */
+  getLatestVisitorSnapshot(visitorId: string): Promise<{
+    country: string | null;
+    region: string | null;
+    city: string | null;
+    deviceType: string | null;
+    timezone: string | null;
+  } | null>;
 
   // Lead intelligence: alerts
   createCrmAlert(alert: InsertCrmAlert): Promise<CrmAlert>;
@@ -2403,6 +2411,39 @@ export class DatabaseStorage implements IStorage {
       .where(eq(visitorActivity.visitorId, visitorId));
   }
 
+  async getLatestVisitorSnapshot(visitorId: string): Promise<{
+    country: string | null;
+    region: string | null;
+    city: string | null;
+    deviceType: string | null;
+    timezone: string | null;
+  } | null> {
+    const rows = await db
+      .select({
+        country: visitorActivity.country,
+        region: visitorActivity.region,
+        city: visitorActivity.city,
+        deviceType: visitorActivity.deviceType,
+        timezone: visitorActivity.timezone,
+      })
+      .from(visitorActivity)
+      .where(eq(visitorActivity.visitorId, visitorId))
+      .orderBy(desc(visitorActivity.createdAt))
+      .limit(25);
+    for (const r of rows) {
+      if (r.country || r.region || r.city || r.deviceType || r.timezone) {
+        return {
+          country: r.country ?? null,
+          region: r.region ?? null,
+          city: r.city ?? null,
+          deviceType: r.deviceType ?? null,
+          timezone: r.timezone ?? null,
+        };
+      }
+    }
+    return null;
+  }
+
   async getVisitorActivityByLeadId(leadId: number): Promise<VisitorActivity[]> {
     return db
       .select()
@@ -2782,7 +2823,8 @@ export class DatabaseStorage implements IStorage {
     for (const c of filteredCrm) {
       inc(ageMap, c.ageRange?.trim() ?? "");
       inc(genderMap, c.gender?.trim() ?? "");
-      inc(occupationMap, c.jobTitle?.trim() ?? "");
+      const occ = c.occupation?.trim() || c.jobTitle?.trim() || "";
+      inc(occupationMap, occ);
       inc(companySizeMap, c.companySize?.trim() ?? "");
       inc(industryMap, c.industry?.trim() ?? "");
     }
@@ -2795,7 +2837,16 @@ export class DatabaseStorage implements IStorage {
         const companySize = (c as Contact & { companySize?: string | null }).companySize?.trim();
         return !!(age || gender || occupation || companySize);
       }).length +
-      filteredCrm.filter((c) => !!(c.ageRange || c.gender || c.jobTitle || c.companySize || c.industry)).length;
+      filteredCrm.filter((c) => {
+        const occ = c.occupation?.trim() || c.jobTitle?.trim();
+        return !!(
+          c.ageRange?.trim() ||
+          c.gender?.trim() ||
+          occ ||
+          c.companySize?.trim() ||
+          c.industry?.trim()
+        );
+      }).length;
 
     const byAgeRange = [...ageMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
     const byGender = [...genderMap.entries()].filter(([v]) => v).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);

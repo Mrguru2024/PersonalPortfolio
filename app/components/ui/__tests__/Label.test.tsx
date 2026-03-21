@@ -21,6 +21,6 @@ describe('Label', () => {
 
   it('applies custom className', () => {
     const { container } = render(<Label className="custom-label">Label</Label>);
-    expect(container.firstChild).toHaveClass('custom-label');
+    expect(container.firstElementChild).toHaveClass('custom-label');
   });
 });

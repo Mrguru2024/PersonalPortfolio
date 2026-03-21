@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ParticleAnimation from "@/components/ParticleAnimation";
-import { AUDIT_PATH, SEE_GROWTH_SYSTEMS } from "@/lib/funnelCtas";
+import { AUDIT_PATH, FREE_TRIAL_PATH, PRIMARY_FREE_LEAD_CTA, SEE_GROWTH_SYSTEMS } from "@/lib/funnelCtas";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { HeroMotion, MagneticButton } from "@/components/motion";
 import { heroChoreography, motionTokens } from "@/lib/motion";
@@ -18,7 +18,7 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative w-full min-w-0 max-w-full min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex items-center justify-center overflow-hidden"
+      className="relative w-full min-w-0 max-w-full min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex items-center justify-center overflow-x-hidden overflow-y-visible"
       aria-label="Hero"
     >
       {/* Particle background only — no video here to avoid visual collision */}
@@ -85,7 +85,7 @@ export default function HeroSection() {
             subline="Ascendra Technologies works with design and branding partners to help businesses improve how they show up online and turn more visitors into real opportunities."
             actions={
               <>
-                <MagneticButton className="w-full sm:w-auto">
+                <MagneticButton className="w-full sm:w-auto shrink-0">
                   <Button
                     asChild
                     size="lg"
@@ -101,7 +101,25 @@ export default function HeroSection() {
                   whileHover={reducedMotion ? undefined : { y: -2 }}
                   whileTap={reducedMotion ? undefined : { scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="block w-full sm:w-auto"
+                  className="flex w-full sm:w-auto shrink-0 justify-center"
+                >
+                  <Button
+                    asChild
+                    variant="secondary"
+                    size="lg"
+                    className="min-h-[48px] w-full sm:w-auto gap-2 shadow-sm"
+                  >
+                    <Link href={FREE_TRIAL_PATH}>
+                      {PRIMARY_FREE_LEAD_CTA}
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </Link>
+                  </Button>
+                </motion.span>
+                <motion.span
+                  whileHover={reducedMotion ? undefined : { y: -2 }}
+                  whileTap={reducedMotion ? undefined : { scale: 0.98 }}
+                  transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="flex w-full sm:w-auto shrink-0 justify-center"
                 >
                   <Button
                     asChild

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { magnetic } from "@/lib/motion";
@@ -20,11 +20,17 @@ export function MagneticButton({
 }: Readonly<MagneticButtonProps>) {
   const ref = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  /** Defer motion until after mount so SSR matches hydration (same pattern as SectionReveal). */
+  const [motionReady, setMotionReady] = useState(false);
   const reduced = useReducedMotion();
+
+  useEffect(() => {
+    setMotionReady(true);
+  }, []);
 
   const handleMove = useCallback(
     (e: React.MouseEvent) => {
-      if (reduced) return;
+      if (!motionReady || reduced) return;
       const el = ref.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -36,23 +42,22 @@ export function MagneticButton({
       const pullY = Math.max(-1, Math.min(1, dy)) * magnetic.maxPull;
       setOffset({ x: pullX, y: pullY });
     },
-    [reduced]
+    [reduced, motionReady]
   );
 
   const handleLeave = useCallback(() => {
     setOffset({ x: 0, y: 0 });
   }, []);
 
-  if (reduced) {
-    return <span className={className}>{children}</span>;
-  }
+  /** Same outer node on server and first client paint — avoids span vs motion.div hydration mismatch. */
+  const magneticOn = motionReady && !reduced;
 
   return (
     <motion.div
       ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{ x: offset.x, y: offset.y }}
+      onMouseMove={magneticOn ? handleMove : undefined}
+      onMouseLeave={magneticOn ? handleLeave : undefined}
+      style={{ x: magneticOn ? offset.x : 0, y: magneticOn ? offset.y : 0 }}
       transition={{
         type: "spring",
         stiffness: magnetic.stiffness,
@@ -63,14 +68,9 @@ export function MagneticButton({
       {asChild ? (
         children
       ) : (
-        <motion.span
-          whileHover={{ y: -2 }}
-          whileTap={{ y: 0, scale: 0.98 }}
-          transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-          className="inline-block"
-        >
+        <span className="inline-block transition-transform duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98]">
           {children}
-        </motion.span>
+        </span>
       )}
     </motion.div>
   );

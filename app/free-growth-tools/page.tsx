@@ -7,7 +7,14 @@ import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
-import { STARTUP_GROWTH_KIT_PATH, STARTUP_WEBSITE_SCORE_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
+import {
+  STARTUP_GROWTH_KIT_PATH,
+  STARTUP_WEBSITE_SCORE_PATH,
+  GROWTH_DIAGNOSIS_ENGINE_PATH,
+  DIGITAL_GROWTH_AUDIT_PATH,
+} from "@/lib/funnelCtas";
+import { FreeLeadPrioritySection } from "@/components/conversion/FreeLeadPrioritySection";
+import { FreeToolsQualifiedLeadCard } from "@/components/conversion/FreeToolsQualifiedLeadCard";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { MemberFreeDownloads } from "@/components/MemberFreeDownloads";
@@ -15,7 +22,7 @@ import { MemberFreeDownloads } from "@/components/MemberFreeDownloads";
 export const metadata: Metadata = {
   title: "Free growth tools | Ascendra Technologies",
   description:
-    "Free tools to help you see where your business stands: growth audit, competitor snapshot, homepage blueprint, and more. One coordinated ecosystem—brand, web, and marketing.",
+    "Free tools with CRM-qualified follow-up: share your goal and timeline, then use diagnosis, calculators, blueprints, and more. Brand, web, and marketing in one ecosystem.",
 };
 
 const LEAD_MAGNETS = [
@@ -101,13 +108,18 @@ const LEAD_MAGNETS = [
   },
 ];
 
+/** Cards already featured in {@link FREE_LEAD_OFFERS_IN_ORDER} — keep them only in the priority strip. */
+const MORE_LEAD_MAGNETS = LEAD_MAGNETS.filter(
+  (m) => m.href !== GROWTH_DIAGNOSIS_ENGINE_PATH && m.href !== DIGITAL_GROWTH_AUDIT_PATH,
+);
+
 export default function FreeGrowthToolsPage() {
   return (
     <>
       <TrackPageView path="/free-growth-tools" />
       <PageSEO
         title="Free growth tools | Ascendra Technologies"
-        description="Free tools to help you see where your business stands: growth audit, competitor snapshot, homepage blueprint, and more."
+        description="Free tools with a short qualification for qualified CRM follow-up—then diagnosis, calculators, blueprints, and more."
         canonicalPath="/free-growth-tools"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
@@ -117,9 +129,16 @@ export default function FreeGrowthToolsPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Free growth tools
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
                 Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
               </p>
+              <div className="max-w-4xl mx-auto mb-10 sm:mb-12 space-y-6">
+                <FreeToolsQualifiedLeadCard />
+                <FreeLeadPrioritySection
+                  toolkitHashOnThisPage
+                  pageVisited="/free-growth-tools"
+                />
+              </div>
               {/* Hero visual: contained, professional focal point */}
               <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
                 <Image
@@ -148,8 +167,18 @@ export default function FreeGrowthToolsPage() {
               />
             </section>
 
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {LEAD_MAGNETS.map((magnet) => {
+            <section
+              id="all-tools"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 scroll-mt-24"
+              aria-label="More free tools"
+            >
+              <h2 className="col-span-full text-lg font-semibold text-foreground mb-2">
+                More free tools
+              </h2>
+              <p className="col-span-full text-sm text-muted-foreground mb-4">
+                Calculators, blueprints, startup resources, and other extras beyond the four-step path above.
+              </p>
+              {MORE_LEAD_MAGNETS.map((magnet) => {
                 const Icon = magnet.icon;
                 return (
                   <Card key={magnet.id} className="border-border bg-card h-full flex flex-col">
@@ -196,7 +225,15 @@ export default function FreeGrowthToolsPage() {
 
             <section className="text-center rounded-xl border border-border bg-card p-5 sm:p-6">
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-                Not sure which tool fits? Start with the <Link href="/digital-growth-audit" className="font-medium text-primary hover:underline">Digital Growth Audit</Link>—we'll help you see your best next move.
+                Not sure where to start? Use the{" "}
+                <Link href="#all-tools" className="font-medium text-primary hover:underline">
+                  priority order at the top
+                </Link>
+                —free trial first (call + audit), then audit, diagnosis, and toolkit for extra depth. Or go straight to the{" "}
+                <Link href="/digital-growth-audit" className="font-medium text-primary hover:underline">
+                  Digital Growth Audit
+                </Link>
+                .
               </p>
               <Button asChild variant="outline" className="mt-4 min-h-[44px]">
                 <Link href="/contact">Book a free call</Link>

@@ -7,6 +7,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
+/** Hostnames allowed for Server Actions CSRF origin checks (production hardening). */
+function getServerActionAllowedOrigins() {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) return undefined;
+  try {
+    const { hostname } = new URL(raw);
+    if (!hostname || hostname === "localhost") return undefined;
+    return [hostname];
+  } catch {
+    return undefined;
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -21,6 +34,34 @@ const nextConfig = {
       { source: '/insights/:path*', destination: '/blog', permanent: true },
       { source: '/results', destination: '/diagnosis/results', permanent: true },
       { source: '/ecosystem-founders', destination: '/about?founders=1', permanent: true },
+    ];
+  },
+
+  // Production security headers for the Next.js surface (aligns with server/middleware/vercel-production.ts).
+  async headers() {
+    if (process.env.NODE_ENV !== 'production') {
+      return [];
+    }
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
     ];
   },
   
@@ -54,6 +95,9 @@ const nextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
+      ...(getServerActionAllowedOrigins()?.length
+        ? { allowedOrigins: getServerActionAllowedOrigins() }
+        : {}),
     },
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'framer-motion'],
   },

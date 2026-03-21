@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain } from "lucide-react";
+import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain, Inbox } from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
   { href: "/admin/growth-os/intelligence", label: "Intelligence", icon: Brain },
   { href: "/admin/growth-os/security", label: "Security & audit", icon: Shield },
   { href: "/admin/growth-os/shares", label: "Client shares", icon: FileKey },
@@ -26,6 +27,7 @@ export function GrowthOsSubnav() {
       {LINKS.map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href ||
+          (href === "/admin/lead-intake" && pathname.startsWith("/admin/lead-intake")) ||
           (href === "/admin/growth-os/intelligence" && pathname.startsWith("/admin/growth-os/intelligence")) ||
           (href.startsWith("/admin/growth-os/") && pathname.startsWith(href)) ||
           (href === "/admin/internal-audit" && pathname.startsWith("/admin/internal-audit")) ||
