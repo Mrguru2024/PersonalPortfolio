@@ -4,6 +4,15 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 **Format:** Each section is `## YYYY-MM-DD [time] — Title` then bullet points. Time is optional (e.g. `14:30` or `2:30 PM`). If omitted, the dashboard shows "—" for time.
 
+**Production sourcing:** Vercel builds a GitHub raw URL from `VERCEL_GIT_REPO_OWNER` + `VERCEL_GIT_REPO_SLUG` + `main` (or `DEVELOPMENT_UPDATES_GITHUB_REF`), or uses `DEVELOPMENT_UPDATES_RAW_URL` if set. See `.env.example` and `AGENTS.md`.
+
+---
+
+## 2026-03-21 — Development updates sourcing and Content Studio social adapters
+
+- Admin “Development updates” on production resolves `content/development-updates.md` from **main** via explicit `DEVELOPMENT_UPDATES_RAW_URL` or automatic URL from Vercel Git env vars.
+- Content Studio calendar publishing: adapters for LinkedIn (UGC API), X (API v2), webhook hub (Buffer/Make-style JSON POST), and Brevo notify-only; same publish logs and calendar rows as Facebook/manual.
+
 ---
 
 ## 2025-03-15 — CRM Stage 3 (AI guidance) and Stage 4 (workflow automation)

@@ -731,10 +731,14 @@ export default function AdminDashboardPage() {
               </CardTitle>
               <CardDescription className="mt-0.5">
                 Features and fixes shipped to production. In production, the list loads from{" "}
-                <code className="text-xs bg-muted px-1 rounded">development-updates.md</code> on your GitHub{" "}
-                <code className="text-xs bg-muted px-1 rounded">main</code> branch (or whichever branch is set in{" "}
-                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>). Edit that file on
-                that branch and push; this panel refreshes automatically.
+                <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> on GitHub{" "}
+                <code className="text-xs bg-muted px-1 rounded">main</code> by default (
+                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On Vercel, the raw
+                URL is built from{" "}
+                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_OWNER</code> /{" "}
+                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
+                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the markdown on{" "}
+                <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes automatically.
               </CardDescription>
             </div>
             <Button

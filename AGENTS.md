@@ -40,6 +40,12 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 - **Optional services** (Brevo email, OpenAI, Stripe, GitHub OAuth) degrade gracefully — the app runs fine without their API keys.
 - **Vercel crons** (`vercel.json`): `/api/cron/growth-os` (daily) and `/api/cron/content-studio-publish` (every 10 minutes) for Content Studio scheduled social posts. Both require `CRON_SECRET` in production. Facebook Page publishing uses `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` (see `.env.example`).
 
+### Development updates (admin dashboard digest)
+
+- Production loads `content/development-updates.md` from GitHub. **Branch defaults to `main`** (`DEVELOPMENT_UPDATES_GITHUB_REF`).
+- **URL resolution:** set `DEVELOPMENT_UPDATES_RAW_URL` explicitly, or rely on Vercel’s `VERCEL_GIT_REPO_OWNER` + `VERCEL_GIT_REPO_SLUG` to build the raw URL (no paste needed for standard GitHub deploys). Private repos need `DEVELOPMENT_UPDATES_GITHUB_TOKEN` or `GITHUB_TOKEN` for the Contents API fallback.
+- **Process:** when merging meaningful product changes to `main`, add a dated `## YYYY-MM-DD — Title` section to `content/development-updates.md` in the same commit or PR when practical so the digest stays truthful. Local dev reads the file from disk.
+
 ### Standard commands
 
 See `package.json` scripts and `README.md` for:

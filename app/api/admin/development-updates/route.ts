@@ -36,12 +36,39 @@ const GITHUB_USER_AGENT =
   "AscendraPortfolio-Admin/1.0 (development-updates; +https://github.com/Mrguru2024/PersonalPortfolio)";
 
 /**
- * Public raw URL for the branch to read (typically main).
+ * Fallback when no explicit URL and no Vercel repo env (keep in sync with default remote).
  * e.g. https://raw.githubusercontent.com/OWNER/REPO/main/content/development-updates.md
  */
-const GITHUB_RAW_URL =
-  process.env.DEVELOPMENT_UPDATES_RAW_URL ||
+const FALLBACK_DEVELOPMENT_UPDATES_RAW_URL =
   "https://raw.githubusercontent.com/Mrguru2024/PersonalPortfolio/main/content/development-updates.md";
+
+/**
+ * Resolved raw URL for `content/development-updates.md` on the branch that should drive production (usually `main`).
+ *
+ * Priority: `DEVELOPMENT_UPDATES_RAW_URL` → build from `VERCEL_GIT_REPO_OWNER` + `VERCEL_GIT_REPO_SLUG` + ref/path → repo fallback.
+ * On Vercel, owner/slug are set automatically so production tracks `main` without pasting a URL (override ref with `DEVELOPMENT_UPDATES_GITHUB_REF`).
+ */
+function getDevelopmentUpdatesRawUrl(): string {
+  const explicit = process.env.DEVELOPMENT_UPDATES_RAW_URL?.trim();
+  if (explicit) return explicit;
+
+  const owner = process.env.VERCEL_GIT_REPO_OWNER?.trim();
+  const slug = process.env.VERCEL_GIT_REPO_SLUG?.trim();
+  const path =
+    process.env.DEVELOPMENT_UPDATES_GITHUB_PATH?.trim() || "content/development-updates.md";
+  const ref = process.env.DEVELOPMENT_UPDATES_GITHUB_REF?.trim() || "main";
+  if (owner && slug) {
+    const pathSeg = path
+      .split("/")
+      .filter(Boolean)
+      .map((p) => encodeURIComponent(p))
+      .join("/");
+    const refSeg = encodeURIComponent(ref);
+    return `https://raw.githubusercontent.com/${owner}/${slug}/${refSeg}/${pathSeg}`;
+  }
+
+  return FALLBACK_DEVELOPMENT_UPDATES_RAW_URL;
+}
 
 /** Optional: owner/repo when raw URL is not parseable (used with GitHub API fallback). */
 const GITHUB_REPO_OVERRIDE = process.env.DEVELOPMENT_UPDATES_GITHUB_REPO?.trim();
@@ -129,7 +156,7 @@ function resolveGithubRepoAndPath(): { owner: string; repo: string; path: string
     if (!m) return null;
     return { owner: m[1]!, repo: m[2]!, path: GITHUB_PATH_OVERRIDE };
   }
-  const parsed = parseGithubRawUrl(GITHUB_RAW_URL);
+  const parsed = parseGithubRawUrl(getDevelopmentUpdatesRawUrl());
   if (!parsed) return null;
   return { owner: parsed.owner, repo: parsed.repo, path: parsed.path };
 }
@@ -140,7 +167,7 @@ function resolveGithubCoordinates(): { owner: string; repo: string; ref: string;
     if (!m) return null;
     return { owner: m[1]!, repo: m[2]!, ref: GITHUB_REF_OVERRIDE, path: GITHUB_PATH_OVERRIDE };
   }
-  return parseGithubRawUrl(GITHUB_RAW_URL);
+  return parseGithubRawUrl(getDevelopmentUpdatesRawUrl());
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
@@ -155,7 +182,8 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
 
 async function fetchRawFromGitHub(): Promise<string | null> {
   try {
-    const url = GITHUB_RAW_URL + (GITHUB_RAW_URL.includes("?") ? "&" : "?") + "t=" + Date.now();
+    const base = getDevelopmentUpdatesRawUrl();
+    const url = base + (base.includes("?") ? "&" : "?") + "t=" + Date.now();
     const res = await fetchWithTimeout(url, {
       headers: {
         Accept: "text/plain",

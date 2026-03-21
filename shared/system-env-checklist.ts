@@ -299,6 +299,19 @@ export const SYSTEM_ENV_CHECKLIST: readonly SystemEnvChecklistEntry[] = [
     howToGet: "Optional override; see shared/super-admin-email.ts default.",
   },
   {
+    key: "DEVELOPMENT_UPDATES_RAW_URL",
+    tier: "recommended",
+    summary: "GitHub raw URL for admin “Development updates” digest (content/development-updates.md on main).",
+    howToGet:
+      "Optional on Vercel: owner/slug env vars build the URL automatically. Otherwise: raw.githubusercontent.com/OWNER/REPO/main/content/development-updates.md",
+  },
+  {
+    key: "DEVELOPMENT_UPDATES_GITHUB_REF",
+    tier: "optional",
+    summary: "Git ref in the auto-built raw URL (default main). Use if your production branch is not main.",
+    howToGet: "Set to your default branch name if it differs from main.",
+  },
+  {
     key: "DEVELOPMENT_UPDATES_GITHUB_TOKEN",
     tier: "optional",
     summary: "Token for fetching private repo markdown for dev updates (or uses GITHUB_TOKEN).",
