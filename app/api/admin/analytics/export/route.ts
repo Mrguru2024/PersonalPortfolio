@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     const utmSource = searchParams.get("utm_source") ?? searchParams.get("utmSource") ?? undefined;
     const utmMedium = searchParams.get("utm_medium") ?? searchParams.get("utmMedium") ?? undefined;
     const utmCampaign = searchParams.get("utm_campaign") ?? searchParams.get("utmCampaign") ?? undefined;
+    const experimentKey = searchParams.get("experiment_key") ?? searchParams.get("experimentKey") ?? undefined;
+    const experimentVariant =
+      searchParams.get("experiment_variant") ?? searchParams.get("experimentVariant") ?? undefined;
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? Math.min(10000, Math.max(1, Number.parseInt(limitParam, 10) || 2000)) : 2000;
 
@@ -47,6 +50,8 @@ export async function GET(req: NextRequest) {
       utmSource,
       utmMedium,
       utmCampaign,
+      experimentKey,
+      experimentVariant,
       limit,
       offset: 0,
     });
@@ -66,6 +71,8 @@ export async function GET(req: NextRequest) {
       utm_source: (e.metadata as Record<string, unknown> | null)?.utm_source ?? "",
       utm_medium: (e.metadata as Record<string, unknown> | null)?.utm_medium ?? "",
       utm_campaign: (e.metadata as Record<string, unknown> | null)?.utm_campaign ?? "",
+      experiment_key: (e.metadata as Record<string, unknown> | null)?.experiment_key ?? "",
+      experiment_variant: (e.metadata as Record<string, unknown> | null)?.experiment_variant ?? "",
       createdAt: e.createdAt instanceof Date ? e.createdAt.toISOString() : String(e.createdAt),
     }));
 
@@ -78,7 +85,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const headers = ["id", "visitorId", "sessionId", "pageVisited", "eventType", "referrer", "deviceType", "country", "region", "city", "timezone", "utm_source", "utm_medium", "utm_campaign", "createdAt"];
+    const headers = ["id", "visitorId", "sessionId", "pageVisited", "eventType", "referrer", "deviceType", "country", "region", "city", "timezone", "utm_source", "utm_medium", "utm_campaign", "experiment_key", "experiment_variant", "createdAt"];
     const escapeCsv = (v: string | number) => {
       const s = String(v);
       if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;

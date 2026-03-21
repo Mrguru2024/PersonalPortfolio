@@ -76,7 +76,7 @@ const SNAPSHOT_SECTIONS = [
 
 export default function CompetitorPositionSnapshotPage() {
   const [submitted, setSubmitted] = useState(false);
-  const { track } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
   const formStartedRef = useRef(false);
 
   useEffect(() => {
@@ -101,10 +101,16 @@ export default function CompetitorPositionSnapshotPage() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (values: FormValues) => {
+      const attribution = getAttributionSnapshot();
       const res = await fetch("/api/competitor-snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          ...attribution.current,
+          first_touch: attribution.firstTouch,
+          last_touch: attribution.lastTouch,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

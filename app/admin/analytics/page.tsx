@@ -229,6 +229,8 @@ export default function AdminAnalyticsPage() {
   const [reportRegion, setReportRegion] = useState<string>("");
   const [reportCity, setReportCity] = useState<string>("");
   const [reportTimezone, setReportTimezone] = useState<string>("");
+  const [reportExperimentKey, setReportExperimentKey] = useState<string>("");
+  const [reportExperimentVariant, setReportExperimentVariant] = useState<string>("");
   const [reportApplied, setReportApplied] = useState(false);
 
   useEffect(() => {
@@ -327,10 +329,12 @@ export default function AdminAnalyticsPage() {
   if (reportUtmSource) reportParams.set("utm_source", reportUtmSource);
   if (reportUtmMedium) reportParams.set("utm_medium", reportUtmMedium);
   if (reportUtmCampaign) reportParams.set("utm_campaign", reportUtmCampaign);
+  if (reportExperimentKey) reportParams.set("experiment_key", reportExperimentKey);
+  if (reportExperimentVariant) reportParams.set("experiment_variant", reportExperimentVariant);
   reportParams.set("limit", "500");
 
-  const { data: reportData, isLoading: reportLoading, isFetching: reportFetching } = useQuery<{ summary: { total: number; returned: number; filtersApplied: Record<string, string | null> }; events: { id: number; visitorId: string; pageVisited: string | null; eventType: string; deviceType: string | null; country: string | null; region: string | null; referrer: string | null; createdAt: string }[] }>({
-    queryKey: ["/api/admin/analytics/reports", reportSince, reportUntil, reportEventType, reportPage, reportDevice, reportCountry, reportRegion, reportCity, reportTimezone, reportUtmSource, reportUtmMedium, reportUtmCampaign],
+  const { data: reportData, isLoading: reportLoading, isFetching: reportFetching } = useQuery<{ summary: { total: number; returned: number; filtersApplied: Record<string, string | null>; experimentBreakdown: Record<string, number> }; events: { id: number; visitorId: string; pageVisited: string | null; eventType: string; deviceType: string | null; country: string | null; region: string | null; referrer: string | null; metadata?: Record<string, unknown> | null; createdAt: string }[] }>({
+    queryKey: ["/api/admin/analytics/reports", reportSince, reportUntil, reportEventType, reportPage, reportDevice, reportCountry, reportRegion, reportCity, reportTimezone, reportUtmSource, reportUtmMedium, reportUtmCampaign, reportExperimentKey, reportExperimentVariant],
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/admin/analytics/reports?${reportParams.toString()}`);
       if (!res.ok) throw new Error("Failed to load report");
@@ -1482,6 +1486,14 @@ export default function AdminAnalyticsPage() {
                       <Label className="text-xs">UTM Campaign</Label>
                       <Input placeholder="e.g. spring2024" value={reportUtmCampaign} onChange={(e) => setReportUtmCampaign(e.target.value)} className="mt-1" />
                     </div>
+                    <div>
+                      <Label className="text-xs">Experiment key</Label>
+                      <Input placeholder="e.g. strategy_call_messaging_v1" value={reportExperimentKey} onChange={(e) => setReportExperimentKey(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Experiment variant</Label>
+                      <Input placeholder="e.g. control" value={reportExperimentVariant} onChange={(e) => setReportExperimentVariant(e.target.value)} className="mt-1" />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2 items-center">
                     <Button size="sm" onClick={() => setReportApplied(true)} disabled={reportFetching}>
@@ -1509,6 +1521,14 @@ export default function AdminAnalyticsPage() {
                         <p className="text-sm text-muted-foreground">
                           Total matching: <strong>{reportData.summary.total}</strong> · Showing: <strong>{reportData.summary.returned}</strong>
                         </p>
+                        {Object.keys(reportData.summary.experimentBreakdown ?? {}).length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Experiment buckets:{" "}
+                            {Object.entries(reportData.summary.experimentBreakdown)
+                              .map(([bucket, count]) => `${bucket} (${count})`)
+                              .join(" · ")}
+                          </p>
+                        )}
                         <div className="overflow-x-auto rounded-md border">
                           <table className="w-full text-sm">
                             <thead>
@@ -1516,6 +1536,7 @@ export default function AdminAnalyticsPage() {
                                 <th className="text-left py-2 px-2 font-medium">Time</th>
                                 <th className="text-left py-2 px-2 font-medium">Visitor</th>
                                 <th className="text-left py-2 px-2 font-medium">Event</th>
+                                <th className="text-left py-2 px-2 font-medium">Experiment</th>
                                 <th className="text-left py-2 px-2 font-medium">Page</th>
                                 <th className="text-left py-2 px-2 font-medium">Device</th>
                                 <th className="text-left py-2 px-2 font-medium">Country</th>
@@ -1528,6 +1549,11 @@ export default function AdminAnalyticsPage() {
                                   <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">{format(new Date(e.createdAt), "MMM d, HH:mm")}</td>
                                   <td className="py-1 px-2 font-mono text-xs truncate max-w-[100px]" title={e.visitorId}>{e.visitorId.slice(0, 10)}…</td>
                                   <td className="py-1 px-2">{e.eventType}</td>
+                                  <td className="py-1 px-2 text-xs text-muted-foreground whitespace-nowrap">
+                                    {typeof e.metadata?.experiment_key === "string"
+                                      ? `${e.metadata.experiment_key}:${typeof e.metadata?.experiment_variant === "string" ? e.metadata.experiment_variant : "control"}`
+                                      : "—"}
+                                  </td>
                                   <td className="py-1 px-2 truncate max-w-[140px]" title={e.pageVisited ?? ""}>{e.pageVisited ?? "—"}</td>
                                   <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
                                   <td className="py-1 px-2">{e.country ?? "—"}</td>

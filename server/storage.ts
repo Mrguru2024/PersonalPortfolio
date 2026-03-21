@@ -368,6 +368,8 @@ export interface IStorage {
     utmSource?: string;
     utmMedium?: string;
     utmCampaign?: string;
+    experimentKey?: string;
+    experimentVariant?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ events: VisitorActivity[]; total: number }>;
@@ -2824,6 +2826,8 @@ export class DatabaseStorage implements IStorage {
     utmSource?: string;
     utmMedium?: string;
     utmCampaign?: string;
+    experimentKey?: string;
+    experimentVariant?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ events: VisitorActivity[]; total: number }> {
@@ -2841,6 +2845,8 @@ export class DatabaseStorage implements IStorage {
     if (filters.utmSource) conditions.push(sql`${visitorActivity.metadata}->>'utm_source' = ${filters.utmSource}`);
     if (filters.utmMedium) conditions.push(sql`${visitorActivity.metadata}->>'utm_medium' = ${filters.utmMedium}`);
     if (filters.utmCampaign) conditions.push(sql`${visitorActivity.metadata}->>'utm_campaign' = ${filters.utmCampaign}`);
+    if (filters.experimentKey) conditions.push(sql`${visitorActivity.metadata}->>'experiment_key' = ${filters.experimentKey}`);
+    if (filters.experimentVariant) conditions.push(sql`${visitorActivity.metadata}->>'experiment_variant' = ${filters.experimentVariant}`);
 
     const whereClause = conditions.length ? and(...conditions) : undefined;
     const limit = Math.min(5000, Math.max(1, filters.limit ?? 500));

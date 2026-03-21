@@ -9,6 +9,12 @@ import type { AdminTourStep } from "@/lib/adminTourConfig";
 
 const OVERLAY_Z = 9999;
 const PADDING = 8;
+const MOBILE_BREAKPOINT = 768;
+const TOUR_CARD_MAX_WIDTH = 400;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 interface AdminGuideTourProps {
   steps: AdminTourStep[];
@@ -29,6 +35,7 @@ export function AdminGuideTour({
 }: AdminGuideTourProps) {
   const step = steps[currentStep];
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   const updateTarget = useCallback(() => {
     if (!step || step.target === "center") {
@@ -52,6 +59,19 @@ export function AdminGuideTour({
   }, [step]);
 
   useEffect(() => {
+    const updateViewport = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
     updateTarget();
     const resize = () => updateTarget();
     window.addEventListener("resize", resize);
@@ -62,10 +82,70 @@ export function AdminGuideTour({
     };
   }, [updateTarget]);
 
+  const viewportWidth = viewport.width || (typeof window !== "undefined" ? window.innerWidth : 1024);
+  const viewportHeight = viewport.height || (typeof window !== "undefined" ? window.innerHeight : 768);
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+
+  useEffect(() => {
+    if (!isMobile || !step || step.target === "center") return;
+    const el = document.querySelector(step.target);
+    if (el && el instanceof HTMLElement) {
+      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      const timer = window.setTimeout(() => updateTarget(), 220);
+      return () => window.clearTimeout(timer);
+    }
+  }, [isMobile, step, updateTarget]);
+
   if (!step) return null;
 
   const isFirst = currentStep === 0;
   const isLast = currentStep === steps.length - 1;
+  const cardHorizontalPadding = 16;
+  const cardWidth = Math.min(
+    Math.max(viewportWidth - cardHorizontalPadding * 2, 280),
+    TOUR_CARD_MAX_WIDTH
+  );
+
+  const cardStyle =
+    targetRect && isMobile
+      ? {
+          left: cardHorizontalPadding,
+          right: cardHorizontalPadding,
+          top: "auto",
+          bottom: `calc(${cardHorizontalPadding}px + env(safe-area-inset-bottom, 0px))`,
+        }
+      : targetRect
+        ? (() => {
+            const availableRight = viewportWidth - (targetRect.left + targetRect.width) - cardHorizontalPadding;
+            const availableLeft = targetRect.left - cardHorizontalPadding;
+            let left = targetRect.left + targetRect.width + cardHorizontalPadding;
+
+            if (availableRight < cardWidth && availableLeft >= cardWidth) {
+              left = targetRect.left - cardWidth - cardHorizontalPadding;
+            }
+
+            if (availableRight < cardWidth && availableLeft < cardWidth) {
+              left = (viewportWidth - cardWidth) / 2;
+            }
+
+            return {
+              left: clamp(
+                left,
+                cardHorizontalPadding,
+                Math.max(cardHorizontalPadding, viewportWidth - cardWidth - cardHorizontalPadding)
+              ),
+              top: clamp(
+                targetRect.top,
+                cardHorizontalPadding,
+                Math.max(cardHorizontalPadding, viewportHeight - 360)
+              ),
+            };
+          })()
+        : {
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          };
 
   const overlay = (
     <div
@@ -113,21 +193,8 @@ export function AdminGuideTour({
 
       {/* Card: position near target or center */}
       <div
-        className="absolute z-[10000] w-[min(calc(100vw-2rem),400px)] max-h-[85vh] overflow-auto"
-        style={
-          targetRect
-            ? {
-                left: targetRect.left + targetRect.width + 16 <= window.innerWidth - 320
-                  ? targetRect.left + targetRect.width + 16
-                  : targetRect.left - 320 - 16,
-                top: Math.max(16, Math.min(targetRect.top, window.innerHeight - 320)),
-              }
-            : {
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-              }
-        }
+        className="absolute z-[10000] w-[min(calc(100vw-2rem),400px)] max-h-[70vh] overflow-auto sm:max-h-[85vh]"
+        style={cardStyle}
       >
         <Card className="shadow-xl border-2">
           <CardHeader className="pb-2">
@@ -154,26 +221,26 @@ export function AdminGuideTour({
               {step.description}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-between gap-2 pt-2">
-            <div className="flex gap-2">
+          <CardContent className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
               {!isFirst && (
-                <Button variant="outline" size="sm" onClick={onBack}>
+                <Button variant="outline" size="sm" className="min-h-[40px] sm:min-h-0" onClick={onBack}>
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back
                 </Button>
               )}
               {isLast ? (
-                <Button size="sm" onClick={onEnd}>
+                <Button size="sm" className="min-h-[40px] sm:min-h-0" onClick={onEnd}>
                   Done
                 </Button>
               ) : (
-                <Button size="sm" onClick={onNext}>
+                <Button size="sm" className="min-h-[40px] sm:min-h-0" onClick={onNext}>
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               )}
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="self-end text-xs text-muted-foreground sm:self-auto">
               {currentStep + 1} of {steps.length}
             </span>
           </CardContent>

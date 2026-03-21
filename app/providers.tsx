@@ -9,22 +9,25 @@ import { ViewModeProvider } from "@/lib/view-mode-context";
 import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
 import PwaRegistration from "@/components/PwaRegistration";
 import { FunnelProvider } from "@/lib/funnel-store";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
-        <ViewModeProvider>
-          <AuthProvider>
-            <FunnelProvider>
-            <PwaRegistration />
-            {children}
-            <Toaster />
-            <SuperAdminErrorReporter />
-            </FunnelProvider>
-          </AuthProvider>
-        </ViewModeProvider>
-      </ThemeProvider>
+      <PostHogProvider>
+        <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
+          <ViewModeProvider>
+            <AuthProvider>
+              <FunnelProvider>
+                <PwaRegistration />
+                {children}
+                <Toaster />
+                <SuperAdminErrorReporter />
+              </FunnelProvider>
+            </AuthProvider>
+          </ViewModeProvider>
+        </ThemeProvider>
+      </PostHogProvider>
     </QueryClientProvider>
   );
 }

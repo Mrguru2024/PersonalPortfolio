@@ -25,6 +25,9 @@ export async function GET(req: NextRequest) {
     const utmSource = searchParams.get("utm_source") ?? searchParams.get("utmSource") ?? undefined;
     const utmMedium = searchParams.get("utm_medium") ?? searchParams.get("utmMedium") ?? undefined;
     const utmCampaign = searchParams.get("utm_campaign") ?? searchParams.get("utmCampaign") ?? undefined;
+    const experimentKey = searchParams.get("experiment_key") ?? searchParams.get("experimentKey") ?? undefined;
+    const experimentVariant =
+      searchParams.get("experiment_variant") ?? searchParams.get("experimentVariant") ?? undefined;
     const limitParam = searchParams.get("limit");
     const offsetParam = searchParams.get("offset");
 
@@ -40,15 +43,31 @@ export async function GET(req: NextRequest) {
       page,
       deviceType,
       country,
+      region,
+      city,
+      timezone,
       referrer,
       utmSource,
       utmMedium,
       utmCampaign,
+      experimentKey,
+      experimentVariant,
       limit,
       offset,
     };
 
     const { events, total } = await storage.getVisitorActivityFiltered(filters);
+    const experimentBreakdown = events.reduce<Record<string, number>>((acc, event) => {
+      const metadata = (event.metadata ?? {}) as Record<string, unknown>;
+      const key =
+        typeof metadata.experiment_key === "string" ? metadata.experiment_key : undefined;
+      const variant =
+        typeof metadata.experiment_variant === "string" ? metadata.experiment_variant : undefined;
+      if (!key || !variant) return acc;
+      const bucket = `${key}:${variant}`;
+      acc[bucket] = (acc[bucket] ?? 0) + 1;
+      return acc;
+    }, {});
 
     const summary = {
       total,
@@ -67,7 +86,10 @@ export async function GET(req: NextRequest) {
         utm_source: utmSource ?? null,
         utm_medium: utmMedium ?? null,
         utm_campaign: utmCampaign ?? null,
+        experiment_key: experimentKey ?? null,
+        experiment_variant: experimentVariant ?? null,
       },
+      experimentBreakdown,
     };
 
     const eventsSerialized = events.map((e) => ({

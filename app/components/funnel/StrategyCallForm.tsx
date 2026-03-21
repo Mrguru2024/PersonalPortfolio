@@ -37,6 +37,7 @@ import {
   OCCUPATION_OPTIONS,
   TIMELINE_OPTIONS,
 } from "@/lib/funnel-content";
+import { useExperimentVariant } from "@/lib/experiments/useExperimentVariant";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -61,10 +62,18 @@ type StrategyCallValues = z.infer<typeof strategyCallSchema>;
 
 export function StrategyCallForm() {
   const [submitted, setSubmitted] = useState(false);
-  const { track } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
   const pathname = usePathname();
   const pageVisited = pathname || "/contact";
   const formStartedRef = useRef(false);
+  const submitExperiment = useExperimentVariant("strategy_call_submit_cta_v1", {
+    pageVisited,
+  });
+  const submitCtaByVariant: Record<string, string> = {
+    control: "Book my free call",
+    book_now: "Book my strategy call now",
+    get_plan: "Get my custom call plan",
+  };
 
   const form = useForm<StrategyCallValues>({
     resolver: zodResolver(strategyCallSchema),
@@ -87,6 +96,7 @@ export function StrategyCallForm() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (values: StrategyCallValues) => {
+      const attribution = getAttributionSnapshot();
       const message = [
         `Primary goal: ${values.primaryGoal}`,
         values.websiteUrl ? `Website: ${values.websiteUrl}` : "",
@@ -113,6 +123,9 @@ export function StrategyCallForm() {
           gender: values.gender || undefined,
           occupation: values.occupation || undefined,
           companySize: values.companySize || undefined,
+          ...attribution.current,
+          first_touch: attribution.firstTouch,
+          last_touch: attribution.lastTouch,
         }),
       });
 
@@ -124,7 +137,15 @@ export function StrategyCallForm() {
       return res.json();
     },
     onSuccess: () => {
-      track("form_completed", { pageVisited, metadata: { form: "strategy_call" } });
+      track("form_completed", {
+        pageVisited,
+        metadata: {
+          form: "strategy_call",
+          experiment_key: submitExperiment.definition.key,
+          experiment_variant: submitExperiment.variant,
+        },
+      });
+      submitExperiment.trackConversion("contact_strategy_call_form_completed");
       setSubmitted(true);
       toast({
         title: "Request received",
@@ -436,7 +457,7 @@ export function StrategyCallForm() {
             </div>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
-              {isPending ? "Submitting..." : "Book my free call"}
+              {isPending ? "Submitting..." : (submitCtaByVariant[submitExperiment.variant] ?? submitCtaByVariant.control)}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>

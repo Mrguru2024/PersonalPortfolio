@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import { githubService } from "../services/githubService";
 import { emailService } from "../services/emailService";
+import { sendConversionSignals } from "../services/analytics/conversionRouterService";
 
 // Still import these for now as fallback until we populate the database
 import {
@@ -478,14 +479,54 @@ export const portfolioController = {
             utm_source: body.utm_source ?? null,
             utm_medium: body.utm_medium ?? null,
             utm_campaign: body.utm_campaign ?? null,
+            utm_term: body.utm_term ?? null,
+            utm_content: body.utm_content ?? null,
+            gclid: body.gclid ?? null,
+            fbclid: body.fbclid ?? null,
+            msclkid: body.msclkid ?? null,
+            ttclid: body.ttclid ?? null,
             referrer: body.referrer ?? null,
             landing_page: body.landing_page ?? body.landingPage ?? null,
             visitorId: body.visitorId ?? null,
+            sessionId: body.sessionId ?? null,
+          },
+          customFields: {
+            projectType: savedContact.projectType ?? null,
+            budget: savedContact.budget ?? null,
+            timeframe: savedContact.timeframe ?? null,
+            subject: savedContact.subject ?? null,
+            ...(body.mainNeed ? { mainNeed: body.mainNeed } : {}),
+            ...(body.businessStage ? { businessStage: body.businessStage } : {}),
           },
         });
       } catch (err) {
         console.warn("[Contact form] CRM lead ensure failed:", err);
       }
+
+      sendConversionSignals({
+        eventName: "lead_form_submitted",
+        visitorId: typeof body.visitorId === "string" ? body.visitorId : null,
+        email: savedContact.email,
+        phone: savedContact.phone,
+        sourceUrl:
+          (typeof body.url === "string" && body.url) ||
+          (typeof body.landing_page === "string" && body.landing_page) ||
+          (typeof body.landingPage === "string" && body.landingPage) ||
+          null,
+        userAgent: typeof req.headers["user-agent"] === "string" ? req.headers["user-agent"] : null,
+        ipAddress: typeof req.ip === "string" ? req.ip : null,
+        attribution: {
+          utm_source: body.utm_source ?? null,
+          utm_medium: body.utm_medium ?? null,
+          utm_campaign: body.utm_campaign ?? null,
+          utm_term: body.utm_term ?? null,
+          utm_content: body.utm_content ?? null,
+          gclid: body.gclid ?? null,
+          fbclid: body.fbclid ?? null,
+          msclkid: body.msclkid ?? null,
+          ttclid: body.ttclid ?? null,
+        },
+      }).catch(() => {});
 
       // Send email notification to admin
       const emailSent = isQuoteRequest

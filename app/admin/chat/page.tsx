@@ -231,7 +231,7 @@ export default function AdminChatPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/dashboard">

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFunnel } from "@/lib/funnel-store";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 
 const applySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -61,6 +62,7 @@ const BUDGET_OPTIONS = [
 export default function ApplyPage() {
   const router = useRouter();
   const { scores, answers } = useFunnel();
+  const { getAttributionSnapshot } = useVisitorTracking();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,6 +110,7 @@ export default function ApplyPage() {
     setError(null);
     setSubmitting(true);
     try {
+      const attribution = getAttributionSnapshot();
       const res = await fetch("/api/funnel/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,6 +118,11 @@ export default function ApplyPage() {
           answers,
           scores,
           form: data,
+          tracking: {
+            ...attribution.current,
+            first_touch: attribution.firstTouch,
+            last_touch: attribution.lastTouch,
+          },
         }),
       });
       const json = await res.json().catch(() => ({}));

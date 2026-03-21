@@ -3,6 +3,9 @@ import { db } from "@server/db";
 import { growthFunnelLeads } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
 import { RECOMMENDATION_LABELS } from "@/lib/scoring";
+import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
+import { extractRequestAttribution } from "@/lib/analytics/server-attribution";
+import { sendConversionSignals } from "@server/services/analytics/conversionRouterService";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +14,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const { answers, scores, form } = body;
+    const trackingPayload =
+      body && typeof body === "object" && body.tracking && typeof body.tracking === "object"
+        ? (body.tracking as Record<string, unknown>)
+        : {};
+    const { attribution, firstTouch } = extractRequestAttribution(req, trackingPayload);
 
     if (!scores || typeof scores !== "object" || !form || typeof form !== "object") {
       return NextResponse.json(
@@ -99,6 +107,71 @@ export async function POST(req: NextRequest) {
         recommendation: recommendationLabel,
       }),
     ]);
+
+    try {
+      await ensureCrmLeadFromFormSubmission({
+        email,
+        name,
+        company: String(form.businessName ?? "").trim() || undefined,
+        attribution: {
+          utm_source: attribution.utm_source ?? null,
+          utm_medium: attribution.utm_medium ?? null,
+          utm_campaign: attribution.utm_campaign ?? null,
+          utm_term: attribution.utm_term ?? null,
+          utm_content: attribution.utm_content ?? null,
+          gclid: attribution.gclid ?? null,
+          fbclid: attribution.fbclid ?? null,
+          msclkid: attribution.msclkid ?? null,
+          ttclid: attribution.ttclid ?? null,
+          referrer: attribution.referrer ?? null,
+          landing_page: attribution.landing_page ?? null,
+          visitorId: attribution.visitorId ?? null,
+          sessionId: attribution.sessionId ?? null,
+        },
+        customFields: {
+          growthDiagnosisLeadId: inserted.id,
+          sourceFlow: "growth_diagnosis_apply",
+          recommendation,
+          primaryBottleneck,
+          totalScore,
+          brandScore,
+          designScore,
+          systemScore,
+          monthlyRevenue: String(form.monthlyRevenue ?? "").trim() || null,
+          mainChallenge: String(form.mainChallenge ?? "").trim() || null,
+          timeline: String(form.timeline ?? "").trim() || null,
+          budgetRange: String(form.budgetRange ?? "").trim() || null,
+          firstTouchSource: firstTouch?.utm_source ?? null,
+          firstTouchMedium: firstTouch?.utm_medium ?? null,
+          firstTouchCampaign: firstTouch?.utm_campaign ?? null,
+        },
+      });
+    } catch (crmError) {
+      console.warn("[Growth funnel leads] CRM upsert failed:", crmError);
+    }
+
+    sendConversionSignals({
+      eventName: "growth_apply_submitted",
+      visitorId: attribution.visitorId ?? null,
+      email,
+      sourceUrl: attribution.url ?? attribution.landing_page ?? null,
+      userAgent: req.headers.get("user-agent"),
+      ipAddress:
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        req.headers.get("x-real-ip"),
+      attribution: {
+        utm_source: attribution.utm_source ?? null,
+        utm_medium: attribution.utm_medium ?? null,
+        utm_campaign: attribution.utm_campaign ?? null,
+        utm_term: attribution.utm_term ?? null,
+        utm_content: attribution.utm_content ?? null,
+      },
+      metadata: {
+        recommendation,
+        primaryBottleneck,
+        totalScore,
+      },
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, id: inserted.id });
   } catch (e) {
