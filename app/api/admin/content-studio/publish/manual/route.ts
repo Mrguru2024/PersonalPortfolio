@@ -10,6 +10,8 @@ const bodySchema = z.object({
   documentId: z.number().int(),
   calendarEntryId: z.number().int().optional().nullable(),
   platform: z.string().min(1).max(80),
+  /** Super-admin bypass for approval gate (manual only). */
+  force: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
       calendarEntryId: parsed.data.calendarEntryId ?? null,
       platform: parsed.data.platform,
       userId: user?.id ?? null,
+      force: parsed.data.force,
     });
     return NextResponse.json(out);
   } catch (e: unknown) {

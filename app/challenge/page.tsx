@@ -75,15 +75,19 @@ export default function ChallengeLandingPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="mb-12"
+          className="mb-12 text-center"
         >
-          <h2 className="text-xl font-semibold text-foreground mb-4">What you&apos;ll learn in 5 days</h2>
-          <div className="space-y-3">
-            {LESSON_DAYS.map((item, i) => (
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            What you&apos;ll learn in 5 days
+          </h2>
+          <div className="space-y-3 max-w-2xl mx-auto">
+            {LESSON_DAYS.map((item) => (
               <Card key={item.day} className="border-border">
-                <CardContent className="py-3 px-4 flex items-center gap-3">
-                  <span className="text-sm font-medium text-primary shrink-0">Day {item.day}</span>
-                  <span className="text-foreground">{item.title}</span>
+                <CardContent className="py-4 px-4 sm:px-6 flex flex-col items-center justify-center gap-1.5 text-center">
+                  <span className="text-sm font-medium text-primary">Day {item.day}</span>
+                  <span className="text-foreground text-sm sm:text-base leading-snug max-w-md">
+                    {item.title}
+                  </span>
                 </CardContent>
               </Card>
             ))}

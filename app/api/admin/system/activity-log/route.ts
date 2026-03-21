@@ -6,6 +6,16 @@ import { desc, eq, lt, and } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+function isMissingUserActivityTable(error: unknown): boolean {
+  const e = error as { code?: string; message?: string };
+  if (e?.code === "42P01") return true;
+  const m = e?.message ?? "";
+  return (
+    m.includes("user_activity_log") &&
+    (m.includes("does not exist") || m.includes("relation") || m.includes("Failed query"))
+  );
+}
+
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 
@@ -85,8 +95,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ entries });
   } catch (error: unknown) {
     console.error("Activity log GET error:", error);
+    if (isMissingUserActivityTable(error)) {
+      return NextResponse.json(
+        {
+          entries: [] as unknown[],
+          error: "schema_missing",
+          message:
+            'Table "user_activity_log" is missing. Run npm run db:push against this database, then log in again.',
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { message: "Failed to fetch activity log" },
+      { message: "Failed to fetch activity log", entries: [] },
       { status: 500 }
     );
   }

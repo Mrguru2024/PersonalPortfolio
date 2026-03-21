@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdmin } from "@/lib/auth-helpers";
-import { listCalendarEntries, createCalendarEntry } from "@server/services/internalStudio/calendarService";
+import {
+  listCalendarEntries,
+  createCalendarEntry,
+  getCalendarLinkedDocumentMeta,
+} from "@server/services/internalStudio/calendarService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,7 +39,17 @@ export async function GET(req: NextRequest) {
         ? parseInt(searchParams.get("campaignId")!, 10)
         : undefined,
     });
-    return NextResponse.json({ entries });
+    const docIds = entries.map((e) => e.documentId).filter((id): id is number => id != null && id > 0);
+    const docMeta = await getCalendarLinkedDocumentMeta(docIds);
+    const enriched = entries.map((e) => {
+      const m = e.documentId ? docMeta.get(e.documentId) : undefined;
+      return {
+        ...e,
+        documentApprovalStatus: m?.approvalStatus ?? null,
+        documentWorkflowStatus: m?.workflowStatus ?? null,
+      };
+    });
+    return NextResponse.json({ entries: enriched });
   } catch (e: unknown) {
     console.error(e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

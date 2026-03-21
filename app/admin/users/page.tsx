@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@shared/super-admin-identities";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -72,7 +71,7 @@ export default function AdminUsersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const isSuperUser = isSuperAdminUser(user ?? null);
+  const isSuperUser = isAuthSuperUser(user);
 
   useEffect(() => {
     setMounted(true);

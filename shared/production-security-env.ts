@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 const WEAK_SESSION_SECRETS = new Set(
   [
     "mrguru-portfolio-session-secret",
@@ -11,6 +14,23 @@ const WEAK_SESSION_SECRETS = new Set(
 
 export const MIN_SESSION_SECRET_LENGTH = 32;
 export const MIN_CRON_SECRET_LENGTH = 16;
+
+/**
+ * Whether Vercel cron routes are declared in vercel.json. If the file is missing or unreadable at runtime (some
+ * serverless layouts), we treat that as "unknown" and still require CRON_SECRET on Vercel production.
+ */
+function vercelCronSecretRequirement(): "require" | "skip" {
+  try {
+    const p = join(process.cwd(), "vercel.json");
+    if (!existsSync(p)) return "require";
+    const raw = readFileSync(p, "utf8");
+    const j = JSON.parse(raw) as { crons?: unknown };
+    const hasCrons = Array.isArray(j.crons) && j.crons.length > 0;
+    return hasCrons ? "require" : "skip";
+  } catch {
+    return "require";
+  }
+}
 
 /**
  * Fail fast in production when session or cron secrets are missing, too short, or known placeholders.
@@ -38,18 +58,23 @@ export function assertProductionSecurityEnv(): void {
     );
   }
 
-  /** vercel.json defines crons; Vercel injects VERCEL=1. Require a strong secret so scheduled jobs are not trivially callable. */
+  /**
+   * When vercel.json defines crons, Vercel calls those routes on a schedule. Require CRON_SECRET so jobs are not
+   * trivially callable without the Bearer token. If vercel.json is present with an empty/missing "crons" array, this
+   * check is skipped. If vercel.json cannot be read at runtime, we still require CRON_SECRET (fail closed).
+   */
   const skipCronCheck =
     process.env.SKIP_VERCEL_CRON_SECRET?.trim() === "1" ||
     process.env.SKIP_VERCEL_CRON_SECRET?.toLowerCase() === "true";
   if (
     process.env.NODE_ENV === "production" &&
     process.env.VERCEL === "1" &&
-    !skipCronCheck
+    !skipCronCheck &&
+    vercelCronSecretRequirement() === "require"
   ) {
     if (!cron || cron.length < MIN_CRON_SECRET_LENGTH) {
       throw new Error(
-        `[security] Vercel production requires CRON_SECRET (at least ${MIN_CRON_SECRET_LENGTH} characters) because this project defines Vercel crons. Remove crons from vercel.json or set SKIP_VERCEL_CRON_SECRET=1 if you intentionally do not use scheduled routes.`,
+        `[security] Vercel production requires CRON_SECRET (at least ${MIN_CRON_SECRET_LENGTH} characters) because vercel.json defines crons (e.g. /api/cron/growth-os), or vercel.json could not be read at runtime. Add CRON_SECRET in the Vercel project env, remove the "crons" array from vercel.json (and redeploy), or set SKIP_VERCEL_CRON_SECRET=1 only if you accept weaker protection for scheduled routes (not recommended).`,
       );
     }
   }

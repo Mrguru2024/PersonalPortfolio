@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,8 +51,6 @@ import {
   setTourDismissed,
   getStepsForRole,
 } from "@/lib/adminTourConfig";
-import { isSuperAdminUser } from "@shared/super-admin-identities";
-
 /** Summary row for list (lightweight for fast load on mobile). */
 interface AssessmentSummary {
   id: number;
@@ -496,7 +494,7 @@ export default function AdminDashboardPage() {
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
-  const isSuperAdmin = user ? isSuperAdminUser(user) : false;
+  const isSuperAdmin = isAuthSuperUser(user);
   const tourSteps = getStepsForRole(isSuperAdmin);
   const nudgeItems = buildNudgeItems({
     pendingAssessments,

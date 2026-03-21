@@ -32,8 +32,7 @@ import {
 import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
-import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@shared/super-admin-identities";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { useMobileNav } from "@/contexts/MobileNavContext";
 import { Button } from "@/components/ui/button";
@@ -126,7 +125,7 @@ export default function Header(_props: HeaderProps) {
   const isApprovedAdmin =
     user?.isAdmin === true && user?.adminApproved === true;
 
-  const isSuperUser = isSuperAdminUser(user ?? null);
+  const isSuperUser = isAuthSuperUser(user);
   const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
 
   const visibleAdminPages = adminPages.filter((page) => {

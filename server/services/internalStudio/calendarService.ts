@@ -1,6 +1,6 @@
 import { db } from "@server/db";
 import { internalEditorialCalendarEntries, internalCmsDocuments } from "@shared/schema";
-import { eq, and, gte, lte, asc, ne } from "drizzle-orm";
+import { eq, and, gte, lte, asc, ne, isNotNull, inArray } from "drizzle-orm";
 
 export function computeEntryWarnings(entry: {
   title: string;
@@ -172,6 +172,54 @@ export async function reorderCalendarEntries(orderedIds: number[]) {
 }
 
 /** Transition document workflow when calendar entry moves to published. */
+/**
+ * Calendar rows ready for automated publish: status scheduled, time passed, linked document present.
+ */
+export async function listCalendarEntriesDueForPublish(filters: { projectKey?: string; before: Date }) {
+  const conditions = [
+    eq(internalEditorialCalendarEntries.calendarStatus, "scheduled"),
+    lte(internalEditorialCalendarEntries.scheduledAt, filters.before),
+    isNotNull(internalEditorialCalendarEntries.documentId),
+  ];
+  if (filters.projectKey) {
+    conditions.push(eq(internalEditorialCalendarEntries.projectKey, filters.projectKey));
+  }
+  return db
+    .select()
+    .from(internalEditorialCalendarEntries)
+    .where(and(...conditions))
+    .orderBy(asc(internalEditorialCalendarEntries.scheduledAt), asc(internalEditorialCalendarEntries.sortOrder));
+}
+
+export type CalendarDocumentMeta = {
+  id: number;
+  approvalStatus: string;
+  workflowStatus: string;
+};
+
+/** Batch-load document approval/workflow for calendar list UI. */
+export async function getCalendarLinkedDocumentMeta(documentIds: number[]): Promise<Map<number, CalendarDocumentMeta>> {
+  const unique = [...new Set(documentIds.filter((id) => id > 0))];
+  const map = new Map<number, CalendarDocumentMeta>();
+  if (unique.length === 0) return map;
+  const rows = await db
+    .select({
+      id: internalCmsDocuments.id,
+      approvalStatus: internalCmsDocuments.approvalStatus,
+      workflowStatus: internalCmsDocuments.workflowStatus,
+    })
+    .from(internalCmsDocuments)
+    .where(inArray(internalCmsDocuments.id, unique));
+  for (const r of rows) {
+    map.set(r.id, {
+      id: r.id,
+      approvalStatus: r.approvalStatus,
+      workflowStatus: r.workflowStatus,
+    });
+  }
+  return map;
+}
+
 export async function syncDocumentWorkflowFromCalendar(documentId: number, calendarStatus: string) {
   if (!documentId) return;
   if (calendarStatus === "published") {
@@ -188,6 +236,12 @@ export async function syncDocumentWorkflowFromCalendar(documentId: number, calen
     await db
       .update(internalCmsDocuments)
       .set({ workflowStatus: "scheduled", updatedAt: new Date() })
+      .where(eq(internalCmsDocuments.id, documentId));
+  }
+  if (calendarStatus === "failed") {
+    await db
+      .update(internalCmsDocuments)
+      .set({ workflowStatus: "failed", updatedAt: new Date() })
       .where(eq(internalCmsDocuments.id, documentId));
   }
 }

@@ -8,15 +8,18 @@ import { User as SelectUser, InsertUser } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const AUTH_CACHE_KEY = "auth_user_cache";
+/** Session user from /api/user, /api/login, /api/register — includes server-computed `isSuperUser`. */
+export type AuthUser = SelectUser & { isSuperUser?: boolean };
+
+const AUTH_CACHE_KEY = "auth_user_cache_v2";
 const AUTH_CACHE_TTL_MS = 60 * 1000; // 60 seconds – short-lived so first load can show last user while /api/user completes
 
-function getCachedUser(): SelectUser | null | undefined {
+function getCachedUser(): AuthUser | null | undefined {
   if (typeof window === "undefined") return undefined;
   try {
     const raw = sessionStorage.getItem(AUTH_CACHE_KEY);
     if (!raw) return undefined;
-    const { user, ts } = JSON.parse(raw) as { user: SelectUser | null; ts: number };
+    const { user, ts } = JSON.parse(raw) as { user: AuthUser | null; ts: number };
     if (Date.now() - ts > AUTH_CACHE_TTL_MS) return undefined;
     return user;
   } catch {
@@ -24,7 +27,7 @@ function getCachedUser(): SelectUser | null | undefined {
   }
 }
 
-function setCachedUser(user: SelectUser | null): void {
+function setCachedUser(user: AuthUser | null): void {
   if (typeof window === "undefined") return;
   try {
     if (user === null) {
@@ -65,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | null, Error>({
+  } = useQuery<AuthUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
@@ -117,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: (user: AuthUser) => {
       setCachedUser(user);
       queryClient.setQueryData(["/api/user"], user);
       toast({
@@ -175,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: (user: AuthUser) => {
       setCachedUser(user);
       queryClient.setQueryData(["/api/user"], user);
       toast({
@@ -249,4 +252,9 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+/** Client UI gate for break-glass / super-admin — uses `isSuperUser` from the API (no separate client module). */
+export function isAuthSuperUser(user: AuthUser | null | undefined): boolean {
+  return user?.isSuperUser === true;
 }

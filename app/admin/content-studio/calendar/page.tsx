@@ -52,7 +52,7 @@ import {
   format,
   isSameDay,
 } from "date-fns";
-import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2 } from "lucide-react";
+import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -78,6 +78,15 @@ interface CalEntry {
   warningsJson: string[] | null;
   documentId: number | null;
   sortOrder?: number;
+  documentApprovalStatus?: string | null;
+  documentWorkflowStatus?: string | null;
+}
+
+interface PlatformAdapterRow {
+  id: number;
+  key: string;
+  displayName: string;
+  active: boolean;
 }
 
 function dayDropId(d: Date) {
@@ -205,7 +214,29 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
   );
 }
 
-function SortableRow({ entry }: { entry: CalEntry }) {
+function SortableRow({
+  entry,
+  adapters,
+  calendarQueryKey,
+  qc,
+}: {
+  entry: CalEntry;
+  adapters: PlatformAdapterRow[];
+  calendarQueryKey: readonly unknown[];
+  qc: ReturnType<typeof useQueryClient>;
+}) {
+  const { toast } = useToast();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editStatus, setEditStatus] = useState(entry.calendarStatus);
+  const [editPlatforms, setEditPlatforms] = useState<string[]>([...(entry.platformTargets ?? [])]);
+
+  useEffect(() => {
+    if (editOpen) {
+      setEditStatus(entry.calendarStatus);
+      setEditPlatforms([...(entry.platformTargets ?? [])]);
+    }
+  }, [editOpen, entry]);
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
     transition: CALENDAR_SORTABLE_TRANSITION,
@@ -217,6 +248,24 @@ function SortableRow({ entry }: { entry: CalEntry }) {
     zIndex: isDragging ? 50 : undefined,
   };
   const warnings = entry.warningsJson ?? [];
+  const activeAdapters = adapters.filter((a) => a.active);
+
+  async function saveEdit() {
+    const res = await fetch(`/api/admin/content-studio/calendar/${entry.id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ calendarStatus: editStatus, platformTargets: editPlatforms }),
+    });
+    if (!res.ok) {
+      toast({ title: "Save failed", variant: "destructive" });
+      return;
+    }
+    void qc.invalidateQueries({ queryKey: calendarQueryKey });
+    setEditOpen(false);
+    toast({ title: "Calendar entry updated" });
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -247,6 +296,13 @@ function SortableRow({ entry }: { entry: CalEntry }) {
             </Badge>
           ))}
         </div>
+        {entry.documentId != null && entry.documentApprovalStatus && (
+          <div className="mt-1">
+            <Badge variant={entry.documentApprovalStatus === "approved" ? "default" : "secondary"} className="text-[10px]">
+              Doc approval: {entry.documentApprovalStatus}
+            </Badge>
+          </div>
+        )}
         {warnings.length > 0 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
             <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -263,6 +319,69 @@ function SortableRow({ entry }: { entry: CalEntry }) {
         )}
       </div>
       <div className="flex flex-col gap-1 shrink-0">
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="ghost" aria-label="Edit targets and status">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit publish targets</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Calendar status</Label>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">draft</SelectItem>
+                    <SelectItem value="scheduled">scheduled (cron picks up when due)</SelectItem>
+                    <SelectItem value="published">published</SelectItem>
+                    <SelectItem value="skipped">skipped</SelectItem>
+                    <SelectItem value="failed">failed (fix + set back to scheduled)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Platforms (multi-select)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Use keys that match adapters (e.g. facebook_page, manual). Cron publishes each target when the slot is due.
+                </p>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                  {activeAdapters.map((a) => (
+                    <label
+                      key={a.key}
+                      className="flex items-center gap-2 text-xs border rounded-md px-2 py-1.5 cursor-pointer bg-muted/30"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={editPlatforms.includes(a.key)}
+                        onChange={(e) => {
+                          setEditPlatforms((prev) =>
+                            e.target.checked ? [...prev, a.key] : prev.filter((k) => k !== a.key),
+                          );
+                        }}
+                      />
+                      <span>{a.displayName}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={() => void saveEdit()}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Button
           size="sm"
           variant="ghost"
@@ -296,8 +415,11 @@ export default function ContentStudioCalendarPage() {
   const [qWhen, setQWhen] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [qCta, setQCta] = useState("");
   const [qPersonas, setQPersonas] = useState("");
-  const [qPlatforms, setQPlatforms] = useState("linkedin,x");
+  const [qSelectedPlatforms, setQSelectedPlatforms] = useState<string[]>(["facebook_page", "manual"]);
   const [activeDragEntry, setActiveDragEntry] = useState<CalEntry | null>(null);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "scheduled" | "published" | "skipped" | "failed"
+  >("all");
 
   useEffect(() => {
     try {
@@ -358,10 +480,28 @@ export default function ContentStudioCalendarPage() {
     },
   });
 
+  const { data: adaptersRes } = useQuery({
+    queryKey: ["/api/admin/content-studio/adapters"],
+    queryFn: async () => {
+      const r = await fetch("/api/admin/content-studio/adapters", { credentials: "include" });
+      if (!r.ok) throw new Error("Failed adapters");
+      return r.json() as Promise<{ adapters: PlatformAdapterRow[] }>;
+    },
+  });
+
   const entries = data?.entries ?? [];
+  const activeAdapters = useMemo(
+    () => (adaptersRes?.adapters ?? []).filter((a) => a.active),
+    [adaptersRes],
+  );
+
+  const visibleEntries = useMemo(() => {
+    if (statusFilter === "all") return entries;
+    return entries.filter((e) => e.calendarStatus === statusFilter);
+  }, [entries, statusFilter]);
 
   const dayEntriesFixed = useMemo(() => {
-    return [...entries]
+    return [...visibleEntries]
       .filter((e) => isSameDay(new Date(e.scheduledAt), selectedDay))
       .sort(
         (a, b) =>
@@ -502,10 +642,7 @@ export default function ContentStudioCalendarPage() {
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean),
-          platformTargets: qPlatforms
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
+          platformTargets: qSelectedPlatforms,
           calendarStatus: "draft",
         }),
       });
@@ -559,6 +696,28 @@ export default function ContentStudioCalendarPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="border-primary/25 bg-primary/5">
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm">Automated social publishing</CardTitle>
+          <CardDescription className="text-xs leading-relaxed">
+            Vercel cron calls <code className="text-[10px] bg-muted px-1 rounded">/api/cron/content-studio-publish</code>{" "}
+            every 10 minutes (Bearer <code className="text-[10px] bg-muted px-1 rounded">CRON_SECRET</code>). A row is
+            eligible when it is <strong>scheduled</strong>, <strong>scheduledAt</strong> is in the past, it has a{" "}
+            <strong>linked document</strong>, and <strong>platform targets</strong> are set (e.g.{" "}
+            <code className="text-[10px] bg-muted px-1 rounded">facebook_page</code>,{" "}
+            <code className="text-[10px] bg-muted px-1 rounded">manual</code>). By default the document must be{" "}
+            <strong>approval: approved</strong> for auto-publish; set{" "}
+            <code className="text-[10px] bg-muted px-1 rounded">CONTENT_STUDIO_SCHEDULED_REQUIRE_APPROVAL=0</code> to
+            disable. Facebook Page posts need <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_ACCESS_TOKEN</code>{" "}
+            + <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_PAGE_ID</code>. Failures set calendar status{" "}
+            <strong>failed</strong> — fix tokens or copy, then set back to <strong>scheduled</strong>. Check{" "}
+            <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
+              workflow / publish logs
+            </Link>
+            .
+          </CardDescription>
+        </CardHeader>
+      </Card>
       <DndContext
         sensors={sensors}
         collisionDetection={calendarCollisionDetection}
@@ -621,6 +780,19 @@ export default function ContentStudioCalendarPage() {
                 <Button variant="outline" size="sm" onClick={shiftCursorNext}>
                   Next
                 </Button>
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+                  <SelectTrigger className="w-[140px] h-9 text-xs">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="skipped">Skipped</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" aria-label="Calendar display settings">
@@ -696,15 +868,38 @@ export default function ContentStudioCalendarPage() {
                         <Label>Personas (comma)</Label>
                         <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Platforms (comma)</Label>
-                        <Input value={qPlatforms} onChange={(e) => setQPlatforms(e.target.value)} />
+                      <div className="space-y-2">
+                        <Label>Platforms (publish targets)</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Must match adapter keys. <code className="bg-muted px-1 rounded">facebook_page</code> uses Meta
+                          Graph when env is configured.
+                        </p>
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                          {activeAdapters.map((a) => (
+                            <label
+                              key={a.key}
+                              className="flex items-center gap-2 text-xs border rounded-md px-2 py-1.5 cursor-pointer bg-muted/30"
+                            >
+                              <input
+                                type="checkbox"
+                                className="rounded border-input"
+                                checked={qSelectedPlatforms.includes(a.key)}
+                                onChange={(e) => {
+                                  setQSelectedPlatforms((prev) =>
+                                    e.target.checked ? [...prev, a.key] : prev.filter((k) => k !== a.key),
+                                  );
+                                }}
+                              />
+                              <span>{a.displayName}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <DialogFooter>
                       <Button
                         onClick={() => createMutation.mutate()}
-                        disabled={!qTitle.trim() || createMutation.isPending}
+                        disabled={!qTitle.trim() || createMutation.isPending || qSelectedPlatforms.length === 0}
                       >
                         {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
                       </Button>
@@ -731,7 +926,7 @@ export default function ContentStudioCalendarPage() {
                 {monthDays.map((d) => {
                   const inMonth =
                     d.getMonth() === cursor.getMonth() && d.getFullYear() === cursor.getFullYear();
-                  const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
+                  const count = visibleEntries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
                   return (
                     <div
                       key={d.toISOString()}
@@ -766,7 +961,7 @@ export default function ContentStudioCalendarPage() {
                   </div>
                   <div className="grid grid-cols-7 gap-2">
                     {weekDays.map((d) => {
-                      const count = entries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
+                      const count = visibleEntries.filter((e) => isSameDay(new Date(e.scheduledAt), d)).length;
                       return (
                         <DroppableDayCell
                           key={d.toISOString()}
@@ -787,7 +982,7 @@ export default function ContentStudioCalendarPage() {
                 <DroppableDayCell
                   day={cursor}
                   selectedDay={selectedDay}
-                  count={entries.filter((e) => isSameDay(new Date(e.scheduledAt), cursor)).length}
+                  count={visibleEntries.filter((e) => isSameDay(new Date(e.scheduledAt), cursor)).length}
                   onSelect={() => setSelectedDay(cursor)}
                   variant="week"
                 />
@@ -798,7 +993,7 @@ export default function ContentStudioCalendarPage() {
             )}
             {view === "agenda" && (
               <ul className="space-y-2">
-                {[...entries]
+                {[...visibleEntries]
                   .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
                   .map((e) => (
                     <li key={e.id} className="rounded-lg border p-3 text-sm">
@@ -825,7 +1020,15 @@ export default function ContentStudioCalendarPage() {
                 {dayEntriesFixed.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No entries this day.</p>
                 ) : (
-                  dayEntriesFixed.map((e) => <SortableRow key={e.id} entry={e} />)
+                  dayEntriesFixed.map((e) => (
+                    <SortableRow
+                      key={e.id}
+                      entry={e}
+                      adapters={adaptersRes?.adapters ?? []}
+                      calendarQueryKey={calendarQueryKey}
+                      qc={qc}
+                    />
+                  ))
                 )}
               </div>
             </SortableContext>

@@ -23,8 +23,11 @@ import {
   ScrollText,
   Gauge,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@shared/super-admin-identities";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import {
+  SYSTEM_ENV_CHECKLIST,
+  type SystemEnvTier,
+} from "@/lib/system-env-checklist";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,7 @@ interface HealthData {
   db: "ok" | "error";
   errorMessage?: string;
   counts: Record<string, number>;
+  userActivityLogCount?: number | null;
   config: Record<string, boolean>;
   logStats: { total: number; errors: number };
   nodeEnv: string;
@@ -79,6 +83,26 @@ interface LogEntryWithFix {
   fixHint?: FixHint[];
 }
 
+const ENV_TIER_HEADINGS: Record<
+  SystemEnvTier,
+  { title: string; hint: string }
+> = {
+  essential: {
+    title: "Essential for production",
+    hint: "Set these before launch (or local dev with a real DB).",
+  },
+  recommended: {
+    title: "Recommended",
+    hint: "Add when you use Stripe, Vercel crons, verified email sender, or AI.",
+  },
+  optional: {
+    title: "Optional integrations",
+    hint: "Only if you use OAuth, Zoom, Twilio, Meta ads, GA4 API, Upstash, etc.",
+  },
+};
+
+const ENV_TIER_ORDER: SystemEnvTier[] = ["essential", "recommended", "optional"];
+
 interface ActivityLogEntry {
   id: number;
   userId: number | null;
@@ -97,7 +121,7 @@ export default function AdminSystemPage() {
   const [mounted, setMounted] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const isSuperUser = isSuperAdminUser(user ?? null);
+  const isSuperUser = isAuthSuperUser(user);
 
   const [logs, setLogs] = useState<LogEntryWithFix[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +133,7 @@ export default function AdminSystemPage() {
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityLogEntries, setActivityLogEntries] = useState<ActivityLogEntry[]>([]);
   const [loadingActivityLog, setLoadingActivityLog] = useState(false);
+  const [activityLogError, setActivityLogError] = useState<string | null>(null);
   const [activityLogFilter, setActivityLogFilter] = useState<string>("");
   const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -178,9 +203,26 @@ export default function AdminSystemPage() {
       ? `/api/admin/system/activity-log?limit=100&eventType=${encodeURIComponent(activityLogFilter)}`
       : "/api/admin/system/activity-log?limit=100";
     apiRequest("GET", url)
-      .then((r) => (r.ok ? r.json() : { entries: [] }))
-      .then((data) => setActivityLogEntries(data.entries ?? []))
-      .catch(() => setActivityLogEntries([]))
+      .then(async (r) => {
+        const data = (await r.json().catch(() => ({}))) as {
+          entries?: ActivityLogEntry[];
+          error?: string;
+          message?: string;
+        };
+        setActivityLogEntries(Array.isArray(data.entries) ? data.entries : []);
+        if (!r.ok || data.error === "schema_missing") {
+          setActivityLogError(
+            data.message ||
+              (!r.ok ? `Could not load activity log (HTTP ${r.status})` : "Activity log unavailable")
+          );
+        } else {
+          setActivityLogError(null);
+        }
+      })
+      .catch(() => {
+        setActivityLogEntries([]);
+        setActivityLogError("Network error loading activity log");
+      })
       .finally(() => setLoadingActivityLog(false));
   }, [user, isSuperUser, refreshTick, activityLogFilter]);
 
@@ -248,7 +290,7 @@ export default function AdminSystemPage() {
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">System monitor</h1>
           <p className="text-muted-foreground text-sm">
-            Errors, activity, and fix hints for 5epmgllc super admin. In-memory logs (per instance).
+            Persisted login and audit events (database) plus a live in-memory error buffer (this instance only).
           </p>
         </div>
         <Button
@@ -302,7 +344,9 @@ export default function AdminSystemPage() {
               <Database className="h-4 w-4" />
               Health & config
             </CardTitle>
-            <CardDescription>DB status, counts, and env config (keys only)</CardDescription>
+            <CardDescription>
+              Database status, table counts, and environment variables (what each is for + how to obtain it).
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {loadingHealth ? (
@@ -326,25 +370,80 @@ export default function AdminSystemPage() {
                   {Object.entries(health.counts).map(([k, v]) => (
                     <Badge key={k} variant="secondary">{k}: {v}</Badge>
                   ))}
+                  {health.userActivityLogCount != null ? (
+                    <Badge variant="secondary">user_activity_log: {health.userActivityLogCount}</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-600/40">
+                      user_activity_log: unavailable (run db:push?)
+                    </Badge>
+                  )}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Config: {Object.entries(health.config).filter(([, v]) => v).length} / {Object.keys(health.config).length} keys set
-                  <Collapsible>
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p>
+                    Env vars:{" "}
+                    <span className="font-medium text-foreground">
+                      {Object.entries(health.config).filter(([, v]) => v).length} /{" "}
+                      {Object.keys(health.config).length}
+                    </span>{" "}
+                    set. Unset optional keys are normal until you enable that feature.
+                  </p>
+                  <Collapsible defaultOpen>
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-auto py-1 px-0 mt-1 gap-1 text-xs group">
+                      <Button variant="ghost" size="sm" className="h-auto py-1 px-0 gap-1 text-xs group text-muted-foreground hover:text-foreground">
                         <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
-                        {Object.keys(health.config).length} keys
+                        Show env checklist (tiers, summaries, how to get)
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <ul className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
-                        {Object.entries(health.config).map(([key, set]) => (
-                          <li key={key} className="flex items-center gap-1">
-                            {set ? <CheckCircle2 className="h-3 w-3 shrink-0 text-green-600" /> : <XCircle className="h-3 w-3 shrink-0 text-muted-foreground" />}
-                            <span>{key}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-2 max-h-[min(28rem,70vh)] overflow-y-auto space-y-4 pr-1 border-t border-border/60 pt-3">
+                        {ENV_TIER_ORDER.map((tier) => {
+                          const entries = SYSTEM_ENV_CHECKLIST.filter((e) => e.tier === tier);
+                          const setInTier = entries.filter((e) => health.config[e.key]).length;
+                          const meta = ENV_TIER_HEADINGS[tier];
+                          return (
+                            <div key={tier}>
+                              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide">
+                                {meta.title}{" "}
+                                <span className="font-normal text-muted-foreground normal-case">
+                                  ({setInTier}/{entries.length} set)
+                                </span>
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mb-2">{meta.hint}</p>
+                              <ul className="space-y-2">
+                                {entries.map((e) => {
+                                  const set = health.config[e.key];
+                                  return (
+                                    <li
+                                      key={e.key}
+                                      className={`rounded-md border px-2 py-2 ${
+                                        set
+                                          ? "border-border/60 bg-muted/20"
+                                          : "border-amber-600/25 bg-amber-500/5 dark:bg-amber-500/10"
+                                      }`}
+                                    >
+                                      <div className="flex gap-2">
+                                        {set ? (
+                                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-500 mt-0.5" />
+                                        ) : (
+                                          <XCircle className="h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400 mt-0.5" />
+                                        )}
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                          <code className="text-[11px] font-mono text-foreground break-all">{e.key}</code>
+                                          <p className="text-[11px] leading-snug text-muted-foreground">{e.summary}</p>
+                                          <p className="text-[11px] leading-snug text-muted-foreground/85 border-l-2 border-primary/30 pl-2">
+                                            <span className="font-medium text-foreground/80">How to get: </span>
+                                            {e.howToGet}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </CollapsibleContent>
                   </Collapsible>
                 </div>
@@ -431,7 +530,8 @@ export default function AdminSystemPage() {
                 Login & user activity log
               </CardTitle>
               <CardDescription>
-                User events: logins, failures, logout, and captured errors (persisted)
+                Stored in PostgreSQL (survives deploys). Log in or out once after migrating; if the table is missing,
+                run <code className="text-xs bg-muted px-1 rounded">npm run db:push</code>.
               </CardDescription>
             </div>
             <Select value={activityLogFilter || "all"} onValueChange={(v) => setActivityLogFilter(v === "all" ? "" : v)}>
@@ -450,15 +550,24 @@ export default function AdminSystemPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {activityLogError && (
+            <div
+              className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {activityLogError}
+            </div>
+          )}
           {loadingActivityLog ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : activityLogEntries.length === 0 ? (
+          ) : activityLogEntries.length === 0 && !activityLogError ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No activity log entries yet. Logins, logouts, and errors will appear here.
+              No persisted entries yet. Sign in, sign out, or trigger a failed login—events are written on each request.
+              OAuth (Google/GitHub) and registration also record here.
             </p>
-          ) : (
+          ) : activityLogEntries.length === 0 ? null : (
             <div className="overflow-x-auto -mx-2 space-y-2">
               {(() => {
                 const ACTIVITY_INITIAL = 25;
@@ -637,14 +746,28 @@ export default function AdminSystemPage() {
         </CardContent>
       </Card>
 
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">Live error buffer</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          In-memory only: resets when this server instance restarts or scales (typical on Vercel). API handlers that call{" "}
+          <code className="text-xs bg-muted px-1 rounded">captureApiError</code> and successful auth writes mirrored from
+          the database appear here on the same instance.
+        </p>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : logs.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No logs yet. Errors captured by API routes and client-side capture will appear here.
+          <CardContent className="py-12 text-center text-muted-foreground space-y-2">
+            <p>No in-memory entries yet.</p>
+            <p className="text-xs max-w-lg mx-auto">
+              This list is not the same as the login table above. After you sign in, you should see an{" "}
+              <span className="font-medium text-foreground/80">activity</span> line here on this instance. Uncaught API
+              errors and super-admin client capture also show up here.
+            </p>
           </CardContent>
         </Card>
       ) : (

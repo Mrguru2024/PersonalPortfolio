@@ -6,7 +6,7 @@ import { motionTokens, heroChoreography } from "@/lib/motion";
 
 /** Single class string for CTA row — must match in reduced-motion and animated branches (hydration). */
 const HERO_ACTIONS_ROW_CLASS =
-  "mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap justify-center items-stretch sm:items-center gap-3 w-full min-w-0";
+  "mt-6 sm:mt-8 flex flex-col lg:flex-row lg:flex-wrap justify-center items-stretch lg:items-center gap-3 w-full min-w-0";
 
 interface HeroMotionProps {
   /** Brand/eyebrow line */

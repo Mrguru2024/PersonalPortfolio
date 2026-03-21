@@ -4,6 +4,7 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
+import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import { recordActivityLog } from "@server/activityLog";
 import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
 
@@ -90,7 +91,13 @@ export async function POST(req: NextRequest) {
 
     // Don't send password
     const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword, { status: 201 });
+    return NextResponse.json(
+      {
+        ...userWithoutPassword,
+        isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+      },
+      { status: 201 },
+    );
   } catch (error: any) {
     console.error("Registration error:", error);
     return NextResponse.json(

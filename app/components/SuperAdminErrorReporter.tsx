@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { isSuperAdminUser } from "@shared/super-admin-identities";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 
 /**
  * When the current user is a super admin, reports client-side errors and unhandled
@@ -11,7 +10,7 @@ import { isSuperAdminUser } from "@shared/super-admin-identities";
  */
 export function SuperAdminErrorReporter() {
   const { user } = useAuth();
-  const isSuperAdmin = isSuperAdminUser(user ?? null);
+  const isSuperAdmin = isAuthSuperUser(user);
   const reported = useRef(new Set<string>());
 
   useEffect(() => {

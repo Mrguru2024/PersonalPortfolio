@@ -38,6 +38,7 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 - **Chrome ephemeral connections** can claim port 3000 transiently. If the dev server starts on a different port, check logs for the actual port.
 - **Schema management** uses `npm run db:push` which runs `drizzle-kit push` (uses `pg` driver directly, not Neon WebSocket). This works without the WebSocket proxy.
 - **Optional services** (Brevo email, OpenAI, Stripe, GitHub OAuth) degrade gracefully — the app runs fine without their API keys.
+- **Vercel crons** (`vercel.json`): `/api/cron/growth-os` (daily) and `/api/cron/content-studio-publish` (every 10 minutes) for Content Studio scheduled social posts. Both require `CRON_SECRET` in production. Facebook Page publishing uses `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` (see `.env.example`).
 
 ### Standard commands
 

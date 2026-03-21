@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { isSuperUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { getLogStats } from "@/lib/systemMonitor";
+import { db } from "@server/db";
+import { userActivityLog } from "@shared/schema";
+import { count } from "drizzle-orm";
+import { SYSTEM_ENV_KEYS } from "@shared/system-env-checklist";
 
 export const dynamic = "force-dynamic";
-
-const CONFIG_KEYS = [
-  "DATABASE_URL",
-  "SESSION_SECRET",
-  "ADMIN_EMAIL",
-  "BREVO_API_KEY",
-  "STRIPE_SECRET_KEY",
-  "NEXT_PUBLIC_APP_URL",
-  "TRACKING_SIGNATURE_SECRET",
-];
 
 /**
  * GET /api/admin/system/health
@@ -28,9 +22,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    let db: "ok" | "error" = "ok";
+    let dbStatus: "ok" | "error" = "ok";
     let counts: Record<string, number> = {};
     let errorMessage: string | undefined;
+    let userActivityLogCount: number | null = null;
 
     try {
       const [contacts, assessments, crmContacts, blogPosts] = await Promise.all([
@@ -45,14 +40,20 @@ export async function GET(req: NextRequest) {
         crmContacts: crmContacts.length,
         blogPosts: blogPosts.length,
       };
-      // Optional: visitor activity count would require a new storage method; skip for now
     } catch (e) {
-      db = "error";
+      dbStatus = "error";
       errorMessage = e instanceof Error ? e.message : String(e);
     }
 
+    try {
+      const [row] = await db.select({ n: count() }).from(userActivityLog);
+      userActivityLogCount = row?.n ?? 0;
+    } catch {
+      userActivityLogCount = null;
+    }
+
     const config: Record<string, boolean> = {};
-    for (const key of CONFIG_KEYS) {
+    for (const key of SYSTEM_ENV_KEYS) {
       const val = process.env[key];
       config[key] = !!val && val.length > 0;
     }
@@ -60,9 +61,10 @@ export async function GET(req: NextRequest) {
     const logStats = getLogStats();
 
     return NextResponse.json({
-      db,
+      db: dbStatus,
       errorMessage,
       counts,
+      userActivityLogCount,
       config,
       logStats,
       nodeEnv: process.env.NODE_ENV ?? "development",

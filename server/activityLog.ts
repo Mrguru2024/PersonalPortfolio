@@ -1,10 +1,12 @@
 /**
  * User activity / audit log for admin monitoring.
  * Records login success/failure, logout, and errors (persisted to DB).
+ * Also mirrors to the in-memory system monitor so /admin/system shows recent auth events on the same instance.
  */
 
 import { db } from "@server/db";
 import { userActivityLog, type InsertUserActivityLog } from "@shared/schema";
+import { captureActivity } from "@/lib/systemMonitor";
 
 export type ActivityEventType =
   | "login_success"
@@ -49,6 +51,17 @@ export async function recordActivityLog(
       userAgent: userAgent ? userAgent.slice(0, 500) : null,
       metadata: options.metadata ?? null,
     } as InsertUserActivityLog);
+
+    const who =
+      identifier ??
+      (options.userId != null ? `userId=${options.userId}` : "anonymous");
+    captureActivity({
+      message: `${eventType} · ${who}${message ? ` · ${message.slice(0, 120)}` : ""}`,
+      route: "user_activity_log",
+      method: eventType,
+      status: success ? 200 : 401,
+      userId: options.userId != null ? String(options.userId) : undefined,
+    });
   } catch (e) {
     console.error("Activity log insert failed:", e);
   }

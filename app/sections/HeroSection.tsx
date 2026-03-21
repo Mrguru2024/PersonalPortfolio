@@ -18,11 +18,11 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative w-full min-w-0 max-w-full min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex items-center justify-center overflow-x-hidden overflow-y-visible"
+      className="relative w-full min-w-0 max-w-full min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex items-center justify-center overflow-x-visible overflow-y-visible"
       aria-label="Hero"
     >
       {/* Particle background only — no video here to avoid visual collision */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 w-full h-full overflow-x-hidden" aria-hidden>
         <ParticleAnimation
           count={56}
           minSize={1.6}
@@ -85,11 +85,11 @@ export default function HeroSection() {
             subline="Ascendra Technologies works with design and branding partners to help businesses improve how they show up online and turn more visitors into real opportunities."
             actions={
               <>
-                <MagneticButton className="w-full sm:w-auto shrink-0">
+                <MagneticButton className="w-full lg:w-auto shrink-0 min-w-0 max-w-full">
                   <Button
                     asChild
                     size="lg"
-                    className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg focus-visible:ring-2 focus-visible:ring-ring"
+                    className="gap-2 min-h-[48px] w-full lg:w-auto max-w-full bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Link href={AUDIT_PATH}>
                       Request a Digital Growth Audit
@@ -119,13 +119,13 @@ export default function HeroSection() {
                   whileHover={reducedMotion ? undefined : { y: -2 }}
                   whileTap={reducedMotion ? undefined : { scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="flex w-full sm:w-auto shrink-0 justify-center"
+                  className="flex w-full lg:w-auto shrink-0 min-w-0 max-w-full justify-center"
                 >
                   <Button
                     asChild
                     variant="outline"
                     size="lg"
-                    className="min-h-[48px] w-full sm:w-auto border-border hover:bg-accent"
+                    className="min-h-[48px] w-full lg:w-auto max-w-full border-border hover:bg-accent"
                   >
                     <Link href="/services">{SEE_GROWTH_SYSTEMS}</Link>
                   </Button>

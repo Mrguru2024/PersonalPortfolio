@@ -5,6 +5,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
+import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import { captureApiError } from "@/lib/systemMonitor";
 import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
 
@@ -47,6 +48,17 @@ export async function POST(req: NextRequest) {
     const rl = await checkPublicApiRateLimitAsync(`login:${ip}`, 40, 15 * 60_000);
     if (!rl.ok) {
       const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+      try {
+        await recordActivityLog("login_failure", false, {
+          identifier: username,
+          message: "Rate limited (too many login attempts)",
+          ipAddress: getIpAddress(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+          metadata: { retryAfterSec: retryAfter },
+        });
+      } catch {
+        /* logged inside recordActivityLog */
+      }
       return NextResponse.json(
         { message: "Too many login attempts. Try again later." },
         {
@@ -72,6 +84,17 @@ export async function POST(req: NextRequest) {
       }
     } catch (dbError: any) {
       console.error("Database error fetching user:", dbError);
+      try {
+        await recordActivityLog("error", false, {
+          message: dbError?.message || "Database error during login user lookup",
+          identifier: username,
+          ipAddress: getIpAddress(req),
+          userAgent: req.headers.get("user-agent") ?? undefined,
+          metadata: { route: "/api/login", phase: "user_lookup" },
+        });
+      } catch {
+        /* logged inside recordActivityLog */
+      }
       return NextResponse.json(
         {
           message: "Database error",
@@ -236,17 +259,24 @@ export async function POST(req: NextRequest) {
       // Continue with login - the cookie is set, session can be stored on next request
     }
 
-    // Step 6: Record success and return user data
-    recordActivityLog("login_success", true, {
-      userId: user.id,
-      identifier: user.username,
-      ipAddress: getIpAddress(req),
-      userAgent: req.headers.get("user-agent") ?? undefined,
-    }).catch(() => {});
+    // Step 6: Record success and return user data (await so the row exists before response)
+    try {
+      await recordActivityLog("login_success", true, {
+        userId: user.id,
+        identifier: user.username,
+        ipAddress: getIpAddress(req),
+        userAgent: req.headers.get("user-agent") ?? undefined,
+      });
+    } catch {
+      /* recordActivityLog logs insert failures */
+    }
 
     try {
       const { password: _, ...userWithoutPassword } = user;
-      return NextResponse.json(userWithoutPassword);
+      return NextResponse.json({
+        ...userWithoutPassword,
+        isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+      });
     } catch (responseError: any) {
       console.error("Error creating response:", responseError);
       return NextResponse.json(
