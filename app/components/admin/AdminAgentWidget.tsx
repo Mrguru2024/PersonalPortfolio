@@ -12,11 +12,13 @@ import { apiRequest } from "@/lib/queryClient";
 interface AgentMessage {
   role: "user" | "assistant";
   content: string;
+  suggestions?: string[];
 }
 
 interface AgentResponse {
   reply: string;
   action?: { type: string; url?: string; api?: string };
+  suggestions?: string[];
 }
 
 function executeAction(
@@ -24,38 +26,28 @@ function executeAction(
   router: ReturnType<typeof useRouter>,
   queryClient: ReturnType<typeof useQueryClient>
 ): void {
-  if (action.type === "navigate" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_reminders" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_crm" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_dashboard" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_settings" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_contacts" || action.type === "open_blog" || action.type === "open_invoices" || action.type === "open_chat") {
-    if (action.url) router.push(action.url);
-    return;
-  }
   if (action.type === "generate_reminders" && action.api === "POST /api/admin/reminders") {
     apiRequest("POST", "/api/admin/reminders", {})
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/reminders"] });
       })
       .catch(() => {});
+    return;
+  }
+  if (action.url) {
+    router.push(action.url);
+    return;
   }
 }
+
+const STARTER_COMMANDS = [
+  "Open dashboard",
+  "Open CRM pipeline",
+  "Open content studio",
+  "Generate reminders",
+  "What is new?",
+  "/help",
+];
 
 export function AdminAgentWidget() {
   const { user } = useAuth();
@@ -91,7 +83,7 @@ export function AdminAgentWidget() {
       setMessages((prev) => [
         ...prev,
         { role: "user", content: message },
-        { role: "assistant", content: data.reply },
+        { role: "assistant", content: data.reply, suggestions: data.suggestions },
       ]);
       if (data.action) {
         executeAction(data.action, router, queryClient);
@@ -106,11 +98,15 @@ export function AdminAgentWidget() {
     },
   });
 
-  const handleSubmit = () => {
-    const text = input.trim();
+  const sendText = (value: string) => {
+    const text = value.trim();
     if (!text || sendMutation.isPending) return;
     setInput("");
     sendMutation.mutate(text);
+  };
+
+  const handleSubmit = () => {
+    sendText(input);
   };
 
   return (
@@ -137,9 +133,25 @@ export function AdminAgentWidget() {
               className="flex-1 overflow-y-auto p-3 space-y-3 text-sm"
             >
               {messages.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  Ask to open reminders, CRM, dashboard, or generate reminders. Enable &quot;Allow agent to perform actions&quot; in Settings to run actions.
-                </p>
+                <div className="space-y-3 py-2">
+                  <p className="text-muted-foreground text-center">
+                    Ask actions, questions, or commands. Try navigation prompts, feature questions, or slash commands.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {STARTER_COMMANDS.map((command) => (
+                      <Button
+                        key={command}
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => sendText(command)}
+                        disabled={sendMutation.isPending}
+                      >
+                        {command}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               )}
               {messages.map((m, i) => (
                 <div
@@ -159,6 +171,22 @@ export function AdminAgentWidget() {
                   >
                     {m.content}
                   </div>
+                  {m.role === "assistant" && m.suggestions && m.suggestions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {m.suggestions.slice(0, 6).map((suggestion) => (
+                        <Button
+                          key={`${i}-${suggestion}`}
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => sendText(suggestion)}
+                          disabled={sendMutation.isPending}
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {sendMutation.isPending && (

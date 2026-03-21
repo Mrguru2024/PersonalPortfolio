@@ -678,6 +678,12 @@ export default function AdminDashboardPage() {
             <span className="truncate">Content studio</span>
           </Link>
         </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/case-studies">
+            <FileText className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Case studies</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Password reset control — send reset link to any user by email */}

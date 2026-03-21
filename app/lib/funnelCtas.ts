@@ -17,6 +17,10 @@ export const SEE_GROWTH_SYSTEMS = "See growth systems";
 export const GROWTH_DIAGNOSIS_PATH = "/growth";
 /** Automated website growth diagnosis (crawl + score + report). */
 export const GROWTH_DIAGNOSIS_ENGINE_PATH = "/growth-diagnosis";
+/** Connected revenue opportunity diagnostic flow. */
+export const REVENUE_DIAGNOSTIC_PATH = "/revenue-diagnostic";
+/** Public proof library for conversion-ready case studies. */
+export const CASE_STUDIES_PATH = "/case-studies";
 
 /** Canonical lead magnet: Digital Growth Audit. */
 export const AUDIT_PATH = "/digital-growth-audit";

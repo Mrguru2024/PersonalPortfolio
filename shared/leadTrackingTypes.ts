@@ -22,6 +22,11 @@ export const LEAD_TRACKING_EVENT_TYPES = [
   "section_engagement",
   "return_visit",
   "tool_used", // legacy
+  "diagnostic_start",
+  "diagnostic_complete",
+  "case_study_view",
+  "case_study_cta_click",
+  "conversion_complete",
 ] as const;
 
 export type LeadTrackingEventType = (typeof LEAD_TRACKING_EVENT_TYPES)[number];

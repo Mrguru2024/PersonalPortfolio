@@ -108,14 +108,14 @@ export default function ServicesPage() {
               <Link href="/website-revenue-calculator" className="font-medium text-primary hover:underline">revenue loss calculator</Link> and{" "}
               <Link href="/homepage-conversion-blueprint" className="font-medium text-primary hover:underline">homepage conversion blueprint</Link> for free tools.
             </p>
-            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-              <Button asChild className="min-h-[44px]">
+            <div className="mt-6 flex flex-col sm:flex-row justify-center items-start sm:items-center gap-3">
+              <Button asChild className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/digital-growth-audit">Request Your Digital Growth Audit</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
+              <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/website-revenue-calculator">Explore free growth tools</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
+              <Button asChild variant="outline" className="min-h-[44px] min-w-[170px] sm:w-auto !flex justify-center text-center">
                 <Link href="/partners/ascendra-technologies#projects">View our work</Link>
               </Button>
             </div>
