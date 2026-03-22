@@ -28,6 +28,13 @@ export default function GrowthLandingPage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
+          <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
+            Prefer an automated scan or a full project assessment instead?{" "}
+            <Link href="/diagnostics" className="text-primary font-medium underline-offset-4 hover:underline">
+              Compare all diagnosis options
+            </Link>
+            .
+          </p>
         </section>
 
         {/* Problem */}
@@ -120,6 +127,11 @@ export default function GrowthLandingPage() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
+          <p className="text-sm text-muted-foreground mt-3">
+            <Link href="/diagnostics" className="text-primary font-medium underline-offset-4 hover:underline">
+              See other diagnosis paths
+            </Link>
+          </p>
         </section>
       </div>
     </div>

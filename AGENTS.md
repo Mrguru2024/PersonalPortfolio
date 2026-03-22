@@ -40,6 +40,12 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 - **Optional services** (Brevo email, OpenAI, Stripe, GitHub OAuth) degrade gracefully — the app runs fine without their API keys.
 - **Vercel crons** (`vercel.json`): `/api/cron/growth-os` (daily) and `/api/cron/content-studio-publish` (every 10 minutes) for Content Studio scheduled social posts. Both require `CRON_SECRET` in production. Facebook Page publishing uses `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` (see `.env.example`).
 
+### Site map (admin + AI agents)
+
+- **Source of truth:** `app/lib/siteDirectory.ts` — paths, titles, categories, keywords, **cluster** (IA / consolidation hints), related routes.
+- **Admin UI:** `/admin/site-directory` — search, audience filter, consolidation clusters, **Copy JSON for AI**.
+- **API:** `GET /api/admin/site-directory` (approved admin session). Optional query `?q=crm` returns filtered `entries` plus `clusters`. Use for agents that can call authenticated APIs.
+
 ### Development updates (admin dashboard digest)
 
 - Production loads `content/development-updates.md` from GitHub. **Branch defaults to `main`** (`DEVELOPMENT_UPDATES_GITHUB_REF`).

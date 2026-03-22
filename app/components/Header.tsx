@@ -28,8 +28,16 @@ import {
   Brain,
   Inbox,
   Target,
+  Map,
 } from "lucide-react";
-import { STRATEGY_CALL_PATH, LAUNCH_YOUR_BRAND_PATH, REBRAND_YOUR_BUSINESS_PATH, MARKETING_ASSETS_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
+import {
+  STRATEGY_CALL_PATH,
+  LAUNCH_YOUR_BRAND_PATH,
+  REBRAND_YOUR_BUSINESS_PATH,
+  MARKETING_ASSETS_PATH,
+  FREE_GROWTH_TOOLS_PATH,
+  DIAGNOSTICS_HUB_PATH,
+} from "@/lib/funnelCtas";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
@@ -100,6 +108,8 @@ export default function Header(_props: HeaderProps) {
   ];
   const moreLinks = [
     { name: "About", href: "/about" },
+    { name: "Diagnostics hub", href: DIAGNOSTICS_HUB_PATH },
+    { name: "Tools hub", href: FREE_GROWTH_TOOLS_PATH },
     { name: "Website breakdowns", href: "/website-breakdowns" },
     { name: "Your Growth Score", href: "/diagnosis/results" },
     { name: "Contact", href: "/contact" },
@@ -112,6 +122,7 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
+    { name: "Site directory", href: "/admin/site-directory", icon: Map, permission: "dashboard" as const },
     { name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
     { name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
     { name: "Lead intake", href: "/admin/lead-intake", icon: Inbox, permission: "crm" as const },

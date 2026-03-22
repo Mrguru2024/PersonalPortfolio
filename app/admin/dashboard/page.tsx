@@ -4,7 +4,7 @@ import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -633,6 +633,12 @@ export default function AdminDashboardPage() {
       </div>
 
       <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/site-directory">
+            <Map className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Site directory</span>
+          </Link>
+        </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/invoices">
             <Receipt className="h-4 w-4 mr-2 shrink-0" />

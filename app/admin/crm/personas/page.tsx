@@ -75,9 +75,14 @@ export default function PersonasPage() {
             Back to CRM
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold mt-2">Personas & Insights</h1>
-        <p className="text-muted-foreground">
-          Customer segments from CRM data for marketing and product planning.
+        <h1 className="text-3xl font-bold mt-2">Sales segments & CRM insights</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          Firmographics from your real contacts and deals (industry, type, status)—for targeting and pipeline planning.
+          This is not the same as{" "}
+          <Link href="/admin/ascendra-intelligence/personas" className="text-primary font-medium underline-offset-4 hover:underline">
+            marketing personas
+          </Link>{" "}
+          in Offer + Persona IQ (ideal buyer profiles for copy and campaigns).
         </p>
       </div>
 
@@ -88,7 +93,7 @@ export default function PersonasPage() {
       ) : (
         <Tabs defaultValue="personas">
           <TabsList className="inline-flex flex-nowrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
-            <TabsTrigger value="personas">Personas</TabsTrigger>
+            <TabsTrigger value="personas">Segments</TabsTrigger>
             <TabsTrigger value="insights">Insights (AI)</TabsTrigger>
           </TabsList>
           <TabsContent value="personas" className="mt-6 space-y-6">

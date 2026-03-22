@@ -9,13 +9,22 @@ interface TrackedCtaLinkProps {
   ctaLabel: string;
   pageVisited?: string;
   className?: string;
+  /** Merged into tracking metadata (e.g. personaId for journey CTAs). */
+  extraMetadata?: Record<string, unknown>;
   children: React.ReactNode;
 }
 
 /**
  * Link that fires cta_click before navigation. Use for primary CTAs (e.g. Start audit, Get my snapshot).
  */
-export function TrackedCtaLink({ href, ctaLabel, pageVisited, className, children }: TrackedCtaLinkProps) {
+export function TrackedCtaLink({
+  href,
+  ctaLabel,
+  pageVisited,
+  className,
+  extraMetadata,
+  children,
+}: TrackedCtaLinkProps) {
   const pathname = usePathname();
   const { track } = useVisitorTracking();
   const page = pageVisited ?? pathname ?? "/";
@@ -24,7 +33,12 @@ export function TrackedCtaLink({ href, ctaLabel, pageVisited, className, childre
     <Link
       href={href}
       className={className}
-      onClick={() => track("cta_click", { pageVisited: page, metadata: { cta: ctaLabel } })}
+      onClick={() =>
+        track("cta_click", {
+          pageVisited: page,
+          metadata: { cta: ctaLabel, ...extraMetadata },
+        })
+      }
     >
       {children}
     </Link>

@@ -90,8 +90,11 @@ export default function AscendraIntelligenceHubPage() {
                   Personas
                 </CardTitle>
                 <CardDescription>
-                  Core targets + partners. Add new personas, then attach scripts and magnets. Manage live pricing copy
-                  under Site offers.
+                  Marketing targets (ideal buyers) for copy and campaigns—distinct from CRM{" "}
+                  <Link href="/admin/crm/personas" className="underline-offset-2 hover:underline text-foreground">
+                    sales segments
+                  </Link>
+                  . Attach scripts and magnets; manage live pricing under Site offers.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -179,7 +182,7 @@ export default function AscendraIntelligenceHubPage() {
               <Link href="/admin/funnel/content-library">Funnel content library</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link href="/admin/crm/personas">CRM segments (firmographics)</Link>
+              <Link href="/admin/crm/personas">Sales segments (CRM firmographics)</Link>
             </Button>
           </CardContent>
         </Card>

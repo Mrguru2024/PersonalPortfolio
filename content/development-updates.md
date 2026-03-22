@@ -8,6 +8,16 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-22 — Persona journey, revenue bridge, and funnel alignment
+
+- **Persona journey:** Public `/journey` with `?journey=` and localStorage; compact selector on home (`#persona-journey`). Copy and paths live in `shared/personaJourneys.ts`. Visitor tracking: `persona_journey_selected`, `persona_journey_viewed`, `persona_journey_lead_magnet_click` (plus `cta_click` with `personaId` on journey CTAs). Lead scoring weights added for those events in `server/services/leadScoringService.ts`.
+- **Revenue bridge (no new DB tables):** `shared/personaRevenueMap.ts` maps each journey id to `site_offers.slug` (`startup-growth-system`) and lead-magnet slugs for analytics alignment with `funnel_content_assets.lead_magnet_slug`. `PersonaOfferTeaser` on the journey panel loads `GET /api/offers/[slug]` and links to `/offers/[slug]`; fires `section_engagement` when shown. **Ops:** run `npm run db:push` and `npm run db:seed` (or ensure `site_offers` has `startup-growth-system`) or the teaser stays hidden on 404.
+- **Proof on journey:** `caseStudyRefs` resolve to portfolio `projects` (`/projects/[id]`); cards show synopsis challenge line when present (`app/lib/personaCaseStudies.ts`).
+- **Service pages:** `PersonaServiceHeroAccent` when stored persona matches `recommendedService` / primary / secondary CTA href (`app/lib/servicePagePersonaMatch.ts`) on contractor, local business, startup MVP, marketing assets, brand growth.
+- **Footer / diagnostics:** “Growth assessment (full)” links to `/assessment` via `PROJECT_GROWTH_ASSESSMENT_PATH` (`app/lib/funnelCtas.ts`). Diagnostics hub links to `/journey`. `siteDirectory` includes `/journey`. `TrackedCtaLink` supports optional `extraMetadata` for attribution.
+
+---
+
 ## 2026-03-22 — Next-only stack, dev bundler, auth/HMR hardening, header hydration
 
 - **Single Next surface:** Removed legacy Vite `client/` and Express Vite integration; `dev:old` serves the Next app as static files only. Added small Express helpers (`logger`, `serveStatic`). `components.json` and tooling aligned with `app/globals.css`; `npm run check` uses `scripts/ensure-next-types.mjs` for Next route types.

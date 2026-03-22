@@ -17,6 +17,14 @@ export const SEE_GROWTH_SYSTEMS = "See growth systems";
 export const GROWTH_DIAGNOSIS_PATH = "/growth";
 /** Automated website growth diagnosis (crawl + score + report). */
 export const GROWTH_DIAGNOSIS_ENGINE_PATH = "/growth-diagnosis";
+/** Full project growth assessment (wizard → results / proposal). Not the same as `/growth` (free diagnosis entry). */
+export const PROJECT_GROWTH_ASSESSMENT_PATH = "/assessment";
+
+/** Persona-based journey selector + tailored paths (`?journey=`). */
+export const PERSONA_JOURNEY_PATH = "/journey";
+
+/** Single landing: pick automated scan vs questionnaire vs full paid assessment. */
+export const DIAGNOSTICS_HUB_PATH = "/diagnostics";
 
 /** Canonical lead magnet: Digital Growth Audit. */
 export const AUDIT_PATH = "/digital-growth-audit";

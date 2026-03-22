@@ -473,7 +473,7 @@ export default function CrmPage() {
               <Link href="/admin/crm/tasks">Tasks</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
-              <Link href="/admin/crm/personas">Personas</Link>
+              <Link href="/admin/crm/personas">Sales segments</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/sequences">Sequences</Link>

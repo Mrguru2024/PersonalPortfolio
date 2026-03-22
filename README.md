@@ -18,6 +18,7 @@ A Next.js (App Router) site for the **Brand Growth** ecosystem: three partners (
 - **Strategy flow:** `/strategy-call` (form) → `/call-confirmation` (thank-you + prep checklist).
 - **Partners:** `/partners/ascendra-technologies`, `/partners/macon-designs`, `/partners/style-studio-branding` — authority pages with brand accents.
 - **Persona landings:** `/contractor-systems`, `/local-business-growth`, `/startup-mvp-development` — use shared `FaqSection`; CTAs to audit and strategy call.
+- **Persona journey:** `/journey` — self-select path, lead magnets, optional offer teaser from `site_offers` (`npm run db:seed` seeds `startup-growth-system`). Home links in `#persona-journey`.
 - **Other:** `/audit`, `/blog`, `/assessment`, `/faq`, `/resume`, contact section, admin/dashboard (unchanged).
 
 ## Development

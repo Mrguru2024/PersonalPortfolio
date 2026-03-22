@@ -27,6 +27,9 @@ export const SCORING_RULES: Partial<Record<LeadTrackingEventType | string, numbe
   section_engagement: 2,
   return_visit: 10,
   tool_used: 5,
+  persona_journey_selected: 8,
+  persona_journey_viewed: 4,
+  persona_journey_lead_magnet_click: 6,
 };
 
 /** Service page path pattern: viewing a service page adds points. */

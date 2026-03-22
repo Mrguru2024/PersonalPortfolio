@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles } from "lucide-react";
+import { ArrowRight, Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, Signpost } from "lucide-react";
 import { TrackPageView } from "@/components/TrackPageView";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   STARTUP_WEBSITE_SCORE_PATH,
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   DIGITAL_GROWTH_AUDIT_PATH,
+  DIAGNOSTICS_HUB_PATH,
 } from "@/lib/funnelCtas";
 import { FreeLeadPrioritySection } from "@/components/conversion/FreeLeadPrioritySection";
 import { FreeToolsQualifiedLeadCard } from "@/components/conversion/FreeToolsQualifiedLeadCard";
@@ -132,6 +133,25 @@ export default function FreeGrowthToolsPage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
                 Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
               </p>
+              <Card className="max-w-2xl mx-auto mb-8 border-primary/20 bg-primary/5 dark:bg-primary/10">
+                <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <Signpost className="h-5 w-5" aria-hidden />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="font-semibold text-foreground">Not sure which diagnosis to use?</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Compare the automated scan, questionnaire, and full assessment on one page.
+                    </p>
+                  </div>
+                  <Button asChild variant="secondary" className="shrink-0 w-full sm:w-auto">
+                    <Link href={DIAGNOSTICS_HUB_PATH}>
+                      Choose your path
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
               <div className="max-w-4xl mx-auto mb-10 sm:mb-12 space-y-6">
                 <FreeToolsQualifiedLeadCard />
                 <FreeLeadPrioritySection

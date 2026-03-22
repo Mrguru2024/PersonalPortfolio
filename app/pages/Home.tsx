@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, ClipboardCheck, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +12,9 @@ import {
   FUNNEL_STORY_STEPS,
 } from "@/lib/funnel-content";
 import { projects } from "@/lib/data";
-import { FREE_TRIAL_PATH } from "@/lib/funnelCtas";
+import { FREE_TRIAL_PATH, PERSONA_JOURNEY_PATH } from "@/lib/funnelCtas";
+import { PersonaJourneySelector } from "@/components/persona-journey/PersonaJourneySelector";
+import type { PersonaJourneyId } from "@shared/personaJourneys";
 import { getLatestBlogPostsForBusiness } from "@/lib/blogSeedData";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightPerFounder } from "@/lib/partnerFounders";
@@ -68,6 +71,8 @@ const problemListItems = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-10 sm:space-y-12 pb-10 sm:pb-14">
       <HeroSection />
@@ -85,6 +90,36 @@ export default function Home() {
             ariaLabel="Ascendra Business Launch promo"
             objectFit="cover"
             maxWidthClassName="max-w-5xl"
+          />
+        </SectionReveal>
+      </section>
+      <section
+        id="persona-journey"
+        className="container mx-auto px-3 fold:px-4 sm:px-6"
+        aria-label="Find your growth path"
+      >
+        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-foreground">
+              Find your growth path
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              What best describes your business? We&apos;ll match you to lead systems, conversion paths, and automation
+              — not a one-size-fits-all pitch.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              <Link
+                href={PERSONA_JOURNEY_PATH}
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Open full journey page
+              </Link>
+            </p>
+          </div>
+          <PersonaJourneySelector
+            variant="compact"
+            pageVisited="/"
+            onSelect={(id: PersonaJourneyId) => router.push(`/journey?journey=${encodeURIComponent(id)}`)}
           />
         </SectionReveal>
       </section>

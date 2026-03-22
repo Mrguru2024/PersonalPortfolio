@@ -75,8 +75,13 @@ export default function AscendraPersonasListPage() {
           <Users className="h-7 w-7 text-primary" />
           Marketing personas
         </h1>
-        <p className="text-muted-foreground text-sm mb-6">
-          Customer targets for messaging and offers—not application users. Includes Denishia (Macon Designs).
+        <p className="text-muted-foreground text-sm mb-6 max-w-xl">
+          Ideal-buyer profiles for copy, scripts, and lead magnets—not application users. For segments derived from
+          real CRM contacts, see{" "}
+          <Link href="/admin/crm/personas" className="text-primary font-medium underline-offset-4 hover:underline">
+            Sales segments & CRM insights
+          </Link>
+          .
         </p>
 
         {isLoading ? (

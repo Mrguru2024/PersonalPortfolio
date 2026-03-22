@@ -32,6 +32,7 @@ import {
   ECOSYSTEM_CTA_STRATEGY_CALL,
 } from "@/lib/funnelCtas";
 import { personalInfo } from "@/lib/data";
+import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 
 const MACON_LOGO_BADGE = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
 const STYLE_STUDIO_LOGO = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
@@ -177,6 +178,7 @@ export default function BrandGrowthPage() {
                 One coordinated team · Brand · Web · Marketing
               </Badge>
             </motion.div>
+            <PersonaServiceHeroAccent />
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

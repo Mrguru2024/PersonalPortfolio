@@ -22,6 +22,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { FaqSection } from "@/components/FaqSection";
+import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 import {
   PRIMARY_CTA,
   PRIMARY_CTA_SHORT,
@@ -72,6 +73,7 @@ export default function ContractorSystemsPage() {
                 For contractors & trades
               </Badge>
             </motion.div>
+            <PersonaServiceHeroAccent />
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

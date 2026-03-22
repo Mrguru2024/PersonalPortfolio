@@ -22,6 +22,10 @@ export const LEAD_TRACKING_EVENT_TYPES = [
   "section_engagement",
   "return_visit",
   "tool_used", // legacy
+  /** Persona journey engine — public marketing funnel */
+  "persona_journey_selected",
+  "persona_journey_viewed",
+  "persona_journey_lead_magnet_click",
 ] as const;
 
 export type LeadTrackingEventType = (typeof LEAD_TRACKING_EVENT_TYPES)[number];
