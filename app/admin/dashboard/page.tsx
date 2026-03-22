@@ -175,6 +175,11 @@ export default function AdminDashboardPage() {
   const [tourCompletedOrDismissed, setTourCompletedOrDismissed] = useState(false);
   const [passwordResetEmail, setPasswordResetEmail] = useState("");
   const handled403 = useRef(false);
+  /** Avoid hydration mismatch: server vs client can disagree on auth (e.g. sessionStorage placeholderData). */
+  const [clientReady, setClientReady] = useState(false);
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
 
   const sendPasswordResetMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -479,9 +484,9 @@ export default function AdminDashboardPage() {
       minimumFractionDigits: 0,
     }).format(value);
 
-  if (authLoading) {
+  if (!clientReady || authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen" aria-busy="true" aria-label="Loading dashboard">
         <Loader2 className="h-8 w-8 animate-spin text-border" />
       </div>
     );
@@ -805,7 +810,10 @@ export default function AdminDashboardPage() {
             </div>
           ) : !devUpdatesData?.updates?.length ? (
             <p className="text-sm text-muted-foreground py-4">
-              No entries yet. Add sections to content/development-updates.md: start each section with ## YYYY-MM-DD — Title then bullet points. Push to production to see them here.
+              No entries yet. Add sections to content/development-updates.md: start each section with{" "}
+              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD — Title</code> or include time like{" "}
+              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD 14:30 — Title</code>, then bullet points. Push to
+              production to see them here.
             </p>
           ) : (
             <div className="space-y-6">
@@ -815,11 +823,19 @@ export default function AdminDashboardPage() {
                     <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date + "T12:00:00"} suppressHydrationWarning>
                       {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
                     </time>
-                    <span className="text-muted-foreground">·</span>
-                    <span className="text-sm tabular-nums text-muted-foreground" suppressHydrationWarning>
-                      {entry.time ?? "—"}
+                    {entry.time ? (
+                      <>
+                        <span className="text-muted-foreground" aria-hidden>
+                          ·
+                        </span>
+                        <span className="text-sm tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
+                          {entry.time}
+                        </span>
+                      </>
+                    ) : null}
+                    <span className="text-muted-foreground" aria-hidden>
+                      —
                     </span>
-                    <span className="text-muted-foreground">—</span>
                     <span className="text-sm font-semibold text-foreground">{entry.title}</span>
                   </div>
                   {entry.sourceBranches && entry.sourceBranches.length > 1 && (
