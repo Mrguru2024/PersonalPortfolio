@@ -13,6 +13,10 @@ import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
 const gaEnabled = GA_MEASUREMENT_ID.length > 0;
 
+/** Google Tag Manager container (public id). Must look like GTM-XXXXXXX. */
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID?.trim() ?? "";
+const gtmEnabled = /^GTM-[A-Z0-9]+$/i.test(GTM_ID);
+
 /** Absolute base URL (with https://) so manifest, OG, etc. resolve correctly and don't double-path. */
 const baseUrl = ensureAbsoluteUrl(getSiteBaseUrl());
 
@@ -94,7 +98,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
       <head>
-        {/* Google tag (gtag.js) — immediately after <head> per Google's instructions so detection and GA work */}
+        {/* Google Tag Manager — high in <head> per Google */}
+        {gtmEnabled && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_ID}');`,
+            }}
+          />
+        )}
+        {/* Google tag (gtag.js) — GA4; avoid duplicate page_view if you also load GA via GTM */}
         {gaEnabled && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
@@ -111,6 +127,17 @@ export default function RootLayout({
         className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden"
         suppressHydrationWarning
       >
+        {gtmEnabled && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(GTM_ID)}`}
+              height={0}
+              width={0}
+              style={{ display: "none", visibility: "hidden" }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}

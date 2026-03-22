@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSuperUser } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
+import {
+  isGoogleCalendarConnected,
+  isGoogleCalendarOAuthConfigured,
+} from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationStatus } from "../types";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +21,9 @@ export async function GET(req: NextRequest) {
         { status: 403 }
       );
     }
+
+    const gcalEnv = isGoogleCalendarOAuthConfigured();
+    const gcalConnected = await isGoogleCalendarConnected();
 
     const services: IntegrationStatus[] = [
       {
@@ -59,6 +66,32 @@ export async function GET(req: NextRequest) {
         configured: false,
         status: "not_configured",
         message: "Connect accounts below to enable scheduling.",
+      },
+      {
+        id: "google_calendar",
+        name: "Google Calendar (scheduling sync)",
+        description:
+          "OAuth: new Ascendra bookings create events on your Google calendar. Disconnect anytime from Integrations.",
+        configured: gcalEnv && gcalConnected,
+        status: gcalConnected ? "ok" : gcalEnv ? "not_configured" : "not_configured",
+        message: gcalConnected
+          ? "Connected — new /book confirmations sync as calendar events."
+          : gcalEnv
+            ? "OAuth client is set — click Connect Google Calendar to authorize."
+            : "Set GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET, add redirect URI in Google Cloud, then connect.",
+        reconnectUrl: "https://console.cloud.google.com/apis/credentials",
+        connectHref: gcalEnv && !gcalConnected ? "/api/admin/integrations/google-calendar/start" : undefined,
+      },
+      {
+        id: "calendly",
+        name: "Calendly (fallback URL)",
+        description: "Optional external scheduler URL for Revenue Ops SMS or redirects while native scheduling rolls out.",
+        configured: !!process.env.CALENDLY_API_TOKEN?.trim(),
+        status: process.env.CALENDLY_API_TOKEN?.trim() ? "ok" : "not_configured",
+        message: process.env.CALENDLY_API_TOKEN?.trim()
+          ? "API token set (use for import/sync tooling when implemented)."
+          : "Optional: CALENDLY_API_TOKEN for future Calendly bridge.",
+        reconnectUrl: "https://calendly.com/integrations/api_webhooks",
       },
     ];
 

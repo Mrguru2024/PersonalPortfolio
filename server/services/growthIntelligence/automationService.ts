@@ -220,6 +220,21 @@ export async function runScheduledGrowthOsJobs(input: {
     });
     steps.push({ job: "weekly_research_digest", ok: r.ok, message: r.message });
   }
+  try {
+    const { processDueSchedulingReminders } = await import("@server/services/schedulingReminderProcessor");
+    const r = await processDueSchedulingReminders();
+    steps.push({
+      job: "scheduling_reminders",
+      ok: true,
+      message: `processed=${r.processed} errors=${r.errors}`,
+    });
+  } catch (e) {
+    steps.push({
+      job: "scheduling_reminders",
+      ok: false,
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
   return { steps };
 }
 

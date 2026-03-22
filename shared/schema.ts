@@ -860,5 +860,6 @@ export * from "./crmSchema";
 export * from "./newsletterSchema";
 export * from "./communicationsSchema";
 export * from "./paidGrowthSchema";
+export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";

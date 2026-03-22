@@ -40,7 +40,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/services", title: "Services", category: "Public · Marketing", audience: "public", description: "Service overview and positioning.", keywords: k("services", "what we do") },
   { path: "/faq", title: "FAQ", category: "Public · Marketing", audience: "public", description: "Frequently asked questions.", keywords: k("faq", "questions") },
   { path: "/contact", title: "Contact", category: "Public · Marketing", audience: "public", description: "Contact form and booking entry.", keywords: k("contact", "form"), relatedPaths: ["/strategy-call"] },
-  { path: "/strategy-call", title: "Strategy call", category: "Public · Marketing", audience: "public", description: "Book a strategy / discovery call.", keywords: k("book", "call", "calendar", "meeting"), cluster: "conversion-primary" },
+  { path: "/strategy-call", title: "Strategy call", category: "Public · Marketing", audience: "public", description: "Book a strategy / discovery call.", keywords: k("book", "call", "calendar", "meeting"), cluster: "conversion-primary", relatedPaths: ["/book"] },
+  { path: "/book", title: "Book a time (native)", category: "Public · Marketing", audience: "public", description: "Ascendra-hosted scheduling: pick type, date, time; confirmations and reminders.", keywords: k("schedule", "calendar", "meeting", "book"), cluster: "conversion-primary", relatedPaths: ["/strategy-call"] },
   { path: "/call-confirmation", title: "Call confirmation", category: "Public · Marketing", audience: "public", description: "Post-booking confirmation.", keywords: k("call", "confirmed") },
   { path: "/thank-you", title: "Thank you", category: "Public · Marketing", audience: "public", description: "Generic thank-you after conversions.", keywords: k("thanks", "conversion") },
 
@@ -207,6 +208,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
 
   // —— Admin: growth products
   { path: "/admin/growth-os", title: "Growth OS hub", category: "Admin · Growth OS", audience: "admin", description: "Client Growth OS admin shell.", keywords: k("growth os", "gos") },
+  { path: "/admin/scheduling", title: "Native scheduling", category: "Admin · Growth OS", audience: "admin", description: "Bookings, email templates, AI tools for /book.", keywords: k("scheduling", "calendar", "bookings"), relatedPaths: ["/book"] },
   { path: "/admin/growth-os/intelligence", title: "GOS intelligence", category: "Admin · Growth OS", audience: "admin", description: "Intel dashboards/automation.", keywords: k("intelligence", "automation") },
   { path: "/admin/growth-os/security", title: "GOS security", category: "Admin · Growth OS", audience: "admin", description: "Security settings for GOS.", keywords: k("security", "gos") },
   { path: "/admin/growth-os/shares", title: "GOS shares", category: "Admin · Growth OS", audience: "admin", description: "Shared reports/links.", keywords: k("shares", "tokens") },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSuperUser } from "@/lib/auth-helpers";
 import { testZoomConnection } from "@/lib/zoom";
+import { testGoogleCalendarConnection } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationId } from "../types";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +31,16 @@ export async function POST(req: NextRequest) {
     }
 
     const service = body.service as IntegrationId | undefined;
-    if (!service || !["facebook", "brevo", "zoom", "social-scheduling"].includes(service)) {
+    if (
+      !service ||
+      !["facebook", "brevo", "zoom", "social-scheduling", "google_calendar", "calendly"].includes(service)
+    ) {
       return NextResponse.json(
-        { ok: false, message: "Missing or invalid service. Use: facebook, brevo, zoom, or social-scheduling." },
+        {
+          ok: false,
+          message:
+            "Missing or invalid service. Use: facebook, brevo, zoom, social-scheduling, google_calendar, or calendly.",
+        },
         { status: 400 }
       );
     }
@@ -94,6 +102,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         ok: false,
         message: "Social scheduling is not yet connected. Connect Facebook and other platforms above first.",
+      });
+    }
+
+    if (service === "google_calendar") {
+      const r = await testGoogleCalendarConnection();
+      return NextResponse.json(r);
+    }
+
+    if (service === "calendly") {
+      const tok = process.env.CALENDLY_API_TOKEN?.trim();
+      if (!tok) {
+        return NextResponse.json({
+          ok: false,
+          message: "CALENDLY_API_TOKEN not set (optional bridge).",
+        });
+      }
+      return NextResponse.json({
+        ok: true,
+        message: "Calendly token is set. Import/sync tooling can use it when implemented.",
       });
     }
 

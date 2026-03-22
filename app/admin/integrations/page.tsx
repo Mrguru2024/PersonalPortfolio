@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +20,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { IntegrationId, IntegrationStatus } from "@/api/admin/integrations/types";
 
 export default function AdminIntegrationsPage() {
@@ -33,9 +35,26 @@ export default function AdminIntegrationsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [testingId, setTestingId] = useState<IntegrationId | null>(null);
   const [testResult, setTestResult] = useState<{ id: IntegrationId; ok: boolean; message: string } | null>(null);
+  const [gcalFlash, setGcalFlash] = useState<string | null>(null);
+  const [gcalCalendarId, setGcalCalendarId] = useState("primary");
+  const [gcalSaving, setGcalSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("gcal") === "connected") {
+      setGcalFlash("Google Calendar connected. New bookings will create events on your calendar.");
+      window.history.replaceState({}, "", "/admin/integrations");
+    }
+    const err = q.get("gcal_error");
+    if (err) {
+      setGcalFlash(`Google Calendar: ${decodeURIComponent(err)}`);
+      window.history.replaceState({}, "", "/admin/integrations");
+    }
   }, []);
 
   useEffect(() => {
@@ -49,28 +68,66 @@ export default function AdminIntegrationsPage() {
     }
   }, [mounted, user, authLoading, router, isSuperUser]);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
-      const res = await apiRequest("GET", "/api/admin/integrations/status");
+      const res = await fetch("/api/admin/integrations/status", { credentials: "include" });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to load integrations");
+        throw new Error((data as { message?: string }).message || "Failed to load integrations");
       }
-      const data = await res.json();
-      setServices(data.services ?? []);
+      setServices((data as { services?: IntegrationStatus[] }).services ?? []);
+      const gcal = ((data as { services?: IntegrationStatus[] }).services ?? []).find(
+        (x) => x.id === "google_calendar",
+      );
+      if (gcal?.configured) {
+        try {
+          const cr = await fetch("/api/admin/integrations/google-calendar/settings", { credentials: "include" });
+          const cj = await cr.json().catch(() => ({}));
+          if (typeof (cj as { calendarId?: string }).calendarId === "string") {
+            setGcalCalendarId((cj as { calendarId: string }).calendarId);
+          }
+        } catch {
+          /* ignore */
+        }
+      }
     } catch {
       setServices([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!user || !isSuperUser) return;
     setLoading(true);
-    fetchStatus();
-  }, [user, isSuperUser]);
+    void fetchStatus();
+  }, [user, isSuperUser, fetchStatus]);
+
+  async function disconnectGoogleCalendar() {
+    if (!confirm("Disconnect Google Calendar? New bookings will not sync until you connect again.")) return;
+    try {
+      await apiRequest("POST", "/api/admin/integrations/google-calendar/disconnect");
+      setGcalFlash("Google Calendar disconnected.");
+      await fetchStatus();
+    } catch (e) {
+      setGcalFlash(e instanceof Error ? e.message : "Disconnect failed");
+    }
+  }
+
+  async function saveGcalCalendarId() {
+    setGcalSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/admin/integrations/google-calendar/settings", {
+        calendarId: gcalCalendarId.trim() || "primary",
+      });
+      setGcalFlash("Calendar target saved.");
+    } catch (e) {
+      setGcalFlash(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setGcalSaving(false);
+    }
+  }
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -194,27 +251,61 @@ export default function AdminIntegrationsPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTest(s.id)}
-                    disabled={testingId !== null}
-                  >
-                    {testingId === s.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Test"
-                    )}
-                  </Button>
-                  {s.reconnectUrl && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={s.reconnectUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        Reconnect
-                      </a>
+                <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    {s.connectHref ? (
+                      <Button variant="default" size="sm" asChild>
+                        <a href={s.connectHref}>Connect Google Calendar</a>
+                      </Button>
+                    ) : null}
+                    {s.id === "google_calendar" && s.configured ? (
+                      <Button variant="outline" size="sm" type="button" onClick={disconnectGoogleCalendar}>
+                        Disconnect
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTest(s.id)}
+                      disabled={testingId !== null}
+                    >
+                      {testingId === s.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Test"
+                      )}
                     </Button>
-                  )}
+                    {s.reconnectUrl ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={s.reconnectUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Google Cloud
+                        </a>
+                      </Button>
+                    ) : null}
+                  </div>
+                  {s.id === "google_calendar" && s.configured ? (
+                    <div className="flex flex-col gap-1 w-full sm:w-64">
+                      <Label className="text-xs text-muted-foreground">Calendar ID (primary or email)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={gcalCalendarId}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setGcalCalendarId(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="shrink-0"
+                          disabled={gcalSaving}
+                          onClick={() => void saveGcalCalendarId()}
+                        >
+                          {gcalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))
