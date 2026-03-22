@@ -158,7 +158,17 @@ export type ActivityLogType =
   | "discovery_workspace_created"
   | "discovery_workspace_updated"
   | "proposal_prep_created"
-  | "proposal_prep_updated";
+  | "proposal_prep_updated"
+  | "revenue_ops_sms_inbound"
+  | "revenue_ops_sms_outbound"
+  | "revenue_ops_call_inbound"
+  | "revenue_ops_missed_call"
+  | "revenue_ops_welcome_sms"
+  | "revenue_ops_booking_link_sent"
+  | "revenue_ops_booking_link_click"
+  | "revenue_ops_booking_confirmed"
+  | "revenue_ops_deposit_link_sent"
+  | "revenue_ops_payment_completed";
 
 export interface LogActivityPayload {
   contactId?: number;

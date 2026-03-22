@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -21,6 +20,8 @@ import {
 import { getFunnelContent } from "@/lib/funnelContent.server";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -71,7 +72,7 @@ export default async function StartupGrowthKitPage() {
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <BookOpen className="h-7 w-7" />
@@ -79,20 +80,14 @@ export default async function StartupGrowthKitPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 {heroTitle}
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
                 {heroSubtitle}
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
-                <Image
-                  src="/stock images/Web Design_4.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Web Design_4.jpeg"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+              />
             </section>
 
             {/* Why most startup websites fail */}
@@ -194,6 +189,8 @@ export default async function StartupGrowthKitPage() {
                 </li>
               </ol>
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="startup-growth-kit" />
 
             {/* Next steps */}
             <section>

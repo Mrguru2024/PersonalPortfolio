@@ -36,8 +36,9 @@ import {
 } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
-import Image from "next/image";
 import { CALL_CONFIRMATION_PATH, BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -155,11 +156,14 @@ export default function StrategyCallPage() {
       />
 
       <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-8 fold:py-10 xs:py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-xl overflow-x-hidden">
-          <div className="relative w-full max-w-lg mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mb-8">
-            <Image src="/stock images/Digital_18.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent" aria-hidden />
-          </div>
+        <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl overflow-x-hidden">
+          <FunnelHeroMedia
+            src="/stock images/Digital_18.jpeg"
+            spacing="before-copy"
+            maxWidth="3xl"
+            sizes="(max-width: 768px) 100vw, 672px"
+            gradientClassName="from-background/50 via-transparent to-transparent"
+          />
           <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 dark:bg-primary/20 text-primary mb-3 sm:mb-4 shrink-0">
               <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
@@ -191,7 +195,7 @@ export default function StrategyCallPage() {
             </Card>
           </div>
 
-          <Card className="border-border bg-card shadow-md overflow-hidden min-w-0">
+          <Card className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full">
             <CardHeader className="px-4 sm:px-6 md:px-8">
               <CardTitle className="text-lg sm:text-xl">Book your free call</CardTitle>
               <CardDescription className="text-sm sm:text-base">
@@ -396,6 +400,8 @@ export default function StrategyCallPage() {
               </Form>
             </CardContent>
           </Card>
+
+          <LeadMagnetRelatedWorkSection leadMagnetKey="strategy-call" />
         </div>
       </div>
     </>

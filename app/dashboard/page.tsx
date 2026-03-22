@@ -88,7 +88,7 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login");
+      router.push("/portal?redirect=/dashboard");
     }
   }, [user, authLoading, router]);
 

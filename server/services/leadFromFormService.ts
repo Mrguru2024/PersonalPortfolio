@@ -6,6 +6,7 @@
 import { storage } from "@server/storage";
 import { addScoreFromEvent } from "@server/services/leadScoringService";
 import { computeSegmentTags, mergeSegmentTags } from "@server/services/leadSegmentationService";
+import { onNewCrmContactCreated } from "@server/services/revenueOpsService";
 
 export interface FormAttribution {
   utm_source?: string | null;
@@ -23,6 +24,13 @@ export interface LeadFormDemographics {
   occupation?: string | null;
   companySize?: string | null;
   industry?: string | null;
+}
+
+function isPaidSearchAttribution(a: FormAttribution | null | undefined): boolean {
+  const medium = (a?.utm_medium || "").toLowerCase();
+  if (/^(cpc|ppc|paidsearch|paid)$/i.test(medium.replace(/\s/g, ""))) return true;
+  if (medium.includes("cpc") || medium.includes("ppc") || medium.includes("paid")) return true;
+  return false;
 }
 
 export interface EnsureLeadInput {
@@ -116,7 +124,10 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     const events = await storage.getVisitorActivityByLeadId(lead.id);
     const updated = await storage.getCrmContactById(lead.id);
     if (updated) {
-      const tags = mergeSegmentTags(updated.tags ?? undefined, computeSegmentTags({ contact: updated, recentEvents: events, recentSignals: {} }));
+      let tags = mergeSegmentTags(updated.tags ?? undefined, computeSegmentTags({ contact: updated, recentEvents: events, recentSignals: {} }));
+      if (isPaidSearchAttribution(attribution)) {
+        tags = mergeSegmentTags(tags, ["ascendra_ppc_attribution"]);
+      }
       if (tags.length > 0) await storage.updateCrmContact(lead.id, { tags });
     }
     if (vid) await storage.attachVisitorToLead(vid, lead.id);
@@ -149,8 +160,13 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
   });
 
   await addScoreFromEvent(storage, lead.id, "form_submit", {}).catch(() => {});
-  const tags = computeSegmentTags({ contact: lead, recentEvents: [], recentSignals: {} });
+  let tags = computeSegmentTags({ contact: lead, recentEvents: [], recentSignals: {} });
+  if (isPaidSearchAttribution(attribution)) {
+    tags = mergeSegmentTags(tags, ["ascendra_ppc_attribution"]);
+  }
   if (tags.length > 0) await storage.updateCrmContact(lead.id, { tags });
   if (vid) await storage.attachVisitorToLead(vid, lead.id);
-  return storage.getCrmContactById(lead.id);
+  const created = await storage.getCrmContactById(lead.id);
+  if (created) await onNewCrmContactCreated(storage, created).catch(() => {});
+  return created;
 }

@@ -46,7 +46,8 @@ function JourneyPageInner() {
                 </h1>
                 <p className="text-muted-foreground text-sm sm:text-base">
                   What best describes your business? We&apos;ll match you to the right tools, messaging, and next step
-                  — lead systems, conversion, and automation first.
+                  — lead systems, conversion, and automation first. High-ticket and tax practices live under{" "}
+                  <span className="text-foreground/90 font-medium">Additional paths</span> below.
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Prefer to pick a diagnostic?{" "}

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Layout, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export const metadata: Metadata = {
   title: "Homepage conversion blueprint | Free growth tool",
@@ -49,7 +50,7 @@ export default function HomepageConversionBlueprintPage() {
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
             {/* Hero */}
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -58,20 +59,15 @@ export default function HomepageConversionBlueprintPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 What your homepage needs to turn more visitors into leads
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
                 A practical blueprint showing the sections, messaging, and conversion elements most business homepages are missing.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
-                <Image
-                  src="/stock images/Graphic Design_15.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Graphic Design_15.jpeg"
+                aspect="video"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+              />
             </section>
 
             {/* Blueprint overview */}
@@ -178,6 +174,8 @@ export default function HomepageConversionBlueprintPage() {
                 </Button>
               </div>
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="homepage-blueprint" />
 
             <RecommendedNextStep
               offerSlug="website-optimization"

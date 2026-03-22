@@ -79,7 +79,7 @@ export default function CommunityProfilePage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/login?redirect=/community/profile");
+    if (!authLoading && !user) router.replace("/auth?redirect=/community/profile");
   }, [user, authLoading, router]);
 
   const profile = data?.profile ?? null;

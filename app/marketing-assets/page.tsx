@@ -19,6 +19,7 @@ import {
   ECOSYSTEM_CTA_MARKETING,
 } from "@/lib/funnelCtas";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 const SERVICES = [
   { icon: Megaphone, title: "Ad creatives", desc: "Paid social and display ads that stop the scroll and convert." },
@@ -40,74 +41,84 @@ export default function MarketingAssetsPage() {
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="marketing-assets">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-red-500/30 dark:border-red-400/25">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
-          <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl text-center">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-              <Badge className="mb-4 sm:mb-6 bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-xs sm:text-sm font-medium">
-                Marketing & promotional design
-              </Badge>
-            </motion.div>
-            <PersonaServiceHeroAccent />
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 sm:mb-6 leading-tight"
-            >
-              Professional Marketing Assets That{" "}
-              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Actually Convert
-              </span>
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10"
-            >
-              You have a website and basic branding—now you need stronger ongoing marketing visuals. Ad creatives, social graphics, packaging, and campaign assets led by Style Studio Branding.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="w-full flex justify-center"
-            >
-              <div className="relative w-full max-w-3xl aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <Image
-                  src="/stock images/Graphic Design_16.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
+          <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-6xl">
+            <div className="text-center">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                <Badge className="mb-4 sm:mb-6 bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-xs sm:text-sm font-medium">
+                  Marketing & promotional design
+                </Badge>
+              </motion.div>
+              <PersonaServiceHeroAccent />
+            </div>
+
+            <div className="mt-6 sm:mt-8 grid grid-cols-1 md:grid-cols-2 md:gap-10 lg:gap-12 xl:gap-14 items-center">
+              <div className="text-center md:text-left space-y-4 sm:space-y-6 min-w-0 order-2 md:order-1">
+                <motion.h1
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.05 }}
+                  className="text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-tight"
+                >
+                  Professional Marketing Assets That{" "}
+                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Actually Convert
+                  </span>
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto md:mx-0"
+                >
+                  You have a website and basic branding—now you need stronger ongoing marketing visuals. Ad creatives, social graphics, packaging, and campaign assets led by Style Studio Branding.
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
+                  className="flex flex-col items-center md:items-stretch gap-4 pt-1"
+                >
+                  <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto md:self-start bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg">
+                    <Link href={STRATEGY_CALL_PATH}>
+                      {ECOSYSTEM_CTA_MARKETING}
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </Link>
+                  </Button>
+                  <Link
+                    href="/partners/style-studio-branding"
+                    className="inline-flex items-center justify-center md:justify-start gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+                  >
+                    <div className="relative w-20 h-8 shrink-0">
+                      <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left dark:hidden" sizes="80px" />
+                      <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left hidden dark:block" sizes="80px" />
+                    </div>
+                    <span className="text-left">Marketing & production by Style Studio Branding</span>
+                  </Link>
+                </motion.div>
               </div>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="w-full flex flex-col items-center gap-4">
-              <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg">
-                <Link href={STRATEGY_CALL_PATH}>
-                  {ECOSYSTEM_CTA_MARKETING}
-                  <ArrowRight className="h-4 w-4 shrink-0" />
-                </Link>
-              </Button>
-              <Link href="/partners/style-studio-branding" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
-                <div className="relative w-20 h-8 shrink-0">
-                  <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left dark:hidden" sizes="80px" />
-                  <Image src="/Ascendra images/Stylestudiologos/StyleStudio_Wt_Rd_.png" alt="Style Studio Branding" fill className="object-contain object-left hidden dark:block" sizes="80px" />
-                </div>
-                <span>Marketing & production by Style Studio Branding</span>
-              </Link>
-            </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.12 }}
+                className="order-1 md:order-2 w-full"
+              >
+                <FunnelHeroMedia
+                  src="/stock images/Graphic Design_16.jpeg"
+                  spacing="none"
+                  maxWidth="full"
+                  sizes="(max-width: 768px) 100vw, 420px"
+                  priority
+                  className="max-w-lg mx-auto md:max-w-none aspect-[4/3] md:aspect-[5/4]"
+                  gradientClassName="from-background/60 via-transparent to-transparent md:from-background/40"
+                />
+              </motion.div>
+            </div>
           </div>
         </section>
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
-            <div className="relative w-full max-w-2xl mx-auto aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-md mb-8">
-              <Image src="/stock images/Graphic Design_16.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
-              <div className="absolute inset-0 bg-gradient-to-t from-muted/80 via-muted/10 to-transparent" aria-hidden />
-            </div>
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why Weak Marketing Visuals Cost You Trust and Sales
             </h2>

@@ -43,6 +43,17 @@ interface Newsletter {
   failedCount: number;
 }
 
+function getStatusBadge(status: string) {
+  const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    draft: "outline",
+    scheduled: "secondary",
+    sending: "secondary",
+    sent: "default",
+    failed: "destructive",
+  };
+  return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+}
+
 export default function NewslettersPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -148,6 +159,19 @@ export default function NewslettersPage() {
     },
   });
 
+  const filteredNewsletters = useMemo(() => {
+    return newsletters.filter((n) => {
+      const okStatus = statusFilter === "all" || n.status === statusFilter;
+      const okSearch = matchesLiveSearch(listSearch, [
+        n.subject,
+        n.status,
+        String(n.id),
+        n.totalRecipients != null ? String(n.totalRecipients) : "",
+      ]);
+      return okStatus && okSearch;
+    });
+  }, [newsletters, listSearch, statusFilter]);
+
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -158,11 +182,6 @@ export default function NewslettersPage() {
 
   if (!user || !user.isAdmin || !user.adminApproved) {
     return null;
-  }
-
-  // Debug: Log user status to help diagnose issues
-  if (user && user.isAdmin && !user.adminApproved) {
-    console.warn("User is admin but not approved. Please run 'npm run approve-admin' and log out/in.");
   }
 
   if (error) {
@@ -185,30 +204,6 @@ export default function NewslettersPage() {
       </div>
     );
   }
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      draft: "outline",
-      scheduled: "secondary",
-      sending: "secondary",
-      sent: "default",
-      failed: "destructive",
-    };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
-  };
-
-  const filteredNewsletters = useMemo(() => {
-    return newsletters.filter((n) => {
-      const okStatus = statusFilter === "all" || n.status === statusFilter;
-      const okSearch = matchesLiveSearch(listSearch, [
-        n.subject,
-        n.status,
-        String(n.id),
-        n.totalRecipients != null ? String(n.totalRecipients) : "",
-      ]);
-      return okStatus && okSearch;
-    });
-  }, [newsletters, listSearch, statusFilter]);
 
   return (
     <div className="container mx-auto px-4 py-10">

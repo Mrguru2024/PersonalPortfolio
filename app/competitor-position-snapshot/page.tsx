@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -138,7 +139,7 @@ export default function CompetitorPositionSnapshotPage() {
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <BarChart3 className="h-7 w-7" />
@@ -146,20 +147,15 @@ export default function CompetitorPositionSnapshotPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 See how your business may be showing up compared to competitors.
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
                 This snapshot helps identify how clearly your business is positioned online and where competitors may be gaining an advantage. It's a strategic review—not automated competitor scraping—covering brand clarity, presentation quality, website trust signals, and conversion readiness.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
-                <Image
-                  src="/stock images/Diversity_17.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/65 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Diversity_17.jpeg"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+                gradientClassName="from-background/65 via-transparent to-transparent"
+              />
             </section>
 
             {!submitted ? (
@@ -382,6 +378,8 @@ export default function CompetitorPositionSnapshotPage() {
                 />
               </>
             )}
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="competitor-snapshot" />
           </div>
         </div>
       </div>

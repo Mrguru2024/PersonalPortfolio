@@ -9,7 +9,12 @@ import { users, type User, type InsertUser,
   resumeRequests, type ResumeRequest, type InsertResumeRequest,
   projectAssessments, type ProjectAssessment, type InsertProjectAssessment,
   clientQuotes, type ClientQuote, type InsertClientQuote,
-  clientInvoices, type ClientInvoice, type InsertClientInvoice,
+  clientInvoices,
+  invoiceLineItemPresets,
+  type ClientInvoice,
+  type InsertClientInvoice,
+  type InvoiceLineItemPreset,
+  type InsertInvoiceLineItemPreset,
   clientAnnouncements, type ClientAnnouncement, type InsertClientAnnouncement,
   clientFeedback, type ClientFeedback, type InsertClientFeedback,
   funnelContent, type FunnelContent, type InsertFunnelContent,
@@ -20,6 +25,9 @@ import { users, type User, type InsertUser,
   businessGoalPresets, type BusinessGoalPreset, type InsertBusinessGoalPreset,
   adminReminders, type AdminReminder, type InsertAdminReminder,
   adminSettings, type AdminSettings, type InsertAdminSettings,
+  adminAgentMentorState,
+  type AdminAgentMentorStateRow,
+  type AdminAgentMentorStateV1,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -27,6 +35,37 @@ import {
   newsletters, type Newsletter, type InsertNewsletter,
   newsletterSends, type NewsletterSend, type InsertNewsletterSend
 } from "@shared/newsletterSchema";
+import {
+  commEmailDesigns,
+  commCampaigns,
+  commCampaignSends,
+  type CommEmailDesign,
+  type InsertCommEmailDesign,
+  type CommCampaign,
+  type InsertCommCampaign,
+  type CommCampaignSend,
+  type InsertCommCampaignSend,
+} from "@shared/communicationsSchema";
+import {
+  ppcAdAccounts,
+  ppcCampaigns,
+  ppcPublishLogs,
+  ppcPerformanceSnapshots,
+  ppcLeadQuality,
+  ppcReadinessAssessments,
+  type PpcAdAccount,
+  type InsertPpcAdAccount,
+  type PpcCampaign,
+  type InsertPpcCampaign,
+  type PpcPublishLog,
+  type PpcPerformanceSnapshot,
+  type PpcLeadQuality,
+  type InsertPpcLeadQuality,
+  type PpcReadinessAssessment,
+  type InsertPpcPublishLog,
+  type InsertPpcPerformanceSnapshot,
+  type InsertPpcReadinessAssessment,
+} from "@shared/paidGrowthSchema";
 import {
   crmAccounts, type CrmAccount, type InsertCrmAccount,
   crmContacts, type CrmContact, type InsertCrmContact,
@@ -48,12 +87,18 @@ import {
   crmDiscoveryWorkspaces, type CrmDiscoveryWorkspace, type InsertCrmDiscoveryWorkspace,
   crmProposalPrepWorkspaces, type CrmProposalPrepWorkspace, type InsertCrmProposalPrepWorkspace,
   crmSalesPlaybooks, type CrmSalesPlaybook, type InsertCrmSalesPlaybook,
+  crmContactSocialSuggestions,
+  type CrmContactSocialSuggestion,
+  type InsertCrmContactSocialSuggestion,
+  revenueOpsSettings,
+  type RevenueOpsSettingsRow,
+  type RevenueOpsSettingsConfig,
   growthExperiments, type GrowthExperiment, type InsertGrowthExperiment,
   growthVariants, type GrowthVariant, type InsertGrowthVariant,
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte, ne, count, countDistinct } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -184,6 +229,43 @@ export interface IStorage {
   getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]>;
   getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]>;
   getOrCreateSubscriberForEmail(email: string, source?: string): Promise<NewsletterSubscriber>;
+
+  // Ascendra OS — Communications
+  createCommEmailDesign(row: InsertCommEmailDesign): Promise<CommEmailDesign>;
+  updateCommEmailDesign(id: number, updates: Partial<InsertCommEmailDesign>): Promise<CommEmailDesign>;
+  getCommEmailDesignById(id: number): Promise<CommEmailDesign | undefined>;
+  listCommEmailDesigns(): Promise<CommEmailDesign[]>;
+  createCommCampaign(row: InsertCommCampaign): Promise<CommCampaign>;
+  updateCommCampaign(id: number, updates: Partial<CommCampaign>): Promise<CommCampaign>;
+  getCommCampaignById(id: number): Promise<CommCampaign | undefined>;
+  listCommCampaigns(): Promise<CommCampaign[]>;
+  createCommCampaignSend(row: InsertCommCampaignSend): Promise<CommCampaignSend>;
+  updateCommCampaignSend(id: number, updates: Partial<CommCampaignSend>): Promise<CommCampaignSend>;
+  getCommCampaignSendById(id: number): Promise<CommCampaignSend | undefined>;
+  getCommCampaignSendsByCampaignId(campaignId: number): Promise<CommCampaignSend[]>;
+  /** First open only: sets send.openedAt and increments campaign.openedCount */
+  markCommCampaignSendFirstOpen(sendId: number): Promise<boolean>;
+  /** First click only: sets send.clickedAt, firstClickedUrl, increments campaign.clickedCount */
+  markCommCampaignSendFirstClick(sendId: number, url: string, firstClickedBlockId?: string | null): Promise<boolean>;
+  getCommCampaignSendByBrevoMessageId(messageId: string): Promise<CommCampaignSend | undefined>;
+
+  // Ascendra OS — Paid Growth (PPC)
+  listFunnelContentPages(): Promise<FunnelContent[]>;
+  listPpcAdAccounts(): Promise<PpcAdAccount[]>;
+  createPpcAdAccount(row: InsertPpcAdAccount): Promise<PpcAdAccount>;
+  updatePpcAdAccount(id: number, updates: Partial<PpcAdAccount>): Promise<PpcAdAccount>;
+  listPpcCampaigns(): Promise<PpcCampaign[]>;
+  getPpcCampaignById(id: number): Promise<PpcCampaign | undefined>;
+  createPpcCampaign(row: InsertPpcCampaign): Promise<PpcCampaign>;
+  updatePpcCampaign(id: number, updates: Partial<PpcCampaign>): Promise<PpcCampaign>;
+  createPpcPublishLog(row: InsertPpcPublishLog): Promise<PpcPublishLog>;
+  listPpcPublishLogs(campaignId: number, limit?: number): Promise<PpcPublishLog[]>;
+  listPpcPerformanceSnapshots(campaignId: number, limit?: number): Promise<PpcPerformanceSnapshot[]>;
+  createPpcPerformanceSnapshot(row: InsertPpcPerformanceSnapshot): Promise<PpcPerformanceSnapshot>;
+  getPpcLeadQualityByContact(crmContactId: number): Promise<PpcLeadQuality | undefined>;
+  listPpcLeadQuality(limit?: number): Promise<(PpcLeadQuality & { contact?: CrmContact })[]>;
+  upsertPpcLeadQuality(crmContactId: number, data: Partial<InsertPpcLeadQuality>): Promise<PpcLeadQuality>;
+  createPpcReadinessAssessment(row: InsertPpcReadinessAssessment): Promise<PpcReadinessAssessment>;
   
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
@@ -194,6 +276,8 @@ export interface IStorage {
   getClientFeedback(userId: number): Promise<ClientFeedback[]>;
   createClientFeedback(feedback: InsertClientFeedback): Promise<ClientFeedback>;
   getClientProjects(userId: number): Promise<ProjectAssessment[]>;
+  /** Paying / project client workspace: explicit flag or linked invoices, quotes, or assessments. */
+  getClientPortalEligibility(userId: number): Promise<boolean>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllClientFeedback(): Promise<ClientFeedback[]>;
   updateClientFeedback(id: number, updates: Partial<InsertClientFeedback> & { respondedBy?: number; respondedAt?: Date }): Promise<ClientFeedback>;
@@ -204,6 +288,9 @@ export interface IStorage {
   updateInvoice(id: number, updates: Partial<InsertClientInvoice> & { paidAt?: Date | null; lastReminderAt?: Date | null }): Promise<ClientInvoice>;
   deleteInvoice(id: number): Promise<void>;
   getInvoiceByStripeId(stripeInvoiceId: string): Promise<ClientInvoice | undefined>;
+  listInvoiceLineItemPresets(): Promise<InvoiceLineItemPreset[]>;
+  createInvoiceLineItemPreset(row: InsertInvoiceLineItemPreset): Promise<InvoiceLineItemPreset>;
+  deleteInvoiceLineItemPreset(id: number): Promise<void>;
   // Announcements admin operations
   getAllAnnouncements(): Promise<ClientAnnouncement[]>;
   getPublicAnnouncements(): Promise<ClientAnnouncement[]>;
@@ -227,6 +314,15 @@ export interface IStorage {
   getCrmActivities(contactId: number): Promise<CrmActivity[]>;
   createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
   getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
+  listCrmContactSocialSuggestions(contactId: number, limit?: number): Promise<CrmContactSocialSuggestion[]>;
+  getCrmContactSocialSuggestionById(id: number): Promise<CrmContactSocialSuggestion | undefined>;
+  supersedeSuggestedSocialSuggestions(contactId: number): Promise<void>;
+  createCrmContactSocialSuggestion(row: InsertCrmContactSocialSuggestion): Promise<CrmContactSocialSuggestion>;
+  createCrmContactSocialSuggestions(rows: InsertCrmContactSocialSuggestion[]): Promise<CrmContactSocialSuggestion[]>;
+  updateCrmContactSocialSuggestion(
+    id: number,
+    updates: Partial<Pick<CrmContactSocialSuggestion, "status">>
+  ): Promise<CrmContactSocialSuggestion>;
 
   // CRM accounts (Stage 1)
   getCrmAccounts(): Promise<CrmAccount[]>;
@@ -240,6 +336,21 @@ export interface IStorage {
   getCrmActivityLogByContactId(contactId: number, limit?: number): Promise<CrmActivityLog[]>;
   getCrmActivityLogByAccountId(accountId: number, limit?: number): Promise<CrmActivityLog[]>;
   getCrmActivityLogByDealId(dealId: number, limit?: number): Promise<CrmActivityLog[]>;
+
+  getRevenueOpsSettings(): Promise<RevenueOpsSettingsRow>;
+  upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow>;
+  getCrmContactByPhoneDigits(digits: string): Promise<CrmContact | undefined>;
+  getCrmContactByStripeCustomerId(stripeCustomerId: string): Promise<CrmContact | undefined>;
+  getRevenueOpsDashboardMetrics(): Promise<{
+    totalLeads: number;
+    leadsWithPhone: number;
+    bookedLeads: number;
+    contactedLeads: number;
+    paymentsLogged: number;
+    missedCalls7d: number;
+    bookingClicks30d: number;
+    topSources: { source: string; count: number }[];
+  }>;
 
   // CRM research profiles (Stage 1)
   getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined>;
@@ -441,6 +552,9 @@ export interface IStorage {
 
   getAdminSettings(userId: number): Promise<AdminSettings | undefined>;
   upsertAdminSettings(userId: number, settings: Partial<Omit<InsertAdminSettings, "id" | "userId" | "createdAt">>): Promise<AdminSettings>;
+
+  getAdminAgentMentorState(userId: number): Promise<AdminAgentMentorStateRow | undefined>;
+  upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateV1): Promise<AdminAgentMentorStateRow>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1526,6 +1640,302 @@ export class DatabaseStorage implements IStorage {
       source,
     });
   }
+
+  async createCommEmailDesign(row: InsertCommEmailDesign): Promise<CommEmailDesign> {
+    const now = new Date();
+    const blocksJson = Array.isArray(row.blocksJson) ? row.blocksJson : null;
+    const [inserted] = await db
+      .insert(commEmailDesigns)
+      .values({ ...row, blocksJson, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updateCommEmailDesign(id: number, updates: Partial<InsertCommEmailDesign>): Promise<CommEmailDesign> {
+    const { blocksJson, ...rest } = updates;
+    const normalizedBlocks =
+      blocksJson === undefined ? undefined : Array.isArray(blocksJson) ? blocksJson : null;
+    const [updated] = await db
+      .update(commEmailDesigns)
+      .set({
+        ...rest,
+        ...(normalizedBlocks !== undefined ? { blocksJson: normalizedBlocks } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(commEmailDesigns.id, id))
+      .returning();
+    if (!updated) throw new Error("comm email design not found");
+    return updated;
+  }
+
+  async getCommEmailDesignById(id: number): Promise<CommEmailDesign | undefined> {
+    const [row] = await db.select().from(commEmailDesigns).where(eq(commEmailDesigns.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async listCommEmailDesigns(): Promise<CommEmailDesign[]> {
+    return db.select().from(commEmailDesigns).orderBy(desc(commEmailDesigns.updatedAt));
+  }
+
+  async createCommCampaign(row: InsertCommCampaign): Promise<CommCampaign> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(commCampaigns)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updateCommCampaign(id: number, updates: Partial<CommCampaign>): Promise<CommCampaign> {
+    const [updated] = await db
+      .update(commCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(commCampaigns.id, id))
+      .returning();
+    if (!updated) throw new Error("comm campaign not found");
+    return updated;
+  }
+
+  async getCommCampaignById(id: number): Promise<CommCampaign | undefined> {
+    const [row] = await db.select().from(commCampaigns).where(eq(commCampaigns.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async listCommCampaigns(): Promise<CommCampaign[]> {
+    return db.select().from(commCampaigns).orderBy(desc(commCampaigns.updatedAt));
+  }
+
+  async createCommCampaignSend(row: InsertCommCampaignSend): Promise<CommCampaignSend> {
+    const [inserted] = await db.insert(commCampaignSends).values(row).returning();
+    return inserted!;
+  }
+
+  async updateCommCampaignSend(id: number, updates: Partial<CommCampaignSend>): Promise<CommCampaignSend> {
+    const [updated] = await db
+      .update(commCampaignSends)
+      .set(updates)
+      .where(eq(commCampaignSends.id, id))
+      .returning();
+    if (!updated) throw new Error("comm campaign send not found");
+    return updated;
+  }
+
+  async getCommCampaignSendById(id: number): Promise<CommCampaignSend | undefined> {
+    const [row] = await db.select().from(commCampaignSends).where(eq(commCampaignSends.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async getCommCampaignSendsByCampaignId(campaignId: number): Promise<CommCampaignSend[]> {
+    return db
+      .select()
+      .from(commCampaignSends)
+      .where(eq(commCampaignSends.campaignId, campaignId))
+      .orderBy(desc(commCampaignSends.createdAt));
+  }
+
+  async markCommCampaignSendFirstOpen(sendId: number): Promise<boolean> {
+    const [updated] = await db
+      .update(commCampaignSends)
+      .set({ openedAt: new Date() })
+      .where(and(eq(commCampaignSends.id, sendId), isNull(commCampaignSends.openedAt)))
+      .returning();
+    if (!updated) return false;
+    await db
+      .update(commCampaigns)
+      .set({
+        openedCount: sql`coalesce(${commCampaigns.openedCount}, 0) + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(commCampaigns.id, updated.campaignId));
+    return true;
+  }
+
+  async getCommCampaignSendByBrevoMessageId(messageId: string): Promise<CommCampaignSend | undefined> {
+    const trimmed = messageId.trim();
+    if (!trimmed) return undefined;
+    const [row] = await db
+      .select()
+      .from(commCampaignSends)
+      .where(eq(commCampaignSends.brevoMessageId, trimmed))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async markCommCampaignSendFirstClick(
+    sendId: number,
+    url: string,
+    firstClickedBlockId?: string | null
+  ): Promise<boolean> {
+    const [updated] = await db
+      .update(commCampaignSends)
+      .set({
+        clickedAt: new Date(),
+        firstClickedUrl: url,
+        ...(firstClickedBlockId ? { firstClickedBlockId } : {}),
+      })
+      .where(and(eq(commCampaignSends.id, sendId), isNull(commCampaignSends.clickedAt)))
+      .returning();
+    if (!updated) return false;
+    await db
+      .update(commCampaigns)
+      .set({
+        clickedCount: sql`coalesce(${commCampaigns.clickedCount}, 0) + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(commCampaigns.id, updated.campaignId));
+    return true;
+  }
+
+  async listFunnelContentPages(): Promise<FunnelContent[]> {
+    return db.select().from(funnelContent).orderBy(funnelContent.slug);
+  }
+
+  async listPpcAdAccounts(): Promise<PpcAdAccount[]> {
+    return db.select().from(ppcAdAccounts).orderBy(desc(ppcAdAccounts.updatedAt));
+  }
+
+  async createPpcAdAccount(row: InsertPpcAdAccount): Promise<PpcAdAccount> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcAdAccounts)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcAdAccount(id: number, updates: Partial<PpcAdAccount>): Promise<PpcAdAccount> {
+    const [updated] = await db
+      .update(ppcAdAccounts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcAdAccounts.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc ad account not found");
+    return updated;
+  }
+
+  async listPpcCampaigns(): Promise<PpcCampaign[]> {
+    return db.select().from(ppcCampaigns).orderBy(desc(ppcCampaigns.updatedAt));
+  }
+
+  async getPpcCampaignById(id: number): Promise<PpcCampaign | undefined> {
+    const [row] = await db.select().from(ppcCampaigns).where(eq(ppcCampaigns.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createPpcCampaign(row: InsertPpcCampaign): Promise<PpcCampaign> {
+    const now = new Date();
+    const [inserted] = await db.insert(ppcCampaigns).values({ ...row, createdAt: now, updatedAt: now }).returning();
+    return inserted!;
+  }
+
+  async updatePpcCampaign(id: number, updates: Partial<PpcCampaign>): Promise<PpcCampaign> {
+    const [updated] = await db
+      .update(ppcCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcCampaigns.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc campaign not found");
+    return updated;
+  }
+
+  async createPpcPublishLog(row: InsertPpcPublishLog): Promise<PpcPublishLog> {
+    const [inserted] = await db.insert(ppcPublishLogs).values(row).returning();
+    return inserted!;
+  }
+
+  async listPpcPublishLogs(campaignId: number, limit = 30): Promise<PpcPublishLog[]> {
+    return db
+      .select()
+      .from(ppcPublishLogs)
+      .where(eq(ppcPublishLogs.campaignId, campaignId))
+      .orderBy(desc(ppcPublishLogs.createdAt))
+      .limit(limit);
+  }
+
+  async listPpcPerformanceSnapshots(campaignId: number, limit = 60): Promise<PpcPerformanceSnapshot[]> {
+    return db
+      .select()
+      .from(ppcPerformanceSnapshots)
+      .where(eq(ppcPerformanceSnapshots.campaignId, campaignId))
+      .orderBy(desc(ppcPerformanceSnapshots.snapshotDate))
+      .limit(limit);
+  }
+
+  async createPpcPerformanceSnapshot(row: InsertPpcPerformanceSnapshot): Promise<PpcPerformanceSnapshot> {
+    const [inserted] = await db.insert(ppcPerformanceSnapshots).values(row).returning();
+    return inserted!;
+  }
+
+  async getPpcLeadQualityByContact(crmContactId: number): Promise<PpcLeadQuality | undefined> {
+    const [row] = await db
+      .select()
+      .from(ppcLeadQuality)
+      .where(eq(ppcLeadQuality.crmContactId, crmContactId))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async listPpcLeadQuality(limit = 50): Promise<(PpcLeadQuality & { contact?: CrmContact })[]> {
+    const rows = await db
+      .select()
+      .from(ppcLeadQuality)
+      .orderBy(desc(ppcLeadQuality.updatedAt))
+      .limit(limit);
+    const out: (PpcLeadQuality & { contact?: CrmContact })[] = [];
+    for (const r of rows) {
+      const contact = await this.getCrmContactById(r.crmContactId);
+      out.push({ ...r, contact });
+    }
+    return out;
+  }
+
+  async upsertPpcLeadQuality(crmContactId: number, data: Partial<InsertPpcLeadQuality>): Promise<PpcLeadQuality> {
+    const existing = await this.getPpcLeadQualityByContact(crmContactId);
+    const now = new Date();
+    if (existing) {
+      const patch: Record<string, unknown> = { crmContactId, updatedAt: now };
+      for (const key of [
+        "ppcCampaignId",
+        "leadValid",
+        "fitScore",
+        "spamFlag",
+        "bookedCall",
+        "sold",
+        "notes",
+        "createdBy",
+      ] as const) {
+        if (key in data && data[key] !== undefined) patch[key] = data[key];
+      }
+      const [updated] = await db
+        .update(ppcLeadQuality)
+        .set(patch as Partial<InsertPpcLeadQuality>)
+        .where(eq(ppcLeadQuality.id, existing.id))
+        .returning();
+      return updated!;
+    }
+    const [inserted] = await db
+      .insert(ppcLeadQuality)
+      .values({
+        crmContactId,
+        ppcCampaignId: data.ppcCampaignId ?? null,
+        leadValid: data.leadValid ?? true,
+        fitScore: data.fitScore ?? null,
+        spamFlag: data.spamFlag ?? false,
+        bookedCall: data.bookedCall ?? false,
+        sold: data.sold ?? false,
+        notes: data.notes ?? null,
+        createdBy: data.createdBy ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return inserted!;
+  }
+
+  async createPpcReadinessAssessment(row: InsertPpcReadinessAssessment): Promise<PpcReadinessAssessment> {
+    const [inserted] = await db.insert(ppcReadinessAssessments).values(row).returning();
+    return inserted!;
+  }
   
   // Client dashboard operations
   async getClientQuotes(userId: number): Promise<ClientQuote[]> {
@@ -1697,7 +2107,7 @@ export class DatabaseStorage implements IStorage {
     if (!user || !user.email) {
       return [];
     }
-    
+
     // Get assessments by email
     return db
       .select()
@@ -1705,7 +2115,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projectAssessments.email, user.email))
       .orderBy(desc(projectAssessments.createdAt));
   }
-  
+
+  async getClientPortalEligibility(userId: number): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    if (user.clientPortalAccess === true) return true;
+
+    const invoices = await this.getClientInvoices(userId);
+    if (invoices.length > 0) return true;
+
+    const quotesByUser = await this.getClientQuotes(userId);
+    if (quotesByUser.length > 0) return true;
+
+    const email = user.email?.trim();
+    if (email) {
+      const quotesByEmail = await this.getClientQuotesByEmail(email);
+      if (quotesByEmail.length > 0) return true;
+    }
+
+    const projects = await this.getClientProjects(userId);
+    return projects.length > 0;
+  }
+
   async getAllClientFeedback(): Promise<ClientFeedback[]> {
     return db
       .select()
@@ -1758,6 +2189,23 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInvoice(id: number): Promise<void> {
     await db.delete(clientInvoices).where(eq(clientInvoices.id, id));
+  }
+
+  async listInvoiceLineItemPresets(): Promise<InvoiceLineItemPreset[]> {
+    return db.select().from(invoiceLineItemPresets).orderBy(desc(invoiceLineItemPresets.updatedAt));
+  }
+
+  async createInvoiceLineItemPreset(row: InsertInvoiceLineItemPreset): Promise<InvoiceLineItemPreset> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(invoiceLineItemPresets)
+      .values({ ...row, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async deleteInvoiceLineItemPreset(id: number): Promise<void> {
+    await db.delete(invoiceLineItemPresets).where(eq(invoiceLineItemPresets.id, id));
   }
 
   async getAllAnnouncements(): Promise<ClientAnnouncement[]> {
@@ -1858,6 +2306,54 @@ export class DatabaseStorage implements IStorage {
     await db.delete(crmContacts).where(eq(crmContacts.id, id));
   }
 
+  async listCrmContactSocialSuggestions(contactId: number, limit = 40): Promise<CrmContactSocialSuggestion[]> {
+    return db
+      .select()
+      .from(crmContactSocialSuggestions)
+      .where(
+        and(eq(crmContactSocialSuggestions.contactId, contactId), ne(crmContactSocialSuggestions.status, "superseded"))
+      )
+      .orderBy(desc(crmContactSocialSuggestions.createdAt))
+      .limit(limit);
+  }
+
+  async getCrmContactSocialSuggestionById(id: number): Promise<CrmContactSocialSuggestion | undefined> {
+    const [row] = await db.select().from(crmContactSocialSuggestions).where(eq(crmContactSocialSuggestions.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async supersedeSuggestedSocialSuggestions(contactId: number): Promise<void> {
+    await db
+      .update(crmContactSocialSuggestions)
+      .set({ status: "superseded" })
+      .where(
+        and(eq(crmContactSocialSuggestions.contactId, contactId), eq(crmContactSocialSuggestions.status, "suggested"))
+      );
+  }
+
+  async createCrmContactSocialSuggestion(row: InsertCrmContactSocialSuggestion): Promise<CrmContactSocialSuggestion> {
+    const [inserted] = await db.insert(crmContactSocialSuggestions).values(row).returning();
+    return inserted!;
+  }
+
+  async createCrmContactSocialSuggestions(rows: InsertCrmContactSocialSuggestion[]): Promise<CrmContactSocialSuggestion[]> {
+    if (rows.length === 0) return [];
+    return db.insert(crmContactSocialSuggestions).values(rows).returning();
+  }
+
+  async updateCrmContactSocialSuggestion(
+    id: number,
+    updates: Partial<Pick<CrmContactSocialSuggestion, "status">>
+  ): Promise<CrmContactSocialSuggestion> {
+    const [updated] = await db
+      .update(crmContactSocialSuggestions)
+      .set(updates)
+      .where(eq(crmContactSocialSuggestions.id, id))
+      .returning();
+    if (!updated) throw new Error("social suggestion not found");
+    return updated;
+  }
+
   async getCrmDeals(contactId?: number, accountId?: number, pipelineStage?: string): Promise<(CrmDeal & { contact?: CrmContact; account?: CrmAccount })[]> {
     const conditions: ReturnType<typeof eq>[] = [];
     if (contactId != null) conditions.push(eq(crmDeals.contactId, contactId));
@@ -1942,6 +2438,119 @@ export class DatabaseStorage implements IStorage {
       .where(eq(crmActivityLog.dealId, dealId))
       .orderBy(desc(crmActivityLog.createdAt))
       .limit(Math.min(limit, 100));
+  }
+
+  async getRevenueOpsSettings(): Promise<RevenueOpsSettingsRow> {
+    const [row] = await db.select().from(revenueOpsSettings).where(eq(revenueOpsSettings.id, 1)).limit(1);
+    if (row) return row;
+    const [inserted] = await db.insert(revenueOpsSettings).values({ id: 1, config: {} }).returning();
+    return inserted!;
+  }
+
+  async upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow> {
+    const existing = await this.getRevenueOpsSettings();
+    const merged = { ...existing.config, ...config };
+    const [updated] = await db
+      .update(revenueOpsSettings)
+      .set({ config: merged, updatedAt: new Date() })
+      .where(eq(revenueOpsSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
+  async getCrmContactByPhoneDigits(digits: string): Promise<CrmContact | undefined> {
+    const d = digits.replace(/\D/g, "");
+    if (d.length < 10) return undefined;
+    const last10 = d.slice(-10);
+    const rows = await db
+      .select()
+      .from(crmContacts)
+      .where(
+        sql`right(regexp_replace(coalesce(${crmContacts.phone}, ''), '[^0-9]', '', 'g'), 10) = ${last10}`
+      )
+      .orderBy(desc(crmContacts.updatedAt))
+      .limit(3);
+    return rows[0];
+  }
+
+  async getCrmContactByStripeCustomerId(stripeCustomerId: string): Promise<CrmContact | undefined> {
+    if (!stripeCustomerId.trim()) return undefined;
+    const [row] = await db
+      .select()
+      .from(crmContacts)
+      .where(eq(crmContacts.stripeCustomerId, stripeCustomerId))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async getRevenueOpsDashboardMetrics(): Promise<{
+    totalLeads: number;
+    leadsWithPhone: number;
+    bookedLeads: number;
+    contactedLeads: number;
+    paymentsLogged: number;
+    missedCalls7d: number;
+    bookingClicks30d: number;
+    topSources: { source: string; count: number }[];
+  }> {
+    const now = Date.now();
+    const sevenDaysAgo = new Date(now - 7 * 86400000);
+    const thirtyDaysAgo = new Date(now - 30 * 86400000);
+
+    const [totalLeadsRow] = await db.select({ n: count() }).from(crmContacts).where(eq(crmContacts.type, "lead"));
+    const [withPhoneRow] = await db
+      .select({ n: count() })
+      .from(crmContacts)
+      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.phone), sql`length(trim(${crmContacts.phone})) > 5`));
+    const [bookedRow] = await db
+      .select({ n: count() })
+      .from(crmContacts)
+      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.bookedCallAt)));
+    const [contactedRow] = await db
+      .select({ n: count() })
+      .from(crmContacts)
+      .where(
+        and(eq(crmContacts.type, "lead"), or(isNotNull(crmContacts.lastContactedAt), ne(crmContacts.status, "new")))
+      );
+    const [paymentsRow] = await db
+      .select({ n: countDistinct(crmActivityLog.contactId) })
+      .from(crmActivityLog)
+      .where(
+        and(eq(crmActivityLog.type, "revenue_ops_payment_completed"), gte(crmActivityLog.createdAt, thirtyDaysAgo))
+      );
+    const [missedRow] = await db
+      .select({ n: count() })
+      .from(crmActivityLog)
+      .where(and(eq(crmActivityLog.type, "revenue_ops_missed_call"), gte(crmActivityLog.createdAt, sevenDaysAgo)));
+    const [clicksRow] = await db
+      .select({ n: count() })
+      .from(crmActivityLog)
+      .where(and(eq(crmActivityLog.type, "revenue_ops_booking_link_click"), gte(crmActivityLog.createdAt, thirtyDaysAgo)));
+
+    const leadSources = await db
+      .select({ utm: crmContacts.utmSource, src: crmContacts.source })
+      .from(crmContacts)
+      .where(eq(crmContacts.type, "lead"));
+    const sourceMap = new Map<string, number>();
+    for (const row of leadSources) {
+      const label = (row.utm?.trim() || row.src?.trim() || "(none)") as string;
+      sourceMap.set(label, (sourceMap.get(label) ?? 0) + 1);
+    }
+    const topSources = [...sourceMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([source, n]) => ({ source, count: n }));
+
+    return {
+      totalLeads: Number(totalLeadsRow?.n ?? 0),
+      leadsWithPhone: Number(withPhoneRow?.n ?? 0),
+      bookedLeads: Number(bookedRow?.n ?? 0),
+      contactedLeads: Number(contactedRow?.n ?? 0),
+      paymentsLogged: Number(paymentsRow?.n ?? 0),
+      missedCalls7d: Number(missedRow?.n ?? 0),
+      bookingClicks30d: Number(clicksRow?.n ?? 0),
+      topSources,
+    };
   }
 
   async getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined> {
@@ -3263,6 +3872,31 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, ...payload, createdAt: now })
       .returning();
     return inserted!;
+  }
+
+  async getAdminAgentMentorState(userId: number): Promise<AdminAgentMentorStateRow | undefined> {
+    const [row] = await db
+      .select()
+      .from(adminAgentMentorState)
+      .where(eq(adminAgentMentorState.userId, userId))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async upsertAdminAgentMentorState(
+    userId: number,
+    state: AdminAgentMentorStateV1,
+  ): Promise<AdminAgentMentorStateRow> {
+    const now = new Date();
+    const [row] = await db
+      .insert(adminAgentMentorState)
+      .values({ userId, state, updatedAt: now })
+      .onConflictDoUpdate({
+        target: adminAgentMentorState.userId,
+        set: { state, updatedAt: now },
+      })
+      .returning();
+    return row!;
   }
 }
 

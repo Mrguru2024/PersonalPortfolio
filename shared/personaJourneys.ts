@@ -3,7 +3,8 @@
  * Admin/CMS can later load or override this; keep IDs stable for analytics and URLs (?journey=).
  */
 
-export const PERSONA_JOURNEY_IDS = [
+/** Shown first in the path selector (max 6 cards before “additional paths”). */
+export const PERSONA_JOURNEY_PRIMARY_IDS = [
   "marcus-trades",
   "kristopher-studio",
   "tasha-beauty",
@@ -12,6 +13,16 @@ export const PERSONA_JOURNEY_IDS = [
   "denishia-creative",
 ] as const;
 
+/** Revealed under “Additional paths” — same journey workflow + lead magnets as core personas. */
+export const PERSONA_JOURNEY_MORE_IDS = ["high-ticket-owner", "tax-business-owner"] as const;
+
+export const PERSONA_JOURNEY_IDS = [
+  ...PERSONA_JOURNEY_PRIMARY_IDS,
+  ...PERSONA_JOURNEY_MORE_IDS,
+] as const;
+
+export type PersonaJourneyPrimaryId = (typeof PERSONA_JOURNEY_PRIMARY_IDS)[number];
+export type PersonaJourneyMoreId = (typeof PERSONA_JOURNEY_MORE_IDS)[number];
 export type PersonaJourneyId = (typeof PERSONA_JOURNEY_IDS)[number];
 
 export function isPersonaJourneyId(value: string): value is PersonaJourneyId {
@@ -401,7 +412,136 @@ export const PERSONA_JOURNEYS: PersonaJourney[] = [
       },
     ],
   },
+  {
+    id: "high-ticket-owner",
+    selectorTitle: "High-ticket / business owner",
+    selectorSubtitle: "Consulting, advisory, or premium B2B — you sell outcomes and need a funnel that matches your price.",
+    businessTypeLabel: "High-ticket services / expert-led business",
+    pains: [
+      "Pipeline swings between referrals and random inbound — there's no repeatable path to qualified strategy calls.",
+      "Your site explains what you do but not why you're worth premium fees or how engagement starts.",
+      "Long sales cycles die in the inbox because nurture and proof aren't systematized.",
+    ],
+    goals: [
+      "More conversations with buyers who already respect budget and timeline before the first call.",
+      "A single primary path: educate → qualify → book — without discounting to fill the calendar.",
+      "Assets and automation that reinforce authority while you stay focused on delivery.",
+    ],
+    headline: "Match your funnel to your fee — without sounding desperate or generic",
+    subhead:
+      "Ascendra builds the conversion layer high-ticket buyers expect: sharp positioning, proof, and a clear next step that protects your time.",
+    valueProposition:
+      "We align homepage story, lead magnets, and follow-up so premium prospects self-select in — the same audit and blueprint stack we use for studios and strategic sellers, tuned for owners who close on trust, not coupons.",
+    primaryLeadMagnet: {
+      label: "Request a Digital Growth Audit",
+      href: "/digital-growth-audit",
+      blurb: "We map where premium buyers drop off between your story, proof, and book-a-call flow — prioritized, plain language.",
+    },
+    secondaryLeadMagnet: {
+      label: "Get the Homepage Conversion Blueprint",
+      href: "/homepage-conversion-blueprint",
+      blurb: "Structure your homepage so high-ticket visitors see fit, process, and next step before they ever hit your calendar.",
+    },
+    primaryCta: { label: "Book a strategy call", href: "/strategy-call" },
+    secondaryCta: { label: "Explore the Brand Growth hub", href: "/brand-growth" },
+    recommendedService: {
+      label: "Brand Growth ecosystem hub",
+      href: "/brand-growth",
+      rationale: "One narrative spine for premium positioning, offers, and conversion — aligned with how you actually sell.",
+    },
+    trustIntro: "What we optimize for high-ticket operators",
+    trustPoints: [
+      "Offer and page structure that pre-qualify budget and fit — fewer tire-kicker calls.",
+      "Lead magnets that educate toward a strategy conversation, not a free brainstorm.",
+      "Automation that keeps long-cycle deals warm without you manually chasing every thread.",
+    ],
+    educationBlurb:
+      "High-ticket revenue is a trust transfer. We make that transfer visible on the page and in the follow-up — same playbook as our branding and creative journeys, built for owners who sell expertise at a premium.",
+    caseStudyRefs: ["the-unauthorized-author", "web-development-services"],
+    faqs: [
+      {
+        question: "We already get inbound — why change the site?",
+        answer:
+          "Volume without fit wastes partner time. We tighten who raises their hand and what they understand before they book — so calls start warmer.",
+      },
+      {
+        question: "Will this make us look like a template shop?",
+        answer:
+          "No. We extend your positioning into structure and CTAs — the craft stays yours; the path to revenue gets clearer.",
+      },
+    ],
+  },
+  {
+    id: "tax-business-owner",
+    selectorTitle: "Tax / accounting practice owner",
+    selectorSubtitle: "CPA, EA, or tax firm — seasonal spikes, trust-heavy buyers, and local competition.",
+    businessTypeLabel: "Tax, accounting & advisory practice",
+    pains: [
+      "Busy season buries you; the rest of the year marketing is an afterthought — so growth feels accidental.",
+      "Prospects compare you on price because your site doesn't spell out who you're for and what happens first.",
+      "Referrals are strong but there's no parallel path for search and digital leads.",
+    ],
+    goals: [
+      "Year-round clarity: a simple path from find → trust → book consult or upload.",
+      "Messaging that respects compliance tone while still converting modern buyers.",
+      "Lead capture and follow-up that don't depend on you answering every DM during crunch.",
+    ],
+    headline: "Turn seasonal chaos into a steady, trustworthy client pipeline",
+    subhead:
+      "Ascendra builds the digital side of your practice: clear who you serve, what to do next, and automation that respects how tax pros actually work.",
+    valueProposition:
+      "We use the same audit and structured diagnosis flows as our other service businesses — tailored for trust, deadlines, and local discovery — so new clients understand your value before they compare you on price alone.",
+    primaryLeadMagnet: {
+      label: "Request a Digital Growth Audit",
+      href: "/digital-growth-audit",
+      blurb: "We review how your site and intake path build trust, clarity, and booking — especially under deadline pressure.",
+    },
+    secondaryLeadMagnet: {
+      label: "Start Growth Diagnosis (questionnaire)",
+      href: "/diagnosis",
+      blurb: "Short structured check on where leads and retention leak — same workflow as our beauty and local service paths, tuned for practices.",
+    },
+    primaryCta: { label: "See local business growth systems", href: "/local-business-growth" },
+    secondaryCta: { label: "Book a strategy call", href: "/strategy-call" },
+    recommendedService: {
+      label: "Local business growth",
+      href: "/local-business-growth",
+      rationale: "Discovery, reviews, and repeat engagement patterns that fit appointment-based professional firms.",
+    },
+    trustIntro: "What changes for tax and accounting firms",
+    trustPoints: [
+      "Mobile-first contact and intake — clients file from their phones, not desktops.",
+      "Copy that balances compliance seriousness with clear next steps (no vague 'contact us').",
+      "Reminder and nurture patterns that respect seasonality without going silent off-season.",
+    ],
+    educationBlurb:
+      "Trust is your product; your funnel should prove it fast. We connect audit and diagnosis magnets to the same strategy-call workflow as the rest of Ascendra journeys — consistent ops, practice-specific story.",
+    caseStudyRefs: ["web-development-services", "ssi-met-repairs"],
+    faqs: [
+      {
+        question: "We're bound by industry rules — can marketing still work?",
+        answer:
+          "Yes. We focus on clarity, disclosure-friendly language, and paths that educate — not hype — so prospects understand scope before they engage.",
+      },
+      {
+        question: "We live in tax season — who runs this?",
+        answer:
+          "We design systems you can keep running: simple pages, clear CTAs, and automation that doesn't need daily babysitting.",
+      },
+    ],
+  },
 ];
+
+const _primaryJourneyIdSet = new Set<string>(PERSONA_JOURNEY_PRIMARY_IDS);
+const _moreJourneyIdSet = new Set<string>(PERSONA_JOURNEY_MORE_IDS);
+
+/** First screen of path cards (6). */
+export const PERSONA_JOURNEYS_PRIMARY: PersonaJourney[] = PERSONA_JOURNEYS.filter((j) =>
+  _primaryJourneyIdSet.has(j.id)
+);
+
+/** “Additional paths” — same panel + lead magnet workflow as primary. */
+export const PERSONA_JOURNEYS_MORE: PersonaJourney[] = PERSONA_JOURNEYS.filter((j) => _moreJourneyIdSet.has(j.id));
 
 export const PERSONA_JOURNEYS_BY_ID: Record<PersonaJourneyId, PersonaJourney> = PERSONA_JOURNEYS.reduce(
   (acc, j) => {

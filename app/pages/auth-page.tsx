@@ -206,12 +206,19 @@ const AuthPage = () => {
               Admin and founder sign-in
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Client? <Link href="/login" className="underline font-medium text-foreground hover:no-underline">Sign in here</Link>
+              Client?{" "}
+              <Link href="/portal" className="underline font-medium text-foreground hover:no-underline">
+                Client workspace sign-in
+              </Link>
             </p>
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            Admin and founder access only. Clients use <Link href="/login" className="underline font-medium text-foreground hover:no-underline">client login</Link>.
+            Admin and founder access only. Clients use{" "}
+            <Link href="/portal" className="underline font-medium text-foreground hover:no-underline">
+              client workspace sign-in
+            </Link>
+            .
           </p>
 
           <Tabs

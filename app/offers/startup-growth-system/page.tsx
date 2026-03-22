@@ -27,6 +27,8 @@ import {
   type OfferSections,
   type OfferDeliverable,
 } from "@/lib/offerSections";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileText,
@@ -85,27 +87,27 @@ export default function StartupGrowthSystemOfferPage() {
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted">
-              <Image
-                src={sections.graphics?.bannerUrl ?? fallbackHeroImageUrl}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 672px"
-              />
-            </div>
+          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+            <FunnelHeroMedia
+              src={sections.graphics?.bannerUrl ?? fallbackHeroImageUrl}
+              maxWidth="full"
+              aspect="video"
+              spacing="none"
+              showGradientOverlay={false}
+              sizes="(max-width: 768px) 100vw, 672px"
+              className="rounded-xl border-0 shadow-none ring-0"
+            />
 
             <section className="text-center">
-              <div className="relative w-full max-w-md mx-auto aspect-video mb-6 rounded-lg overflow-hidden bg-muted">
-                <Image
-                  src={hero.imageUrl ?? fallbackHeroImageUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 448px) 100vw, 448px"
-                />
-              </div>
+              <FunnelHeroMedia
+                src={hero.imageUrl ?? fallbackHeroImageUrl}
+                maxWidth="md"
+                aspect="video"
+                spacing="none"
+                showGradientOverlay={false}
+                sizes="(max-width: 448px) 100vw, 448px"
+                className="mb-6 rounded-lg border-0 shadow-none ring-0"
+              />
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 {hero.title}
               </h1>
@@ -175,6 +177,8 @@ export default function StartupGrowthSystemOfferPage() {
                 <p className="text-xs text-muted-foreground mt-3">{cta.footnote}</p>
               )}
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="startup-growth-system" />
           </div>
         </div>
       </div>

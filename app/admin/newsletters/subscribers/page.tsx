@@ -178,18 +178,6 @@ export default function SubscribersPage() {
     },
   });
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
-
-  if (!user || !user.isAdmin || !user.adminApproved) {
-    return null;
-  }
-
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => s.subscribed),
     [subscribers],
@@ -212,6 +200,18 @@ export default function SubscribersPage() {
       ),
     [unsubscribed, listSearch],
   );
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  if (!user || !user.isAdmin || !user.adminApproved) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-10">

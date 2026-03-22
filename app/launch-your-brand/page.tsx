@@ -19,6 +19,7 @@ import {
   STRATEGY_CALL_PATH,
   ECOSYSTEM_CTA_LAUNCH,
 } from "@/lib/funnelCtas";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 const LAUNCH_FAQ = [
   { q: "How long does a typical launch project take?", a: "Timeline depends on scope—brand only, brand + site, or full launch kit. Most launch projects run a few weeks to a few months. Book a call and we'll outline a timeline for your situation." },
@@ -97,10 +98,15 @@ export default function LaunchYourBrandPage() {
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
-            <div className="relative w-full max-w-2xl mx-auto aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-md mb-8">
-              <Image src="/stock images/Diversity_16.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 512px" />
-              <div className="absolute inset-0 bg-gradient-to-t from-muted/80 via-muted/10 to-transparent" aria-hidden />
-            </div>
+            <FunnelHeroMedia
+              src="/stock images/Diversity_16.jpeg"
+              aspect="wide"
+              maxWidth="2xl"
+              spacing="none"
+              sizes="(max-width: 768px) 100vw, 512px"
+              className="mb-6 sm:mb-8"
+              gradientClassName="from-muted/80 via-muted/10 to-transparent"
+            />
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               The Problem With DIY Branding
             </h2>

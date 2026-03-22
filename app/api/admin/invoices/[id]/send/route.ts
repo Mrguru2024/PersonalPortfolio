@@ -6,6 +6,7 @@ import {
   finalizeAndSendInvoice,
   isStripeConfigured,
 } from "@server/services/stripeInvoiceService";
+import { logDepositLinkSent } from "@server/services/revenueOpsService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,9 +46,19 @@ export async function POST(
         { status: 400 }
       );
     }
-    const lineItems = invoice.lineItems && invoice.lineItems.length > 0
-      ? invoice.lineItems
-      : [{ description: invoice.title, amount: invoice.amount, quantity: 1 }];
+    const lineItems =
+      invoice.lineItems && invoice.lineItems.length > 0
+        ? invoice.lineItems
+        : [
+            {
+              description: invoice.title,
+              amount: invoice.subtotalCents ?? invoice.amount,
+              quantity: 1,
+            },
+          ];
+
+    const crmMatches = await storage.getCrmContactsByEmails([recipientEmail]);
+    const crmContactId = crmMatches[0]?.id;
 
     let stripeInvoiceId = invoice.stripeInvoiceId;
     let hostInvoiceUrl = invoice.hostInvoiceUrl;
@@ -59,7 +70,14 @@ export async function POST(
         title: invoice.title,
         lineItems,
         dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
-        metadata: { invoiceId: String(invoice.id), invoiceNumber: invoice.invoiceNumber },
+        invoiceSaleType: invoice.invoiceSaleType ?? null,
+        taxAmountCents: invoice.taxAmountCents ?? 0,
+        taxRatePercent: invoice.taxRatePercent ?? null,
+        metadata: {
+          invoiceId: String(invoice.id),
+          invoiceNumber: invoice.invoiceNumber,
+          ...(crmContactId != null ? { crmContactId: String(crmContactId) } : {}),
+        },
       });
       stripeInvoiceId = created.stripeInvoiceId;
       stripeCustomerId = created.stripeCustomerId;
@@ -77,6 +95,13 @@ export async function POST(
       status: "sent",
       ...(userByEmail && { userId: userByEmail.id }),
     });
+
+    if (crmContactId != null) {
+      const contact = await storage.getCrmContactById(crmContactId);
+      if (contact) {
+        await logDepositLinkSent(storage, contact.id, contact.accountId, finalUrl, id).catch(() => {});
+      }
+    }
 
     return NextResponse.json({
       success: true,

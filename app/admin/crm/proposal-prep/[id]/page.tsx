@@ -4,7 +4,9 @@ import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, FileText, Loader2, Save, CheckSquare, ListTodo, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, CheckSquare, ListTodo, BookOpen } from "lucide-react";
+import { ProposalPrepProfitabilityCard } from "@/components/crm/ProposalPrepProfitabilityCard";
+import { ProposalPrepMarketIntelCard } from "@/components/crm/ProposalPrepMarketIntelCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -121,7 +123,7 @@ export default function ProposalPrepWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild>
             <Link href={contactId ? `/admin/crm/proposal-prep?contactId=${contactId}` : "/admin/crm"}>
@@ -220,6 +222,20 @@ export default function ProposalPrepWorkspacePage() {
             </CardContent>
           </Card>
         )}
+
+        <div className="mb-6 space-y-6">
+          <ProposalPrepMarketIntelCard
+            workspaceId={id}
+            summary={workspace.marketIntelSummary}
+            sources={workspace.marketIntelSourcesJson ?? undefined}
+            meta={workspace.marketIntelMetaJson ?? undefined}
+          />
+          <ProposalPrepProfitabilityCard
+            initial={workspace.profitabilityInputsJson ?? undefined}
+            onSave={(profitabilityInputsJson) => updateMutation.mutate({ profitabilityInputsJson })}
+            isSaving={updateMutation.isPending}
+          />
+        </div>
 
         <Card className="mb-6">
           <CardHeader>

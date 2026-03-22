@@ -1,5 +1,12 @@
+export type EcosystemPartnerProject = {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+};
+
 /** Macon Designs (Denishia Macon-Lynn) — projects from Behance portfolio */
-export const MACON_PROJECTS = [
+export const MACON_PROJECTS: EcosystemPartnerProject[] = [
   { id: "social-media-branding-kits", title: "Social Media Branding Kits", description: "Cohesive visual systems for social channels—templates, assets, and guidelines for consistent brand presence.", tags: ["Brand identity", "Social media", "Visual systems"] },
   { id: "wwe-promo-motion", title: "WWE-Inspired Promo & Motion Graphics", description: "Promo and motion graphics for events and campaigns. Bold typography and dynamic visuals.", tags: ["Motion graphics", "Promo", "Event branding"] },
   { id: "hbo-production", title: "HBO Production Work", description: "Design and production for broadcast and entertainment. Professional presentation and brand alignment.", tags: ["Production design", "Broadcast", "Entertainment"] },
@@ -9,7 +16,7 @@ export const MACON_PROJECTS = [
 ];
 
 /** Style Studio Branding (Kristopher Williams) — projects from Behance portfolio */
-export const STYLE_STUDIO_PROJECTS = [
+export const STYLE_STUDIO_PROJECTS: EcosystemPartnerProject[] = [
   { id: "scecep-empowerment", title: "SCECEP Empowerment Program", description: "Program branding and visual identity for the SCECEP Empowerment Program. Clear, professional presentation for community and education initiatives.", tags: ["Program branding", "Visual identity", "Education"] },
   { id: "osaic-presentations", title: "Osaic corporate materials", description: "Powerpoint presentations, facts questionnaires, bond credit ratings booklet, social media program sheets, and institutions data sheets. Corporate design at scale.", tags: ["Corporate design", "Presentations", "Print"] },
   { id: "dekalb-school-flyer", title: "Dekalb County School Flyer / Brochure", description: "Flyer and brochure design for Dekalb County Schools. Clean layout and on-brand messaging for education and outreach.", tags: ["Print design", "Brochure", "Education"] },

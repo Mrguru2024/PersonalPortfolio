@@ -6,8 +6,16 @@
 
 import "openai/shims/node";
 import OpenAI from "openai";
+import { stripConversationalSearchNoise } from "@/lib/advancedSearchQuery";
 import { searchSiteDirectory, SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getCachedAdminAgentContext } from "@server/services/adminAgentContextBuilder";
+import type { AdminAgentMentorStateV1 } from "@shared/schema";
+import {
+  ADMIN_AGENT_MENTOR_POLICY,
+  fetchWebContextForTeaching,
+  mentorStateToPromptBlock,
+  shouldAttachWebSources,
+} from "@server/services/adminAgentMentorService";
 
 export type AgentActionType =
   | "navigate"
@@ -141,7 +149,9 @@ function parseIntent(message: string): AgentAction | undefined {
  * If search matches exactly one admin screen (no dynamic pattern in path), suggest navigation.
  */
 function singleAdminDirectoryMatch(message: string): AgentAction | undefined {
-  const matches = searchSiteDirectory(message);
+  const cleaned = stripConversationalSearchNoise(message);
+  const q = cleaned.length >= 2 ? cleaned : message.trim();
+  const matches = searchSiteDirectory(q);
   const adminStatic = matches.filter((m) => m.audience === "admin" && !m.path.includes("["));
   if (adminStatic.length !== 1) return undefined;
   return { type: "navigate", url: adminStatic[0].path };
@@ -161,6 +171,17 @@ function titleForPath(path: string): string {
 function mdLink(path: string, label?: string): string {
   const t = label ?? titleForPath(path);
   return `[${t}](${path})`;
+}
+
+/** Ranked site-directory hits for fallback replies (same search as /admin/site-directory). */
+function formatDirectorySuggestionBlock(message: string): string {
+  const cleaned = stripConversationalSearchNoise(message);
+  const q = cleaned.length >= 2 ? cleaned : message.trim();
+  if (q.length < 2) return "";
+  const hits = searchSiteDirectory(q).slice(0, 5);
+  if (hits.length === 0) return "";
+  const lines = hits.map((e) => `- ${mdLink(e.path, e.title)} — ${e.category}`);
+  return `\n\n**Closest pages in the directory:**\n${lines.join("\n")}`;
 }
 
 function getReplyForAction(action: AgentAction): string {
@@ -188,6 +209,9 @@ async function processWithOpenAI(input: {
   contextText: string;
   canPerformActions: boolean;
   currentPath?: string;
+  operatorDisplayName: string;
+  mentorPromptBlock: string;
+  webContextBlock: string;
 }): Promise<AgentResult | null> {
   const client = getOpenAIClient();
   if (!client) return null;
@@ -199,15 +223,32 @@ async function processWithOpenAI(input: {
 Otherwise "action": null.`
     : `Do not return an action. Always set "action": null (actions are disabled for this user).`;
 
-  const system = `You are the Ascendra admin assistant for an approved CMS/CRM operators.
+  const webSection =
+    input.webContextBlock.trim().length > 0
+      ? `\n\n${input.webContextBlock}\n\nWhen you teach general concepts or external facts, ground claims in the web results above and cite as [publisher or title](full_https_url) using only URLs from that list. If web results are empty or irrelevant, say you could not verify live sources and stick to CONTEXT + general process guidance.`
+      : "\n\nNo live web results were attached for this turn. For external facts, say when you are unsure and suggest authoritative sources they can check; do not invent citations.";
 
-Mission: always work toward solving their problem. Give clear next steps, name the exact screen or API from CONTEXT, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
+  const system = `You are the Ascendra admin assistant and mentor for approved CMS/CRM operators. You address the operator by name when natural: ${input.operatorDisplayName}.
 
-Grounding: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md). The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
+Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.
 
-Navigation and wayfinding: whenever you mention a place to go, include a markdown link in the reply using ONLY paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination.
+Operator memory (INTERNAL — ${ADMIN_AGENT_MENTOR_POLICY}):
+${input.mentorPromptBlock}
 
-Style: concise (under ~12 short sentences in the reply string). You may use **bold** for emphasis and newlines for lists. The "reply" field is a JSON string — escape quotes and newlines properly inside JSON.
+Mission detail: give clear next steps, name the exact screen or API from CONTEXT when the task is in-app, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
+
+Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
+${webSection}
+
+Navigation and wayfinding: whenever you mention an in-app place to go, include a markdown link using ONLY internal paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination. External https links are allowed only when citing WEB RESULTS for teaching.
+
+Style: concise. Format the "reply" for quick scanning in a small chat panel:
+- Open with one short sentence when it helps (the takeaway).
+- Use ## for section titles (e.g. ## Next steps, ## Where to go). Add a blank line before each ## block.
+- Use bullet lines starting with "- " for steps or options (one item per line). For ordered steps use "1. " "2. " on separate lines.
+- Use backticks for literals: npm scripts, file paths, and API paths (e.g. \`npm run check\`, \`/api/admin/crm\`).
+- Use **bold** sparingly for critical terms. Keep markdown links [Label](/path) for every admin route you mention.
+- The "reply" value is JSON — escape quotes and newlines properly inside the string.
 
 ${actionRules}
 
@@ -255,6 +296,10 @@ export interface ProcessAgentMessageInput {
   currentPath?: string;
   openaiAvailable?: boolean;
   history?: AgentChatTurn[];
+  /** Numeric user id for logging / future use */
+  userId?: number;
+  operatorDisplayName?: string;
+  mentorState?: AdminAgentMentorStateV1 | null;
 }
 
 /**
@@ -279,12 +324,21 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
 
   const useOpenAI = input.openaiAvailable !== false && getOpenAIClient() !== null;
   if (useOpenAI) {
+    const operatorDisplayName = input.operatorDisplayName?.trim() || "there";
+    const mentorPromptBlock = mentorStateToPromptBlock(input.mentorState ?? null);
+    let webContextBlock = "";
+    if (shouldAttachWebSources(message)) {
+      webContextBlock = await fetchWebContextForTeaching(message);
+    }
     const ai = await processWithOpenAI({
       message,
       history,
       contextText: cached.text,
       canPerformActions,
       currentPath,
+      operatorDisplayName,
+      mentorPromptBlock,
+      webContextBlock,
     });
     if (ai) {
       if (ai.action && !canPerformActions) {
@@ -318,8 +372,9 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
     };
   }
 
-  const hint = `Browse the ${mdLink("/admin/site-directory", "site directory")} to search every route. Common hubs: ${mdLink("/admin/content-studio", "Content Studio")}, ${mdLink("/admin/crm", "CRM")}, ${mdLink("/admin/analytics", "Analytics")}, ${mdLink("/admin/ascendra-intelligence", "Ascendra Intelligence")}, ${mdLink("/admin/growth-os", "Growth OS")}. Say **generate reminders** to refresh admin reminders (if actions are enabled).`;
+  const hint = `Browse the ${mdLink("/admin/site-directory", "site directory")} to search every route — use **quotes** for exact phrases (e.g. \`"lead intake"\` \`crm\`). Common hubs: ${mdLink("/admin/content-studio", "Content Studio")}, ${mdLink("/admin/crm", "CRM")}, ${mdLink("/admin/analytics", "Analytics")}, ${mdLink("/admin/ascendra-intelligence", "Ascendra Intelligence")}, ${mdLink("/admin/growth-os", "Growth OS")}. Say **generate reminders** to refresh admin reminders (if actions are enabled).`;
+  const ranked = formatDirectorySuggestionBlock(message);
   return {
-    reply: `I’m not sure which screen you mean.\n\n${hint}\n\nDescribe the problem you’re solving (e.g. “publish a newsletter”, “find lead intake”) and I’ll narrow it down.`,
+    reply: `I’m not sure which screen you mean.\n\n${hint}\n\nDescribe the problem you’re solving (e.g. “publish a newsletter”, “find lead intake”) and I’ll narrow it down.${ranked}`,
   };
 }

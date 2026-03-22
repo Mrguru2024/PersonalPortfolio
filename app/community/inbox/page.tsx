@@ -43,7 +43,7 @@ export default function CommunityInboxPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login?redirect=/community/inbox");
+      router.replace("/auth?redirect=/community/inbox");
     }
   }, [user, authLoading, router]);
 

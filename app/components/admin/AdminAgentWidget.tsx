@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Send, Loader2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,12 @@ interface AgentMessage {
 interface AgentResponse {
   reply: string;
   action?: { type: string; url?: string; api?: string };
+}
+
+interface AgentBootstrap {
+  greetingLine: string;
+  mentorNudge: string | null;
+  policyNotice: string;
 }
 
 function executeAction(
@@ -49,6 +55,24 @@ export function AdminAgentWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.isAdmin === true && user?.adminApproved === true;
+  const localFirstName =
+    user?.full_name?.trim().split(/\s+/).filter(Boolean)[0] ??
+    user?.username ??
+    "there";
+
+  const bootstrapQuery = useQuery({
+    queryKey: ["/api/admin/agent", "bootstrap"],
+    queryFn: async (): Promise<AgentBootstrap> => {
+      const res = await fetch("/api/admin/agent", { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(typeof err.message === "string" ? err.message : "Bootstrap failed");
+      }
+      return res.json() as Promise<AgentBootstrap>;
+    },
+    enabled: isAdmin && open,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -105,7 +129,7 @@ export function AdminAgentWidget() {
             <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50">
               <span className="font-medium text-sm flex items-center gap-2">
                 <Bot className="h-4 w-4" />
-                Admin assistant
+                Admin mentor and assistant
               </span>
               <Button
                 variant="ghost"
@@ -122,10 +146,35 @@ export function AdminAgentWidget() {
               className="flex-1 overflow-y-auto p-3 space-y-3 text-sm"
             >
               {messages.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  Ask where something lives (routes, APIs, npm scripts) or say “open …” for CRM, Content Studio, newsletters, Ascendra Intelligence, Growth OS, analytics, site directory, and more. With{" "}
-                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can navigate or run reminder generation. Context from this deployment refreshes every few minutes.
-                </p>
+                <div className="text-muted-foreground text-center py-3 space-y-3 px-1">
+                  {bootstrapQuery.isPending && (
+                    <p className="text-sm animate-pulse">Loading your greeting…</p>
+                  )}
+                  {!bootstrapQuery.isPending && (
+                    <>
+                      <p className="text-foreground/95 font-medium text-sm leading-snug">
+                        {bootstrapQuery.data?.greetingLine ??
+                          `Hi, ${localFirstName} — I'm your admin mentor and assistant.`}
+                      </p>
+                      {bootstrapQuery.data?.mentorNudge ? (
+                        <p className="text-sm border border-border/80 rounded-lg bg-muted/40 px-3 py-2 text-left">
+                          <span className="text-foreground/80 font-medium">Nudge: </span>
+                          {bootstrapQuery.data.mentorNudge}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
+                  <p className="text-sm leading-relaxed">
+                    Ask where something lives (routes, APIs, npm scripts) or say “open …” for CRM, Content Studio, newsletters, Ascendra Intelligence, Growth OS, analytics, and more. I can also teach concepts and cite{" "}
+                    <span className="text-foreground/90">live web sources</span> when you want factual external context (configure{" "}
+                    <code className="text-xs">BRAVE_SEARCH_API_KEY</code> for search). With{" "}
+                    <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can navigate or run reminder generation.
+                  </p>
+                  <p className="text-[11px] leading-snug text-muted-foreground/90 border-t border-border/60 pt-2">
+                    {bootstrapQuery.data?.policyNotice ??
+                      "Conversation-derived insights are stored only on this site to personalize your assistant; they are not sold or shared with third parties."}
+                  </p>
+                </div>
               )}
               {messages.map((m, i) => (
                 <div
@@ -140,7 +189,7 @@ export function AdminAgentWidget() {
                     className={
                       m.role === "user"
                         ? "inline-block rounded-lg bg-primary text-primary-foreground px-3 py-1.5"
-                        : "inline-block rounded-lg bg-muted px-3 py-1.5 max-w-full"
+                        : "inline-block rounded-lg bg-muted px-3.5 py-2.5 max-w-full text-left align-top"
                     }
                   >
                     {m.role === "assistant" ? (
@@ -193,7 +242,7 @@ export function AdminAgentWidget() {
           size="icon"
           className="h-12 w-12 rounded-full shadow-lg"
           onClick={() => setOpen((o) => !o)}
-          aria-label={open ? "Close assistant" : "Open admin assistant"}
+          aria-label={open ? "Close mentor and assistant" : "Open admin mentor and assistant"}
         >
           <Bot className="h-6 w-6" />
         </Button>

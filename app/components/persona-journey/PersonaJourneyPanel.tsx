@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ChevronLeft } from "lucide-react";
+import { ArrowRight, ChevronLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PersonaJourney } from "@shared/personaJourneys";
-import type { Project } from "@/lib/data";
 import { DIAGNOSTICS_HUB_PATH } from "@/lib/funnelCtas";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
-import { projectCaseStudyPath, resolvePersonaCaseStudyProjects } from "@/lib/personaCaseStudies";
+import {
+  getPersonaEcosystemSpotlight,
+  projectCaseStudyPath,
+} from "@/lib/personaCaseStudies";
+import {
+  BEHANCE_MACON_URL,
+  BEHANCE_STYLE_STUDIO_URL,
+} from "@/lib/ecosystemProjects";
 import { getPersonaRevenueBridge } from "@shared/personaRevenueMap";
 import { PersonaOfferTeaser } from "@/components/persona-journey/PersonaOfferTeaser";
 
@@ -38,7 +44,14 @@ export function PersonaJourneyPanel({ journey, onChangePersona }: PersonaJourney
     });
   };
 
-  const caseStudyProjects: Project[] = resolvePersonaCaseStudyProjects(journey.caseStudyRefs);
+  const spotlight = getPersonaEcosystemSpotlight(journey.id, journey.caseStudyRefs);
+
+  const trackExternal = (cta: string, url: string) => {
+    track("cta_click", {
+      pageVisited,
+      metadata: { cta, personaId: journey.id, href: url },
+    });
+  };
 
   return (
     <div className="space-y-8 sm:space-y-10">
@@ -171,43 +184,122 @@ export function PersonaJourneyPanel({ journey, onChangePersona }: PersonaJourney
         <p className="text-sm sm:text-base text-foreground/90 max-w-3xl pt-2">{journey.educationBlurb}</p>
       </section>
 
-      {caseStudyProjects.length > 0 ? (
-        <section aria-labelledby="persona-case-studies-heading" className="space-y-4">
-          <h2 id="persona-case-studies-heading" className="text-xl font-semibold text-foreground">
-            Related work
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Deep dives on builds that mirror the systems we&apos;re talking about — conversion paths, product depth, and
-            local service delivery.
-          </p>
-          <ul className="grid gap-3 sm:grid-cols-2 max-w-3xl">
-            {caseStudyProjects.map((p) => (
-              <li key={p.id}>
-                <TrackedCtaLink
-                  href={projectCaseStudyPath(p.id)}
-                  ctaLabel={`persona_case_study_${p.id}`}
-                  pageVisited={pageVisited}
-                  extraMetadata={{ personaId: journey.id, projectId: p.id }}
-                  className="block rounded-xl border border-border/80 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors p-4 min-h-[88px]"
+      <section aria-labelledby="persona-case-studies-heading" className="space-y-4">
+        <h2 id="persona-case-studies-heading" className="text-xl font-semibold text-foreground">
+          Related work
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          One example from each pillar of the Brand Growth ecosystem — Ascendra (web &amp; systems), Macon Designs®
+          (brand visuals), and Style Studio Branding (strategy &amp; production design). We rotate portfolio picks by
+          path so different journeys surface different work; your refs still anchor the Ascendra story when present.
+        </p>
+        <ul className="grid gap-3 sm:grid-cols-3 max-w-5xl">
+          <li>
+            <TrackedCtaLink
+              href={projectCaseStudyPath(spotlight.ascendra.id)}
+              ctaLabel={`persona_case_study_${spotlight.ascendra.id}`}
+              pageVisited={pageVisited}
+              extraMetadata={{ personaId: journey.id, projectId: spotlight.ascendra.id, pillar: "ascendra" }}
+              className="block h-full rounded-xl border border-border/80 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors p-4 min-h-[88px]"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Ascendra</span>
+              <span className="block font-medium text-foreground text-sm sm:text-base mt-1">
+                {spotlight.ascendra.title}
+              </span>
+              <span className="block text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
+                {spotlight.ascendra.description}
+              </span>
+              {spotlight.ascendra.synopsis?.caseStudy?.problem ? (
+                <span className="block text-xs text-muted-foreground mt-2 border-l-2 border-primary/35 pl-2.5 leading-relaxed line-clamp-3">
+                  <span className="font-medium text-foreground/85">Challenge: </span>
+                  {spotlight.ascendra.synopsis.caseStudy.problem}
+                </span>
+              ) : null}
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary mt-2">
+                View case study
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </span>
+            </TrackedCtaLink>
+          </li>
+          <li>
+            <div className="h-full rounded-xl border border-border/80 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors p-4 min-h-[88px] flex flex-col">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Macon Designs®</span>
+              <span className="block font-medium text-foreground text-sm sm:text-base mt-1">{spotlight.macon.title}</span>
+              <span className="block text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-3 flex-1">
+                {spotlight.macon.description}
+              </span>
+              <div className="flex flex-col gap-1.5 mt-3">
+                <a
+                  href={BEHANCE_MACON_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+                  onClick={() => trackExternal("persona_partner_behance_macon", BEHANCE_MACON_URL)}
                 >
-                  <span className="font-medium text-foreground text-sm sm:text-base">{p.title}</span>
-                  <span className="block text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</span>
-                  {p.synopsis?.caseStudy?.problem ? (
-                    <span className="block text-xs text-muted-foreground mt-2 border-l-2 border-primary/35 pl-2.5 leading-relaxed line-clamp-3">
-                      <span className="font-medium text-foreground/85">Challenge: </span>
-                      {p.synopsis.caseStudy.problem}
-                    </span>
-                  ) : null}
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary mt-2">
-                    View case study
+                  View on Behance
+                  <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+                <Link
+                  href="/partners/macon-designs"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                >
+                  Partner profile
+                </Link>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div className="h-full rounded-xl border border-border/80 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors p-4 min-h-[88px] flex flex-col">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Style Studio</span>
+              <span className="block font-medium text-foreground text-sm sm:text-base mt-1">
+                {spotlight.styleStudio.title}
+              </span>
+              <span className="block text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-3 flex-1">
+                {spotlight.styleStudio.description}
+              </span>
+              <div className="flex flex-col gap-1.5 mt-3">
+                <a
+                  href={BEHANCE_STYLE_STUDIO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+                  onClick={() => trackExternal("persona_partner_behance_style_studio", BEHANCE_STYLE_STUDIO_URL)}
+                >
+                  View on Behance
+                  <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+                <Link
+                  href="/partners/style-studio-branding"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                >
+                  Partner profile
+                </Link>
+              </div>
+            </div>
+          </li>
+        </ul>
+        {spotlight.ascendraMore.length > 0 ? (
+          <div className="max-w-5xl pt-1">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Also from Ascendra</p>
+            <ul className="flex flex-wrap gap-2">
+              {spotlight.ascendraMore.map((p) => (
+                <li key={p.id}>
+                  <TrackedCtaLink
+                    href={projectCaseStudyPath(p.id)}
+                    ctaLabel={`persona_case_study_${p.id}`}
+                    pageVisited={pageVisited}
+                    extraMetadata={{ personaId: journey.id, projectId: p.id }}
+                    className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-muted/30 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/50"
+                  >
+                    {p.title}
                     <ArrowRight className="h-3 w-3" aria-hidden />
-                  </span>
-                </TrackedCtaLink>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+                  </TrackedCtaLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
 
       <section aria-labelledby="persona-faq-heading" className="space-y-4">
         <h2 id="persona-faq-heading" className="text-xl font-semibold text-foreground">

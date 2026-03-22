@@ -182,7 +182,9 @@ export default function ProposalViewByTokenPage() {
                 <p className="text-sm font-medium mb-3">Sign in to accept or decline this proposal.</p>
                 <div className="flex flex-wrap gap-2">
                   <Button asChild>
-                    <Link href={`/login?redirect=${encodeURIComponent(`/dashboard/proposals/${data.quoteId}`)}`}>
+                    <Link
+                      href={`/portal?redirect=${encodeURIComponent(`/dashboard/proposals/${data.quoteId}`)}`}
+                    >
                       Sign in to respond
                     </Link>
                   </Button>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, FileText, Layout, Zap, Target } from "lucide-react";
@@ -13,6 +12,7 @@ import {
   ORDER_BUMP,
   LESSON_DAYS,
 } from "@/lib/challenge/config";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export default function ChallengeLandingPage() {
   return (
@@ -29,15 +29,16 @@ export default function ChallengeLandingPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             {CHALLENGE_NAME}
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
             Most websites don&apos;t convert because they lack structure, clear messaging, and lead systems.
             This 5-day challenge helps you build a website system that attracts and converts clients—with
             guided strategy, not random education.
           </p>
-          <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mb-8">
-            <Image src="/stock images/Diversity_17.jpeg" alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" aria-hidden />
-          </div>
+          <FunnelHeroMedia
+            src="/stock images/Diversity_17.jpeg"
+            sizes="(max-width: 768px) 100vw, 672px"
+            gradientClassName="from-background/80 via-transparent to-transparent"
+          />
           <Button asChild size="lg" className="gap-2 min-h-[48px]">
             <Link href="/challenge/checkout">
               Join the challenge — {CHALLENGE_PRICE_DISPLAY}

@@ -64,7 +64,7 @@ export const FREE_LEAD_OFFERS_IN_ORDER = [
     shortLabel: "Free trial",
     href: FREE_TRIAL_PATH,
     description:
-      "Test run of our real offer: strategy call and human audit first—feel the gap without the full system; tools are optional after.",
+      "Free clarity call and/or human-led Digital Growth Snapshot—concrete next steps or prioritized findings before any paid build; optional tools after.",
   },
   {
     rank: 2,

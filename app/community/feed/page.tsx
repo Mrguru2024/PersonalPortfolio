@@ -67,7 +67,7 @@ export default function CommunityFeedPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login?redirect=/community/feed");
+      router.replace("/auth?redirect=/community/feed");
     }
   }, [user, authLoading, router]);
 

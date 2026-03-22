@@ -3,7 +3,7 @@ import { getPersonaRevenueBridge, PERSONA_REVENUE_MAP } from "@shared/personaRev
 describe("personaRevenueMap", () => {
   it("maps every journey id to a bridge with flagship offer", () => {
     const ids = Object.keys(PERSONA_REVENUE_MAP);
-    expect(ids.length).toBe(6);
+    expect(ids.length).toBe(8);
     for (const id of ids) {
       const b = getPersonaRevenueBridge(id as keyof typeof PERSONA_REVENUE_MAP);
       expect(b.flagshipOfferSlug).toBe("startup-growth-system");

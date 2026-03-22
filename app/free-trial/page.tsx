@@ -12,28 +12,31 @@ import {
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   STRATEGY_CALL_PATH,
 } from "@/lib/funnelCtas";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 
 export const metadata: Metadata = {
-  title: "Free trial | Ascendra Technologies",
+  title: "Free growth starter | Clarity call & snapshot audit | Ascendra Technologies",
   description:
-    "Try Ascendra’s value firsthand: a strategy conversation and human audit—not a maze of free downloads. Optional self-serve tools come after you’ve seen the real offer.",
+    "Start free with a clarity call, a human-led Digital Growth Snapshot across brand and conversion, or both—know what to fix first before any paid build. Optional tools after.",
 };
 
 const VALUE_TRIAL_STEPS = [
   {
-    title: "Book a strategy call",
+    title: "Free clarity call",
+    outcome: "Leave with your best next step—even if we’re not a fit.",
     description:
-      "A real conversation about your site, funnel, and priorities—how we’d sequence work if you moved forward. That’s the fastest way to feel how we think and whether the fit is right.",
+      "A focused conversation on your site, funnel, and goals. You hear how we’d prioritize work and sequence a build so you can judge fit fast—without a generic pitch deck.",
     href: STRATEGY_CALL_PATH,
-    cta: "Book a free call",
+    cta: "Claim my free call",
     icon: Calendar,
   },
   {
-    title: "Request a Digital Growth Audit",
+    title: "Digital Growth Snapshot (audit)",
+    outcome: "See what’s working, what’s costing leads, and what to fix first.",
     description:
-      "A human-led review across brand clarity, visual trust, and conversion—not a generic checklist. You see the depth of our diagnosis before any high-ticket implementation.",
+      "Human review across brand clarity, visual trust, and conversion—not an auto checklist. Depth you can act on, so you understand our standard before any high-ticket implementation.",
     href: DIGITAL_GROWTH_AUDIT_PATH,
-    cta: "Request your audit",
+    cta: "Get my free snapshot",
     icon: Search,
   },
 ] as const;
@@ -55,36 +58,36 @@ export default function FreeTrialPage() {
                 <Target className="h-7 w-7" aria-hidden />
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
-                Free trial: see what you&apos;re missing—then how we close the gap
+                Your free growth starter: clarity, then a real read on your site
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-                This isn&apos;t a trail of more free downloads up front. Your trial is a{" "}
-                <span className="text-foreground font-medium">test run of our real value</span>: how we diagnose,
-                prioritize, and show up on high-ticket work—so you feel the cost of{" "}
-                <span className="text-foreground font-medium">not</span> having the full system.
+                Pick a <span className="text-foreground font-medium">free call</span>, a{" "}
+                <span className="text-foreground font-medium">human-led snapshot audit</span>, or both—so you know
+                what to fix first and whether we&apos;re the team to build it. No maze of downloads up front; optional
+                scans and tools come after you&apos;ve seen how we think.
               </p>
             </section>
 
             <Card className="border-destructive/20 bg-destructive/5 dark:bg-destructive/10">
               <CardContent className="p-5 sm:p-6 text-left">
-                <h2 className="text-lg font-semibold text-foreground mb-3">The deprivation most sites live in</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-3">Why this is the offer—not another tool list</h2>
                 <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5 mb-4">
                   <li>Traffic that never turns into qualified conversations.</li>
                   <li>Messaging that sounds fine to you but doesn&apos;t convert strangers.</li>
-                  <li>Brand, design, and website pulling in different directions—with no one roadmap.</li>
+                  <li>Brand, design, and site pulling in different directions—with no single prioritized plan.</li>
                 </ul>
                 <p className="text-sm text-foreground font-medium">
-                  A stack of free tools can&apos;t replace that clarity. The trial below puts you in the same lane as our
-                  paid clients—conversation and audit first—so you experience outcomes, not just content.
+                  Free tools add noise until someone helps you rank what matters. Below you get the same front door as our
+                  paid clients: conversation and/or a human snapshot—so the outcome is obvious before you invest.
                 </p>
               </CardContent>
             </Card>
 
             <section aria-label="Primary trial: value firsthand">
-              <h2 className="text-xl font-semibold text-foreground mb-2 text-center">Start your trial here</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-2 text-center">Choose how you want value first</h2>
               <p className="text-sm text-muted-foreground text-center max-w-xl mx-auto mb-6">
-                Pick one or both. These are the front door to how Ascendra actually works—not a detour through every
-                free asset we publish.
+                One or both—each path ends with something concrete: next steps from a call, or prioritized findings from
+                an audit. Same front door our paid clients use.
               </p>
               <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4 list-none p-0 m-0">
                 {VALUE_TRIAL_STEPS.map((step, index) => {
@@ -102,6 +105,7 @@ export default function FreeTrialPage() {
                             </div>
                             <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
                           </div>
+                          <p className="text-sm font-medium text-foreground mb-2">{step.outcome}</p>
                           <p className="text-sm text-muted-foreground flex-1 mb-4">{step.description}</p>
                           <Button asChild className="w-full sm:w-auto gap-2 min-h-[44px] mt-auto">
                             <Link href={step.href} className="inline-flex items-center gap-2">
@@ -180,6 +184,8 @@ export default function FreeTrialPage() {
                 </Card>
               </div>
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="free-trial" />
 
             <Card className="border-border/80 bg-muted/30 dark:bg-muted/15">
               <CardContent className="p-5 sm:p-6">

@@ -335,7 +335,13 @@ export async function getOperationalDashboard(projectKey: string) {
   const [latestAudit] = await db
     .select()
     .from(internalAuditRuns)
-    .where(and(eq(internalAuditRuns.projectKey, projectKey), eq(internalAuditRuns.status, "completed")))
+    .where(
+      and(
+        eq(internalAuditRuns.projectKey, projectKey),
+        eq(internalAuditRuns.status, "completed"),
+        isNull(internalAuditRuns.targetSiteUrl),
+      ),
+    )
     .orderBy(desc(internalAuditRuns.completedAt))
     .limit(1);
 

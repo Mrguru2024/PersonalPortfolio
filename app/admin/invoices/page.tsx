@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -18,6 +18,7 @@ import {
   Calendar,
   Mail,
   Users,
+  BookmarkPlus,
 } from "lucide-react";
 import {
   Card,
@@ -30,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -52,19 +54,53 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { computeInvoiceTotals, type InvoiceSaleType } from "@/lib/invoiceTotals";
 
 interface Invoice {
   id: number;
   invoiceNumber: string;
   title: string;
   amount: number;
+  subtotalCents?: number | null;
+  taxRatePercent?: number | null;
+  taxAmountCents?: number | null;
+  invoiceSaleType?: InvoiceSaleType | null;
   status: string;
   dueDate: string | null;
   recipientEmail: string | null;
   hostInvoiceUrl: string | null;
+  stripeInvoiceId?: string | null;
   lastReminderAt: string | null;
   createdAt: string;
-  lineItems?: { description: string; amount: number; quantity?: number }[];
+  lineItems?: {
+    description: string;
+    amount: number;
+    quantity?: number;
+    saleType?: "service" | "product";
+  }[];
+}
+
+type FormLine = {
+  description: string;
+  amount: string;
+  quantity: string;
+  saleType: "" | "service" | "product";
+};
+
+interface PresetRow {
+  id: number;
+  name: string;
+  description: string;
+  defaultAmountCents: number | null;
+  defaultQuantity: number;
+  saleType: string;
 }
 
 export default function AdminInvoicesPage() {
@@ -76,16 +112,15 @@ export default function AdminInvoicesPage() {
   const [crmPickOpen, setCrmPickOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
   const [form, setForm] = useState({
     title: "",
-    amount: "",
     recipientEmail: "",
     dueDate: "",
-    lineItems: [] as {
-      description: string;
-      amount: string;
-      quantity: string;
-    }[],
+    invoiceSaleType: "mixed" as InvoiceSaleType,
+    taxRatePercent: "0",
+    saveLineItemsToCatalog: false,
+    lineItems: [] as FormLine[],
   });
 
   useEffect(() => {
@@ -96,7 +131,32 @@ export default function AdminInvoicesPage() {
     }
   }, [user, authLoading, router]);
 
-  const { data: crmContacts = [] } = useQuery<{ id: number; email: string; name: string }[]>({
+  const dialogOpen = createOpen || !!editing;
+
+  const { data: invoiceConfig } = useQuery<{ defaultTaxPercent: number }>({
+    queryKey: ["/api/admin/invoices/config"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/invoices/config");
+      if (!res.ok) return { defaultTaxPercent: 0 };
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const { data: presetsData } = useQuery<{ presets: PresetRow[] }>({
+    queryKey: ["/api/admin/invoice-line-presets"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/invoice-line-presets");
+      if (!res.ok) return { presets: [] };
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && dialogOpen,
+  });
+  const presets = presetsData?.presets ?? [];
+
+  const { data: crmContacts = [] } = useQuery<
+    { id: number; email: string; name: string; company?: string | null }[]
+  >({
     queryKey: ["/api/admin/crm/contacts"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/crm/contacts");
@@ -111,26 +171,44 @@ export default function AdminInvoicesPage() {
       const res = await apiRequest("GET", "/api/admin/invoices");
       return res.json();
     },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
+    enabled: !!user?.isAdmin && !!user.adminApproved,
+  });
+
+  const previewTotals = useMemo(() => {
+    const lines = form.lineItems
+      .filter((l) => l.description.trim() && l.amount.trim())
+      .map((l) => ({
+        amount: Math.round(parseFloat(l.amount || "0") * 100),
+        quantity: parseInt(l.quantity || "1", 10) || 1,
+      }));
+    const tax = Math.min(100, Math.max(0, parseFloat(form.taxRatePercent || "0") || 0));
+    if (lines.length === 0) return { subtotalCents: 0, taxAmountCents: 0, totalCents: 0, tax };
+    return { ...computeInvoiceTotals(lines, tax), tax };
+  }, [form.lineItems, form.taxRatePercent]);
+
+  const deletePresetMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/invoice-line-presets/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoice-line-presets"] });
+      toast({ title: "Catalog item removed" });
+    },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (body: {
-      title: string;
-      amount: number;
-      recipientEmail?: string;
-      dueDate?: string;
-      lineItems?: { description: string; amount: number; quantity?: number }[];
-    }) => {
+    mutationFn: async (body: Record<string, unknown>) => {
       const res = await apiRequest("POST", "/api/admin/invoices", body);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Create failed");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
-      toast({
-        title: "Invoice created",
-        description: "Draft invoice has been created.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoice-line-presets"] });
+      toast({ title: "Invoice created", description: "Draft invoice has been created." });
       setCreateOpen(false);
       resetForm();
     },
@@ -140,24 +218,13 @@ export default function AdminInvoicesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      body,
-    }: {
-      id: number;
-      body: Partial<{
-        title: string;
-        amount: number;
-        recipientEmail: string | null;
-        dueDate: string | null;
-        lineItems: { description: string; amount: number; quantity?: number }[];
-      }>;
-    }) => {
+    mutationFn: async ({ id, body }: { id: number; body: Record<string, unknown> }) => {
       const res = await apiRequest("PATCH", `/api/admin/invoices/${id}`, body);
-      return res.json();
+      return res.json() as Promise<{ status?: string }>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoice-line-presets"] });
       toast({ title: "Invoice updated" });
       setEditing(null);
       resetForm();
@@ -172,12 +239,11 @@ export default function AdminInvoicesPage() {
       const res = await apiRequest("POST", `/api/admin/invoices/${id}/send`);
       return res.json();
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
       toast({
         title: "Invoice sent",
-        description:
-          "The recipient will receive an email with the payment link.",
+        description: "The recipient will receive an email with the payment link.",
       });
     },
     onError: (e: Error) => {
@@ -208,8 +274,9 @@ export default function AdminInvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
-      toast({ title: "Invoice deleted", variant: "destructive" });
+      toast({ title: "Invoice deleted" });
       setDeleteId(null);
+      setDeleteTarget(null);
     },
     onError: (e: Error) => {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -217,104 +284,140 @@ export default function AdminInvoicesPage() {
   });
 
   function resetForm() {
+    const defTax = invoiceConfig?.defaultTaxPercent ?? 0;
     setForm({
       title: "",
-      amount: "",
       recipientEmail: "",
       dueDate: "",
-      lineItems: [],
+      invoiceSaleType: "mixed",
+      taxRatePercent: String(defTax),
+      saveLineItemsToCatalog: false,
+      lineItems: [{ description: "", amount: "", quantity: "1", saleType: "" }],
     });
   }
 
   function openCreate() {
-    resetForm();
-    setForm((f) => ({
-      ...f,
-      lineItems: [{ description: "", amount: "", quantity: "1" }],
-    }));
+    const defTax = invoiceConfig?.defaultTaxPercent ?? 0;
+    setForm({
+      title: "",
+      recipientEmail: "",
+      dueDate: "",
+      invoiceSaleType: "mixed",
+      taxRatePercent: String(defTax),
+      saveLineItemsToCatalog: false,
+      lineItems: [{ description: "", amount: "", quantity: "1", saleType: "" }],
+    });
     setCreateOpen(true);
   }
 
   function openEdit(inv: Invoice) {
     setEditing(inv);
+    const tax =
+      inv.taxRatePercent != null ? String(inv.taxRatePercent) : String(invoiceConfig?.defaultTaxPercent ?? 0);
     setForm({
       title: inv.title,
-      amount: String(inv.amount / 100),
       recipientEmail: inv.recipientEmail || "",
       dueDate: inv.dueDate ? inv.dueDate.slice(0, 10) : "",
+      invoiceSaleType: (inv.invoiceSaleType as InvoiceSaleType) || "mixed",
+      taxRatePercent: tax,
+      saveLineItemsToCatalog: false,
       lineItems:
         (inv.lineItems?.length ?? 0) > 0
           ? inv.lineItems!.map((l) => ({
               description: l.description,
               amount: String(l.amount / 100),
               quantity: String(l.quantity ?? 1),
+              saleType: (l.saleType as FormLine["saleType"]) || "",
             }))
           : [
               {
                 description: inv.title,
                 amount: String(inv.amount / 100),
                 quantity: "1",
+                saleType: "",
               },
             ],
     });
   }
 
+  function buildLineItemsPayload() {
+    return form.lineItems
+      .filter((l) => l.description.trim() && l.amount.trim())
+      .map((l) => ({
+        description: l.description.trim(),
+        amount: Math.round(parseFloat(l.amount || "0") * 100),
+        quantity: parseInt(l.quantity || "1", 10) || 1,
+        ...(l.saleType ? { saleType: l.saleType as "service" | "product" } : {}),
+      }));
+  }
+
   function submitCreate() {
-    const amountCents = Math.round(parseFloat(form.amount || "0") * 100);
-    const lineItems =
-      form.lineItems.length > 0 &&
-      form.lineItems.some((l) => l.description || l.amount)
-        ? form.lineItems
-            .filter((l) => l.description && l.amount)
-            .map((l) => ({
-              description: l.description,
-              amount: Math.round(parseFloat(l.amount || "0") * 100),
-              quantity: parseInt(l.quantity || "1", 10) || 1,
-            }))
-        : undefined;
+    const lineItems = buildLineItemsPayload();
+    if (lineItems.length === 0) {
+      toast({ title: "Add at least one line", description: "Description and unit price are required.", variant: "destructive" });
+      return;
+    }
+    const taxRate = parseFloat(form.taxRatePercent || "0") || 0;
     createMutation.mutate({
-      title: form.title,
-      amount: lineItems
-        ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0)
-        : amountCents,
+      title: form.title.trim(),
       recipientEmail: form.recipientEmail || undefined,
       dueDate: form.dueDate || undefined,
       lineItems,
+      invoiceSaleType: form.invoiceSaleType,
+      taxRatePercent: taxRate,
+      saveLineItemsToCatalog: form.saveLineItemsToCatalog,
     });
   }
 
   function submitEdit() {
     if (!editing) return;
-    const amountCents = Math.round(parseFloat(form.amount || "0") * 100);
-    const lineItems =
-      form.lineItems.length > 0 &&
-      form.lineItems.some((l) => l.description || l.amount)
-        ? form.lineItems
-            .filter((l) => l.description && l.amount)
-            .map((l) => ({
-              description: l.description,
-              amount: Math.round(parseFloat(l.amount || "0") * 100),
-              quantity: parseInt(l.quantity || "1", 10) || 1,
-            }))
-        : undefined;
+    if (editing.status === "paid") {
+      updateMutation.mutate({
+        id: editing.id,
+        body: {
+          title: form.title.trim(),
+          recipientEmail: form.recipientEmail || null,
+          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+        },
+      });
+      return;
+    }
+    const lineItems = buildLineItemsPayload();
+    if (lineItems.length === 0) {
+      toast({ title: "Add at least one line", variant: "destructive" });
+      return;
+    }
+    const taxRate = parseFloat(form.taxRatePercent || "0") || 0;
     updateMutation.mutate({
       id: editing.id,
       body: {
-        title: form.title,
-        amount: lineItems
-          ? lineItems.reduce((s, l) => s + l.amount * (l.quantity ?? 1), 0)
-          : amountCents,
+        title: form.title.trim(),
         recipientEmail: form.recipientEmail || null,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         lineItems,
+        invoiceSaleType: form.invoiceSaleType,
+        taxRatePercent: taxRate,
+        saveLineItemsToCatalog: form.saveLineItemsToCatalog,
       },
     });
   }
 
-  const statusVariant: Record<
-    string,
-    "default" | "secondary" | "destructive" | "outline"
-  > = {
+  function applyPreset(presetId: string, rowIndex: number) {
+    const p = presets.find((x) => String(x.id) === presetId);
+    if (!p) return;
+    setForm((f) => {
+      const next = [...f.lineItems];
+      next[rowIndex] = {
+        description: p.description,
+        amount: p.defaultAmountCents != null ? String(p.defaultAmountCents / 100) : "",
+        quantity: String(p.defaultQuantity ?? 1),
+        saleType: (p.saleType === "product" ? "product" : "service") as FormLine["saleType"],
+      };
+      return { ...f, lineItems: next };
+    });
+  }
+
+  const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     draft: "outline",
     sent: "secondary",
     paid: "default",
@@ -338,6 +441,8 @@ export default function AdminInvoicesPage() {
   }
   if (!user || !user.isAdmin || !user.adminApproved) return null;
 
+  const editingPaid = editing?.status === "paid";
+
   return (
     <div className="container mx-auto px-4 py-10">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -352,7 +457,7 @@ export default function AdminInvoicesPage() {
             Invoices
           </h1>
           <p className="text-muted-foreground mt-1">
-            Create, send, and manage Stripe invoices
+            Line items, sale labels, catalog presets, and tax — synced to Stripe totals
           </p>
         </div>
         <Button
@@ -371,7 +476,8 @@ export default function AdminInvoicesPage() {
             All invoices
           </CardTitle>
           <CardDescription>
-            {invoices.length} total · Drafts can be edited and sent via Stripe
+            {invoices.length} total · Edit any invoice; changing line items or tax on a sent invoice moves it back to
+            draft and releases the Stripe invoice so you can send an updated one
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -382,12 +488,8 @@ export default function AdminInvoicesPage() {
           ) : invoices.length === 0 ? (
             <div className="text-center py-12 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5">
               <FileText className="h-12 w-12 mx-auto text-violet-500/60 mb-4" />
-              <p className="text-muted-foreground font-medium">
-                No invoices yet
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Create your first invoice to get started
-              </p>
+              <p className="text-muted-foreground font-medium">No invoices yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Create your first invoice to get started</p>
               <Button onClick={openCreate} variant="outline" className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Create invoice
@@ -412,14 +514,18 @@ export default function AdminInvoicesPage() {
                         </>
                       )}
                     </p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <Badge variant={statusVariant[inv.status] ?? "outline"}>
-                        {inv.status}
-                      </Badge>
+                    <div className="flex flex-wrap items-center gap-3 mt-2">
+                      <Badge variant={statusVariant[inv.status] ?? "outline"}>{inv.status}</Badge>
                       <span className="text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         {formatCurrency(inv.amount)}
                       </span>
+                      {inv.taxAmountCents != null && inv.taxAmountCents > 0 && inv.subtotalCents != null && (
+                        <span className="text-xs text-muted-foreground">
+                          Subtotal {formatCurrency(inv.subtotalCents)} + tax {formatCurrency(inv.taxAmountCents)}
+                          {inv.taxRatePercent != null ? ` (${inv.taxRatePercent}%)` : ""}
+                        </span>
+                      )}
                       {inv.dueDate && (
                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
@@ -429,37 +535,25 @@ export default function AdminInvoicesPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEdit(inv)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                     {inv.status === "draft" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEdit(inv)}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-violet-600 hover:bg-violet-700"
-                          onClick={() => sendMutation.mutate(inv.id)}
-                          disabled={
-                            sendMutation.isPending || !inv.recipientEmail
-                          }
-                        >
-                          <Send className="h-4 w-4 mr-1" />
-                          Send
-                        </Button>
-                      </>
+                      <Button
+                        size="sm"
+                        className="bg-violet-600 hover:bg-violet-700"
+                        onClick={() => sendMutation.mutate(inv.id)}
+                        disabled={sendMutation.isPending || !inv.recipientEmail}
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Send
+                      </Button>
                     )}
                     {inv.status === "sent" && inv.hostInvoiceUrl && (
                       <>
                         <Button variant="outline" size="sm" asChild>
-                          <a
-                            href={inv.hostInvoiceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                          <a href={inv.hostInvoiceUrl} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-1" />
                             View
                           </a>
@@ -475,16 +569,18 @@ export default function AdminInvoicesPage() {
                         </Button>
                       </>
                     )}
-                    {inv.status === "draft" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteId(inv.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setDeleteTarget(inv);
+                        setDeleteId(inv.id);
+                      }}
+                      title="Delete invoice"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -493,9 +589,8 @@ export default function AdminInvoicesPage() {
         </CardContent>
       </Card>
 
-      {/* Create / Edit dialog */}
       <Dialog
-        open={createOpen || !!editing}
+        open={dialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             setCreateOpen(false);
@@ -503,40 +598,252 @@ export default function AdminInvoicesPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editing ? "Edit invoice" : "New invoice"}
-            </DialogTitle>
+            <DialogTitle>{editing ? "Edit invoice" : "New invoice"}</DialogTitle>
             <DialogDescription>
-              {editing
-                ? "Update details. Only draft invoices can be edited."
-                : "Create a draft invoice. Add recipient email and send via Stripe when ready."}
+              {editingPaid ? (
+                <>
+                  This invoice is <strong className="text-foreground">paid</strong>. You can update title, recipient,
+                  and due date only. Amounts and line items stay fixed for accounting consistency.
+                </>
+              ) : (
+                <>
+                  Add line items (pre-tax). Sale type adds &quot;Service —&quot; or &quot;Product —&quot; on the Stripe invoice.
+                  Tax is calculated from the subtotal. Editing amounts on a sent invoice moves it back to draft and voids
+                  the previous Stripe invoice.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
-              <Label>Title</Label>
+              <Label>Invoice title</Label>
               <Input
-                placeholder="e.g. Project Phase 1"
+                placeholder="e.g. Q1 implementation deposit"
                 value={form.title}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, title: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
             </div>
             <div className="grid gap-2">
-              <Label>Amount (USD)</Label>
+              <Label>Sale type (default for lines)</Label>
+              <Select
+                value={form.invoiceSaleType}
+                disabled={editingPaid}
+                onValueChange={(v) => setForm((f) => ({ ...f, invoiceSaleType: v as InvoiceSaleType }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mixed">Mixed — use per-line or plain descriptions</SelectItem>
+                  <SelectItem value="service">Service sale — prefix lines unless overridden</SelectItem>
+                  <SelectItem value="product">Product sale — prefix lines unless overridden</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Tax rate (%)</Label>
               <Input
                 type="number"
                 step="0.01"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, amount: e.target.value }))
-                }
+                min={0}
+                max={100}
+                value={form.taxRatePercent}
+                disabled={editingPaid}
+                onChange={(e) => setForm((f) => ({ ...f, taxRatePercent: e.target.value }))}
               />
+              <p className="text-xs text-muted-foreground">
+                Default from server <code className="text-[10px]">INVOICE_DEFAULT_TAX_PERCENT</code>. Subtotal × rate = tax;
+                total includes tax.
+              </p>
             </div>
+
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(previewTotals.subtotalCents)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax ({previewTotals.tax}%)</span>
+                <span>{formatCurrency(previewTotals.taxAmountCents)}</span>
+              </div>
+              <div className="flex justify-between font-semibold pt-1 border-t">
+                <span>Total due</span>
+                <span>{formatCurrency(previewTotals.totalCents)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base">Line items</Label>
+                {!editingPaid && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        lineItems: [...f.lineItems, { description: "", amount: "", quantity: "1", saleType: "" }],
+                      }))
+                    }
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add line
+                  </Button>
+                )}
+              </div>
+              {form.lineItems.map((line, idx) => (
+                <div key={idx} className="rounded-lg border p-3 space-y-2 bg-card">
+                  <div className="flex flex-wrap gap-2 items-end">
+                    <div className="flex-1 min-w-[180px] space-y-1">
+                      <Label className="text-xs">Description / product or service detail</Label>
+                      <Input
+                        placeholder="e.g. Discovery workshop (8 hrs)"
+                        readOnly={editingPaid}
+                        value={line.description}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setForm((f) => {
+                            const next = [...f.lineItems];
+                            next[idx] = { ...next[idx], description: v };
+                            return { ...f, lineItems: next };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="w-24 space-y-1">
+                      <Label className="text-xs">Qty</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        readOnly={editingPaid}
+                        value={line.quantity}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setForm((f) => {
+                            const next = [...f.lineItems];
+                            next[idx] = { ...next[idx], quantity: v };
+                            return { ...f, lineItems: next };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="w-28 space-y-1">
+                      <Label className="text-xs">Unit $</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        readOnly={editingPaid}
+                        value={line.amount}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setForm((f) => {
+                            const next = [...f.lineItems];
+                            next[idx] = { ...next[idx], amount: v };
+                            return { ...f, lineItems: next };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="w-[130px] space-y-1">
+                      <Label className="text-xs">Line type</Label>
+                      <Select
+                        value={line.saleType || "inherit"}
+                        disabled={editingPaid}
+                        onValueChange={(v) => {
+                          setForm((f) => {
+                            const next = [...f.lineItems];
+                            next[idx] = { ...next[idx], saleType: v === "inherit" ? "" : (v as FormLine["saleType"]) };
+                            return { ...f, lineItems: next };
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Inherit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inherit">Use invoice default</SelectItem>
+                          <SelectItem value="service">Service</SelectItem>
+                          <SelectItem value="product">Product</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {!editingPaid && form.lineItems.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 text-destructive"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            lineItems: f.lineItems.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {!editingPaid && presets.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <BookmarkPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <Select onValueChange={(v) => applyPreset(v, idx)}>
+                        <SelectTrigger className="h-8 text-xs max-w-xs">
+                          <SelectValue placeholder="Insert from catalog…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {presets.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {!editingPaid && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="saveCat"
+                  checked={form.saveLineItemsToCatalog}
+                  onCheckedChange={(c) => setForm((f) => ({ ...f, saveLineItemsToCatalog: c === true }))}
+                />
+                <label htmlFor="saveCat" className="text-sm leading-none cursor-pointer">
+                  Save these lines to catalog for quick reuse on future invoices
+                </label>
+              </div>
+            )}
+
+            {!editingPaid && presets.length > 0 && (
+              <div className="rounded-md border border-dashed p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Saved catalog</p>
+                <ul className="space-y-1 max-h-28 overflow-y-auto text-sm">
+                  {presets.map((p) => (
+                    <li key={p.id} className="flex justify-between items-center gap-2">
+                      <span className="truncate">{p.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-destructive shrink-0"
+                        onClick={() => deletePresetMutation.mutate(p.id)}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="grid gap-2">
               <Label>Recipient email</Label>
               <div className="flex gap-2">
@@ -544,9 +851,7 @@ export default function AdminInvoicesPage() {
                   type="email"
                   placeholder="client@company.com"
                   value={form.recipientEmail}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, recipientEmail: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))}
                   className="flex-1"
                 />
                 <Button type="button" variant="outline" onClick={() => setCrmPickOpen(true)} title="Select from CRM">
@@ -559,9 +864,7 @@ export default function AdminInvoicesPage() {
               <Input
                 type="date"
                 value={form.dueDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, dueDate: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
               />
             </div>
           </div>
@@ -578,21 +881,14 @@ export default function AdminInvoicesPage() {
             {editing ? (
               <Button
                 onClick={submitEdit}
-                disabled={updateMutation.isPending || !form.title}
+                disabled={updateMutation.isPending || !form.title.trim()}
               >
-                {updateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Save
+                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {editingPaid ? "Save details" : "Save"}
               </Button>
             ) : (
-              <Button
-                onClick={submitCreate}
-                disabled={createMutation.isPending || !form.title}
-              >
-                {createMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
+              <Button onClick={submitCreate} disabled={createMutation.isPending || !form.title.trim()}>
+                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Create
               </Button>
             )}
@@ -604,7 +900,7 @@ export default function AdminInvoicesPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Select from CRM</DialogTitle>
-            <DialogDescription>Choose a contact to use as invoice recipient.</DialogDescription>
+            <DialogDescription>Sets recipient email and suggests title and first line from the contact.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {crmContacts.map((c) => (
@@ -613,12 +909,27 @@ export default function AdminInvoicesPage() {
                 type="button"
                 className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition"
                 onClick={() => {
-                  setForm((f) => ({ ...f, recipientEmail: c.email }));
+                  const org = c.company?.trim() || c.name;
+                  setForm((f) => ({
+                    ...f,
+                    recipientEmail: c.email,
+                    title: f.title.trim() ? f.title : `Services — ${org}`,
+                    lineItems:
+                      f.lineItems.length === 1 && !f.lineItems[0].description.trim()
+                        ? [
+                            {
+                              ...f.lineItems[0],
+                              description: `Professional services — ${org}`,
+                            },
+                          ]
+                        : f.lineItems,
+                  }));
                   setCrmPickOpen(false);
                 }}
               >
                 <div className="font-medium">{c.name}</div>
                 <div className="text-sm text-muted-foreground">{c.email}</div>
+                {c.company && <div className="text-xs text-muted-foreground mt-0.5">{c.company}</div>}
               </button>
             ))}
             {crmContacts.length === 0 && (
@@ -630,23 +941,37 @@ export default function AdminInvoicesPage() {
 
       <AlertDialog
         open={deleteId !== null}
-        onOpenChange={() => setDeleteId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteId(null);
+            setDeleteTarget(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove this draft invoice. This action
-              cannot be undone.
+              {deleteTarget?.status === "paid" ? (
+                <>
+                  This removes the invoice record from Ascendra. The payment in Stripe is unchanged — reconcile there
+                  if needed.
+                </>
+              ) : deleteTarget?.stripeInvoiceId || deleteTarget?.hostInvoiceUrl ? (
+                <>
+                  We will void or remove the linked Stripe invoice when possible, then delete this record. This cannot
+                  be undone.
+                </>
+              ) : (
+                <>This permanently removes the invoice. This action cannot be undone.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground"
-              onClick={() =>
-                deleteId !== null && deleteMutation.mutate(deleteId)
-              }
+              onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
             >
               Delete
             </AlertDialogAction>

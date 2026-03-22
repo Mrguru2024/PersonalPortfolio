@@ -275,7 +275,7 @@ function AssessmentResultsContent() {
                     Set up your account to view all your quotes, track project progress, receive announcements, and manage invoices in one place.
                   </p>
                   <Button
-                    onClick={() => router.push("/login?redirect=/dashboard")}
+                    onClick={() => router.push("/portal?redirect=/dashboard")}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />

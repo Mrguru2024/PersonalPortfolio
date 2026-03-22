@@ -33,8 +33,11 @@ export default function ClientProposalDetailPage() {
   const id = params?.id ? String(params.id) : null;
 
   useEffect(() => {
-    if (!authLoading && !user) router.push("/login");
-  }, [user, authLoading, router]);
+    if (!authLoading && !user) {
+      const dest = id ? `/dashboard/proposals/${id}` : "/dashboard";
+      router.push(`/portal?redirect=${encodeURIComponent(dest)}`);
+    }
+  }, [user, authLoading, router, id]);
 
   const { data: quote, isLoading, error } = useQuery<QuoteResponse>({
     queryKey: ["/api/client/proposals", id],

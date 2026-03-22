@@ -97,7 +97,7 @@ export default function CommunityLandingPage() {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="gap-2">
-                    <Link href="/login?redirect=/community/feed">
+                    <Link href="/auth?redirect=/community/feed">
                       <LogIn className="h-4 w-4" />
                       Sign in
                     </Link>

@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,6 +27,7 @@ import {
   STRATEGY_CALL_PATH,
   STARTUP_GROWTH_KIT_PATH,
 } from "@/lib/funnelCtas";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
 
@@ -82,7 +82,7 @@ export default function StartupMvpDevelopmentPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10"
+              className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-0"
             >
               MVP development and scalable platforms for SaaS founders, product builders, and marketplace creators—built to grow with you from day one.
             </motion.p>
@@ -92,17 +92,11 @@ export default function StartupMvpDevelopmentPage() {
               transition={{ duration: 0.5, delay: 0.15 }}
               className="w-full"
             >
-              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <Image
-                  src="/stock images/Web Design_3.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Web Design_3.jpeg"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+              />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}

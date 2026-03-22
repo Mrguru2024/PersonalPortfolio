@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Search, MessageSquare, Palette, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import { TrackPageView } from "@/components/TrackPageView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Find out why your website isn't generating customers",
@@ -64,19 +65,13 @@ export default function DigitalGrowthAuditPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Find out why your website may not be generating the customers it should.
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
                 Our Digital Growth Audit reviews your brand clarity, visual presentation, and website performance to uncover opportunities for improvement.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-                <Image
-                  src="/stock images/Digital_18.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Digital_18.jpeg"
+                sizes="(max-width: 768px) 100vw, 672px"
+              />
             </section>
 
             {/* What the audit reviews */}
@@ -161,6 +156,8 @@ export default function DigitalGrowthAuditPage() {
                 showFoundersLink={true}
               />
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="digital-growth-audit" />
 
             {/* Bridge to paid offers */}
             <section>

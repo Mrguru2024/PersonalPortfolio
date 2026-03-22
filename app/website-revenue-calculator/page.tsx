@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { PageSEO } from "@/components/SEO";
 import { TrackPageView } from "@/components/TrackPageView";
 import { RevenueLossCalculator } from "@/components/funnel/RevenueLossCalculator";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export const metadata: Metadata = {
   title: "Website revenue loss calculator | Free growth tool",
@@ -26,22 +27,21 @@ export default function WebsiteRevenueCalculatorPage() {
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 How much revenue could your website be leaving on the table?
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-0">
                 Use this quick calculator to estimate how much potential business your website might be missing due to low conversion rates.
               </p>
-              <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
-                <Image
-                  src="/stock images/Digital_19.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Digital_19.jpeg"
+                aspect="video"
+                maxWidth="3xl"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+              />
             </section>
             <RevenueLossCalculator />
+          </div>
+          <div className="mx-auto max-w-4xl mt-12 sm:mt-16">
+            <LeadMagnetRelatedWorkSection leadMagnetKey="revenue-calculator" />
           </div>
         </div>
       </div>

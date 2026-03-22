@@ -173,7 +173,9 @@ export default function AdminSiteDirectoryPage() {
             <CardDescription>
               Showing <span className="font-medium text-foreground">{filtered.length}</span> of{" "}
               {SITE_DIRECTORY_ENTRIES_UNIQUE.length} pages
-              {query ? ` matching “${query}”` : ""}.
+              {query ? ` matching “${query}”` : ""}. Use quotes for an exact phrase (e.g.{" "}
+              <code className="text-xs bg-muted px-1 rounded">&quot;lead intake&quot;</code>{" "}
+              <code className="text-xs bg-muted px-1 rounded">crm</code>) — results rank by title, path, and keywords.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row gap-3">
@@ -182,7 +184,7 @@ export default function AdminSiteDirectoryPage() {
               <Input
                 type="search"
                 className="pl-9 h-11"
-                placeholder="Type to filter pages as you go…"
+                placeholder='Search: words + optional phrases — e.g. admin "content studio"'
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="Search pages and tools"

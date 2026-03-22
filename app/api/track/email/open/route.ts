@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyEmailTrackingToken } from "@/lib/track-email";
 import { storage } from "@server/storage";
+import {
+  applyCommSendTrackingSideEffects,
+  parseCommSendTrackingEmailId,
+} from "@server/services/communications/trackingSideEffects";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +31,27 @@ export async function GET(req: NextRequest) {
       if (contact) {
         const ua = req.headers.get("user-agent") || undefined;
         const deviceType = ua && /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
+        let metadata: Record<string, unknown> | undefined;
+        const sendId = parseCommSendTrackingEmailId(parsed.emailId);
+        if (sendId != null) {
+          await applyCommSendTrackingSideEffects(parsed.emailId, "open");
+          const send = await storage.getCommCampaignSendById(sendId);
+          if (send) {
+            const campaign = await storage.getCommCampaignById(send.campaignId);
+            const design = campaign ? await storage.getCommEmailDesignById(campaign.emailDesignId) : undefined;
+            metadata = {
+              commCampaignId: campaign?.id,
+              commCampaignName: campaign?.name,
+              subject: design?.subject,
+              commSendId: send.id,
+            };
+          }
+        }
         await storage.createCommunicationEvent({
           leadId: parsed.leadId,
           eventType: "open",
           emailId: parsed.emailId,
+          metadata,
           ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || undefined,
           userAgent: ua,
           deviceType,

@@ -49,6 +49,7 @@ export async function PATCH(
       "assumptions", "exclusions", "pricingNotes", "timelineNotes",
       "risks", "dependencies", "crossSellOpportunities", "decisionFactors",
       "proposalReadinessScore", "aiSummary", "checklist", "playbookId",
+      "profitabilityInputsJson",
     ];
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];

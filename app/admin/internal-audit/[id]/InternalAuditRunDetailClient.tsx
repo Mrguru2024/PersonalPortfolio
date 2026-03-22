@@ -65,6 +65,7 @@ export function InternalAuditRunDetailClient() {
           id: number;
           status: string;
           projectKey: string;
+          targetSiteUrl: string | null;
           summaryJson: Record<string, unknown> | null;
           clientSafeSummaryJson: Record<string, unknown> | null;
         };
@@ -103,8 +104,19 @@ export function InternalAuditRunDetailClient() {
     router.push(`/admin/internal-audit/${id}?${q.toString()}`);
   }
 
-  const dbSnapshot = data?.run.summaryJson?.dbSnapshot as Record<string, number> | undefined;
+  const rawSnapshot = data?.run.summaryJson?.dbSnapshot;
+  const externalCrawl =
+    rawSnapshot &&
+    typeof rawSnapshot === "object" &&
+    (rawSnapshot as { auditKind?: string }).auditKind === "external_site"
+      ? (rawSnapshot as { baseUrl?: string; fetchedUrls?: string[]; pagesSucceeded?: number })
+      : null;
+  const dbSnapshot =
+    !externalCrawl && rawSnapshot && typeof rawSnapshot === "object"
+      ? (rawSnapshot as Record<string, number>)
+      : undefined;
   const hasEvidence = (data?.scores ?? []).some((s) => (s.evidence?.length ?? 0) > 0);
+  const isClientCrawl = Boolean(data?.run.targetSiteUrl);
 
   return (
     <div className="space-y-8">
@@ -119,8 +131,9 @@ export function InternalAuditRunDetailClient() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Filter this report</CardTitle>
           <CardDescription>
-            Narrow recommendations by funnel category, or by text in a related file path (e.g.{" "}
-            <code className="text-xs bg-muted px-1 rounded">app/api/funnel</code>). Press Apply for path.
+            Narrow recommendations by funnel category, or by text in a related file path / crawled URL (e.g.{" "}
+            <code className="text-xs bg-muted px-1 rounded">app/api/funnel</code> or{" "}
+            <code className="text-xs bg-muted px-1 rounded">/pricing</code>). Press Apply for path.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row flex-wrap gap-4">
@@ -173,9 +186,59 @@ export function InternalAuditRunDetailClient() {
             <Badge variant="secondary" className="capitalize">
               {data.run.status}
             </Badge>
+            {isClientCrawl ? (
+              <Badge variant="outline">Client site crawl</Badge>
+            ) : (
+              <Badge variant="outline">Workspace (repo + DB)</Badge>
+            )}
             <VisibilityBadge tier="internal_only" />
             <span className="text-sm text-muted-foreground">Admin-only report · not shown to site visitors.</span>
           </div>
+
+          {isClientCrawl && data.run.targetSiteUrl && (
+            <Card className="border-primary/20 bg-muted/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Audited site</CardTitle>
+                <CardDescription>
+                  Scores use public HTML only — not the client&apos;s analytics or CRM. Use workspace audit for this
+                  Ascendra stack.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <a
+                  href={data.run.targetSiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-mono text-primary underline break-all"
+                >
+                  {data.run.targetSiteUrl}
+                </a>
+              </CardContent>
+            </Card>
+          )}
+
+          {externalCrawl && (externalCrawl.fetchedUrls?.length ?? 0) > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Pages fetched (this crawl)</CardTitle>
+                <CardDescription>
+                  Successful HTML responses used for this report ({externalCrawl.pagesSucceeded ?? 0} page
+                  {externalCrawl.pagesSucceeded === 1 ? "" : "s"}).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm font-mono space-y-1.5 break-all">
+                  {(externalCrawl.fetchedUrls ?? []).map((u) => (
+                    <li key={u}>
+                      <a href={u} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                        {u}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {dbSnapshot && Object.keys(dbSnapshot).length > 0 && (
             <Card>
@@ -188,7 +251,9 @@ export function InternalAuditRunDetailClient() {
               </CardHeader>
               <CardContent>
                 <ul className="grid gap-2 sm:grid-cols-2 text-sm">
-                  {Object.entries(dbSnapshot).map(([key, val]) => (
+                  {Object.entries(dbSnapshot)
+                    .filter(([, val]) => typeof val === "number")
+                    .map(([key, val]) => (
                     <li
                       key={key}
                       className="flex justify-between gap-4 rounded-md border border-border/50 px-3 py-2 bg-muted/30"
@@ -208,7 +273,9 @@ export function InternalAuditRunDetailClient() {
             <CardHeader>
               <CardTitle>Scores by category</CardTitle>
               <CardDescription>
-                Each score is derived from the checks below (files present on server and selected database counts).{" "}
+                {isClientCrawl
+                  ? "Each score is derived from the checks below (public HTML crawl — forms, CTAs, scripts, headings)."
+                  : "Each score is derived from the checks below (files present on server and selected database counts)."}{" "}
                 {!hasEvidence && (
                   <span className="text-amber-700 dark:text-amber-300">
                     This run has no stored check details (older report). Run a new audit for line-by-line proof.
@@ -287,7 +354,9 @@ export function InternalAuditRunDetailClient() {
                     {r.detail && <p className="text-sm text-muted-foreground">{r.detail}</p>}
                     {(r.relatedPaths ?? []).length > 0 && (
                       <div className="text-xs space-y-1">
-                        <span className="text-muted-foreground font-medium">Related paths</span>
+                        <span className="text-muted-foreground font-medium">
+                          {isClientCrawl ? "Related URLs / notes" : "Related paths"}
+                        </span>
                         <ul className="font-mono text-muted-foreground list-disc list-inside">
                           {r.relatedPaths.map((p) => (
                             <li key={p}>{p}</li>

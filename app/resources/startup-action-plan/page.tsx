@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Target, Layout, Mail, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import {
 } from "@/lib/funnelCtas";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export const metadata: Metadata = {
   title: "Startup action plan | Practical steps to improve your online presence",
@@ -63,20 +64,15 @@ export default function StartupActionPlanPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Startup action plan
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-0">
                 Practical steps to improve your online presence—without a full agency build. Work through these in order for the best results.
               </p>
-              <div className="relative w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border/60 bg-muted shadow-lg ring-1 ring-black/5 dark:ring-white/5 mt-8">
-                <Image
-                  src="/stock images/Digital_18.jpeg"
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" aria-hidden />
-              </div>
+              <FunnelHeroMedia
+                src="/stock images/Digital_18.jpeg"
+                aspect="video"
+                sizes="(max-width: 768px) 100vw, 672px"
+                priority
+              />
             </section>
 
             <section className="text-center" aria-label="Ascendra tips video">
@@ -110,6 +106,8 @@ export default function StartupActionPlanPage() {
                 </Card>
               ))}
             </section>
+
+            <LeadMagnetRelatedWorkSection leadMagnetKey="startup-action-plan" />
 
             <section className="rounded-xl border border-primary/20 bg-card p-5 sm:p-6 text-center">
               <h3 className="text-lg font-semibold text-foreground mb-2">

@@ -31,7 +31,7 @@ export default function CommunityResourceDetailPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace(`/login?redirect=/community/resources/${slug}`);
+      router.replace(`/auth?redirect=/community/resources/${slug}`);
     }
   }, [user, authLoading, router, slug]);
 

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,6 +23,11 @@ export const users = pgTable("users", {
   /** Client dashboard trial — set on signup/OAuth for eligible accounts (skipped for admins/operators). */
   trialStartedAt: timestamp("trial_started_at"),
   trialEndsAt: timestamp("trial_ends_at"),
+  /**
+   * When true, user may use the client portal even if no invoices/quotes are linked yet (e.g. invited before first bill).
+   * Otherwise eligibility is derived from linked client data.
+   */
+  clientPortalAccess: boolean("client_portal_access").default(false).notNull(),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -40,6 +45,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   avatarUrl: true,
   trialStartedAt: true,
   trialEndsAt: true,
+  clientPortalAccess: true,
   created_at: true
 });
 
@@ -649,6 +655,30 @@ export const adminSettings = pgTable("admin_settings", {
 export type AdminSettings = typeof adminSettings.$inferSelect;
 export type InsertAdminSettings = typeof adminSettings.$inferInsert;
 
+/**
+ * Internal-only per-admin memory for the admin AI mentor (habits, struggles, nudges).
+ * Used only on this deployment to personalize the assistant — not sold or shared externally.
+ */
+export type AdminAgentMentorStateV1 = {
+  v: 1;
+  habits: string[];
+  painPoints: string[];
+  goals: string[];
+  strengths: string[];
+  topicsOftenAsked: string[];
+  pendingMentorNudges: string[];
+};
+
+export const adminAgentMentorState = pgTable("admin_agent_mentor_state", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  state: json("state").$type<AdminAgentMentorStateV1>().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminAgentMentorStateRow = typeof adminAgentMentorState.$inferSelect;
+export type InsertAdminAgentMentorStateRow = typeof adminAgentMentorState.$inferInsert;
+
 /** Growth diagnosis funnel: answers, scores, recommendation, and application form. */
 export const growthFunnelLeads = pgTable("growth_funnel_leads", {
   id: serial("id").primaryKey(),
@@ -691,8 +721,29 @@ export const clientQuotes = pgTable("client_quotes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Line item shape for invoice items (Stripe uses amount in cents)
-export type InvoiceLineItem = { description: string; amount: number; quantity?: number };
+// Line item shape for invoice items (Stripe uses amount in cents, pre-tax per unit)
+export type InvoiceLineItem = {
+  description: string;
+  amount: number;
+  quantity?: number;
+  /** Overrides invoice-level sale type for this line when set */
+  saleType?: "service" | "product";
+};
+
+/** Saved catalog rows for quick line-item entry on new invoices */
+export const invoiceLineItemPresets = pgTable("invoice_line_item_presets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  defaultAmountCents: integer("default_amount_cents"),
+  defaultQuantity: integer("default_quantity").notNull().default(1),
+  saleType: text("sale_type").notNull().default("service"), // service | product
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type InvoiceLineItemPreset = typeof invoiceLineItemPresets.$inferSelect;
+export type InsertInvoiceLineItemPreset = typeof invoiceLineItemPresets.$inferInsert;
 
 // Client Invoices schema (Stripe-backed)
 export const clientInvoices = pgTable("client_invoices", {
@@ -701,7 +752,13 @@ export const clientInvoices = pgTable("client_invoices", {
   userId: integer("user_id").references(() => users.id),
   invoiceNumber: text("invoice_number").notNull().unique(),
   title: text("title").notNull(),
-  amount: integer("amount").notNull(), // total in cents
+  amount: integer("amount").notNull(), // grand total in cents (subtotal + tax)
+  /** Sum of line items pre-tax */
+  subtotalCents: integer("subtotal_cents"),
+  taxRatePercent: real("tax_rate_percent"),
+  taxAmountCents: integer("tax_amount_cents").default(0),
+  /** Default sale context for line descriptions (service / product / mixed) */
+  invoiceSaleType: text("invoice_sale_type").$type<"service" | "product" | "mixed" | null>(),
   status: text("status").default("draft"), // draft, sent, paid, overdue, cancelled
   dueDate: timestamp("due_date"),
   paidAt: timestamp("paid_at"),
@@ -801,5 +858,7 @@ export * from "./growthIntelligenceSchema";
 export * from "./internalStudioSchema";
 export * from "./crmSchema";
 export * from "./newsletterSchema";
+export * from "./communicationsSchema";
+export * from "./paidGrowthSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";

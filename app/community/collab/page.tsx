@@ -57,7 +57,7 @@ export default function CommunityCollabPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login?redirect=/community/collab");
+      router.replace("/auth?redirect=/community/collab");
     }
   }, [user, authLoading, router]);
 

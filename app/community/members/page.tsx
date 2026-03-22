@@ -53,7 +53,7 @@ export default function CommunityMembersPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login?redirect=/community/members");
+      router.replace("/auth?redirect=/community/members");
     }
   }, [user, authLoading, router]);
 

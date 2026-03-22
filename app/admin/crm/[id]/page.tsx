@@ -45,6 +45,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
 import { format } from "date-fns";
+import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
 
 interface CrmContact {
   id: number;
@@ -63,6 +64,9 @@ interface CrmContact {
   intentLevel?: string | null;
   linkedinUrl?: string | null;
   customFields?: Record<string, unknown> | null;
+  bookedCallAt?: string | null;
+  lastContactedAt?: string | null;
+  stripeCustomerId?: string | null;
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
@@ -112,6 +116,7 @@ interface CommunicationEvent {
   id: number;
   eventType: string;
   emailId?: string | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -201,6 +206,7 @@ export default function CrmLeadProfilePage() {
   const { toast } = useToast();
   const id = Number(params?.id);
   const [noteText, setNoteText] = useState("");
+  const [smsBody, setSmsBody] = useState("");
 
   const { data: contact, isLoading: contactLoading } = useQuery<CrmContact>({
     queryKey: ["/api/admin/crm/contacts", id],
@@ -356,6 +362,40 @@ export default function CrmLeadProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
       toast({ title: "Task completed" });
     },
+  });
+
+  const sendOpsSmsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/crm/contacts/${id}/revenue-ops/sms`, { body: smsBody });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error ?? "Failed to send SMS");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setSmsBody("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      toast({ title: "SMS sent" });
+    },
+    onError: (e: Error) => toast({ title: "SMS failed", description: e.message, variant: "destructive" }),
+  });
+
+  const sendBookingLinkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/crm/contacts/${id}/revenue-ops/booking-link`, {});
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error ?? "Failed");
+      }
+      return res.json() as Promise<{ url?: string }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({ title: "Booking link sent", description: "Check the timeline for the tracked URL." });
+    },
+    onError: (e: Error) => toast({ title: "Booking link failed", description: e.message, variant: "destructive" }),
   });
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -658,6 +698,23 @@ export default function CrmLeadProfilePage() {
                     <Linkedin className="h-3 w-3" /> LinkedIn
                   </a>
                 )}
+                {contact.customFields &&
+                  typeof contact.customFields.socialProfiles === "object" &&
+                  contact.customFields.socialProfiles !== null &&
+                  !Array.isArray(contact.customFields.socialProfiles) &&
+                  Object.entries(contact.customFields.socialProfiles as Record<string, string>).filter(
+                    ([k, v]) => k !== "linkedin" && typeof v === "string" && v.startsWith("http")
+                  ).map(([platform, url]) => (
+                    <a
+                      key={platform}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary hover:underline capitalize"
+                    >
+                      <ExternalLink className="h-3 w-3" /> {platform}
+                    </a>
+                  ))}
               </div>
             )}
             {(insights?.contactCompleteness?.missingFields?.length ?? 0) > 0 && (
@@ -750,6 +807,80 @@ export default function CrmLeadProfilePage() {
         </div>
 
         <PinnedPlaybookCard contact={contact} onUpdate={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] })} />
+
+        <SocialProfileDiscoveryCard
+          contactId={id}
+          contactName={contact.name}
+          company={contact.company}
+          jobTitle={contact.jobTitle}
+          onUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
+          }}
+        />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Revenue ops (Twilio + booking)
+            </CardTitle>
+            <CardDescription>
+              Manual SMS and booking links log to the timeline. Configure templates in{" "}
+              <Link href="/admin/growth-os/revenue-ops/settings" className="text-primary underline-offset-2 hover:underline">
+                Growth OS → Revenue ops settings
+              </Link>
+              .
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              {contact.bookedCallAt && (
+                <Badge variant="secondary">Booked call logged</Badge>
+              )}
+              {contact.lastContactedAt && (
+                <span>Last contact: {format(new Date(contact.lastContactedAt), "MMM d, yyyy")}</span>
+              )}
+              {contact.stripeCustomerId && <span>Stripe customer linked</span>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ops-sms">Quick SMS</Label>
+              <Textarea
+                id="ops-sms"
+                value={smsBody}
+                onChange={(e) => setSmsBody(e.target.value)}
+                placeholder="Short message to the lead’s phone on file…"
+                className="min-h-[80px] text-sm"
+                disabled={!contact.phone || !!contact.doNotContact}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => sendOpsSmsMutation.mutate()}
+                  disabled={!smsBody.trim() || !contact.phone || !!contact.doNotContact || sendOpsSmsMutation.isPending}
+                >
+                  {sendOpsSmsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send SMS"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => sendBookingLinkMutation.mutate()}
+                  disabled={sendBookingLinkMutation.isPending}
+                >
+                  {sendBookingLinkMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send booking link (SMS)"}
+                </Button>
+              </div>
+              {!contact.phone && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">Add a phone number on this contact to send SMS.</p>
+              )}
+              {contact.doNotContact && (
+                <p className="text-xs text-muted-foreground">Do not contact is enabled — SMS disabled.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {(contact.source || contact.utmSource || contact.utmMedium || contact.utmCampaign || contact.referringPage || contact.landingPage) && (
           <Card>
@@ -1324,12 +1455,30 @@ export default function CrmLeadProfilePage() {
                   <p className="text-sm text-muted-foreground">No email events yet.</p>
                 ) : (
                   <ul className="space-y-2">
-                    {commEvents.map((e) => (
-                      <li key={e.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
-                        <span className="capitalize">{e.eventType}</span>
-                        <span className="text-muted-foreground">{e.emailId && `· ${e.emailId}`} {format(new Date(e.createdAt), "PPp")}</span>
-                      </li>
-                    ))}
+                    {commEvents.map((e) => {
+                      const meta = e.metadata as { commCampaignName?: string; subject?: string; url?: string } | null | undefined;
+                      const label =
+                        meta?.commCampaignName ?
+                          `${e.eventType} · ${meta.commCampaignName}`
+                        : e.eventType;
+                      return (
+                        <li key={e.id} className="flex flex-col gap-0.5 text-sm py-2 border-b last:border-0">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="capitalize font-medium">{label}</span>
+                            <span className="text-muted-foreground text-xs">{format(new Date(e.createdAt), "PPp")}</span>
+                          </div>
+                          {meta?.subject && <span className="text-xs text-muted-foreground truncate">{meta.subject}</span>}
+                          {meta?.url && (
+                            <span className="text-xs text-primary truncate max-w-full" title={meta.url}>
+                              {meta.url}
+                            </span>
+                          )}
+                          {e.emailId && !meta?.commCampaignName && (
+                            <span className="text-xs text-muted-foreground">{e.emailId}</span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </CardContent>

@@ -3,6 +3,13 @@
  * Keep in sync when adding pages; optional `cluster` marks consolidation candidates.
  */
 
+import {
+  parseAdvancedSearchQuery,
+  haystackMatchesParsedQuery,
+  isParsedQueryEmpty,
+  type ParsedAdvancedSearchQuery,
+} from "./advancedSearchQuery";
+
 export type SiteDirectoryAudience = "public" | "admin" | "client" | "token";
 
 export interface SiteDirectoryEntry {
@@ -104,7 +111,9 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/challenge/thank-you", title: "Challenge thank you", category: "Public · Challenge", audience: "public", description: "Thank-you after purchase.", keywords: k("thanks") },
 
   // —— Public: auth & client portal
-  { path: "/login", title: "Login", category: "Public · Auth", audience: "public", description: "User login.", keywords: k("login", "sign in") },
+  { path: "/login", title: "Sign-in hub", category: "Public · Auth", audience: "public", description: "Pick client workspace, community account, or guidance if unsure; links to /portal and /auth.", keywords: k("login", "sign in", "hub"), relatedPaths: ["/portal", "/auth"] },
+  { path: "/portal", title: "Client workspace sign-in", category: "Public · Auth", audience: "client", description: "Dedicated login for paying clients and project portal.", keywords: k("client", "portal", "workspace", "login"), relatedPaths: ["/dashboard", "/login"] },
+  { path: "/portal/welcome", title: "Client workspace welcome", category: "Public · Auth", audience: "client", description: "Signed in but no linked client records; contact / sign out.", keywords: k("client", "portal", "welcome"), relatedPaths: ["/portal", "/contact"] },
   { path: "/auth", title: "Auth", category: "Public · Auth", audience: "public", description: "Auth shell / register login.", keywords: k("auth", "register") },
   { path: "/auth/forgot-password", title: "Forgot password", category: "Public · Auth", audience: "public", description: "Password reset request.", keywords: k("password", "reset") },
   { path: "/auth/reset-password", title: "Reset password", category: "Public · Auth", audience: "public", description: "Password reset form.", keywords: k("password") },
@@ -228,25 +237,101 @@ function dedupeByPath(entries: SiteDirectoryEntry[]): SiteDirectoryEntry[] {
 
 export const SITE_DIRECTORY_ENTRIES_UNIQUE = dedupeByPath(SITE_DIRECTORY_ENTRIES);
 
+function buildEntryHay(e: SiteDirectoryEntry): string {
+  return [
+    e.path,
+    e.title,
+    e.category,
+    e.description,
+    e.cluster ?? "",
+    e.consolidateNote ?? "",
+    ...(e.keywords ?? []),
+    ...(e.relatedPaths ?? []),
+  ].join(" ");
+}
+
+type SiteDirectorySearchRow = {
+  entry: SiteDirectoryEntry;
+  hay: string;
+  titleL: string;
+  pathL: string;
+  descL: string;
+  keywordsL: string;
+};
+
+let cachedSearchRows: SiteDirectorySearchRow[] | null = null;
+
+function getSiteDirectorySearchRows(): SiteDirectorySearchRow[] {
+  if (!cachedSearchRows) {
+    cachedSearchRows = SITE_DIRECTORY_ENTRIES_UNIQUE.map((e) => {
+      const hay = buildEntryHay(e);
+      return {
+        entry: e,
+        hay: hay.toLowerCase(),
+        titleL: e.title.toLowerCase(),
+        pathL: e.path.toLowerCase(),
+        descL: e.description.toLowerCase(),
+        keywordsL: (e.keywords ?? []).join(" ").toLowerCase(),
+      };
+    });
+  }
+  return cachedSearchRows;
+}
+
+function scoreDirectoryRow(q: ParsedAdvancedSearchQuery, r: SiteDirectorySearchRow): number {
+  let score = 0;
+  for (const p of q.phrases) {
+    const slugish = p.replace(/\s+/g, "-");
+    const compact = p.replace(/\s+/g, "");
+    if (r.titleL.includes(p)) score += 120;
+    if (r.pathL.includes(slugish) || (compact.length > 2 && r.pathL.includes(compact))) score += 95;
+    else if (r.pathL.includes(p)) score += 85;
+    if (r.keywordsL.includes(p)) score += 72;
+    if (r.descL.includes(p)) score += 42;
+  }
+  for (const t of q.tokens) {
+    if (r.titleL === t) score += 55;
+    else if (
+      r.titleL.startsWith(`${t} `) ||
+      r.titleL.endsWith(` ${t}`) ||
+      r.titleL.includes(` ${t} `)
+    ) {
+      score += 38;
+    } else if (r.titleL.includes(t)) score += 28;
+    if (r.pathL.includes(t)) score += 16;
+    if (r.keywordsL.includes(t)) score += 12;
+    if (r.descL.includes(t)) score += 6;
+  }
+  return score;
+}
+
+/**
+ * Filter site directory entries by advanced query (quoted phrases + tokens), sorted by relevance.
+ * Precomputed haystacks keep repeated filtering fast on the client.
+ */
 export function searchSiteDirectory(query: string): SiteDirectoryEntry[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return SITE_DIRECTORY_ENTRIES_UNIQUE;
-  const tokens = q.split(/\s+/).filter(Boolean);
-  return SITE_DIRECTORY_ENTRIES_UNIQUE.filter((e) => {
-    const hay = [
-      e.path,
-      e.title,
-      e.category,
-      e.description,
-      e.cluster ?? "",
-      e.consolidateNote ?? "",
-      ...(e.keywords ?? []),
-      ...(e.relatedPaths ?? []),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return tokens.every((t) => hay.includes(t));
-  });
+  const parsed = parseAdvancedSearchQuery(query);
+  if (isParsedQueryEmpty(parsed)) return SITE_DIRECTORY_ENTRIES_UNIQUE;
+
+  const rows = getSiteDirectorySearchRows();
+  const scored: { entry: SiteDirectoryEntry; score: number }[] = [];
+  for (const r of rows) {
+    if (!haystackMatchesParsedQuery(r.hay, parsed)) continue;
+    scored.push({ entry: r.entry, score: scoreDirectoryRow(parsed, r) });
+  }
+  scored.sort(
+    (a, b) =>
+      b.score - a.score ||
+      a.entry.path.length - b.entry.path.length ||
+      a.entry.title.localeCompare(b.entry.title),
+  );
+  return scored.map((s) => s.entry);
+}
+
+/** Top N matches for assistant hints (same ranking as searchSiteDirectory). */
+export function topSiteDirectoryMatches(query: string, limit: number): SiteDirectoryEntry[] {
+  const n = Math.min(20, Math.max(1, limit));
+  return searchSiteDirectory(query).slice(0, n);
 }
 
 export function entriesByCluster(): Map<string, SiteDirectoryEntry[]> {

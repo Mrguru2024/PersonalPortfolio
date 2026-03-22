@@ -36,7 +36,7 @@ export default function CommunityPostDetailPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace(`/login?redirect=/community/post/${postId}`);
+      router.replace(`/auth?redirect=/community/post/${postId}`);
     }
   }, [user, authLoading, router, postId]);
 

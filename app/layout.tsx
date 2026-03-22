@@ -115,8 +115,14 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
-        {/* Very soft full-page gradient – blends hero/particles with page, no harsh line at top */}
-        <div className="fixed inset-0 -z-10 hero-page-gradient pointer-events-none" aria-hidden />
+        {/* Full-page backdrop: vertical hero wash + corner/edge ambient glow (theme-aware) */}
+        <div
+          className="page-backdrop-root fixed inset-0 -z-10 pointer-events-none overflow-hidden"
+          aria-hidden
+        >
+          <div className="hero-page-gradient absolute inset-0" />
+          <div className="page-edge-ambient absolute inset-0" />
+        </div>
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             <MobileNavProvider>

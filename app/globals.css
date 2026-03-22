@@ -32,6 +32,65 @@
   );
 }
 
+/**
+ * Fixed full-viewport backdrop: corner blooms + soft vertical edge washes.
+ * Stacks under content (-z-10); uses theme tokens so light/dark stay cohesive.
+ */
+.page-backdrop-root {
+  contain: strict;
+}
+
+.page-edge-ambient {
+  mix-blend-mode: normal;
+  background:
+    linear-gradient(
+      to right,
+      hsl(var(--primary) / 0.045) 0%,
+      transparent min(11vw, 5.5rem),
+      transparent max(89vw, calc(100% - 5.5rem)),
+      hsl(var(--primary) / 0.045) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      hsl(var(--primary) / 0.03) 0%,
+      transparent 18%,
+      transparent 78%,
+      hsl(var(--secondary) / 0.08) 100%
+    ),
+    radial-gradient(ellipse 72% 58% at -8% 4%, hsl(var(--primary) / 0.1), transparent 58%),
+    radial-gradient(ellipse 64% 52% at 108% 6%, hsl(var(--accent) / 0.14), transparent 56%),
+    radial-gradient(ellipse 58% 48% at 104% 96%, hsl(var(--primary) / 0.07), transparent 54%),
+    radial-gradient(ellipse 68% 56% at -6% 98%, hsl(var(--secondary) / 0.1), transparent 56%);
+}
+
+.dark .page-edge-ambient {
+  background:
+    linear-gradient(
+      to right,
+      hsl(var(--primary) / 0.07) 0%,
+      transparent min(12vw, 6rem),
+      transparent max(88vw, calc(100% - 6rem)),
+      hsl(var(--primary) / 0.07) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      hsl(var(--primary) / 0.05) 0%,
+      transparent 22%,
+      transparent 72%,
+      hsl(var(--secondary) / 0.12) 100%
+    ),
+    radial-gradient(ellipse 70% 56% at -10% 2%, hsl(var(--primary) / 0.14), transparent 58%),
+    radial-gradient(ellipse 62% 50% at 110% 4%, hsl(var(--accent) / 0.1), transparent 55%),
+    radial-gradient(ellipse 56% 46% at 102% 98%, hsl(var(--primary) / 0.1), transparent 52%),
+    radial-gradient(ellipse 66% 54% at -8% 100%, hsl(var(--chart-2) / 0.08), transparent 58%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-edge-ambient {
+    opacity: 0.85;
+  }
+}
+
 /* Logo: dark on light theme (visible), white on dark theme */
 img.header-logo,
 img[alt="Ascendra Technologies"] {

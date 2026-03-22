@@ -20,6 +20,8 @@ import { z } from "zod";
 export const internalAuditRuns = pgTable("internal_audit_runs", {
   id: serial("id").primaryKey(),
   projectKey: text("project_key").notNull().default("ascendra_main"),
+  /** When set, this run is a public HTML crawl of that https origin (client site), not the monolith+DB audit. */
+  targetSiteUrl: text("target_site_url"),
   label: text("label"),
   status: text("status").notNull().default("pending"), // pending | running | completed | failed
   startedAt: timestamp("started_at").defaultNow().notNull(),

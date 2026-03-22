@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/auth-helpers";
 import {
   SITE_DIRECTORY_ENTRIES_UNIQUE,
   entriesByCluster,
+  searchSiteDirectory,
   type SiteDirectoryEntry,
 } from "@/lib/siteDirectory";
 
@@ -16,7 +17,7 @@ function clustersPayload(): Record<string, SiteDirectoryEntry[]> {
 /**
  * GET /api/admin/site-directory
  * Full route map for admins and AI agents (Cursor, etc.). Requires approved admin session.
- * Query: ?q=search+terms — filtered entries only.
+ * Query: ?q=... — filtered entries only (quoted phrases + tokens; same as Site directory UI).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -25,25 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
-    let entries = SITE_DIRECTORY_ENTRIES_UNIQUE;
-    if (q) {
-      const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
-      entries = entries.filter((e) => {
-        const hay = [
-          e.path,
-          e.title,
-          e.category,
-          e.description,
-          e.cluster ?? "",
-          e.consolidateNote ?? "",
-          ...(e.keywords ?? []),
-          ...(e.relatedPaths ?? []),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return tokens.every((t) => hay.includes(t));
-      });
-    }
+    const entries = q ? searchSiteDirectory(q) : SITE_DIRECTORY_ENTRIES_UNIQUE;
 
     return NextResponse.json({
       generatedAt: new Date().toISOString(),

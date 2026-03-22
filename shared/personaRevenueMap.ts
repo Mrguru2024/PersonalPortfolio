@@ -45,6 +45,16 @@ export const PERSONA_REVENUE_MAP: Record<PersonaJourneyId, PersonaRevenueBridge>
     primaryLeadMagnetSlug: "digital-growth-audit",
     secondaryLeadMagnetSlug: "startup-growth-system",
   },
+  "high-ticket-owner": {
+    flagshipOfferSlug: "startup-growth-system",
+    primaryLeadMagnetSlug: "digital-growth-audit",
+    secondaryLeadMagnetSlug: "homepage-conversion-blueprint",
+  },
+  "tax-business-owner": {
+    flagshipOfferSlug: "startup-growth-system",
+    primaryLeadMagnetSlug: "digital-growth-audit",
+    secondaryLeadMagnetSlug: "diagnosis",
+  },
 };
 
 export function getPersonaRevenueBridge(id: PersonaJourneyId): PersonaRevenueBridge {

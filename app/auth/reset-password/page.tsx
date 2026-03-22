@@ -229,7 +229,7 @@ function ResetPasswordForm() {
                   </Link>
                 </Button>
                 <Button variant="ghost" className="w-full" asChild>
-                  <Link href="/login">Client sign in</Link>
+                  <Link href="/portal">Client workspace sign-in</Link>
                 </Button>
               </div>
             </form>

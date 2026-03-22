@@ -45,7 +45,7 @@ export default function CommunitySettingsPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/login?redirect=/community/settings");
+    if (!authLoading && !user) router.replace("/auth?redirect=/community/settings");
   }, [user, authLoading, router]);
 
   const settings = data?.settings ?? {

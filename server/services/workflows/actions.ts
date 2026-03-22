@@ -5,6 +5,7 @@
 import type { WorkflowContext, WorkflowActionType } from "./types";
 import { logActivity } from "@server/services/crmFoundationService";
 import { generateAndPersistLeadGuidance, generateAndPersistAccountGuidance } from "@server/services/crmAiGuidanceService";
+import { executeCommCampaignSend } from "@server/services/communications/sendCommCampaign";
 
 const ACTION_KEYS: Record<WorkflowActionType, string> = {
   create_task: "create_task",
@@ -30,6 +31,7 @@ const ACTION_KEYS: Record<WorkflowActionType, string> = {
   create_internal_alert: "create_internal_alert",
   mark_sequence_ready: "mark_sequence_ready",
   set_do_not_contact: "set_do_not_contact",
+  send_comm_campaign: "send_comm_campaign",
 };
 
 export async function executeAction(
@@ -169,6 +171,32 @@ export async function executeAction(
           return { ok: true, actionKey: key };
         }
         return { ok: false, actionKey: key };
+      }
+      case "send_comm_campaign": {
+        const campaignId = Number(params?.campaignId);
+        if (!contactId || !Number.isFinite(campaignId)) return { ok: false, actionKey: key };
+        const campaign = await ctx.storage.getCommCampaignById(campaignId);
+        if (!campaign || campaign.status !== "draft") return { ok: false, actionKey: key };
+        const ids = campaign.segmentFilters?.contactIds;
+        if (!Array.isArray(ids) || ids.length !== 1 || Number(ids[0]) !== contactId) {
+          return { ok: false, actionKey: key };
+        }
+        const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+        const result = await executeCommCampaignSend({
+          campaignId,
+          reqOrigin: origin,
+          createdByUserId: null,
+        });
+        if (result.ok) {
+          await logActivity(ctx.storage, {
+            contactId,
+            type: "research_updated",
+            title: "Communications campaign sent (workflow)",
+            content: campaign.name,
+            metadata: { commCampaignId: campaign.id, workflow: true },
+          });
+        }
+        return { ok: result.ok, actionKey: key };
       }
       case "set_do_not_contact": {
         if (!contactId) return { ok: false, actionKey: key };

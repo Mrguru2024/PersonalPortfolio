@@ -28,6 +28,7 @@ import { format } from "date-fns";
 interface AuditRunRow {
   id: number;
   projectKey: string;
+  targetSiteUrl: string | null;
   label: string | null;
   status: string;
   startedAt: string;
@@ -42,6 +43,7 @@ export default function InternalAuditDashboardPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [projectKey, setProjectKey] = useState(DEFAULT_INTERNAL_AUDIT_PROJECT_KEY);
+  const [clientSiteUrl, setClientSiteUrl] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -81,11 +83,16 @@ export default function InternalAuditDashboardPage() {
 
   const runMutation = useMutation({
     mutationFn: async () => {
+      const trimmedSite = clientSiteUrl.trim();
       const res = await fetch("/api/admin/internal-audit/runs", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectKey, execute: true }),
+        body: JSON.stringify({
+          projectKey: effectiveProjectKey,
+          ...(trimmedSite ? { targetSiteUrl: trimmedSite } : {}),
+          execute: true,
+        }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -121,7 +128,8 @@ export default function InternalAuditDashboardPage() {
         <CardContent>
           <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
             <li>
-              <span className="text-foreground">Run an audit</span> using the button below (usually a few seconds).
+              <span className="text-foreground">Run an audit</span> — leave the client URL empty for this workspace, or
+              enter their <code className="text-xs bg-muted px-1 rounded">https://…</code> site for a public-page crawl.
             </li>
             <li>
               <span className="text-foreground">Open the report</span> and read each category: score, what we
@@ -142,11 +150,30 @@ export default function InternalAuditDashboardPage() {
         <CardHeader>
           <CardTitle>Run a new audit</CardTitle>
           <CardDescription>
-            One click runs a check against this app&apos;s server files and your live database. You don&apos;t need to
-            configure anything for a normal single-site setup.
+            <span className="text-foreground font-medium">Workspace audit</span> — this deployment&apos;s repo files and
+            your database. <span className="text-foreground font-medium">Client site audit</span> — enter their public
+            https URL; we fetch common paths (home, contact, pricing, etc.) and score funnel signals from HTML only.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2 max-w-xl">
+            <Label htmlFor="client-site-url">Client site URL (optional)</Label>
+            <Input
+              id="client-site-url"
+              type="url"
+              inputMode="url"
+              placeholder="https://client-example.com"
+              value={clientSiteUrl}
+              onChange={(e) => setClientSiteUrl(e.target.value)}
+              autoComplete="off"
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Only <code className="text-[10px] bg-muted px-1 rounded">https://</code> public hosts. Local/private networks
+              are blocked. Some sites may block automated requests — if a crawl fails, try again or audit key pages
+              manually.
+            </p>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button
               size="lg"
@@ -159,10 +186,12 @@ export default function InternalAuditDashboardPage() {
               ) : (
                 <PlayCircle className="h-4 w-4 mr-2" />
               )}
-              Run audit now
+              {clientSiteUrl.trim() ? "Run client site audit" : "Run workspace audit"}
             </Button>
             {runMutation.isPending && (
-              <span className="text-sm text-muted-foreground">Checking files and database…</span>
+              <span className="text-sm text-muted-foreground">
+                {clientSiteUrl.trim() ? "Fetching public pages…" : "Checking files and database…"}
+              </span>
             )}
           </div>
 
@@ -240,6 +269,15 @@ export default function InternalAuditDashboardPage() {
                       <div>
                         <div className="font-medium flex flex-wrap items-center gap-2">
                           {r.label ?? `Report #${r.id}`}
+                          {r.targetSiteUrl ? (
+                            <Badge variant="outline" className="font-normal">
+                              Client crawl
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="font-normal">
+                              Workspace
+                            </Badge>
+                          )}
                           <Badge variant="secondary" className="capitalize">
                             {r.status}
                           </Badge>

@@ -8,6 +8,17 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-22 — Revenue Ops, Communications, Paid Growth, and funnel polish
+
+- **Lean Revenue Ops (Growth OS):** Admin **Revenue Ops** dashboard and settings (`/admin/growth-os/revenue-ops`), Twilio SMS and Stripe-aware helpers, booking-link flows, and CRM contact **Revenue Ops** actions. Webhook routes for Stripe and Twilio; optional env vars documented in `.env.example`. See `Docs/implementation/LEAN-REVENUE-OPS.md`.
+- **Communications suite:** Admin **Communications** hub — campaigns, email designs, analytics, test send, AI assist on designs, audience preview. APIs under `/api/admin/communications/*`; seed via `scripts/seed-communications.ts`. Aligns with `Docs/implementation/COMMUNICATIONS-SYSTEM-AUDIT-AND-PLAN.md`.
+- **Paid Growth module:** Admin **Paid Growth** area (accounts, campaigns, readiness, lead quality, reports) plus backing APIs and schema. See `Docs/implementation/PAID-GROWTH-MODULE.md` and `scripts/seed-paid-growth.ts`.
+- **CRM & invoices:** Richer contact profile (revenue ops, social discovery/suggestions, market intel on proposal prep), invoice send/remind and line presets, internal audit run detail and public HTTPS checks.
+- **Marketing funnel UX:** Shared **`FunnelHeroMedia`** for consistent hero images across lead magnets and service pages; **bottom spacing** so CTAs no longer sit flush on images. **`/free-trial`** copy reframed around outcomes (clarity call + Digital Growth Snapshot). Page backdrop / edge gradients in `globals.css` + layout.
+- **Persona & ecosystem:** Journey panel and related-work rotation updates; **`/go/book/[token]`** short links; client portal eligibility API; login hub polish; site directory search improvements.
+
+---
+
 ## 2026-03-22 15:30 — Admin: CRM quick actions, offer AI fill, IQ persona quick create
 
 - **CRM (`/admin/crm`):** Per-lead **quick actions** menu on list and pipeline cards (`CrmContactQuickActions`) — mailto, SMS, tel, copy email/phone, timeline **note**, **follow-up task**, **intent** submenu, open profile, Discovery workspaces. Helpers in `app/lib/crmContactOutreach.ts`.

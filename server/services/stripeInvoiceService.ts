@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import type { InvoiceLineItem } from "@shared/schema";
+import { formatInvoiceLineDescription } from "../../app/lib/invoiceTotals";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 let stripe: Stripe | null = null;
@@ -18,7 +19,12 @@ export interface CreateInvoiceParams {
   title: string;
   lineItems: InvoiceLineItem[];
   dueDate?: Date;
-  metadata?: { invoiceId?: string; invoiceNumber?: string };
+  metadata?: { invoiceId?: string; invoiceNumber?: string; crmContactId?: string };
+  /** Applies Service— / Product— prefixes on Stripe line text */
+  invoiceSaleType?: "service" | "product" | "mixed" | null;
+  /** Pre-calculated sales tax in cents (added as its own Stripe invoice line) */
+  taxAmountCents?: number;
+  taxRatePercent?: number | null;
 }
 
 /** Create or retrieve Stripe customer by email */
@@ -61,17 +67,39 @@ export async function createDraftInvoice(
     metadata: {
       ...(params.metadata?.invoiceId && { invoiceId: String(params.metadata.invoiceId) }),
       ...(params.metadata?.invoiceNumber && { invoiceNumber: params.metadata.invoiceNumber }),
+      ...(params.metadata?.crmContactId && { crmContactId: String(params.metadata.crmContactId) }),
     },
     custom_fields: params.title ? [{ name: "Project", value: params.title }] : undefined,
   });
 
   for (const item of params.lineItems) {
+    const qty = item.quantity ?? 1;
+    // Stripe rejects passing both `amount` and `quantity` on invoice items; send a single line total in cents.
+    const lineTotalCents = Math.round(item.amount * qty);
+    const description = formatInvoiceLineDescription(
+      item.description,
+      item.saleType,
+      params.invoiceSaleType ?? null
+    );
     await s.invoiceItems.create({
       customer: customerId,
       invoice: invoice.id,
-      description: item.description,
-      amount: item.amount,
-      quantity: item.quantity ?? 1,
+      description,
+      amount: lineTotalCents,
+    });
+  }
+
+  const tax = params.taxAmountCents ?? 0;
+  if (tax > 0) {
+    const label =
+      params.taxRatePercent != null && params.taxRatePercent > 0
+        ? `Sales tax (${params.taxRatePercent}%)`
+        : "Sales tax";
+    await s.invoiceItems.create({
+      customer: customerId,
+      invoice: invoice.id,
+      description: label,
+      amount: tax,
     });
   }
 
@@ -107,6 +135,29 @@ export async function getHostedInvoiceUrl(stripeInvoiceId: string): Promise<stri
 export async function voidInvoice(stripeInvoiceId: string): Promise<void> {
   const s = getStripe();
   await s.invoices.voidInvoice(stripeInvoiceId);
+}
+
+/**
+ * Remove an invoice from Stripe so local edits/deletes do not leave an active hosted invoice behind.
+ * Draft → delete; open / uncollectible → void; already void → no-op; paid → skip (cannot void).
+ */
+export async function releaseStripeInvoice(stripeInvoiceId: string): Promise<void> {
+  const s = getStripe();
+  const inv = await s.invoices.retrieve(stripeInvoiceId);
+  if (inv.status === "draft") {
+    await s.invoices.del(stripeInvoiceId);
+    return;
+  }
+  if (inv.status === "open") {
+    await s.invoices.voidInvoice(stripeInvoiceId);
+    return;
+  }
+  if (inv.status === "void") {
+    return;
+  }
+  if (inv.status === "uncollectible" || inv.status === "paid") {
+    return;
+  }
 }
 
 /** Check if Stripe is configured */

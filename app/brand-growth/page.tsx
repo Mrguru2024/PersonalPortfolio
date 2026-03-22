@@ -33,6 +33,7 @@ import {
 } from "@/lib/funnelCtas";
 import { personalInfo } from "@/lib/data";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
+import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 
 const MACON_LOGO_BADGE = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
 const STYLE_STUDIO_LOGO = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
@@ -524,6 +525,10 @@ export default function BrandGrowthPage() {
             </Card>
           </div>
         </section>
+
+        <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 max-w-4xl pb-10 sm:pb-14">
+          <LeadMagnetRelatedWorkSection leadMagnetKey="brand-growth" />
+        </div>
 
         {/* 8. Consultation CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">

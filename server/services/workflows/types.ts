@@ -54,7 +54,9 @@ export type WorkflowActionType =
   | "notify_owner"
   | "create_internal_alert"
   | "mark_sequence_ready"
-  | "set_do_not_contact";
+  | "set_do_not_contact"
+  /** Sends a comm campaign that targets exactly this contact (segmentFilters.contactIds === [contactId], draft only). */
+  | "send_comm_campaign";
 
 export interface WorkflowPayload {
   contactId?: number;

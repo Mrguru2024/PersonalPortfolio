@@ -28,6 +28,7 @@ export const SCORING_RULES: Partial<Record<LeadTrackingEventType | string, numbe
   return_visit: 10,
   tool_used: 5,
   persona_journey_selected: 8,
+  persona_journey_more_toggle: 1,
   persona_journey_viewed: 4,
   persona_journey_lead_magnet_click: 6,
 };

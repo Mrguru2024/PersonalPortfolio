@@ -6,6 +6,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { runLeadAlignmentEngine } from "./leadAlignmentEngine";
+import { runExternalSiteAuditEngine } from "./externalSiteAuditEngine";
 import { buildClientSafeAuditSummary } from "@/lib/internal-audit/buildClientSafeAuditSummary";
 import type { LeadAuditEvidenceItem } from "@/lib/internal-audit/leadAuditCategories";
 
@@ -54,12 +55,21 @@ export async function executeAuditRun(input: {
   projectKey: string;
   label?: string;
   triggeredByUserId: number | null;
+  /** Normalized https origin when auditing a client site; null = this deployment (repo + DB). */
+  targetSiteUrl?: string | null;
 }) {
+  const iso = new Date().toISOString();
+  const externalOrigin = input.targetSiteUrl?.trim() || null;
+  const defaultLabel = externalOrigin
+    ? `External funnel crawl · ${new URL(externalOrigin).hostname} · ${iso}`
+    : `Lead alignment ${iso}`;
+
   const [run] = await db
     .insert(internalAuditRuns)
     .values({
       projectKey: input.projectKey,
-      label: input.label ?? `Lead alignment ${new Date().toISOString()}`,
+      targetSiteUrl: externalOrigin,
+      label: input.label?.trim() || defaultLabel,
       status: "running",
       triggeredByUserId: input.triggeredByUserId,
     })
@@ -68,7 +78,9 @@ export async function executeAuditRun(input: {
   if (!run) throw new Error("Failed to create audit run");
 
   try {
-    const { categories, dbSnapshot } = await runLeadAlignmentEngine(input.projectKey);
+    const { categories, dbSnapshot } = externalOrigin
+      ? await runExternalSiteAuditEngine(externalOrigin)
+      : await runLeadAlignmentEngine(input.projectKey);
 
     const categoryEvidence = Object.fromEntries(
       categories.map((c) => [c.categoryKey, c.evidence]),

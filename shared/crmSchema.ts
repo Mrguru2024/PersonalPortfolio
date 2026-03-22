@@ -207,7 +207,8 @@ export const communicationEvents = pgTable("communication_events", {
   leadId: integer("lead_id").notNull(), // crm_contacts.id
   eventType: text("event_type").notNull(), // delivered | open | click | reply
   emailId: text("email_id"), // internal id for the email/campaign
-  metadata: json("metadata").$type<{ url?: string; linkId?: string; subject?: string }>(),
+  /** Open/click/delivered context; Ascendra Communications adds commCampaign* / commSendId. */
+  metadata: json("metadata").$type<Record<string, unknown>>(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   deviceType: text("device_type"),
@@ -492,6 +493,35 @@ export const crmDiscoveryWorkspaces = pgTable("crm_discovery_workspaces", {
 export type CrmDiscoveryWorkspace = typeof crmDiscoveryWorkspaces.$inferSelect;
 export type InsertCrmDiscoveryWorkspace = typeof crmDiscoveryWorkspaces.$inferInsert;
 
+/** Saved inputs for the proposal prep profitability calculator (computed metrics derived client-side). */
+export type ProposalPrepProfitabilityInputs = {
+  quotedPrice?: number | null;
+  internalHours?: number | null;
+  /** Blended internal cost per hour (loaded cost). */
+  hourlyCost?: number | null;
+  passThroughCosts?: number | null;
+  /** Percent of quoted price paid to commission (0–100). */
+  salesCommissionPct?: number | null;
+  /** Target gross margin for “suggested price” helper (0–100). */
+  targetGrossMarginPct?: number | null;
+};
+
+/** Web sources attached to the latest market intel run (Brave snippets). */
+export type ProposalPrepMarketIntelSource = {
+  title: string;
+  url: string;
+  snippet: string;
+};
+
+export type ProposalPrepMarketIntelMeta = {
+  generatedAt: string;
+  queriesUsed: string[];
+  model?: string;
+  braveConfigured: boolean;
+  /** When true, synthesis had no web results — copy is exploratory only. */
+  noLiveSources?: boolean;
+};
+
 /** Proposal prep workspace: internal prep before writing proposal. */
 export const crmProposalPrepWorkspaces = pgTable("crm_proposal_prep_workspaces", {
   id: serial("id").primaryKey(),
@@ -518,6 +548,13 @@ export const crmProposalPrepWorkspaces = pgTable("crm_proposal_prep_workspaces",
   playbookId: integer("playbook_id"),
   /** Checklist: items like budget confirmed, timeline discussed, etc. */
   checklist: json("checklist").$type<Array<{ id: string; label: string; done: boolean }>>(),
+  /** Advanced sales tools — calculator inputs (outputs computed in UI). */
+  profitabilityInputsJson: json("profitability_inputs_json").$type<ProposalPrepProfitabilityInputs | null>(),
+  /** AI + web-grounded market / pricing snapshot (markdown). */
+  marketIntelSummary: text("market_intel_summary"),
+  marketIntelSourcesJson: json("market_intel_sources_json").$type<ProposalPrepMarketIntelSource[] | null>(),
+  marketIntelMetaJson: json("market_intel_meta_json").$type<ProposalPrepMarketIntelMeta | null>(),
+  marketIntelUpdatedAt: timestamp("market_intel_updated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -545,6 +582,51 @@ export const crmSalesPlaybooks = pgTable("crm_sales_playbooks", {
 
 export type CrmSalesPlaybook = typeof crmSalesPlaybooks.$inferSelect;
 export type InsertCrmSalesPlaybook = typeof crmSalesPlaybooks.$inferInsert;
+
+// ——— Social profile discovery (web search → suggested links; admin confirms) ———
+
+export const crmContactSocialSuggestions = pgTable("crm_contact_social_suggestions", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id")
+    .notNull()
+    .references(() => crmContacts.id, { onDelete: "cascade" }),
+  /** linkedin | x | facebook | instagram | github | other */
+  platform: text("platform").notNull(),
+  profileUrl: text("profile_url").notNull(),
+  displayName: text("display_name"),
+  snippet: text("snippet"),
+  /** 0–100 heuristic or model-assisted */
+  confidence: integer("confidence"),
+  matchReason: text("match_reason"),
+  /** brave_web | openai_ranked | search_link_only */
+  discoverySource: text("discovery_source").notNull(),
+  /** suggested | applied | dismissed | superseded */
+  status: text("status").notNull().default("suggested"),
+  discoveryRunId: text("discovery_run_id").notNull(),
+  rawMetadata: json("raw_metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CrmContactSocialSuggestion = typeof crmContactSocialSuggestions.$inferSelect;
+export type InsertCrmContactSocialSuggestion = typeof crmContactSocialSuggestions.$inferInsert;
+
+/** Singleton row (id=1): internal Revenue Ops templates, toggles, default booking URL. */
+export type RevenueOpsSettingsConfig = {
+  welcomeSmsEnabled?: boolean;
+  welcomeSmsTemplate?: string;
+  missedCallSmsEnabled?: boolean;
+  missedCallSmsTemplate?: string;
+  defaultBookingUrl?: string;
+};
+
+export const revenueOpsSettings = pgTable("revenue_ops_settings", {
+  id: integer("id").primaryKey().default(1),
+  config: json("config").$type<RevenueOpsSettingsConfig>().notNull().default({}),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type RevenueOpsSettingsRow = typeof revenueOpsSettings.$inferSelect;
+export type InsertRevenueOpsSettingsRow = typeof revenueOpsSettings.$inferInsert;
 
 // ——— Growth Intelligence: experiments and variant assignment ———
 
