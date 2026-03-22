@@ -10,14 +10,11 @@ import {
   Mail,
   Phone,
   Building2,
-  User,
   Target,
   FileText,
   Activity,
   MessageSquare,
-  Globe,
   Zap,
-  Calendar,
   CheckSquare,
   Linkedin,
   Sparkles,
@@ -622,11 +619,11 @@ export default function CrmLeadProfilePage() {
                 {insights?.contactCompleteness && (
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Profile</p>
-                    <p className="text-sm font-medium">
+                    <div className="text-sm font-medium">
                       <Badge variant={insights.contactCompleteness.label === "complete" ? "default" : insights.contactCompleteness.label === "good" ? "secondary" : "outline"}>
                         {insights.contactCompleteness.score}% {insights.contactCompleteness.label}
                       </Badge>
-                    </p>
+                    </div>
                   </div>
                 )}
                 {contact.leadScore != null && (

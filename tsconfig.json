@@ -44,10 +44,10 @@
   ],
   "exclude": [
     "node_modules",
-    "client",
     "scripts",
     "old_index.html",
-    "backups"
+    "backups",
+    ".next/cache"
   ]
 }
 

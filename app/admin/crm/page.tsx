@@ -11,11 +11,11 @@ import {
   Mail,
   Building2,
   User,
+  Users,
   DollarSign,
   Trash2,
   Edit,
   Phone,
-  Target,
   Bell,
   BarChart3,
   FileText,
@@ -195,6 +195,16 @@ export default function CrmPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/crm/analytics/engagement");
       if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  /** Total CRM contacts (all types); shared query key with CRM Overview dashboard. */
+  const { data: crmDashStats, isLoading: crmDashLoading } = useQuery<{ totalContacts: number }>({
+    queryKey: ["/api/admin/crm/dashboard"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/dashboard");
       return res.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
@@ -480,54 +490,77 @@ export default function CrmPage() {
           </nav>
         </header>
 
-        {engagement && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Email opens</CardTitle>
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <Mail className="h-4 w-4 text-primary" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{engagement.emailOpens}</p>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Email clicks</CardTitle>
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <BarChart3 className="h-4 w-4 text-primary" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{engagement.emailClicks}</p>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Proposal views</CardTitle>
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{engagement.documentViews}</p>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-amber-500/30 transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">High intent leads</CardTitle>
-                <div className="rounded-lg bg-amber-500/10 p-2">
-                  <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{engagement.highIntentLeadsCount}</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
+          <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Contacts</CardTitle>
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold tabular-nums">
+                {crmDashLoading ? "…" : (crmDashStats?.totalContacts ?? "—")}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Total in CRM (leads + clients)</p>
+              {!crmDashLoading &&
+                crmDashStats != null &&
+                filteredContacts.length !== crmDashStats.totalContacts && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {filteredContacts.length} shown with current list / filters
+                  </p>
+                )}
+            </CardContent>
+          </Card>
+          {engagement && (
+            <>
+              <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Email opens</CardTitle>
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{engagement.emailOpens}</p>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Email clicks</CardTitle>
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{engagement.emailClicks}</p>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Proposal views</CardTitle>
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{engagement.documentViews}</p>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-amber-500/30 transition-all duration-200">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">High intent leads</CardTitle>
+                  <div className="rounded-lg bg-amber-500/10 p-2">
+                    <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{engagement.highIntentLeadsCount}</p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
 
       {engagement?.recentUnreadAlerts && engagement.recentUnreadAlerts.length > 0 && (
         <Card className="mb-6 border-0 shadow-sm overflow-hidden">

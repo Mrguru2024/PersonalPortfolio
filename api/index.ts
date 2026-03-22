@@ -1,3 +1,8 @@
+/**
+ * Legacy Express + Passport app (duplicate auth/register/login vs Next `app/api/*`).
+ * Not used by `next dev` / Vercel Next deployment; kept for `npm run dev:old` or custom hosting.
+ * Prefer Next.js App Router API routes for new work.
+ */
 import express, { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import passport from 'passport';
@@ -16,6 +21,7 @@ if (process.env.NODE_ENV !== "production") {
 // Import body parser no longer needed as we use express built-in parsers
 import { db } from '../server/db';
 import { storage } from '../server/storage';
+import { startDefaultClientTrialForUser } from "../server/services/userTrialService";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import * as schema from "../shared/schema";
@@ -123,6 +129,8 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               githubId: profile.id,
               created_at: new Date(),
             });
+            await startDefaultClientTrialForUser(user.id);
+            user = (await storage.getUser(user.id))!;
           }
           
           return done(null, user);
@@ -167,10 +175,12 @@ app.post("/api/register", async (req, res, next) => {
     return res.status(400).send("Username already exists");
   }
 
-  const user = await storage.createUser({
+  let user = await storage.createUser({
     ...req.body,
     password: await hashPassword(req.body.password),
   });
+  await startDefaultClientTrialForUser(user.id);
+  user = (await storage.getUser(user.id))!;
 
   req.login(user, (err) => {
     if (err) return next(err);

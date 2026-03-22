@@ -42,12 +42,10 @@ next-env.d.ts
 
 # Public folders (Next.js uses root public/)
 app/public
-client/public
 server/public
 
 # Legacy files
 old_index.html
-vite.config.ts.*
 
 # Unused build scripts (deleted)
 # vercel-build.js

@@ -8,6 +8,16 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-22 — Next-only stack, dev bundler, auth/HMR hardening, header hydration
+
+- **Single Next surface:** Removed legacy Vite `client/` and Express Vite integration; `dev:old` serves the Next app as static files only. Added small Express helpers (`logger`, `serveStatic`). `components.json` and tooling aligned with `app/globals.css`; `npm run check` uses `scripts/ensure-next-types.mjs` for Next route types.
+- **Next.js 16 dev:** `npm run dev` runs **`next dev --webpack`** because Next 16 defaults to Turbopack (which was causing “module factory is not available” HMR errors on some admin routes). **`npm run dev:turbo`** opts into Turbopack. `AGENTS.md` documents this; production **`next build`** was already **`--webpack`**.
+- **Client auth module graph:** `app/lib/super-admin.ts` is a leaf exporting `isAuthSuperUser`; `use-auth` re-exports it and declares **`"use client"`**. Restored **`"use client"`** on Radix wrappers where the directive had been corrupted (`select`, `dialog`, `sheet`).
+- **Hydration vs browser extensions:** `fdprocessedid` and similar attributes from password-manager extensions no longer spam hydration warnings — **`suppressHydrationWarning`** on `ui/button` and plain header/mobile `<button>`s; clarified `layout` body comment (body-level suppression does not cover descendants).
+- **Product/ops (subset):** Client trial window helpers (`shared/userTrial`, API/register/login/user paths, `TrialBanner`); contact page and `StrategyCallForm` refinements; CRM list/detail and admin shell/nav polish; OAuth callback and intelligence route tweaks; shared security/env and schema updates.
+
+---
+
 ## 2026-03-21 — Development updates sourcing and Content Studio social adapters
 
 - Admin “Development updates” on production resolves `content/development-updates.md` from **main** via explicit `DEVELOPMENT_UPDATES_RAW_URL` or automatic URL from Vercel Git env vars.

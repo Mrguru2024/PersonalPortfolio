@@ -20,6 +20,9 @@ export const users = pgTable("users", {
   // Password reset fields
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  /** Client dashboard trial — set on signup/OAuth for eligible accounts (skipped for admins/operators). */
+  trialStartedAt: timestamp("trial_started_at"),
+  trialEndsAt: timestamp("trial_ends_at"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -35,6 +38,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   githubId: true,
   githubUsername: true,
   avatarUrl: true,
+  trialStartedAt: true,
+  trialEndsAt: true,
   created_at: true
 });
 

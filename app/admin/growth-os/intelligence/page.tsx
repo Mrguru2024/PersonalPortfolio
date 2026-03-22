@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FlaskConical, LineChart, Search, Zap } from "lucide-react";
+import { Loader2, FlaskConical, LineChart, RefreshCw, Search, Zap } from "lucide-react";
 import { useState } from "react";
 import {
   Select,
@@ -18,6 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AUTOMATION_JOB_VALUES,
+  formatAutomationJobType,
+  formatResearchItemKind,
+  formatResearchSource,
+  humanizeSnakeCase,
+} from "@/lib/growth-os/friendlyCopy";
 
 const PROJECT = "ascendra_main";
 
@@ -154,11 +162,18 @@ export default function GrowthOsIntelligencePage() {
 
   const runAutomation = useMutation({
     mutationFn: async () => {
+      const body: Record<string, unknown> = {
+        jobType: automationJob,
+        projectKey: PROJECT,
+      };
+      if (automationNeedsDocumentId && automationDocumentOk) {
+        body.documentId = automationDocumentIdParsed;
+      }
       const res = await fetch("/api/admin/growth-os/intelligence/automation/run", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobType: automationJob, projectKey: PROJECT }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Automation failed");
       return res.json() as Promise<{ ok: boolean; message: string }>;
@@ -175,11 +190,23 @@ export default function GrowthOsIntelligencePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Growth intelligence</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Internal-only scoring and research. Client exposure uses{" "}
-          <span className="font-medium text-foreground">Client shares</span> and policy builders only.
+        <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+          Research topics, run background jobs, and view rollups. Everything here stays internal until you put a
+          sanitized summary into <span className="font-medium text-foreground">Client shares</span>.
         </p>
       </div>
+
+      <Alert>
+        <AlertTitle>How this area works</AlertTitle>
+        <AlertDescription className="mt-2 space-y-2 text-muted-foreground">
+          <p>
+            <strong className="text-foreground">Dashboards</strong> show live JSON rollups from CRM, blog, and
+            Content Studio (handy for debugging). <strong className="text-foreground">Research</strong> stores
+            discovery items you can turn into drafts. <strong className="text-foreground">Automation</strong> runs
+            scheduled-style jobs on demand (some need a document id from Content Studio).
+          </p>
+        </AlertDescription>
+      </Alert>
 
       <Tabs defaultValue="dashboards" className="space-y-4">
         <TabsList className="flex flex-wrap h-auto gap-1">
@@ -215,13 +242,30 @@ export default function GrowthOsIntelligencePage() {
             <>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={dash.data?.intelligenceMode === "live" ? "default" : "secondary"}>
-                  AI mode: {dash.data?.intelligenceMode}
+                  {dash.data?.intelligenceMode === "live" ? "Live AI" : "Demo / mock data"}
                 </Badge>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    void qc.invalidateQueries({
+                      queryKey: ["/api/admin/growth-os/intelligence/dashboards", PROJECT],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Refresh
+                </Button>
                 <span className="text-xs text-muted-foreground">
-                  Mock when <code className="text-foreground">OPENAI_API_KEY</code> missing or{" "}
-                  <code className="text-foreground">GOS_INTELLIGENCE_MODE=mock</code>
+                  Uses demo data when <code className="text-foreground">OPENAI_API_KEY</code> is missing or{" "}
+                  <code className="text-foreground">GOS_INTELLIGENCE_MODE=mock</code>.
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Raw JSON below is meant for admins checking pipelines — share client-facing text only through{" "}
+                <span className="text-foreground font-medium">Client shares</span>.
+              </p>
               <div className="grid gap-4 lg:grid-cols-3">
                 <Card>
                   <CardHeader>
@@ -260,27 +304,51 @@ export default function GrowthOsIntelligencePage() {
             <CardHeader>
               <CardTitle>Run discovery</CardTitle>
               <CardDescription>
-                Labeled <strong>live</strong> vs <strong>mock</strong> per batch. Items stored for weekly
-                summaries.
+                Pull a batch of ideas related to your seed. Each run is marked live vs demo. Items feed the weekly
+                summary card beside this form.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 max-w-xl">
-              <div className="space-y-1">
-                <Label>Seed keyword / topic</Label>
-                <Textarea value={seed} onChange={(e) => setSeed(e.target.value)} rows={2} />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    void qc.invalidateQueries({
+                      queryKey: ["/api/admin/growth-os/intelligence/research/items", PROJECT],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Refresh lists
+                </Button>
               </div>
               <div className="space-y-1">
-                <Label>Focus</Label>
+                <Label htmlFor="intel-seed">Starting topic or keywords</Label>
+                <Textarea
+                  id="intel-seed"
+                  value={seed}
+                  onChange={(e) => setSeed(e.target.value)}
+                  rows={2}
+                  placeholder="Example: B2B SaaS onboarding emails, Ascendra portfolio leads, Chicago small business SEO"
+                />
+                <p className="text-xs text-muted-foreground">
+                  One or two plain sentences is enough — the job expands into related angles.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="intel-focus">What to lean toward</Label>
                 <Select value={focus} onValueChange={(v) => setFocus(v as typeof focus)}>
-                  <SelectTrigger>
+                  <SelectTrigger id="intel-focus">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mixed">Mixed</SelectItem>
-                    <SelectItem value="keyword">Keyword</SelectItem>
-                    <SelectItem value="topic">Topic</SelectItem>
-                    <SelectItem value="phrase">Phrase</SelectItem>
-                    <SelectItem value="headline">Headline</SelectItem>
+                    <SelectItem value="mixed">Balanced mix (recommended)</SelectItem>
+                    <SelectItem value="keyword">Search-style keywords</SelectItem>
+                    <SelectItem value="topic">Broad themes</SelectItem>
+                    <SelectItem value="phrase">Short phrases / angles</SelectItem>
+                    <SelectItem value="headline">Headline-style hooks</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -303,15 +371,24 @@ export default function GrowthOsIntelligencePage() {
                 ) : (
                   <>
                     <p className="text-muted-foreground">Total items: {weekly.data?.totalItems}</p>
-                    <pre className="text-xs bg-muted/50 p-2 rounded-md overflow-auto max-h-40">
-                      {JSON.stringify(weekly.data?.byKind, null, 2)}
-                    </pre>
+                    <ul className="text-xs bg-muted/50 p-2 rounded-md space-y-1 max-h-40 overflow-auto">
+                      {Object.keys(weekly.data?.byKind ?? {}).length === 0 ? (
+                        <li className="text-muted-foreground">No items yet this week.</li>
+                      ) : (
+                        Object.entries(weekly.data?.byKind ?? {}).map(([k, n]) => (
+                          <li key={k} className="flex justify-between gap-2">
+                            <span>{formatResearchItemKind(k)}</span>
+                            <span className="text-muted-foreground tabular-nums">{String(n)}</span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
                     <ul className="list-disc pl-4 space-y-1">
                       {(weekly.data?.topOpportunities ?? []).slice(0, 6).map((o, i) => (
                         <li key={i}>
                           <span className="font-medium text-foreground">{o.phrase}</span>{" "}
                           <span className="text-muted-foreground">
-                            ({o.itemKind} · {o.relevanceScore})
+                            ({formatResearchItemKind(o.itemKind)} · score {o.relevanceScore})
                           </span>
                         </li>
                       ))}
@@ -328,10 +405,13 @@ export default function GrowthOsIntelligencePage() {
               </CardHeader>
               <CardContent className="space-y-2 max-w-md">
                 <Input
-                  placeholder="Keyword or topic phrase"
+                  placeholder="e.g. AI compliance checklist for startups"
                   value={genPhrase}
                   onChange={(e) => setGenPhrase(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Creates internal drafts in Content Studio — review before publishing.
+                </p>
                 <Button
                   size="sm"
                   onClick={() => genPosts.mutate()}
@@ -357,8 +437,8 @@ export default function GrowthOsIntelligencePage() {
                   <thead>
                     <tr className="border-b border-border text-left text-muted-foreground">
                       <th className="py-2 pr-2">Phrase</th>
-                      <th className="py-2 pr-2">Kind</th>
-                      <th className="py-2 pr-2">Src</th>
+                      <th className="py-2 pr-2">Type</th>
+                      <th className="py-2 pr-2">Source</th>
                       <th className="py-2 pr-2">Score</th>
                       <th className="py-2">Trend</th>
                     </tr>
@@ -367,14 +447,14 @@ export default function GrowthOsIntelligencePage() {
                     {(researchItems.data?.items ?? []).map((it) => (
                       <tr key={it.id} className="border-b border-border/60">
                         <td className="py-2 pr-2 max-w-[200px] truncate">{it.phrase}</td>
-                        <td className="py-2 pr-2">{it.itemKind}</td>
+                        <td className="py-2 pr-2">{formatResearchItemKind(it.itemKind)}</td>
                         <td className="py-2 pr-2">
                           <Badge variant={it.source.includes("mock") ? "secondary" : "default"}>
-                            {it.source}
+                            {formatResearchSource(it.source)}
                           </Badge>
                         </td>
                         <td className="py-2 pr-2">{it.relevanceScore}</td>
-                        <td className="py-2">{it.trendDirection}</td>
+                        <td className="py-2">{humanizeSnakeCase(it.trendDirection)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -387,29 +467,40 @@ export default function GrowthOsIntelligencePage() {
         <TabsContent value="automation" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Run job</CardTitle>
+              <CardTitle>Run a background job</CardTitle>
               <CardDescription>
-                Content insight on save/schedule is also wired via CMS APIs (see provider tab for env flags).
+                Same jobs the cron route can trigger — useful for testing. Insight-on-save also runs from Content
+                Studio when enabled (see Providers tab).
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 max-w-xl">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                onClick={() =>
+                  void qc.invalidateQueries({
+                    queryKey: ["/api/admin/growth-os/intelligence/automation/runs"],
+                  })
+                }
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                Refresh run history
+              </Button>
               <div className="flex flex-wrap gap-3 items-end">
                 <div className="space-y-1 flex-1 min-w-[200px]">
-                  <Label>Job type</Label>
+                  <Label htmlFor="auto-job">Job</Label>
                   <Select value={automationJob} onValueChange={setAutomationJob}>
-                    <SelectTrigger>
+                    <SelectTrigger id="auto-job">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly_research_digest">Weekly research digest</SelectItem>
-                      <SelectItem value="audit_recommendation_engine">Audit recommendation engine</SelectItem>
-                      <SelectItem value="editorial_gap_detection">Editorial gap detection</SelectItem>
-                      <SelectItem value="stale_content_detection">Stale content detection</SelectItem>
-                      <SelectItem value="stale_followup_detection">Stale follow-up detection (CRM)</SelectItem>
-                      <SelectItem value="content_insight_save">Content insight (on save style)</SelectItem>
-                      <SelectItem value="content_insight_schedule">Content insight (on schedule style)</SelectItem>
-                      <SelectItem value="headline_hook_variants">Headline / hook variants</SelectItem>
-                      <SelectItem value="repurposing_suggestions">Repurposing / platform variants</SelectItem>
+                      {AUTOMATION_JOB_VALUES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {formatAutomationJobType(value)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -445,7 +536,8 @@ export default function GrowthOsIntelligencePage() {
             <CardContent className="text-xs font-mono space-y-2 max-h-64 overflow-auto">
               {(automationRuns.data?.runs ?? []).map((r) => (
                 <div key={r.id} className="border-b border-border/40 pb-2">
-                  <span className="text-foreground">{r.jobType}</span>{" "}
+                  <span className="text-foreground">{formatAutomationJobType(r.jobType)}</span>{" "}
+                  <span className="text-muted-foreground font-mono text-[10px]">({r.jobType})</span>{" "}
                   <Badge variant="outline">{r.status}</Badge>
                   <div className="text-muted-foreground">{r.resultSummary}</div>
                 </div>

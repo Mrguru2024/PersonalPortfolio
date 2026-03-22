@@ -207,9 +207,12 @@ export async function getSessionUser(
             );
           }
 
-          // Don't send password
+          // Don't send password; mirror GET /api/user so shared accessScope stays client-safe (no super-admin-env in browser).
           const { password, ...userWithoutPassword } = user;
-          resolve(userWithoutPassword);
+          resolve({
+            ...userWithoutPassword,
+            isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+          });
         } catch (error: unknown) {
           if (isDev && isMobile) {
             const msg =
@@ -346,7 +349,7 @@ export async function hasPermission(
 ): Promise<boolean> {
   const user = await getSessionUser(req);
   if (!user) return false;
-  if (userMatchesSuperAdminIdentity(user)) return true;
+  if (user.isSuperUser === true) return true;
   const perms = user.permissions as Record<string, boolean> | null | undefined;
   return perms?.[permission] === true;
 }

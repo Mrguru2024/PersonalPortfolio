@@ -1,7 +1,6 @@
 /**
- * Vercel-specific production middleware
- * This middleware adds optimization for Vercel's production environment
- * and handles Vite-related configurations
+ * Vercel-specific production middleware for legacy Express deployments.
+ * Next.js on Vercel does not use this file.
  */
 
 import { Request, Response, NextFunction } from 'express';

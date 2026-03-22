@@ -17,7 +17,7 @@ function LinkGroup({
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </span>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <ul className="flex min-w-0 max-w-full flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {links.map(({ label, href }) => (
           <li key={label}>
             <Link href={href} className="hover:text-foreground transition-colors py-2.5 -my-1 sm:py-0 sm:my-0 block sm:inline">
@@ -52,7 +52,7 @@ export default function SiteFooter() {
             </div>
           </div>
           <nav
-            className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8"
+            className="grid min-w-0 max-w-full grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8"
             aria-label="Footer navigation"
             suppressHydrationWarning
           >

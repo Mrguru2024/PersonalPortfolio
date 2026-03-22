@@ -6,6 +6,7 @@ import { promisify } from "util";
 import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
+import { buildTrialSummaryForClient } from "@shared/userTrial";
 import { captureApiError } from "@/lib/systemMonitor";
 import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
 
@@ -82,11 +83,12 @@ export async function POST(req: NextRequest) {
       } else {
         console.log("User found:", user.id, user.username, user.email);
       }
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
+      const dbMsg = dbError instanceof Error ? dbError.message : String(dbError);
       console.error("Database error fetching user:", dbError);
       try {
         await recordActivityLog("error", false, {
-          message: dbError?.message || "Database error during login user lookup",
+          message: dbMsg || "Database error during login user lookup",
           identifier: username,
           ipAddress: getIpAddress(req),
           userAgent: req.headers.get("user-agent") ?? undefined,
@@ -95,12 +97,15 @@ export async function POST(req: NextRequest) {
       } catch {
         /* logged inside recordActivityLog */
       }
+      const isDev = process.env.NODE_ENV === "development";
+      /** Shown in the client via apiRequest() — include Postgres hint in dev; safe summary in prod. */
+      const message = isDev
+        ? `Database error: ${dbMsg || "unknown"}`
+        : "Sign-in failed (database). If you upgraded the app, run npm run db:push with your DATABASE_URL, then retry.";
       return NextResponse.json(
         {
-          message: "Database error",
-          ...(process.env.NODE_ENV === "development" && {
-            error: dbError?.message,
-          }),
+          message,
+          ...(isDev && { error: dbMsg }),
         },
         { status: 500 },
       );
@@ -273,9 +278,11 @@ export async function POST(req: NextRequest) {
 
     try {
       const { password: _, ...userWithoutPassword } = user;
+      const isSuperUser = userMatchesSuperAdminIdentity(userWithoutPassword);
       return NextResponse.json({
         ...userWithoutPassword,
-        isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+        isSuperUser,
+        trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
       });
     } catch (responseError: any) {
       console.error("Error creating response:", responseError);

@@ -61,10 +61,20 @@ export default function Header(_props: HeaderProps) {
   const { track } = useVisitorTracking();
   const { user, logoutMutation } = useAuth();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  /** Avoid hydration mismatch: media queries aren’t evaluated the same during SSR vs first paint. */
+  const [showMobileNavText, setShowMobileNavText] = useState(false);
 
   // Avoid hydration mismatch: server has no session, client may have user from cookie
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 360px)");
+    const apply = () => setShowMobileNavText(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   const isHomePage = pathname === "/";
@@ -163,6 +173,7 @@ export default function Header(_props: HeaderProps) {
     <header
       className="!bg-transparent !border-0 !shadow-none shrink-0"
       style={{ background: "transparent", border: "none", boxShadow: "none" }}
+      suppressHydrationWarning
     >
       <div
         className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 py-3 flex items-center !bg-transparent !border-0 !shadow-none min-w-0 max-w-full"
@@ -177,6 +188,7 @@ export default function Header(_props: HeaderProps) {
               <button
                 key={item.name}
                 type="button"
+                suppressHydrationWarning
                 onClick={() => scrollToSection(getLinkHref(item) as string)}
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1"
               >
@@ -196,6 +208,7 @@ export default function Header(_props: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
+                suppressHydrationWarning
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 flex items-center gap-0.5 outline-none"
               >
                 Services <ChevronDown className="h-3.5 w-3.5 opacity-70" />
@@ -226,6 +239,7 @@ export default function Header(_props: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
+                suppressHydrationWarning
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 flex items-center gap-0.5 outline-none"
               >
                 More <ChevronDown className="h-3.5 w-3.5 opacity-70" />
@@ -369,7 +383,9 @@ export default function Header(_props: HeaderProps) {
             ) : (
               <Menu className="h-5 w-5 shrink-0" />
             )}
-            <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
+            {showMobileNavText ? (
+              <span className="shrink-0">{mobileMenuOpen ? "Close" : "Menu"}</span>
+            ) : null}
           </Button>
         </div>
       </div>
@@ -389,6 +405,7 @@ export default function Header(_props: HeaderProps) {
                       <li key={item.name}>
                         <button
                           type="button"
+                          suppressHydrationWarning
                           onClick={() => { scrollToSection(getLinkHref(item) as string); closeMobileMenu(); }}
                           className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                         >
@@ -472,6 +489,7 @@ export default function Header(_props: HeaderProps) {
                       <button
                         key={cta.label}
                         type="button"
+                        suppressHydrationWarning
                         onClick={() => {
                           track("cta_click", { pageVisited: pathname, metadata: { cta: "book_a_call" } });
                           scrollToSection(cta.href);
@@ -539,6 +557,7 @@ export default function Header(_props: HeaderProps) {
                       )}
                       <button
                         type="button"
+                        suppressHydrationWarning
                         onClick={() => {
                           logoutMutation.mutate();
                           closeMobileMenu();

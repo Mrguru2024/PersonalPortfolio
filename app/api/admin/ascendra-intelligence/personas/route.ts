@@ -52,7 +52,20 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
     }
-    const persona = await createMarketingPersona(parsed.data);
+    // Option A: Zod `.nullable()` yields `null`; Drizzle-friendly optionals use `undefined` at the boundary.
+    const d = parsed.data;
+    const persona = await createMarketingPersona({
+      id: d.id,
+      displayName: d.displayName,
+      segment: d.segment ?? undefined,
+      revenueBand: d.revenueBand ?? undefined,
+      summary: d.summary ?? undefined,
+      strategicNote: d.strategicNote ?? undefined,
+      problems: d.problems,
+      goals: d.goals,
+      objections: d.objections,
+      dynamicSignals: d.dynamicSignals,
+    });
     if (!persona) {
       return NextResponse.json(
         { error: "Persona id already exists or invalid" },

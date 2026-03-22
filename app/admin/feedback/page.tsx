@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FieldHint } from "@/lib/field-hint";
+import { ADMIN_PLACEHOLDERS } from "@/lib/admin-form-placeholders";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
@@ -284,10 +286,13 @@ export default function AdminFeedbackPage() {
                     id="admin-response"
                     value={adminResponse}
                     onChange={(e) => setAdminResponse(e.target.value)}
-                    placeholder="Type your response here..."
+                    placeholder={ADMIN_PLACEHOLDERS.adminReply}
                     rows={6}
                     className="mt-1"
                   />
+                  <FieldHint>
+                    Saved with the ticket — use a warm, direct tone. Update status when you are done.
+                  </FieldHint>
                 </div>
                 <div className="flex gap-2">
                   <Button

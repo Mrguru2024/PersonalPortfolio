@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import {
   AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS_WITH_FLEXIBLE,
@@ -59,7 +60,20 @@ const strategyCallSchema = z.object({
 
 type StrategyCallValues = z.infer<typeof strategyCallSchema>;
 
-export function StrategyCallForm() {
+export type StrategyCallFormProps = {
+  /** Merged onto the outer Card (both default and success states). */
+  cardClassName?: string;
+  /**
+   * When the user picks a topic chip (or similar), bump `id` and set `text` to prefill "Primary goal".
+   * Keeps the form in sync without lifting all react-hook-form state.
+   */
+  goalInjection?: { id: number; text: string } | null;
+};
+
+export function StrategyCallForm({
+  cardClassName,
+  goalInjection,
+}: StrategyCallFormProps = {}) {
   const [submitted, setSubmitted] = useState(false);
   const { track } = useVisitorTracking();
   const pathname = usePathname();
@@ -84,6 +98,11 @@ export function StrategyCallForm() {
       companySize: "",
     },
   });
+
+  useEffect(() => {
+    if (!goalInjection?.text) return;
+    form.setValue("primaryGoal", goalInjection.text, { shouldValidate: true, shouldDirty: true });
+  }, [goalInjection?.id, goalInjection?.text, form]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (values: StrategyCallValues) => {
@@ -143,7 +162,7 @@ export function StrategyCallForm() {
 
   if (submitted) {
     return (
-      <Card className="border-border bg-card">
+      <Card className={cn("border-border bg-card", cardClassName)}>
         <CardContent className="p-6 sm:p-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
             <CheckCircle2 className="h-7 w-7" />
@@ -169,7 +188,7 @@ export function StrategyCallForm() {
   }
 
   return (
-    <Card className="border-border bg-card">
+    <Card className={cn("border-border bg-card", cardClassName)}>
       <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form

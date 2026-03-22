@@ -44,7 +44,16 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
     }
-    const magnet = await createLeadMagnet(parsed.data);
+    const d = parsed.data;
+    const magnet = await createLeadMagnet({
+      magnetType: d.magnetType,
+      title: d.title,
+      hook: d.hook ?? undefined,
+      bodyMd: d.bodyMd ?? undefined,
+      primaryAssetId: d.primaryAssetId != null ? d.primaryAssetId : undefined,
+      personaIds: d.personaIds,
+      status: d.status,
+    });
     return NextResponse.json({ magnet }, { status: 201 });
   } catch (e) {
     console.error("[POST ascendra-intelligence/lead-magnets]", e);

@@ -33,7 +33,13 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Validation", details: parsed.error.flatten() }, { status: 400 });
     }
-    const row = await createCampaign(parsed.data);
+    const d = parsed.data;
+    const row = await createCampaign({
+      name: d.name,
+      description: d.description ?? undefined,
+      goal: d.goal ?? undefined,
+      projectKey: d.projectKey,
+    });
     return NextResponse.json({ campaign: row });
   } catch (e: unknown) {
     console.error(e);

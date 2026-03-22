@@ -8,6 +8,12 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GrowthOsSubnav } from "@/components/growth-os/GrowthOsSubnav";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { resolveAscendraAccessRole } from "@shared/accessScope";
 
 export interface GrowthOsAdminShellProps {
@@ -58,8 +64,10 @@ export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
             <Badge variant="secondary" className="text-xs">
               Growth OS · Phase 1
             </Badge>
-            <Badge variant="outline" className="text-xs font-mono">
-              Access: {coarseRole}
+            <Badge variant="outline" className="text-xs">
+              {coarseRole === "ADMIN"
+                ? "Signed in as admin"
+                : `Access level: ${coarseRole.replace(/_/g, " ").toLowerCase()}`}
             </Badge>
           </div>
         </div>
@@ -69,10 +77,38 @@ export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
             Growth Operating System
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Internal foundation: visibility classes, audit trail, and client-safe share tokens. All routes
-            here are admin-only unless explicitly opened in a later phase.
+            One place to manage who can see growth data, leave private team notes, build client-safe links, and
+            review activity. Everything here is for approved admins only.
           </p>
         </header>
+
+        <Accordion type="single" collapsible className="mb-6 rounded-lg border border-border/60 px-4 bg-muted/20">
+          <AccordionItem value="how" className="border-none">
+            <AccordionTrigger className="text-sm font-medium py-3 hover:no-underline">
+              How Growth OS fits together
+            </AccordionTrigger>
+            <AccordionContent className="text-sm text-muted-foreground space-y-2 pb-4">
+              <p>
+                <strong className="text-foreground">Overview</strong> — See which modules exist, attach{" "}
+                <strong className="text-foreground">team-only notes</strong> to a specific item, or set{" "}
+                <strong className="text-foreground">who may see</strong> a report or diagnosis.
+              </p>
+              <p>
+                <strong className="text-foreground">Intelligence</strong> — Research and automation (drafts,
+                digests, audits). Raw scores stay internal; clients only see what you put into a share.
+              </p>
+              <p>
+                <strong className="text-foreground">Security &amp; audit</strong> — Recent actions (shares,
+                notes, visibility changes) so you can trace what changed.
+              </p>
+              <p>
+                <strong className="text-foreground">Client shares</strong> — Create a link with a{" "}
+                <strong className="text-foreground">sanitized</strong> summary your customer can open. Sensitive
+                fields are stripped on the server.
+              </p>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <GrowthOsSubnav />
         {children}

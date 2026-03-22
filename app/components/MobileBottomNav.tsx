@@ -33,7 +33,11 @@ export default function MobileBottomNav() {
           const isActive =
             item.href === "/"
               ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : item.href === STRATEGY_CALL_PATH
+                ? pathname === "/contact" ||
+                  pathname === STRATEGY_CALL_PATH ||
+                  pathname.startsWith(`${STRATEGY_CALL_PATH}/`)
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
             <Link

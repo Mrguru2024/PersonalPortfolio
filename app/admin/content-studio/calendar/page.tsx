@@ -508,7 +508,7 @@ export default function ContentStudioCalendarPage() {
           (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
-  }, [entries, selectedDay]);
+  }, [visibleEntries, selectedDay]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

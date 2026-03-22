@@ -56,10 +56,11 @@ export async function getMarketingPersona(id: string): Promise<MarketingPersonaD
 export async function createMarketingPersona(data: {
   id: string;
   displayName: string;
-  segment?: string | null;
-  revenueBand?: string | null;
-  summary?: string | null;
-  strategicNote?: string | null;
+  /** Omitted or undefined → SQL NULL (call sites should coerce Zod `null` away with `?? undefined`). */
+  segment?: string;
+  revenueBand?: string;
+  summary?: string;
+  strategicNote?: string;
   problems?: string[];
   goals?: string[];
   objections?: string[];
@@ -282,9 +283,10 @@ export async function getLeadMagnet(id: number): Promise<LeadMagnetDTO | null> {
 export async function createLeadMagnet(data: {
   magnetType: string;
   title: string;
-  hook?: string | null;
-  bodyMd?: string | null;
-  primaryAssetId?: number | null;
+  /** Omitted or undefined → SQL NULL (API routes: `hook: d.hook ?? undefined`). */
+  hook?: string;
+  bodyMd?: string;
+  primaryAssetId?: number;
   personaIds?: string[];
   status?: string;
 }): Promise<LeadMagnetDTO> {

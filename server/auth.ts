@@ -7,6 +7,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
+import { startDefaultClientTrialForUser } from "./services/userTrialService";
 import { User as SelectUser } from "@shared/schema";
 import { resolveSessionSecretForRuntime } from "@shared/production-security-env";
 
@@ -107,6 +108,8 @@ export function setupAuth(app: Express) {
                 githubUsername: profile.username,
                 avatarUrl: profile.photos?.[0]?.value
               });
+              await startDefaultClientTrialForUser(user.id);
+              user = (await storage.getUser(user.id))!;
             }
             
             return done(null, user);
@@ -152,6 +155,8 @@ export function setupAuth(app: Express) {
                 isAdmin: false,
                 avatarUrl: profile.photos?.[0]?.value
               });
+              await startDefaultClientTrialForUser(user.id);
+              user = (await storage.getUser(user.id))!;
             } else {
               // Update existing user with Google info if needed
               if (!user.avatarUrl && profile.photos?.[0]?.value) {
@@ -196,13 +201,15 @@ export function setupAuth(app: Express) {
       }
       
       // Create new user (adminApproved is always false by default)
-      const user = await storage.createUser({
+      let user = await storage.createUser({
         username,
         email,
         password: await hashPassword(password),
         isAdmin: false,
         adminApproved: false
       });
+      await startDefaultClientTrialForUser(user.id);
+      user = (await storage.getUser(user.id))!;
       
       // Log the user in
       req.login(user, (err) => {

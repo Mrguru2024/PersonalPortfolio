@@ -59,8 +59,7 @@ export type SuperAdminUserInput = SuperAdminUserLike & {
 
 /**
  * Prefer isSuperUser from GET /api/user when present; otherwise identity rules.
- * Client UI should use `isSuperUser` from GET /api/user (and login/register), e.g. `isAuthSuperUser`
- * from `@/hooks/use-auth` — avoids Turbopack/HMR issues with a separate client `super-admin` module.
+ * Client UI: `isAuthSuperUser` from `@/lib/super-admin` (leaf module) or re-exported from `@/hooks/use-auth`.
  */
 export function isSuperAdminUser(user: SuperAdminUserInput | null | undefined): boolean {
   if (!user) return false;

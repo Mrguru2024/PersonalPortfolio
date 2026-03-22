@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FieldHint } from "@/lib/field-hint";
+import { ADMIN_PLACEHOLDERS } from "@/lib/admin-form-placeholders";
 import { format } from "date-fns";
 import Link from "next/link";
 import {
@@ -264,10 +266,11 @@ export default function AdminAnnouncementsPage() {
             <div className="grid gap-2">
               <Label>Title</Label>
               <Input
-                placeholder="e.g. Phase 1 complete"
+                placeholder={ADMIN_PLACEHOLDERS.announcementTitle}
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
+              <FieldHint>Keep it short — this is the headline clients see first.</FieldHint>
             </div>
             <div className="grid gap-2">
               <Label>Type</Label>
@@ -282,11 +285,12 @@ export default function AdminAnnouncementsPage() {
                   <SelectItem value="warning">Warning</SelectItem>
                 </SelectContent>
               </Select>
+              <FieldHint>Controls accent color / tone on the client dashboard.</FieldHint>
             </div>
             <div className="grid gap-2">
               <Label>Content</Label>
               <Textarea
-                placeholder="Announcement content..."
+                placeholder={ADMIN_PLACEHOLDERS.announcementBody}
                 rows={4}
                 value={form.content}
                 onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
@@ -299,6 +303,7 @@ export default function AdminAnnouncementsPage() {
                 value={form.expiresAt}
                 onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
               />
+              <FieldHint>{ADMIN_PLACEHOLDERS.announcementExpires}</FieldHint>
             </div>
           </div>
           <DialogFooter>

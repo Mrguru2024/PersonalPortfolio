@@ -1,6 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-
 const WEAK_SESSION_SECRETS = new Set(
   [
     "mrguru-portfolio-session-secret",
@@ -16,20 +13,16 @@ export const MIN_SESSION_SECRET_LENGTH = 32;
 export const MIN_CRON_SECRET_LENGTH = 16;
 
 /**
- * Whether Vercel cron routes are declared in vercel.json. If the file is missing or unreadable at runtime (some
- * serverless layouts), we treat that as "unknown" and still require CRON_SECRET on Vercel production.
+ * Whether Vercel production should enforce CRON_SECRET at boot.
+ * No filesystem reads — keeps this module Edge-safe when pulled in via `instrumentation.ts`.
+ *
+ * - Default: require (this repo ships crons; fail closed).
+ * - Set VERCEL_CRONS_DISABLED=1 (or true) if you deploy without any `vercel.json` crons and do not want CRON_SECRET enforced at boot.
  */
 function vercelCronSecretRequirement(): "require" | "skip" {
-  try {
-    const p = join(process.cwd(), "vercel.json");
-    if (!existsSync(p)) return "require";
-    const raw = readFileSync(p, "utf8");
-    const j = JSON.parse(raw) as { crons?: unknown };
-    const hasCrons = Array.isArray(j.crons) && j.crons.length > 0;
-    return hasCrons ? "require" : "skip";
-  } catch {
-    return "require";
-  }
+  const disabled = process.env.VERCEL_CRONS_DISABLED?.trim().toLowerCase();
+  if (disabled === "1" || disabled === "true" || disabled === "yes") return "skip";
+  return "require";
 }
 
 /**
@@ -59,9 +52,8 @@ export function assertProductionSecurityEnv(): void {
   }
 
   /**
-   * When vercel.json defines crons, Vercel calls those routes on a schedule. Require CRON_SECRET so jobs are not
-   * trivially callable without the Bearer token. If vercel.json is present with an empty/missing "crons" array, this
-   * check is skipped. If vercel.json cannot be read at runtime, we still require CRON_SECRET (fail closed).
+   * On Vercel production, require CRON_SECRET so scheduled routes are not trivially callable without the Bearer token.
+   * Set SKIP_VERCEL_CRON_SECRET=1 to bypass (not recommended), or VERCEL_CRONS_DISABLED=1 if you have no crons configured.
    */
   const skipCronCheck =
     process.env.SKIP_VERCEL_CRON_SECRET?.trim() === "1" ||
@@ -74,7 +66,7 @@ export function assertProductionSecurityEnv(): void {
   ) {
     if (!cron || cron.length < MIN_CRON_SECRET_LENGTH) {
       throw new Error(
-        `[security] Vercel production requires CRON_SECRET (at least ${MIN_CRON_SECRET_LENGTH} characters) because vercel.json defines crons (e.g. /api/cron/growth-os), or vercel.json could not be read at runtime. Add CRON_SECRET in the Vercel project env, remove the "crons" array from vercel.json (and redeploy), or set SKIP_VERCEL_CRON_SECRET=1 only if you accept weaker protection for scheduled routes (not recommended).`,
+        `[security] Vercel production requires CRON_SECRET (at least ${MIN_CRON_SECRET_LENGTH} characters) for scheduled routes. Add CRON_SECRET in the Vercel project env, set VERCEL_CRONS_DISABLED=1 only if you have no vercel.json crons, or set SKIP_VERCEL_CRON_SECRET=1 if you accept weaker protection (not recommended).`,
       );
     }
   }

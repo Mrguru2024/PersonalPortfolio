@@ -7,6 +7,7 @@ import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import { recordActivityLog } from "@server/activityLog";
 import { checkPublicApiRateLimitAsync, getClientIp } from "@/lib/public-api-rate-limit";
+import { buildTrialSummaryForClient } from "@shared/userTrial";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -91,10 +92,12 @@ export async function POST(req: NextRequest) {
 
     // Don't send password
     const { password: _, ...userWithoutPassword } = user;
+    const isSuperUser = userMatchesSuperAdminIdentity(userWithoutPassword);
     return NextResponse.json(
       {
         ...userWithoutPassword,
-        isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+        isSuperUser,
+        trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
       },
       { status: 201 },
     );

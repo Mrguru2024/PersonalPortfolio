@@ -12,7 +12,6 @@ import {
   Filter,
   ArrowUpDown,
   ArrowLeft,
-  ChevronRight,
   MoreHorizontal,
   X,
   DollarSign,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
+import { buildTrialSummaryForClient } from "@shared/userTrial";
 import { cookies } from "next/headers";
 
 // Ensure this route is always dynamic so cookies are read from the request (fixes 401 on mobile/Vercel)
@@ -62,9 +63,11 @@ export async function GET(req: NextRequest) {
 
     // Don't send password; expose server-computed super-user flag for client UI (avoids duplicating env in the browser).
     const { password, ...userWithoutPassword } = user;
+    const isSuperUser = userMatchesSuperAdminIdentity(userWithoutPassword);
     return NextResponse.json({
       ...userWithoutPassword,
-      isSuperUser: userMatchesSuperAdminIdentity(userWithoutPassword),
+      isSuperUser,
+      trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
     });
   } catch (error: unknown) {
     if (isDev) {

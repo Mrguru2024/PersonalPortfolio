@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { startDefaultClientTrialForUser } from "@server/services/userTrialService";
 import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -128,6 +129,9 @@ export async function GET(req: NextRequest) {
           adminApproved: false,
           avatarUrl: profile.picture,
         });
+        await startDefaultClientTrialForUser(user.id);
+        const refreshed = await storage.getUser(user.id);
+        if (refreshed) user = refreshed;
         console.log("Google OAuth - User created:", user.id);
       } else {
         console.log("Google OAuth - User found, updating if needed");

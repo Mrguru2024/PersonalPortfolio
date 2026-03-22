@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
@@ -5,11 +7,12 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User as SelectUser, InsertUser } from "@shared/schema";
+import type { TrialClientSummary } from "@shared/userTrial";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-/** Session user from /api/user, /api/login, /api/register — includes server-computed `isSuperUser`. */
-export type AuthUser = SelectUser & { isSuperUser?: boolean };
+/** Session user from /api/user, /api/login, /api/register — includes server-computed `isSuperUser` and `trial`. */
+export type AuthUser = SelectUser & { isSuperUser?: boolean; trial?: TrialClientSummary };
 
 const AUTH_CACHE_KEY = "auth_user_cache_v2";
 const AUTH_CACHE_TTL_MS = 60 * 1000; // 60 seconds – short-lived so first load can show last user while /api/user completes
@@ -44,12 +47,12 @@ function setCachedUser(user: AuthUser | null): void {
 }
 
 type AuthContextType = {
-  user: SelectUser | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<AuthUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, RegisterPayload>;
+  registerMutation: UseMutationResult<AuthUser, Error, RegisterPayload>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password"> & {
@@ -254,7 +257,4 @@ export function useAuth() {
   return context;
 }
 
-/** Client UI gate for break-glass / super-admin — uses `isSuperUser` from the API (no separate client module). */
-export function isAuthSuperUser(user: AuthUser | null | undefined): boolean {
-  return user?.isSuperUser === true;
-}
+export { isAuthSuperUser } from "@/lib/super-admin";

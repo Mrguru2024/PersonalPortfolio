@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FieldHint } from "@/lib/field-hint";
+import { ADMIN_PLACEHOLDERS, INDUSTRY_SUGGESTIONS } from "@/lib/admin-form-placeholders";
 
 export default function NewAccountPage() {
   const router = useRouter();
@@ -73,8 +75,10 @@ export default function NewAccountPage() {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Company name"
+              placeholder={ADMIN_PLACEHOLDERS.companyName}
+              autoComplete="organization"
             />
+            <FieldHint>Legal or brand name as you want it to appear in CRM.</FieldHint>
           </div>
           <div>
             <Label htmlFor="website">Website</Label>
@@ -83,8 +87,10 @@ export default function NewAccountPage() {
               type="url"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://…"
+              placeholder={ADMIN_PLACEHOLDERS.websiteUrl}
+              autoComplete="url"
             />
+            <FieldHint>Optional — include https:// so links work in one click.</FieldHint>
           </div>
           <div>
             <Label htmlFor="industry">Industry</Label>
@@ -92,8 +98,16 @@ export default function NewAccountPage() {
               id="industry"
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              placeholder="e.g. SaaS, E-commerce"
+              placeholder={ADMIN_PLACEHOLDERS.industry}
+              list="crm-industry-suggestions"
+              autoComplete="off"
             />
+            <datalist id="crm-industry-suggestions">
+              {INDUSTRY_SUGGESTIONS.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+            <FieldHint>Pick a suggestion or type your own short label.</FieldHint>
           </div>
           <div>
             <Label htmlFor="notes">Notes</Label>
@@ -101,9 +115,10 @@ export default function NewAccountPage() {
               id="notes"
               value={notesSummary}
               onChange={(e) => setNotesSummary(e.target.value)}
-              placeholder="Brief summary or notes…"
+              placeholder={ADMIN_PLACEHOLDERS.accountNotes}
               rows={3}
             />
+            <FieldHint>Not shown to contacts — for your team only.</FieldHint>
           </div>
           <div className="flex gap-2">
             <Button

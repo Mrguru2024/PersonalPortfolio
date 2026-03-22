@@ -26,7 +26,6 @@ export default [
       "dist/**",
       "coverage/**",
       "public/**",
-      "client/**",
       "api/**",
       "app/admin/newsletters/*/page.tsx",
       "scripts/**",

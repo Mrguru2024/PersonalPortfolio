@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
+import { TrialBanner } from "./components/TrialBanner";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import MobileBottomNav from "./components/MobileBottomNav";
@@ -105,7 +106,11 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden">
+      {/* suppressHydrationWarning: only affects this node; extension attrs on descendants are handled via suppressHydrationWarning on ui/Button and Header <button>s (fdprocessedid, etc.). */}
+      <body
+        className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden"
+        suppressHydrationWarning
+      >
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -119,7 +124,8 @@ export default function RootLayout({
               <ScrollProgress />
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
               <FixedHeaderWrapper />
-              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[150px] fold:pt-[170px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px))] lg:pb-[env(safe-area-inset-bottom)]">
+              <TrialBanner />
+              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+12px)] lg:pb-[env(safe-area-inset-bottom)]">
                 {children}
               </main>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}

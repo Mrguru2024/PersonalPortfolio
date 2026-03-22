@@ -19,6 +19,17 @@ describe("accessScope", () => {
     ).toBe("ADMIN");
   });
 
+  it("resolves ADMIN when isSuperUser is true (break-glass) without approved admin", () => {
+    expect(
+      resolveAscendraAccessRole({
+        isAdmin: false,
+        adminApproved: false,
+        isSuperUser: true,
+        role: "user",
+      }),
+    ).toBe("ADMIN");
+  });
+
   it("resolves INTERNAL_TEAM when internal_team permission set and not admin", () => {
     expect(
       resolveAscendraAccessRole({

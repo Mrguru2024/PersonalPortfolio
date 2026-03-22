@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/newsletter/RichTextEditor";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FieldHint } from "@/lib/field-hint";
+import { ADMIN_PLACEHOLDERS } from "@/lib/admin-form-placeholders";
 import Link from "next/link";
 import {
   Select,
@@ -313,12 +315,10 @@ export default function CreateNewsletterPage() {
                 id="preview-text"
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
-                placeholder="Short preview text shown in email clients..."
+                placeholder={ADMIN_PLACEHOLDERS.emailPreviewInput}
                 className="mt-1 text-foreground"
               />
-              <p className="text-sm text-muted-foreground mt-1">
-                This text appears after the subject line in most email clients
-              </p>
+              <FieldHint>{ADMIN_PLACEHOLDERS.emailPreviewHint}</FieldHint>
             </div>
           </CardContent>
         </Card>

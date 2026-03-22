@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FieldHint } from "@/lib/field-hint";
 
 interface AdminSettingsPayload {
   emailNotifications: boolean;
@@ -211,6 +212,10 @@ export default function AdminSettingsPage() {
                       <SelectItem value="weekly">Weekly</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FieldHint>
+                    Controls how often the app rechecks for overdue tasks and follow-ups — not how often emails
+                    are sent (that depends on your workflow).
+                  </FieldHint>
                 </div>
               </CardContent>
             </Card>

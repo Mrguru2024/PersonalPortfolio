@@ -20,8 +20,9 @@ export async function listCampaigns(projectKey?: string) {
 
 export async function createCampaign(data: {
   name: string;
-  description?: string | null;
-  goal?: string | null;
+  /** Omitted or undefined → SQL NULL (API: `description: d.description ?? undefined`). */
+  description?: string;
+  goal?: string;
   projectKey?: string;
 }) {
   const [row] = await db
