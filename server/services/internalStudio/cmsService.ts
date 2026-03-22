@@ -5,7 +5,7 @@ import {
   internalContentTemplates,
   internalContentEditHistory,
 } from "@shared/schema";
-import { eq, and, desc, ilike, or } from "drizzle-orm";
+import { eq, and, desc, ilike, or, count, type SQL } from "drizzle-orm";
 
 export async function listCampaigns(projectKey?: string) {
   if (projectKey) {
@@ -41,16 +41,18 @@ export async function listTemplates() {
   return db.select().from(internalContentTemplates).orderBy(internalContentTemplates.name);
 }
 
-export async function listDocuments(filters: {
+/** Filters shared by {@link listDocuments} and {@link countDocuments} (no pagination). */
+export type ListInternalDocumentsFilters = {
   projectKey?: string;
   contentType?: string;
   workflowStatus?: string;
   campaignId?: number;
+  /** Case-insensitive match on title, excerpt, content type, workflow status, or visibility. */
   search?: string;
-  limit?: number;
-}) {
-  const lim = Math.min(filters.limit ?? 60, 200);
-  const conditions = [];
+};
+
+function buildInternalDocumentsWhere(filters: ListInternalDocumentsFilters): SQL | undefined {
+  const conditions: SQL[] = [];
   if (filters.projectKey) conditions.push(eq(internalCmsDocuments.projectKey, filters.projectKey));
   if (filters.contentType) conditions.push(eq(internalCmsDocuments.contentType, filters.contentType));
   if (filters.workflowStatus)
@@ -62,18 +64,50 @@ export async function listDocuments(filters: {
     const searchCond = or(
       ilike(internalCmsDocuments.title, q),
       ilike(internalCmsDocuments.excerpt, q),
+      ilike(internalCmsDocuments.contentType, q),
+      ilike(internalCmsDocuments.workflowStatus, q),
+      ilike(internalCmsDocuments.visibility, q),
     );
     if (searchCond) conditions.push(searchCond);
   }
+  if (conditions.length === 0) return undefined;
+  return and(...conditions);
+}
 
-  const base = db.select().from(internalCmsDocuments).orderBy(desc(internalCmsDocuments.updatedAt)).limit(lim);
-  if (conditions.length === 0) return base;
+export async function countDocuments(filters: ListInternalDocumentsFilters): Promise<number> {
+  const whereClause = buildInternalDocumentsWhere(filters);
+  if (whereClause) {
+    const rows = await db
+      .select({ total: count() })
+      .from(internalCmsDocuments)
+      .where(whereClause);
+    return Number(rows[0]?.total ?? 0);
+  }
+  const rows = await db.select({ total: count() }).from(internalCmsDocuments);
+  return Number(rows[0]?.total ?? 0);
+}
+
+export async function listDocuments(
+  filters: ListInternalDocumentsFilters & { limit?: number; offset?: number },
+) {
+  const lim = Math.min(Math.max(filters.limit ?? 25, 1), 100);
+  const off = Math.max(filters.offset ?? 0, 0);
+  const whereClause = buildInternalDocumentsWhere(filters);
+  if (whereClause) {
+    return db
+      .select()
+      .from(internalCmsDocuments)
+      .where(whereClause)
+      .orderBy(desc(internalCmsDocuments.updatedAt))
+      .limit(lim)
+      .offset(off);
+  }
   return db
     .select()
     .from(internalCmsDocuments)
-    .where(and(...conditions))
     .orderBy(desc(internalCmsDocuments.updatedAt))
-    .limit(lim);
+    .limit(lim)
+    .offset(off);
 }
 
 export async function getDocument(id: number) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Calendar, Tag, Search, PlusCircle, Filter } from "lucide-react";
@@ -28,6 +28,7 @@ import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/fu
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
 import type { BlogPost } from "@/lib/data";
 import { format } from "date-fns";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 const POSTS_PER_PAGE = 12;
 
@@ -59,18 +60,12 @@ export default function Blog() {
   });
 
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || []))).sort();
-  const filteredPosts = posts
-    .filter((post) => {
-      const q = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        post.title.toLowerCase().includes(q) ||
-        (post.summary || "").toLowerCase().includes(q) ||
-        (post.tags || []).some((t) => t.toLowerCase().includes(q));
-      const matchesTag = !selectedTag || (post.tags || []).includes(selectedTag);
-      return matchesSearch && matchesTag;
-    })
-    .sort((a, b) => {
+  const filteredPosts = useMemo(() => {
+    const tagged = posts.filter((post) => !selectedTag || (post.tags || []).includes(selectedTag));
+    const searched = tagged.filter((post) =>
+      matchesLiveSearch(searchQuery, [post.title, post.summary, ...(post.tags || [])]),
+    );
+    return [...searched].sort((a, b) => {
       if (sortOrder === "newest" || sortOrder === "oldest") {
         const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
         const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
@@ -81,6 +76,7 @@ export default function Blog() {
       if (sortOrder === "title-asc") return titleA.localeCompare(titleB);
       return titleB.localeCompare(titleA);
     });
+  }, [posts, searchQuery, selectedTag, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
   const start = (page - 1) * POSTS_PER_PAGE;

@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, MessageSquare, CheckCircle, Clock, AlertCircle, ArrowLeft, Reply } from "lucide-react";
+import { Loader2, MessageSquare, CheckCircle, Clock, AlertCircle, ArrowLeft, Reply, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 interface Feedback {
   id: number;
@@ -44,6 +46,8 @@ export default function AdminFeedbackPage() {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [status, setStatus] = useState<string>("");
+  const [listSearch, setListSearch] = useState("");
+  const [listStatusFilter, setListStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -163,9 +167,13 @@ export default function AdminFeedbackPage() {
     );
   };
 
-  const filteredFeedback = selectedFeedback
-    ? feedback.filter((f) => f.id === selectedFeedback.id)
-    : feedback;
+  const filteredFeedback = useMemo(() => {
+    return feedback.filter((f) => {
+      const okStatus = listStatusFilter === "all" || f.status === listStatusFilter;
+      const okSearch = matchesLiveSearch(listSearch, [f.subject, f.message, f.category, f.status]);
+      return okStatus && okSearch;
+    });
+  }, [feedback, listSearch, listStatusFilter]);
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -190,12 +198,45 @@ export default function AdminFeedbackPage() {
           <Card>
             <CardHeader>
               <CardTitle>All Feedback</CardTitle>
-              <CardDescription>{feedback.length} total feedback items</CardDescription>
+              <CardDescription>
+                {filteredFeedback.length} shown
+                {filteredFeedback.length !== feedback.length ? ` of ${feedback.length}` : ""} total feedback items
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    type="search"
+                    value={listSearch}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setListSearch(e.target.value)}
+                    placeholder="Filter by subject, message, or category as you type…"
+                    className="pl-9"
+                    aria-label="Filter feedback"
+                  />
+                </div>
+                <Select value={listStatusFilter} onValueChange={setListStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by ticket status">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="read">Read</SelectItem>
+                    <SelectItem value="responded">Responded</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {feedback.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No feedback yet.
+                </p>
+              ) : filteredFeedback.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No feedback matches your filter.
                 </p>
               ) : (
                 <div className="space-y-4">

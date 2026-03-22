@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
+import { AdminAgentReplyText } from "@/components/admin/AdminAgentReplyText";
 
 interface AgentMessage {
   role: "user" | "assistant";
@@ -24,36 +25,16 @@ function executeAction(
   router: ReturnType<typeof useRouter>,
   queryClient: ReturnType<typeof useQueryClient>
 ): void {
-  if (action.type === "navigate" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_reminders" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_crm" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_dashboard" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_settings" && action.url) {
-    router.push(action.url);
-    return;
-  }
-  if (action.type === "open_contacts" || action.type === "open_blog" || action.type === "open_invoices" || action.type === "open_chat") {
-    if (action.url) router.push(action.url);
-    return;
-  }
   if (action.type === "generate_reminders" && action.api === "POST /api/admin/reminders") {
     apiRequest("POST", "/api/admin/reminders", {})
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/reminders"] });
       })
       .catch(() => {});
+    return;
+  }
+  if (typeof action.url === "string" && action.url.startsWith("/")) {
+    router.push(action.url);
   }
 }
 
@@ -76,31 +57,35 @@ export function AdminAgentWidget() {
   }, [open, messages]);
 
   const sendMutation = useMutation({
-    mutationFn: async (message: string) => {
+    mutationFn: async (variables: { message: string; history: AgentMessage[] }) => {
       const res = await fetch("/api/admin/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, currentPath: pathname ?? undefined }),
+        body: JSON.stringify({
+          message: variables.message,
+          currentPath: pathname ?? undefined,
+          history: variables.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
+        }),
         credentials: "include",
       });
       const data = (await res.json()) as AgentResponse;
       if (!res.ok) throw new Error(data.reply || "Request failed");
       return data;
     },
-    onSuccess: (data, message) => {
+    onSuccess: (data, variables) => {
       setMessages((prev) => [
         ...prev,
-        { role: "user", content: message },
+        { role: "user", content: variables.message },
         { role: "assistant", content: data.reply },
       ]);
       if (data.action) {
         executeAction(data.action, router, queryClient);
       }
     },
-    onError: (err, message) => {
+    onError: (err, variables) => {
       setMessages((prev) => [
         ...prev,
-        { role: "user", content: message },
+        { role: "user", content: variables.message },
         { role: "assistant", content: err instanceof Error ? err.message : "Something went wrong." },
       ]);
     },
@@ -110,7 +95,7 @@ export function AdminAgentWidget() {
     const text = input.trim();
     if (!text || sendMutation.isPending) return;
     setInput("");
-    sendMutation.mutate(text);
+    sendMutation.mutate({ message: text, history: messages });
   };
 
   return (
@@ -138,7 +123,8 @@ export function AdminAgentWidget() {
             >
               {messages.length === 0 && (
                 <p className="text-muted-foreground text-center py-4">
-                  Ask to open reminders, CRM, dashboard, or generate reminders. Enable &quot;Allow agent to perform actions&quot; in Settings to run actions.
+                  Ask where something lives (routes, APIs, npm scripts) or say “open …” for CRM, Content Studio, newsletters, Ascendra Intelligence, Growth OS, analytics, site directory, and more. With{" "}
+                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can navigate or run reminder generation. Context from this deployment refreshes every few minutes.
                 </p>
               )}
               {messages.map((m, i) => (
@@ -154,10 +140,14 @@ export function AdminAgentWidget() {
                     className={
                       m.role === "user"
                         ? "inline-block rounded-lg bg-primary text-primary-foreground px-3 py-1.5"
-                        : "inline-block rounded-lg bg-muted px-3 py-1.5"
+                        : "inline-block rounded-lg bg-muted px-3 py-1.5 max-w-full"
                     }
                   >
-                    {m.content}
+                    {m.role === "assistant" ? (
+                      <AdminAgentReplyText text={m.content} />
+                    ) : (
+                      m.content
+                    )}
                   </div>
                 </div>
               ))}
@@ -170,7 +160,7 @@ export function AdminAgentWidget() {
             </div>
             <div className="p-2 border-t flex gap-2">
               <Textarea
-                placeholder="Ask to go to reminders, CRM…"
+                placeholder="e.g. Where is lead intake? Open content studio."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {

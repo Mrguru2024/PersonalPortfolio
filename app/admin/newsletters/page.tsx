@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Mail, Eye, Trash2, Send, Edit, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Mail, Eye, Trash2, Send, Edit, ArrowLeft, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 interface Newsletter {
   id: number;
@@ -40,6 +49,8 @@ export default function NewslettersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [listSearch, setListSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   
   // Force refresh user data to ensure we have the latest adminApproved status
   useEffect(() => {
@@ -186,6 +197,19 @@ export default function NewslettersPage() {
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
 
+  const filteredNewsletters = useMemo(() => {
+    return newsletters.filter((n) => {
+      const okStatus = statusFilter === "all" || n.status === statusFilter;
+      const okSearch = matchesLiveSearch(listSearch, [
+        n.subject,
+        n.status,
+        String(n.id),
+        n.totalRecipients != null ? String(n.totalRecipients) : "",
+      ]);
+      return okStatus && okSearch;
+    });
+  }, [newsletters, listSearch, statusFilter]);
+
   return (
     <div className="container mx-auto px-4 py-10">
       <div className="mb-8">
@@ -227,8 +251,45 @@ export default function NewslettersPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="search"
+                value={listSearch}
+                onChange={(e) => setListSearch(e.target.value)}
+                placeholder="Filter by subject or status as you type…"
+                className="pl-9"
+                aria-label="Filter newsletters"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]" aria-label="Filter by campaign status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="sending">Sending</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Showing {filteredNewsletters.length} of {newsletters.length} campaigns
+          </p>
+        {filteredNewsletters.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No campaigns match your filter. Try different words or set status to “All statuses”.
+            </CardContent>
+          </Card>
+        ) : (
         <div className="grid gap-4">
-          {newsletters.map((newsletter) => (
+          {filteredNewsletters.map((newsletter) => (
             <Card key={newsletter.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -294,6 +355,8 @@ export default function NewslettersPage() {
             </Card>
           ))}
         </div>
+        )}
+        </>
       )}
 
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>

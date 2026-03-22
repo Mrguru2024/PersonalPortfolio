@@ -2,7 +2,7 @@
 
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,13 +17,16 @@ import {
   UserPlus,
   Eye,
   ArrowRight,
+  Search,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +69,7 @@ interface Stats {
 
 export default function AdminUsersPage() {
   const [mounted, setMounted] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -100,6 +104,28 @@ export default function AdminUsersPage() {
     },
     enabled: !!user && !!isSuperUser,
   });
+
+  const pendingAll = useMemo(() => users.filter((u) => u.isAdmin && !u.adminApproved), [users]);
+  const adminUsersAll = useMemo(
+    () => users.filter((u) => u.role === "developer" || (u.isAdmin && u.adminApproved)),
+    [users],
+  );
+  const guestUsersAll = useMemo(() => users.filter((u) => !u.isAdmin), [users]);
+
+  const pending = useMemo(() => {
+    if (!userSearch.trim()) return pendingAll;
+    return pendingAll.filter((u) => matchesLiveSearch(userSearch, [u.username, u.email, u.role]));
+  }, [pendingAll, userSearch]);
+
+  const adminUsers = useMemo(() => {
+    if (!userSearch.trim()) return adminUsersAll;
+    return adminUsersAll.filter((u) => matchesLiveSearch(userSearch, [u.username, u.email, u.role]));
+  }, [adminUsersAll, userSearch]);
+
+  const guestUsers = useMemo(() => {
+    if (!userSearch.trim()) return guestUsersAll;
+    return guestUsersAll.filter((u) => matchesLiveSearch(userSearch, [u.username, u.email, u.role]));
+  }, [guestUsersAll, userSearch]);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/admin/users/stats"],
@@ -185,12 +211,6 @@ export default function AdminUsersPage() {
 
   if (!user) return null;
 
-  const pending = users.filter((u) => u.isAdmin && !u.adminApproved);
-  const adminUsers = users.filter(
-    (u) => u.role === "developer" || (u.isAdmin && u.adminApproved)
-  );
-  const guestUsers = users.filter((u) => !u.isAdmin);
-
   return (
     <div className="w-full min-w-0 max-w-full py-6 sm:py-10">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-4xl">
@@ -207,6 +227,18 @@ export default function AdminUsersPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Organize admin access, guest users, CRM leads & clients, and newsletter subscribers. Approve founders and control their privileges.
           </p>
+        </div>
+
+        <div className="relative max-w-md mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Filter users by name or email as you type…"
+            className="pl-9"
+            aria-label="Filter users"
+          />
         </div>
 
         {usersLoading ? (
@@ -229,7 +261,7 @@ export default function AdminUsersPage() {
                         <Shield className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-foreground">{adminUsers.length}</p>
+                        <p className="text-2xl font-bold text-foreground">{adminUsersAll.length}</p>
                         <p className="text-xs text-muted-foreground">Admin users</p>
                       </div>
                     </div>
@@ -242,7 +274,7 @@ export default function AdminUsersPage() {
                         <UserCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-foreground">{pending.length}</p>
+                        <p className="text-2xl font-bold text-foreground">{pendingAll.length}</p>
                         <p className="text-xs text-muted-foreground">Pending approval</p>
                       </div>
                     </div>
@@ -328,19 +360,26 @@ export default function AdminUsersPage() {
             </section>
 
             {/* Pending approval */}
-            {pending.length > 0 && (
+            {pendingAll.length > 0 && (
               <Card className="border-amber-500/30 bg-amber-500/5">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <UserCheck className="h-5 w-5" />
-                    Pending approval ({pending.length})
+                    Pending approval ({pending.length}
+                    {userSearch.trim() && pending.length !== pendingAll.length
+                      ? ` shown · ${pendingAll.length} total`
+                      : ""}
+                    )
                   </CardTitle>
                   <CardDescription>
                     These users requested founder admin access. Approve to grant dashboard, CRM, blog, and content tools.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {pending.map((u) => (
+                  {pending.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No pending users match your search.</p>
+                  ) : (
+                  pending.map((u) => (
                     <div
                       key={u.id}
                       className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
@@ -363,7 +402,8 @@ export default function AdminUsersPage() {
                         )}
                       </Button>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -437,8 +477,10 @@ export default function AdminUsersPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {guestUsers.length === 0 ? (
+                {guestUsersAll.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-2">No guest users.</p>
+                ) : guestUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No guest users match your search.</p>
                 ) : (
                   <ul className="space-y-2">
                     {guestUsers.map((u) => (

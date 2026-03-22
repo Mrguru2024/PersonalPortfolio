@@ -28,6 +28,26 @@ export interface OfferCta {
   footnote: string;
 }
 
+/** How long the target reader has been in business (grading adjusts proof vs. education expectations). */
+export type AudienceTenureBand =
+  | "pre_launch"
+  | "under_2_years"
+  | "two_to_five_years"
+  | "five_plus_years";
+
+/** How invested they are in their vision (grading adjusts CTA strength and reassurance). */
+export type AudienceVisionInvestment = "exploring" | "committed" | "all_in";
+
+/**
+ * Links a site offer to Ascendra IQ marketing personas (same ids as `marketing_personas.id`).
+ * Stored in `site_offers.sections` for one JSON blob; **stripped** from public `GET /api/offers/[slug]`.
+ */
+export interface OfferIqTargeting {
+  personaIds: string[];
+  audienceTenureBand?: AudienceTenureBand;
+  audienceVisionInvestment?: AudienceVisionInvestment;
+}
+
 export interface OfferSections {
   hero?: OfferHero;
   price?: OfferPrice;
@@ -36,6 +56,57 @@ export interface OfferSections {
   cta?: OfferCta;
   /** Optional graphics: banner, etc. */
   graphics?: { bannerUrl?: string; [key: string]: string | undefined };
+  /**
+   * Framework / intelligence: which personas this offer is written for (preview, grading, analytics).
+   * Not exposed on the public site JSON.
+   */
+  iqTargeting?: OfferIqTargeting;
+}
+
+/** Remove admin-only keys before returning offer sections to visitors. */
+export function stripOfferSectionsForPublic(
+  sections: Record<string, unknown>
+): Record<string, unknown> {
+  const { iqTargeting: _iq, ...rest } = sections;
+  return rest;
+}
+
+const TENURE_VALUES: AudienceTenureBand[] = [
+  "pre_launch",
+  "under_2_years",
+  "two_to_five_years",
+  "five_plus_years",
+];
+
+const VISION_VALUES: AudienceVisionInvestment[] = ["exploring", "committed", "all_in"];
+
+function parseTenure(raw: unknown): AudienceTenureBand | undefined {
+  return typeof raw === "string" && TENURE_VALUES.includes(raw as AudienceTenureBand)
+    ? (raw as AudienceTenureBand)
+    : undefined;
+}
+
+function parseVision(raw: unknown): AudienceVisionInvestment | undefined {
+  return typeof raw === "string" && VISION_VALUES.includes(raw as AudienceVisionInvestment)
+    ? (raw as AudienceVisionInvestment)
+    : undefined;
+}
+
+/** Parse `iqTargeting` from stored JSON when loading the admin editor. */
+export function parseOfferIqTargeting(raw: unknown): OfferIqTargeting | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const ids = o.personaIds;
+  const personaIds = Array.isArray(ids)
+    ? ids.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    : [];
+  const audienceTenureBand = parseTenure(o.audienceTenureBand);
+  const audienceVisionInvestment = parseVision(o.audienceVisionInvestment);
+  if (personaIds.length === 0 && !audienceTenureBand && !audienceVisionInvestment) return undefined;
+  const out: OfferIqTargeting = { personaIds };
+  if (audienceTenureBand) out.audienceTenureBand = audienceTenureBand;
+  if (audienceVisionInvestment) out.audienceVisionInvestment = audienceVisionInvestment;
+  return out;
 }
 
 export const DEFAULT_OFFER_SECTIONS: OfferSections = {

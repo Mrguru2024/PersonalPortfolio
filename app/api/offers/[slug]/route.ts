@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { stripOfferSectionsForPublic } from "@/lib/offerSections";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,13 @@ export async function GET(
     if (!slug) return NextResponse.json({ error: "Slug required" }, { status: 400 });
     const offer = await storage.getSiteOffer(slug);
     if (!offer) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const sectionsRaw = offer.sections as Record<string, unknown>;
     return NextResponse.json({
       slug: offer.slug,
       name: offer.name,
       metaTitle: offer.metaTitle,
       metaDescription: offer.metaDescription,
-      sections: offer.sections,
+      sections: stripOfferSectionsForPublic(sectionsRaw),
       updatedAt: offer.updatedAt,
     });
   } catch (error: unknown) {

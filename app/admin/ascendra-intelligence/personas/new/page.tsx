@@ -13,13 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-function arrFromLines(s: string) {
-  return s
-    .split("\n")
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
+import { linesToStringArray } from "@/lib/personaFormUtils";
 
 export default function NewMarketingPersonaPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -52,10 +46,10 @@ export default function NewMarketingPersonaPage() {
         revenueBand: revenueBand.trim() || null,
         summary: summary.trim() || null,
         strategicNote: strategicNote.trim() || null,
-        problems: arrFromLines(problems),
-        goals: arrFromLines(goals),
-        objections: arrFromLines(objections),
-        dynamicSignals: arrFromLines(dynamicSignals),
+        problems: linesToStringArray(problems),
+        goals: linesToStringArray(goals),
+        objections: linesToStringArray(objections),
+        dynamicSignals: linesToStringArray(dynamicSignals),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

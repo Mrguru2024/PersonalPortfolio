@@ -167,4 +167,117 @@ export const DEFAULT_MARKETING_PERSONAS: InsertMarketingPersonaRow[] = [
       "Shift toward productized services and clear packages",
     ],
   },
+  // —— High-ticket market personas (verify external figures; never invent stats in client-facing copy) ——
+  {
+    id: "lena-scaled-trades",
+    displayName: "Lena – Scaled Home Services Operator",
+    segment: "Multi-crew / multi-territory trades (HVAC, plumbing, electrical, restoration)",
+    revenueBand: "High-ticket ops (verify revenue & payroll per account)",
+    summary:
+      "Runs or co-owns a growing trades operation with multiple crews or territories. Buys serious marketing, websites, and conversion work because each booked job has high margin and LTV.",
+    strategicNote:
+      "Real-world verification: use U.S. Census County Business Patterns (CBP) for establishment counts and payroll in your service counties — https://www.census.gov/programs-surveys/cbp.html . For labor cost context, see BLS Occupational Employment and Wage Statistics — https://www.bls.gov/oes/ . Refresh before proposals; do not cite stale or invented market numbers.",
+    problemsJson: [
+      "Paid lead costs rising; need landing pages and offers that convert",
+      "Brand and website don’t match the quality of in-field work",
+      "Dispatch and sales say “we’re busy” but margin per job is uneven",
+    ],
+    goalsJson: [
+      "Higher close rate on high-ticket installs and replacements",
+      "Clear service-area SEO and map presence without gimmicks",
+      "Attribution that finance trusts (call tracking, CRM, not vanity metrics)",
+    ],
+    objectionsJson: [
+      "Our trucks are full; we don’t need marketing",
+      "We already pay a lead-gen vendor",
+    ],
+    dynamicSignalsJson: [
+      "Local Services Ads and LSA reputation signals continue to shape who gets the call",
+      "Refresh CBP/BLS snapshots quarterly for territory planning — links in strategic note",
+    ],
+  },
+  {
+    id: "victor-practice-admin",
+    displayName: "Victor – Practice Owner / Administrator (Dental & Elective Care)",
+    segment: "Outpatient healthcare — dental, med spa, elective specialty",
+    revenueBand: "High-ticket patient procedures (verify payer mix locally)",
+    summary:
+      "Decision-maker for a practice where case value is high and competition is local and map-driven. Needs trustworthy web, clear offers, and compliance-aware messaging—not hype.",
+    strategicNote:
+      "Real-world context (U.S.): CDC Oral Health data hub for national oral-health statistics — https://www.cdc.gov/oralhealth/data-statistics/index.html — use for macro trends only. For your market, verify demographics and competition with Census data tools — https://www.census.gov/data.html — and payer mix with local knowledge. Never fabricate clinical or market statistics.",
+    problemsJson: [
+      "Website feels generic; doesn’t reflect specialty or outcomes patients care about",
+      "High cost per booked consult from ads; landing pages don’t match ad intent",
+      "Reviews and reputation are strong in-office but weak online",
+    ],
+    goalsJson: [
+      "More booked consults for high-value procedures",
+      "HIPAA-aware forms and clear privacy messaging",
+      "Differentiation vs. other practices in the same map pack",
+    ],
+    objectionsJson: [
+      "Compliance won’t let us say much online",
+      "Our patients come from referrals only",
+    ],
+    dynamicSignalsJson: [
+      "Patient search behavior stays local-first; map and review signals matter",
+      "Re-check CDC/Census releases when updating copy — dates and metrics change",
+    ],
+  },
+  {
+    id: "priya-b2b-services-partner",
+    displayName: "Priya – B2B Services Firm Partner (IT, Ops, Professional)",
+    segment: "Mid-market B2B — implementation, managed services, advisory",
+    revenueBand: "Six-figure deals; multi-stakeholder buying (verify per pursuit)",
+    summary:
+      "Partner or practice lead selling complex B2B engagements. Site and collateral must support long cycles, security questions, and procurement—high ticket, low tolerance for amateur web.",
+    strategicNote:
+      "Real-world verification: U.S. Census Statistics of U.S. Businesses (SUSB) for firm size and industry structure — https://www.census.gov/programs-surveys/susb.html . For IT/digital economy context, see BEA digital economy estimates (methodology and releases) — https://www.bea.gov/data/special-topics/digital-economy . Use for framing, not fabricated deal benchmarks.",
+    problemsJson: [
+      "Website reads like 2015; loses to larger firms on credibility",
+      "Case studies exist but aren’t packaged for each vertical",
+      "Marketing and sales disagree on what a “qualified” opportunity is",
+    ],
+    goalsJson: [
+      "Clear service lines, proof, and security/privacy signals on the site",
+      "Content that supports RFPs and outbound without sounding hollow",
+      "Shorter path from first touch to technical scoping call",
+    ],
+    objectionsJson: [
+      "We win on relationships, not the website",
+      "Procurement only cares about price",
+    ],
+    dynamicSignalsJson: [
+      "Buyers self-serve research before taking a call; weak sites extend cycles",
+      "Refresh SUSB/BEA references when building vertical pitches — links in strategic note",
+    ],
+  },
+  {
+    id: "james-dtc-scale",
+    displayName: "James – Established DTC / E-commerce Operator",
+    segment: "DTC brand past early traction — ops, retention, and CAC pressure",
+    revenueBand: "Scaling GMV (verify with client; no assumed ARR in copy)",
+    summary:
+      "Owns or leads growth for a product brand selling online. High spend on ads and creators; needs site speed, CRO, LTV plays, and messaging that survives iOS/privacy changes.",
+    strategicNote:
+      "Real-world verification: U.S. Census Monthly Retail Trade and related retail indicators — https://www.census.gov/retail/index.html — for macro retail e-commerce trends. For broader economic context, FRED (Federal Reserve Economic Data) — https://fred.stlouisfed.org/ — search series your finance team already uses. Pull current values in spreadsheets or slides; do not hard-code percentages in the CMS that will go stale.",
+    problemsJson: [
+      "Rising CAC; landing pages and PDPs don’t test fast enough",
+      "Site speed and Core Web Vitals hurt paid social and organic",
+      "Email/SMS and retention underbuilt vs. acquisition spend",
+    ],
+    goalsJson: [
+      "Repeatable CRO experiments and clearer offer hierarchy",
+      "Site and funnel that match premium positioning",
+      "Better LTV metrics and cohort reporting marketing can act on",
+    ],
+    objectionsJson: [
+      "Shopify apps will fix conversion",
+      "We’ll fix creative before the site",
+    ],
+    dynamicSignalsJson: [
+      "Privacy and attribution changes keep shifting paid channel efficiency",
+      "Re-pull Census retail / FRED series when building board-level growth narratives",
+    ],
+  },
 ];

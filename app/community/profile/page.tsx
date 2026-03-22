@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 
 export default function CommunityProfilePage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -30,6 +31,8 @@ export default function CommunityProfilePage() {
     enabled: !!user?.id,
   });
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const updateMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
       const res = await apiRequest("PATCH", "/api/community/profile", body);
@@ -41,6 +44,38 @@ export default function CommunityProfilePage() {
       toast({ title: "Profile updated" });
     },
     onError: () => toast({ title: "Failed to update profile", variant: "destructive" }),
+  });
+
+  const avatarUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/community/profile/avatar", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        let msg = text || res.statusText;
+        try {
+          const j = JSON.parse(text) as { error?: string };
+          if (j.error) msg = j.error;
+        } catch {
+          /* use text */
+        }
+        throw new Error(msg);
+      }
+      return JSON.parse(text) as { url: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community/profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({ title: "Profile photo updated" });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    onError: (e: Error) =>
+      toast({ title: "Upload failed", description: e.message, variant: "destructive" }),
   });
 
   useEffect(() => {
@@ -70,6 +105,14 @@ export default function CommunityProfilePage() {
 
   if (authLoading || !user) return null;
 
+  const displayAvatarUrl = profile?.avatarUrl ?? user.avatarUrl ?? undefined;
+  const initials = (profile?.displayName ?? user.username ?? "?")
+    .split(/\s+/)
+    .map((w: string) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <CommunityShell>
       <div className="mx-auto max-w-2xl">
@@ -87,6 +130,43 @@ export default function CommunityProfilePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-2 border-b border-border/60">
+                  <Avatar className="h-24 w-24 shrink-0 border border-border">
+                    <AvatarImage src={displayAvatarUrl} alt="" className="object-cover" />
+                    <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2 min-w-0">
+                    <Label className="text-base">Profile photo</Label>
+                    <p className="text-sm text-muted-foreground">
+                      JPG, PNG, GIF, WebP, or AVIF — up to 5MB. Cropped to a square for the directory and feed.
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+                      className="sr-only"
+                      aria-label="Choose profile photo"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) avatarUploadMutation.mutate(f);
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={avatarUploadMutation.isPending}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {avatarUploadMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Camera className="h-4 w-4 mr-2" />
+                      )}
+                      Upload photo
+                    </Button>
+                  </div>
+                </div>
                 <div>
                   <Label htmlFor="displayName">Display name</Label>
                   <Input id="displayName" name="displayName" defaultValue={profile?.displayName ?? user?.username} className="mt-1" />

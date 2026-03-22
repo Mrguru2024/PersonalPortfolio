@@ -55,3 +55,27 @@ export async function optimizeImageBuffer(
     return { buffer: input, ext, contentType: originalMime ?? "image/jpeg" };
   }
 }
+
+const PROFILE_AVATAR_PX = 512;
+
+/**
+ * Square crop (attention), WebP — for member profile photos.
+ */
+export async function optimizeProfileAvatarBuffer(
+  input: Buffer,
+  originalMime?: string
+): Promise<{ buffer: Buffer; ext: string; contentType: string }> {
+  const supported = /^image\/(jpeg|png|gif|webp|avif)$/i.test(originalMime ?? "");
+  if (!supported) {
+    throw new Error("Unsupported image type for profile photo");
+  }
+  const out = await sharp(input)
+    .rotate()
+    .resize(PROFILE_AVATAR_PX, PROFILE_AVATAR_PX, {
+      fit: "cover",
+      position: "attention",
+    })
+    .webp({ quality: 86, effort: 4 })
+    .toBuffer();
+  return { buffer: out, ext: ".webp", contentType: "image/webp" };
+}

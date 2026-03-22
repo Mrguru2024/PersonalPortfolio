@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import { processAgentMessage } from "@server/services/adminAgentService";
+import { processAgentMessage, type AgentChatTurn } from "@server/services/adminAgentService";
 
 export const dynamic = "force-dynamic";
+
+function parseAgentHistory(raw: unknown): AgentChatTurn[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: AgentChatTurn[] = [];
+  for (const t of raw) {
+    if (!t || typeof t !== "object") continue;
+    const role = (t as { role?: string }).role;
+    const content = (t as { content?: string }).content;
+    if ((role === "user" || role === "assistant") && typeof content === "string") {
+      out.push({ role, content: content.slice(0, 4000) });
+    }
+  }
+  return out.length > 0 ? out : undefined;
+}
 
 /** POST /api/admin/agent — chat with admin AI agent; may return an action to run if permitted. */
 export async function POST(req: NextRequest) {
@@ -20,6 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const message = typeof body.message === "string" ? body.message.trim() : "";
     const currentPath = typeof body.currentPath === "string" ? body.currentPath : undefined;
+    const history = parseAgentHistory(body.history);
 
     if (!message) {
       return NextResponse.json({ reply: "Send a message to get started. Try “open reminders” or “go to CRM”." });
@@ -33,6 +48,7 @@ export async function POST(req: NextRequest) {
       canPerformActions,
       currentPath,
       openaiAvailable: !!process.env.OPENAI_API_KEY,
+      history,
     });
 
     return NextResponse.json(result);

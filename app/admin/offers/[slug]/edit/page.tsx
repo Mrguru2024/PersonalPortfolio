@@ -17,6 +17,9 @@ import {
   MousePointer,
   Image as ImageIcon,
   Award,
+  Brain,
+  UserPlus,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +29,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ImagePicker } from "@/components/admin/ImagePicker";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DEFAULT_OFFER_SECTIONS,
+  parseOfferIqTargeting,
   type OfferSections,
   type OfferHero,
   type OfferPrice,
   type OfferDeliverable,
   type OfferCta,
+  type OfferIqTargeting,
+  type AudienceTenureBand,
+  type AudienceVisionInvestment,
 } from "@/lib/offerSections";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { QuickCreatePersonaModal } from "@/components/admin/QuickCreatePersonaModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const ICON_OPTIONS = [
   "FileText",
@@ -53,6 +77,7 @@ const ICON_OPTIONS = [
 function mergeSections(existing: Record<string, unknown> | null): OfferSections {
   const def = DEFAULT_OFFER_SECTIONS;
   if (!existing || typeof existing !== "object") return def;
+  const iq = parseOfferIqTargeting(existing.iqTargeting);
   return {
     hero: { ...def.hero, ...(existing.hero as object) } as OfferHero,
     price: { ...def.price, ...(existing.price as object) } as OfferPrice,
@@ -67,7 +92,38 @@ function mergeSections(existing: Record<string, unknown> | null): OfferSections 
     bullets: Array.isArray(existing.bullets) ? existing.bullets as string[] : def.bullets,
     cta: { ...def.cta, ...(existing.cta as object) } as OfferCta,
     graphics: (existing.graphics as { bannerUrl?: string }) ?? {},
+    ...(iq ? { iqTargeting: iq } : {}),
   };
+}
+
+function sectionsWithoutIq(s: OfferSections): Record<string, unknown> {
+  const { iqTargeting: _iq, ...rest } = s;
+  return rest as Record<string, unknown>;
+}
+
+function patchIqTargeting(
+  prev: OfferSections,
+  updates: {
+    personaIds?: string[];
+    audienceTenureBand?: AudienceTenureBand | null;
+    audienceVisionInvestment?: AudienceVisionInvestment | null;
+  }
+): OfferIqTargeting | undefined {
+  const cur = prev.iqTargeting;
+  const personaIds = updates.personaIds ?? cur?.personaIds ?? [];
+  let tenure = cur?.audienceTenureBand;
+  let vision = cur?.audienceVisionInvestment;
+  if ("audienceTenureBand" in updates) {
+    tenure = updates.audienceTenureBand ?? undefined;
+  }
+  if ("audienceVisionInvestment" in updates) {
+    vision = updates.audienceVisionInvestment ?? undefined;
+  }
+  if (personaIds.length === 0 && !tenure && !vision) return undefined;
+  const out: OfferIqTargeting = { personaIds };
+  if (tenure) out.audienceTenureBand = tenure;
+  if (vision) out.audienceVisionInvestment = vision;
+  return out;
 }
 
 export default function EditOfferPage() {
@@ -81,6 +137,10 @@ export default function EditOfferPage() {
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [sections, setSections] = useState<OfferSections>(DEFAULT_OFFER_SECTIONS);
+  const [quickPersonaOpen, setQuickPersonaOpen] = useState(false);
+  const [aiFillOpen, setAiFillOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiIncludeCurrent, setAiIncludeCurrent] = useState(true);
 
   const { data: offer, isLoading, isFetched } = useQuery({
     queryKey: ["/api/admin/offers", slug],
@@ -92,6 +152,16 @@ export default function EditOfferPage() {
     },
     enabled: !!slug,
   });
+
+  const { data: personasData } = useQuery({
+    queryKey: ["/api/admin/ascendra-intelligence/personas"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/ascendra-intelligence/personas");
+      if (!res.ok) throw new Error("Failed to load personas");
+      return (await res.json()) as { personas: { id: string; displayName: string }[] };
+    },
+  });
+  const iqPersonas = personasData?.personas ?? [];
 
   useEffect(() => {
     if (!offer) {
@@ -147,6 +217,75 @@ export default function EditOfferPage() {
     onError: (e: Error) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
   });
 
+  const aiFillMutation = useMutation({
+    mutationFn: async (vars: { prompt: string; includeCurrent: boolean }) => {
+      const res = await apiRequest("POST", "/api/admin/offers/ai-generate", {
+        prompt: vars.prompt,
+        slug,
+        includeCurrent: vars.includeCurrent,
+        ...(vars.includeCurrent
+          ? {
+              currentOffer: {
+                name: name.trim(),
+                metaTitle: metaTitle.trim() || null,
+                metaDescription: metaDescription.trim() || null,
+                sections: sectionsWithoutIq(sections),
+              },
+            }
+          : {}),
+      });
+      return res.json() as Promise<{
+        offer: {
+          name: string;
+          metaTitle: string;
+          metaDescription: string;
+          hero: { title: string; subtitle: string; imageUrl?: string };
+          price: OfferPrice;
+          deliverables: OfferDeliverable[];
+          bullets: string[];
+          cta: OfferCta;
+          graphics?: { bannerUrl?: string };
+        };
+      }>;
+    },
+    onSuccess: (data) => {
+      const o = data.offer;
+      setName(o.name);
+      setMetaTitle(o.metaTitle);
+      setMetaDescription(o.metaDescription);
+      setSections((prev) => ({
+        ...prev,
+        hero: {
+          title: o.hero.title,
+          subtitle: o.hero.subtitle,
+          imageUrl: (o.hero.imageUrl ?? "").trim() || prev.hero?.imageUrl || "",
+        },
+        price: o.price,
+        deliverables: o.deliverables.map((d) => ({
+          icon: d.icon || "FileText",
+          title: d.title,
+          desc: d.desc,
+          ...(d.imageUrl ? { imageUrl: d.imageUrl } : {}),
+        })),
+        bullets: o.bullets,
+        cta: o.cta,
+        graphics: {
+          ...prev.graphics,
+          bannerUrl: (o.graphics?.bannerUrl ?? "").trim() || prev.graphics?.bannerUrl || "",
+        },
+        iqTargeting: prev.iqTargeting,
+      }));
+      setAiFillOpen(false);
+      setAiPrompt("");
+      toast({
+        title: "Form filled from AI",
+        description: "Review all fields and click Save when ready. Persona targeting was not changed.",
+      });
+    },
+    onError: (e: Error) =>
+      toast({ title: "AI fill failed", description: e.message, variant: "destructive" }),
+  });
+
   const setHero = (updates: Partial<OfferHero>) =>
     setSections((s) => ({ ...s, hero: { ...s.hero, ...updates } as OfferHero }));
   const setPrice = (updates: Partial<OfferPrice>) =>
@@ -200,13 +339,20 @@ export default function EditOfferPage() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/offers"><ArrowLeft className="h-4 w-4 mr-2" />Back to offers</Link>
           </Button>
-          <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Save changes
-          </Button>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+            <Button type="button" variant="outline" onClick={() => setAiFillOpen(true)} className="flex-1 sm:flex-initial">
+              <Sparkles className="h-4 w-4 mr-2" aria-hidden />
+              AI fill
+            </Button>
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              className="flex-1 sm:flex-initial"
+            >
+              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save changes
+            </Button>
+          </div>
         </div>
 
         <h1 className="text-2xl font-bold mb-1">Edit offer</h1>
@@ -230,6 +376,130 @@ export default function EditOfferPage() {
             <div>
               <Label>Meta description</Label>
               <Textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={2} placeholder="Short description for search results" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <CardTitle className="text-base flex items-center gap-2 shrink-0">
+                <Brain className="h-4 w-4 shrink-0" />
+                Persona targeting (IQ framework)
+              </CardTitle>
+              <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto sm:shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto justify-center"
+                  onClick={() => setQuickPersonaOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4 sm:mr-2" aria-hidden />
+                  New persona
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="w-full sm:w-auto justify-center" asChild>
+                  <Link href="/admin/ascendra-intelligence/personas/new">Full persona form</Link>
+                </Button>
+              </div>
+            </div>
+            <CardDescription>
+              Link this offer to{" "}
+              <Link href="/admin/ascendra-intelligence/personas" className="text-primary underline underline-offset-4">
+                marketing personas
+              </Link>{" "}
+              so messaging stays consistent with lead magnets, scripts, and Content Studio. Use{" "}
+              <button
+                type="button"
+                className="text-primary underline underline-offset-4 p-0 h-auto text-sm bg-transparent border-0 cursor-pointer inline text-left"
+                onClick={() => setQuickPersonaOpen(true)}
+              >
+                quick create
+              </button>{" "}
+              to add one without leaving this page. Selections are stored with this offer and are not exposed on the public offer API.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {iqPersonas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No personas found. Add them under Ascendra Intelligence, then save this offer again after selecting targets.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {iqPersonas.map((p) => {
+                  const checked = sections.iqTargeting?.personaIds?.includes(p.id) ?? false;
+                  return (
+                    <li key={p.id} className="flex items-center gap-3">
+                      <Checkbox
+                        id={`iq-persona-${p.id}`}
+                        checked={checked}
+                        onCheckedChange={() => {
+                          setSections((s) => {
+                            const cur = s.iqTargeting?.personaIds ?? [];
+                            const next = cur.includes(p.id) ? cur.filter((x) => x !== p.id) : [...cur, p.id];
+                            return { ...s, iqTargeting: patchIqTargeting(s, { personaIds: next }) };
+                          });
+                        }}
+                      />
+                      <Label htmlFor={`iq-persona-${p.id}`} className="text-sm font-normal cursor-pointer leading-tight">
+                        {p.displayName}{" "}
+                        <span className="text-muted-foreground font-mono text-xs">({p.id})</span>
+                      </Label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/60">
+              <div className="space-y-2">
+                <Label>Time in business (reader)</Label>
+                <Select
+                  value={sections.iqTargeting?.audienceTenureBand ?? "__none__"}
+                  onValueChange={(v) =>
+                    setSections((s) => ({
+                      ...s,
+                      iqTargeting: patchIqTargeting(s, {
+                        audienceTenureBand: v === "__none__" ? null : (v as AudienceTenureBand),
+                      }),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional — improves grading" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Not specified</SelectItem>
+                    <SelectItem value="pre_launch">Pre-launch / idea stage</SelectItem>
+                    <SelectItem value="under_2_years">Under 2 years operating</SelectItem>
+                    <SelectItem value="two_to_five_years">2–5 years in business</SelectItem>
+                    <SelectItem value="five_plus_years">5+ years / scaling</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Investment in their vision</Label>
+                <Select
+                  value={sections.iqTargeting?.audienceVisionInvestment ?? "__none__"}
+                  onValueChange={(v) =>
+                    setSections((s) => ({
+                      ...s,
+                      iqTargeting: patchIqTargeting(s, {
+                        audienceVisionInvestment: v === "__none__" ? null : (v as AudienceVisionInvestment),
+                      }),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional — improves grading" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Not specified</SelectItem>
+                    <SelectItem value="exploring">Exploring / early interest</SelectItem>
+                    <SelectItem value="committed">Committed / actively building</SelectItem>
+                    <SelectItem value="all_in">All-in / high conviction</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -391,7 +661,9 @@ export default function EditOfferPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Award className="h-4 w-4" />Content grading</CardTitle>
-            <CardDescription>SEO, design readiness, and copy clarity. Grade after editing to ensure agency-grade content.</CardDescription>
+            <CardDescription>
+              SEO, design, copy, and — when persona targeting or audience parameters are set — persona/audience context (IQ language overlap, tenure, vision investment).
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {offer?.grading && (
@@ -400,6 +672,9 @@ export default function EditOfferPage() {
                   <span><strong>SEO:</strong> {offer.grading.seoScore}/100</span>
                   <span><strong>Design:</strong> {offer.grading.designScore}/100</span>
                   <span><strong>Copy:</strong> {offer.grading.copyScore}/100</span>
+                  {offer.grading.personaContextScore != null && (
+                    <span><strong>Persona & audience:</strong> {offer.grading.personaContextScore}/100</span>
+                  )}
                   <span><strong>Grade:</strong> {offer.grading.overallGrade}</span>
                 </div>
                 {offer.grading.gradedAt && (
@@ -425,14 +700,35 @@ export default function EditOfferPage() {
                       {offer.grading.targets.copy && offer.grading.measured.copy && (
                         <div>CTA: button {offer.grading.measured.copy.hasCtaButton ? "✓" : "✗"}, link {offer.grading.measured.copy.hasCtaHref ? "✓" : "✗"} · Bullets: {offer.grading.measured.copy.bulletCount} (min {offer.grading.targets.copy.minBullets}) · Subtitle: {offer.grading.measured.copy.heroSubtitleLength} chars (min {offer.grading.targets.copy.heroSubtitleMinChars})</div>
                       )}
+                      {offer.grading.targets.personaContext && offer.grading.measured.personaContext && (
+                        <div>
+                          Persona fit: token overlap {Math.round((offer.grading.measured.personaContext.overlapRatio ?? 0) * 100)}% ({offer.grading.measured.personaContext.personaTokenHits}/{offer.grading.measured.personaContext.personaTokenUniverse} IQ tokens found in offer) · Personas scored: {offer.grading.measured.personaContext.personaCount}
+                          {offer.grading.measured.personaContext.audienceTenureBand
+                            ? ` · Tenure band: ${offer.grading.measured.personaContext.audienceTenureBand}`
+                            : ""}
+                          {offer.grading.measured.personaContext.audienceVisionInvestment
+                            ? ` · Vision: ${offer.grading.measured.personaContext.audienceVisionInvestment}`
+                            : ""}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
-                {(offer.grading.feedback?.seo?.length || offer.grading.feedback?.design?.length || offer.grading.feedback?.copy?.length) ? (
+                {(offer.grading.feedback?.seo?.length ||
+                  offer.grading.feedback?.design?.length ||
+                  offer.grading.feedback?.copy?.length ||
+                  offer.grading.feedback?.persona?.length) ? (
                   <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                    {[...(offer.grading.feedback?.seo ?? []), ...(offer.grading.feedback?.design ?? []), ...(offer.grading.feedback?.copy ?? [])].slice(0, 6).map((f, i) => (
-                      <li key={i}>{f}</li>
-                    ))}
+                    {[
+                      ...(offer.grading.feedback?.seo ?? []),
+                      ...(offer.grading.feedback?.design ?? []),
+                      ...(offer.grading.feedback?.copy ?? []),
+                      ...(offer.grading.feedback?.persona ?? []),
+                    ]
+                      .slice(0, 10)
+                      .map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
                   </ul>
                 ) : null}
               </div>
@@ -463,6 +759,85 @@ export default function EditOfferPage() {
           {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Save changes
         </Button>
+
+        <Dialog open={aiFillOpen} onOpenChange={setAiFillOpen}>
+          <DialogContent className="w-[min(100%,calc(100vw-2rem))] max-w-lg max-h-[min(92dvh,calc(100dvh-1rem))] overflow-y-auto top-4 translate-x-[-50%] translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary shrink-0" aria-hidden />
+                AI fill offer
+              </DialogTitle>
+              <DialogDescription>
+                Describe the offer, audience, pricing, and what they get. The model fills this page&apos;s fields.
+                Persona targeting (IQ) is never changed. Empty hero/banner image URLs keep your current URLs.
+                Requires <code className="text-xs bg-muted px-1 rounded">OPENAI_API_KEY</code>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="offer-ai-prompt">Prompt</Label>
+                <Textarea
+                  id="offer-ai-prompt"
+                  rows={6}
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder='e.g. "Premium website redesign for local home services, $8k–$15k, 4-week timeline, includes discovery, Figma, Webflow build, 30-day support…"'
+                  className="resize-y min-h-[140px] text-sm"
+                />
+              </div>
+              <div className="flex items-start gap-3 rounded-lg border border-border/80 bg-muted/30 p-3">
+                <Checkbox
+                  id="offer-ai-context"
+                  checked={aiIncludeCurrent}
+                  onCheckedChange={(v) => setAiIncludeCurrent(v === true)}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="offer-ai-context" className="text-sm font-medium leading-snug cursor-pointer">
+                    Include current form as context
+                  </Label>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    When checked, the model sees your existing copy and can refine it. Uncheck for a fresh draft from the prompt only.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setAiFillOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                disabled={!aiPrompt.trim() || aiFillMutation.isPending}
+                onClick={() =>
+                  aiFillMutation.mutate({ prompt: aiPrompt.trim(), includeCurrent: aiIncludeCurrent })
+                }
+              >
+                {aiFillMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" aria-hidden />
+                    Generate &amp; apply
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <QuickCreatePersonaModal
+          open={quickPersonaOpen}
+          onOpenChange={setQuickPersonaOpen}
+          onCreated={(p) => {
+            setSections((s) => {
+              const cur = s.iqTargeting?.personaIds ?? [];
+              if (cur.includes(p.id)) return s;
+              return { ...s, iqTargeting: patchIqTargeting(s, { personaIds: [...cur, p.id] }) };
+            });
+          }}
+        />
       </div>
     </div>
   );

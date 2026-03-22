@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
-import { listDocuments, createDocument } from "@server/services/internalStudio/cmsService";
+import { listDocuments, countDocuments, createDocument } from "@server/services/internalStudio/cmsService";
 import { INTERNAL_CMS_CONTENT_TYPES } from "@/lib/content-studio/constants";
 
 export const dynamic = "force-dynamic";
@@ -32,17 +32,32 @@ export async function GET(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const { searchParams } = new URL(req.url);
-    const docs = await listDocuments({
+    const limitRaw = parseInt(searchParams.get("limit") ?? "60", 10);
+    const limit = Math.min(Math.max(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : 60, 1), 100);
+    const offsetRaw = parseInt(searchParams.get("offset") ?? "0", 10);
+    const offset = Math.max(Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0, 0);
+
+    const filters = {
       projectKey: searchParams.get("projectKey") ?? undefined,
       contentType: searchParams.get("contentType") ?? undefined,
       workflowStatus: searchParams.get("workflowStatus") ?? undefined,
       campaignId: searchParams.get("campaignId")
         ? parseInt(searchParams.get("campaignId")!, 10)
         : undefined,
-      search: searchParams.get("search") ?? undefined,
-      limit: parseInt(searchParams.get("limit") ?? "60", 10) || 60,
+      search: searchParams.get("search")?.trim() || undefined,
+    };
+
+    const [documents, total] = await Promise.all([
+      listDocuments({ ...filters, limit, offset }),
+      countDocuments(filters),
+    ]);
+
+    return NextResponse.json({
+      documents,
+      total,
+      limit,
+      offset,
     });
-    return NextResponse.json({ documents: docs });
   } catch (e: unknown) {
     console.error(e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

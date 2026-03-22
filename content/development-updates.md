@@ -8,6 +8,15 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-22 15:30 — Admin: CRM quick actions, offer AI fill, IQ persona quick create
+
+- **CRM (`/admin/crm`):** Per-lead **quick actions** menu on list and pipeline cards (`CrmContactQuickActions`) — mailto, SMS, tel, copy email/phone, timeline **note**, **follow-up task**, **intent** submenu, open profile, Discovery workspaces. Helpers in `app/lib/crmContactOutreach.ts`.
+- **Offer editor:** **AI fill** dialog drafts name, meta, hero, price, deliverables, bullets, CTA, banner from a prompt; optional **include current form** for rewrites. `POST /api/admin/offers/ai-generate` + `server/services/offerAiFillService.ts`. **Persona targeting (IQ) is never overwritten**; blank hero/banner URLs keep existing assets. Requires `OPENAI_API_KEY`.
+- **Offer editor — Persona targeting:** **Quick create** modal + link to full persona form (`QuickCreatePersonaModal`, `app/lib/personaFormUtils.ts` shared with `/admin/ascendra-intelligence/personas/new`).
+- **Marketing personas seed:** Additional high-ticket IQ personas in `shared/ascendraPersonaSeed.ts` with cited public data sources in strategic notes (no fabricated stats). Run `npm run db:seed` to upsert.
+
+---
+
 ## 2026-03-22 — Persona journey, revenue bridge, and funnel alignment
 
 - **Persona journey:** Public `/journey` with `?journey=` and localStorage; compact selector on home (`#persona-journey`). Copy and paths live in `shared/personaJourneys.ts`. Visitor tracking: `persona_journey_selected`, `persona_journey_viewed`, `persona_journey_lead_magnet_click` (plus `cta_click` with `personaId` on journey CTAs). Lead scoring weights added for those events in `server/services/leadScoringService.ts`.

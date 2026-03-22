@@ -120,6 +120,11 @@ export interface GradingTargetsStored {
   seo?: { metaTitleMin: number; metaTitleMax: number; metaDescMin: number; metaDescMax: number };
   design?: { heroTitleRequired: boolean; heroSubtitleRequired: boolean; heroImageRecommended: boolean; minDeliverables: number; deliverablesNeedDesc: boolean };
   copy?: { ctaButtonRequired: boolean; ctaHrefRequired: boolean; minBullets: number; heroSubtitleMinChars: number };
+  personaContext?: {
+    minPersonaTokenOverlapRatio: number;
+    tenureBandsConsidered: string[];
+    visionLevelsConsidered: string[];
+  };
 }
 
 /** Measured values from content (your content vs targets). */
@@ -127,16 +132,27 @@ export interface GradingMeasuredStored {
   seo?: { metaTitleLength: number; metaDescLength: number };
   design?: { hasHeroTitle: boolean; hasHeroSubtitle: boolean; hasHeroImage: boolean; deliverableCount: number; deliverableWithDescCount: number };
   copy?: { hasCtaButton: boolean; hasCtaHref: boolean; bulletCount: number; heroSubtitleLength: number };
+  personaContext?: {
+    personaTokenHits: number;
+    personaTokenUniverse: number;
+    overlapRatio: number;
+    proofLanguageHits: number;
+    audienceTenureBand?: string;
+    audienceVisionInvestment?: string;
+    personaCount: number;
+  };
 }
 
-/** Content grading result for an offer (SEO, design readiness, copy clarity). */
+/** Content grading result for an offer (SEO, design readiness, copy clarity, optional persona/audience context). */
 export interface OfferContentGrading {
   seoScore: number;       // 0-100
   designScore: number;    // 0-100
   copyScore: number;      // 0-100
+  /** IQ persona + tenure/vision-conditioned fit (when targeting was configured). */
+  personaContextScore?: number;
   overallGrade: string;   // A | B | C | D | F
   gradedAt: string;       // ISO date
-  feedback?: { seo?: string[]; design?: string[]; copy?: string[] };
+  feedback?: { seo?: string[]; design?: string[]; copy?: string[]; persona?: string[] };
   /** Target criteria (for diagnostics/audits). */
   targets?: GradingTargetsStored;
   /** Measured values (confirms accuracy of grading). */

@@ -2,13 +2,15 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Sparkles, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import { LEAD_MAGNET_TYPE_LABELS, type LeadMagnetType } from "@shared/schema";
 
 interface Magnet {
@@ -23,6 +25,7 @@ interface Magnet {
 export default function AscendraLeadMagnetsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [listSearch, setListSearch] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -48,6 +51,19 @@ export default function AscendraLeadMagnetsPage() {
   }
 
   const magnets = data?.magnets ?? [];
+  const filteredMagnets = useMemo(
+    () =>
+      magnets.filter((m) =>
+        matchesLiveSearch(listSearch, [
+          m.title,
+          m.magnetType,
+          m.status,
+          LEAD_MAGNET_TYPE_LABELS[m.magnetType as LeadMagnetType] ?? "",
+          ...(m.personaIds ?? []),
+        ]),
+      ),
+    [magnets, listSearch],
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -75,6 +91,20 @@ export default function AscendraLeadMagnetsPage() {
           Reveal problems, samples/trials, one-step systems. Link a funnel asset ID when ready.
         </p>
 
+        {!isLoading && magnets.length > 0 && (
+          <div className="relative max-w-md mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Filter lead magnets as you type…"
+              className="pl-9"
+              aria-label="Filter lead magnets"
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -85,15 +115,20 @@ export default function AscendraLeadMagnetsPage() {
               No lead magnets yet. Create one to track copy and persona targeting beside funnel files.
             </CardContent>
           </Card>
+        ) : filteredMagnets.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No lead magnets match your filter.
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-2">
-            {magnets.map((m) => (
+            {filteredMagnets.map((m) => (
               <Link key={m.id} href={`/admin/ascendra-intelligence/lead-magnets/${m.id}`}>
                 <Card className="hover:border-primary/40 transition-colors">
                   <CardHeader className="py-3">
                     <CardTitle className="text-base">{m.title}</CardTitle>
                     <CardDescription>
-                      {m.magnetType.replace(/_/g, " ")} · {m.status}
                       {LEAD_MAGNET_TYPE_LABELS[m.magnetType as LeadMagnetType] ?? m.magnetType.replace(/_/g, " ")} ·{" "}
                       {m.status}
                       {m.personaIds?.length ? ` · ${m.personaIds.join(", ")}` : ""}

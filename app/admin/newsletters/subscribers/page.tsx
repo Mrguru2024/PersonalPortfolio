@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Mail, Trash2, UserPlus, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Mail, Trash2, UserPlus, ArrowLeft, Search } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 interface Subscriber {
   id: number;
@@ -59,6 +60,7 @@ export default function SubscribersPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [listSearch, setListSearch] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -188,8 +190,28 @@ export default function SubscribersPage() {
     return null;
   }
 
-  const activeSubscribers = subscribers.filter((s) => s.subscribed);
-  const unsubscribed = subscribers.filter((s) => !s.subscribed);
+  const activeSubscribers = useMemo(
+    () => subscribers.filter((s) => s.subscribed),
+    [subscribers],
+  );
+  const unsubscribed = useMemo(
+    () => subscribers.filter((s) => !s.subscribed),
+    [subscribers],
+  );
+  const filteredActive = useMemo(
+    () =>
+      activeSubscribers.filter((s) =>
+        matchesLiveSearch(listSearch, [s.email, s.name, s.source, ...(s.tags ?? [])]),
+      ),
+    [activeSubscribers, listSearch],
+  );
+  const filteredUnsubscribed = useMemo(
+    () =>
+      unsubscribed.filter((s) =>
+        matchesLiveSearch(listSearch, [s.email, s.name, s.source, ...(s.tags ?? [])]),
+      ),
+    [unsubscribed, listSearch],
+  );
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -272,11 +294,24 @@ export default function SubscribersPage() {
         </div>
       </div>
 
+      <div className="relative max-w-md mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          value={listSearch}
+          onChange={(e) => setListSearch(e.target.value)}
+          placeholder="Filter by email, name, or source as you type…"
+          className="pl-9"
+          aria-label="Filter subscribers"
+        />
+      </div>
+
       <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>
-              Active Subscribers ({activeSubscribers.length})
+              Active Subscribers ({filteredActive.length}
+              {listSearch.trim() ? ` of ${activeSubscribers.length}` : ""})
             </CardTitle>
             <CardDescription>
               Subscribers who will receive newsletters
@@ -287,9 +322,13 @@ export default function SubscribersPage() {
               <p className="text-muted-foreground text-center py-8">
                 No active subscribers
               </p>
+            ) : filteredActive.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No active subscribers match your search.
+              </p>
             ) : (
               <div className="space-y-2">
-                {activeSubscribers.map((subscriber) => (
+                {filteredActive.map((subscriber) => (
                   <div
                     key={subscriber.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
@@ -335,14 +374,22 @@ export default function SubscribersPage() {
         {unsubscribed.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Unsubscribed ({unsubscribed.length})</CardTitle>
+              <CardTitle>
+                Unsubscribed ({filteredUnsubscribed.length}
+                {listSearch.trim() ? ` of ${unsubscribed.length}` : ""})
+              </CardTitle>
               <CardDescription>
                 Subscribers who have unsubscribed
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {listSearch.trim() && filteredUnsubscribed.length === 0 ? (
+                <p className="text-muted-foreground text-center py-6 text-sm">
+                  No unsubscribed contacts match your search.
+                </p>
+              ) : (
               <div className="space-y-2">
-                {unsubscribed.map((subscriber) => (
+                {(listSearch.trim() ? filteredUnsubscribed : unsubscribed).map((subscriber) => (
                   <div
                     key={subscriber.id}
                     className="flex items-center justify-between p-3 border rounded-lg opacity-60"
@@ -370,6 +417,7 @@ export default function SubscribersPage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         )}

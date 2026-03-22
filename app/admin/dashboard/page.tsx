@@ -641,7 +641,7 @@ export default function AdminDashboardPage() {
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/site-directory">
             <Map className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Site directory</span>
+            <span className="truncate">Pages directory</span>
           </Link>
         </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>

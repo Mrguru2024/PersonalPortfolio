@@ -2,12 +2,14 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Loader2, User, ExternalLink } from "lucide-react";
+import { ArrowLeft, Loader2, User, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
@@ -30,6 +32,7 @@ interface ChallengeLead {
 export default function AdminChallengeLeadsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [listSearch, setListSearch] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -55,6 +58,20 @@ export default function AdminChallengeLeadsPage() {
   }
 
   const leads = data?.leads ?? [];
+  const filteredLeads = useMemo(
+    () =>
+      leads.filter((lead) =>
+        matchesLiveSearch(listSearch, [
+          lead.fullName,
+          lead.email,
+          lead.businessName,
+          lead.status,
+          lead.recommendedBrandPath,
+          lead.diagnosisScore != null ? String(lead.diagnosisScore) : "",
+        ]),
+      ),
+    [leads, listSearch],
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -67,6 +84,20 @@ export default function AdminChallengeLeadsPage() {
         <h1 className="text-3xl font-bold mb-2">Challenge leads</h1>
         <p className="text-muted-foreground mb-6">Paid challenge registrations. View in CRM for full lead context.</p>
 
+        {!isLoading && leads.length > 0 && (
+          <div className="relative max-w-md mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Filter leads as you type…"
+              className="pl-9"
+              aria-label="Filter challenge leads"
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
         ) : leads.length === 0 ? (
@@ -75,9 +106,15 @@ export default function AdminChallengeLeadsPage() {
               No challenge registrations yet.
             </CardContent>
           </Card>
+        ) : filteredLeads.length === 0 && leads.length > 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No leads match your search.
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {leads.map((lead) => (
+            {filteredLeads.map((lead) => (
               <Card key={lead.id} className="overflow-hidden">
                 <CardContent className="py-4 px-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">

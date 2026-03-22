@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import { gradeOfferContent } from "@/lib/contentGrading";
+import { gradeOfferContent, type PersonaGradingContext } from "@/lib/contentGrading";
 import type { OfferContentGrading } from "@shared/schema";
+import { parseOfferIqTargeting } from "@/lib/offerSections";
+import { getMarketingPersona } from "@server/services/ascendraIntelligenceService";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,33 @@ export async function POST(
     if (!offer) return NextResponse.json({ error: "Offer not found" }, { status: 404 });
 
     const sections = (offer.sections ?? {}) as Record<string, unknown>;
+    const iq = parseOfferIqTargeting(sections.iqTargeting);
+
+    let personaContext: PersonaGradingContext | undefined;
+    if (
+      iq &&
+      (iq.personaIds.length > 0 || iq.audienceTenureBand || iq.audienceVisionInvestment)
+    ) {
+      const personas: PersonaGradingContext["personas"] = [];
+      for (const id of iq.personaIds) {
+        const p = await getMarketingPersona(id);
+        if (p) {
+          personas.push({
+            displayName: p.displayName,
+            problems: p.problems,
+            goals: p.goals,
+            objections: p.objections,
+            summary: p.summary,
+          });
+        }
+      }
+      personaContext = {
+        personas,
+        audienceTenureBand: iq.audienceTenureBand,
+        audienceVisionInvestment: iq.audienceVisionInvestment,
+      };
+    }
+
     const result = gradeOfferContent({
       metaTitle: offer.metaTitle,
       metaDescription: offer.metaDescription,
@@ -31,12 +60,16 @@ export async function POST(
         cta: sections.cta as { buttonText?: string; buttonHref?: string; footnote?: string },
         deliverables: sections.deliverables as { title?: string; desc?: string }[],
       },
+      ...(personaContext ? { personaContext } : {}),
     });
 
     const grading: OfferContentGrading = {
       seoScore: result.seoScore,
       designScore: result.designScore,
       copyScore: result.copyScore,
+      ...(result.personaContextScore !== undefined
+        ? { personaContextScore: result.personaContextScore }
+        : {}),
       overallGrade: result.overallGrade,
       gradedAt: new Date().toISOString(),
       feedback: result.feedback,

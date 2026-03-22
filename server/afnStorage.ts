@@ -92,6 +92,25 @@ export async function getAfnProfilesForDirectory(options: { currentUserId?: numb
   return filtered.slice(0, limit);
 }
 
+/** Update only profile photo URL (does not touch other columns). */
+export async function setAfnProfileAvatarUrl(userId: number, avatarUrl: string | null) {
+  const now = new Date();
+  const existing = await getAfnProfileByUserId(userId);
+  if (existing) {
+    const [updated] = await db
+      .update(afnProfiles)
+      .set({ avatarUrl, updatedAt: now })
+      .where(eq(afnProfiles.userId, userId))
+      .returning();
+    return updated ?? null;
+  }
+  const [inserted] = await db
+    .insert(afnProfiles)
+    .values({ userId, avatarUrl, createdAt: now, updatedAt: now })
+    .returning();
+  return inserted ?? null;
+}
+
 export async function upsertAfnProfile(profile: InsertAfnProfile & { userId: number }) {
   const now = new Date();
   const existing = await getAfnProfileByUserId(profile.userId);

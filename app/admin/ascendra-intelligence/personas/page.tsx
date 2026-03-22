@@ -2,13 +2,15 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Loader2, ChevronRight, Package, Plus, Users } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronRight, Package, Plus, Users, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 interface Persona {
   id: string;
@@ -20,6 +22,7 @@ interface Persona {
 export default function AscendraPersonasListPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [listSearch, setListSearch] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -36,6 +39,15 @@ export default function AscendraPersonasListPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
+  const personas = data?.personas ?? [];
+  const filteredPersonas = useMemo(
+    () =>
+      personas.filter((p) =>
+        matchesLiveSearch(listSearch, [p.displayName, p.summary, p.revenueBand, p.id]),
+      ),
+    [personas, listSearch],
+  );
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,8 +55,6 @@ export default function AscendraPersonasListPage() {
       </div>
     );
   }
-
-  const personas = data?.personas ?? [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -84,6 +94,20 @@ export default function AscendraPersonasListPage() {
           .
         </p>
 
+        {!isLoading && personas.length > 0 && (
+          <div className="relative max-w-md mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              value={listSearch}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setListSearch(e.target.value)}
+              placeholder="Filter personas as you type…"
+              className="pl-9"
+              aria-label="Filter personas"
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -95,9 +119,15 @@ export default function AscendraPersonasListPage() {
               <code className="text-xs bg-muted px-1 rounded">npm run db:seed</code>.
             </CardContent>
           </Card>
+        ) : filteredPersonas.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No personas match your filter.
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {personas.map((p) => (
+            {filteredPersonas.map((p) => (
               <Link key={p.id} href={`/admin/ascendra-intelligence/personas/${p.id}`}>
                 <Card className="hover:border-primary/40 transition-colors cursor-pointer">
                   <CardHeader className="py-4">

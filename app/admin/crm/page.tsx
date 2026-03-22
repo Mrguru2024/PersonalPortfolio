@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
 import {
@@ -59,6 +60,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CrmContactQuickActions } from "@/components/admin/CrmContactQuickActions";
 
 interface CrmContact {
   id: number;
@@ -396,15 +398,21 @@ export default function CrmPage() {
     deals: deals.filter((d) => d.stage === stage),
   }));
 
-  const filteredContacts = (() => {
+  const filteredContacts = useMemo(() => {
     let list = [...contacts];
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          (c.company ?? "").toLowerCase().includes(q)
+    if (searchQuery.trim()) {
+      list = list.filter((c) =>
+        matchesLiveSearch(searchQuery, [
+          c.name,
+          c.email,
+          c.company,
+          c.phone,
+          c.jobTitle,
+          c.industry,
+          c.source,
+          c.status,
+          ...(c.tags ?? []),
+        ]),
       );
     }
     if (statusFilter) list = list.filter((c) => (c.status ?? "new") === statusFilter);
@@ -419,7 +427,7 @@ export default function CrmPage() {
     else if (sortBy === "status")
       list.sort((a, b) => (a.status ?? "").localeCompare(b.status ?? ""));
     return list;
-  })();
+  }, [contacts, searchQuery, statusFilter, intentFilter, sortBy]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -626,10 +634,12 @@ export default function CrmPage() {
               <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search name, email, company..."
+                  type="search"
+                  placeholder="Filter contacts as you type (name, email, tags…)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 rounded-xl border-muted-foreground/20 focus-visible:ring-2"
+                  aria-label="Filter contacts"
                 />
               </div>
               <Select value={typeFilter || "all"} onValueChange={(v) => setTypeFilter(v === "all" ? "" : (v as "lead" | "client"))}>
@@ -801,24 +811,27 @@ export default function CrmPage() {
                               )}
                             </div>
                           )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-7 w-full mt-2 text-xs justify-between rounded-lg">
-                                {(c.status ?? "new")} <ChevronDown className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              {CONTACT_STATUSES.map((s) => (
-                                <DropdownMenuItem
-                                  key={s}
-                                  onClick={() => quickStatusMutation.mutate({ id: c.id, status: s })}
-                                  disabled={quickStatusMutation.isPending}
-                                >
-                                  {s}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-2 items-stretch mt-2">
+                            <CrmContactQuickActions contact={c} />
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-9 flex-1 min-w-0 text-xs justify-between rounded-lg">
+                                  {(c.status ?? "new")} <ChevronDown className="h-3 w-3 shrink-0" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {CONTACT_STATUSES.map((s) => (
+                                  <DropdownMenuItem
+                                    key={s}
+                                    onClick={() => quickStatusMutation.mutate({ id: c.id, status: s })}
+                                    disabled={quickStatusMutation.isPending}
+                                  >
+                                    {s}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       ))}
                     </CardContent>
@@ -893,7 +906,8 @@ export default function CrmPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex flex-wrap gap-2 shrink-0 items-center">
+                      <CrmContactQuickActions contact={c} />
                       <Button variant="outline" size="sm" className="rounded-lg" asChild>
                         <Link href={`/admin/crm/${c.id}`}>View</Link>
                       </Button>

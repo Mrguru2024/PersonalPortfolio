@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import {
   UserPlus,
   CheckCircle2,
   AlertCircle,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,6 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import type { LeadIntakeKind } from "@shared/leadIntakeTypes";
+import { Input } from "@/components/ui/input";
+import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 
 interface IntakeItem {
   kind: LeadIntakeKind;
@@ -65,6 +68,7 @@ function AdminLeadIntakePage() {
   }, [activeTab]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [listSearch, setListSearch] = useState("");
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -80,6 +84,21 @@ function AdminLeadIntakePage() {
 
   const items = data?.items ?? [];
   const aiConfigured = data?.aiConfigured ?? false;
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((i) =>
+        matchesLiveSearch(listSearch, [
+          i.email,
+          i.name,
+          i.company,
+          i.summary,
+          i.scoreLabel,
+          KIND_LABEL[i.kind],
+        ]),
+      ),
+    [items, listSearch],
+  );
 
   const toggle = useCallback((k: LeadIntakeKind, id: number) => {
     const key = itemKey(k, id);
@@ -236,6 +255,18 @@ function AdminLeadIntakePage() {
         </CardContent>
       </Card>
 
+      <div className="relative max-w-md mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          value={listSearch}
+          onChange={(e) => setListSearch(e.target.value)}
+          placeholder="Filter submissions as you type (email, name, summary…)"
+          className="pl-9"
+          aria-label="Filter lead intake"
+        />
+      </div>
+
       <Tabs
         value={tab}
         onValueChange={(v) => {
@@ -253,14 +284,18 @@ function AdminLeadIntakePage() {
 
         {(["all", "growth_diagnosis", "funnel_lead", "assessment"] as const).map((tabValue) => {
           const rows =
-            tabValue === "all" ? items : items.filter((i) => i.kind === tabValue);
+            tabValue === "all" ? filteredItems : filteredItems.filter((i) => i.kind === tabValue);
           return (
             <TabsContent key={tabValue} value={tabValue} className="mt-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Submissions</CardTitle>
                   <CardDescription>
-                    {rows.length} row{rows.length === 1 ? "" : "s"} in this tab. Full assessment tooling remains on the{" "}
+                    {rows.length} row{rows.length === 1 ? "" : "s"} in this tab
+                    {listSearch.trim() && items.length !== filteredItems.length
+                      ? ` (filtered from ${tabValue === "all" ? items.length : items.filter((i) => i.kind === tabValue).length} total)`
+                      : ""}
+                    . Full assessment tooling remains on the{" "}
                     <Link href="/admin/dashboard" className="text-primary underline underline-offset-2">
                       dashboard
                     </Link>
