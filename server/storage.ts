@@ -31,6 +31,12 @@ import { users, type User, type InsertUser,
   adminAgentKnowledgeEntries,
   type AdminAgentKnowledgeEntryRow,
   type InsertAdminAgentKnowledgeEntryRow,
+  offerValuationSettings,
+  type OfferValuationSettings,
+  type InsertOfferValuationSettings,
+  offerValuations,
+  type OfferValuation,
+  type InsertOfferValuation,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -141,6 +147,22 @@ export interface IStorage {
   getChallengeLessonProgress(registrationId: number): Promise<{ day: number; completedAt: Date | null }[]>;
   setChallengeLessonCompleted(registrationId: number, day: number): Promise<void>;
   listChallengeRegistrations(): Promise<ChallengeRegistration[]>;
+  getOfferValuationSettings(): Promise<OfferValuationSettings>;
+  upsertOfferValuationSettings(
+    updates: Partial<Omit<InsertOfferValuationSettings, "id" | "updatedAt">>,
+  ): Promise<OfferValuationSettings>;
+  createOfferValuation(data: InsertOfferValuation): Promise<OfferValuation>;
+  listOfferValuations(filters?: {
+    userId?: number;
+    leadId?: number;
+    limit?: number;
+  }): Promise<OfferValuation[]>;
+  getOfferValuationById(id: number): Promise<OfferValuation | undefined>;
+  updateOfferValuation(
+    id: number,
+    updates: Partial<InsertOfferValuation>,
+  ): Promise<OfferValuation>;
+  deleteOfferValuation(id: number): Promise<void>;
 
   // Project operations
   getProjects(): Promise<Project[]>;
@@ -921,6 +943,108 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(challengeRegistrations)
       .orderBy(desc(challengeRegistrations.createdAt));
+  }
+
+  async getOfferValuationSettings(): Promise<OfferValuationSettings> {
+    const [row] = await db
+      .select()
+      .from(offerValuationSettings)
+      .where(eq(offerValuationSettings.id, 1))
+      .limit(1);
+    if (row) return row;
+    const [inserted] = await db
+      .insert(offerValuationSettings)
+      .values({ id: 1 })
+      .returning();
+    return inserted!;
+  }
+
+  async upsertOfferValuationSettings(
+    updates: Partial<Omit<InsertOfferValuationSettings, "id" | "updatedAt">>,
+  ): Promise<OfferValuationSettings> {
+    const current = await this.getOfferValuationSettings();
+    const nextValues = {
+      accessMode: updates.accessMode ?? current.accessMode,
+      clientAccessEnabled:
+        updates.clientAccessEnabled ?? current.clientAccessEnabled,
+      publicAccessEnabled:
+        updates.publicAccessEnabled ?? current.publicAccessEnabled,
+      paidModeEnabled: updates.paidModeEnabled ?? current.paidModeEnabled,
+      aiDefaultEnabled: updates.aiDefaultEnabled ?? current.aiDefaultEnabled,
+      requireLeadCapture:
+        updates.requireLeadCapture ?? current.requireLeadCapture,
+      updatedAt: new Date(),
+    };
+    const [updated] = await db
+      .update(offerValuationSettings)
+      .set(nextValues)
+      .where(eq(offerValuationSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
+  async createOfferValuation(data: InsertOfferValuation): Promise<OfferValuation> {
+    const now = new Date();
+    const [row] = await db
+      .insert(offerValuations)
+      .values({ ...data, createdAt: now, updatedAt: now })
+      .returning();
+    if (!row) throw new Error("Failed to create offer valuation");
+    return row;
+  }
+
+  async listOfferValuations(filters?: {
+    userId?: number;
+    leadId?: number;
+    limit?: number;
+  }): Promise<OfferValuation[]> {
+    const clauses: ReturnType<typeof eq>[] = [];
+    if (filters?.userId != null) {
+      clauses.push(eq(offerValuations.userId, filters.userId));
+    }
+    if (filters?.leadId != null) {
+      clauses.push(eq(offerValuations.leadId, filters.leadId));
+    }
+    const baseQuery = clauses.length
+      ? db
+          .select()
+          .from(offerValuations)
+          .where(and(...clauses))
+          .orderBy(desc(offerValuations.createdAt))
+      : db
+          .select()
+          .from(offerValuations)
+          .orderBy(desc(offerValuations.createdAt));
+    if (filters?.limit != null) {
+      return baseQuery.limit(Math.max(1, Math.min(filters.limit, 200)));
+    }
+    return baseQuery;
+  }
+
+  async getOfferValuationById(id: number): Promise<OfferValuation | undefined> {
+    const [row] = await db
+      .select()
+      .from(offerValuations)
+      .where(eq(offerValuations.id, id))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async updateOfferValuation(
+    id: number,
+    updates: Partial<InsertOfferValuation>,
+  ): Promise<OfferValuation> {
+    const [row] = await db
+      .update(offerValuations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(offerValuations.id, id))
+      .returning();
+    if (!row) throw new Error(`Offer valuation not found: ${id}`);
+    return row;
+  }
+
+  async deleteOfferValuation(id: number): Promise<void> {
+    await db.delete(offerValuations).where(eq(offerValuations.id, id));
   }
 
   // Project operations

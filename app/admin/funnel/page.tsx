@@ -52,6 +52,14 @@ const FUNNEL_ITEMS = [
     icon: Gauge,
   },
   {
+    id: "offer-audit",
+    title: "Offer valuation engine",
+    description: "Lead magnet offer audit with CRM capture and strategic output.",
+    publicPath: "/offer-audit",
+    editPath: null,
+    icon: Gauge,
+  },
+  {
     id: "action-plan",
     title: "Startup action plan",
     description: "Five steps: clarify offer, structure homepage, capture leads, trust, conversions.",

@@ -32,6 +32,7 @@ export const DIGITAL_GROWTH_AUDIT_PATH = "/digital-growth-audit";
 /** PPC / CRM / lead conversion / ads consultation lead magnet. */
 export const PPC_LEAD_MAGNET_PATH = "/ppc-lead-system";
 export const REVENUE_CALCULATOR_PATH = "/website-revenue-calculator";
+export const OFFER_AUDIT_PATH = "/offer-audit";
 export const WEBSITE_SCORE_PATH = "/website-performance-score";
 export const BOOK_CALL_HREF = "/strategy-call";
 

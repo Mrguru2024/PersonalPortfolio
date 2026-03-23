@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart } from "lucide-react";
+import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart, Target } from "lucide-react";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   DIGITAL_GROWTH_AUDIT_PATH,
   PPC_LEAD_MAGNET_PATH,
+  OFFER_AUDIT_PATH,
 } from "@/lib/funnelCtas";
 
 export interface FreeGrowthToolMagnet {
@@ -49,6 +50,16 @@ export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
     cta: "Request consultation",
     href: PPC_LEAD_MAGNET_PATH,
     icon: LineChart,
+  },
+  {
+    id: "offer-audit",
+    title: "Offer valuation engine",
+    who: "Teams and founders whose offer messaging is not converting consistently.",
+    problem: "You are unsure whether outcome, certainty, speed, or effort friction is hurting conversion.",
+    get: "A 100M value-equation score with diagnosis, strategic fixes, upgraded offer direction, and monetization insight.",
+    cta: "Run offer audit",
+    href: OFFER_AUDIT_PATH,
+    icon: Target,
   },
   {
     id: "revenue-calculator",

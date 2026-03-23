@@ -31,6 +31,32 @@ export const WORKFLOW_FORM_COMPLETED: WorkflowDefinition = {
   ],
 };
 
+export const WORKFLOW_CALCULATOR_COMPLETED: WorkflowDefinition = {
+  key: "calculator_completed",
+  name: "Calculator completed",
+  trigger: "calculator_completed",
+  conditions: [alwaysTrue()],
+  actions: [
+    { type: "update_tags", params: { add: ["offer_valuation"] } },
+    {
+      type: "create_task",
+      params: {
+        title: "Follow up on offer valuation lead",
+        dueDays: 1,
+        priority: "high",
+      },
+    },
+    {
+      type: "create_internal_alert",
+      params: {
+        alertType: "high_engagement",
+        title: "New offer valuation lead",
+        message: "A lead completed the Offer Valuation Engine.",
+      },
+    },
+  ],
+};
+
 export const WORKFLOW_PROPOSAL_READY: WorkflowDefinition = {
   key: "proposal_ready",
   name: "Proposal ready",
@@ -119,6 +145,7 @@ export const WORKFLOW_RECOMMENDATION_ACCEPTED: WorkflowDefinition = {
 const ALL_WORKFLOWS: WorkflowDefinition[] = [
   WORKFLOW_NEW_QUALIFIED_LEAD,
   WORKFLOW_FORM_COMPLETED,
+  WORKFLOW_CALCULATOR_COMPLETED,
   WORKFLOW_PROPOSAL_READY,
   WORKFLOW_STALE_LEAD,
   WORKFLOW_MISSING_QUALIFICATION,

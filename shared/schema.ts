@@ -727,6 +727,49 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
 export type GrowthFunnelLead = typeof growthFunnelLeads.$inferSelect;
 export type InsertGrowthFunnelLead = typeof growthFunnelLeads.$inferInsert;
 
+/** Offer Valuation Engine access/config toggles (singleton row id=1). */
+export const offerValuationSettings = pgTable("offer_valuation_settings", {
+  id: integer("id").primaryKey().default(1),
+  /** internal_tool | client_tool | lead_magnet | paid_tool */
+  accessMode: text("access_mode").notNull().default("internal_tool"),
+  clientAccessEnabled: boolean("client_access_enabled").notNull().default(false),
+  publicAccessEnabled: boolean("public_access_enabled").notNull().default(false),
+  /** Future-ready monetization switch. */
+  paidModeEnabled: boolean("paid_mode_enabled").notNull().default(false),
+  aiDefaultEnabled: boolean("ai_default_enabled").notNull().default(false),
+  requireLeadCapture: boolean("require_lead_capture").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type OfferValuationSettings = typeof offerValuationSettings.$inferSelect;
+export type InsertOfferValuationSettings = typeof offerValuationSettings.$inferInsert;
+
+/** Offer Valuation Engine submissions and scored outputs. */
+export const offerValuations = pgTable("offer_valuations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  /** crm_contacts.id when this came from public lead capture flow. */
+  leadId: integer("lead_id"),
+  /** internal_tool | client_tool | lead_magnet | paid_tool */
+  accessMode: text("access_mode").notNull().default("internal_tool"),
+  persona: text("persona"),
+  offerName: text("offer_name").notNull(),
+  description: text("description").notNull(),
+  dreamOutcomeScore: integer("dream_outcome_score").notNull(),
+  likelihoodScore: integer("likelihood_score").notNull(),
+  timeDelayScore: integer("time_delay_score").notNull(),
+  effortScore: integer("effort_score").notNull(),
+  /** Normalized 0-10 score from 100M value equation. */
+  finalScore: real("final_score").notNull(),
+  aiEnabled: boolean("ai_enabled").notNull().default(false),
+  insights: json("insights").$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type OfferValuation = typeof offerValuations.$inferSelect;
+export type InsertOfferValuation = typeof offerValuations.$inferInsert;
+
 // Client Quotes schema (from assessments/proposals)
 export const clientQuotes = pgTable("client_quotes", {
   id: serial("id").primaryKey(),
