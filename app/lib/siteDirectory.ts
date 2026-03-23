@@ -137,7 +137,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/partners/style-studio-branding", title: "Partner: Style Studio", category: "Public · Partners", audience: "public", description: "Partner page.", keywords: k("partner", "style studio") },
 
   // —— Admin: core
-  { path: "/admin/dashboard", title: "Admin dashboard", category: "Admin · Core", audience: "admin", description: "Assessments, contacts, quick links, tours.", keywords: k("dashboard", "admin", "home") },
+  { path: "/admin/dashboard", title: "Ascendra Operations Dashboard", category: "Admin · Core", audience: "admin", description: "Unified operations control center for diagnostics, case studies, publishing, AI content tools, and lead activity.", keywords: k("dashboard", "admin", "operations", "diagnostics", "case study", "publishing", "crm", "ai") },
   { path: "/admin/settings", title: "Admin settings", category: "Admin · Core", audience: "admin", description: "Notifications, AI agent toggles, preferences.", keywords: k("settings", "preferences") },
   { path: "/admin/agent-knowledge", title: "Assistant knowledge base", category: "Admin · Core", audience: "admin", description: "Private notes and knowledge the AI assistant and optional flows may use when you enable each entry.", keywords: k("assistant", "knowledge", "notes", "agent", "ai") },
   { path: "/admin/operator-profile", title: "Operator profile", category: "Admin · Core", audience: "admin", description: "Operator positioning for AI/intelligence features.", keywords: k("operator", "profile") },

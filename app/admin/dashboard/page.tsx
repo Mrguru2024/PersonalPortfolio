@@ -44,6 +44,7 @@ import { AdminGuideTour } from "@/components/admin/AdminGuideTour";
 import { AdminDailyNudge, buildNudgeItems } from "@/components/admin/AdminDailyNudge";
 import { AdminOperatorIntelligenceCard } from "@/components/admin/AdminOperatorIntelligenceCard";
 import { AdminRemindersCard } from "@/components/admin/AdminRemindersCard";
+import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
 import {
   getTourCompleted,
   setTourCompleted,
@@ -515,14 +516,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
-          Admin Dashboard
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Manage assessments, quotes, and responses
-        </p>
-      </div>
+      <AscendraOperationsDashboard />
 
       {/* New admin: offer guided tour */}
       {showTourBanner && !tourActive && (
