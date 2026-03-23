@@ -649,6 +649,12 @@ export default function AdminDashboardPage() {
           </Link>
         </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/operations">
+            <Radar className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Operations dashboard</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/invoices">
             <Receipt className="h-4 w-4 mr-2 shrink-0" />
             <span className="truncate">Invoices</span>
