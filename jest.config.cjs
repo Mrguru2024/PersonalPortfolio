@@ -16,6 +16,7 @@ const config = {
     '^@/(.*)$': '<rootDir>/app/$1',
     '^@server/(.*)$': '<rootDir>/server/$1',
     '^@shared/(.*)$': '<rootDir>/shared/$1',
+    '^@modules/(.*)$': '<rootDir>/modules/$1',
   },
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
   collectCoverageFrom: [

@@ -886,3 +886,4 @@ export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
+export * from "./offerValuationSchema";

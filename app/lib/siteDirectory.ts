@@ -120,6 +120,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/auth/forgot-password", title: "Forgot password", category: "Public · Auth", audience: "public", description: "Password reset request.", keywords: k("password", "reset") },
   { path: "/auth/reset-password", title: "Reset password", category: "Public · Auth", audience: "public", description: "Password reset form.", keywords: k("password") },
   { path: "/dashboard", title: "Client dashboard", category: "Public · Client portal", audience: "client", description: "Signed-in customer dashboard.", keywords: k("dashboard", "client") },
+  { path: "/dashboard/offer-valuation", title: "Client offer valuation", category: "Public · Client portal", audience: "client", description: "Client-facing offer valuation workspace (admin-controlled visibility).", keywords: k("offer valuation", "value equation", "offer score"), relatedPaths: ["/admin/offer-valuation"] },
   { path: "/dashboard/proposals/[id]", title: "Proposal detail", category: "Public · Client portal", audience: "client", description: "View proposal in portal.", keywords: k("proposal", "client") },
   { path: "/projects/[id]", title: "Project detail", category: "Public · Client portal", audience: "client", description: "Client project view.", keywords: k("project") },
 
@@ -200,6 +201,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/ascendra-intelligence/preview", title: "IQ preview", category: "Admin · Marketing IQ", audience: "admin", description: "Preview composed offers/personas.", keywords: k("preview") },
   { path: "/admin/offers", title: "Site offers list", category: "Admin · Marketing IQ", audience: "admin", description: "Editable site offer pages (e.g. startup growth system).", keywords: k("offers", "site offers", "pricing page") },
   { path: "/admin/offers/[slug]/edit", title: "Edit site offer", category: "Admin · Marketing IQ", audience: "admin", description: "CMS for offer sections + grading.", keywords: k("offer", "edit", "grade") },
+  { path: "/admin/offer-valuation", title: "Offer valuation engine", category: "Admin · Marketing IQ", audience: "admin", description: "Admin scoring and strategy engine for offer value diagnostics.", keywords: k("offer valuation", "score", "diagnosis", "value equation"), relatedPaths: ["/dashboard/offer-valuation"] },
   { path: "/admin/funnel", title: "Funnel admin hub", category: "Admin · Funnel", audience: "admin", description: "Links to funnel assets + offer.", keywords: k("funnel", "startup") },
   { path: "/admin/funnel/growth-kit", title: "Funnel: growth kit notes", category: "Admin · Funnel", audience: "admin", description: "Admin notes for startup kit.", keywords: k("growth kit", "funnel") },
   { path: "/admin/funnel/website-score", title: "Funnel: website score", category: "Admin · Funnel", audience: "admin", description: "Admin copy for score tool.", keywords: k("website score", "funnel") },
