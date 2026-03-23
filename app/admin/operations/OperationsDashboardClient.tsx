@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ export function OperationsDashboardClient() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { track } = useVisitorTracking();
+  const [statusOverrides, setStatusOverrides] = useState<Record<number, "published" | "draft">>({});
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -82,13 +83,23 @@ export function OperationsDashboardClient() {
         }).catch(() => null);
       }
     },
+    onMutate: (variables) => {
+      setStatusOverrides((prev) => ({ ...prev, [variables.id]: variables.nextStatus }));
+      return variables;
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/operations-dashboard"] });
       toast({
         title: variables.nextStatus === "published" ? "Item published" : "Item unpublished",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables) => {
+      setStatusOverrides((prev) => {
+        const next = { ...prev };
+        delete next[variables.id];
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/operations-dashboard"] });
       toast({
         title: "Could not update publish status",
         description: error.message,
@@ -180,6 +191,23 @@ export function OperationsDashboardClient() {
   if (!user.isAdmin || !user.adminApproved) return null;
 
   const payload = dashboardQuery.data;
+  const followUpPendingContactId = createFollowUpMutation.isPending
+    ? createFollowUpMutation.variables?.contactId ?? null
+    : null;
+  const displayCaseStudies = useMemo(() => {
+    if (!payload) return [];
+    return payload.caseStudies.map((item) => ({
+      ...item,
+      workflowStatus: statusOverrides[item.id] ?? item.workflowStatus,
+    }));
+  }, [payload, statusOverrides]);
+  const displayPublishingQueue = useMemo(() => {
+    if (!payload) return [];
+    return payload.publishingQueue.map((item) => ({
+      ...item,
+      workflowStatus: statusOverrides[item.id] ?? item.workflowStatus,
+    }));
+  }, [payload, statusOverrides]);
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6">
@@ -228,6 +256,7 @@ export function OperationsDashboardClient() {
 
           <DiagnosticsTable
             diagnostics={payload.diagnostics}
+            followUpPendingContactId={followUpPendingContactId}
             onAction={(action: string, row: DiagnosticActivityRow) => {
               const event = action === "view_breakdown" ? "diagnostic_review_click" : action;
               trackAction(track, event, "diagnostics", { diagnosticId: row.id, kind: row.kind });
@@ -243,7 +272,7 @@ export function OperationsDashboardClient() {
           />
 
           <CaseStudyList
-            caseStudies={payload.caseStudies}
+            caseStudies={displayCaseStudies}
             onAction={(action: string, item: CaseStudyWorkflowItem) => {
               trackAction(track, action, "case_study_pipeline", { documentId: item.id });
             }}
@@ -259,7 +288,7 @@ export function OperationsDashboardClient() {
           />
 
           <PublishingPanel
-            items={payload.publishingQueue}
+            items={displayPublishingQueue}
             onAction={(action: string, item: PublishingQueueItem) => {
               const trackedAction =
                 action === "publish_item" || action === "unpublish_item" ? "publish_action" : action;
@@ -272,6 +301,7 @@ export function OperationsDashboardClient() {
 
           <LeadPanel
             leads={payload.leads}
+            followUpPendingContactId={followUpPendingContactId}
             onAction={(action: string, lead: LeadSnapshotItem) => {
               trackAction(track, action, "lead_snapshot", { contactId: lead.contactId });
             }}

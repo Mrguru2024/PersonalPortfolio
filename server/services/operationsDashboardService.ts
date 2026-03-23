@@ -1,7 +1,8 @@
 import { db } from "@server/db";
-import { storage } from "@server/storage";
 import { listLeadIntakeItems } from "@server/services/leadIntakeCrmService";
 import {
+  crmContacts,
+  crmDeals,
   growthDiagnosisReports,
   growthFunnelLeads,
   internalCmsDocuments,
@@ -411,17 +412,14 @@ export async function getOperationsDashboardPayload(): Promise<OperationsDashboa
   let leads: LeadSnapshotItem[] = [];
   let qualifiedLeads = 0;
   try {
-    const [crmStats, contacts, deals] = await Promise.all([
-      storage.getCrmDashboardStats(),
-      storage.getCrmContacts(),
-      storage.getCrmDeals(),
+    const [contacts, deals] = await Promise.all([
+      db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt)).limit(500),
+      db.select().from(crmDeals).orderBy(desc(crmDeals.updatedAt)).limit(500),
     ]);
 
-    const stageCounts = new Map(crmStats.leadsByPipelineStage.map((entry) => [entry.stage, entry.count]));
-    qualifiedLeads =
-      (stageCounts.get("qualified") ?? 0) +
-      (stageCounts.get("proposal_ready") ?? 0) +
-      (stageCounts.get("negotiation") ?? 0);
+    qualifiedLeads = deals.filter((deal) =>
+      ["qualified", "proposal_ready", "negotiation"].includes(deal.pipelineStage ?? ""),
+    ).length;
 
     const contactById = new Map(contacts.map((c) => [c.id, c]));
     const activeDeals = deals.filter((deal) =>

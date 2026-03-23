@@ -8,9 +8,10 @@ interface DiagnosticsTableProps {
   diagnostics: DiagnosticActivityRow[];
   onMarkFollowUp: (row: DiagnosticActivityRow) => void;
   onAction: (action: string, row: DiagnosticActivityRow) => void;
+  followUpPendingContactId?: number | null;
 }
 
-export function DiagnosticsTable({ diagnostics, onMarkFollowUp, onAction }: DiagnosticsTableProps) {
+export function DiagnosticsTable({ diagnostics, onMarkFollowUp, onAction, followUpPendingContactId }: DiagnosticsTableProps) {
   return (
     <section className="space-y-3">
       <Card>
@@ -57,13 +58,13 @@ export function DiagnosticsTable({ diagnostics, onMarkFollowUp, onAction }: Diag
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={!row.crmContactId}
+                            disabled={!row.crmContactId || followUpPendingContactId === row.crmContactId}
                             onClick={() => {
                               onAction("mark_follow_up", row);
                               onMarkFollowUp(row);
                             }}
                           >
-                            Mark for Follow-Up
+                            {followUpPendingContactId === row.crmContactId ? "Marking..." : "Mark for Follow-Up"}
                           </Button>
                           <Button
                             variant="outline"

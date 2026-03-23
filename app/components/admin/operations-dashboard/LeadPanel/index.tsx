@@ -8,9 +8,10 @@ interface LeadPanelProps {
   leads: LeadSnapshotItem[];
   onStartFollowUp: (lead: LeadSnapshotItem) => void;
   onAction: (action: string, lead: LeadSnapshotItem) => void;
+  followUpPendingContactId?: number | null;
 }
 
-export function LeadPanel({ leads, onStartFollowUp, onAction }: LeadPanelProps) {
+export function LeadPanel({ leads, onStartFollowUp, onAction, followUpPendingContactId }: LeadPanelProps) {
   return (
     <section className="space-y-3">
       <Card>
@@ -51,12 +52,13 @@ export function LeadPanel({ leads, onStartFollowUp, onAction }: LeadPanelProps) 
                     <Button
                       variant="secondary"
                       size="sm"
+                      disabled={followUpPendingContactId === lead.contactId}
                       onClick={() => {
                         onAction("start_follow_up", lead);
                         onStartFollowUp(lead);
                       }}
                     >
-                      Start Follow-Up
+                      {followUpPendingContactId === lead.contactId ? "Starting..." : "Start Follow-Up"}
                     </Button>
                   </div>
                 </div>
