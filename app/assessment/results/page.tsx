@@ -25,6 +25,7 @@ import { BudgetComparison } from "@/components/assessment/BudgetComparison";
 import { DragDropFeatureSelector } from "@/components/assessment/DragDropFeatureSelector";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { devError, devWarn } from "@/lib/devConsole";
 import {
   Dialog,
   DialogContent,
@@ -165,7 +166,7 @@ function AssessmentResultsContent() {
               localStorage.setItem(`assessment_${assessmentId}`, JSON.stringify(data.assessment));
             }
           } catch (e) {
-            console.warn("Failed to save to localStorage:", e);
+            devWarn("[assessment/results] localStorage save failed");
           }
         } else {
           if (res.status === 404) {
@@ -199,7 +200,7 @@ function AssessmentResultsContent() {
             }
           }
         } catch (storageError) {
-          console.warn("Failed to read from localStorage:", storageError);
+          devWarn("[assessment/results] localStorage read failed");
         }
       } finally {
         if (!ac.signal.aborted) setFetchDone(true);
@@ -211,6 +212,14 @@ function AssessmentResultsContent() {
   useEffect(() => {
     track("page_view", { pageVisited: "/assessment/results" });
   }, [track]);
+
+  useEffect(() => {
+    if (!assessment || typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("complete") === "1") return;
+    u.searchParams.set("complete", "1");
+    router.replace(`${u.pathname}${u.search}`, { scroll: false });
+  }, [assessment, router]);
 
   if (!fetchDone) {
     return (
@@ -620,8 +629,8 @@ function AssessmentResultsContent() {
                       }));
                     }
                   }
-                } catch (error) {
-                  console.error("Error updating features:", error);
+                } catch {
+                  devError("[assessment/results] feature update failed");
                 } finally {
                   setIsUpdating(false);
                 }

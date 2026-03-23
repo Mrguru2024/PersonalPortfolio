@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
+import { devError } from "@/lib/devConsole";
 
 /**
  * ClickTracker - Tracks clicks on links and interactive elements in blog posts
@@ -35,9 +36,8 @@ export function ClickTracker() {
             element: element.tagName.toLowerCase(),
           }),
         });
-      } catch (error) {
-        // Silently fail - don't interrupt user experience
-        console.debug("Click tracking error:", error);
+      } catch {
+        devError("[ClickTracker] analytics request failed");
       }
     };
 

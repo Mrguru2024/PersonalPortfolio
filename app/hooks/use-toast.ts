@@ -4,11 +4,15 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import {
+  localizeToastCall,
+  type LocalizedToastProps,
+} from "@/lib/i18n/localizeToast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = ToastProps & {
+type ToasterToast = Omit<ToastProps, "title"> & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
@@ -137,9 +141,11 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Omit<ToasterToast, "id"> &
+  Pick<LocalizedToastProps, "titleKey" | "descriptionKey" | "values">
 
-function toast({ ...props }: Toast) {
+function toast(props: Toast) {
+  const resolved = localizeToastCall(props as LocalizedToastProps)
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -152,7 +158,7 @@ function toast({ ...props }: Toast) {
   dispatch({
     type: "ADD_TOAST",
     toast: {
-      ...props,
+      ...resolved,
       id,
       open: true,
       onOpenChange: (open) => {

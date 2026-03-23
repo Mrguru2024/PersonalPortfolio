@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { devError } from "@/lib/devConsole";
 
 interface AIAssistantProps {
   type: 'generate-ideas' | 'suggest-features' | 'clarify-requirements' | 'improve-description';
@@ -45,8 +46,8 @@ export function AIAssistant({ type, context, currentAnswers, onApplySuggestion }
         setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       }
       setIsOpen(true);
-    } catch (error) {
-      console.error("Error fetching AI assistance:", error);
+    } catch {
+      devError("[AIAssistant] request failed");
     } finally {
       setIsLoading(false);
     }

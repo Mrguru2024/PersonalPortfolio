@@ -24,11 +24,11 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
       aria-label="Mobile navigation"
     >
-      <div className="flex items-stretch justify-around min-h-[56px]">
+      <div className="flex min-h-[56px] w-full min-w-0 items-stretch justify-around">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/"

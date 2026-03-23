@@ -10,6 +10,7 @@ import {
   CHALLENGE_LANDING_PATH,
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   DIGITAL_GROWTH_AUDIT_PATH,
+  PPC_LEAD_MAGNET_PATH,
   DIAGNOSTICS_HUB_PATH,
   PROJECT_GROWTH_ASSESSMENT_PATH,
 } from "@/lib/funnelCtas";
@@ -31,6 +32,7 @@ export const GROWTH_LINKS = [
   { label: "Free trial", href: FREE_TRIAL_PATH },
   { label: "Free diagnosis", href: GROWTH_DIAGNOSIS_ENGINE_PATH },
   { label: "Free audit", href: DIGITAL_GROWTH_AUDIT_PATH },
+  { label: "PPC & lead systems", href: PPC_LEAD_MAGNET_PATH },
   { label: "Free toolkit", href: FREE_GROWTH_TOOLS_PATH },
   { label: "5-day challenge (paid)", href: CHALLENGE_LANDING_PATH },
   { label: "Growth assessment (full)", href: PROJECT_GROWTH_ASSESSMENT_PATH },

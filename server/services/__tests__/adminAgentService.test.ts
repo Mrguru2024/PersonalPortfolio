@@ -1,4 +1,4 @@
-import { isKnownSitePath, processAgentMessage } from "../adminAgentService";
+import { describeAgentActionForUser, isKnownSitePath, processAgentMessage } from "../adminAgentService";
 
 describe("isKnownSitePath", () => {
   it("accepts static admin routes from the site directory", () => {
@@ -14,6 +14,22 @@ describe("isKnownSitePath", () => {
     expect(isKnownSitePath("/admin/nonexistent-tool-xyz")).toBe(false);
     expect(isKnownSitePath("/blog/[slug]")).toBe(false);
     expect(isKnownSitePath("../admin")).toBe(false);
+  });
+});
+
+describe("describeAgentActionForUser", () => {
+  it("describes navigation with path title", () => {
+    const s = describeAgentActionForUser({ type: "navigate", url: "/admin/crm" });
+    expect(s).toContain("/admin/crm");
+    expect(s).toMatch(/\*\*.+\*\*/);
+  });
+
+  it("describes reminder generation", () => {
+    const s = describeAgentActionForUser({
+      type: "generate_reminders",
+      api: "POST /api/admin/reminders",
+    });
+    expect(s.toLowerCase()).toMatch(/reminder/);
   });
 });
 

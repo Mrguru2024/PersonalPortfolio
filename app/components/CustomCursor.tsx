@@ -1,4 +1,7 @@
+"use client";
+
 import { useEffect, useState, useCallback } from "react";
+import { devWarn } from "@/lib/devConsole";
 import { motion } from "framer-motion";
 import { Bot, Mouse, MousePointerClick } from "lucide-react";
 
@@ -144,7 +147,7 @@ const CustomCursor = ({ currentSection }: CustomCursorProps) => {
       }
     } catch (error) {
       // Fallback to default colors on error
-      console.warn("Error calculating cursor color:", error);
+      devWarn("[CustomCursor] color sampling failed");
     }
   }, []);
 

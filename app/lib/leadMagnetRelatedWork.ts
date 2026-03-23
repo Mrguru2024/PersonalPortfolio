@@ -12,6 +12,7 @@ import {
 /** Lead magnet / funnel pages that show the Related work ecosystem strip. */
 export const LEAD_MAGNET_RELATED_WORK_KEYS = [
   "digital-growth-audit",
+  "ppc-lead-system",
   "revenue-calculator",
   "website-performance-score",
   "competitor-snapshot",

@@ -59,6 +59,14 @@ export default function DiagnosisResultsPage() {
     }
   }, [mounted, scores, answers, router]);
 
+  useEffect(() => {
+    if (!scores || typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("complete") === "1") return;
+    u.searchParams.set("complete", "1");
+    router.replace(`${u.pathname}${u.search}`, { scroll: false });
+  }, [scores, router]);
+
   if (!mounted || !scores) {
     return (
       <div className="min-h-screen flex items-center justify-center">

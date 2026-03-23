@@ -35,7 +35,7 @@ export default function AdminBlogPage() {
 
   if (!canCreate) {
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-10">
         <Card className="max-w-2xl mx-auto border-red-200 dark:border-red-900">
           <CardHeader>
             <div className="flex items-center gap-2">

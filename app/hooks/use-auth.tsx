@@ -10,6 +10,7 @@ import { User as SelectUser, InsertUser } from "@shared/schema";
 import type { TrialClientSummary } from "@shared/userTrial";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { devError } from "@/lib/devConsole";
 
 /** Session user from /api/user, /api/login, /api/register — includes server-computed `isSuperUser` and `trial`. */
 export type AuthUser = SelectUser & { isSuperUser?: boolean; trial?: TrialClientSummary };
@@ -85,9 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (!res.ok) {
-          const errorText = await res.text().catch(() => res.statusText);
           if (res.status !== 401) {
-            console.error(`Error fetching user data: ${res.status} ${errorText}`);
+            devError("[auth] /api/user non-OK", res.status);
           }
           return null;
         }
@@ -128,7 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.username}!`,
+        descriptionKey: "auth.welcomeBack",
+        values: { username: user.username ?? "there" },
       });
       if (user?.isAdmin && !user?.adminApproved) {
         toast({
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await res.json();
         return userData;
       } catch (error) {
-        console.error("Registration error:", error);
+        devError("[auth] registration request failed");
         throw error;
       }
     },
@@ -186,7 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome, ${user.username}!`,
+        descriptionKey: "auth.welcomeRegister",
+        values: { username: user.username ?? "there" },
       });
       // Handle redirect if present in URL
       if (typeof window !== "undefined") {
@@ -198,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
-      console.error("Registration mutation error:", error);
+      devError("[auth] registration mutation error");
       toast({
         title: "Registration failed",
         description: error.message || "Please try a different username",
@@ -212,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await apiRequest("POST", "/api/logout");
       } catch (error) {
-        console.error("Logout error:", error);
+        devError("[auth] logout request failed");
         throw error;
       }
     },

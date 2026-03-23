@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, ChevronRight, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { BUSINESS_TYPES, PRIMARY_GOALS } from "@/lib/growth-diagnosis/constants"
 import type { AuditReport } from "@/lib/growth-diagnosis/types";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { devError } from "@/lib/devConsole";
 
 const LOADING_STEPS = [
   "Scanning site structure",
@@ -41,6 +42,7 @@ const LOADING_STEPS = [
 ];
 
 export default function GrowthDiagnosisPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"entry" | "loading" | "results">("entry");
   const [url, setUrl] = useState("");
@@ -59,6 +61,14 @@ export default function GrowthDiagnosisPage() {
     const prefillUrl = searchParams.get("url");
     if (prefillUrl) setUrl(prefillUrl);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (step !== "results" || typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("complete") === "1") return;
+    u.searchParams.set("complete", "1");
+    router.replace(`${u.pathname}${u.search}`, { scroll: false });
+  }, [step, router]);
 
   const runAudit = async () => {
     const auditUrl = url.trim() || "https://example.com";
@@ -100,7 +110,7 @@ export default function GrowthDiagnosisPage() {
       clearInterval(stepInterval);
       setError("We couldn't complete the audit. Try demo mode or try again.");
       setStep("entry");
-      if (e instanceof Error) console.error("Growth diagnosis error:", e.message);
+      if (e instanceof Error) devError("[growth-diagnosis]", e.message);
     }
   };
 
@@ -110,8 +120,8 @@ export default function GrowthDiagnosisPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/20 to-background">
-      <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+    <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-gradient-to-b from-muted/20 to-background pb-24 lg:pb-8">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12 max-w-4xl min-w-0">
         <AnimatePresence mode="wait">
           {step === "entry" && (
             <motion.div
@@ -125,7 +135,7 @@ export default function GrowthDiagnosisPage() {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Search className="h-7 w-7" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
+                <h1 className="text-2xl fold:text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3 leading-tight">
                   Website Growth Diagnosis
                 </h1>
                 <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-0">

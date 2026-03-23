@@ -42,7 +42,7 @@ const ProjectRecommendationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden pb-24 lg:pb-20">
       {/* Add SEO for Project Recommendations */}
       <PageSEO
         title="AI Project Recommendations | Find Your Perfect Project | Ascendra Technologies"
@@ -98,10 +98,10 @@ const ProjectRecommendationPage: React.FC = () => {
       />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-blue-900 to-indigo-800 text-white py-16 px-4 sm:px-6">
-        <div className="container mx-auto max-w-5xl">
-          <div className="flex flex-wrap items-center">
-            <div className="w-full lg:w-2/3 pr-0 lg:pr-8 mb-8 lg:mb-0">
+      <section className="bg-gradient-to-b from-blue-900 to-indigo-800 text-white py-10 fold:py-12 sm:py-16 px-3 fold:px-4 sm:px-6">
+        <div className="container mx-auto max-w-5xl min-w-0 px-0 sm:px-0">
+          <div className="flex flex-wrap items-center gap-6 lg:gap-0">
+            <div className="w-full min-w-0 lg:w-2/3 pr-0 lg:pr-8 mb-2 lg:mb-0">
               <Link
                 href="/"
                 className="inline-flex items-center mb-6 text-blue-300 hover:text-blue-100 transition-colors"
@@ -109,10 +109,10 @@ const ProjectRecommendationPage: React.FC = () => {
                 <ArrowLeft size={16} className="mr-2" />
                 Back to Home
               </Link>
-              <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+              <h1 className="text-2xl fold:text-3xl xs:text-4xl sm:text-5xl font-extrabold mb-3 sm:mb-4 leading-tight">
                 AI-Powered Project Recommendations
               </h1>
-              <p className="text-xl text-blue-100 mb-6">
+              <p className="text-base fold:text-lg sm:text-xl text-blue-100 mb-4 sm:mb-6 leading-relaxed">
                 Find the perfect projects that match your interests, skills, and
                 learning goals with our intelligent recommendation engine.
               </p>
@@ -166,9 +166,9 @@ const ProjectRecommendationPage: React.FC = () => {
       </section>
 
       {/* Form Section */}
-      <section className="py-12 px-4 sm:px-6">
-        <div className="container mx-auto max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-8">
+      <section className="py-10 fold:py-12 sm:py-14 px-3 fold:px-4 sm:px-6">
+        <div className="container mx-auto max-w-3xl min-w-0">
+          <h2 className="text-2xl fold:text-3xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">
             Tell Us About Your Interests
           </h2>
           <motion.div
@@ -187,15 +187,15 @@ const ProjectRecommendationPage: React.FC = () => {
       {recommendationData && (
         <section
           id="recommendation-results"
-          className="py-12 px-4 sm:px-6 bg-gray-50 dark:bg-gray-900"
+          className="py-10 fold:py-12 sm:py-14 px-3 fold:px-4 sm:px-6 bg-gray-50 dark:bg-gray-900"
         >
-          <div className="container mx-auto max-w-6xl">
+          <div className="container mx-auto max-w-6xl min-w-0">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl font-bold text-center mb-10">
+              <h2 className="text-2xl fold:text-3xl sm:text-3xl font-bold text-center mb-8 sm:mb-10">
                 Your Personalized Recommendations
               </h2>
               <ProjectRecommendationResults

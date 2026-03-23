@@ -317,7 +317,7 @@ export default function EditOfferPage() {
 
   if (!slug) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-8">
         <p>Missing offer slug.</p>
         <Button variant="link" asChild><Link href="/admin/offers">Back to offers</Link></Button>
       </div>
@@ -334,7 +334,7 @@ export default function EditOfferPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-3xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/offers"><ArrowLeft className="h-4 w-4 mr-2" />Back to offers</Link>

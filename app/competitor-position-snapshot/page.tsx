@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle2, BarChart3, AlertCircle } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -40,43 +41,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const SNAPSHOT_SECTIONS = [
-  {
-    title: "Brand position clarity",
-    questions: [
-      "Does your business appear clearly positioned?",
-      "Is your core service obvious?",
-      "Does your messaging feel specific or generic?",
-    ],
-  },
-  {
-    title: "Visual trust impression",
-    questions: [
-      "Does your site appear credible?",
-      "Does the design feel current or dated?",
-      "Is the presentation likely to build confidence?",
-    ],
-  },
-  {
-    title: "Website conversion readiness",
-    questions: [
-      "Is there a clear CTA?",
-      "Is there a strong lead path?",
-      "Is the site likely helping or hurting conversions?",
-    ],
-  },
-  {
-    title: "Market opportunity questions",
-    questions: [
-      "What likely makes competitors easier to choose?",
-      "Where may your business be blending in?",
-      "What should you improve first?",
-    ],
-  },
-];
-
 export default function CompetitorPositionSnapshotPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
   const { track } = useVisitorTracking();
   const formStartedRef = useRef(false);
 
@@ -115,11 +81,11 @@ export default function CompetitorPositionSnapshotPage() {
     },
     onSuccess: () => {
       track("form_completed", { pageVisited: "/competitor-position-snapshot", metadata: { form: "competitor_snapshot" } });
-      setSubmitted(true);
       toast({
         title: "Snapshot request received",
         description: "We'll use your details to prepare a structured review and send it to you.",
       });
+      router.replace(funnelThankYouUrl("competitor_snapshot"));
     },
     onError: (e: Error) => {
       toast({
@@ -158,14 +124,13 @@ export default function CompetitorPositionSnapshotPage() {
               />
             </section>
 
-            {!submitted ? (
-              <Card className="border-border bg-card">
-                <CardContent className="p-5 sm:p-6">
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit((values) => mutate(values))}
-                      className="space-y-4"
-                    >
+            <Card className="border-border bg-card">
+              <CardContent className="p-5 sm:p-6">
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit((values) => mutate(values))}
+                    className="space-y-4"
+                  >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -311,73 +276,18 @@ export default function CompetitorPositionSnapshotPage() {
                       <Button type="submit" className="w-full sm:w-auto min-h-[44px]" disabled={isPending}>
                         {isPending ? "Submitting..." : "Get my snapshot"}
                       </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <Card className="border-border bg-card">
-                  <CardContent className="p-5 sm:p-6">
-                    <div className="flex items-start gap-3 mb-6">
-                      <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <h2 className="text-lg font-semibold text-foreground">
-                          What your snapshot will cover
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          We'll use your details to prepare a structured competitor position snapshot. It reviews the areas below so you can see where you stand and what to improve first.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      {SNAPSHOT_SECTIONS.map((section) => (
-                        <div key={section.title}>
-                          <h3 className="font-semibold text-foreground text-sm mb-2">
-                            {section.title}
-                          </h3>
-                          <ul className="space-y-1 text-sm text-muted-foreground">
-                            {section.questions.map((q) => (
-                              <li key={q}>• {q}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-                <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/30">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground">
-                    This is a guided strategic review based on the information you provide, not a guaranteed ranking or third-party analytics report. We use it to give you a clear, honest view of how your business may be showing up relative to others in your space.
-                  </p>
-                </div>
-
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground">Next steps</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Button asChild size="lg" className="gap-2 min-h-[48px]">
-                      <Link href="/digital-growth-audit">
-                        Request Full Digital Growth Audit
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" size="lg" className="min-h-[48px]">
-                      <Link href="/services">See recommended growth system</Link>
-                    </Button>
-                  </div>
-                </section>
-
-                <RecommendedNextStep
-                  offerSlug="brand-website"
-                  ctaText="Request Full Digital Growth Audit"
-                  ctaHref="/digital-growth-audit"
-                  secondaryCtaText="See growth systems"
-                  secondaryCtaHref="/services"
-                />
-              </>
-            )}
+            <RecommendedNextStep
+              offerSlug="brand-website"
+              ctaText="Request Full Digital Growth Audit"
+              ctaHref="/digital-growth-audit"
+              secondaryCtaText="See growth systems"
+              secondaryCtaHref="/services"
+            />
 
             <LeadMagnetRelatedWorkSection leadMagnetKey="competitor-snapshot" />
           </div>

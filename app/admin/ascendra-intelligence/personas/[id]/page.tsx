@@ -132,7 +132,7 @@ export default function AscendraPersonaDetailPage() {
 
   if (!persona) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+      <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-12 text-center text-muted-foreground">
         Persona not found.
         <div className="mt-4">
           <Button asChild variant="outline">
@@ -145,7 +145,7 @@ export default function AscendraPersonaDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-3xl space-y-6">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-3xl space-y-6">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/ascendra-intelligence/personas">
             <ArrowLeft className="h-4 w-4 mr-2" />

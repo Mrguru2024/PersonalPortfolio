@@ -35,7 +35,7 @@ function JourneyPageInner() {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden pb-12 sm:pb-16">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden pb-24 sm:pb-16 lg:pb-16">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-5xl pt-10 sm:pt-14">
         <SectionReveal>
           {!journey ? (
@@ -75,7 +75,9 @@ export default function JourneyPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-3 py-20 text-center text-muted-foreground text-sm">Loading…</div>
+        <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-20 text-center text-muted-foreground text-sm">
+          Loading…
+        </div>
       }
     >
       <JourneyPageInner />

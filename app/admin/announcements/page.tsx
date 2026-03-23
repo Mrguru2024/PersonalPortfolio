@@ -174,7 +174,7 @@ export default function AdminAnnouncementsPage() {
   if (!user || !user.isAdmin || !user.adminApproved) return null;
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-10">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <Button variant="ghost" size="sm" asChild>

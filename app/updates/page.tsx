@@ -27,7 +27,7 @@ export default function UpdatesPage() {
   const entries = data?.entries ?? [];
 
   return (
-    <div className="min-h-screen w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div className="min-h-screen w-full min-w-0 max-w-3xl mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-violet-500" />

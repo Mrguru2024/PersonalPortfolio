@@ -230,7 +230,7 @@ export default function AdminChatPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-3xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-6 max-w-3xl">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>

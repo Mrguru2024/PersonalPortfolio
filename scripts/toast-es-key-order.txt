@@ -1,0 +1,308 @@
+A reminder email was sent to the recipient.
+AI assist
+AI content generated
+AI content has been added to the editor
+AI fill failed
+AI generation failed
+AI guidance generated
+AI not configured
+AI plan regenerated
+AI plan updated
+AI-generated cover image has been added
+AI-generated preview text has been added
+AI-generated summary has been added
+Access denied
+Account created
+Account saved
+Action failed
+Add at least one line
+Admin access pending
+Announcement created
+Announcement deleted
+Announcement updated
+Approval failed
+Assessment moved to Deleted
+Assessment restored
+Assessment status updated successfully
+Audience preview
+Audit finished
+Audit request received
+Backup downloaded
+Body replaced with polished HTML
+Booking link failed
+Booking link sent
+Bulk update failed
+CRM import finished
+Calendar entry updated
+Campaign created
+Campaign settings saved
+Cannot delete
+Cannot restore
+Card scan failed
+Card scanned
+Catalog item removed
+Check the timeline for the tracked URL.
+Check your email
+Clipboard permission denied.
+Comment added
+Comment submitted
+Confirmation required
+Contact added
+Contact deleted
+Contact enriched
+Contact updated
+Contact updated from card
+Content generated
+Content graded
+Content improved
+Copied
+Copy failed
+Copy the token now — it will not be shown again.
+Could not create persona
+Could not create task
+Could not generate an image prompt. Try again or enter a longer title/content.
+Could not load suggestions
+Could not read contacts
+Could not read image
+Could not retrieve the resume. Please try again.
+Could not run audit
+Could not save note
+Could not send reset email
+Could not send your request. Please try again or contact us directly.
+Couldn’t save
+Cover image uploaded successfully
+Created
+Data and card image saved.
+Deleted
+Delivery status
+Description and unit price are required.
+Design created.
+Discovery complete
+Discovery failed
+Discovery workspace created
+Draft invoice has been created.
+Draft posts created
+Duplicated
+Email required
+Endorsement submitted
+Enrichment failed
+Enter a URL slug using letters, numbers, and hyphens (e.g. my-launch-offer).
+Enter at least 10 characters.
+Enter or select a topic above, or in this dialog
+Enter your email to subscribe.
+Error
+Example id filled
+Export failed
+Failed to add contact
+Failed to copy
+Failed to create playbook
+Failed to create sequence
+Failed to create task
+Failed to create tasks
+Failed to create workspace
+Failed to delete
+Failed to generate guidance
+Failed to log meeting
+Failed to save
+Failed to save recipients
+Failed to save settings
+Failed to send
+Failed to submit endorsement
+Failed to update
+Failed to update profile
+Failed to update settings
+Failed to update stage
+Failed to update status
+Feedback has been updated successfully
+Feedback sent
+Feedback updated
+Fill type, title, and description
+Form cleared to defaults
+Form filled from AI
+Forms reset
+Fresh web context saved to this workspace.
+Full directory data is on the clipboard.
+Full page URL copied.
+Funnel content updated.
+Generation failed
+Grade failed
+Image generated
+Image generated and saved
+Image uploaded
+Import complete
+Import error
+Import failed
+Improvement failed
+Insight run completed
+Intent updated
+Invalid file
+Invalid prompt
+Invoice created
+Invoice deleted
+Invoice sent
+Invoice updated
+It appears in the active list again.
+Link copied
+Link copied!
+Logged out
+Login failed
+Login successful
+Logout failed
+Market intel failed
+Market intel updated
+Meeting scheduled
+Missing fields
+Modules and notes were reloaded.
+Move failed
+Moved to new day
+Name and email required
+Name, email, and at least 3 characters for your comment are required.
+Newsletter Sent
+Newsletter deleted successfully
+No HTML returned
+No contacts selected
+No preheader returned
+No reset token provided
+Not supported
+Note added
+Note saved
+Nothing selected
+Offer already exists
+Offer saved
+Password reset successful
+Paste some data first
+Persona created
+Playbook created
+Playbook updated
+Please confirm that you understand the effect of this request.
+Please enter a subject line first
+Please enter a title first
+Please enter a title first to generate an image
+Please enter a topic
+Please enter the email address associated with your data.
+Please enter your email address
+Please select an image (JPEG, PNG, GIF, WebP).
+Please try again or copy the link manually.
+Post created
+Preview text generated
+Preview text updated
+Privileges updated
+Profile photo updated
+Profile saved
+Profile updated
+Prompt too short
+Proposal accepted
+Proposal created
+Proposal declined
+Proposal prep workspace created
+Publish
+Publish error
+Publish logged (scaffold)
+Push enabled
+Push subscribe failed
+Readiness
+Readiness failed
+Recipients saved
+Refreshed
+Registration failed
+Registration successful
+Reminder sent
+Reminder updated
+Reorder failed
+Request Failed
+Request Submitted
+Request Successful
+Request failed
+Request received
+Research batch created
+Reset email sent
+Review all fields and click Save when ready. Persona targeting was not changed.
+Review and edit as needed, then save.
+Review and edit, then save.
+Review and save the contact.
+SMS failed
+SMS sent
+Sample values restored.
+Save failed
+Saved
+Saved assessments (including deleted) as JSON.
+Saved list created
+Schedule failed
+Scheduled
+Section appended to body
+Select at least one row.
+Selection cancelled
+Send complete
+Sequence created
+Set OPENAI_API_KEY or import without AI.
+Settings saved
+Settings updated
+Share link created
+Share this link with your client.
+Sign-in failed
+Signed in
+Slug required
+Snapshot request received
+Something went wrong
+Something went wrong. Please try again.
+Stage updated
+Status updated
+Subject required
+Submission failed
+Subscribe failed
+Subscribe with the same email you use to comment, then try again.
+Subscriber added successfully
+Subscriber deleted successfully
+Subscriber required
+Subscriber unsubscribed
+Success
+Success!
+Summary generated
+Tags generated
+Task added
+Task completed
+Task created
+Task created from recommendation
+Tasks created from follow-up items
+Tasks created from incomplete checklist items
+Test email sent
+Thank you! We'll review it soon.
+Thanks for the details. We will review your request and share your next steps shortly.
+Thanks — you're set
+Thanks. We will review your details and send next-step scheduling guidance.
+The article link has been copied to your clipboard.
+The recipient will receive an email with the payment link.
+They now have founder admin access.
+This device will receive push notifications.
+This rule is stored for that item.
+Title and body are required
+Title required
+Token copied to clipboard.
+Topic required
+Type 'not-a-robot' in the verification field.
+URL import complete
+Unable to submit
+Update failed
+Upload failed
+Use Chrome on Android or a browser that supports the Contact Picker.
+Use Start meeting (host) or share the Join link with the lead.
+User access has been saved.
+User approved
+Using temporary URL (may expire).
+Verification required
+Visibility saved
+Visible to your team only — not exposed on client or public pages.
+We'll be in touch to schedule your strategy call.
+We'll use your details to prepare a structured review and send it to you.
+Welcome to the Founder Network
+We’ll use this to qualify follow-up in CRM. Explore the tools below.
+You can edit it to match your real record.
+You can now leave a comment below.
+You can restore it from the Deleted section below.
+You have been successfully logged out
+You're subscribed
+Your comment is awaiting moderation.
+Your founder admin request is awaiting approval. You’ll get access once approved.
+Your request has been approved. You can now download the resume.
+Your request is being processed. Please check your email for updates.
+Zoom meeting logged

@@ -29,6 +29,7 @@ interface AdminSettingsPayload {
   reminderFrequency: string;
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
+  aiAgentRequireActionConfirmation: boolean;
 }
 
 const DEFAULT_SETTINGS: AdminSettingsPayload = {
@@ -39,6 +40,7 @@ const DEFAULT_SETTINGS: AdminSettingsPayload = {
   reminderFrequency: "realtime",
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
+  aiAgentRequireActionConfirmation: true,
 };
 
 export default function AdminSettingsPage() {
@@ -100,7 +102,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-2xl">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/dashboard">
@@ -250,16 +252,34 @@ export default function AdminSettingsPage() {
                   AI admin agent
                 </CardTitle>
                 <CardDescription>
-                  When enabled, the floating AI assistant can perform actions you request (e.g. navigate, open reminders, generate reminders). The agent is always available for questions and navigation; this setting only allows it to execute actions on your behalf.
+                  When enabled, the floating AI assistant can perform actions you request (e.g. navigate, open reminders, generate reminders). The agent is always available for questions and navigation; this setting only allows it to execute actions on your behalf. Build a private knowledge base on{" "}
+                  <Link href="/admin/agent-knowledge" className="text-primary underline font-medium">
+                    Assistant knowledge
+                  </Link>{" "}
+                  so replies can use your notes when those entries are enabled for the assistant.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="ai-agent-actions" className="cursor-pointer">Allow agent to perform actions</Label>
                   <Switch
                     id="ai-agent-actions"
                     checked={local.aiAgentCanPerformActions}
                     onCheckedChange={(v) => update("aiAgentCanPerformActions", v)}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="ai-agent-confirm" className="cursor-pointer">Confirm before running actions</Label>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      When on, navigation and reminder runs need a tap to confirm in the assistant panel.
+                    </p>
+                  </div>
+                  <Switch
+                    id="ai-agent-confirm"
+                    checked={local.aiAgentRequireActionConfirmation}
+                    onCheckedChange={(v) => update("aiAgentRequireActionConfirmation", v)}
                     disabled={saving}
                   />
                 </div>

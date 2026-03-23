@@ -167,6 +167,18 @@ function titleForPath(path: string): string {
     .join(" ");
 }
 
+/** Human-readable confirmation line for the admin UI (spellings match in-app labels). */
+export function describeAgentActionForUser(action: AgentAction): string {
+  if (action.type === "generate_reminders") {
+    return "Run the reminder generator and refresh your admin reminders list.";
+  }
+  if (action.url) {
+    const label = titleForPath(action.url);
+    return `Navigate to **${label}** (${action.url}).`;
+  }
+  return "Perform an in-app action.";
+}
+
 /** Markdown link for assistant replies (rendered as clickable in the admin widget). */
 function mdLink(path: string, label?: string): string {
   const t = label ?? titleForPath(path);
@@ -212,15 +224,22 @@ async function processWithOpenAI(input: {
   operatorDisplayName: string;
   mentorPromptBlock: string;
   webContextBlock: string;
+  /** Operator-authored notes injected from the knowledge base (when enabled per entry). */
+  operatorKnowledgeBlock: string;
+  /** Longer-form notes for research-style grounding (when enabled per entry). */
+  operatorResearchBlock: string;
 }): Promise<AgentResult | null> {
   const client = getOpenAIClient();
   if (!client) return null;
 
   const actionRules = input.canPerformActions
-    ? `You may set "action" to run something in the app:
-- {"type":"navigate","url":"<path>"} only if url appears in the site routes in CONTEXT as a concrete path (no square brackets in the url string). For section hubs use index routes like /admin/crm, /blog, /admin/content-studio.
-- {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate/run/refresh reminders.
-Otherwise "action": null.`
+    ? `You may set "action" to run something in the app (exact JSON shapes only):
+- {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os.
+- Alternatively you may use these exact types (no url needed): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM).
+- {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate, run, or refresh reminders.
+Otherwise set "action": null. Never invent types or URLs.
+
+Spelling and labels: use correct product names — Ascendra, Ascendra Intelligence, Growth OS, Content Studio, Brand Growth. Match directory titles for screen names.`
     : `Do not return an action. Always set "action": null (actions are disabled for this user).`;
 
   const webSection =
@@ -242,6 +261,8 @@ ${webSection}
 
 Navigation and wayfinding: whenever you mention an in-app place to go, include a markdown link using ONLY internal paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination. External https links are allowed only when citing WEB RESULTS for teaching.
 
+Accuracy: spell product and screen names exactly as in CONTEXT or OPERATOR KNOWLEDGE (e.g. Ascendra Intelligence, Growth OS). When quoting UI text or OCR from the user, preserve spelling; fix only clear typos if you label them as corrections.
+
 Style: concise. Format the "reply" for quick scanning in a small chat panel:
 - Open with one short sentence when it helps (the takeaway).
 - Use ## for section titles (e.g. ## Next steps, ## Where to go). Add a blank line before each ## block.
@@ -256,6 +277,8 @@ Output a single JSON object only (valid JSON). The value of "reply" may contain 
 {"reply":"string","action":null|object}
 
 Current page (if any): ${input.currentPath ?? "unknown"}
+${input.operatorKnowledgeBlock}
+${input.operatorResearchBlock}
 
 CONTEXT:
 ${input.contextText}`;
@@ -300,6 +323,10 @@ export interface ProcessAgentMessageInput {
   userId?: number;
   operatorDisplayName?: string;
   mentorState?: AdminAgentMentorStateV1 | null;
+  /** Pre-formatted operator knowledge (from DB); empty string if none. */
+  operatorKnowledgeBlock?: string;
+  /** Research-oriented notes (from DB); empty string if none. */
+  operatorResearchBlock?: string;
 }
 
 /**
@@ -339,6 +366,8 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
       operatorDisplayName,
       mentorPromptBlock,
       webContextBlock,
+      operatorKnowledgeBlock: (input.operatorKnowledgeBlock ?? "").trim(),
+      operatorResearchBlock: (input.operatorResearchBlock ?? "").trim(),
     });
     if (ai) {
       if (ai.action && !canPerformActions) {

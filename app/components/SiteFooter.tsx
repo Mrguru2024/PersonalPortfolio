@@ -4,6 +4,7 @@ import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, STRATEGY_CALL_PATH } from "@/li
 import { MAIN_LINKS, GROWTH_LINKS, WHO_WE_SERVE_LINKS, LEGAL_LINKS } from "@/lib/siteNavLinks";
 import { COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_E164 } from "@/lib/company";
 import { Search } from "lucide-react";
+import { FooterLanguageControl } from "@/components/FooterLanguageControl";
 
 function LinkGroup({
   title,
@@ -83,6 +84,7 @@ export default function SiteFooter() {
               </address>
             </div>
           </nav>
+          <FooterLanguageControl />
           <p className="text-xs text-muted-foreground">
             Built in partnership with Style Studio Branding and Macon Designs®.
           </p>

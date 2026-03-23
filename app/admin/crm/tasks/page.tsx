@@ -55,7 +55,7 @@ export default function CrmTasksPage() {
 
   if (authLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex justify-center">
+      <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-8 flex justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -63,7 +63,7 @@ export default function CrmTasksPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-4xl">
         <div className="mb-6">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/crm">

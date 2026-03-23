@@ -18,6 +18,7 @@ import {
 import { getFeatureBenefit, isFeatureRequired, type FeatureBenefit } from "@/lib/featureBenefits";
 import { getFeatureId } from "@/lib/featureMapping";
 import type { ProjectAssessment } from "@shared/assessmentSchema";
+import { devError } from "@/lib/devConsole";
 
 interface DragDropFeatureSelectorProps {
   selectedFeatures: string[];
@@ -96,8 +97,8 @@ export function DragDropFeatureSelector({
                              ((data.pricing.estimatedRange?.min || 0) + (data.pricing.estimatedRange?.max || 0)) / 2;
           onPriceUpdate(averagePrice);
         }
-      } catch (error) {
-        console.error("Error updating price:", error);
+      } catch {
+        devError("[DragDropFeatureSelector] price update failed");
       }
     }
 

@@ -2,7 +2,7 @@ import { CommunicationsSubnav } from "@/components/communications/Communications
 
 export default function CommunicationsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-6xl">
       <div className="mb-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ascendra OS</p>
         <h1 className="text-2xl font-bold tracking-tight">Communications</h1>

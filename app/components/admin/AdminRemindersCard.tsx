@@ -105,7 +105,14 @@ export function AdminRemindersCard({
     onSuccess: (data: { created?: number; skipped?: number }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/reminders"] });
       const created = data?.created ?? 0;
-      toast({ title: created > 0 ? `${created} new reminder(s) added` : "Reminders are up to date" });
+      if (created > 0) {
+        toast({
+          titleKey: "admin.remindersAdded",
+          values: { count: String(created) },
+        });
+      } else {
+        toast({ titleKey: "admin.remindersUpToDate" });
+      }
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });

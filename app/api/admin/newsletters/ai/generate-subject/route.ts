@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { generateSubjectLines } from "@server/services/newsletterAIService";
+import { storage } from "@server/storage";
+import { formatKnowledgeForMessagesPrompt } from "@server/services/adminAgentKnowledgeContext";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,10 +24,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const user = await getSessionUser(req);
+    const userId = user?.id != null ? Number(user.id) : null;
+    let mergedInstructions = typeof customInstructions === "string" ? customInstructions.trim() : "";
+    if (userId != null) {
+      const kbRows = await storage.getAdminAgentKnowledgeForMessages(userId);
+      const kbBlock = formatKnowledgeForMessagesPrompt(kbRows);
+      if (kbBlock) {
+        mergedInstructions = [mergedInstructions, kbBlock].filter(Boolean).join("\n\n");
+      }
+    }
+
     const subjectLines = await generateSubjectLines(
       topic,
       tone || "professional",
-      typeof customInstructions === "string" ? customInstructions : undefined
+      mergedInstructions.trim() ? mergedInstructions : undefined
     );
     return NextResponse.json({ subjectLines });
   } catch (error: any) {

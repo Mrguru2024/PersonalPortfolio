@@ -1,4 +1,6 @@
-import { useState } from 'react';
+"use client";
+
+import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Loader2, Download, CheckCircle2 } from 'lucide-react';
+import { funnelThankYouUrl, THANK_YOU_SESSION } from '@/lib/funnelThankYou';
+import { devError } from '@/lib/devConsole';
+import { Loader2 } from 'lucide-react';
 
 // Resume request form schema
 const resumeRequestSchema = z.object({
@@ -24,8 +28,7 @@ const resumeRequestSchema = z.object({
 type ResumeRequestFormValues = z.infer<typeof resumeRequestSchema>;
 
 export function ResumeForm() {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const router = useRouter();
   const { toast } = useToast();
   
   const form = useForm<ResumeRequestFormValues>({
@@ -45,22 +48,21 @@ export function ResumeForm() {
       return await res.json();
     },
     onSuccess: async (data) => {
-      // Show success message
-      setShowSuccess(true);
-      
-      // After successful form submission, fetch the resume with the token
       try {
         const resumeRes = await fetch(`/api/resume/download/${data.accessToken}`);
         const resumeData = await resumeRes.json();
-        setResumeUrl(resumeData.resumeUrl);
-        
+        const url = resumeData.resumeUrl as string | undefined;
+        if (url && typeof window !== "undefined") {
+          sessionStorage.setItem(THANK_YOU_SESSION.resumeDownloadUrl, url);
+        }
         toast({
-          title: "Resume download ready",
-          description: "You can now download the resume",
+          title: "Request received",
+          description: url ? "Opening your confirmation page." : "We’ll follow up shortly.",
           variant: "default",
         });
-      } catch (error) {
-        console.error('Error fetching resume:', error);
+        router.push(funnelThankYouUrl("resume_request"));
+      } catch {
+        devError("[ResumeForm] resume fetch after submit failed");
         toast({
           title: "Error",
           description: "Could not retrieve the resume. Please try again.",
@@ -79,42 +81,6 @@ export function ResumeForm() {
 
   function onSubmit(values: ResumeRequestFormValues) {
     resumeRequestMutation.mutate(values);
-  }
-  
-  if (showSuccess) {
-    return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-auto">
-        <div className="text-center mb-6">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Thank You!</h3>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Your resume request has been successfully submitted.
-          </p>
-        </div>
-        
-        {resumeUrl ? (
-          <div className="text-center">
-            <Button 
-              className="w-full mb-4 bg-primary hover:bg-primary/90 text-white"
-              onClick={() => window.open(resumeUrl, '_blank')}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download Resume
-            </Button>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              The resume will open in a new tab.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center">
-            <Button disabled className="w-full mb-4">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Preparing Download...
-            </Button>
-          </div>
-        )}
-      </div>
-    );
   }
 
   return (

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -29,6 +30,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import {
   AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS,
@@ -66,7 +68,7 @@ const auditRequestSchema = z.object({
 type AuditRequestValues = z.infer<typeof auditRequestSchema>;
 
 export function AuditRequestForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
   const formStartedSent = useRef(false);
   const { track } = useVisitorTracking();
 
@@ -121,12 +123,12 @@ export function AuditRequestForm() {
     },
     onSuccess: () => {
       track("form_completed", { pageVisited: "/digital-growth-audit", metadata: { form: "audit" } });
-      setSubmitted(true);
       toast({
         title: "Audit request received",
         description:
           "Thanks for the details. We will review your request and share your next steps shortly.",
       });
+      router.replace(funnelThankYouUrl("digital_growth_audit"));
     },
     onError: (error: Error) => {
       toast({
@@ -136,36 +138,6 @@ export function AuditRequestForm() {
       });
     },
   });
-
-  if (submitted) {
-    return (
-      <Card className="border-border bg-card">
-        <CardContent className="p-6 sm:p-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <CheckCircle2 className="h-7 w-7" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground">
-            Thanks, your audit request is in.
-          </h3>
-          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-            We will review your information across strategy, design, and
-            technology criteria, then send recommended next steps.
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-            <Button asChild className="min-h-[44px]">
-              <Link href="/contact">
-                Book a free call
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="min-h-[44px]">
-              <Link href="/services">See how we can help</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="border-border bg-card">

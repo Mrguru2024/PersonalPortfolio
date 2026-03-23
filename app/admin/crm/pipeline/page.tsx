@@ -147,7 +147,7 @@ export default function CrmPipelinePage() {
   if (!showContent) {
     return (
       <div className="min-h-screen flex flex-col">
-        <div className="container max-w-[1600px] mx-auto px-4 py-8 flex items-center justify-center">
+        <div className="container max-w-[1600px] mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function CrmPipelinePage() {
     <div className="min-h-screen flex flex-col">
       {/* Sticky header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="container max-w-[1600px] mx-auto px-4 py-3">
+        <div className="container max-w-[1600px] mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" asChild>
@@ -264,7 +264,7 @@ export default function CrmPipelinePage() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 container max-w-[1600px] mx-auto px-4 py-4">
+      <div className="flex-1 container max-w-[1600px] mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-4">
         {isLoading ? (
           <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollSnapType: "x mandatory" }}>
             {CRM_PIPELINE_STAGES.map((stage) => (

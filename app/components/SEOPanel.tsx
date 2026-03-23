@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { devError } from "@/lib/devConsole";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -452,7 +453,7 @@ export function SEOPanel({
                     if (data.ogDescription)
                       onOgDescriptionChange(data.ogDescription);
                   } catch (error: any) {
-                    console.error("Error generating SEO meta:", error);
+                    devError("[SEOPanel] SEO meta generation failed");
                   } finally {
                     setIsGeneratingSEO(false);
                   }

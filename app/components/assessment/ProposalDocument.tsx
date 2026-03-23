@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ProposalDocument as ProposalDocType } from "@server/services/proposalService";
+import { devError } from "@/lib/devConsole";
 
 interface ProposalDocumentProps {
   assessmentId: number;
@@ -36,8 +37,8 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
           const suggestionsData = await suggestionsRes.json();
           setSuggestions(suggestionsData.suggestions);
         }
-      } catch (error) {
-        console.error("Error fetching proposal:", error);
+      } catch {
+        devError("[ProposalDocument] fetch failed");
       } finally {
         setLoading(false);
       }
@@ -175,8 +176,8 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
         </html>
       `);
       printWindow.document.close();
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
+    } catch {
+      devError("[ProposalDocument] PDF export failed");
       alert('Error generating PDF. Please try using the browser\'s print function (Ctrl+P / Cmd+P on Mac) and select "Save as PDF"');
       setExporting(null);
     }
@@ -196,7 +197,7 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Error exporting TXT:", error);
+      devError("[ProposalDocument] TXT export failed");
     } finally {
       setExporting(null);
     }
@@ -215,8 +216,8 @@ export function ProposalDocument({ assessmentId }: ProposalDocumentProps) {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Error exporting DOCX:", error);
+    } catch {
+      devError("[ProposalDocument] DOCX export failed");
     } finally {
       setExporting(null);
     }

@@ -13,7 +13,7 @@ export default function ChallengeWelcomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-12 max-w-lg">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-lg">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import { processAgentMessage, type AgentChatTurn } from "@server/services/adminAgentService";
+import {
+  describeAgentActionForUser,
+  processAgentMessage,
+  type AgentChatTurn,
+} from "@server/services/adminAgentService";
+import { augmentAdminAgentMessageWithMedia, parseImageDataUrls } from "@server/services/adminAgentMediaService";
+import {
+  formatKnowledgeForAgentPrompt,
+  formatResearchBlockForAgentPrompt,
+} from "@server/services/adminAgentKnowledgeContext";
 import {
   ADMIN_AGENT_MENTOR_POLICY,
   buildPersonalizedGreetingLine,
@@ -86,21 +95,47 @@ export async function POST(req: NextRequest) {
     const history = parseAgentHistory(body.history);
 
     const firstName = firstNameFromUser(user);
-    if (!message) {
+    const imgParsed = parseImageDataUrls(body.imageAttachments);
+    if (!imgParsed.ok) {
+      return NextResponse.json({ reply: imgParsed.error }, { status: 400 });
+    }
+    const hasMedia = imgParsed.dataUrls.length > 0;
+
+    if (!message && !hasMedia) {
       return NextResponse.json({
-        reply: `${buildPersonalizedGreetingLine(firstName)} Send a message to continue — try “open reminders”, “go to CRM”, or ask me to explain something (I can pull live web sources when teaching).`,
+        reply: `${buildPersonalizedGreetingLine(firstName)} Send a message or attach a screenshot to continue — try “open reminders”, “go to CRM”, or ask where a feature lives. I can read images when OpenAI is configured.`,
       });
     }
 
     const settings = await storage.getAdminSettings(userId);
     const canPerformActions = settings?.aiAgentCanPerformActions === true;
+    const requireActionConfirmation = settings?.aiAgentRequireActionConfirmation !== false;
+
+    const mediaAug = hasMedia
+      ? await augmentAdminAgentMessageWithMedia({
+          message,
+          imageDataUrls: imgParsed.dataUrls,
+        })
+      : null;
+    const effectiveMessage = (mediaAug?.augmentedMessage ?? message).trim();
+    if (!effectiveMessage) {
+      return NextResponse.json({
+        reply: "I could not understand that. Add a short text description or a clearer image.",
+        mediaInterpretation: mediaAug?.mediaInterpretation,
+      });
+    }
+
+    const knowledgeRows = await storage.getAdminAgentKnowledgeForAgent(userId);
+    const researchRows = await storage.getAdminAgentKnowledgeForResearch(userId);
+    const operatorKnowledgeBlock = formatKnowledgeForAgentPrompt(knowledgeRows);
+    const operatorResearchBlock = formatResearchBlockForAgentPrompt(researchRows);
 
     const mentorRow = await storage.getAdminAgentMentorState(userId);
     const mentorParsed = mentorRow ? parseStoredMentorState(mentorRow.state) : null;
     const mentorState = mentorParsed ?? emptyMentorState();
 
     const result = await processAgentMessage({
-      message,
+      message: effectiveMessage,
       canPerformActions,
       currentPath,
       openaiAvailable: !!process.env.OPENAI_API_KEY,
@@ -108,13 +143,25 @@ export async function POST(req: NextRequest) {
       userId,
       operatorDisplayName: firstName,
       mentorState,
+      operatorKnowledgeBlock,
+      operatorResearchBlock,
     });
 
     if (process.env.OPENAI_API_KEY) {
-      persistMentorMerge(userId, mentorState, message, result.reply);
+      const mentorUserLine =
+        message.trim() ||
+        (mediaAug?.mediaInterpretation
+          ? `[Image] ${mediaAug.mediaInterpretation.slice(0, 900)}`
+          : effectiveMessage.slice(0, 900));
+      persistMentorMerge(userId, mentorState, mentorUserLine, result.reply);
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      mediaInterpretation: mediaAug?.mediaInterpretation,
+      actionSummary: result.action ? describeAgentActionForUser(result.action) : undefined,
+      requiresActionConfirmation: Boolean(result.action && requireActionConfirmation),
+    });
   } catch (e) {
     console.error("POST admin agent error:", e);
     return NextResponse.json(

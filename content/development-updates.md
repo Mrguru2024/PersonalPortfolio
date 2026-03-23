@@ -8,6 +8,15 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-23 — PPC, CRM & lead conversion lead magnet
+
+- **Public funnel:** **`/ppc-lead-system`** — landing page for teams focused on lead prospecting, CRM fit, conversion, and paid ads (Google, Meta, LinkedIn). Hero, pillars, contrast with Digital Growth Audit, **`PpcLeadMagnetForm`**, ecosystem insight strip, **`LeadMagnetRelatedWorkSection`**, recommended next step.
+- **API:** **`POST /api/ppc-lead-consultation`** — validates context, builds structured message, submits via **`portfolioController.submitContactForm`** (subject: PPC, CRM & Lead Growth Consultation Request; default **`landing_page`** `/ppc-lead-system`).
+- **Thank-you:** **`ppc_lead_consultation`** in **`funnelThankYou`** + tailored copy on **`/thank-you?form=ppc_lead_consultation`** for stable conversion URLs (e.g. Google Ads).
+- **Discovery:** **`PPC_LEAD_MAGNET_PATH`** in **`funnelCtas`**, card on **`/free-growth-tools`** (**`LEAD_MAGNETS`**), **`siteDirectory`** entry, **Growth** footer link (“PPC & lead systems”), related-work key **`ppc-lead-system`**.
+
+---
+
 ## 2026-03-22 — Revenue Ops, Communications, Paid Growth, and funnel polish
 
 - **Lean Revenue Ops (Growth OS):** Admin **Revenue Ops** dashboard and settings (`/admin/growth-os/revenue-ops`), Twilio SMS and Stripe-aware helpers, booking-link flows, and CRM contact **Revenue Ops** actions. Webhook routes for Stripe and Twilio; optional env vars documented in `.env.example`. See `Docs/implementation/LEAN-REVENUE-OPS.md`.

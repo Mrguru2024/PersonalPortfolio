@@ -61,7 +61,7 @@ export default function ChallengeDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-2xl">
         <div className="mb-6">
           <Link href="/challenge" className="text-sm text-muted-foreground hover:text-foreground">
             ← Challenge home

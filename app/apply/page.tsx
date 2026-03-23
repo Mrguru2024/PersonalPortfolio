@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFunnel } from "@/lib/funnel-store";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 
 const applySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -123,7 +124,7 @@ export default function ApplyPage() {
         setSubmitting(false);
         return;
       }
-      router.push("/thank-you");
+      router.push(funnelThankYouUrl("growth_plan_apply"));
     } catch {
       setError("Network error. Please try again.");
       setSubmitting(false);

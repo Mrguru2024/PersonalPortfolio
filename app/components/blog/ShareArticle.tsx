@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { devError } from "@/lib/devConsole";
 
 interface ShareArticleProps {
   readonly title: string;
@@ -55,7 +56,7 @@ export function ShareArticle({ title, url, summary, className }: ShareArticlePro
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (error: unknown) {
-      console.error("Failed to copy link:", error);
+      devError("[ShareArticle] copy link failed");
       toast({
         title: "Failed to copy",
         description: "Please try again or copy the link manually.",
@@ -92,7 +93,7 @@ export function ShareArticle({ title, url, summary, className }: ShareArticlePro
       } catch (error: unknown) {
         // User cancelled or error occurred
         if (error instanceof Error && error.name !== "AbortError") {
-          console.error("Error sharing:", error);
+          devError("[ShareArticle] native share failed");
         }
       }
     } else {

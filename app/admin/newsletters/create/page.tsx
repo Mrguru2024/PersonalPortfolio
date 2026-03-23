@@ -107,7 +107,7 @@ export default function CreateNewsletterPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-5xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-10 max-w-5xl">
       <div className="mb-8">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/newsletters">

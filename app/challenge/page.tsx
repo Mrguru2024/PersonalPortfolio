@@ -16,8 +16,8 @@ import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
 export default function ChallengeLandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-10 sm:py-14 max-w-4xl">
+    <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-gradient-to-b from-muted/30 to-background pb-24 lg:pb-8">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-10 fold:py-12 sm:py-14 max-w-4xl min-w-0">
         {/* Hero with contained visual */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
@@ -26,7 +26,7 @@ export default function ChallengeLandingPage() {
           className="text-center mb-12 sm:mb-16"
         >
           <p className="text-sm font-medium text-primary mb-2">{CHALLENGE_SUBTITLE}</p>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h1 className="text-2xl fold:text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4 leading-tight">
             {CHALLENGE_NAME}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-0">

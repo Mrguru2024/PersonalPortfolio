@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { devError } from "@/lib/devConsole";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -38,7 +39,7 @@ export function BudgetComparison({ assessmentId }: BudgetComparisonProps) {
           setComparison(data.comparison);
         }
       } catch (error) {
-        console.error("Error fetching comparison:", error);
+        devError("[BudgetComparison] fetch failed");
       } finally {
         setLoading(false);
       }

@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,6 +30,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import {
   AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS_WITH_FLEXIBLE,
@@ -74,7 +75,7 @@ export function StrategyCallForm({
   cardClassName,
   goalInjection,
 }: StrategyCallFormProps = {}) {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
   const { track } = useVisitorTracking();
   const pathname = usePathname();
   const pageVisited = pathname || "/contact";
@@ -144,12 +145,12 @@ export function StrategyCallForm({
     },
     onSuccess: () => {
       track("form_completed", { pageVisited, metadata: { form: "strategy_call" } });
-      setSubmitted(true);
       toast({
         title: "Request received",
         description:
           "Thanks. We will review your details and send next-step scheduling guidance.",
       });
+      router.replace(funnelThankYouUrl("strategy_call_contact"));
     },
     onError: (error: Error) => {
       toast({
@@ -159,33 +160,6 @@ export function StrategyCallForm({
       });
     },
   });
-
-  if (submitted) {
-    return (
-      <Card className={cn("border-border bg-card", cardClassName)}>
-        <CardContent className="p-6 sm:p-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <CheckCircle2 className="h-7 w-7" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground">
-            Strategy call request submitted.
-          </h3>
-          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-            We will review your context, then reach out with the best next-step
-            call flow for your stage.
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-            <Button asChild variant="outline" className="min-h-[44px]">
-              <Link href="/digital-growth-audit">Prefer a full audit first?</Link>
-            </Button>
-            <Button asChild className="min-h-[44px]">
-              <Link href="/services">Review service options</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className={cn("border-border bg-card", cardClassName)}>

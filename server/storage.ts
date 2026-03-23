@@ -28,6 +28,9 @@ import { users, type User, type InsertUser,
   adminAgentMentorState,
   type AdminAgentMentorStateRow,
   type AdminAgentMentorStateV1,
+  adminAgentKnowledgeEntries,
+  type AdminAgentKnowledgeEntryRow,
+  type InsertAdminAgentKnowledgeEntryRow,
 } from "@shared/schema";
 import { blogPostViews, type BlogPostView, type InsertBlogPostView } from "@shared/blogAnalyticsSchema";
 import {
@@ -555,6 +558,19 @@ export interface IStorage {
 
   getAdminAgentMentorState(userId: number): Promise<AdminAgentMentorStateRow | undefined>;
   upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateV1): Promise<AdminAgentMentorStateRow>;
+
+  listAdminAgentKnowledgeEntries(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
+  getAdminAgentKnowledgeEntry(userId: number, id: number): Promise<AdminAgentKnowledgeEntryRow | undefined>;
+  createAdminAgentKnowledgeEntry(row: InsertAdminAgentKnowledgeEntryRow): Promise<AdminAgentKnowledgeEntryRow>;
+  updateAdminAgentKnowledgeEntry(
+    userId: number,
+    id: number,
+    updates: Partial<Omit<InsertAdminAgentKnowledgeEntryRow, "userId" | "id">>,
+  ): Promise<AdminAgentKnowledgeEntryRow | undefined>;
+  deleteAdminAgentKnowledgeEntry(userId: number, id: number): Promise<boolean>;
+  getAdminAgentKnowledgeForAgent(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
+  getAdminAgentKnowledgeForResearch(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
+  getAdminAgentKnowledgeForMessages(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3857,6 +3873,7 @@ export class DatabaseStorage implements IStorage {
       reminderFrequency: settings.reminderFrequency,
       notifyOnRoleChange: settings.notifyOnRoleChange,
       aiAgentCanPerformActions: settings.aiAgentCanPerformActions,
+      aiAgentRequireActionConfirmation: settings.aiAgentRequireActionConfirmation,
       updatedAt: now,
     };
     if (existing) {
@@ -3897,6 +3914,91 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return row!;
+  }
+
+  async listAdminAgentKnowledgeEntries(userId: number): Promise<AdminAgentKnowledgeEntryRow[]> {
+    return db
+      .select()
+      .from(adminAgentKnowledgeEntries)
+      .where(eq(adminAgentKnowledgeEntries.userId, userId))
+      .orderBy(desc(adminAgentKnowledgeEntries.updatedAt));
+  }
+
+  async getAdminAgentKnowledgeEntry(userId: number, id: number): Promise<AdminAgentKnowledgeEntryRow | undefined> {
+    const [row] = await db
+      .select()
+      .from(adminAgentKnowledgeEntries)
+      .where(and(eq(adminAgentKnowledgeEntries.id, id), eq(adminAgentKnowledgeEntries.userId, userId)))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async createAdminAgentKnowledgeEntry(
+    row: InsertAdminAgentKnowledgeEntryRow,
+  ): Promise<AdminAgentKnowledgeEntryRow> {
+    const now = new Date();
+    const [created] = await db
+      .insert(adminAgentKnowledgeEntries)
+      .values({
+        userId: row.userId,
+        title: row.title,
+        body: row.body,
+        useInAgent: row.useInAgent,
+        useInResearch: row.useInResearch,
+        useInMessages: row.useInMessages,
+        updatedAt: now,
+      })
+      .returning();
+    return created!;
+  }
+
+  async updateAdminAgentKnowledgeEntry(
+    userId: number,
+    id: number,
+    updates: Partial<Omit<InsertAdminAgentKnowledgeEntryRow, "userId" | "id">>,
+  ): Promise<AdminAgentKnowledgeEntryRow | undefined> {
+    const now = new Date();
+    const [row] = await db
+      .update(adminAgentKnowledgeEntries)
+      .set({ ...updates, updatedAt: now })
+      .where(and(eq(adminAgentKnowledgeEntries.id, id), eq(adminAgentKnowledgeEntries.userId, userId)))
+      .returning();
+    return row ?? undefined;
+  }
+
+  async deleteAdminAgentKnowledgeEntry(userId: number, id: number): Promise<boolean> {
+    const deleted = await db
+      .delete(adminAgentKnowledgeEntries)
+      .where(and(eq(adminAgentKnowledgeEntries.id, id), eq(adminAgentKnowledgeEntries.userId, userId)))
+      .returning({ id: adminAgentKnowledgeEntries.id });
+    return deleted.length > 0;
+  }
+
+  async getAdminAgentKnowledgeForAgent(userId: number): Promise<AdminAgentKnowledgeEntryRow[]> {
+    return db
+      .select()
+      .from(adminAgentKnowledgeEntries)
+      .where(
+        and(eq(adminAgentKnowledgeEntries.userId, userId), eq(adminAgentKnowledgeEntries.useInAgent, true)),
+      );
+  }
+
+  async getAdminAgentKnowledgeForResearch(userId: number): Promise<AdminAgentKnowledgeEntryRow[]> {
+    return db
+      .select()
+      .from(adminAgentKnowledgeEntries)
+      .where(
+        and(eq(adminAgentKnowledgeEntries.userId, userId), eq(adminAgentKnowledgeEntries.useInResearch, true)),
+      );
+  }
+
+  async getAdminAgentKnowledgeForMessages(userId: number): Promise<AdminAgentKnowledgeEntryRow[]> {
+    return db
+      .select()
+      .from(adminAgentKnowledgeEntries)
+      .where(
+        and(eq(adminAgentKnowledgeEntries.userId, userId), eq(adminAgentKnowledgeEntries.useInMessages, true)),
+      );
   }
 }
 

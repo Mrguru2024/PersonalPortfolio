@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Gauge, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +54,7 @@ function getSuggestions(answers: Record<string, number>): string[] {
 }
 
 export function StartupWebsiteScoreCard() {
+  const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -66,6 +68,14 @@ export function StartupWebsiteScoreCard() {
     e.preventDefault();
     if (allAnswered) setSubmitted(true);
   };
+
+  useEffect(() => {
+    if (!submitted || typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("quiz_complete") === "1") return;
+    u.searchParams.set("quiz_complete", "1");
+    router.replace(`${u.pathname}${u.search}`, { scroll: false });
+  }, [submitted, router]);
 
   if (submitted) {
     return (

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function ChallengeThankYouPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-12 max-w-xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-xl">
         <Card className="border-primary/20">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">

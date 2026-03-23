@@ -148,7 +148,11 @@ export default function CommCampaignDetailPage() {
       return res.json() as Promise<{ sent: number; failed: number }>;
     },
     onSuccess: (r) => {
-      toast({ title: "Send complete", description: `Sent ${r.sent}, failed ${r.failed}` });
+      toast({
+        title: "Send complete",
+        descriptionKey: "communications.sendCompleteDescription",
+        values: { sent: String(r.sent), failed: String(r.failed) },
+      });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns", id] });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns"] });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/analytics"] });

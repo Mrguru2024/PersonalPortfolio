@@ -648,6 +648,8 @@ export const adminSettings = pgTable("admin_settings", {
   reminderFrequency: text("reminder_frequency").default("realtime").notNull(), // realtime | hourly | daily | weekly
   notifyOnRoleChange: boolean("notify_on_role_change").default(true).notNull(),
   aiAgentCanPerformActions: boolean("ai_agent_can_perform_actions").default(false).notNull(),
+  /** When true, the admin assistant shows a confirm step before navigation or reminder runs. */
+  aiAgentRequireActionConfirmation: boolean("ai_agent_require_action_confirmation").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -678,6 +680,27 @@ export const adminAgentMentorState = pgTable("admin_agent_mentor_state", {
 
 export type AdminAgentMentorStateRow = typeof adminAgentMentorState.$inferSelect;
 export type InsertAdminAgentMentorStateRow = typeof adminAgentMentorState.$inferInsert;
+
+/**
+ * Per-admin notes and knowledge bases for the AI assistant and optional downstream flows.
+ * Flags control whether each entry is injected into the agent, research-style tools, or message generation.
+ */
+export const adminAgentKnowledgeEntries = pgTable("admin_agent_knowledge_entries", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  useInAgent: boolean("use_in_agent").default(true).notNull(),
+  useInResearch: boolean("use_in_research").default(true).notNull(),
+  useInMessages: boolean("use_in_messages").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AdminAgentKnowledgeEntryRow = typeof adminAgentKnowledgeEntries.$inferSelect;
+export type InsertAdminAgentKnowledgeEntryRow = typeof adminAgentKnowledgeEntries.$inferInsert;
 
 /** Growth diagnosis funnel: answers, scores, recommendation, and application form. */
 export const growthFunnelLeads = pgTable("growth_funnel_leads", {

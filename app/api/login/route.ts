@@ -28,10 +28,13 @@ export async function POST(req: NextRequest) {
     let body;
     try {
       body = await req.json();
-    } catch (parseError: any) {
-      console.error("Error parsing request body:", parseError);
+    } catch (parseError: unknown) {
+      console.error("[POST /api/login] invalid JSON body");
+      const isDev = process.env.NODE_ENV === "development";
+      const detail =
+        isDev && parseError instanceof Error ? parseError.message : undefined;
       return NextResponse.json(
-        { message: "Invalid request body", error: parseError?.message },
+        { message: "Invalid request body", ...(detail ? { error: detail } : {}) },
         { status: 400 },
       );
     }
@@ -75,17 +78,11 @@ export async function POST(req: NextRequest) {
       user = await storage.getUserByUsername(username);
       // If not found by username, try email
       if (!user && username.includes("@")) {
-        console.log("User not found by username, trying email:", username);
         user = await storage.getUserByEmail(username);
-      }
-      if (!user) {
-        console.log("User not found by username or email:", username);
-      } else {
-        console.log("User found:", user.id, user.username, user.email);
       }
     } catch (dbError: unknown) {
       const dbMsg = dbError instanceof Error ? dbError.message : String(dbError);
-      console.error("Database error fetching user:", dbError);
+      console.error("[POST /api/login] database error during user lookup");
       try {
         await recordActivityLog("error", false, {
           message: dbMsg || "Database error during login user lookup",
@@ -105,7 +102,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           message,
-          ...(isDev && { error: dbMsg }),
+          ...(isDev ? { error: dbMsg } : {}),
         },
         { status: 500 },
       );
@@ -113,7 +110,6 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Verify password
     if (!user) {
-      console.log("Login failed: User not found");
       try {
         await recordActivityLog("login_failure", false, {
           identifier: username,
@@ -132,28 +128,21 @@ export async function POST(req: NextRequest) {
 
     let passwordMatch;
     try {
-      console.log("Comparing password for user:", user.id);
       passwordMatch = await comparePasswords(password, user.password);
-      console.log("Password match result:", passwordMatch);
-    } catch (compareError: any) {
-      console.error("Error comparing passwords:", compareError);
-      console.error("Compare error details:", {
-        message: compareError?.message,
-        stack: compareError?.stack,
-      });
+    } catch (compareError: unknown) {
+      console.error("[POST /api/login] password verify error");
       return NextResponse.json(
         {
           message: "Error verifying password",
-          ...(process.env.NODE_ENV === "development" && {
-            error: compareError?.message,
-          }),
+          ...(process.env.NODE_ENV === "development" && compareError instanceof Error
+            ? { error: compareError.message }
+            : {}),
         },
         { status: 500 },
       );
     }
 
     if (!passwordMatch) {
-      console.log("Login failed: Password does not match");
       try {
         await recordActivityLog("login_failure", false, {
           userId: user.id,
@@ -171,20 +160,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("Login successful for user:", user.id, user.username);
-
     // Step 4: Create session ID and set cookie
     let sessionId: string;
     try {
       sessionId = randomBytes(32).toString("hex");
-    } catch (cryptoError: any) {
-      console.error("Error generating session ID:", cryptoError);
+    } catch (cryptoError: unknown) {
+      console.error("[POST /api/login] session id generation failed");
       return NextResponse.json(
         {
           message: "Error creating session",
-          ...(process.env.NODE_ENV === "development" && {
-            error: cryptoError?.message,
-          }),
+          ...(process.env.NODE_ENV === "development" && cryptoError instanceof Error
+            ? { error: cryptoError.message }
+            : {}),
         },
         { status: 500 },
       );
@@ -193,14 +180,14 @@ export async function POST(req: NextRequest) {
     let cookieStore;
     try {
       cookieStore = await cookies();
-    } catch (cookieError: any) {
-      console.error("Error getting cookie store:", cookieError);
+    } catch (cookieError: unknown) {
+      console.error("[POST /api/login] cookie store unavailable");
       return NextResponse.json(
         {
           message: "Error setting up session",
-          ...(process.env.NODE_ENV === "development" && {
-            error: cookieError?.message,
-          }),
+          ...(process.env.NODE_ENV === "development" && cookieError instanceof Error
+            ? { error: cookieError.message }
+            : {}),
         },
         { status: 500 },
       );
@@ -219,24 +206,14 @@ export async function POST(req: NextRequest) {
         ...(maxAge && { maxAge }),
       };
       cookieStore.set("sessionId", sessionId, cookieOptions);
-      console.log(
-        `[Login] ✅ Session cookie set - sessionId: ${sessionId.substring(0, 16)}..., options:`,
-        {
-          httpOnly: cookieOptions.httpOnly,
-          secure: cookieOptions.secure,
-          sameSite: cookieOptions.sameSite,
-          path: cookieOptions.path,
-          maxAge: cookieOptions.maxAge || "session",
-        },
-      );
-    } catch (setCookieError: any) {
-      console.error("Error setting cookie:", setCookieError);
+    } catch (setCookieError: unknown) {
+      console.error("[POST /api/login] set session cookie failed");
       return NextResponse.json(
         {
           message: "Error setting session cookie",
-          ...(process.env.NODE_ENV === "development" && {
-            error: setCookieError?.message,
-          }),
+          ...(process.env.NODE_ENV === "development" && setCookieError instanceof Error
+            ? { error: setCookieError.message }
+            : {}),
         },
         { status: 500 },
       );
@@ -244,24 +221,12 @@ export async function POST(req: NextRequest) {
 
     // Step 5: Store session in database (non-fatal but important)
     try {
-      console.log(
-        `[Login] Storing session for user ${user.id} with sessionId ${sessionId.substring(0, 16)}...`,
-      );
       await setSession(sessionId, user.id);
-      console.log(`[Login] Session storage completed for user ${user.id}`);
-    } catch (sessionError: any) {
-      // Log session storage error but don't fail login
-      console.error(
-        `[Login] Warning: Failed to store session in database for user ${user.id}:`,
-        sessionError,
-      );
-      console.error("Session storage error details:", {
-        message: sessionError?.message,
-        code: sessionError?.code,
-        path: sessionError?.path,
-        stack: sessionError?.stack,
-      });
-      // Continue with login - the cookie is set, session can be stored on next request
+    } catch (sessionError: unknown) {
+      console.error("[POST /api/login] session persistence warning");
+      if (process.env.NODE_ENV === "development" && sessionError instanceof Error) {
+        console.error(sessionError.message);
+      }
     }
 
     // Step 6: Record success and return user data (await so the row exists before response)
@@ -284,45 +249,45 @@ export async function POST(req: NextRequest) {
         isSuperUser,
         trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
       });
-    } catch (responseError: any) {
-      console.error("Error creating response:", responseError);
+    } catch (responseError: unknown) {
+      console.error("[POST /api/login] response serialization error");
       return NextResponse.json(
         {
           message: "Error preparing response",
-          ...(process.env.NODE_ENV === "development" && {
-            error: responseError?.message,
-          }),
+          ...(process.env.NODE_ENV === "development" && responseError instanceof Error
+            ? { error: responseError.message }
+            : {}),
         },
         { status: 500 },
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     captureApiError(error, req);
     try {
+      const errMsg = error instanceof Error ? error.message : "Login error";
       await recordActivityLog("error", false, {
-        message: error?.message || "Login error",
+        message: errMsg,
         ipAddress: getIpAddress(req),
         userAgent: req.headers.get("user-agent") ?? undefined,
-        metadata: { stack: error?.stack?.slice(0, 2000) },
+        metadata: {
+          stack: error instanceof Error ? error.stack?.slice(0, 2000) : undefined,
+        },
       });
     } catch {
       /* logged inside recordActivityLog */
     }
-    console.error("Unexpected login error:", error);
-    console.error("Error stack:", error?.stack);
-    console.error("Error details:", {
-      message: error?.message,
-      name: error?.name,
-      code: error?.code,
-      cause: error?.cause,
-    });
+    console.error("[POST /api/login] unexpected error");
+    if (process.env.NODE_ENV === "development" && error instanceof Error) {
+      console.error(error.message, error.stack);
+    }
+    const devErr =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? { error: error.message, stack: error.stack }
+        : {};
     return NextResponse.json(
       {
         message: "Error during login",
-        ...(process.env.NODE_ENV === "development" && {
-          error: error?.message || "Unknown error",
-          stack: error?.stack,
-        }),
+        ...devErr,
       },
       { status: 500 },
     );

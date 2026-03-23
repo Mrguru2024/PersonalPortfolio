@@ -105,7 +105,7 @@ export function CommunityShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-6 lg:py-8">{children}</main>
+      <main className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-6 lg:py-8">{children}</main>
     </div>
   );
 }

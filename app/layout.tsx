@@ -13,9 +13,29 @@ import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
 const gaEnabled = GA_MEASUREMENT_ID.length > 0;
 
+/** Google Ads / conversion tag (gtag destination). Set empty to disable. */
+const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() ?? "AW-18034342914";
+const googleAdsEnabled = /^AW-\d+$/i.test(GOOGLE_ADS_ID);
+
 /** Google Tag Manager container (public id). Must look like GTM-XXXXXXX. */
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID?.trim() ?? "";
 const gtmEnabled = /^GTM-[A-Z0-9]+$/i.test(GTM_ID);
+
+/** One shared gtag.js loader + inline init (GA4 and/or Google Ads — never duplicate the snippet). */
+const gtagSnippetEnabled = gaEnabled || googleAdsEnabled;
+const gtagJsQueryId = gaEnabled ? GA_MEASUREMENT_ID : GOOGLE_ADS_ID;
+
+function gtagInitScriptContent(): string {
+  let s =
+    "window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());";
+  if (gaEnabled) {
+    s += `gtag('config','${GA_MEASUREMENT_ID}');`;
+  }
+  if (googleAdsEnabled) {
+    s += `gtag('config','${GOOGLE_ADS_ID}');`;
+  }
+  return s;
+}
 
 /** Absolute base URL (with https://) so manifest, OG, etc. resolve correctly and don't double-path. */
 const baseUrl = ensureAbsoluteUrl(getSiteBaseUrl());
@@ -110,13 +130,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }}
           />
         )}
-        {/* Google tag (gtag.js) — GA4; avoid duplicate page_view if you also load GA via GTM */}
-        {gaEnabled && (
+        {/* Google tag (gtag.js) — GA4 + Google Ads in one loader; disable either via env */}
+        {gtagSnippetEnabled && (
           <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gtagJsQueryId)}`}
+            />
             <script
               dangerouslySetInnerHTML={{
-                __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${GA_MEASUREMENT_ID}');`,
+                __html: gtagInitScriptContent(),
               }}
             />
           </>
@@ -158,7 +181,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
               <FixedHeaderWrapper />
               <TrialBanner />
-              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+12px)] lg:pb-[env(safe-area-inset-bottom)]">
+              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+20px)] lg:pb-[env(safe-area-inset-bottom)]">
                 {children}
               </main>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}

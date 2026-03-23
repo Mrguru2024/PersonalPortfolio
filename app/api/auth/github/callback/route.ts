@@ -56,8 +56,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error("GitHub token exchange error:", errorText);
+      console.error("GitHub token exchange failed:", tokenResponse.status);
       return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=Token exchange failed`);
     }
 
@@ -78,8 +77,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userInfoResponse.ok) {
-      const errorText = await userInfoResponse.text();
-      console.error("GitHub user info error:", errorText);
+      console.error("GitHub user info failed:", userInfoResponse.status);
       return NextResponse.redirect(`${baseUrl}/auth?error=github_auth_failed&message=Failed to get user info`);
     }
 
@@ -153,9 +151,8 @@ export async function GET(req: NextRequest) {
     // Store session in database
     try {
       await setSession(sessionId, user.id);
-    } catch (sessionError) {
-      console.error("Warning: Failed to store session:", sessionError);
-      // Continue anyway - cookie is set
+    } catch {
+      console.error("[GitHub OAuth] session persistence warning");
     }
 
     try {
@@ -172,11 +169,20 @@ export async function GET(req: NextRequest) {
 
     // Redirect to home page
     return NextResponse.redirect(baseUrl);
-  } catch (error: any) {
-    console.error("GitHub OAuth callback error:", error);
+  } catch (error: unknown) {
+    console.error("[GitHub OAuth] callback error");
+    if (process.env.NODE_ENV === "development" && error instanceof Error) {
+      console.error(error.message);
+    }
     const errorBaseUrl = process.env.NODE_ENV === 'production' 
       ? 'https://mrguru.dev' 
       : (req.headers.get('origin') || 'http://localhost:3000');
-    return NextResponse.redirect(`${errorBaseUrl}/auth?error=github_auth_failed&message=${encodeURIComponent(error?.message || "Unknown error")}`);
+    const publicMessage =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? error.message.slice(0, 200)
+        : "Authentication failed";
+    return NextResponse.redirect(
+      `${errorBaseUrl}/auth?error=github_auth_failed&message=${encodeURIComponent(publicMessage)}`,
+    );
   }
 }

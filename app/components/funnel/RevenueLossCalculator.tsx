@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { ArrowRight, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ function clampSaleValue(n: number): number {
 }
 
 export function RevenueLossCalculator() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { track } = useVisitorTracking();
   const [monthlyVisitors, setMonthlyVisitors] = useState<string>("");
   const [conversionRate, setConversionRate] = useState<string>("");
@@ -59,6 +62,14 @@ export function RevenueLossCalculator() {
   };
 
   const showResults = hasCalculated && visitors > 0 && saleValue > 0;
+
+  useEffect(() => {
+    if (!showResults || !pathname || typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("tool_complete") === "1") return;
+    u.searchParams.set("tool_complete", "1");
+    router.replace(`${u.pathname}${u.search}`, { scroll: false });
+  }, [showResults, pathname, router]);
 
   return (
     <Card className="border-border bg-card">

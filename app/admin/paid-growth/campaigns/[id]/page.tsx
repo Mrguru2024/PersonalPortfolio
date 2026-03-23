@@ -60,7 +60,11 @@ export default function PaidGrowthCampaignDetailPage() {
       return res.json();
     },
     onSuccess: (d: { overallScore: number; blockers: string[] }) => {
-      toast({ title: "Readiness", description: `Score ${d.overallScore}` });
+      toast({
+        title: "Readiness",
+        descriptionKey: "growth.readinessScore",
+        values: { score: String(d.overallScore) },
+      });
       qc.invalidateQueries({ queryKey: ["/api/admin/paid-growth/campaigns", id] });
     },
     onError: () => toast({ title: "Readiness failed", variant: "destructive" }),

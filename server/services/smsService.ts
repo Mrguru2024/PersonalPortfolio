@@ -55,10 +55,10 @@ export async function sendSms(
     });
     const data = (await res.json()) as { sid?: string; message?: string; code?: number };
     if (!res.ok) {
-      console.error("Twilio SMS error:", data);
+      console.error("Twilio SMS error:", res.status, data.code, data.message);
       return { ok: false, error: data.message || String(res.status) };
     }
-    console.log(`✅ SMS sent to ${toE164} (sid: ${data.sid})`);
+    console.log("SMS sent", data.sid ? { sid: data.sid } : {});
     return { ok: true, messageSid: data.sid };
   } catch (e) {
     console.error("SMS send error:", e);

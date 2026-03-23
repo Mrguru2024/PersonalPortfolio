@@ -216,7 +216,7 @@ const AdminBlog = () => {
   }, [form]);
   
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-10">
       <div className="max-w-6xl mx-auto">
         <div className="mb-10">
           <h1 className="text-3xl font-bold mb-2">Create New Blog Post</h1>

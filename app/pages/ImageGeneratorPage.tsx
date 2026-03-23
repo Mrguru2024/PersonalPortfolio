@@ -4,7 +4,7 @@ import ImageGenerator from "@/components/ImageGenerator";
 
 export default function ImageGeneratorPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Generate images</h1>
         <p className="text-muted-foreground">

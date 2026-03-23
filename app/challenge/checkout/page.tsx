@@ -73,7 +73,7 @@ export default function ChallengeCheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-lg">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-lg">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/challenge" className="gap-2">

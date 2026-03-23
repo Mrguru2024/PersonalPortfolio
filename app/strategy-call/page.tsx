@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/card";
 import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
-import { CALL_CONFIRMATION_PATH, BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 
@@ -133,7 +134,7 @@ export default function StrategyCallPage() {
         title: "Request received",
         description: "We'll be in touch to schedule your strategy call.",
       });
-      router.push(CALL_CONFIRMATION_PATH);
+      router.push(funnelThankYouUrl("strategy_call_landing"));
     },
     onError: (error: Error) => {
       toast({

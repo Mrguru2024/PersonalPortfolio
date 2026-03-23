@@ -41,7 +41,7 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-4xl">
         <Skeleton className="h-8 w-48 mb-6" />
         <Skeleton className="h-4 w-1/3 mb-4" />
         <Skeleton className="h-64 w-full mb-8 rounded-lg" />
@@ -56,7 +56,7 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
 
   if (error || !post) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-4xl">
         <Alert variant="destructive" className="mb-6">
           <AlertTitle>Post not found</AlertTitle>
           <AlertDescription>
@@ -77,7 +77,7 @@ export default function BlogPost({ slug }: Readonly<BlogPostProps>) {
   const tags = Array.isArray(post.tags) ? post.tags : [];
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-4xl">
       <BlogPostSEO post={post} />
       <StructuredData
         schema={{

@@ -4,6 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ContactBookingSection } from "./index";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    replace: jest.fn(),
+    push: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => "/contact",
+}));
+
 jest.mock("@/lib/useVisitorTracking", () => ({
   useVisitorTracking: () => ({ track: jest.fn() }),
 }));

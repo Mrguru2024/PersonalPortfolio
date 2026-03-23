@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, MessageCircle, Sparkles } from "lucide-react";
+import { funnelThankYouUrl, THANK_YOU_SESSION } from "@/lib/funnelThankYou";
 
 type MeetingType = {
   id: number;
@@ -20,6 +22,7 @@ type MeetingType = {
 type Slot = { startAt: string; endAt: string; label: string };
 
 export function SchedulingBookFlow() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [timezone, setTimezone] = useState("America/New_York");
@@ -35,7 +38,6 @@ export function SchedulingBookFlow() {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ token: string; emailSent?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
@@ -113,7 +115,13 @@ export function SchedulingBookFlow() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Booking failed");
-      setDone({ token: data.guestToken, emailSent: data.confirmationEmailSent });
+      const token = data.guestToken as string;
+      const emailSent = data.confirmationEmailSent as boolean | undefined;
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(THANK_YOU_SESSION.bookingManageHref, `/book/manage/${token}`);
+        sessionStorage.setItem(THANK_YOU_SESSION.bookingEmailSent, String(emailSent !== false));
+      }
+      router.push(funnelThankYouUrl("native_booking"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
     } finally {
@@ -162,26 +170,6 @@ export function SchedulingBookFlow() {
           <CardTitle>Online scheduling is off</CardTitle>
           <CardDescription>Ask your Ascendra contact for a time, or use the strategy call form.</CardDescription>
         </CardHeader>
-      </Card>
-    );
-  }
-
-  if (done) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>You&apos;re booked</CardTitle>
-          <CardDescription>
-            {done.emailSent === false
-              ? "We saved your meeting. Confirmation email could not be sent—check spam or contact us."
-              : "Check your email for confirmation and calendar details."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button asChild variant="outline">
-            <a href={`/book/manage/${done.token}`}>View or cancel</a>
-          </Button>
-        </CardContent>
       </Card>
     );
   }

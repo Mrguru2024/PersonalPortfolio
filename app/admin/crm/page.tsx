@@ -262,7 +262,10 @@ export default function CrmPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
       setSelectedIds(new Set());
       setBulkStatusOpen(false);
-      toast({ title: `${ids.length} contact(s) updated` });
+      toast({
+        titleKey: "crm.bulkContactsUpdated",
+        values: { count: String(ids.length) },
+      });
     },
     onError: (e: Error) => toast({ title: "Bulk update failed", description: e.message, variant: "destructive" }),
   });
@@ -452,7 +455,7 @@ export default function CrmPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-6 max-w-6xl">
         {/* Header */}
         <header className="mb-8">
           <Button variant="ghost" size="sm" className="text-muted-foreground -ml-1" asChild>

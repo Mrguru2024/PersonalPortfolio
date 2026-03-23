@@ -191,7 +191,11 @@ export default function AdminDashboardPage() {
       return res.json();
     },
     onSuccess: (_, email) => {
-      toast({ title: "Reset email sent", description: `If an account exists for ${email}, they will receive a link.` });
+      toast({
+        title: "Reset email sent",
+        descriptionKey: "admin.resetEmailDescription",
+        values: { email },
+      });
       setPasswordResetEmail("");
     },
     onError: (e: Error) => toast({ title: "Could not send reset email", description: e.message, variant: "destructive" }),
@@ -510,7 +514,7 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="min-h-screen w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
           Admin Dashboard

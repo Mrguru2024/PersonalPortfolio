@@ -4,6 +4,8 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "dev:install-hooks": "node scripts/install-git-hooks.mjs",
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack",
     "dev:turbo": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev --turbo",
     "dev:webpack": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack",
@@ -34,7 +36,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:email": "tsx scripts/test-email.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "i18n:toast": "node scripts/build-toast-phrase-map.mjs && node scripts/apply-toast-es-lines.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.0",

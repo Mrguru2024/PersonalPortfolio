@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { devError } from "@/lib/devConsole";
 
 const loginSchema = z.object({
   username: z
@@ -95,8 +96,7 @@ const AuthPage = () => {
           loginForm.setValue("rememberMe", true, { shouldValidate: false });
         }
       } catch (error) {
-        // localStorage might not be available in some environments
-        console.error("Error reading from localStorage:", error);
+        devError("[auth-page] localStorage read failed");
       }
     }
   }, [activeTab, loginForm]);
@@ -109,7 +109,6 @@ const AuthPage = () => {
   }, [user, router]);
 
   const onLogin = async (values: LoginFormValues) => {
-    console.log("Login attempt with:", values);
     try {
       // Save or clear credentials based on remember me
       if (values.rememberMe) {
@@ -130,8 +129,8 @@ const AuthPage = () => {
       if (redirect) {
         router.push(redirect);
       }
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch {
+      devError("[auth-page] login request failed");
     }
   };
 
@@ -142,8 +141,8 @@ const AuthPage = () => {
         ...rest,
         requestAdmin: requestAdmin ?? false,
       });
-    } catch (error) {
-      console.error("Registration error:", error);
+    } catch {
+      devError("[auth-page] registration request failed");
     }
   };
 

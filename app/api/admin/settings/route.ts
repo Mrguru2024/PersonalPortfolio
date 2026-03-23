@@ -12,6 +12,7 @@ const DEFAULTS = {
   reminderFrequency: "realtime" as const,
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
+  aiAgentRequireActionConfirmation: true,
 };
 
 /** GET /api/admin/settings — current admin's settings (or defaults). */
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
       reminderFrequency: settings.reminderFrequency,
       notifyOnRoleChange: settings.notifyOnRoleChange,
       aiAgentCanPerformActions: settings.aiAgentCanPerformActions,
+      aiAgentRequireActionConfirmation: settings.aiAgentRequireActionConfirmation,
     });
   } catch (e) {
     console.error("GET admin settings error:", e);
@@ -64,6 +66,7 @@ export async function PATCH(req: NextRequest) {
       "reminderFrequency",
       "notifyOnRoleChange",
       "aiAgentCanPerformActions",
+      "aiAgentRequireActionConfirmation",
     ];
     const updates: Record<string, boolean | string> = {};
     for (const key of allowed) {
@@ -89,6 +92,7 @@ export async function PATCH(req: NextRequest) {
       reminderFrequency: updated.reminderFrequency,
       notifyOnRoleChange: updated.notifyOnRoleChange,
       aiAgentCanPerformActions: updated.aiAgentCanPerformActions,
+      aiAgentRequireActionConfirmation: updated.aiAgentRequireActionConfirmation,
     });
   } catch (e) {
     console.error("PATCH admin settings error:", e);

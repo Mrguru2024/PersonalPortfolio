@@ -67,7 +67,7 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-4xl">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/crm">

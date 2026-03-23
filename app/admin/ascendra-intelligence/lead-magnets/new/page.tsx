@@ -93,7 +93,7 @@ export default function NewLeadMagnetPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-2xl space-y-6">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/ascendra-intelligence/lead-magnets">
             <ArrowLeft className="h-4 w-4 mr-2" />

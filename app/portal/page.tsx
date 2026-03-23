@@ -99,7 +99,8 @@ export default function ClientPortalLoginPage() {
 
       toast({
         title: "Signed in",
-        description: `Welcome back, ${userData.username ?? "there"}!`,
+        descriptionKey: "auth.portalSignedIn",
+        values: { username: userData.username ?? "there" },
       });
 
       const redirect = searchParams.get("redirect");

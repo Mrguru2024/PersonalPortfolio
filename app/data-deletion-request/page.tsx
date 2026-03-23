@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 
 export default function DataDeletionRequestPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,11 +58,11 @@ export default function DataDeletionRequestPage() {
         });
         return;
       }
-      setSubmitted(true);
       toast({
         title: "Request received",
         description: data.message,
       });
+      router.replace(funnelThankYouUrl("data_deletion"));
     } catch {
       toast({
         title: "Request failed",
@@ -70,35 +72,6 @@ export default function DataDeletionRequestPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
-        <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl space-y-6">
-            <Card className="border-border bg-card">
-              <CardContent className="p-6 sm:p-8 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">
-                  Request received
-                </h2>
-                <p className="text-muted-foreground text-sm sm:text-base">
-                  We have received your data deletion request. We will process it in line with our{" "}
-                  <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-                  {" "}and contact you at the email you provided once it is complete.
-                </p>
-                <Button asChild className="mt-6">
-                  <Link href="/">Back to home</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (

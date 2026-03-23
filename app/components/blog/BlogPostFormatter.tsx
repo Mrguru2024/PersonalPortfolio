@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { devWarn } from "@/lib/devConsole";
 
 interface BlogPostFormatterProps {
   content: string;
@@ -90,9 +91,7 @@ export function BlogPostFormatter({
         const level = parseInt(heading.tagName.charAt(1));
         if (level > lastLevel + 1 && lastLevel > 0) {
           // Skip levels detected - could log warning
-          console.warn(
-            `Heading hierarchy issue: ${heading.tagName} after h${lastLevel}`
-          );
+          devWarn("[BlogPostFormatter] heading skip", heading.tagName, lastLevel);
         }
         lastLevel = level;
 

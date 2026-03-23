@@ -31,6 +31,12 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 npm run dev
 
 The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert used by the local WebSocket proxy. The server runs on port 3000 (`npm run dev` uses Webpack via `--webpack`; `npm run dev:turbo` uses Turbopack).
 
+### Development updates log (local git hook)
+
+- **`npm install`** runs **`prepare`** → **`scripts/install-git-hooks.mjs`**, which writes **`.git/hooks/post-commit`** to run **`scripts/dev-log-commit.mjs`** after each local commit.
+- The script appends a short **`##` section** to **`content/development-updates.md`** (unstaged). Skips **CI**, **merge commits**, **`SKIP_DEV_LOG_COMMIT=1`**, and duplicates of the same commit hash. Re-run **`npm run dev:install-hooks`** if the hook is missing.
+- Optional env: see **`.env.example`** (`SKIP_DEV_LOG_COMMIT`, `ASCENDRA_DEV_LOG_COMMITS`, `ASCENDRA_DEV_LOG_QUIET`).
+
 ### Key gotchas
 
 - **`npm run lint`** is broken in this codebase: `next lint` was removed in Next.js 16. Use `npm run check` (`tsc`) for type checking instead. The `tsc` output shows pre-existing type errors in test files (`@testing-library/jest-dom` matcher types) — these do not affect runtime.

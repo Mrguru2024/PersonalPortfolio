@@ -70,9 +70,18 @@ export default function CrmImportPage() {
       if (data.created > 0) {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
-        toast({ title: `${data.created} lead(s) added` });
+        toast({
+          titleKey: "crm.importLeadsAdded",
+          values: { count: String(data.created) },
+        });
       }
-      if (data.errors.length > 0) toast({ title: `${data.skipped} skipped`, variant: "default" });
+      if (data.errors.length > 0) {
+        toast({
+          titleKey: "crm.importSkipped",
+          values: { count: String(data.skipped) },
+          variant: "default",
+        });
+      }
     },
     onError: (e: Error) => toast({ title: "Import failed", description: e.message, variant: "destructive" }),
   });

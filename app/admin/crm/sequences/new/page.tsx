@@ -67,10 +67,10 @@ export default function NewSequencePage() {
   const removeStep = (i: number) => setSteps((s) => s.filter((_, idx) => idx !== i));
   const updateStep = (i: number, upd: Partial<Step>) => setSteps((s) => s.map((step, idx) => (idx === i ? { ...step, ...upd } : step)));
 
-  if (authLoading) return <div className="container mx-auto px-4 py-8 flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  if (authLoading) return <div className="container mx-auto min-w-0 max-w-full px-3 fold:px-4 sm:px-6 py-8 flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-2xl">
       <Button variant="ghost" size="sm" asChild>
         <Link href="/admin/crm/sequences"><ArrowLeft className="h-4 w-4 mr-2" /> Back to sequences</Link>
       </Button>

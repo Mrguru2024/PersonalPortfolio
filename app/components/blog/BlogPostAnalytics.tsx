@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { devError } from "@/lib/devConsole";
 
 interface AnalyticsData {
   scrollDepth: number;
@@ -45,8 +46,8 @@ export function BlogPostAnalytics() {
           }
           hasTrackedInitialView.current = true;
         }
-      } catch (error) {
-        console.error("Error tracking initial view:", error);
+      } catch {
+        devError("[BlogPostAnalytics] initial view track failed");
       }
     };
     
@@ -70,8 +71,8 @@ export function BlogPostAnalytics() {
           scrollEvents: scrollEventsRef.current.slice(-50),
         }),
       });
-    } catch (error) {
-      console.error("Error updating view:", error);
+    } catch {
+      devError("[BlogPostAnalytics] view update failed");
     }
   }, [viewId, slug]);
 

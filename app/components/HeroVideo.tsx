@@ -35,8 +35,8 @@ export default function HeroVideo({
         .catch(error => {
           // Auto-play was prevented, add a muted attribute and try again
           video.muted = true;
-          video.play().catch(e => {
-            console.log('Video autoplay still prevented:', e);
+          video.play().catch(() => {
+            /* autoplay blocked — expected in many browsers */
           });
         });
     }

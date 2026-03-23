@@ -82,7 +82,11 @@ export default function NewCommCampaignPage() {
       return res.json() as Promise<{ count: number; sample: { id: number; email: string; name: string }[] }>;
     },
     onSuccess: (d) => {
-      toast({ title: "Audience preview", description: `${d.count} contacts match.` });
+      toast({
+        title: "Audience preview",
+        descriptionKey: "communications.audiencePreviewDescription",
+        values: { count: String(d.count) },
+      });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

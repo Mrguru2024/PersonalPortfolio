@@ -111,7 +111,7 @@ export default function ChallengeApplyPage() {
   if (!registrationId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-        <div className="container mx-auto px-4 py-12 max-w-lg">
+        <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-12 max-w-lg">
           <Card>
             <CardContent className="pt-6">
               <p className="text-muted-foreground text-center mb-4">Open the apply form from your challenge dashboard.</p>
@@ -127,7 +127,7 @@ export default function ChallengeApplyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="container mx-auto px-4 py-8 max-w-lg">
+      <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-lg">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild>
             <Link href={registrationId ? `/challenge/dashboard?registrationId=${registrationId}` : "/challenge/dashboard"} className="gap-2">

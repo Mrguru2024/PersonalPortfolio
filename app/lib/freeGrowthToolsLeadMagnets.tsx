@@ -1,10 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles } from "lucide-react";
+import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart } from "lucide-react";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   DIGITAL_GROWTH_AUDIT_PATH,
+  PPC_LEAD_MAGNET_PATH,
 } from "@/lib/funnelCtas";
 
 export interface FreeGrowthToolMagnet {
@@ -38,6 +39,16 @@ export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
     cta: "Get your free audit",
     href: "/digital-growth-audit",
     icon: Search,
+  },
+  {
+    id: "ppc-lead-system",
+    title: "PPC, CRM & lead conversion consultation",
+    who: "Teams investing in ads who need prospecting, a CRM that fits how they sell, and better conversion.",
+    problem: "Leads slip through spreadsheets, your CRM doesn’t match your process, or ad spend isn’t tied to pipeline.",
+    get: "A structured review of prospecting, pipeline, conversion, and ad platforms—plus recommended next steps.",
+    cta: "Request consultation",
+    href: PPC_LEAD_MAGNET_PATH,
+    icon: LineChart,
   },
   {
     id: "revenue-calculator",
