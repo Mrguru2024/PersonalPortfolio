@@ -65,6 +65,10 @@ function mkReq(body: Record<string, unknown>) {
 describe("POST /api/offer-valuation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLogActivity.mockResolvedValue(undefined);
+    mockFireWorkflows.mockResolvedValue([]);
+    mockSendDirectMessageEmail.mockResolvedValue(true);
+    mockSendNotification.mockResolvedValue(true);
     mockStorage.getOfferValuationSettings.mockResolvedValue({
       id: 1,
       accessMode: "lead_magnet",

@@ -344,7 +344,7 @@ Business type: ${b.leadCapture.businessType ?? "N/A"}`,
       effortScore: valuation.inputsUsed.effortAndSacrifice,
       finalScore: valuation.finalScore,
       aiEnabled,
-      insights: valuation.insights as Record<string, unknown>,
+      insights: valuation.insights as unknown as Record<string, unknown>,
     });
 
     return NextResponse.json({

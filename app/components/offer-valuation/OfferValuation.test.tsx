@@ -21,9 +21,19 @@ jest.mock("@/hooks/use-toast", () => ({
 }));
 
 describe("OfferValuationTool", () => {
+  beforeAll(() => {
+    class ResizeObserverMock {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    (global as typeof globalThis & { ResizeObserver?: typeof ResizeObserverMock }).ResizeObserver =
+      ResizeObserverMock;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn().mockResolvedValue({
+    (global.fetch as jest.Mock) = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         accessMode: "internal_tool",
