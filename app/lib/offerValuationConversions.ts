@@ -1,7 +1,8 @@
 /**
  * Google Ads (gtag) + dataLayer hooks for the Offer Audit / Valuation funnel.
  * Set optional NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_* to full values: AW-123456789/LabelName
- * Or set NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL with NEXT_PUBLIC_GOOGLE_ADS_ID for submit/lead fallback.
+ * Or NEXT_PUBLIC_GOOGLE_ADS_CV_* label-only vars with NEXT_PUBLIC_GOOGLE_ADS_ID for any action.
+ * Or NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL + NEXT_PUBLIC_GOOGLE_ADS_ID for submit/lead fallback only.
  */
 
 export type OfferValuationConversionAction =
@@ -10,13 +11,30 @@ export type OfferValuationConversionAction =
   | "lead_created"
   | "strategy_call_clicked";
 
-function buildIdLabelSendTo(): string | null {
-  const idRaw = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim();
-  const label = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL?.trim();
-  if (!idRaw || !label) return null;
-  const id = /^AW-/i.test(idRaw) ? idRaw : `AW-${idRaw}`;
-  return `${id}/${label}`;
+function normalizeAdsId(idRaw: string): string | null {
+  const t = idRaw.trim();
+  if (!t) return null;
+  return /^AW-/i.test(t) ? t : `AW-${t}`;
 }
+
+function sendToFromIdAndLabel(label: string | undefined): string | null {
+  const id = normalizeAdsId(process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "");
+  const l = label?.trim();
+  if (!id || !l) return null;
+  return `${id}/${l}`;
+}
+
+/** Full send_to from Google Ads (AW-xxx/Label) or label-only env paired with NEXT_PUBLIC_GOOGLE_ADS_ID. */
+function buildIdLabelSendTo(): string | null {
+  return sendToFromIdAndLabel(process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL);
+}
+
+const CV_LABELS: Record<OfferValuationConversionAction, string | undefined> = {
+  offer_audit_started: process.env.NEXT_PUBLIC_GOOGLE_ADS_CV_OFFER_AUDIT_STARTED,
+  offer_audit_submitted: process.env.NEXT_PUBLIC_GOOGLE_ADS_CV_OFFER_AUDIT_SUBMITTED,
+  lead_created: process.env.NEXT_PUBLIC_GOOGLE_ADS_CV_LEAD_CREATED,
+  strategy_call_clicked: process.env.NEXT_PUBLIC_GOOGLE_ADS_CV_STRATEGY_CALL,
+};
 
 function readSendToForAction(action: OfferValuationConversionAction): string | null {
   const e = process.env;
@@ -24,10 +42,14 @@ function readSendToForAction(action: OfferValuationConversionAction): string | n
     offer_audit_started: e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_OFFER_AUDIT_STARTED,
     offer_audit_submitted: e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_OFFER_AUDIT_SUBMITTED,
     lead_created: e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_LEAD_CREATED,
-    strategy_call_clicked: e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL,
+    strategy_call_clicked:
+      e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL ?? e.NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL_CLICKED,
   };
   const direct = map[action]?.trim();
   if (direct) return direct;
+
+  const fromCv = sendToFromIdAndLabel(CV_LABELS[action]);
+  if (fromCv) return fromCv;
 
   if (action === "offer_audit_submitted" || action === "lead_created") {
     return buildIdLabelSendTo();

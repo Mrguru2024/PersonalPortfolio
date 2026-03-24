@@ -8,9 +8,15 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
-## 2026-03-23 22:15 — Auto · fdad838
+## 2026-03-24 — Offer audit Google Ads unification
 
-- `feat: offer audit UTM, conversions, and canonical site metadata` (`fdad838`)
+- One **`fireOfferValuationConversion`** path for submit and lead on the public funnel; optional **`NEXT_PUBLIC_GOOGLE_ADS_CV_*`** label envs with **`NEXT_PUBLIC_GOOGLE_ADS_ID`**; strategy-call **`send_to`** reads **`NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL`** (or legacy **`_STRATEGY_CALL_CLICKED`**).
+
+---
+
+## 2026-03-23 22:15 — Offer audit UTM, conversions, canonical site metadata
+
+- Persist UTM on offer valuations; client attribution and Google Ads conversion hooks; canonical site URL for Open Graph, sitemap, and robots.
 
 ---
 

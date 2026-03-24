@@ -313,6 +313,12 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
           finalScore: data.finalScore,
         },
       });
+      if (surface === "public") {
+        fireOfferValuationConversion("offer_audit_submitted", {
+          finalScore: data.finalScore,
+          scoreBand: data.scoreBand,
+        });
+      }
       setResult(data as OfferValuationApiResult);
       setShowLeadGate(false);
       setPendingPayload(null);
@@ -372,6 +378,9 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
         pageVisited: "/offer-audit",
         metadata: { form: "offer_audit_gate" },
       });
+      fireOfferValuationConversion("lead_created", {
+        form: "offer_audit_gate",
+      });
       track("calculator_complete", {
         pageVisited: "/offer-audit",
         metadata: {
@@ -379,6 +388,11 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
           scoreBand: data.scoreBand,
           finalScore: data.finalScore,
         },
+      });
+      fireOfferValuationConversion("offer_audit_submitted", {
+        finalScore: data.finalScore,
+        scoreBand: data.scoreBand,
+        leadGate: true,
       });
       setResult(data as OfferValuationApiResult);
       setShowLeadGate(false);
