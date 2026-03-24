@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
-import { ensureAbsoluteUrl, getSiteBaseUrl } from "@/lib/siteUrl";
+import { ensureAbsoluteUrl, getSiteOriginForMetadata } from "@/lib/siteUrl";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = ensureAbsoluteUrl(getSiteBaseUrl());
+  const base = ensureAbsoluteUrl(getSiteOriginForMetadata());
   return {
     rules: [
       {

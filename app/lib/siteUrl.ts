@@ -4,11 +4,33 @@
  * After changing, use Facebook Sharing Debugger / Twitter Card Validator / LinkedIn Post Inspector to refresh cached metadata.
  */
 export function getSiteBaseUrl(): string {
-  return (
-    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_APP_URL) ||
-    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_URL) ||
-    "https://mrguru.dev"
-  );
+  const raw =
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_APP_URL?.trim()) ||
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_URL?.trim()) ||
+    "";
+  if (raw) return ensureAbsoluteUrl(raw);
+  return "https://mrguru.dev";
+}
+
+/**
+ * Server / build-time origin for root metadata (Open Graph absolute URLs, metadataBase).
+ * Order: explicit public URL → Vercel production domain → preview deployment URL → legacy fallback.
+ */
+export function getSiteOriginForMetadata(): string {
+  const pub =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_BASE_URL?.trim();
+  if (pub) return ensureAbsoluteUrl(pub);
+
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (prod) return ensureAbsoluteUrl(prod);
+
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    return ensureAbsoluteUrl(/^https?:\/\//i.test(vercel) ? vercel : `https://${vercel}`);
+  }
+
+  return "https://mrguru.dev";
 }
 
 /** Ensures URL has a scheme (https:// or http://). Required for OAuth redirect_uri. */
@@ -17,4 +39,44 @@ export function ensureAbsoluteUrl(url: string): string {
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed === "localhost" || /^localhost:\d+$/.test(trimmed)) return `http://${trimmed}`;
   return `https://${trimmed}`;
+}
+
+/** Build absolute URL for og:image / twitter:image (handles /path or full URL). */
+export function absoluteFromSiteBase(siteBase: string, pathOrUrl: string): string {
+  const p = pathOrUrl.trim();
+  if (!p) return `${ensureAbsoluteUrl(siteBase)}/og-ascendra.png`;
+  if (/^https?:\/\//i.test(p)) return p;
+  const base = ensureAbsoluteUrl(siteBase);
+  if (p.startsWith("/")) return `${base}${p}`;
+  return `${base}/${p}`;
+}
+
+/**
+ * In the browser, prefer the live origin on real deployments so OG/canonical match the shared URL
+ * even when NEXT_PUBLIC_APP_URL was mis-set. Localhost keeps env-based base.
+ */
+export function resolveClientSiteBase(envBase: string): string {
+  const fromEnv = ensureAbsoluteUrl(envBase);
+  if (typeof window === "undefined") return fromEnv;
+  try {
+    const live = window.location.origin;
+    if (/localhost|127\.0\.0\.1/i.test(live)) return fromEnv;
+    return live;
+  } catch {
+    return fromEnv;
+  }
+}
+
+/** Canonical URL for a page (absolute href or path segment). */
+export function absoluteCanonicalUrl(
+  siteBase: string,
+  canonicalOrPath: string,
+  fallbackPath: string,
+): string {
+  const c = (canonicalOrPath || "").trim();
+  const base = ensureAbsoluteUrl(siteBase);
+  if (/^https?:\/\//i.test(c)) return c;
+  if (c.startsWith("/")) return `${base}${c}`;
+  if (c) return `${base}/${c}`;
+  return `${base}${fallbackPath.startsWith("/") ? fallbackPath : `/${fallbackPath}`}`;
 }

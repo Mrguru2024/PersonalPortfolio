@@ -4,11 +4,11 @@ import { db } from "@server/db";
 import { blogPosts } from "@shared/schema";
 import { WEBSITE_BREAKDOWNS } from "@/lib/authorityContent";
 import { SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
-import { ensureAbsoluteUrl, getSiteBaseUrl } from "@/lib/siteUrl";
+import { ensureAbsoluteUrl, getSiteOriginForMetadata } from "@/lib/siteUrl";
 
 export const revalidate = 3600;
 
-const base = ensureAbsoluteUrl(getSiteBaseUrl());
+const base = ensureAbsoluteUrl(getSiteOriginForMetadata());
 
 /** Paths we do not want in the index (match layout robots / auth surfaces). */
 const EXCLUDE_PREFIXES = [

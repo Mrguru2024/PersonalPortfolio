@@ -16,6 +16,8 @@ import {
 } from "@server/services/workflows/engine";
 import { getLeadCustomFields } from "@shared/leadCustomFields";
 import { canUseOfferValuation, sanitizePersonaTag } from "./lib";
+import { getSiteOriginForMetadata } from "@/lib/siteUrl";
+import { STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -270,6 +272,7 @@ export async function POST(req: NextRequest) {
       leadId = lead?.id ?? null;
 
       if (lead) {
+        const strategyCallUrl = `${getSiteOriginForMetadata()}${STRATEGY_CALL_PATH}`;
         emailService
           .sendDirectMessageEmail({
             to: b.leadCapture.email,
@@ -282,7 +285,7 @@ Top strategic fix:
 - ${valuation.insights.strategicFixes[0] ?? "Clarify your core outcome and proof."}
 
 Next step:
-Book a strategy call to turn this into a conversion-focused execution plan: https://ascendra.ai/strategy-call
+Book a strategy call to turn this into a conversion-focused execution plan: ${strategyCallUrl}
 `,
             senderName: "Ascendra Technologies",
           })
@@ -345,6 +348,9 @@ Business type: ${b.leadCapture.businessType ?? "N/A"}`,
       finalScore: valuation.finalScore,
       aiEnabled,
       insights: valuation.insights as unknown as Record<string, unknown>,
+      utmSource: b.attribution?.utm_source ?? null,
+      utmMedium: b.attribution?.utm_medium ?? null,
+      utmCampaign: b.attribution?.utm_campaign ?? null,
     });
 
     return NextResponse.json({

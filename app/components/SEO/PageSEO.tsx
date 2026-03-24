@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { getSiteBaseUrl } from "@/lib/siteUrl";
+import {
+  absoluteFromSiteBase,
+  getSiteBaseUrl,
+  resolveClientSiteBase,
+} from "@/lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "@/lib/company";
 import {
   updateJsonLdScript,
@@ -53,6 +57,14 @@ export function PageSEO({
   ].join(", ");
 
   useEffect(() => {
+    const resolvedBase = resolveClientSiteBase(baseUrl);
+    const path =
+      canonicalPath === "" || canonicalPath.startsWith("/")
+        ? canonicalPath
+        : `/${canonicalPath}`;
+    const url = `${resolvedBase}${path}`;
+    const ogImageAbsolute = absoluteFromSiteBase(resolvedBase, ogImage);
+
     // Update document title
     document.title = fullTitle;
 
@@ -78,9 +90,10 @@ export function PageSEO({
     // Open Graph / Facebook
     updateMetaTag("og:type", ogType, true);
     updateMetaTag("og:url", url, true);
+    updateMetaTag("og:site_name", COMPANY_NAME, true);
     updateMetaTag("og:title", fullTitle, true);
     updateMetaTag("og:description", description, true);
-    updateMetaTag("og:image", `${baseUrl}${ogImage}`, true);
+    updateMetaTag("og:image", ogImageAbsolute, true);
     updateMetaTag("og:image:alt", ogImageAlt, true);
 
     // Twitter
@@ -88,7 +101,7 @@ export function PageSEO({
     updateMetaTag("twitter:url", url);
     updateMetaTag("twitter:title", fullTitle);
     updateMetaTag("twitter:description", description);
-    updateMetaTag("twitter:image", `${baseUrl}${ogImage}`);
+    updateMetaTag("twitter:image", ogImageAbsolute);
     updateMetaTag("twitter:image:alt", ogImageAlt);
 
     // Schema.org / JSON-LD
@@ -102,12 +115,12 @@ export function PageSEO({
         author: {
           "@type": "Person",
           name: "Anthony MrGuru Feaster",
-          url: baseUrl,
+          url: resolvedBase,
         },
         publisher: {
           "@type": "Organization",
           name: COMPANY_NAME,
-          url: baseUrl,
+          url: resolvedBase,
           telephone: COMPANY_PHONE_E164,
           address: {
             "@type": "PostalAddress",
@@ -119,9 +132,9 @@ export function PageSEO({
           },
           logo: {
             "@type": "ImageObject",
-            url: `${baseUrl}/favicon.svg`,
-            width: 32,
-            height: 32,
+            url: `${resolvedBase}/ascendra-logo.svg`,
+            width: 512,
+            height: 512,
           },
         },
       },
@@ -131,7 +144,7 @@ export function PageSEO({
     fullTitle,
     description,
     keywordsString,
-    url,
+    canonicalPath,
     ogType,
     ogImage,
     ogImageAlt,

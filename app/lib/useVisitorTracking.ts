@@ -135,5 +135,32 @@ export function useVisitorTracking() {
     []
   );
 
-  return { track, getVisitorId: () => visitorIdRef.current || getVisitorId(), getSessionId: () => sessionIdRef.current || getSessionId() };
+  const getAttributionSnapshot = useCallback(() => {
+    if (typeof window === "undefined") {
+      return {
+        visitorId: "",
+      };
+    }
+    const visitorId = visitorIdRef.current || getVisitorId();
+    const params = new URLSearchParams(window.location.search);
+    const utm_source = params.get("utm_source")?.trim() || undefined;
+    const utm_medium = params.get("utm_medium")?.trim() || undefined;
+    const utm_campaign = params.get("utm_campaign")?.trim() || undefined;
+    const referrer = document.referrer?.trim() || undefined;
+    return {
+      visitorId,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      referrer,
+      landing_page: window.location.pathname || "/",
+    };
+  }, []);
+
+  return {
+    track,
+    getVisitorId: () => visitorIdRef.current || getVisitorId(),
+    getSessionId: () => sessionIdRef.current || getSessionId(),
+    getAttributionSnapshot,
+  };
 }

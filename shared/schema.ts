@@ -763,6 +763,10 @@ export const offerValuations = pgTable("offer_valuations", {
   finalScore: real("final_score").notNull(),
   aiEnabled: boolean("ai_enabled").notNull().default(false),
   insights: json("insights").$type<Record<string, unknown>>().notNull(),
+  /** First-touch ad attribution (mirrors payload + CRM when present). */
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

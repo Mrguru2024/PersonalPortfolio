@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-23 22:15 — Auto · fdad838
+
+- `feat: offer audit UTM, conversions, and canonical site metadata` (`fdad838`)
+
+---
+
 ## 2026-03-23 — Newsletters for CRM leads & clients, brand file folders, and clearer reading
 
 - **Newsletters:** You can send a campaign to **all CRM leads** or **all CRM clients** (everyone with an email on file), or stick with your main subscriber list. When you build a custom list, the CRM picker can show only leads or only clients, add everyone in view at once, or pick individuals.

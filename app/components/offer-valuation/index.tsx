@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles, Lock, LineChart, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
+import { fireOfferValuationConversion } from "@/lib/offerValuationConversions";
+import { STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,7 +132,7 @@ function accessRoleFromUser(user: ReturnType<typeof useAuth>["user"]) {
 
 export default function OfferValuationTool({ surface }: OfferValuationToolProps) {
   const { user, isLoading: authLoading } = useAuth();
-  const { track, getVisitorId } = useVisitorTracking();
+  const { track, getAttributionSnapshot } = useVisitorTracking();
   const { toast } = useToast();
   const [settings, setSettings] = useState<OfferValuationSettingsShape | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -210,6 +212,9 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
         pageVisited: surface === "public" ? "/offer-audit" : "/offer-valuation",
         metadata: { tool: "offer_valuation_engine" },
       });
+      if (surface === "public") {
+        fireOfferValuationConversion("offer_audit_started");
+      }
     }
   };
 
@@ -274,7 +279,7 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
         scores,
         aiEnabled,
         attribution: {
-          visitorId: getVisitorId(),
+          ...getAttributionSnapshot(),
           landing_page: surface === "public" ? "/offer-audit" : "/offer-valuation",
         },
       };
@@ -353,6 +358,11 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
             name: leadCapture.name.trim(),
             email: leadCapture.email.trim(),
             businessType: leadCapture.businessType.trim() || undefined,
+          },
+          attribution: {
+            ...((pendingPayload.attribution as Record<string, unknown>) || {}),
+            ...getAttributionSnapshot(),
+            landing_page: "/offer-audit",
           },
         }),
       });
@@ -894,7 +904,21 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
                   Turn this diagnosis into a conversion-focused execution plan.
                 </p>
                 <Button asChild>
-                  <Link href="/strategy-call">Book a strategy call</Link>
+                  <Link
+                    href={STRATEGY_CALL_PATH}
+                    onClick={() => {
+                      track("cta_click", {
+                        pageVisited: "/offer-audit",
+                        metadata: {
+                          cta: "strategy_call",
+                          tool: "offer_valuation_engine",
+                        },
+                      });
+                      fireOfferValuationConversion("strategy_call_clicked");
+                    }}
+                  >
+                    Book a strategy call
+                  </Link>
                 </Button>
               </div>
             )}

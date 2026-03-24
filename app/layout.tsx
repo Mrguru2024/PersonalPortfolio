@@ -7,7 +7,7 @@ import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import MobileBottomNav from "./components/MobileBottomNav";
 import { MobileNavProvider } from "./contexts/MobileNavContext";
-import { getSiteBaseUrl, ensureAbsoluteUrl } from "./lib/siteUrl";
+import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
@@ -37,8 +37,8 @@ function gtagInitScriptContent(): string {
   return s;
 }
 
-/** Absolute base URL (with https://) so manifest, OG, etc. resolve correctly and don't double-path. */
-const baseUrl = ensureAbsoluteUrl(getSiteBaseUrl());
+/** Absolute base URL (with https://) so manifest, OG, metadataBase, and schema resolve correctly. */
+const baseUrl = getSiteOriginForMetadata();
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -57,10 +57,14 @@ const organizationSchema = {
   logo: `${baseUrl}/ascendra-logo.svg`,
 };
 
+const defaultTitle = "Ascendra Technologies | Brand Growth, Strategy & Marketing";
+const defaultDescription =
+  "Ascendra Technologies helps you build a brand that converts—strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with clarity.";
+
 export const metadata: Metadata = {
-  title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
-  description:
-    "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with the Brand Growth ecosystem.",
+  metadataBase: new URL(`${baseUrl}/`),
+  title: defaultTitle,
+  description: defaultDescription,
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -70,25 +74,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: baseUrl,
-    siteName: "Ascendra Technologies",
-    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
-    description:
-      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale.",
+    siteName: COMPANY_NAME,
+    title: defaultTitle,
+    description: defaultDescription,
     images: [
       {
-        url: `${baseUrl}/og-ascendra.png`,
+        url: "/og-ascendra.png",
         width: 1200,
         height: 630,
-        alt: "Ascendra Technologies — Brand Growth",
+        alt: `${COMPANY_NAME} — logo and tagline; brand strategy, web, and marketing`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
-    description:
-      "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team.",
-    images: [`${baseUrl}/og-ascendra.png`],
+    title: defaultTitle,
+    description: defaultDescription,
+    images: ["/og-ascendra.png"],
   },
   // PWA: install as app on mobile; standalone display and offline-capable
   manifest: `${baseUrl}/manifest.json`,
