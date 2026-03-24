@@ -35,7 +35,7 @@ export async function POST(
       );
     }
 
-    // Resolve recipients: explicit list (bulk/CRM) or subscriber filter
+    // Resolve recipients: explicit list, CRM segments, or newsletter subscriber filter
     const recipientEmails = (newsletter as { recipientEmails?: string[] }).recipientEmails;
     let subscribers: { id: number; email: string }[];
 
@@ -46,14 +46,36 @@ export async function POST(
       ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
     } else {
       const filter = newsletter.recipientFilter || {};
-      let list = await storage.getAllSubscribers(!filter.subscribed);
-      if (filter.tags && filter.tags.length > 0) {
-        list = list.filter((sub) => {
-          const subTags = sub.tags || [];
-          return filter.tags!.some((tag: string) => subTags.includes(tag));
-        });
+      if (filter.crmLeads === true) {
+        const contacts = await storage.getCrmContacts("lead");
+        const emails = [
+          ...new Set(
+            contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]
+          ),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else if (filter.crmClients === true) {
+        const contacts = await storage.getCrmContacts("client");
+        const emails = [
+          ...new Set(
+            contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]
+          ),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else {
+        let list = await storage.getAllSubscribers(!filter.subscribed);
+        if (filter.tags && filter.tags.length > 0) {
+          list = list.filter((sub) => {
+            const subTags = sub.tags || [];
+            return filter.tags!.some((tag: string) => subTags.includes(tag));
+          });
+        }
+        subscribers = list.map((s) => ({ id: s.id, email: s.email }));
       }
-      subscribers = list.map((s) => ({ id: s.id, email: s.email }));
     }
 
     // Update newsletter status

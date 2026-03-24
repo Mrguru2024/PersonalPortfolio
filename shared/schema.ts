@@ -924,6 +924,7 @@ export * from "./growthIntelligenceSchema";
 export * from "./internalStudioSchema";
 export * from "./crmSchema";
 export * from "./newsletterSchema";
+export * from "./brandVaultSchema";
 export * from "./communicationsSchema";
 export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";

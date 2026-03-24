@@ -26,7 +26,7 @@ export default function StartupWebsiteScorePage() {
         description="See how your startup website scores on offer clarity, lead capture, CTA, trust, and mobile. Get suggestions and your Startup Action Plan."
         canonicalPath="/tools/startup-website-score"
       />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-2xl space-y-8">
             <section className="text-center">

@@ -50,17 +50,17 @@ export default function FreeTrialPage() {
         canonicalPath="/free-trial"
       />
       <TrackPageView path="/free-trial" />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             <section className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="mx-auto mb-5 sm:mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Target className="h-7 w-7" aria-hidden />
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 sm:mb-6 md:mb-7">
                 Your free growth starter: clarity, then a real read on your site
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Pick a <span className="text-foreground font-medium">free call</span>, a{" "}
                 <span className="text-foreground font-medium">human-led snapshot audit</span>, or both—so you know
                 what to fix first and whether we&apos;re the team to build it. No maze of downloads up front; optional
@@ -69,9 +69,9 @@ export default function FreeTrialPage() {
             </section>
 
             <Card className="border-destructive/20 bg-destructive/5 dark:bg-destructive/10">
-              <CardContent className="p-5 sm:p-6 text-left">
-                <h2 className="text-lg font-semibold text-foreground mb-3">Why this is the offer—not another tool list</h2>
-                <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5 mb-4">
+              <CardContent className="p-6 sm:p-8 text-left">
+                <h2 className="text-lg font-semibold text-foreground mb-4 sm:mb-5">Why this is the offer—not another tool list</h2>
+                <ul className="text-sm text-muted-foreground space-y-3 list-disc pl-5 mb-5 sm:mb-6 leading-relaxed">
                   <li>Traffic that never turns into qualified conversations.</li>
                   <li>Messaging that sounds fine to you but doesn&apos;t convert strangers.</li>
                   <li>Brand, design, and site pulling in different directions—with no single prioritized plan.</li>

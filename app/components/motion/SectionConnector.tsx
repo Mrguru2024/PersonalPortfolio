@@ -35,7 +35,7 @@ export function SectionConnector({
 
   if (reduced) {
     return (
-      <div className={cn("flex justify-center py-6", className)} aria-hidden>
+      <div className={cn("flex justify-center py-8 sm:py-10 md:py-12", className)} aria-hidden>
         <div className="h-px w-16 bg-border rounded-full" />
       </div>
     );
@@ -45,7 +45,7 @@ export function SectionConnector({
     return (
       <div
         ref={ref}
-        className={cn("flex justify-center py-6 overflow-hidden", className)}
+        className={cn("flex justify-center py-8 sm:py-10 md:py-12 overflow-hidden", className)}
         aria-hidden
       >
         <motion.div
@@ -61,7 +61,7 @@ export function SectionConnector({
   return (
     <div
       ref={ref}
-      className={cn("flex justify-center py-6", className)}
+      className={cn("flex justify-center py-8 sm:py-10 md:py-12", className)}
       aria-hidden
     >
       <motion.div

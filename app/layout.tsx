@@ -181,7 +181,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
               <FixedHeaderWrapper />
               <TrialBanner />
-              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+20px)] lg:pb-[env(safe-area-inset-bottom)]">
+              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+32px)] lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
                 {children}
               </main>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}

@@ -129,6 +129,10 @@ header .container {
  * Ascendra brand theme — semantic tokens (HSL components, no hsl() wrapper).
  * Maps to Tailwind via tailwind.config.ts. Shadcn primitives use --background, --primary, etc.
  * Brand hex reference: purple #8237BE, navy #0B1142, indigo #9091F2, sky #87CFF5, sand #F1DFD2.
+ *
+ * Single UI system: extend these tokens and @/components/ui/* only — no parallel color stacks.
+ * CTA hierarchy (use Button variants): default + gradient = strongest; outline + secondary = supporting;
+ * ghost + link = tertiary. Surfaces: background / section / elevated / card — content-first, not color-heavy.
  */
 @layer base {
   :root {
@@ -149,7 +153,8 @@ header .container {
     --secondary: 240 50% 96%;
     --secondary-foreground: 235 65% 22%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 54%;
+    /* Dark enough on white for small body copy (readability in light mode). */
+    --muted-foreground: 220 9% 46%;
     --foreground-secondary: 0 0% 29%;
     --accent: 25 48% 94%;
     --accent-foreground: 235 71% 15%;
@@ -328,6 +333,25 @@ header .container {
     word-wrap: break-word;
     word-break: break-word;
   }
+  /* Links: brand-tinted tap feedback (mobile) and hover wash (desktop). Button-as-link uses inline-flex + transparent tap below. */
+  a[href] {
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.24);
+  }
+  a[href]::selection {
+    background-color: hsl(var(--primary) / 0.22);
+    color: inherit;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    a[href]:not(.inline-flex) {
+      transition: background-color 0.15s ease;
+    }
+    a[href]:not(.inline-flex):hover {
+      background-color: hsl(var(--primary) / 0.12);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      border-radius: 0.125rem;
+    }
+  }
   /* Buttons: remove default tap flash on mobile so our scale/active styles are visible */
   button,
   [role="button"],
@@ -459,5 +483,19 @@ header .container {
   }
   .card-interactive:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /**
+   * Marketing / funnel vertical rhythm — clearer focal points without removing content.
+   * Use on page root columns; pair with container px-* as today.
+   */
+  .marketing-stack {
+    @apply space-y-14 sm:space-y-16 md:space-y-20 lg:space-y-24;
+  }
+  .marketing-stack-tight {
+    @apply space-y-8 sm:space-y-10 md:space-y-12;
+  }
+  .marketing-page-y {
+    @apply py-12 sm:py-16 md:py-20 lg:py-24;
   }
 }

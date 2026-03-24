@@ -1,5 +1,5 @@
 // PWA service worker: push notifications + offline caching for admin/CRM app use
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const PAGES_CACHE = `pages-${CACHE_VERSION}`;
 
@@ -9,9 +9,24 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => (k.startsWith('static-') || k.startsWith('pages-')) && k !== STATIC_CACHE && k !== PAGES_CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    (async () => {
+      // We do not consume event.preloadResponse in fetch; disable preload so the browser
+      // does not start a parallel navigation request that gets cancelled (console error).
+      try {
+        if (self.registration.navigationPreload) {
+          await self.registration.navigationPreload.disable();
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => (k.startsWith('static-') || k.startsWith('pages-')) && k !== STATIC_CACHE && k !== PAGES_CACHE)
+          .map((k) => caches.delete(k))
+      );
+      await self.clients.claim();
+    })()
   );
 });
 
@@ -98,17 +113,34 @@ self.addEventListener('fetch', (event) => {
   // Admin/app pages: network-first, fallback to cache for offline
   if (isAdminPage(request.url)) {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
+      (async () => {
+        let res;
+        // If navigation preload is ever on, we must await preloadResponse inside respondWith
+        // or the preload request is cancelled (uncaught / console error).
+        if (request.mode === 'navigate') {
+          try {
+            const preloaded = await event.preloadResponse;
+            if (preloaded && preloaded.ok) {
+              res = preloaded;
+            }
+          } catch (_) {
+            /* ignore: use fetch below */
+          }
+        }
+        try {
+          if (!res) {
+            res = await fetch(request);
+          }
           const clone = res.clone();
           if (res.ok && res.type === 'basic') {
             caches.open(PAGES_CACHE).then((cache) => cache.put(request, clone));
           }
           return res;
-        })
-        .catch(() =>
-          caches.open(PAGES_CACHE).then((cache) => cache.match(request)).then((cached) => cached || new Response('Offline', { status: 503, statusText: 'Offline' }))
-        )
+        } catch (_) {
+          const cached = await caches.open(PAGES_CACHE).then((cache) => cache.match(request));
+          return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+        }
+      })()
     );
     return;
   }

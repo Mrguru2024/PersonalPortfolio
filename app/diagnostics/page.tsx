@@ -56,7 +56,7 @@ export default function DiagnosticsHubPage() {
         canonicalPath="/diagnostics"
       />
       <TrackPageView path="/diagnostics" />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-4xl space-y-8 sm:space-y-10">
             <header className="text-center space-y-3 sm:space-y-4">

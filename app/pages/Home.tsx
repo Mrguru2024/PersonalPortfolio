@@ -74,7 +74,7 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden space-y-10 sm:space-y-12 pb-10 sm:pb-14">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-stack pb-12 sm:pb-16 md:pb-20">
       <HeroSection />
       {/* Business Launch Promo — committed under public/Video Content_Ascendra_Files */}
       <section id="see-ascendra" className="container mx-auto px-3 fold:px-4 sm:px-6" aria-label="See Ascendra in action">
@@ -98,8 +98,8 @@ export default function Home() {
         className="container mx-auto px-3 fold:px-4 sm:px-6"
         aria-label="Find your growth path"
       >
-        <SectionReveal className="mx-auto max-w-5xl space-y-6">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack-tight">
+          <div className="text-center max-w-2xl mx-auto space-y-3 sm:space-y-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-foreground">
               Find your growth path
             </h2>
@@ -127,11 +127,11 @@ export default function Home() {
       {/* Growth Diagnosis funnel hero — high-conversion CTA */}
       <section id="growth-diagnosis" className="container mx-auto px-3 fold:px-4 sm:px-6">
         <SectionReveal className="mx-auto max-w-4xl">
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-background p-6 sm:p-8 md:p-10 text-center">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-background p-8 sm:p-10 md:p-12 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 sm:mb-5 md:mb-6">
               Discover What&apos;s Slowing Your Business Growth
             </h2>
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mb-6 sm:mb-8">
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
               Get a personalized diagnosis across your brand, website, and lead system.
             </p>
             <MagneticButton>
@@ -156,11 +156,11 @@ export default function Home() {
 
       {/* Problem: why most businesses don't convert; disconnect brand / design / systems */}
       <section id="funnel-problem" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack-tight">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
             Why most businesses don&apos;t convert
           </h2>
-          <p className="text-center text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             There&apos;s often a disconnect between <strong className="text-foreground">brand</strong> (who you are and who you serve), <strong className="text-foreground">design</strong> (how you look and feel), and <strong className="text-foreground">systems</strong> (how you capture and follow up with leads). When one is weak, growth stalls.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
@@ -174,18 +174,18 @@ export default function Home() {
 
       {/* Authority: branding (Macon), strategy (Style Studio), systems (Ascendra) */}
       <section id="funnel-authority" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack-tight">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
             Built by specialists in brand, design, and systems
           </h2>
-          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-6">
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Branding work by Macon Designs®, strategy and positioning by Style Studio Branding, and web systems and automation by Ascendra Technologies.
           </p>
-          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {ECOSYSTEM_PILLARS.map((pillar) => (
               <SectionRevealItem key={pillar.name}>
                 <AnimatedCard className="h-full">
-                  <CardContent className="p-5">
+                  <CardContent className="p-6 sm:p-7">
                     <h3 className="text-lg font-semibold text-foreground">{pillar.name}</h3>
                     <p className="mt-1 text-sm font-medium text-primary">{pillar.role}</p>
                     <p className="mt-3 text-sm text-muted-foreground">{pillar.summary}</p>
@@ -205,11 +205,11 @@ export default function Home() {
 
       {/* How the Growth Diagnosis works: 3 steps + CTA */}
       <section id="funnel-how-it-works" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-8">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
             How it works
           </h2>
-          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
             <SectionRevealItem>
               <div className="flex flex-col items-center text-center">
                 <div className="rounded-full bg-primary/10 p-4 mb-3">
@@ -221,20 +221,20 @@ export default function Home() {
             </SectionRevealItem>
             <SectionRevealItem>
               <div className="flex flex-col items-center text-center">
-                <div className="rounded-full bg-primary/10 p-4 mb-3">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
                   <BarChart3 className="h-8 w-8 text-primary" />
                 </div>
                 <p className="font-semibold text-foreground">Step 2: Get your growth score</p>
-                <p className="text-sm text-muted-foreground mt-1">See where you stand (0–100) and your primary bottleneck.</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">See where you stand (0–100) and your primary bottleneck.</p>
               </div>
             </SectionRevealItem>
             <SectionRevealItem>
               <div className="flex flex-col items-center text-center">
-                <div className="rounded-full bg-primary/10 p-4 mb-3">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
                 <p className="font-semibold text-foreground">Step 3: Get your solution</p>
-                <p className="text-sm text-muted-foreground mt-1">We recommend the right next step—Style Studio, Macon Designs, or Ascendra.</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">We recommend the right next step—Style Studio, Macon Designs, or Ascendra.</p>
               </div>
             </SectionRevealItem>
           </SectionRevealStagger>
@@ -253,7 +253,7 @@ export default function Home() {
       <SectionConnector />
 
       <section id="skills" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-6">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack-tight">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
             Why most business websites fail—and how we fix it
           </h2>
@@ -261,7 +261,7 @@ export default function Home() {
             beforeLabel="The problem"
             afterLabel="The solution"
             beforeContent={
-              <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
+              <ul className="space-y-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
                 {problemListItems.map((item) => (
                   <li key={item}>• {item}</li>
                 ))}
@@ -313,9 +313,9 @@ export default function Home() {
       <SectionConnector variant="gradient" />
 
       <section id="services" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl space-y-6">
-          <SpotlightCard className="p-5 sm:p-6">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-3 sm:mb-4">
+        <SectionReveal className="mx-auto max-w-5xl marketing-stack-tight">
+          <SpotlightCard className="p-6 sm:p-8">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-4 sm:mb-5">
               Digital Growth Audit
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground mb-2">
@@ -327,7 +327,7 @@ export default function Home() {
               <li>• Website performance</li>
               <li>• Conversion opportunities</li>
             </ul>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
               <MagneticButton>
                 <Button asChild className="min-h-[44px]">
                   <Link href="/digital-growth-audit">Request your audit</Link>
@@ -378,13 +378,13 @@ export default function Home() {
 
       <section id="insights" className="container mx-auto px-3 fold:px-4 sm:px-6">
         <SectionReveal className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-semibold text-foreground text-center mb-3 sm:mb-4">
+          <h2 className="text-3xl font-semibold text-foreground text-center mb-4 sm:mb-5">
             Insights for business owners
           </h2>
-          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-6">
+          <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Practical articles on website conversion, brand clarity, and growth. No fluff—what works and what to fix.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-12 sm:mb-14">
             {getLatestBlogPostsForBusiness(4).map((post) => (
               <Card key={post.slug} className="border-border bg-card h-full flex flex-col">
                 <CardContent className="p-5 sm:p-6 flex flex-col flex-1">
@@ -419,19 +419,19 @@ export default function Home() {
 
       <section className="container mx-auto px-3 fold:px-4 sm:px-6">
         <SectionReveal className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-semibold text-foreground text-center mb-4 sm:mb-6">
+          <h2 className="text-3xl font-semibold text-foreground text-center mb-6 sm:mb-8 md:mb-10">
             Growth systems that fit where you are
           </h2>
-          <SectionRevealStagger className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <SectionRevealStagger className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {PREMIUM_OFFERS.map((offer) => (
               <SectionRevealItem key={offer.slug}>
                 <SpotlightCard className="h-full">
-                  <CardContent className="p-5 sm:p-6">
+                  <CardContent className="p-6 sm:p-7">
                     <h3 className="text-lg font-semibold text-foreground">{offer.name}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">{offer.outcome}</p>
-                    <p className="mt-3 text-sm font-medium text-foreground">Best for</p>
+                    <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{offer.outcome}</p>
+                    <p className="mt-4 text-sm font-medium text-foreground">Best for</p>
                     <p className="text-sm text-muted-foreground">{offer.audience}</p>
-                    <Button asChild variant="outline" className="mt-4 min-h-[44px] w-full">
+                    <Button asChild variant="outline" className="mt-6 min-h-[44px] w-full">
                       <Link href="/services">Learn more</Link>
                     </Button>
                   </CardContent>
@@ -456,11 +456,11 @@ export default function Home() {
       </section>
 
       <section id="projects" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-5 sm:p-6">
-          <h2 className="text-2xl font-semibold text-foreground mb-4 sm:mb-5">
+        <SectionReveal className="mx-auto max-w-5xl rounded-xl border border-border bg-card p-6 sm:p-8 md:p-10">
+          <h2 className="text-2xl font-semibold text-foreground mb-5 sm:mb-6">
             Selected project examples
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {projects.slice(0, 3).map((project) => (
               <Link
                 key={project.id}
@@ -483,10 +483,10 @@ export default function Home() {
             <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-3 sm:mb-4">
               Start by understanding where your website may be holding your business back.
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Request a Digital Growth Audit for a clear view of brand, design, and conversion opportunities—then decide your next step.
             </p>
-            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               <MagneticButton>
                 <Button asChild className="min-h-[44px]">
                   <Link href="/digital-growth-audit">Request Digital Growth Audit</Link>

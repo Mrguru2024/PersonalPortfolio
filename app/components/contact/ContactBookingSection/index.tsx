@@ -102,7 +102,7 @@ export function ContactBookingSection() {
       };
 
   return (
-    <div className="relative isolate w-full min-w-0 max-w-full overflow-x-hidden py-8 fold:py-10 sm:py-14">
+    <div className="relative isolate w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 sm:py-16 md:py-20">
       <div
         className="pointer-events-none absolute inset-x-0 -top-24 h-[28rem] overflow-hidden"
         aria-hidden

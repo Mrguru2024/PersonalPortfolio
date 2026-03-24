@@ -31,9 +31,9 @@ const pathways = [
 
 export default function ServicesPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-12">
+        <div className="mx-auto max-w-6xl marketing-stack">
           <section className="text-center max-w-3xl mx-auto">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
               Growth systems that fit where you are

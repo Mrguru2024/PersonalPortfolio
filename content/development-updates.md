@@ -8,6 +8,16 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-23 — Newsletters for CRM leads & clients, brand file folders, and clearer reading
+
+- **Newsletters:** You can send a campaign to **all CRM leads** or **all CRM clients** (everyone with an email on file), or stick with your main subscriber list. When you build a custom list, the CRM picker can show only leads or only clients, add everyone in view at once, or pick individuals.
+- **Brand temp vault (admin):** A place to drop **documents or images** while brand work is in motion. We split folders by type so uploads stay organized. Files **expire after 90 days** on purpose—to keep hosting light and encourage moving finals to long-term storage. Copy the link if you need to keep something elsewhere.
+- **Blog reading:** Long-form posts now follow the **same brand colors** as the rest of the site (headings, quotes, code, tables) so articles feel like part of Ascendra—not a separate gray template.
+- **Links:** Hovering a link (or tapping on mobile) shows a **soft purple highlight** so it’s obvious what’s clickable, using our primary brand color.
+- **Operations:** A daily job cleans up expired temp files; newsletter sending was wired to respect the new CRM audience options.
+
+---
+
 ## 2026-03-23 — Theme tokens, OG image, footer, admin chat bell
 
 - **Theme & UI:** Ascendra semantic tokens (`globals.css`, `tailwind.config.ts`) and shadcn-style primitives (button, card, badge, alert, dialog, sheet, input, textarea, select, form, theme-provider). Marketing pages use section/elevated background tokens.

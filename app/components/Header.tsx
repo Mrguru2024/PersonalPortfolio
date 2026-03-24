@@ -31,6 +31,7 @@ import {
   Inbox,
   Target,
   Map as MapIcon,
+  FolderOpen,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -188,6 +189,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Content & email", name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { section: "Content & email", name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { section: "Content & email", name: "Communications", href: "/admin/communications", icon: Send, permission: "newsletters" as const },
+    { section: "Content & email", name: "Brand temp vault", href: "/admin/brand-vault", icon: FolderOpen, permission: "newsletters" as const },
     { section: "Marketing & funnel", name: "Offer + Persona IQ", href: "/admin/ascendra-intelligence", icon: Brain },
     { section: "Marketing & funnel", name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Paid Growth", href: "/admin/paid-growth", icon: LineChart, permission: "funnel" as const },

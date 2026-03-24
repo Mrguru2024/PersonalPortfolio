@@ -52,7 +52,7 @@ export default function HeroSection() {
         aria-hidden
       />
 
-      <div className="container relative z-10 mx-auto px-3 fold:px-4 sm:px-6 py-12 sm:py-16 md:py-20 min-w-0 max-w-4xl text-center">
+      <div className="container relative z-10 mx-auto px-3 fold:px-4 sm:px-6 py-16 sm:py-20 md:py-24 min-w-0 max-w-4xl text-center">
         <motion.div
           ref={contentRef}
           initial={
@@ -75,7 +75,7 @@ export default function HeroSection() {
               ? undefined
               : { boxShadow: "0 20px 50px -15px hsl(var(--foreground) / 0.08)" }
           }
-          className="relative rounded-2xl border border-border/50 bg-card/80 dark:bg-card/70 backdrop-blur-sm p-6 sm:p-8 md:p-10 mx-auto max-w-3xl"
+          className="relative rounded-2xl border border-border/50 bg-card/80 dark:bg-card/70 backdrop-blur-sm p-8 sm:p-10 md:p-12 mx-auto max-w-3xl"
         >
           <HeroMotion
             eyebrow={

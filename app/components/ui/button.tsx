@@ -4,6 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Site-wide button system. CTA hierarchy: `default` / `gradient` = primary action;
+ * `outline` / `secondary` = secondary; `ghost` / `link` = tertiary. Prefer at most one
+ * gradient per view (see variant comment below).
+ */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-transform duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 min-w-0 max-w-full sm:whitespace-nowrap touch-manipulation [-webkit-tap-highlight-color:transparent] hover:scale-[1.02] active:scale-[0.96] motion-reduce:transform-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100",
   {

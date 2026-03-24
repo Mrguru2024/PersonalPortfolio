@@ -19,7 +19,7 @@ interface EcosystemProjectsSectionProps {
 
 export function EcosystemProjectsSection({ ascendraProjects }: EcosystemProjectsSectionProps) {
   return (
-    <div className="space-y-10 sm:space-y-12">
+    <div className="marketing-stack">
       {/* Macon Designs */}
       <section className="min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">

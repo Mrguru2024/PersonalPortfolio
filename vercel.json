@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/content-studio-publish?projectKey=ascendra_main",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/brand-vault",
+      "schedule": "0 4 * * *"
     }
   ]
 }

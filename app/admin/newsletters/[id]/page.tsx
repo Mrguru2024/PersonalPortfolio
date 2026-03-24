@@ -35,6 +35,12 @@ interface Newsletter {
   sentCount: number;
   failedCount: number;
   recipientEmails?: string[] | null;
+  recipientFilter?: {
+    tags?: string[];
+    subscribed?: boolean;
+    crmLeads?: boolean;
+    crmClients?: boolean;
+  } | null;
 }
 
 export default function NewsletterViewPage() {
@@ -84,22 +90,46 @@ export default function NewsletterViewPage() {
     },
   });
 
-  const [recipientMode, setRecipientMode] = useState<"subscribers" | "list">("subscribers");
+  const [recipientMode, setRecipientMode] = useState<
+    "subscribers" | "list" | "crm_leads" | "crm_clients"
+  >("subscribers");
   const [recipientList, setRecipientList] = useState<string>("");
   const [crmModalOpen, setCrmModalOpen] = useState(false);
+  const [crmFilter, setCrmFilter] = useState<"all" | "lead" | "client">("all");
   const [selectedCrmEmails, setSelectedCrmEmails] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (newsletter?.recipientEmails && newsletter.recipientEmails.length > 0) {
-      setRecipientMode("list");
-      setRecipientList(newsletter.recipientEmails.join("\n"));
-    }
-  }, [newsletter?.recipientEmails]);
+  const recipientEmailsJson = JSON.stringify(newsletter?.recipientEmails ?? null);
+  const crmLeadsSelected = newsletter?.recipientFilter?.crmLeads === true;
+  const crmClientsSelected = newsletter?.recipientFilter?.crmClients === true;
 
-  const { data: crmContacts = [] } = useQuery<{ id: number; email: string; name: string }[]>({
-    queryKey: ["/api/admin/crm/contacts"],
+  useEffect(() => {
+    if (!newsletter) return;
+    const emails = newsletter.recipientEmails;
+    if (emails && Array.isArray(emails) && emails.length > 0) {
+      setRecipientMode("list");
+      setRecipientList(emails.join("\n"));
+      return;
+    }
+    const f = newsletter.recipientFilter;
+    if (f?.crmLeads === true) {
+      setRecipientMode("crm_leads");
+      setRecipientList("");
+      return;
+    }
+    if (f?.crmClients === true) {
+      setRecipientMode("crm_clients");
+      setRecipientList("");
+      return;
+    }
+    setRecipientMode("subscribers");
+    setRecipientList("");
+  }, [newsletter, newsletterId, recipientEmailsJson, crmLeadsSelected, crmClientsSelected]);
+
+  const { data: crmContacts = [] } = useQuery<{ id: number; email: string; name: string; type?: string }[]>({
+    queryKey: ["/api/admin/crm/contacts", crmFilter],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/crm/contacts");
+      const q = crmFilter === "all" ? "" : `?type=${crmFilter}`;
+      const res = await apiRequest("GET", `/api/admin/crm/contacts${q}`);
       return res.json();
     },
     enabled: crmModalOpen,
@@ -107,8 +137,14 @@ export default function NewsletterViewPage() {
 
   const saveRecipientsMutation = useMutation({
     mutationFn: async (emails: string[]) => {
+      const baseFilter = newsletter?.recipientFilter ?? {};
       const res = await apiRequest("PATCH", `/api/admin/newsletters/${newsletterId}`, {
         recipientEmails: emails.length > 0 ? emails : null,
+        recipientFilter: {
+          ...baseFilter,
+          crmLeads: false,
+          crmClients: false,
+        },
       });
       return res.json();
     },
@@ -117,6 +153,18 @@ export default function NewsletterViewPage() {
       toast({ title: "Recipients saved" });
     },
     onError: (e: Error) => toast({ title: "Failed to save recipients", description: e.message, variant: "destructive" }),
+  });
+
+  const saveAudienceMutation = useMutation({
+    mutationFn: async (body: { recipientEmails: null; recipientFilter: Record<string, unknown> }) => {
+      const res = await apiRequest("PATCH", `/api/admin/newsletters/${newsletterId}`, body);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletters", newsletterId] });
+      toast({ title: "Audience updated" });
+    },
+    onError: (e: Error) => toast({ title: "Failed to save audience", description: e.message, variant: "destructive" }),
   });
 
   if (authLoading || isLoading) {
@@ -132,15 +180,35 @@ export default function NewsletterViewPage() {
   }
 
   const saveRecipients = () => {
-    if (recipientMode === "subscribers") {
-      saveRecipientsMutation.mutate([]);
-      return;
-    }
     const emails = recipientList
       .split(/\n/)
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
     saveRecipientsMutation.mutate([...new Set(emails)]);
+  };
+
+  const applySubscribersAudience = () => {
+    const baseFilter = newsletter?.recipientFilter ?? {};
+    saveAudienceMutation.mutate({
+      recipientEmails: null,
+      recipientFilter: { ...baseFilter, crmLeads: false, crmClients: false },
+    });
+  };
+
+  const applyCrmLeadsAudience = () => {
+    const baseFilter = newsletter?.recipientFilter ?? {};
+    saveAudienceMutation.mutate({
+      recipientEmails: null,
+      recipientFilter: { ...baseFilter, crmLeads: true, crmClients: false },
+    });
+  };
+
+  const applyCrmClientsAudience = () => {
+    const baseFilter = newsletter?.recipientFilter ?? {};
+    saveAudienceMutation.mutate({
+      recipientEmails: null,
+      recipientFilter: { ...baseFilter, crmLeads: false, crmClients: true },
+    });
   };
 
   const addFromCrm = () => {
@@ -150,6 +218,19 @@ export default function NewsletterViewPage() {
       .filter(Boolean);
     const added = [...new Set([...current, ...selectedCrmEmails])];
     setRecipientList(added.join("\n"));
+    setSelectedCrmEmails(new Set());
+    setCrmModalOpen(false);
+  };
+
+  const addAllCrmShown = () => {
+    const emails = crmContacts
+      .map((c) => c.email?.trim().toLowerCase())
+      .filter((e): e is string => Boolean(e));
+    const current = recipientList
+      .split(/\n/)
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    setRecipientList([...new Set([...current, ...emails])].join("\n"));
     setSelectedCrmEmails(new Set());
     setCrmModalOpen(false);
   };
@@ -224,20 +305,53 @@ export default function NewsletterViewPage() {
             <CardHeader>
               <CardTitle>Recipients</CardTitle>
               <CardDescription>
-                Choose who receives this newsletter. Use &quot;Specific list&quot; for bulk paste or CRM contacts.
+                Send to newsletter subscribers, every CRM lead or client with an email, or a pasted list. CRM segment
+                choices apply as soon as you select them.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="recipientMode"
                     checked={recipientMode === "subscribers"}
-                    onChange={() => setRecipientMode("subscribers")}
+                    onChange={() => {
+                      setRecipientMode("subscribers");
+                      applySubscribersAudience();
+                    }}
+                    disabled={saveAudienceMutation.isPending}
                     className="rounded-full"
                   />
                   <span>All subscribers</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="recipientMode"
+                    checked={recipientMode === "crm_leads"}
+                    onChange={() => {
+                      setRecipientMode("crm_leads");
+                      applyCrmLeadsAudience();
+                    }}
+                    disabled={saveAudienceMutation.isPending}
+                    className="rounded-full"
+                  />
+                  <span>All CRM leads (every lead contact with email)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="recipientMode"
+                    checked={recipientMode === "crm_clients"}
+                    onChange={() => {
+                      setRecipientMode("crm_clients");
+                      applyCrmClientsAudience();
+                    }}
+                    disabled={saveAudienceMutation.isPending}
+                    className="rounded-full"
+                  />
+                  <span>All CRM clients (every client contact with email)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -247,7 +361,7 @@ export default function NewsletterViewPage() {
                     onChange={() => setRecipientMode("list")}
                     className="rounded-full"
                   />
-                  <span>Specific list (bulk / CRM)</span>
+                  <span>Specific list (bulk paste or pick from CRM)</span>
                 </label>
               </div>
               {recipientMode === "list" && (
@@ -330,32 +444,61 @@ export default function NewsletterViewPage() {
         <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Add from CRM</DialogTitle>
-            <DialogDescription>Select contacts to add their emails to the recipient list.</DialogDescription>
+            <DialogDescription>
+              Filter by lead or client, select rows, or add every email in the current filter to the list.
+            </DialogDescription>
           </DialogHeader>
-          <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
-            {crmContacts.map((c) => (
-              <label key={c.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                <Checkbox
-                  checked={selectedCrmEmails.has(c.email)}
-                  onCheckedChange={(checked) => {
-                    setSelectedCrmEmails((prev) => {
-                      const next = new Set(prev);
-                      if (checked) next.add(c.email);
-                      else next.delete(c.email);
-                      return next;
-                    });
-                  }}
-                />
-                <span className="text-sm">{c.name}</span>
-                <span className="text-muted-foreground text-sm">{c.email}</span>
-              </label>
+          <div className="flex flex-wrap gap-2 pb-2">
+            {(["all", "lead", "client"] as const).map((key) => (
+              <Button
+                key={key}
+                type="button"
+                size="sm"
+                variant={crmFilter === key ? "secondary" : "outline"}
+                onClick={() => setCrmFilter(key)}
+              >
+                {key === "all" ? "All" : key === "lead" ? "Leads only" : "Clients only"}
+              </Button>
             ))}
-            {crmContacts.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4">No CRM contacts. Add leads or clients in CRM first.</p>
+          </div>
+          <div className="overflow-y-auto space-y-2 flex-1 min-h-0">
+            {crmContacts
+              .filter((c) => c.email?.trim())
+              .map((c) => (
+                <label key={c.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                  <Checkbox
+                    checked={selectedCrmEmails.has(c.email)}
+                    onCheckedChange={(checked) => {
+                      setSelectedCrmEmails((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(c.email);
+                        else next.delete(c.email);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className="text-sm">{c.name}</span>
+                  <span className="text-muted-foreground text-sm truncate">{c.email}</span>
+                  {c.type && (
+                    <Badge variant="outline" className="ml-auto shrink-0 text-xs capitalize">
+                      {c.type}
+                    </Badge>
+                  )}
+                </label>
+              ))}
+            {crmContacts.filter((c) => c.email?.trim()).length === 0 && (
+              <p className="text-sm text-muted-foreground py-4">
+                No contacts with email in this filter. Add leads or clients in CRM first.
+              </p>
             )}
           </div>
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setCrmModalOpen(false)}>Cancel</Button>
+          <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setCrmModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="secondary" type="button" onClick={addAllCrmShown}>
+              Add all shown
+            </Button>
             <Button onClick={addFromCrm}>Add selected</Button>
           </div>
         </DialogContent>

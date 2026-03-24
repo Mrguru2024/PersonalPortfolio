@@ -43,7 +43,7 @@ export function StickyStorySection({
   };
 
   return (
-    <section className={cn("container mx-auto px-3 fold:px-4 sm:px-6 py-10 sm:py-14", className)}>
+    <section className={cn("container mx-auto px-3 fold:px-4 sm:px-6 marketing-page-y", className)}>
       <div className="mx-auto max-w-5xl">
         <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center mb-2">
           {headline}

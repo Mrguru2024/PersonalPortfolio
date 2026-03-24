@@ -45,6 +45,14 @@ import {
   newsletterSends, type NewsletterSend, type InsertNewsletterSend
 } from "@shared/newsletterSchema";
 import {
+  brandTempFolders,
+  brandTempFiles,
+  type BrandTempFolder,
+  type InsertBrandTempFolder,
+  type BrandTempFile,
+  type InsertBrandTempFile,
+} from "@shared/brandVaultSchema";
+import {
   commEmailDesigns,
   commCampaigns,
   commCampaignSends,
@@ -112,6 +120,21 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import * as crypto from "crypto";
+
+async function unlinkBrandTempPublicFile(publicPath: string): Promise<void> {
+  const pathMod = await import("path");
+  const { unlink } = await import("fs/promises");
+  const rel = publicPath.replace(/^\//, "");
+  const root = pathMod.resolve(process.cwd(), "public", "uploads", "brand-temp");
+  const abs = pathMod.resolve(process.cwd(), "public", rel);
+  const relToRoot = pathMod.relative(root, abs);
+  if (relToRoot.startsWith("..") || pathMod.isAbsolute(relToRoot)) return;
+  try {
+    await unlink(abs);
+  } catch {
+    /* file may already be gone */
+  }
+}
 
 // Extended interface with portfolio-related CRUD operations
 export interface IStorage {
@@ -254,6 +277,17 @@ export interface IStorage {
   getNewsletterSends(newsletterId: number): Promise<NewsletterSend[]>;
   getSubscriberSends(subscriberId: number): Promise<NewsletterSend[]>;
   getOrCreateSubscriberForEmail(email: string, source?: string): Promise<NewsletterSubscriber>;
+
+  // Brand temp vault (admin staging; files expire, cron purges)
+  listBrandTempFolders(): Promise<BrandTempFolder[]>;
+  getBrandTempFolderById(id: number): Promise<BrandTempFolder | undefined>;
+  createBrandTempFolder(row: InsertBrandTempFolder): Promise<BrandTempFolder>;
+  deleteBrandTempFolder(id: number): Promise<void>;
+  listBrandTempFilesByFolderId(folderId: number): Promise<BrandTempFile[]>;
+  getBrandTempFileById(id: number): Promise<BrandTempFile | undefined>;
+  createBrandTempFile(row: InsertBrandTempFile): Promise<BrandTempFile>;
+  deleteBrandTempFile(id: number): Promise<void>;
+  purgeExpiredBrandTempFiles(): Promise<{ deleted: number }>;
 
   // Ascendra OS — Communications
   createCommEmailDesign(row: InsertCommEmailDesign): Promise<CommEmailDesign>;
@@ -1779,6 +1813,69 @@ export class DatabaseStorage implements IStorage {
       subscribed: true,
       source,
     });
+  }
+
+  async listBrandTempFolders(): Promise<BrandTempFolder[]> {
+    return db.select().from(brandTempFolders).orderBy(desc(brandTempFolders.createdAt));
+  }
+
+  async getBrandTempFolderById(id: number): Promise<BrandTempFolder | undefined> {
+    const [row] = await db.select().from(brandTempFolders).where(eq(brandTempFolders.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createBrandTempFolder(row: InsertBrandTempFolder): Promise<BrandTempFolder> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(brandTempFolders)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async deleteBrandTempFolder(id: number): Promise<void> {
+    const files = await this.listBrandTempFilesByFolderId(id);
+    for (const f of files) {
+      await unlinkBrandTempPublicFile(f.publicPath);
+    }
+    await db.delete(brandTempFolders).where(eq(brandTempFolders.id, id));
+  }
+
+  async listBrandTempFilesByFolderId(folderId: number): Promise<BrandTempFile[]> {
+    return db
+      .select()
+      .from(brandTempFiles)
+      .where(eq(brandTempFiles.folderId, folderId))
+      .orderBy(desc(brandTempFiles.uploadedAt));
+  }
+
+  async getBrandTempFileById(id: number): Promise<BrandTempFile | undefined> {
+    const [row] = await db.select().from(brandTempFiles).where(eq(brandTempFiles.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createBrandTempFile(row: InsertBrandTempFile): Promise<BrandTempFile> {
+    const [inserted] = await db.insert(brandTempFiles).values(row).returning();
+    return inserted!;
+  }
+
+  async deleteBrandTempFile(id: number): Promise<void> {
+    const row = await this.getBrandTempFileById(id);
+    if (!row) return;
+    await unlinkBrandTempPublicFile(row.publicPath);
+    await db.delete(brandTempFiles).where(eq(brandTempFiles.id, id));
+  }
+
+  async purgeExpiredBrandTempFiles(): Promise<{ deleted: number }> {
+    const now = new Date();
+    const expired = await db.select().from(brandTempFiles).where(lte(brandTempFiles.expiresAt, now));
+    let deleted = 0;
+    for (const f of expired) {
+      await unlinkBrandTempPublicFile(f.publicPath);
+      await db.delete(brandTempFiles).where(eq(brandTempFiles.id, f.id));
+      deleted++;
+    }
+    return { deleted };
   }
 
   async createCommEmailDesign(row: InsertCommEmailDesign): Promise<CommEmailDesign> {

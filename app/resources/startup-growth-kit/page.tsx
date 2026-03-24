@@ -70,9 +70,9 @@ export default async function StartupGrowthKitPage() {
         description="Educational guide for founders: why startup sites fail, assets vs systems, the 4 layers of online growth, and a simple roadmap."
         canonicalPath="/resources/startup-growth-kit"
       />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <BookOpen className="h-7 w-7" />
