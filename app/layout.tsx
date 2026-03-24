@@ -14,7 +14,7 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF
 const gaEnabled = GA_MEASUREMENT_ID.length > 0;
 
 /** Google Ads / conversion tag (gtag destination). Set empty to disable. */
-const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() ?? "AW-18034342914";
+const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() ?? "AW-11419169823";
 const googleAdsEnabled = /^AW-\d+$/i.test(GOOGLE_ADS_ID);
 
 /** Google Tag Manager container (public id). Must look like GTM-XXXXXXX. */
