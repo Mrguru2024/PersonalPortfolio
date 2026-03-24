@@ -465,7 +465,7 @@ export default function Home() {
               <Link
                 key={project.id}
                 href={`/projects/${project.id}`}
-                className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors"
+                className="rounded-lg border border-border p-4 hover:bg-section/50 transition-colors"
               >
                 <p className="font-medium text-foreground">{project.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground line-clamp-2">

@@ -37,7 +37,8 @@
     "test:coverage": "jest --coverage",
     "test:email": "tsx scripts/test-email.ts",
     "lint": "eslint .",
-    "i18n:toast": "node scripts/build-toast-phrase-map.mjs && node scripts/apply-toast-es-lines.mjs"
+    "i18n:toast": "node scripts/build-toast-phrase-map.mjs && node scripts/apply-toast-es-lines.mjs",
+    "og:ascendra": "node scripts/generate-og-ascendra.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.0",

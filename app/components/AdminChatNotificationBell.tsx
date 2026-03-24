@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,7 +25,8 @@ interface NotificationPayload {
 }
 
 export function AdminChatNotificationBell() {
-  const { data, isLoading } = useQuery<NotificationPayload>({
+  const queryClient = useQueryClient();
+  const { data, isLoading, refetch } = useQuery<NotificationPayload>({
     queryKey: ["/api/admin/chat/notifications"],
     queryFn: async () => {
       const res = await fetch("/api/admin/chat/notifications", {
@@ -36,11 +38,32 @@ export function AdminChatNotificationBell() {
     refetchInterval: 30_000,
   });
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) return;
+    void (async () => {
+      const { data: fresh } = await refetch();
+      const list = fresh?.recentMessages ?? [];
+      const latestId = list[0]?.id;
+      if (latestId != null && latestId > 0) {
+        try {
+          await apiRequest("POST", "/api/admin/chat/read", {
+            lastReadMessageId: latestId,
+          });
+        } catch {
+          /* badge still updates from refetch above */
+        }
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/admin/chat/notifications"],
+      });
+    })();
+  };
+
   const unreadCount = data?.unreadCount ?? 0;
   const recent = data?.recentMessages ?? [];
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"

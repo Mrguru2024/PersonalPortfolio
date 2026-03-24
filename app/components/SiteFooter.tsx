@@ -1,10 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { MAIN_LINKS, GROWTH_LINKS, WHO_WE_SERVE_LINKS, LEGAL_LINKS } from "@/lib/siteNavLinks";
 import { COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_E164 } from "@/lib/company";
 import { Search } from "lucide-react";
-import { FooterLanguageControl } from "@/components/FooterLanguageControl";
+import FooterLanguageControl from "@/components/FooterLanguageControl";
 
 function LinkGroup({
   title,
@@ -34,14 +36,14 @@ function LinkGroup({
 export default function SiteFooter() {
   return (
     <footer
-      className="w-full min-w-0 max-w-full border-t border-border bg-muted/30 dark:bg-muted/10 mt-auto shrink-0"
+      className="w-full min-w-0 max-w-full border-t border-border bg-section/80 dark:bg-section/40 mt-auto shrink-0"
       aria-label="Site footer"
     >
       <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-10 pb-safe min-w-0 max-w-full">
         <div className="flex flex-col gap-6 sm:gap-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-wrap gap-3 sm:gap-4">
-              <Button asChild size="sm" className="gap-1.5 min-h-[44px] sm:min-h-[36px] bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-sm">
+              <Button asChild size="sm" className="gap-1.5 min-h-[44px] sm:min-h-[36px] shadow-sm">
                 <Link href={AUDIT_PATH}>
                   <Search className="h-3.5 w-3.5 shrink-0" />
                   {PRIMARY_CTA}

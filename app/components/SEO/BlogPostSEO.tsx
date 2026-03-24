@@ -75,7 +75,7 @@ export function BlogPostSEO({
   const ogTitle = (post as any).ogTitle || metaTitle;
   const ogDescription = (post as any).ogDescription || metaDescription;
   const ogImage =
-    (post as any).ogImage || post.coverImage || `${baseUrl}/ascendra-logo.svg`;
+    (post as any).ogImage || post.coverImage || `${baseUrl}/og-ascendra.png`;
   const canonicalUrl = (post as any).canonicalUrl || postUrl;
   const twitterCard = (post as any).twitterCard || "summary_large_image";
 

@@ -76,7 +76,7 @@ export const metadata: Metadata = {
       "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale.",
     images: [
       {
-        url: `${baseUrl}/ascendra-logo.svg`,
+        url: `${baseUrl}/og-ascendra.png`,
         width: 1200,
         height: 630,
         alt: "Ascendra Technologies — Brand Growth",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     title: "Brand Growth | Brand Strategy, Web & Marketing — One Team",
     description:
       "Build a brand that converts. Brand strategy, websites, and marketing from one coordinated team.",
-    images: [`${baseUrl}/ascendra-logo.svg`],
+    images: [`${baseUrl}/og-ascendra.png`],
   },
   // PWA: install as app on mobile; standalone display and offline-capable
   manifest: `${baseUrl}/manifest.json`,
@@ -105,8 +105,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#111a1f" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F5F5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1142" },
   ],
 };
 

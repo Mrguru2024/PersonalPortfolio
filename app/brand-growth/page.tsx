@@ -232,7 +232,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 2. Problem */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why So Many Businesses Struggle to Grow
@@ -327,7 +327,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* Meet the team — About Anthony, Denishia (Macon), Kristopher (Style Studio) */}
-        <section id="meet-the-team" className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section id="meet-the-team" className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-4 sm:mb-6">
               Meet the team
@@ -344,7 +344,7 @@ export default function BrandGrowthPage() {
                     className="flex flex-col gap-6 sm:gap-8 min-w-0"
                   >
                     <div className="flex flex-row gap-4 sm:gap-5 items-center min-w-0">
-                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 shrink-0 rounded-xl overflow-hidden shadow-md bg-muted">
+                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 shrink-0 rounded-xl overflow-hidden shadow-md bg-elevated">
                         {member.useLogo ? (
                           <>
                             <Image
@@ -471,7 +471,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 6. Why one coordinated team */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why One Coordinated Team Beats Three Separate Vendors
@@ -499,7 +499,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 7. Client transformation */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/20 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-background">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               What Changes When Your Brand Is Aligned

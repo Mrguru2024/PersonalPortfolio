@@ -88,7 +88,7 @@ export default function ServicesPage() {
                 <Link
                   key={pathway.href}
                   href={pathway.href}
-                  className="rounded-lg border border-border p-4 hover:bg-muted/40 transition-colors"
+                  className="rounded-lg border border-border p-4 hover:bg-section/50 transition-colors"
                 >
                   <p className="font-medium text-foreground">{pathway.label}</p>
                   <p className="mt-1 text-sm text-muted-foreground">

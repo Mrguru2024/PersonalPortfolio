@@ -10,16 +10,19 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-primary/90 hover:shadow-md active:shadow-sm active:bg-primary/95",
+          "bg-primary text-primary-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-primary-hover hover:shadow-md active:shadow-sm active:bg-primary/95",
         destructive:
           "bg-destructive text-destructive-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-destructive/90 hover:shadow-md active:shadow-sm active:bg-destructive/95",
         outline:
           "border border-input bg-background transition-[transform,box-shadow,background-color] duration-200 hover:bg-accent hover:text-accent-foreground hover:shadow-sm active:shadow-none active:bg-accent/80",
         secondary:
-          "bg-secondary text-secondary-foreground transition-[transform,box-shadow,background-color] duration-200 hover:bg-secondary/80 hover:shadow-sm active:shadow-none active:bg-secondary/70",
+          "bg-secondary text-secondary-foreground border border-transparent transition-[transform,box-shadow,background-color] duration-200 hover:bg-secondary/85 hover:border-brand-secondary/25 hover:shadow-sm active:shadow-none active:bg-secondary/75",
         ghost:
           "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
-        link: "text-primary underline-offset-4 hover:underline hover:scale-100 active:scale-100",
+        link: "text-link underline-offset-4 hover:text-link-hover hover:underline hover:scale-100 active:scale-100",
+        /** One strong primary CTA per screen; reserve for hero or key conversion strip only. */
+        gradient:
+          "border-0 bg-gradient-to-r from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))] text-primary-foreground shadow-sm transition-[transform,box-shadow,opacity] duration-200 hover:opacity-[0.96] hover:shadow-md active:opacity-95 active:shadow-sm",
       },
       size: {
         default: "h-10 min-h-[44px] sm:min-h-[40px] px-4 py-2",

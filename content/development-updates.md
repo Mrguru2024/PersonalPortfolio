@@ -8,6 +8,16 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-23 — Theme tokens, OG image, footer, admin chat bell
+
+- **Theme & UI:** Ascendra semantic tokens (`globals.css`, `tailwind.config.ts`) and shadcn-style primitives (button, card, badge, alert, dialog, sheet, input, textarea, select, form, theme-provider). Marketing pages use section/elevated background tokens.
+- **AnimatedButton:** Passes **`variant="gradient"`** through to **`Button`**.
+- **OG / SEO:** **`public/og-ascendra.png`**, **`scripts/generate-og-ascendra.mjs`**, **`PageSEO`**, **`BlogPostSEO`**, root **`layout`**, **`manifest.json`**.
+- **Footer:** **`SiteFooter`** is a client component; **`FooterLanguageControl`** default export (stable under Webpack + RSC).
+- **Admin:** Internal chat notification bell refetches and marks read when the dropdown opens.
+
+---
+
 ## 2026-03-23 — PPC, CRM & lead conversion lead magnet
 
 - **Public funnel:** **`/ppc-lead-system`** — landing page for teams focused on lead prospecting, CRM fit, conversion, and paid ads (Google, Meta, LinkedIn). Hero, pillars, contrast with Digital Growth Audit, **`PpcLeadMagnetForm`**, ecosystem insight strip, **`LeadMagnetRelatedWorkSection`**, recommended next step.

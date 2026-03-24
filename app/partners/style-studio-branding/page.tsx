@@ -111,7 +111,7 @@ export default function StyleStudioBrandingPartnerPage() {
         </section>
 
         {/* Services — interactive expandable cards (same pattern as Macon) */}
-        <section className="w-full min-w-0 max-w-full py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-4 sm:mb-6 tracking-tight">
               What we do

@@ -119,7 +119,7 @@ export default function DiagnosticsHubPage() {
               })}
             </div>
 
-            <Card className="border-dashed bg-muted/20">
+            <Card className="border-dashed bg-section/60 dark:bg-section/25">
               <CardContent className="p-5 sm:p-6 text-center text-sm text-muted-foreground">
                 <p>
                   The shorter{" "}

@@ -130,7 +130,7 @@ export default function FreeTrialPage() {
             </section>
 
             <section
-              className="rounded-2xl border border-border bg-muted/20 dark:bg-muted/10 p-5 sm:p-8"
+              className="rounded-2xl border border-border bg-section/80 dark:bg-section/30 p-5 sm:p-8"
               aria-label="Optional self-serve tools after your trial"
             >
               <h2 className="text-lg font-semibold text-foreground mb-2 text-center sm:text-left">
@@ -146,7 +146,7 @@ export default function FreeTrialPage() {
                 <Card className="border-border/80 bg-card">
                   <CardContent className="p-5 flex flex-col h-full">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-elevated text-muted-foreground">
                         <Sparkles className="h-4 w-4" aria-hidden />
                       </div>
                       <h3 className="text-base font-semibold text-foreground">Website growth diagnosis</h3>
@@ -166,7 +166,7 @@ export default function FreeTrialPage() {
                 <Card className="border-border/80 bg-card">
                   <CardContent className="p-5 flex flex-col h-full">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-elevated text-muted-foreground">
                         <LayoutGrid className="h-4 w-4" aria-hidden />
                       </div>
                       <h3 className="text-base font-semibold text-foreground">Free growth toolkit</h3>
@@ -187,7 +187,7 @@ export default function FreeTrialPage() {
 
             <LeadMagnetRelatedWorkSection leadMagnetKey="free-trial" />
 
-            <Card className="border-border/80 bg-muted/30 dark:bg-muted/15">
+            <Card className="border-border/80 bg-elevated dark:bg-elevated/80">
               <CardContent className="p-5 sm:p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-2">Not the same as the 5-day challenge</h2>
                 <p className="text-sm text-muted-foreground mb-4">

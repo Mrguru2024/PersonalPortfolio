@@ -34,7 +34,7 @@ export function PageSEO({
   canonicalPath = "",
   keywords = [],
   ogType = "website",
-  ogImage = "/ascendra-logo.svg",
+  ogImage = "/og-ascendra.png",
   ogImageAlt = "Ascendra Technologies — Brand Growth",
   baseUrl = getSiteBaseUrl(),
   noIndex = false,

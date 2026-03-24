@@ -164,7 +164,7 @@ export function FreeToolsQualifiedLeadCard() {
 
   if (mode === "skipped") {
     return (
-      <div className="rounded-xl border border-border bg-muted/30 dark:bg-muted/15 px-4 py-3 text-sm text-muted-foreground text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="rounded-xl border border-border bg-section/50 dark:bg-section/25 px-4 py-3 text-sm text-muted-foreground text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <span>
           You’re browsing without a saved profile—fine for exploring. Sharing details first helps us send
           qualified, relevant follow-up from CRM.

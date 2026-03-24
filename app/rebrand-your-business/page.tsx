@@ -84,7 +84,7 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <FunnelHeroMedia
               src="/stock images/Graphic Design_15.jpeg"
@@ -93,7 +93,7 @@ export default function RebrandYourBusinessPage() {
               spacing="none"
               sizes="(max-width: 768px) 100vw, 512px"
               className="mb-6 sm:mb-8"
-              gradientClassName="from-muted/80 via-muted/10 to-transparent"
+              gradientClassName="from-section/90 via-section/20 to-transparent"
             />
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Signs You've Outgrown Your Brand
@@ -142,7 +142,7 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">The Rebrand Process</h2>
             <ol className="space-y-6 sm:space-y-8 min-w-0">
@@ -182,7 +182,7 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <FaqSection items={REBRAND_FAQ} title="Common Questions" className="bg-muted/30 dark:bg-muted/10" />
+        <FaqSection items={REBRAND_FAQ} title="Common Questions" className="bg-section" />
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">

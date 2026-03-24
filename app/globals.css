@@ -125,77 +125,138 @@ header .container {
   box-shadow: none !important;
 }
 
+/**
+ * Ascendra brand theme — semantic tokens (HSL components, no hsl() wrapper).
+ * Maps to Tailwind via tailwind.config.ts. Shadcn primitives use --background, --primary, etc.
+ * Brand hex reference: purple #8237BE, navy #0B1142, indigo #9091F2, sky #87CFF5, sand #F1DFD2.
+ */
 @layer base {
   :root {
-    /* Teal-primary palette: matches clean logo feel, growth/clarity, professional */
-    --background: 40 25% 98%;
-    --foreground: 200 25% 12%;
+    /* Surfaces */
+    --background: 0 0% 100%;
+    --foreground: 235 71% 15%;
+    --section: 0 0% 96%;
+    --elevated: 0 0% 96%;
     --card: 0 0% 100%;
-    --card-foreground: 200 25% 12%;
+    --card-foreground: 235 71% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 200 25% 12%;
-    --primary: 174 62% 36%;
+    --popover-foreground: 235 71% 15%;
+
+    /* Brand & actions */
+    --primary: 273 55% 48%;
+    --primary-hover: 271 54% 41%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 174 25% 94%;
-    --secondary-foreground: 174 62% 28%;
-    --muted: 174 20% 94%;
-    --muted-foreground: 200 12% 42%;
-    --accent: 174 35% 92%;
-    --accent-foreground: 174 62% 28%;
-    --destructive: 0 84.2% 55%;
+    --secondary: 240 50% 96%;
+    --secondary-foreground: 235 65% 22%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 54%;
+    --foreground-secondary: 0 0% 29%;
+    --accent: 25 48% 94%;
+    --accent-foreground: 235 71% 15%;
+
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 174 20% 88%;
-    --input: 174 20% 88%;
-    --ring: 174 62% 36%;
+
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 200 84% 52%;
+
+    /* Extended brand (maps to Tailwind `brand.*`, `link`, feedback) */
+    --brand-primary: 273 55% 48%;
+    --brand-primary-hover: 271 54% 41%;
+    --brand-secondary: 240 79% 76%;
+    --brand-info: 200 84% 75%;
+    --brand-navy: 235 71% 15%;
+    --brand-warm: 25 48% 94%;
+    --gradient-from: 273 55% 48%;
+    --gradient-to: 235 58% 32%;
+    --link: 273 55% 42%;
+    --link-hover: 271 54% 36%;
+    --success: 152 55% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 235 71% 15%;
+    --info: 200 84% 75%;
+    --info-foreground: 235 71% 18%;
+    --overlay: 235 71% 15%;
+
     --radius: 0.5rem;
-    --chart-1: 174 62% 40%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-background: 40 20% 98%;
-    --sidebar-foreground: 200 25% 18%;
-    --sidebar-primary: 174 62% 36%;
+    --chart-1: 273 55% 48%;
+    --chart-2: 240 79% 70%;
+    --chart-3: 200 84% 55%;
+    --chart-4: 235 50% 45%;
+    --chart-5: 25 45% 65%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 235 71% 15%;
+    --sidebar-primary: 273 55% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 174 25% 94%;
-    --sidebar-accent-foreground: 174 62% 28%;
-    --sidebar-border: 174 20% 88%;
-    --sidebar-ring: 174 62% 36%;
+    --sidebar-accent: 240 45% 96%;
+    --sidebar-accent-foreground: 235 65% 22%;
+    --sidebar-border: 0 0% 89%;
+    --sidebar-ring: 200 84% 52%;
   }
 
   .dark {
-    --background: 200 28% 7%;
-    --foreground: 210 25% 95%;
-    --card: 200 24% 10%;
-    --card-foreground: 210 25% 95%;
-    --popover: 200 24% 10%;
-    --popover-foreground: 210 25% 95%;
-    --primary: 174 55% 48%;
-    --primary-foreground: 200 28% 6%;
-    --secondary: 200 22% 16%;
-    --secondary-foreground: 210 25% 92%;
-    --muted: 200 22% 14%;
-    --muted-foreground: 210 18% 62%;
-    --accent: 174 35% 22%;
-    --accent-foreground: 174 50% 75%;
-    --destructive: 0 62.8% 45%;
+    --background: 235 71% 15%;
+    --foreground: 0 0% 100%;
+    --section: 235 49% 14%;
+    --elevated: 235 48% 17%;
+    --card: 235 48% 20%;
+    --card-foreground: 0 0% 100%;
+    --popover: 235 48% 20%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 273 55% 52%;
+    --primary-hover: 268 64% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 235 40% 24%;
+    --secondary-foreground: 230 22% 88%;
+    --muted: 235 49% 14%;
+    --muted-foreground: 233 22% 63%;
+    --foreground-secondary: 230 18% 82%;
+    --accent: 25 30% 22%;
+    --accent-foreground: 40 25% 95%;
+
+    --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 200 22% 18%;
-    --input: 200 22% 18%;
-    --ring: 174 55% 48%;
-    --chart-1: 174 55% 55%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 200 28% 8%;
-    --sidebar-foreground: 210 25% 92%;
-    --sidebar-primary: 174 55% 48%;
-    --sidebar-primary-foreground: 200 28% 6%;
-    --sidebar-accent: 200 22% 16%;
-    --sidebar-accent-foreground: 210 25% 92%;
-    --sidebar-border: 200 22% 18%;
-    --sidebar-ring: 174 55% 48%;
+
+    --border: 235 30% 26%;
+    --input: 235 30% 26%;
+    --ring: 200 90% 68%;
+
+    --brand-primary: 273 55% 52%;
+    --brand-primary-hover: 268 64% 62%;
+    --brand-secondary: 240 79% 76%;
+    --brand-info: 200 84% 70%;
+    --brand-navy: 235 71% 15%;
+    --brand-warm: 25 35% 24%;
+    --gradient-from: 273 55% 52%;
+    --gradient-to: 235 55% 38%;
+    --link: 268 70% 75%;
+    --link-hover: 268 75% 82%;
+    --success: 152 50% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 55%;
+    --warning-foreground: 235 71% 12%;
+    --info: 200 84% 70%;
+    --info-foreground: 235 30% 12%;
+    --overlay: 235 71% 8%;
+
+    --chart-1: 273 55% 58%;
+    --chart-2: 240 75% 72%;
+    --chart-3: 200 80% 62%;
+    --chart-4: 235 45% 55%;
+    --chart-5: 25 50% 58%;
+
+    --sidebar-background: 235 52% 13%;
+    --sidebar-foreground: 230 22% 92%;
+    --sidebar-primary: 273 55% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 235 40% 22%;
+    --sidebar-accent-foreground: 230 22% 90%;
+    --sidebar-border: 235 30% 24%;
+    --sidebar-ring: 200 90% 68%;
   }
 }
 
@@ -231,6 +292,15 @@ header .container {
     padding-bottom: env(safe-area-inset-bottom);
     /* Smooth touch scrolling on iOS */
     -webkit-overflow-scrolling: touch;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html,
+    body {
+      transition:
+        background-color 0.2s ease,
+        color 0.18s ease,
+        border-color 0.2s ease;
+    }
   }
   /* Root wrapper: prevent any child from causing horizontal scroll */
   body > div {
@@ -358,5 +428,36 @@ header .container {
     text-shadow:
       0 0 32px hsl(var(--primary) / 0.25),
       0 2px 6px hsl(var(--foreground) / 0.12);
+  }
+  /* Semantic content: secondary body tone (between body and muted) */
+  .text-foreground-secondary {
+    color: hsl(var(--foreground-secondary));
+  }
+  /* Subtle dividers — navy-tint in light, soft in dark */
+  .border-foreground-subtle {
+    border-color: hsl(var(--foreground) / 0.08);
+  }
+  .dark .border-foreground-subtle {
+    border-color: hsl(var(--foreground) / 0.06);
+  }
+}
+
+/* Composable card surfaces (use with Card or plain divs).
+   Full-width marketing bands: prefer `bg-section` (and alternate with `bg-background`) instead of `bg-muted`. */
+@layer components {
+  .card-elevated {
+    @apply rounded-lg border border-border bg-elevated text-card-foreground shadow-md;
+  }
+  .card-feature {
+    @apply rounded-lg border border-border bg-card text-card-foreground shadow-md ring-1 ring-border/40;
+  }
+  .card-interactive {
+    @apply rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-theme cursor-pointer;
+  }
+  .card-interactive:hover {
+    @apply border-primary/25 shadow-md;
+  }
+  .card-interactive:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }

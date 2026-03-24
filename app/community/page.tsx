@@ -142,7 +142,7 @@ export default function CommunityLandingPage() {
       </section>
 
       {/* Who it's for */}
-      <section className="border-t border-border/50 bg-muted/30">
+      <section className="border-t border-border/50 bg-section">
         <div className="container mx-auto px-4 py-16 sm:py-24">
           <div className="mx-auto max-w-2xl text-center mb-10">
             <h2 className="text-3xl font-bold text-foreground">Who it's for</h2>
