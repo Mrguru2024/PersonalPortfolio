@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 06:34 — Auto · 5872031
+
+- `chore: append dev log for amend commit` (`5872031`)
+
+---
+
 ## 2026-03-25 06:33 — Auto · 73c106a
 
 - `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`73c106a`)
