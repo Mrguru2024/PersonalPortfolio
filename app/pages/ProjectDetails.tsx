@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import ProjectDemo from "@/components/project/ProjectDemo";
 import { ProjectSynopsis } from "@/components/projects/ProjectSynopsis";
-import { PageSEO, StructuredData } from "@/components/SEO";
+import { StructuredData } from "@/components/SEO";
 import type { Project } from "@/lib/data";
 
 export default function ProjectDetails() {
@@ -59,20 +59,6 @@ export default function ProjectDetails() {
 
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-background relative">
-      <PageSEO
-        title={`${project.title} | Project Details | Ascendra Technologies`}
-        description={project.description}
-        canonicalPath={`/projects/${projectId}`}
-        keywords={[
-          ...(project.tags || []),
-          ...(project.techStack || []),
-          project.category,
-        ]}
-        ogType="article"
-        ogImage={project.image}
-        ogImageAlt={`${project.title} project screenshot`}
-        schemaType="WebPage"
-      />
       <StructuredData
         schema={{
           type: "Project",

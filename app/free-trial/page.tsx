@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Search, Sparkles, LayoutGrid, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { TrackPageView } from "@/components/TrackPageView";
 import {
   CHALLENGE_LANDING_PATH,
@@ -13,12 +13,15 @@ import {
   STRATEGY_CALL_PATH,
 } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth starter | Clarity call & snapshot audit | Ascendra Technologies",
   description:
     "Start free with a clarity call, a human-led Digital Growth Snapshot across brand and conversion, or both—know what to fix first before any paid build. Optional tools after.",
-};
+  path: "/free-trial",
+  keywords: ["free trial", "clarity call", "growth audit", "Ascendra"],
+});
 
 const VALUE_TRIAL_STEPS = [
   {
@@ -44,10 +47,10 @@ const VALUE_TRIAL_STEPS = [
 export default function FreeTrialPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Free trial | Ascendra Technologies"
         description="Experience Ascendra’s approach through a call and audit first; self-serve scans and tools are optional follow-ons—not the front door."
-        canonicalPath="/free-trial"
+        path="/free-trial"
       />
       <TrackPageView path="/free-trial" />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">

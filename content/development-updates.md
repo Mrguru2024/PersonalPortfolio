@@ -8,6 +8,18 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 19:16 — Auto · fa6258b
+
+- `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`fa6258b`)
+
+---
+
+## 2026-03-25 06:53 — Auto · 1ce01b9
+
+- `chore: append development-updates digest` (`1ce01b9`)
+
+---
+
 ## 2026-03-25 06:34 — Auto · 5872031
 
 - `chore: append dev log for amend commit` (`5872031`)

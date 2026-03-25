@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Search,
@@ -43,21 +42,6 @@ const CONTRACTOR_FAQ = [
 export default function ContractorSystemsPage() {
   return (
     <>
-      <PageSEO
-        title="Contractor & Trades Website Lead System | Ascendra Technologies"
-        description="Turn your contractor or trades business website into a lead machine. Custom websites and automation for electricians, HVAC, plumbers, locksmiths, and local service businesses."
-        keywords={[
-          "contractor website",
-          "trades business",
-          "lead generation",
-          "electrician website",
-          "HVAC website",
-          "plumber website",
-          "local service business",
-        ]}
-        canonicalPath="/contractor-systems"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* 1. Hero — high-impact, single primary CTA */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">

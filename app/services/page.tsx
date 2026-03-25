@@ -4,12 +4,16 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PREMIUM_OFFERS } from "@/lib/funnel-content";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Services | Ascendra Technologies",
   description:
     "See how we can help—website optimization, brand and website execution, and full business growth. Pick the path that fits where you are.",
-};
+  path: "/services",
+  keywords: ["services", "website", "brand growth", "MVP", "contractor"],
+});
 
 const pathways = [
   {
@@ -31,6 +35,12 @@ const pathways = [
 
 export default function ServicesPage() {
   return (
+    <>
+      <WebPageJsonLd
+        title="Services | Ascendra Technologies"
+        description="See how we can help—website optimization, brand and website execution, and full business growth. Pick the path that fits where you are."
+        path="/services"
+      />
     <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-6xl marketing-stack">
@@ -123,5 +133,6 @@ export default function ServicesPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -34,7 +34,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
 import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
@@ -149,13 +148,6 @@ export default function StrategyCallPage() {
 
   return (
     <>
-      <PageSEO
-        title="Book a free call | Brand Growth"
-        description="Book a free call to discuss your brand, website, or marketing goals. One coordinated team—brand, web, and marketing."
-        keywords={["strategy call", "brand strategy", "consultation", "brand growth"]}
-        canonicalPath="/strategy-call"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-8 fold:py-10 xs:py-12 sm:py-16 md:py-20">
         <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl overflow-x-hidden">
           <FunnelHeroMedia

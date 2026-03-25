@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Search, MessageSquare, Palette, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { AuditRequestForm } from "@/components/funnel/AuditRequestForm";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
@@ -48,10 +48,10 @@ const AUDIT_INCLUDES = [
 export default function DigitalGrowthAuditPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Digital Growth Audit | Find out why your website isn't generating customers"
         description="Get a Digital Growth Audit reviewing your brand, design, and website performance. One coordinated ecosystem—Style Studio, Macon Designs, Ascendra."
-        canonicalPath="/digital-growth-audit"
+        path="/digital-growth-audit"
       />
       <TrackPageView path="/digital-growth-audit" />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">

@@ -8,7 +8,6 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Search,
@@ -41,20 +40,6 @@ const STARTUP_MVP_FAQ = [
 export default function StartupMvpDevelopmentPage() {
   return (
     <>
-      <PageSEO
-        title="Startup & MVP Development | Ascendra Technologies"
-        description="MVP development and scalable architecture for SaaS founders, product builders, and marketplace creators. Ship faster with an experienced development partner."
-        keywords={[
-          "MVP development",
-          "SaaS development",
-          "startup development",
-          "product development",
-          "scalable architecture",
-          "Atlanta developer",
-        ]}
-        canonicalPath="/startup-mvp-development"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* Hero — modern SaaS aesthetic */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">

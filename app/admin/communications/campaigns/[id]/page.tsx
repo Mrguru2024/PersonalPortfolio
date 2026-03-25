@@ -23,12 +23,23 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { describeCommSegmentFilters } from "@/lib/describe-comm-segment-filters";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
+import { CommAudienceSegmentBuilder } from "@/components/communications/CommAudienceSegmentBuilder";
+
+const DEFAULT_SEGMENT: CommSegmentFilters = {
+  status: "new",
+  excludeDoNotContact: true,
+};
+
+function mergeSegmentFilters(raw: Record<string, unknown> | null | undefined): CommSegmentFilters {
+  return { ...DEFAULT_SEGMENT, ...(raw as CommSegmentFilters) };
+}
 
 type CampaignDetail = {
   id: number;
   name: string;
   status: string;
   campaignType: string;
+  savedListId: number | null;
   segmentFilters: Record<string, unknown>;
   sentCount: number | null;
   openedCount: number | null;
@@ -67,6 +78,8 @@ export default function CommCampaignDetailPage() {
   const [variantEmailDesignId, setVariantEmailDesignId] = useState<string>("");
   const [abVariantBPercent, setAbVariantBPercent] = useState("50");
   const [organizationIdText, setOrganizationIdText] = useState("");
+  const [segmentFilters, setSegmentFilters] = useState<CommSegmentFilters>(DEFAULT_SEGMENT);
+  const [savedListId, setSavedListId] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -91,6 +104,8 @@ export default function CommCampaignDetailPage() {
     setOrganizationIdText(
       c.organizationId != null && Number.isFinite(c.organizationId) ? String(c.organizationId) : ""
     );
+    setSegmentFilters(mergeSegmentFilters(c.segmentFilters));
+    setSavedListId(c.savedListId != null && Number.isFinite(c.savedListId) ? String(c.savedListId) : "");
   }, [c]);
 
   const { data: designs = [], isLoading: dLoading } = useQuery({
@@ -103,6 +118,35 @@ export default function CommCampaignDetailPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved && !!c && c.status === "draft",
   });
 
+  const { data: savedLists = [] } = useQuery({
+    queryKey: ["/api/admin/crm/saved-lists", "comm-campaign-detail"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/saved-lists");
+      if (!res.ok) return [];
+      return res.json() as Promise<{ id: number; name: string }[]>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && !!c && c.status === "draft",
+  });
+
+  const previewAudienceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/communications/audience-preview", {
+        segmentFilters,
+        savedListId: savedListId.trim() ? Number(savedListId) : undefined,
+      });
+      if (!res.ok) throw new Error("Preview failed");
+      return res.json() as Promise<{ count: number; sample: { id: number; email: string; name: string }[] }>;
+    },
+    onSuccess: (d) => {
+      toast({
+        title: "Audience preview",
+        descriptionKey: "communications.audiencePreviewDescription",
+        values: { count: String(d.count) },
+      });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       const primaryId = c?.design?.id;
@@ -113,6 +157,8 @@ export default function CommCampaignDetailPage() {
         throw new Error("Organization ID must be a number");
       }
       const body: Record<string, unknown> = {
+        segmentFilters,
+        savedListId: savedListId.trim() ? Number(savedListId) : null,
         abTestEnabled,
         abVariantBPercent: Number(abVariantBPercent),
         variantEmailDesignId: abTestEnabled ? Number(variantEmailDesignId) : null,
@@ -131,7 +177,7 @@ export default function CommCampaignDetailPage() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Campaign settings saved" });
+      toast({ title: "Campaign saved", description: "Audience and settings were updated." });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns", id] });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns"] });
     },
@@ -235,6 +281,36 @@ export default function CommCampaignDetailPage() {
       {c.status === "draft" && (
         <Card>
           <CardHeader>
+            <CardTitle>Audience</CardTitle>
+            <CardDescription>
+              Change who receives this send (same controls as when creating a campaign). Use Preview to see match count,
+              then save below. After the campaign is sent, audience is locked for this run.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <CommAudienceSegmentBuilder
+              value={segmentFilters}
+              onChange={setSegmentFilters}
+              savedListId={savedListId}
+              onSavedListIdChange={setSavedListId}
+              savedLists={savedLists}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => previewAudienceMutation.mutate()}
+              disabled={previewAudienceMutation.isPending}
+            >
+              {previewAudienceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Preview audience
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {c.status === "draft" && (
+        <Card>
+          <CardHeader>
             <CardTitle>A/B & organization</CardTitle>
             <CardDescription>Editable while the campaign is in draft. Save before sending.</CardDescription>
           </CardHeader>
@@ -294,7 +370,7 @@ export default function CommCampaignDetailPage() {
               }
             >
               {saveSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save settings
+              Save audience and settings
             </Button>
           </CardContent>
         </Card>
@@ -326,18 +402,26 @@ export default function CommCampaignDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Audience</CardTitle>
-          <CardDescription>How recipients were selected for this campaign.</CardDescription>
+          <CardTitle>{c.status === "draft" ? "Audience summary" : "Audience"}</CardTitle>
+          <CardDescription>
+            {c.status === "draft" ?
+              "Current saved rules (update the form above, then save)."
+            : "How recipients were selected for this campaign."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <ul className="list-disc pl-5 text-sm space-y-1 text-foreground">
-            {describeCommSegmentFilters(c.segmentFilters).map((line, i) => (
+            {describeCommSegmentFilters(
+              (c.status === "draft" ? segmentFilters : c.segmentFilters) as Record<string, unknown>,
+            ).map((line, i) => (
               <li key={`${i}-${line.slice(0, 48)}`}>{line}</li>
             ))}
           </ul>
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Technical details (advanced)</summary>
-            <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">{JSON.stringify(c.segmentFilters, null, 2)}</pre>
+            <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">
+              {JSON.stringify(c.status === "draft" ? segmentFilters : c.segmentFilters, null, 2)}
+            </pre>
           </details>
         </CardContent>
       </Card>

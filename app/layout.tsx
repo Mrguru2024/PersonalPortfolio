@@ -62,6 +62,20 @@ const defaultTitle = "Ascendra Technologies | Brand Growth, Strategy & Marketing
 const defaultDescription =
   "Ascendra Technologies helps you build a brand that converts—strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with clarity.";
 
+/** Site-level entity for Google (pairs with Organization). */
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: COMPANY_NAME,
+  url: baseUrl,
+  description: defaultDescription,
+  publisher: {
+    "@type": "Organization",
+    name: COMPANY_NAME,
+    url: baseUrl,
+  },
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(`${baseUrl}/`),
   title: defaultTitle,
@@ -167,6 +181,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         {/* Full-page backdrop: vertical hero wash + corner/edge ambient glow (theme-aware) */}
         <div

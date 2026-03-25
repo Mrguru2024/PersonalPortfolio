@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrackPageView } from "@/components/TrackPageView";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import OfferValuationTool from "@/components/offer-valuation";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +16,10 @@ export default function OfferAuditPage() {
   return (
     <>
       <TrackPageView path="/offer-audit" />
-      <PageSEO
+      <WebPageJsonLd
         title="Offer audit | Find why your offer is not converting"
         description="Run a free offer audit, unlock your full diagnosis, and map strategic fixes."
-        canonicalPath="/offer-audit"
+        path="/offer-audit"
       />
       <div className="w-full min-w-0 max-w-full marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-4xl space-y-5">

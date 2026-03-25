@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Image as ImageIcon, Package, Share2, Megaphone } from "lucide-react";
 import {
   BRAND_GROWTH_PATH,
@@ -31,13 +30,6 @@ const SERVICES = [
 export default function MarketingAssetsPage() {
   return (
     <>
-      <PageSEO
-        title="Professional Marketing Assets That Actually Convert | Style Studio"
-        description="Ad creatives, social graphics, packaging, and promotional design for businesses that already have a brand and website. Led by Style Studio Branding. Start your marketing upgrade."
-        keywords={["marketing design", "ad creatives", "packaging design", "social media graphics", "marketing assets"]}
-        canonicalPath="/marketing-assets"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="marketing-assets">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-red-500/30 dark:border-red-400/25">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />

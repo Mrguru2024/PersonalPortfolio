@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Palette,
@@ -146,21 +145,6 @@ const TEAM_ABOUT = [
 export default function BrandGrowthPage() {
   return (
     <>
-      <PageSEO
-        title="Build a Brand That Converts | Brand Growth System"
-        description="Brand strategy, websites, and marketing visuals—built together by one coordinated team. Launch, rebrand, or scale with Macon Designs, Style Studio Branding, and Ascendra Technologies."
-        keywords={[
-          "brand strategy",
-          "brand identity",
-          "website development",
-          "marketing design",
-          "rebrand",
-          "brand growth",
-          "conversion",
-        ]}
-        canonicalPath={BRAND_GROWTH_PATH}
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* 1. Hero */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">

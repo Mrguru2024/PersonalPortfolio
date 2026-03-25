@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, CheckCircle2, Palette, Layout, Package } from "lucide-react";
 import { FaqSection } from "@/components/FaqSection";
 import {
@@ -44,13 +43,6 @@ const PROCESS_STEPS = [
 export default function LaunchYourBrandPage() {
   return (
     <>
-      <PageSEO
-        title="Launch Your Business With a Brand That Looks Professional | Brand Launch"
-        description="Complete business brand build for new entrepreneurs: brand identity, website, and marketing kit—built by one coordinated team. Book your brand launch call."
-        keywords={["brand launch", "new business branding", "startup brand", "brand identity", "launch kit"]}
-        canonicalPath="/launch-your-brand"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="launch">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-amber-500/30 dark:border-amber-400/25">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import {
   STARTUP_WEBSITE_SCORE_PATH,
   REVENUE_CALCULATOR_PATH,
@@ -65,10 +65,10 @@ export default async function StartupGrowthKitPage() {
 
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Startup growth kit | Where to begin building your business online"
         description="Educational guide for founders: why startup sites fail, assets vs systems, the 4 layers of online growth, and a simple roadmap."
-        canonicalPath="/resources/startup-growth-kit"
+        path="/resources/startup-growth-kit"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">

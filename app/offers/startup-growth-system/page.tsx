@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import {
   DEFAULT_OFFER_SECTIONS,
   type OfferSections,
@@ -64,11 +63,6 @@ export default function StartupGrowthSystemOfferPage() {
     ? (offer.sections as OfferSections)
     : DEFAULT_OFFER_SECTIONS;
 
-  const metaTitle = offer?.metaTitle ?? "Startup growth system | Affordable audit for founders";
-  const metaDescription =
-    offer?.metaDescription ??
-    "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.";
-
   const hero = sections.hero ?? DEFAULT_OFFER_SECTIONS.hero!;
   const price = sections.price ?? DEFAULT_OFFER_SECTIONS.price!;
   const deliverables = sections.deliverables ?? DEFAULT_OFFER_SECTIONS.deliverables!;
@@ -80,11 +74,6 @@ export default function StartupGrowthSystemOfferPage() {
 
   return (
     <>
-      <PageSEO
-        title={metaTitle}
-        description={metaDescription}
-        canonicalPath="/offers/startup-growth-system"
-      />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-4xl marketing-stack">

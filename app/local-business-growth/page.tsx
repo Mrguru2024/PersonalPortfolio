@@ -8,7 +8,6 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Search,
@@ -40,21 +39,6 @@ const LOCAL_BUSINESS_FAQ = [
 export default function LocalBusinessGrowthPage() {
   return (
     <>
-      <PageSEO
-        title="Local Business & Practice Growth | Ascendra Technologies"
-        description="Professional websites and appointment systems for healthcare practices, dental offices, med spas, therapy clinics, and professional service firms in Atlanta and beyond."
-        keywords={[
-          "healthcare website",
-          "dental website",
-          "med spa website",
-          "therapy clinic",
-          "professional services",
-          "local business growth",
-          "patient acquisition",
-        ]}
-        canonicalPath="/local-business-growth"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* Hero — polished, trust-focused */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">

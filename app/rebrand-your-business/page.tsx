@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { FaqSection } from "@/components/FaqSection";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
@@ -32,13 +31,6 @@ const REBRAND_SERVICES = [
 export default function RebrandYourBusinessPage() {
   return (
     <>
-      <PageSEO
-        title="Your Business Grew — But Your Brand Didn't | Rebrand Strategy"
-        description="Complete rebrand and website upgrade for established businesses. Outdated branding hurts credibility and conversion. Book your rebrand strategy call."
-        keywords={["rebrand", "brand refresh", "website rebuild", "brand redesign", "brand upgrade"]}
-        canonicalPath="/rebrand-your-business"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="rebrand">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-primary/80">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />

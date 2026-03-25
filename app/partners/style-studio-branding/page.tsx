@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Megaphone, Package, ImageIcon, ChevronDown, ExternalLink } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 
@@ -47,13 +46,6 @@ export default function StyleStudioBrandingPartnerPage() {
 
   return (
     <>
-      <PageSEO
-        title="Style Studio Branding | Marketing & Production Design"
-        description="Kristopher Williams leads Style Studio Branding—production design, marketing assets, packaging, and ad creatives. Part of the Brand Growth ecosystem."
-        keywords={["Style Studio Branding", "production design", "marketing assets", "packaging design", "ad creatives", "Kristopher Williams"]}
-        canonicalPath="/partners/style-studio-branding"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-brand="style-studio">
         {/* Hero — logo-led, premium (brand accent: campaign/production) */}
         <section className="w-full min-w-0 max-w-full relative py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 overflow-hidden border-t-4 border-red-500/40 dark:border-red-400/30">

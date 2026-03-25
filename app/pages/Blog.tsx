@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageSEO } from "@/components/SEO";
 import { apiRequest } from "@/lib/queryClient";
 import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, BOOK_CALL_HREF } from "@/lib/funnelCtas";
 import { fetchBlogSeedPosts } from "@/lib/blogSeedClient";
@@ -96,15 +95,6 @@ export default function Blog() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12 min-w-0 max-w-full">
-      <PageSEO
-        title="Blog | Ascendra Technologies"
-        description="Insights and updates from Ascendra Technologies – brand growth, web systems, and development."
-        canonicalPath="/blog"
-        keywords={allTags}
-        ogType="blog"
-        schemaType="CollectionPage"
-      />
-
       <div className="max-w-5xl mx-auto min-w-0">
         <div className="mb-8 sm:mb-12">
           <div className="text-center">

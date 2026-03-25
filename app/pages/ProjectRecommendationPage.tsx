@@ -6,7 +6,7 @@ import { ArrowLeft, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import ProjectRecommendationForm from "@/components/recommendations/ProjectRecommendationForm";
 import ProjectRecommendationResults from "@/components/recommendations/ProjectRecommendationResults";
-import { PageSEO, StructuredData } from "@/components/SEO";
+import { StructuredData } from "@/components/SEO";
 
 interface RecommendationData {
   recommendations: Array<{
@@ -43,22 +43,6 @@ const ProjectRecommendationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden pb-24 lg:pb-20">
-      {/* Add SEO for Project Recommendations */}
-      <PageSEO
-        title="AI Project Recommendations | Find Your Perfect Project | Ascendra Technologies"
-        description="Get personalized project recommendations tailored to your interests, skills, and learning goals using our AI-powered recommendation engine."
-        canonicalPath="/recommendations"
-        keywords={[
-          "AI recommendations",
-          "project finder",
-          "personalized projects",
-          "web development",
-          "recommendation engine",
-          "GPT-4o",
-        ]}
-        ogType="website"
-        schemaType="WebPage"
-      />
 
       {/* Add FAQ structured data */}
       <StructuredData
