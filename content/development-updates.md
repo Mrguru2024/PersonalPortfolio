@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 19:17 — Auto · 52563f5
+
+- `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`52563f5`)
+
+---
+
 ## 2026-03-25 19:16 — Auto · fa6258b
 
 - `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`fa6258b`)
