@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Newsletter {
   id: number;
@@ -300,6 +301,33 @@ export default function NewsletterViewPage() {
       </div>
 
       <div className="space-y-6">
+        {newsletter.status === "draft" && (
+          <Alert>
+            <AlertTitle>How to send</AlertTitle>
+            <AlertDescription className="space-y-2 text-sm">
+              <p>
+                1. Choose who gets this email below (subscribers, all CRM leads/clients, or a specific list). For a
+                custom list, pick &quot;Specific list&quot;, add emails, then click <strong>Save recipients</strong>.
+              </p>
+              <p>
+                2. Use <strong>Send Now</strong> in the header when you are ready. Merge tags in subject or body:{" "}
+                <code className="text-xs bg-muted px-1 rounded">{"{{firstName}}"}</code>,{" "}
+                <code className="text-xs bg-muted px-1 rounded">{"{{Name}}"}</code>,{" "}
+                <code className="text-xs bg-muted px-1 rounded">{"{{company}}"}</code>,{" "}
+                <code className="text-xs bg-muted px-1 rounded">{"{{email}}"}</code> — filled from CRM when the address
+                matches a contact.
+              </p>
+              <p>
+                If Brevo blocks the send (e.g. unrecognized IP), open{" "}
+                <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
+                  Admin → Settings → Brevo
+                </Link>
+                .
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {newsletter.status === "draft" && (
           <Card>
             <CardHeader>

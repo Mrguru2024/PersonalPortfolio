@@ -28,6 +28,7 @@ export function TrialBanner() {
 
   return (
     <div
+      data-site-trial-banner
       className="fixed left-0 right-0 z-[55] border-b border-emerald-700/40 bg-emerald-950/92 text-emerald-50 shadow-md backdrop-blur-sm dark:border-emerald-600/40 dark:bg-emerald-950/95 top-[calc(env(safe-area-inset-top,0px)+6.75rem)] fold:top-[calc(env(safe-area-inset-top,0px)+7.25rem)] sm:top-[calc(env(safe-area-inset-top,0px)+7.5rem)] md:top-[calc(env(safe-area-inset-top,0px)+8.5rem)] lg:top-[calc(env(safe-area-inset-top,0px)+9.75rem)]"
       role="status"
       aria-live="polite"

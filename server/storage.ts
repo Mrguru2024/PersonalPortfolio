@@ -373,6 +373,8 @@ export interface IStorage {
   getCrmActivities(contactId: number): Promise<CrmActivity[]>;
   createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
   getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
+  /** Match CRM rows by lower(trim(email)) for newsletter / merge sends. */
+  getCrmContactsByNormalizedEmails(emails: string[]): Promise<CrmContact[]>;
   listCrmContactSocialSuggestions(contactId: number, limit?: number): Promise<CrmContactSocialSuggestion[]>;
   getCrmContactSocialSuggestionById(id: number): Promise<CrmContactSocialSuggestion | undefined>;
   supersedeSuggestedSocialSuggestions(contactId: number): Promise<void>;
@@ -3115,6 +3117,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(crmContacts)
       .where(inArray(crmContacts.email, emails));
+  }
+
+  async getCrmContactsByNormalizedEmails(emails: string[]): Promise<CrmContact[]> {
+    const normalized = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+    if (normalized.length === 0) return [];
+    const matchOne = (e: string) => sql`lower(trim(coalesce(${crmContacts.email}, ''))) = ${e}`;
+    const condition =
+      normalized.length === 1 ? matchOne(normalized[0]!) : or(...normalized.map(matchOne));
+    return db.select().from(crmContacts).where(condition);
   }
 
   async createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent> {

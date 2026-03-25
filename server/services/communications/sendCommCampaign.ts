@@ -1,4 +1,9 @@
 import { buildBlockIdResolverForLinks } from "@/lib/commEmailBlocks";
+import {
+  applyEmailMergeTags,
+  mergeFieldsFromCrmContact,
+} from "@/lib/emailMergeTags";
+import { resolveRelativeUrlsForEmail } from "@/lib/resolveEmailAssetUrls";
 import { storage } from "@server/storage";
 import type { CommEmailDesign } from "@shared/communicationsSchema";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
@@ -35,14 +40,6 @@ function publicBaseUrl(reqOrigin?: string): string {
     reqOrigin?.replace(/\/$/, "") ||
     "http://localhost:3000"
   );
-}
-
-/** Merge simple {{firstName}} / {{company}} placeholders from CRM contact */
-function personalizeHtml(html: string, contact: { firstName?: string | null; name: string; company?: string | null }): string {
-  const first = (contact.firstName || contact.name || "").split(/\s+/)[0] || "there";
-  return html
-    .replace(/\{\{\s*firstName\s*\}\}/gi, first)
-    .replace(/\{\{\s*company\s*\}\}/gi, contact.company || "your team");
 }
 
 /**
@@ -119,12 +116,20 @@ export async function executeCommCampaignSend(input: {
 
     const resolveBlockIdForLinkIndex = buildBlockIdResolverForLinks(designForSend.blocksJson as unknown);
 
+    const mergeFields = mergeFieldsFromCrmContact(email, {
+      firstName: contact.firstName,
+      name: contact.name,
+      company: contact.company,
+    });
+    const mergedSubject = applyEmailMergeTags(designForSend.subject, mergeFields, { htmlEscape: false });
+    const mergedHtmlRaw = applyEmailMergeTags(designForSend.htmlContent, mergeFields, { htmlEscape: true });
+    const mergedHtml = resolveRelativeUrlsForEmail(mergedHtmlRaw, baseUrl);
+    const mergedPlain = designForSend.plainText
+      ? applyEmailMergeTags(designForSend.plainText, mergeFields, { htmlEscape: false })
+      : undefined;
+
     const bodyHtml = wrapEmailHtmlForSend({
-      html: personalizeHtml(designForSend.htmlContent, {
-        firstName: contact.firstName,
-        name: contact.name,
-        company: contact.company,
-      }),
+      html: mergedHtml,
       baseUrl,
       previewText: designForSend.previewText,
       leadId: contact.id,
@@ -141,9 +146,9 @@ export async function executeCommCampaignSend(input: {
 
     const result = await sendBrevoTransactional({
       to: email,
-      subject: designForSend.subject,
+      subject: mergedSubject,
       htmlContent: bodyHtml,
-      textContent: designForSend.plainText ?? undefined,
+      textContent: mergedPlain,
       senderName: designForSend.senderName,
     });
 
@@ -158,7 +163,7 @@ export async function executeCommCampaignSend(input: {
         eventType: "delivered",
         emailId: trackingId,
         metadata: {
-          subject: designForSend.subject,
+          subject: mergedSubject,
           commCampaignId: campaign.id,
           commCampaignName: campaign.name,
           commDesignId: designForSend.id,
@@ -169,7 +174,7 @@ export async function executeCommCampaignSend(input: {
         contactId: contact.id,
         type: "comm_campaign_sent",
         title: `Email sent: ${campaign.name}`,
-        content: designForSend.subject,
+        content: mergedSubject,
         metadata: {
           commCampaignId: campaign.id,
           commDesignId: designForSend.id,

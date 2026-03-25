@@ -114,7 +114,7 @@ export default function Header(_props: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 360px)");
+    const mq = window.matchMedia("(min-width: 280px)");
     const apply = () => setShowMobileNavText(mq.matches);
     apply();
     mq.addEventListener("change", apply);

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
+import {
+  applyEmailMergeTags,
+  mergeFieldsFromCrmContact,
+  mergeFieldsFromEmailOnly,
+} from "@/lib/emailMergeTags";
+import { resolveRelativeUrlsForEmail } from "@/lib/resolveEmailAssetUrls";
 import { storage } from "@server/storage";
 import { sendBrevoTransactional } from "@server/services/communications/brevoTransactional";
 
@@ -11,6 +17,16 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function testSendBaseUrl(req: NextRequest): string {
+  const origin = req.headers.get("origin")?.replace(/\/$/, "");
+  if (origin && /^https?:\/\//i.test(origin)) return origin;
+  return (
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "http://localhost:3000"
+  );
 }
 
 /** POST — send design to a test inbox (no tracking pixel; production sends use campaigns). */
@@ -27,27 +43,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const to = typeof body.to === "string" ? body.to.trim() : "";
     if (!to) return NextResponse.json({ error: "to (email) is required" }, { status: 400 });
 
-    let html = design.htmlContent;
     const contactId = body.contactId != null ? Number(body.contactId) : null;
-    if (contactId && Number.isFinite(contactId)) {
-      const contact = await storage.getCrmContactById(contactId);
-      if (contact) {
-        const first = (contact.firstName || contact.name || "").split(/\s+/)[0] || "there";
-        html = html
-          .replace(/\{\{\s*firstName\s*\}\}/gi, first)
-          .replace(/\{\{\s*company\s*\}\}/gi, contact.company || "your team");
-      }
-    }
+    const contact =
+      contactId && Number.isFinite(contactId) ? await storage.getCrmContactById(contactId) : undefined;
+    const fields =
+      contact?.email ?
+        mergeFieldsFromCrmContact(contact.email, {
+          firstName: contact.firstName,
+          name: contact.name,
+          company: contact.company,
+        })
+      : mergeFieldsFromEmailOnly(to);
 
-    const preheader = design.previewText?.trim()
-      ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:transparent;width:0;height:0;">${escapeHtml(design.previewText.trim())}</div>`
+    const base = testSendBaseUrl(req);
+    const subjectMerged = applyEmailMergeTags(design.subject, fields, { htmlEscape: false });
+    const htmlMerged = applyEmailMergeTags(design.htmlContent, fields, { htmlEscape: true });
+    const html = resolveRelativeUrlsForEmail(htmlMerged, base);
+    const plainMerged = design.plainText
+      ? applyEmailMergeTags(design.plainText, fields, { htmlEscape: false })
+      : undefined;
+
+    const previewMerged = design.previewText?.trim()
+      ? applyEmailMergeTags(design.previewText.trim(), fields, { htmlEscape: false })
+      : "";
+    const preheader = previewMerged
+      ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:transparent;width:0;height:0;">${escapeHtml(previewMerged)}</div>`
       : "";
 
     const result = await sendBrevoTransactional({
       to,
-      subject: `[TEST] ${design.subject}`,
+      subject: `[TEST] ${subjectMerged}`,
       htmlContent: `${preheader}${html}`,
-      textContent: design.plainText ?? undefined,
+      textContent: plainMerged,
       senderName: design.senderName,
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -21,6 +21,8 @@ import {
   Heading2,
   Heading3,
   Code,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface RichTextEditorProps {
   content: string;
@@ -46,10 +48,13 @@ export function RichTextEditor({
   onChange,
   placeholder = "Start writing...",
 }: RichTextEditorProps) {
+  const { toast } = useToast();
+  const imageFileRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -111,6 +116,32 @@ export function RichTextEditor({
       editor.chain().focus().setImage({ src: imageUrl }).run();
       setImageUrl("");
       setIsImageDialogOpen(false);
+    }
+  };
+
+  const uploadImageFile = async (file: File) => {
+    setImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "include" });
+      const j = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) throw new Error(j.error || "Upload failed");
+      let url = j.url || "";
+      if (url.startsWith("/")) {
+        url = `${window.location.origin}${url}`;
+      }
+      editor.chain().focus().setImage({ src: url }).run();
+      setIsImageDialogOpen(false);
+      toast({ title: "Image inserted" });
+    } catch (e) {
+      toast({
+        title: "Image upload failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setImageUploading(false);
     }
   };
 
@@ -276,17 +307,40 @@ export function RichTextEditor({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Image</DialogTitle>
-              <DialogDescription>Enter the image URL</DialogDescription>
+              <DialogTitle>Add image</DialogTitle>
+              <DialogDescription>Upload a file (JPEG, PNG, GIF, WebP) or paste a public image URL.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <input
+                ref={imageFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="sr-only"
+                aria-hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) void uploadImageFile(f);
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full gap-2"
+                disabled={imageUploading}
+                onClick={() => imageFileRef.current?.click()}
+              >
+                {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Upload from computer
+              </Button>
               <div>
-                <Label htmlFor="image-url">Image URL</Label>
+                <Label htmlFor="image-url">Image URL (optional)</Label>
                 <Input
                   id="image-url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://yoursite.com/image.jpg"
+                  className="mt-1"
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -296,7 +350,9 @@ export function RichTextEditor({
                 >
                   Cancel
                 </Button>
-                <Button onClick={addImage}>Add Image</Button>
+                <Button onClick={addImage} disabled={!imageUrl.trim()}>
+                  Add from URL
+                </Button>
               </div>
             </div>
           </DialogContent>

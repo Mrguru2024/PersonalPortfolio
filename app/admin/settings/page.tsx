@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2 } from "lucide-react";
+import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -115,6 +115,23 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground text-sm mb-8">
           Control notifications, push, reminders, and AI agent permissions. Role and permission changes are recognized by the backend and AI helpers.
         </p>
+
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader className="py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Mail className="h-5 w-5" />
+              Brevo email delivery
+            </CardTitle>
+            <CardDescription>
+              Check API key status, authorized IPs, and sender env vars. Use this when test sends fail with an IP or auth error.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4">
+            <Button variant="secondary" size="sm" asChild>
+              <Link href="/admin/settings/brevo">Open Brevo setup</Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

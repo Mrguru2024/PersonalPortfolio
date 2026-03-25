@@ -6,6 +6,7 @@ import { TrialBanner } from "./components/TrialBanner";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import MobileBottomNav from "./components/MobileBottomNav";
+import { SiteMain } from "./components/SiteMain";
 import { MobileNavProvider } from "./contexts/MobileNavContext";
 import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
@@ -183,9 +184,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
               <FixedHeaderWrapper />
               <TrialBanner />
-              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+32px)] lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
-                {children}
-              </main>
+              <SiteMain>{children}</SiteMain>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}
               <MobileBottomNav />
               <SiteFooter />

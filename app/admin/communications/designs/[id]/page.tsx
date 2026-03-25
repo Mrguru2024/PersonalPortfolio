@@ -63,6 +63,7 @@ export default function EditCommDesignPage() {
   const [content, setContent] = useState("<p></p>");
   const [category, setCategory] = useState("general");
   const [testTo, setTestTo] = useState("");
+  const [testContactId, setTestContactId] = useState<string>("");
   const [blockRows, setBlockRows] = useState<string[]>([""]);
   const [organizationIdText, setOrganizationIdText] = useState("");
   const [aiInstruction, setAiInstruction] = useState("");
@@ -75,6 +76,15 @@ export default function EditCommDesignPage() {
     if (!authLoading && !user) router.push("/auth");
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
+
+  const { data: crmContactsForTest = [] } = useQuery({
+    queryKey: ["/api/admin/crm/contacts", "comm-test-send"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/contacts");
+      return res.json() as Promise<{ id: number; name: string; email: string }[]>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
 
   const { data: design, isLoading } = useQuery({
     queryKey: ["/api/admin/communications/designs", id],
@@ -218,7 +228,10 @@ export default function EditCommDesignPage() {
 
   const testMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/admin/communications/designs/${id}/test-send`, { to: testTo });
+      const body: { to: string; contactId?: number } = { to: testTo.trim() };
+      const cid = testContactId ? Number(testContactId) : NaN;
+      if (Number.isFinite(cid)) body.contactId = cid;
+      const res = await apiRequest("POST", `/api/admin/communications/designs/${id}/test-send`, body);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error || "Send failed");
@@ -361,6 +374,10 @@ export default function EditCommDesignPage() {
 
           <div className="space-y-2">
             <Label>Body</Label>
+            <p className="text-xs text-muted-foreground">
+              Merge tags: {"{{firstName}}"}, {"{{Name}}"}, {"{{company}}"}, {"{{email}}"} — use &quot;Preview merge from
+              contact&quot; in test send to sample real CRM values.
+            </p>
             <RichTextEditor content={content} onChange={setContent} />
           </div>
 
@@ -389,16 +406,45 @@ export default function EditCommDesignPage() {
             <Send className="h-5 w-5" />
             Test send
           </CardTitle>
-          <CardDescription>Uses Brevo transactional API. Subject prefixed with [TEST].</CardDescription>
+          <CardDescription>
+            Uses Brevo transactional API. Subject prefixed with [TEST]. Optional CRM contact fills merge tags; otherwise
+            tags use the test inbox address.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2 items-end">
-          <div className="space-y-2 flex-1 min-w-[200px]">
-            <Label>Recipient email</Label>
-            <Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@company.com" />
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Recipient email</Label>
+              <Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@company.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Preview merge from contact (optional)</Label>
+              <Select value={testContactId || "__none__"} onValueChange={(v) => setTestContactId(v === "__none__" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None — use test email only" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {crmContactsForTest
+                    .filter((c) => c.email?.trim())
+                    .map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name} ({c.email})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Button onClick={() => testMutation.mutate()} disabled={!testTo.trim() || testMutation.isPending}>
-            Send test
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => testMutation.mutate()} disabled={!testTo.trim() || testMutation.isPending}>
+              {testMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Send test
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/settings/brevo">Brevo setup and IP allowlist</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 06:31 — Auto · 7d3396e
+
+- `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`7d3396e`)
+
+---
+
 ## 2026-03-24 — Offer audit Google Ads unification
 
 - One **`fireOfferValuationConversion`** path for submit and lead on the public funnel; optional **`NEXT_PUBLIC_GOOGLE_ADS_CV_*`** label envs with **`NEXT_PUBLIC_GOOGLE_ADS_ID`**; strategy-call **`send_to`** reads **`NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL`** (or legacy **`_STRATEGY_CALL_CLICKED`**).

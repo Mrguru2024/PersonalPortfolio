@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 
 export default function ContentStudioWorkflowPage() {
@@ -72,6 +73,25 @@ export default function ContentStudioWorkflowPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ImageIcon className="h-5 w-5" />
+            Images in content
+          </CardTitle>
+          <CardDescription>
+            You do not need JSON or a separate upload screen for post images. Open any document, use the editor&apos;s{" "}
+            <strong>image</strong> button, then <strong>Upload from computer</strong> (JPEG, PNG, GIF, WebP) or paste an
+            image URL. The same editor is used for newsletters and email designs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/content-studio/documents">Go to document library</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Platform adapters</CardTitle>
