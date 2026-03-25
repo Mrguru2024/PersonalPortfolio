@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 06:33 — Auto · 73c106a
+
+- `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`73c106a`)
+
+---
+
 ## 2026-03-25 06:31 — Auto · 7d3396e
 
 - `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`7d3396e`)
