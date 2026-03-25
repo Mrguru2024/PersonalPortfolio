@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-25 19:17 — Auto · 8f48481
+
+- `chore: development log entry for SEO and comms changes` (`8f48481`)
+
+---
+
 ## 2026-03-25 19:17 — Auto · 52563f5
 
 - `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`52563f5`)
