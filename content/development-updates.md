@@ -8,15 +8,9 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
-## 2026-03-26 06:02 — Auto · ba53a21
+## 2026-03-26 06:02 — Auto · 6e02b3c
 
-- `feat: Content Studio Facebook OAuth and admin batch updates` (`ba53a21`)
-
----
-
-## 2026-03-26 06:02 — Auto · 374e809
-
-- `feat: Content Studio Facebook OAuth and admin batch updates` (`374e809`)
+- `feat: Content Studio Facebook OAuth and admin batch updates` (`6e02b3c`)
 
 ---
 
