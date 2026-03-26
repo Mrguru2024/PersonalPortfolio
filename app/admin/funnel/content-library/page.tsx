@@ -34,7 +34,6 @@ import {
   LEAD_MAGNET_SLUGS,
 } from "@/lib/funnelContentPlacements";
 import { apiRequest } from "@/lib/queryClient";
-import { MediaPreview, MediaPreviewThumb } from "@/components/media/MediaPreview";
 
 interface FunnelContentAsset {
   id: number;
@@ -74,7 +73,6 @@ export default function AdminFunnelContentLibraryPage() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [pickedLibraryFile, setPickedLibraryFile] = useState<File | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [editPlacements, setEditPlacements] = useState<Array<{ pagePath: string; sectionId: string }>>([]);
   const [newPagePath, setNewPagePath] = useState("");
@@ -151,7 +149,6 @@ export default function AdminFunnelContentLibraryPage() {
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["/api/admin/funnel-content-assets"] });
-      setPickedLibraryFile(null);
       form.reset();
     } finally {
       setUploading(false);
@@ -287,19 +284,12 @@ export default function AdminFunnelContentLibraryPage() {
                   id="file"
                   name="file"
                   type="file"
-                  accept=".pdf,.ppt,.pptx,.mp4,.webm,.mov,.avi,.mkv,.wmv,.3gp,.ogv,.jpg,.jpeg,.png,.gif,.webp,.svg"
+                  accept=".pdf,.ppt,.pptx,.mp4,.webm,.mov,.avi,.jpg,.jpeg,.png,.gif,.webp,.svg"
                   required
-                  onChange={(e) => setPickedLibraryFile(e.target.files?.[0] ?? null)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  PDF, PPT/PPTX, video (MP4, WebM, MOV, AVI, MKV, WMV, 3GP, OGV), images. Max 80MB.
+                  PDF, PPT/PPTX, MP4, WebM, MOV, AVI, JPEG, PNG, GIF, WebP, SVG. Max 80MB.
                 </p>
-                {pickedLibraryFile && (
-                  <div className="rounded-lg border border-border bg-muted/20 p-3">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Preview before upload</p>
-                    <MediaPreview file={pickedLibraryFile} />
-                  </div>
-                )}
               </div>
               {uploadError && (
                 <p className="text-sm text-destructive">{uploadError}</p>
@@ -330,7 +320,6 @@ export default function AdminFunnelContentLibraryPage() {
             {assets.map((asset) => (
               <Card key={asset.id} className="overflow-hidden">
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <MediaPreviewThumb src={asset.fileUrl} mimeType={asset.mimeType} label={asset.title} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-foreground">{asset.title}</span>

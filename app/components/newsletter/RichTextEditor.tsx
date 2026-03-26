@@ -6,8 +6,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import { TipTapVideo } from "@/components/newsletter/tiptapVideoExtension";
-import { ADMIN_RICH_MEDIA_FILE_ACCEPT } from "@shared/adminMediaMimes";
 import {
   Bold,
   Italic,
@@ -38,7 +36,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MediaPreview } from "@/components/media/MediaPreview";
 
 interface RichTextEditorProps {
   content: string;
@@ -58,11 +55,6 @@ export function RichTextEditor({
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [uploadPickerPreview, setUploadPickerPreview] = useState<File | null>(null);
-
-  useEffect(() => {
-    if (!isImageDialogOpen) setUploadPickerPreview(null);
-  }, [isImageDialogOpen]);
 
   const editor = useEditor({
     extensions: [
@@ -75,7 +67,6 @@ export function RichTextEditor({
         inline: true,
         allowBase64: true,
       }),
-      TipTapVideo,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -93,7 +84,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl dark:prose-invert max-w-none mx-auto focus:outline-none min-h-[400px] p-4 text-foreground [&_p]:text-foreground [&_li]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground [&_em]:text-foreground [&_blockquote]:text-muted-foreground [&_code]:text-foreground [&_pre]:text-foreground [&_a]:text-primary [&_a]:underline [&_video]:max-w-full [&_video]:rounded-md",
+          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl dark:prose-invert max-w-none mx-auto focus:outline-none min-h-[400px] p-4 text-foreground [&_p]:text-foreground [&_li]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground [&_em]:text-foreground [&_blockquote]:text-muted-foreground [&_code]:text-foreground [&_pre]:text-foreground [&_a]:text-primary [&_a]:underline",
       },
     },
     immediatelyRender: false,
@@ -121,16 +112,11 @@ export function RichTextEditor({
   };
 
   const addImage = () => {
-    const raw = imageUrl.trim();
-    if (!raw) return;
-    const looksVideo = /\.(mp4|webm|mov|avi|mkv|wmv|3gp|ogv)(\?|#|$)/i.test(raw);
-    if (looksVideo) {
-      editor.chain().focus().insertContent({ type: "video", attrs: { src: raw } }).run();
-    } else {
-      editor.chain().focus().setImage({ src: raw }).run();
+    if (imageUrl) {
+      editor.chain().focus().setImage({ src: imageUrl }).run();
+      setImageUrl("");
+      setIsImageDialogOpen(false);
     }
-    setImageUrl("");
-    setIsImageDialogOpen(false);
   };
 
   const uploadImageFile = async (file: File) => {
@@ -145,21 +131,12 @@ export function RichTextEditor({
       if (url.startsWith("/")) {
         url = `${window.location.origin}${url}`;
       }
-      if (file.type.startsWith("video/")) {
-        editor
-          .chain()
-          .focus()
-          .insertContent({ type: "video", attrs: { src: url } })
-          .run();
-        toast({ title: "Video inserted" });
-      } else {
-        editor.chain().focus().setImage({ src: url }).run();
-        toast({ title: "Image inserted" });
-      }
+      editor.chain().focus().setImage({ src: url }).run();
       setIsImageDialogOpen(false);
+      toast({ title: "Image inserted" });
     } catch (e) {
       toast({
-        title: "Upload failed",
+        title: "Image upload failed",
         description: e instanceof Error ? e.message : "Unknown error",
         variant: "destructive",
       });
@@ -330,34 +307,22 @@ export function RichTextEditor({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add image or video</DialogTitle>
-              <DialogDescription>
-                Upload an image or short video, or paste a public image URL. Many email clients strip video — use image +
-                link for broad compatibility.
-              </DialogDescription>
+              <DialogTitle>Add image</DialogTitle>
+              <DialogDescription>Upload a file (JPEG, PNG, GIF, WebP) or paste a public image URL.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <input
                 ref={imageFileRef}
                 type="file"
-                accept={ADMIN_RICH_MEDIA_FILE_ACCEPT}
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 className="sr-only"
                 aria-hidden
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   e.target.value = "";
-                  if (f) {
-                    setUploadPickerPreview(f);
-                    void uploadImageFile(f);
-                  }
+                  if (f) void uploadImageFile(f);
                 }}
               />
-              {uploadPickerPreview && (
-                <div className="rounded-lg border border-border bg-muted/25 p-3 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Preview</p>
-                  <MediaPreview file={uploadPickerPreview} mediaClassName="max-h-48" />
-                </div>
-              )}
               <Button
                 type="button"
                 variant="secondary"
@@ -369,12 +334,12 @@ export function RichTextEditor({
                 Upload from computer
               </Button>
               <div>
-                <Label htmlFor="image-url">Image or video URL (optional)</Label>
+                <Label htmlFor="image-url">Image URL (optional)</Label>
                 <Input
                   id="image-url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://yoursite.com/hero.jpg or /uploads/promo.mp4"
+                  placeholder="https://yoursite.com/image.jpg"
                   className="mt-1"
                 />
               </div>

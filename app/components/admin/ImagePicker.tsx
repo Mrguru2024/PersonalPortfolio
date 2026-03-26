@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { MediaPreview } from "@/components/media/MediaPreview";
 
 type Mode = "url" | "upload" | "generate";
 
@@ -38,17 +37,12 @@ export function ImagePicker({
   const [generatePrompt, setGeneratePrompt] = useState("");
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [uploadPreviewFile, setUploadPreviewFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setUrlInput((prev) => (value && value !== prev ? value : prev));
   }, [value]);
-
-  useEffect(() => {
-    if (mode !== "upload") setUploadPreviewFile(null);
-  }, [mode]);
 
   const applyUrl = () => {
     const u = urlInput.trim();
@@ -62,7 +56,6 @@ export function ImagePicker({
       toast({ title: "Invalid file", description: "Please select an image (JPEG, PNG, GIF, WebP).", variant: "destructive" });
       return;
     }
-    setUploadPreviewFile(file);
     setUploading(true);
     try {
       const formData = new FormData();
@@ -80,7 +73,6 @@ export function ImagePicker({
       toast({ title: "Upload failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
     } finally {
       setUploading(false);
-      setUploadPreviewFile(null);
       e.target.value = "";
     }
   };
@@ -148,10 +140,7 @@ export function ImagePicker({
                   <Button type="button" size="sm" variant="secondary" onClick={applyUrl}>Use</Button>
                 </div>
               </TabsContent>
-              <TabsContent value="upload" className="mt-2 space-y-2">
-                {uploadPreviewFile && mode === "upload" && (
-                  <MediaPreview file={uploadPreviewFile} mediaClassName="max-h-32" />
-                )}
+              <TabsContent value="upload" className="mt-2">
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} aria-label="Upload image file" />
                 <Button type="button" size="sm" variant="secondary" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
@@ -193,9 +182,6 @@ export function ImagePicker({
           <Button type="button" size="sm" onClick={applyUrl}>Use this URL</Button>
         </TabsContent>
         <TabsContent value="upload" className="mt-3 space-y-2">
-          {uploadPreviewFile && mode === "upload" && (
-            <MediaPreview file={uploadPreviewFile} mediaClassName="max-h-40" />
-          )}
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleFileChange} aria-label="Choose image to upload" />
           <Button type="button" variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
             {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}

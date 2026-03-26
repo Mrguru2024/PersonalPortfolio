@@ -28,16 +28,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // Define accepted mime types
   const imageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  const videoTypes = [
-    'video/mp4',
-    'video/webm',
-    'video/ogg',
-    'video/quicktime',
-    'video/x-msvideo',
-    'video/3gpp',
-    'video/x-matroska',
-    'video/x-ms-wmv',
-  ];
+  const videoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
   const acceptedTypes = [...imageTypes, ...videoTypes];
   
   if (acceptedTypes.includes(file.mimetype)) {
@@ -53,7 +44,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
 const upload = multer({
   storage,
   limits: {
-    fileSize: 80 * 1024 * 1024, // align with Next admin uploads (large video)
+    fileSize: 10 * 1024 * 1024, // 10MB file size limit
   },
   fileFilter
 }).single('media'); // 'media' is the field name in the form
@@ -66,7 +57,7 @@ export const uploadController = {
           // A Multer error occurred
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
-              error: 'File too large. Maximum file size is 80MB.'
+              error: 'File too large. Maximum file size is 10MB.'
             });
           }
           return res.status(400).json({ error: err.message });

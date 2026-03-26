@@ -4,11 +4,12 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import { BRAND_TEMP_RETENTION_DAYS, BRAND_VAULT_MAX_UPLOAD_BYTES } from "@shared/brandVaultSchema";
-import { ADMIN_VIDEO_MIME_TO_EXT } from "@shared/adminMediaMimes";
+import { BRAND_TEMP_RETENTION_DAYS } from "@shared/brandVaultSchema";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const MAX_BYTES = 50 * 1024 * 1024;
 
 const DOCUMENT_MIMES: Record<string, string> = {
   "application/pdf": "pdf",
@@ -29,10 +30,8 @@ const IMAGE_MIMES: Record<string, string> = {
   "image/svg+xml": "svg",
 };
 
-function extForUpload(_folderKind: string, mime: string): string | undefined {
-  const videoExt = ADMIN_VIDEO_MIME_TO_EXT[mime];
-  if (videoExt) return videoExt;
-  if (_folderKind === "images") return IMAGE_MIMES[mime];
+function extForUpload(folderKind: string, mime: string): string | undefined {
+  if (folderKind === "images") return IMAGE_MIMES[mime];
   return DOCUMENT_MIMES[mime];
 }
 
@@ -66,17 +65,14 @@ export async function POST(
         {
           error:
             folder.folderKind === "images"
-              ? "Unsupported media type. Use images (JPEG, PNG, GIF, WebP, SVG) or video (MP4, WebM, MOV, AVI, …)."
-              : "Unsupported file type. Use PDF, Office docs, TXT, CSV, XLSX, or common video (MP4, WebM, MOV, …).",
+              ? "Unsupported image type. Use JPEG, PNG, GIF, WebP, or SVG."
+              : "Unsupported document type. Use PDF, Word, PowerPoint, TXT, CSV, or XLSX.",
         },
         { status: 400 }
       );
     }
-    if (file.size > BRAND_VAULT_MAX_UPLOAD_BYTES) {
-      return NextResponse.json(
-        { error: `File too large (max ${Math.round(BRAND_VAULT_MAX_UPLOAD_BYTES / (1024 * 1024))}MB)` },
-        { status: 400 }
-      );
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: "File too large (max 50MB)" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();

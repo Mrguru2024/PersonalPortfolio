@@ -6,8 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Send, Loader2, Minimize2, ImagePlus, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { AdminAgentReplyText } from "@/components/admin/AdminAgentReplyText";
@@ -93,8 +91,6 @@ export function AdminAgentWidget() {
     summary: string;
   } | null>(null);
   const [actionExecuting, setActionExecuting] = useState(false);
-  /** When true, API may fetch live public HTML from this deployment for OpenAI grounding. */
-  const [groundLiveSite, setGroundLiveSite] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -129,7 +125,6 @@ export function AdminAgentWidget() {
       message: string;
       history: AgentMessage[];
       imageAttachments: string[];
-      crawlSite: boolean;
     }) => {
       const res = await fetch("/api/admin/agent", {
         method: "POST",
@@ -139,7 +134,6 @@ export function AdminAgentWidget() {
           currentPath: pathname ?? undefined,
           history: variables.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
           imageAttachments: variables.imageAttachments.length > 0 ? variables.imageAttachments : undefined,
-          crawlSite: variables.crawlSite,
         }),
         credentials: "include",
       });
@@ -197,7 +191,7 @@ export function AdminAgentWidget() {
     const text = input.trim();
     if ((!text && imageAttachments.length === 0) || sendMutation.isPending) return;
     setInput("");
-    sendMutation.mutate({ message: text, history: messages, imageAttachments, crawlSite: groundLiveSite });
+    sendMutation.mutate({ message: text, history: messages, imageAttachments });
   };
 
   const onPickImages = async (files: FileList | null) => {
@@ -256,7 +250,7 @@ export function AdminAgentWidget() {
                   </>
                 )}
                 <p className="text-sm leading-relaxed">
-                  Ask where something lives, say “open …” for CRM or Content Studio, or attach screenshots (PNG, JPEG, WebP, GIF). With “Ground with live public pages” on (below), I can fetch real HTML from your marketing URLs for accurate copy. Describe what you want done in text alongside images. With{" "}
+                  Ask where something lives, say “open …” for CRM or Content Studio, or attach screenshots (PNG, JPEG, WebP, GIF). Describe what you want done in text alongside images. With{" "}
                   <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can run navigation and reminders; with{" "}
                   <span className="text-foreground/90">Confirm before running actions</span>, you approve each step and see an Action result line after it runs. Build optional notes in{" "}
                   <span className="text-foreground/90">Assistant knowledge</span> (Settings) for facts, research context, and message flows.
@@ -356,19 +350,6 @@ export function AdminAgentWidget() {
               ))}
             </div>
           )}
-          <div className="flex items-start gap-2 px-3 py-2 border-t border-border/60 bg-muted/20 shrink-0">
-            <Checkbox
-              id="admin-agent-live-site"
-              checked={groundLiveSite}
-              onCheckedChange={(v) => setGroundLiveSite(v === true)}
-              className="mt-0.5"
-            />
-            <Label htmlFor="admin-agent-live-site" className="text-xs font-normal cursor-pointer leading-snug text-muted-foreground">
-              Ground with live public pages (server fetches allowed marketing URLs from this site for accuracy; needs{" "}
-              <code className="text-[10px] bg-muted px-0.5 rounded">NEXT_PUBLIC_APP_URL</code> or{" "}
-              <code className="text-[10px] bg-muted px-0.5 rounded">ADMIN_AGENT_SITE_BASE_URL</code> on the server).
-            </Label>
-          </div>
           <div className="p-2 border-t flex gap-2 shrink-0">
             <input
               ref={fileInputRef}

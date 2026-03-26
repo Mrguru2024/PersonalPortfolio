@@ -5,13 +5,6 @@
  */
 
 import { createHmac } from "node:crypto";
-import { getFacebookPageCredentialsResolved } from "@server/services/contentStudioFacebookConnectService";
-import { getLinkedInCredentialsResolved } from "@server/services/contentStudioLinkedInConnectService";
-import {
-  getThreadsCredentialsResolved,
-  publishThreadsTextPost,
-} from "@server/services/contentStudioThreadsConnectService";
-import { getXAccessTokenResolved } from "@server/services/contentStudioXConnectService";
 
 function escapeHtml(s: string): string {
   return s
@@ -40,78 +33,20 @@ export function htmlToPlainText(html: string): string {
     .trim();
 }
 
-/** OAuth-stored Page token (Integrations) or env FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID / META_*. */
-export async function hasFacebookPagePublishConfig(): Promise<boolean> {
-  return (await getFacebookPageCredentialsResolved()) !== null;
+function facebookPageCredentials(): { token: string; pageId: string } | null {
+  const token = (process.env.FACEBOOK_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN)?.trim();
+  const pageId = (process.env.FACEBOOK_PAGE_ID ?? process.env.META_PAGE_ID)?.trim();
+  if (!token || !pageId) return null;
+  return { token, pageId };
 }
 
-export async function hasLinkedInPublishConfig(): Promise<boolean> {
-  return (await getLinkedInCredentialsResolved()) !== null;
-}
-
-export async function hasXPublishConfig(): Promise<boolean> {
-  return (await getXAccessTokenResolved()) !== null;
-}
-
-export async function hasThreadsPublishConfig(): Promise<boolean> {
-  return (await getThreadsCredentialsResolved()) !== null;
-}
-
-export function hasWebhookPublishConfig(): boolean {
-  return webhookPublishConfig() !== null;
-}
-
-/** Optional `facebook_page:<accountId>` / `facebook:<accountId>` suffix from calendar platform targets. */
-function parseFacebookAccountId(platformKey: string): string | undefined {
-  const t = platformKey.trim();
-  const m = t.match(/^facebook_page:(.+)$/i) ?? t.match(/^facebook:(.+)$/i);
-  const id = m?.[1]?.trim();
-  return id || undefined;
-}
-
-function parseLinkedInAccountId(platformKey: string): string | undefined {
-  const m = platformKey.match(/^linkedin(?:_member)?:(.+)$/i);
-  return m?.[1]?.trim() || undefined;
-}
-
-function parseXAccountId(platformKey: string): string | undefined {
-  const m = platformKey.match(/^x:(.+)$/i) ?? platformKey.match(/^twitter:(.+)$/i);
-  return m?.[1]?.trim() || undefined;
-}
-
-function parseThreadsAccountId(platformKey: string): string | undefined {
-  const m = platformKey.match(/^threads:(.+)$/i);
-  return m?.[1]?.trim() || undefined;
-}
-
-function contentStudioAdapterSwitchKey(platformKey: string): string {
-  const t = platformKey.trim().toLowerCase();
-  if (t === "facebook_page" || t.startsWith("facebook_page:") || t === "facebook" || t.startsWith("facebook:")) {
-    return "facebook_page";
-  }
-  if (t === "linkedin" || t.startsWith("linkedin:") || t === "linkedin_member" || t.startsWith("linkedin_member:")) {
-    return "linkedin";
-  }
-  if (t === "threads" || t.startsWith("threads:")) {
-    return "threads";
-  }
-  if (t === "x" || t.startsWith("x:") || t === "twitter" || t.startsWith("twitter:")) {
-    return "x";
-  }
-  return t;
-}
-
-async function publishFacebookPageFeed(
-  message: string,
-  link?: string,
-  facebookAccountId?: string,
-): Promise<AdapterPublishResult> {
-  const cred = await getFacebookPageCredentialsResolved(facebookAccountId ?? null);
+async function publishFacebookPageFeed(message: string, link?: string): Promise<AdapterPublishResult> {
+  const cred = facebookPageCredentials();
   if (!cred) {
     return {
       ok: false,
       error:
-        "Facebook Page not configured: use Integrations → Connect Facebook Page, or set FACEBOOK_ACCESS_TOKEN (or META_ACCESS_TOKEN) and FACEBOOK_PAGE_ID (or META_PAGE_ID). Token needs pages_manage_posts.",
+        "Facebook Page not configured: set FACEBOOK_ACCESS_TOKEN (or META_ACCESS_TOKEN) and FACEBOOK_PAGE_ID (or META_PAGE_ID). Token needs pages_manage_posts (or publish_pages for legacy apps).",
     };
   }
   const endpoint = `https://graph.facebook.com/v21.0/${encodeURIComponent(cred.pageId)}/feed`;
@@ -134,14 +69,21 @@ async function publishFacebookPageFeed(
   return { ok: true, externalId: data.id, raw: data };
 }
 
-/** LinkedIn UGC Post (member or organization) — Integrations OAuth or env token + URN. */
-async function publishLinkedInUgc(text: string, linkedInAccountId?: string): Promise<AdapterPublishResult> {
-  const cred = await getLinkedInCredentialsResolved(linkedInAccountId ?? null);
+function linkedInCredentials(): { token: string; authorUrn: string } | null {
+  const token = process.env.LINKEDIN_ACCESS_TOKEN?.trim();
+  const authorUrn = process.env.LINKEDIN_AUTHOR_URN?.trim();
+  if (!token || !authorUrn) return null;
+  return { token, authorUrn };
+}
+
+/** LinkedIn UGC Post (member or organization) — token from OAuth with w_member_social / w_organization_social as applicable. */
+async function publishLinkedInUgc(text: string): Promise<AdapterPublishResult> {
+  const cred = linkedInCredentials();
   if (!cred) {
     return {
       ok: false,
       error:
-        "LinkedIn not configured: use Integrations → Connect LinkedIn, or set LINKEDIN_ACCESS_TOKEN and LINKEDIN_AUTHOR_URN (urn:li:person:… or urn:li:organization:…).",
+        "LinkedIn not configured: set LINKEDIN_ACCESS_TOKEN and LINKEDIN_AUTHOR_URN (e.g. urn:li:person:… or urn:li:organization:…). Obtain tokens via LinkedIn Developer OAuth.",
     };
   }
   const commentary = text.slice(0, 3000);
@@ -180,6 +122,14 @@ async function publishLinkedInUgc(text: string, linkedInAccountId?: string): Pro
   return { ok: true, externalId: id ?? "linkedin", raw: data };
 }
 
+function xOAuth2Token(): string | null {
+  const t =
+    process.env.X_OAUTH2_ACCESS_TOKEN?.trim() ||
+    process.env.TWITTER_OAUTH2_ACCESS_TOKEN?.trim() ||
+    process.env.TWITTER_ACCESS_TOKEN?.trim();
+  return t || null;
+}
+
 function xTweetMaxLength(): number {
   const raw = process.env.X_TWEET_MAX_CHARS?.trim();
   if (raw && /^\d+$/.test(raw)) {
@@ -189,14 +139,14 @@ function xTweetMaxLength(): number {
   return 280;
 }
 
-/** X / Twitter API v2 — Integrations OAuth or env bearer token with tweet.write. */
-async function publishXTweet(text: string, xAccountId?: string): Promise<AdapterPublishResult> {
-  const token = await getXAccessTokenResolved(xAccountId ?? null);
+/** X / Twitter API v2 — OAuth 2.0 user access token with tweet.write (from X Developer Portal). */
+async function publishXTweet(text: string): Promise<AdapterPublishResult> {
+  const token = xOAuth2Token();
   if (!token) {
     return {
       ok: false,
       error:
-        "X not configured: use Integrations → Connect X, or set X_OAUTH2_ACCESS_TOKEN (or TWITTER_*). OAuth app needs tweet.write.",
+        "X not configured: set X_OAUTH2_ACCESS_TOKEN (or TWITTER_OAUTH2_ACCESS_TOKEN). Use a user access token with tweet.write from the X Developer Portal.",
     };
   }
   const max = xTweetMaxLength();
@@ -227,25 +177,6 @@ async function publishXTweet(text: string, xAccountId?: string): Promise<Adapter
   }
   const id = data.data?.id;
   return { ok: true, externalId: id ?? "x", raw: data };
-}
-
-/** Meta Threads — two-step container + publish (500 char text limit). */
-async function publishThreadsAdapter(
-  text: string,
-  link: string | undefined,
-  threadsAccountId?: string,
-): Promise<AdapterPublishResult> {
-  const cred = await getThreadsCredentialsResolved(threadsAccountId ?? null);
-  if (!cred) {
-    return {
-      ok: false,
-      error:
-        "Threads not configured: use Integrations → Connect Threads, or set THREADS_ACCESS_TOKEN + THREADS_USER_ID.",
-    };
-  }
-  const out = await publishThreadsTextPost(cred.threadsUserId, cred.token, text, link?.trim() || undefined);
-  if (!out.ok) return out;
-  return { ok: true, externalId: out.externalId, raw: out.raw };
 }
 
 function webhookPublishConfig(): { url: string; secret?: string } | null {
@@ -393,12 +324,7 @@ export async function publishViaAdapter(
   platformKey: string,
   input: { title: string; bodyText: string; link?: string | null },
 ): Promise<AdapterPublishResult> {
-  const rawKey = platformKey.trim();
-  const key = contentStudioAdapterSwitchKey(rawKey);
-  const fbAccountId = parseFacebookAccountId(rawKey);
-  const liAccountId = parseLinkedInAccountId(rawKey);
-  const xAccountId = parseXAccountId(rawKey);
-  const threadsAccountId = parseThreadsAccountId(rawKey);
+  const key = platformKey.trim().toLowerCase();
   const message =
     input.bodyText.trim().length > 0
       ? `${input.title.trim()}\n\n${input.bodyText.trim()}`.slice(0, 8000)
@@ -408,31 +334,31 @@ export async function publishViaAdapter(
     case "manual":
       return { ok: true, externalId: "manual", raw: { logged: true } };
     case "facebook_page":
-      return publishFacebookPageFeed(message, input.link ?? undefined, fbAccountId);
+    case "facebook":
+      return publishFacebookPageFeed(message, input.link ?? undefined);
     case "linkedin":
-      return publishLinkedInUgc(message, liAccountId);
+    case "linkedin_member":
+      return publishLinkedInUgc(message);
     case "x":
     case "twitter":
-      return publishXTweet(message, xAccountId);
-    case "threads":
-      return publishThreadsAdapter(message, input.link ?? undefined, threadsAccountId);
+      return publishXTweet(message);
     case "webhook_hub":
     case "hookle_webhook":
     case "buffer_webhook":
-      return publishWebhookHub(rawKey, input, message);
+      return publishWebhookHub(key, input, message);
     case "brevo_notify":
       return publishBrevoNotify({ ...input, message });
     case "blog":
     case "newsletter":
       return {
         ok: false,
-        error: `${key} adapter is not wired yet — use manual, facebook_page, linkedin, threads, x, webhook_hub, brevo_notify, or blog/newsletter admin UI.`,
+        error: `${key} adapter is not wired yet — use manual, facebook_page, linkedin, x, webhook_hub, brevo_notify, or publish from the blog/newsletter admin UI.`,
       };
     case "social_placeholder":
       return {
         ok: false,
         error:
-          "social_placeholder is deprecated: use facebook_page, linkedin, threads, x, webhook_hub, brevo_notify, or manual.",
+          "social_placeholder is deprecated: use facebook_page, linkedin, x, webhook_hub, brevo_notify, or manual.",
       };
     default:
       return { ok: false, error: `Unknown platform adapter: ${platformKey}` };

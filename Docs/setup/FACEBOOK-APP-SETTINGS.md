@@ -31,10 +31,6 @@ Use this guide to fill in your [Facebook Developer App](https://developers.faceb
 
 ---
 
-## 3a. Content Studio — multiple Pages (same app)
-
-You can connect **up to four** Facebook Pages for scheduled publishing (Admin → Integrations → Connect Facebook Page). Each “Connect another Page” run adds the next Page from your `/me/accounts` list that is not already linked. Calendar slots list each Page as a separate publish target (`facebook_page:<id>`).
-
 ## 3. Facebook Login → Settings
 
 Open **Facebook Login** → **Settings** in the left menu.
@@ -44,28 +40,13 @@ Open **Facebook Login** → **Settings** in the left menu.
 | **Client OAuth Login** | **Yes** |
 | **Web OAuth Login** | **Yes** |
 | **Valid OAuth Redirect URIs** | Add these **one per line** (exact strings): |
-| | `http://localhost:3000/api/auth/facebook/callback` (Facebook Login for the site) |
+| | `http://localhost:3000/api/auth/facebook/callback` |
 | | `https://www.ascendra.tech/api/auth/facebook/callback` |
-| | `http://localhost:3000/api/admin/integrations/social/facebook/callback` (Admin → Integrations → Connect Facebook Page for Content Studio) |
-| | `http://127.0.0.1:3000/api/admin/integrations/social/facebook/callback` (only if you open the site at 127.0.0.1, not localhost) |
-| | `https://www.ascendra.tech/api/admin/integrations/social/facebook/callback` |
-| | `https://ascendra.tech/api/admin/integrations/social/facebook/callback` (add both if you use apex and www) |
 | **Enforce HTTPS in Redirect URIs** | **Yes** (for production); localhost can stay http |
 | **Allowed Domains for the JavaScript SDK** | Leave empty if you only use server-side redirect; otherwise add `ascendra.tech` and `www.ascendra.tech` |
 | **Login from Devices** | Optional; turn **Off** if you only use web |
 
 **Important:** The redirect URI must match exactly what your app sends (including path `/api/auth/facebook/callback`). No trailing slash.
-
-### “URL Blocked” / redirect URI not whitelisted (Content Studio)
-
-If Facebook shows **URL Blocked** or **redirect URI is not whitelisted**:
-
-1. In Meta: **Facebook Login → Settings**, turn **Client OAuth Login** and **Web OAuth Login** **On**.
-2. Copy the **exact** redirect URI from **Admin → Integrations** (amber box: “Meta: whitelist this exact redirect URI”). Paste it into **Valid OAuth Redirect URIs** as a new line—no trailing slash, no space.
-3. If you use both **apex** and **www** (or `localhost` and `127.0.0.1`), add **separate** lines for each variant you actually open in the browser.
-4. Save in Meta, wait a minute, try **Connect Facebook Page** again.
-
-The app builds that URI from your current host (and `https` on production), so it may differ from `NEXT_PUBLIC_APP_URL` if you visit the site under another domain.
 
 ---
 
@@ -108,7 +89,7 @@ Use the same base URL (e.g. from `NEXT_PUBLIC_APP_URL`) when building the callba
 
 - [ ] Settings → Basic: App Domains, Privacy Policy URL, Terms of Service URL (and Data Deletion URL if required)
 - [ ] Facebook Login → Settings: Client OAuth Login = Yes, Web OAuth Login = Yes
-- [ ] Valid OAuth Redirect URIs: site login callbacks **and** `/api/admin/integrations/social/facebook/callback` (local + production) if you use Connect Facebook Page
+- [ ] Valid OAuth Redirect URIs: localhost + production callback URLs added
 - [ ] `.env.local`: `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` set
 - [ ] Implement `/api/auth/facebook/route.ts` and `/api/auth/facebook/callback/route.ts` if not already present
 

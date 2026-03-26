@@ -29,7 +29,7 @@ export function AdminGlobalTips() {
   const section = getSectionFromPath(pathname ?? "");
 
   return (
-    <div className="mb-4" data-tour="platform-tips">
+    <div className="mb-4">
       <AdminPlatformTips section={section} defaultOpen={false} />
     </div>
   );

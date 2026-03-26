@@ -871,8 +871,8 @@ export default function ContentStudioCalendarPage() {
                       <div className="space-y-2">
                         <Label>Platforms (publish targets)</Label>
                         <p className="text-xs text-muted-foreground">
-                          Must match adapter keys from the list. Multiple Facebook Pages appear as separate targets (up to
-                          four connected in Integrations).
+                          Must match adapter keys. <code className="bg-muted px-1 rounded">facebook_page</code> uses Meta
+                          Graph when env is configured.
                         </p>
                         <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                           {activeAdapters.map((a) => (

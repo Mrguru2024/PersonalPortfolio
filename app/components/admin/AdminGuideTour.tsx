@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, useCallback, useId, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,6 @@ import type { AdminTourStep } from "@/lib/adminTourConfig";
 
 const OVERLAY_Z = 9999;
 const PADDING = 8;
-const CARD_MAX_W = 400;
-const CARD_MARGIN = 16;
 
 interface AdminGuideTourProps {
   steps: AdminTourStep[];
@@ -31,8 +29,6 @@ export function AdminGuideTour({
 }: AdminGuideTourProps) {
   const step = steps[currentStep];
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const reactId = useId();
-  const maskId = useMemo(() => `tour-mask-${reactId.replace(/[^a-zA-Z0-9_-]/g, "")}-${currentStep}`, [reactId, currentStep]);
 
   const updateTarget = useCallback(() => {
     if (!step || step.target === "center") {
@@ -42,10 +38,6 @@ export function AdminGuideTour({
     const el = document.querySelector(step.target);
     if (el && el instanceof HTMLElement) {
       const rect = el.getBoundingClientRect();
-      if (rect.width < 2 && rect.height < 2) {
-        setTargetRect(null);
-        return;
-      }
       setTargetRect(
         new DOMRect(
           rect.left - PADDING,
@@ -59,84 +51,39 @@ export function AdminGuideTour({
     }
   }, [step]);
 
-  useLayoutEffect(() => {
-    if (!step) return;
-    if (step.target === "center") {
-      setTargetRect(null);
-      return;
-    }
-    const el = document.querySelector(step.target);
-    if (el instanceof HTMLElement) {
-      el.scrollIntoView({ block: "center", behavior: "smooth", inline: "nearest" });
-    }
-    let innerRaf = 0;
-    const outerRaf = requestAnimationFrame(() => {
-      innerRaf = requestAnimationFrame(() => updateTarget());
-    });
-    const delayed = window.setTimeout(() => updateTarget(), 420);
-    return () => {
-      cancelAnimationFrame(outerRaf);
-      if (innerRaf) cancelAnimationFrame(innerRaf);
-      window.clearTimeout(delayed);
-    };
-  }, [currentStep, step, updateTarget]);
-
   useEffect(() => {
-    const onResize = () => updateTarget();
-    window.addEventListener("resize", onResize);
+    updateTarget();
+    const resize = () => updateTarget();
+    window.addEventListener("resize", resize);
     window.addEventListener("scroll", updateTarget, true);
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", updateTarget, true);
     };
   }, [updateTarget]);
-
-  const cardPosition = useMemo(() => {
-    const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
-    const vh = typeof window !== "undefined" ? window.innerHeight : 768;
-    const cardW = Math.min(CARD_MAX_W, vw - CARD_MARGIN * 2);
-    const cardHApprox = 280;
-
-    if (!targetRect) {
-      return {
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-        width: cardW,
-      } as const;
-    }
-
-    const placeRight = targetRect.left + targetRect.width + 16 + cardW <= vw - CARD_MARGIN;
-    let left = placeRight ? targetRect.left + targetRect.width + 16 : targetRect.left - cardW - 16;
-    let top = Math.max(CARD_MARGIN, Math.min(targetRect.top, vh - cardHApprox - CARD_MARGIN));
-
-    left = Math.max(CARD_MARGIN, Math.min(left, vw - cardW - CARD_MARGIN));
-    top = Math.max(CARD_MARGIN, Math.min(top, vh - cardHApprox - CARD_MARGIN));
-
-    return { left, top, width: cardW, transform: undefined } as const;
-  }, [targetRect]);
 
   if (!step) return null;
 
   const isFirst = currentStep === 0;
   const isLast = currentStep === steps.length - 1;
-  const tips = step.tips?.filter(Boolean) ?? [];
-  const tipsId = tips.length > 0 ? "tour-tips" : undefined;
-  const ariaDescribedBy = [tipsId, "tour-desc"].filter(Boolean).join(" ");
 
   const overlay = (
     <div
-      className="fixed inset-0 backdrop-blur-[2px] pointer-events-auto"
+      className="fixed inset-0 backdrop-blur-[2px]"
       style={{ zIndex: OVERLAY_Z, backgroundColor: targetRect ? "transparent" : "rgba(0,0,0,0.5)" }}
       aria-modal="true"
       role="dialog"
       aria-labelledby="tour-title"
-      aria-describedby={ariaDescribedBy || undefined}
+      aria-describedby="tour-desc"
     >
+      {/* Dark overlay with transparent "hole" at target (spotlight) when targeting an element */}
       {targetRect && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          aria-hidden
+        >
           <defs>
-            <mask id={maskId}>
+            <mask id={`tour-spotlight-${step.id}`}>
               <rect width="100%" height="100%" fill="white" />
               <rect
                 x={targetRect.left}
@@ -148,7 +95,7 @@ export function AdminGuideTour({
               />
             </mask>
           </defs>
-          <rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask={`url(#${maskId})`} />
+          <rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask={`url(#tour-spotlight-${step.id})`} />
         </svg>
       )}
       {!targetRect && <div className="absolute inset-0 bg-black/50 pointer-events-none" aria-hidden />}
@@ -164,24 +111,32 @@ export function AdminGuideTour({
         />
       )}
 
+      {/* Card: position near target or center */}
       <div
-        className="absolute z-[10000] max-h-[85vh] overflow-auto pointer-events-auto"
-        style={{
-          width: cardPosition.width,
-          maxWidth: `min(calc(100vw - 2rem), ${CARD_MAX_W}px)`,
-          left: cardPosition.left,
-          top: cardPosition.top,
-          transform: cardPosition.transform,
-        }}
+        className="absolute z-[10000] w-[min(calc(100vw-2rem),400px)] max-h-[85vh] overflow-auto"
+        style={
+          targetRect
+            ? {
+                left: targetRect.left + targetRect.width + 16 <= window.innerWidth - 320
+                  ? targetRect.left + targetRect.width + 16
+                  : targetRect.left - 320 - 16,
+                top: Math.max(16, Math.min(targetRect.top, window.innerHeight - 320)),
+              }
+            : {
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+              }
+        }
       >
         <Card className="shadow-xl border-2">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="rounded-full bg-primary/10 p-1.5 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-primary/10 p-1.5">
                   <Sparkles className="h-4 w-4 text-primary" />
                 </span>
-                <CardTitle id="tour-title" className="text-base leading-snug">
+                <CardTitle id="tour-title" className="text-base">
                   {step.title}
                 </CardTitle>
               </div>
@@ -198,18 +153,6 @@ export function AdminGuideTour({
             <CardDescription id="tour-desc" className="text-sm mt-1">
               {step.description}
             </CardDescription>
-            {tips.length > 0 && (
-              <ul id={tipsId} className="mt-3 space-y-1.5 text-sm text-muted-foreground list-none pl-0 border-t border-border/60 pt-3">
-                {tips.map((t, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="text-primary shrink-0 font-medium" aria-hidden>
-                      •
-                    </span>
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-2 pt-2">
             <div className="flex gap-2">
@@ -230,8 +173,8 @@ export function AdminGuideTour({
                 </Button>
               )}
             </div>
-            <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-              {currentStep + 1} / {steps.length}
+            <span className="text-xs text-muted-foreground">
+              {currentStep + 1} of {steps.length}
             </span>
           </CardContent>
         </Card>

@@ -1,7 +1,6 @@
 /**
  * Admin guidance tour: steps and role-based visibility.
- * Steps target `[data-tour="…"]` anchors on the admin dashboard (and layout).
- * Order is intentional: highest-impact workflows and “how do I…?” first.
+ * Steps target elements with data-tour="<stepId>" on the admin dashboard.
  * roles: "all" = every approved admin; "super" = super admin only.
  */
 
@@ -11,8 +10,6 @@ export interface AdminTourStep {
   id: string;
   title: string;
   description: string;
-  /** Short how-tos / possibilities (shown as bullets under the description). */
-  tips?: string[];
   /** CSS selector or "center" for floating card only */
   target: string;
   /** Which roles see this step. "all" = all admins, "super" = super admins only */
@@ -22,142 +19,57 @@ export interface AdminTourStep {
 export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
   {
     id: "welcome",
-    title: "Welcome — admin workspace",
-    description:
-      "This is your control center for client work, leads, and growth tools. The next steps follow priority: what to do first, where to click, and how to go deeper.",
-    tips: [
-      "You can restart this tour anytime from “Suggested for you” after you finish or dismiss it once.",
-      "Contextual help: open “Platform tips” at the top on any admin page for section-specific how-tos.",
-    ],
+    title: "Welcome to the Admin Dashboard",
+    description: "Here you can manage assessments, contacts, CRM, invoices, and more. This short tour will point you to the main areas.",
     target: "center",
-    roles: ["all"],
-  },
-  {
-    id: "platform-tips",
-    title: "Platform tips (every admin page)",
-    description:
-      "This panel is available across the admin area. It explains how to use the screen you’re on and what’s possible there—including CRM, content, and growth workflows.",
-    tips: [
-      "Expand it whenever you land on an unfamiliar section.",
-      "Tips update by route (e.g. CRM vs dashboard vs blog).",
-    ],
-    target: "[data-tour=\"platform-tips\"]",
-    roles: ["all"],
-  },
-  {
-    id: "daily-nudges",
-    title: "Start here: suggested actions",
-    description:
-      "These links reflect your role and live counts (pending assessments, unaccessed resumes, etc.). Use them to clear the highest-impact queue first.",
-    tips: [
-      "Counts update as you work through the dashboard data below.",
-      "Links deep-link into CRM tasks, blog, analytics, and more depending on your operator focus.",
-    ],
-    target: "[data-tour=\"daily-nudges\"]",
-    roles: ["all"],
-  },
-  {
-    id: "operator-intelligence",
-    title: "Operator profile & AI plan",
-    description:
-      "Your role focus and an AI-assisted daily/weekly plan based on what’s actually in the system (counts, priorities). Adjust your operator profile to steer nudges and plans.",
-    tips: [
-      "Set role focus once so “Suggested for you” and plans stay aligned with how you work.",
-    ],
-    target: "[data-tour=\"operator-intelligence\"]",
-    roles: ["all"],
-  },
-  {
-    id: "reminders",
-    title: "Growth reminders",
-    description:
-      "Platform-driven tasks and goals—separate from CRM tasks. Use this to remember recurring growth work (content, campaigns, housekeeping).",
-    tips: [
-      "Generate or complete items here so nothing important stays only in your head.",
-    ],
-    target: "[data-tour=\"reminders\"]",
     roles: ["all"],
   },
   {
     id: "summary-cards",
     title: "Summary at a glance",
-    description:
-      "Assessments (project quotes), contact form submissions, and resume requests—your three inbound streams on this dashboard.",
-    tips: [
-      "Watch “pending” on assessments to prioritize quotes.",
-      "Resume “unaccessed” flags items you haven’t opened yet.",
-    ],
+    description: "These cards show counts for assessments, contact form submissions, and resume requests. Check pending items first to prioritize your day.",
     target: "[data-tour=\"summary-cards\"]",
     roles: ["all"],
   },
   {
-    id: "crm-entry",
-    title: "CRM — leads, deals, and pipeline",
-    description:
-      "Full CRM lives in its own area: contacts, filters, deals, tasks, sequences, saved lists, import, and accounts. Use this button anytime from the dashboard.",
-    tips: [
-      "Contacts list: filter by industry, location, persona, intent, and see who added each lead.",
-      "Pipeline and tasks: move deals and clear follow-ups without losing context.",
-    ],
-    target: "[data-tour=\"crm-entry\"]",
-    roles: ["all"],
-  },
-  {
     id: "quick-links",
-    title: "More shortcuts",
-    description:
-      "Jump to invoices, announcements, feedback, offers, Growth OS, funnel audit, offer valuation, Content Studio, and the site directory—without hunting the sidebar.",
-    tips: [
-      "Site directory: searchable map of routes for you and for AI assistants (copy JSON).",
-      "Content Studio: drafts, scheduling, and social where configured.",
-    ],
+    title: "Quick links",
+    description: "Jump to Invoices, Project updates (announcements), and Feedback. Use these daily to stay on top of client work.",
     target: "[data-tour=\"quick-links\"]",
     roles: ["all"],
   },
   {
     id: "development-updates",
-    title: "What shipped (development updates)",
-    description:
-      "A living changelog: features and fixes merged to production. In production it usually loads from GitHub; locally it reads the markdown file on disk.",
-    tips: [
-      "Refresh the panel to pull the latest sections.",
-      "Add dated ## headings in content/development-updates.md when you ship meaningful changes.",
-    ],
+    title: "Development updates",
+    description: "See what’s new in production. Features and fixes are logged here so you know what’s available.",
     target: "[data-tour=\"development-updates\"]",
     roles: ["all"],
   },
   {
     id: "tabs",
-    title: "Assessments, contacts, resume",
-    description:
-      "Work the same three streams in detail: change assessment status, reply to form contacts, and track resume requests. Everything here stays on the classic dashboard.",
-    tips: [
-      "Use the Lead intake hub link for unified diagnosis / funnel flows with optional CRM import.",
-      "Create client quotes from assessments when you’re ready to formalize pricing.",
-    ],
+    title: "Assessments, Contacts, Resume",
+    description: "Switch between Assessments (project quotes), Contacts (form submissions), and Resume requests. Review and update statuses here.",
     target: "[data-tour=\"tabs\"]",
     roles: ["all"],
   },
   {
-    id: "communications-content",
-    title: "Communications & audience",
-    description:
-      "Email designs, campaigns, and segments live under Communications. Pair that with newsletters, blog, and Content Studio for a full content and outbound loop.",
-    tips: [
-      "Campaigns: draft audience and design while status is draft; review sends and segments before going live.",
-      "Newsletters and blog: separate from transactional CRM email—use each where it fits.",
-    ],
+    id: "crm-link",
+    title: "CRM and more",
+    description: "For full lead and deal management, use the CRM: contacts, pipeline, tasks, saved lists, and import. Go to CRM from the main nav or dashboard links.",
+    target: "center",
+    roles: ["all"],
+  },
+  {
+    id: "daily-habits",
+    title: "Daily habits",
+    description: "Each visit, check the “Suggested for you” nudges above—they’re tailored to your role and current counts (e.g. pending assessments, unaccessed resumes).",
     target: "center",
     roles: ["all"],
   },
   {
     id: "system",
-    title: "Super admin: system & users",
-    description:
-      "As a super admin you also have System (health, activity), user administration, and integrations. Use those for troubleshooting, audits, and access control.",
-    tips: [
-      "Health and activity routes help verify cron, API, and environment issues in production.",
-    ],
+    title: "System (super admin)",
+    description: "As a super admin you can access System (health, logs), Users, and Integrations. Use these for maintenance and troubleshooting.",
     target: "center",
     roles: ["super"],
   },

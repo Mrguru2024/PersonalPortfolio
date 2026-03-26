@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
     const message = typeof body.message === "string" ? body.message.trim() : "";
     const currentPath = typeof body.currentPath === "string" ? body.currentPath : undefined;
     const history = parseAgentHistory(body.history);
-    const crawlSite = typeof body.crawlSite === "boolean" ? body.crawlSite : undefined;
 
     const firstName = firstNameFromUser(user);
     const imgParsed = parseImageDataUrls(body.imageAttachments);
@@ -146,7 +145,6 @@ export async function POST(req: NextRequest) {
       mentorState,
       operatorKnowledgeBlock,
       operatorResearchBlock,
-      crawlSite,
     });
 
     if (process.env.OPENAI_API_KEY) {

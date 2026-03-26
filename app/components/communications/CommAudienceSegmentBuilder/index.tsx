@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CRM_PIPELINE_STAGES, getPipelineStageLabel } from "@/lib/crm-pipeline-stages";
-import { CommSpecificContactsPicker } from "@/components/communications/CommSpecificContactsPicker";
 
 const LIFECYCLE_OPTIONS = ["cold", "warm", "qualified", "sales_ready"];
 const INTENT_OPTIONS = ["low_intent", "moderate_intent", "high_intent", "hot_lead"];
@@ -58,6 +57,17 @@ export function CommAudienceSegmentBuilder({
     patch({ tags: tags.length ? tags : undefined });
   };
 
+  const contactIdsStr = useMemo(() => (value.contactIds ?? []).join(", "), [value.contactIds]);
+
+  const setContactIdsFromString = (s: string) => {
+    const ids = s
+      .split(/[\s,]+/)
+      .map((x) => Number(x.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    const unique = [...new Set(ids)];
+    patch({ contactIds: unique.length ? unique : undefined });
+  };
+
   const bookedCallSel =
     value.bookedCall === true ? "yes" : value.bookedCall === false ? "no" : ANY;
 
@@ -98,11 +108,16 @@ export function CommAudienceSegmentBuilder({
       </div>
 
       <div className="space-y-2">
-        <Label>Specific people (optional)</Label>
-        <CommSpecificContactsPicker
-          selectedIds={value.contactIds ?? []}
-          onIdsChange={(ids) => patch({ contactIds: ids.length ? ids : undefined })}
+        <Label htmlFor="seg-contact-ids">Specific contact IDs (optional)</Label>
+        <Input
+          id="seg-contact-ids"
+          value={contactIdsStr}
+          onChange={(e) => setContactIdsFromString(e.target.value)}
+          placeholder="e.g. 12, 48, 90 — only these people if set"
         />
+        <p className="text-xs text-muted-foreground">
+          When IDs are listed, the campaign targets only those contacts (other filters still apply).
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

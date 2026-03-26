@@ -1,49 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
 import { isSuperUser } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
 import {
   isGoogleCalendarConnected,
   isGoogleCalendarOAuthConfigured,
 } from "@server/services/googleCalendarSchedulingService";
-import type { ContentStudioSocialPayload, IntegrationStatus } from "../types";
-import { MAX_SOCIAL_CONNECTIONS_PER_PLATFORM } from "@server/lib/contentStudioSocialConstants";
-import {
-  hasFacebookPagePublishConfig,
-  hasLinkedInPublishConfig,
-  hasThreadsPublishConfig,
-  hasXPublishConfig,
-  hasWebhookPublishConfig,
-} from "@server/services/internalStudio/publishAdapters";
-import {
-  getFacebookOAuthRedirectUri,
-  isContentStudioFacebookOAuthConnected,
-  isFacebookAppConfiguredForOAuth,
-  listFacebookAccountSummaries,
-} from "@server/services/contentStudioFacebookConnectService";
-import {
-  getLinkedInOAuthRedirectUri,
-  isContentStudioLinkedInOAuthConnected,
-  isLinkedInOAuthAppConfigured,
-  listLinkedInAccountSummaries,
-} from "@server/services/contentStudioLinkedInConnectService";
-import {
-  getThreadsOAuthRedirectUri,
-  isContentStudioThreadsOAuthConnected,
-  isThreadsOAuthConfigured,
-  listThreadsAccountSummaries,
-} from "@server/services/contentStudioThreadsConnectService";
-import {
-  getXOAuthRedirectUri,
-  isContentStudioXOAuthConnected,
-  isXOAuthAppConfigured,
-  listXAccountSummaries,
-} from "@server/services/contentStudioXConnectService";
+import type { IntegrationStatus } from "../types";
 
 export const dynamic = "force-dynamic";
-
-/** @deprecated Use ContentStudioSocialPayload from ../types */
-export type ContentStudioSocialFlags = ContentStudioSocialPayload;
 
 /**
  * GET /api/admin/integrations/status
@@ -60,85 +24,6 @@ export async function GET(req: NextRequest) {
 
     const gcalEnv = isGoogleCalendarOAuthConfigured();
     const gcalConnected = await isGoogleCalendarConnected();
-
-    const baseUrl = getOAuthBaseUrlFromRequest(req);
-    const [
-      facebookPage,
-      facebookOAuthConnected,
-      facebookAccounts,
-      linkedinOk,
-      linkedinOAuthConnected,
-      linkedinAccounts,
-      xOk,
-      xOAuthConnected,
-      xAccounts,
-      threadsOk,
-      threadsOAuthConnected,
-      threadsAccounts,
-    ] = await Promise.all([
-      hasFacebookPagePublishConfig(),
-      isContentStudioFacebookOAuthConnected(),
-      listFacebookAccountSummaries(),
-      hasLinkedInPublishConfig(),
-      isContentStudioLinkedInOAuthConnected(),
-      listLinkedInAccountSummaries(),
-      hasXPublishConfig(),
-      isContentStudioXOAuthConnected(),
-      listXAccountSummaries(),
-      hasThreadsPublishConfig(),
-      isContentStudioThreadsOAuthConnected(),
-      listThreadsAccountSummaries(),
-    ]);
-    const facebookOAuthAvailable = isFacebookAppConfiguredForOAuth();
-    const facebookContentStudioRedirectUri = getFacebookOAuthRedirectUri(baseUrl);
-    const linkedinOAuthAvailable = isLinkedInOAuthAppConfigured();
-    const linkedinContentStudioRedirectUri = getLinkedInOAuthRedirectUri(baseUrl);
-    const xOAuthAvailable = isXOAuthAppConfigured();
-    const xContentStudioRedirectUri = getXOAuthRedirectUri(baseUrl);
-    const threadsOAuthAvailable = isThreadsOAuthConfigured();
-    const threadsContentStudioRedirectUri = getThreadsOAuthRedirectUri(baseUrl);
-
-    const max = MAX_SOCIAL_CONNECTIONS_PER_PLATFORM;
-
-    const contentStudioSocial: ContentStudioSocialPayload = {
-      facebookPage,
-      facebookOAuthConnected,
-      facebookOAuthAvailable,
-      facebookAccounts,
-      facebookMaxConnections: max,
-      facebookCanAddConnection: facebookOAuthAvailable && facebookAccounts.length < max,
-      facebookContentStudioRedirectUri,
-      linkedin: linkedinOk,
-      linkedinOAuthConnected,
-      linkedinOAuthAvailable,
-      linkedinAccounts,
-      linkedinMaxConnections: max,
-      linkedinCanAddConnection: linkedinOAuthAvailable && linkedinAccounts.length < max,
-      linkedinContentStudioRedirectUri,
-      x: xOk,
-      xOAuthConnected,
-      xOAuthAvailable,
-      xAccounts,
-      xMaxConnections: max,
-      xCanAddConnection: xOAuthAvailable && xAccounts.length < max,
-      xContentStudioRedirectUri,
-      threads: threadsOk,
-      threadsOAuthConnected,
-      threadsOAuthAvailable,
-      threadsAccounts,
-      threadsMaxConnections: max,
-      threadsCanAddConnection: threadsOAuthAvailable && threadsAccounts.length < max,
-      threadsContentStudioRedirectUri,
-      webhook: hasWebhookPublishConfig(),
-    };
-    const socialChannels = [
-      contentStudioSocial.facebookPage ? "Facebook Page" : null,
-      contentStudioSocial.linkedin ? "LinkedIn" : null,
-      contentStudioSocial.x ? "X" : null,
-      contentStudioSocial.threads ? "Threads" : null,
-      contentStudioSocial.webhook ? "Webhook hub" : null,
-    ].filter((x): x is string => x != null);
-    const socialAny = socialChannels.length > 0;
 
     const services: IntegrationStatus[] = [
       {
@@ -176,15 +61,11 @@ export async function GET(req: NextRequest) {
       },
       {
         id: "social-scheduling",
-        name: "Content Studio — social publishing",
-        description:
-          "Scheduled posts from Admin → Content Studio → Calendar to Facebook Page, LinkedIn, X, Threads, or an automation webhook. Distinct from Facebook Login (OAuth app) above.",
-        configured: socialAny,
-        status: socialAny ? "ok" : "not_configured",
-        message: socialAny
-          ? `Channels ready: ${socialChannels.join(", ")}. Match calendar entry targets (e.g. facebook_page) to a configured channel.`
-          : "No posting channel set. Connect accounts below or set env fallbacks (see Integrations).",
-        reconnectUrl: "https://developers.facebook.com/docs/pages-api/posts",
+        name: "Social post scheduling",
+        description: "Schedule posts to Facebook, LinkedIn, and other platforms from Ascendra.",
+        configured: false,
+        status: "not_configured",
+        message: "Connect accounts below to enable scheduling.",
       },
       {
         id: "google_calendar",
@@ -214,7 +95,7 @@ export async function GET(req: NextRequest) {
       },
     ];
 
-    return NextResponse.json({ services, contentStudioSocial });
+    return NextResponse.json({ services });
   } catch (error) {
     console.error("Integrations status error:", error);
     return NextResponse.json(
