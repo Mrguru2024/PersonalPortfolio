@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-26 06:22 — Auto · b220845
+
+- `feat(content-studio): OAuth connect for LinkedIn, X, and Threads` (`b220845`)
+
+---
+
 ## 2026-03-26 06:02 — Auto · 6e02b3c
 
 - `feat: Content Studio Facebook OAuth and admin batch updates` (`6e02b3c`)
