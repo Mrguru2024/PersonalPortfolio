@@ -22,7 +22,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { IntegrationId, IntegrationStatus } from "@/api/admin/integrations/types";
+import type {
+  ContentStudioSocialPayload,
+  IntegrationId,
+  IntegrationStatus,
+} from "@/api/admin/integrations/types";
 
 export default function AdminIntegrationsPage() {
   const [mounted, setMounted] = useState(false);
@@ -39,17 +43,8 @@ export default function AdminIntegrationsPage() {
   const [socialFlash, setSocialFlash] = useState<string | null>(null);
   const [gcalCalendarId, setGcalCalendarId] = useState("primary");
   const [gcalSaving, setGcalSaving] = useState(false);
-  const [fbDisconnecting, setFbDisconnecting] = useState(false);
-  const [contentStudioSocial, setContentStudioSocial] = useState<{
-    facebookPage: boolean;
-    facebookOAuthConnected: boolean;
-    facebookOAuthAvailable: boolean;
-    facebookPageDisplay: { pageId: string; pageName: string } | null;
-    facebookContentStudioRedirectUri: string;
-    linkedin: boolean;
-    x: boolean;
-    webhook: boolean;
-  } | null>(null);
+  const [socialBusy, setSocialBusy] = useState(false);
+  const [contentStudioSocial, setContentStudioSocial] = useState<ContentStudioSocialPayload | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -67,13 +62,28 @@ export default function AdminIntegrationsPage() {
       setGcalFlash(`Google Calendar: ${decodeURIComponent(err)}`);
       window.history.replaceState({}, "", "/admin/integrations");
     }
-    if (q.get("social") === "facebook_connected") {
-      setSocialFlash("Facebook Page connected. Content Studio can publish to this Page when calendar slots target facebook_page.");
+    const social = q.get("social");
+    if (social === "facebook_connected") {
+      setSocialFlash(
+        "Facebook Page connected. In Content Studio → Calendar, pick the matching Facebook target (up to four Pages).",
+      );
+      window.history.replaceState({}, "", "/admin/integrations");
+    }
+    if (social === "linkedin_connected") {
+      setSocialFlash("LinkedIn connected. Choose the matching calendar target when you run multiple profiles.");
+      window.history.replaceState({}, "", "/admin/integrations");
+    }
+    if (social === "x_connected") {
+      setSocialFlash("X account connected. Choose the matching calendar target when you run multiple accounts.");
+      window.history.replaceState({}, "", "/admin/integrations");
+    }
+    if (social === "threads_connected") {
+      setSocialFlash("Threads connected. Text posts use a short API delay; pick the right target on the calendar.");
       window.history.replaceState({}, "", "/admin/integrations");
     }
     const socialErr = q.get("social_error");
     if (socialErr) {
-      setSocialFlash(`Facebook: ${decodeURIComponent(socialErr)}`);
+      setSocialFlash(decodeURIComponent(socialErr));
       window.history.replaceState({}, "", "/admin/integrations");
     }
   }, []);
@@ -96,19 +106,7 @@ export default function AdminIntegrationsPage() {
       if (!res.ok) {
         throw new Error((data as { message?: string }).message || "Failed to load integrations");
       }
-      const payload = data as {
-        services?: IntegrationStatus[];
-        contentStudioSocial?: {
-          facebookPage: boolean;
-          facebookOAuthConnected: boolean;
-          facebookOAuthAvailable: boolean;
-          facebookPageDisplay: { pageId: string; pageName: string } | null;
-          facebookContentStudioRedirectUri: string;
-          linkedin: boolean;
-          x: boolean;
-          webhook: boolean;
-        };
-      };
+      const payload = data as { services?: IntegrationStatus[]; contentStudioSocial?: ContentStudioSocialPayload };
       setServices(payload.services ?? []);
       setContentStudioSocial(payload.contentStudioSocial ?? null);
       const gcal = ((data as { services?: IntegrationStatus[] }).services ?? []).find(
@@ -139,18 +137,17 @@ export default function AdminIntegrationsPage() {
     void fetchStatus();
   }, [user, isSuperUser, fetchStatus]);
 
-  async function disconnectContentStudioFacebook() {
-    if (!confirm("Disconnect Facebook Page from Content Studio? You can reconnect anytime; env-based tokens still work if configured."))
-      return;
-    setFbDisconnecting(true);
+  async function disconnectSocialPath(path: string, body: object, confirmMsg: string, successMsg: string) {
+    if (!confirm(confirmMsg)) return;
+    setSocialBusy(true);
     try {
-      await apiRequest("POST", "/api/admin/integrations/social/facebook/disconnect");
-      setSocialFlash("Facebook Page disconnected from Integrations.");
+      await apiRequest("POST", path, body);
+      setSocialFlash(successMsg);
       await fetchStatus();
     } catch (e) {
       setSocialFlash(e instanceof Error ? e.message : "Disconnect failed");
     } finally {
-      setFbDisconnecting(false);
+      setSocialBusy(false);
     }
   }
 
@@ -238,7 +235,7 @@ export default function AdminIntegrationsPage() {
           <h1 className="text-2xl font-semibold">Integrations</h1>
           <p className="text-muted-foreground text-sm">
             Test and reconnect services: Facebook Login, email, Google Calendar, and Content Studio social publishing
-            (Facebook Page / LinkedIn / X — via env vars).
+            (Facebook Page, LinkedIn, X, Threads — OAuth Connect or env fallbacks).
           </p>
         </div>
         <Button
@@ -376,32 +373,13 @@ export default function AdminIntegrationsPage() {
             Connect social pages for post scheduling
           </CardTitle>
           <CardDescription>
-            Scheduling happens in <strong className="font-medium text-foreground">Content Studio → Calendar</strong>. Each
-            slot can target platforms such as <code className="text-xs">facebook_page</code>,{" "}
-            <code className="text-xs">linkedin</code>, or <code className="text-xs">x</code>. Connect a Facebook Page below
-            (Meta app with{" "}
-            <code className="text-xs">FACEBOOK_APP_ID</code> / <code className="text-xs">FACEBOOK_APP_SECRET</code> plus the
-            admin callback URI in your app settings), or set Page token + ID in server environment as a fallback.
+            Scheduling happens in <strong className="font-medium text-foreground">Content Studio → Calendar</strong>. Connect
+            up to four accounts per network (Facebook Pages, LinkedIn, X, Threads) where OAuth is configured, or use env
+            token fallbacks. Whitelist each callback URL in the provider developer console.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2 items-center">
-            {contentStudioSocial?.facebookOAuthAvailable && !contentStudioSocial.facebookOAuthConnected ? (
-              <Button size="sm" asChild>
-                <a href="/api/admin/integrations/social/facebook/start">Connect Facebook Page</a>
-              </Button>
-            ) : null}
-            {contentStudioSocial?.facebookOAuthConnected ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={fbDisconnecting}
-                onClick={() => void disconnectContentStudioFacebook()}
-              >
-                {fbDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect Facebook Page"}
-              </Button>
-            ) : null}
             <Button size="sm" asChild>
               <Link href="/admin/content-studio/calendar">Content Studio calendar</Link>
             </Button>
@@ -417,24 +395,68 @@ export default function AdminIntegrationsPage() {
           </div>
 
           {contentStudioSocial ? (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 p-3 text-sm">
-              <p className="font-medium text-foreground mb-1">Meta: whitelist this exact redirect URI</p>
-              <p className="text-muted-foreground text-xs mb-2">
-                Facebook Login → Settings → Valid OAuth Redirect URIs. Must match character-for-character (including{" "}
-                <code className="text-xs">http</code> vs <code className="text-xs">https</code>, <code className="text-xs">www</code>, and port). Enable{" "}
-                <strong className="text-foreground">Client OAuth Login</strong> and <strong className="text-foreground">Web OAuth Login</strong>.
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 p-3 text-sm space-y-3">
+              <p className="font-medium text-foreground">Whitelist these redirect URIs (exact match)</p>
+              <p className="text-muted-foreground text-xs">
+                Enable OAuth / Web login as each provider requires. Apex vs <code className="text-xs">www</code> and port must match.
               </p>
-              <code className="block text-xs break-all rounded border border-border bg-background px-2 py-1.5">
-                {contentStudioSocial.facebookContentStudioRedirectUri}
-              </code>
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1">Facebook / Threads (Meta)</p>
+                <code className="block text-xs break-all rounded border border-border bg-background px-2 py-1.5">
+                  {contentStudioSocial.facebookContentStudioRedirectUri}
+                </code>
+                <code className="block text-xs break-all rounded border border-border bg-background px-2 py-1.5 mt-1">
+                  {contentStudioSocial.threadsContentStudioRedirectUri}
+                </code>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1">LinkedIn</p>
+                <code className="block text-xs break-all rounded border border-border bg-background px-2 py-1.5">
+                  {contentStudioSocial.linkedinContentStudioRedirectUri}
+                </code>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1">X (OAuth 2.0)</p>
+                <code className="block text-xs break-all rounded border border-border bg-background px-2 py-1.5">
+                  {contentStudioSocial.xContentStudioRedirectUri}
+                </code>
+              </div>
             </div>
           ) : null}
 
           {contentStudioSocial && (
             <div className="rounded-lg border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium mb-2">Publishing channels (this deployment)</p>
-              <ul className="text-sm space-y-1.5 text-muted-foreground">
-                <li className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
+              <ul className="text-sm space-y-4 text-muted-foreground">
+                <li className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {contentStudioSocial.facebookCanAddConnection ? (
+                      <Button size="sm" asChild>
+                        <a href="/api/admin/integrations/social/facebook/start">
+                          {contentStudioSocial.facebookOAuthConnected ? "Connect another Page" : "Connect Facebook Page"}
+                        </a>
+                      </Button>
+                    ) : null}
+                    {contentStudioSocial.facebookOAuthConnected && contentStudioSocial.facebookAccounts.length > 1 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={socialBusy}
+                        onClick={() =>
+                          void disconnectSocialPath(
+                            "/api/admin/integrations/social/facebook/disconnect",
+                            {},
+                            "Disconnect all Facebook Pages? Env tokens still work if set.",
+                            "All Facebook Pages disconnected.",
+                          )
+                        }
+                      >
+                        {socialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect all Pages"}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {contentStudioSocial.facebookPage ? (
                       <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
@@ -443,14 +465,44 @@ export default function AdminIntegrationsPage() {
                     )}
                     <span className="min-w-0">
                       <strong className="text-foreground">Facebook Page</strong>
-                      {contentStudioSocial.facebookOAuthConnected && contentStudioSocial.facebookPageDisplay ? (
+                      {contentStudioSocial.facebookOAuthConnected && contentStudioSocial.facebookAccounts.length > 0 ? (
                         <>
                           {" "}
-                          — connected as{" "}
+                          —{" "}
                           <span className="text-foreground font-medium">
-                            {contentStudioSocial.facebookPageDisplay.pageName}
+                            {contentStudioSocial.facebookAccounts.length} / {contentStudioSocial.facebookMaxConnections}
                           </span>{" "}
-                          <span className="text-xs">({contentStudioSocial.facebookPageDisplay.pageId})</span>
+                          connected
+                          <ul className="mt-2 space-y-2 list-none">
+                            {contentStudioSocial.facebookAccounts.map((a) => (
+                              <li
+                                key={a.accountId}
+                                className="flex flex-wrap items-center gap-2 justify-between rounded border border-border bg-background/50 px-2 py-1.5"
+                              >
+                                <span>
+                                  <span className="text-foreground font-medium">{a.pageName}</span>{" "}
+                                  <span className="text-xs text-muted-foreground">({a.pageId})</span>
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs shrink-0"
+                                  disabled={socialBusy}
+                                  onClick={() =>
+                                    void disconnectSocialPath(
+                                      "/api/admin/integrations/social/facebook/disconnect",
+                                      { accountId: a.accountId },
+                                      "Remove this Facebook Page from Content Studio?",
+                                      "Facebook Page removed.",
+                                    )
+                                  }
+                                >
+                                  Remove
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
                         </>
                       ) : contentStudioSocial.facebookPage ? (
                         <> — connected via server environment (token + Page ID)</>
@@ -458,6 +510,7 @@ export default function AdminIntegrationsPage() {
                         <> — use Connect Facebook Page or env vars below</>
                       )}
                     </span>
+                  </div>
                   </div>
                 </li>
                 <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
@@ -475,28 +528,300 @@ export default function AdminIntegrationsPage() {
                     <code className="text-xs">FACEBOOK_PAGE_ID</code> (<code className="text-xs">META_PAGE_ID</code>).
                   </p>
                 </li>
-                <li className="flex items-center gap-2">
-                  {contentStudioSocial.linkedin ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                  )}
-                  <span>
-                    <strong className="text-foreground">LinkedIn</strong> —{" "}
-                    <code className="text-xs">LINKEDIN_ACCESS_TOKEN</code> +{" "}
-                    <code className="text-xs">LINKEDIN_AUTHOR_URN</code>
-                  </span>
+                <li className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {contentStudioSocial.linkedinCanAddConnection ? (
+                      <Button size="sm" asChild>
+                        <a href="/api/admin/integrations/social/linkedin/start">
+                          {contentStudioSocial.linkedinOAuthConnected ? "Connect another profile" : "Connect LinkedIn"}
+                        </a>
+                      </Button>
+                    ) : null}
+                    {contentStudioSocial.linkedinOAuthConnected && contentStudioSocial.linkedinAccounts.length > 1 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={socialBusy}
+                        onClick={() =>
+                          void disconnectSocialPath(
+                            "/api/admin/integrations/social/linkedin/disconnect",
+                            {},
+                            "Disconnect all LinkedIn profiles? Env tokens still work if set.",
+                            "All LinkedIn profiles disconnected.",
+                          )
+                        }
+                      >
+                        {socialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect all LinkedIn"}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {contentStudioSocial.linkedin ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="min-w-0">
+                        <strong className="text-foreground">LinkedIn</strong>
+                        {contentStudioSocial.linkedinOAuthConnected && contentStudioSocial.linkedinAccounts.length > 0 ? (
+                          <>
+                            {" "}
+                            —{" "}
+                            <span className="text-foreground font-medium">
+                              {contentStudioSocial.linkedinAccounts.length} / {contentStudioSocial.linkedinMaxConnections}
+                            </span>{" "}
+                            connected
+                            <ul className="mt-2 space-y-2 list-none">
+                              {contentStudioSocial.linkedinAccounts.map((a) => (
+                                <li
+                                  key={a.accountId}
+                                  className="flex flex-wrap items-center gap-2 justify-between rounded border border-border bg-background/50 px-2 py-1.5"
+                                >
+                                  <span>
+                                    <span className="text-foreground font-medium">{a.displayLabel}</span>{" "}
+                                    <span className="text-xs text-muted-foreground">({a.authorUrn})</span>
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs shrink-0"
+                                    disabled={socialBusy}
+                                    onClick={() =>
+                                      void disconnectSocialPath(
+                                        "/api/admin/integrations/social/linkedin/disconnect",
+                                        { accountId: a.accountId },
+                                        "Remove this LinkedIn profile from Content Studio?",
+                                        "LinkedIn profile removed.",
+                                      )
+                                    }
+                                  >
+                                    Remove
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : contentStudioSocial.linkedin ? (
+                          <> — connected via server environment (token + author URN)</>
+                        ) : (
+                          <> — use Connect LinkedIn or env vars below</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  {contentStudioSocial.x ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                  )}
-                  <span>
-                    <strong className="text-foreground">X (Twitter)</strong> —{" "}
-                    <code className="text-xs">X_OAUTH2_ACCESS_TOKEN</code> (or TWITTER_* variants)
-                  </span>
+                <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
+                  {!contentStudioSocial.linkedinOAuthAvailable ? (
+                    <p>
+                      Add <code className="text-xs">LINKEDIN_CLIENT_ID</code> and{" "}
+                      <code className="text-xs">LINKEDIN_CLIENT_SECRET</code>, then add the redirect URI from the box above to
+                      your LinkedIn app.
+                    </p>
+                  ) : null}
+                  <p>
+                    Optional env fallback: <code className="text-xs">LINKEDIN_ACCESS_TOKEN</code> +{" "}
+                    <code className="text-xs">LINKEDIN_AUTHOR_URN</code>.
+                  </p>
+                </li>
+                <li className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {contentStudioSocial.xCanAddConnection ? (
+                      <Button size="sm" asChild>
+                        <a href="/api/admin/integrations/social/x/start">
+                          {contentStudioSocial.xOAuthConnected ? "Connect another account" : "Connect X"}
+                        </a>
+                      </Button>
+                    ) : null}
+                    {contentStudioSocial.xOAuthConnected && contentStudioSocial.xAccounts.length > 1 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={socialBusy}
+                        onClick={() =>
+                          void disconnectSocialPath(
+                            "/api/admin/integrations/social/x/disconnect",
+                            {},
+                            "Disconnect all X accounts? Env tokens still work if set.",
+                            "All X accounts disconnected.",
+                          )
+                        }
+                      >
+                        {socialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect all X"}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {contentStudioSocial.x ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="min-w-0">
+                        <strong className="text-foreground">X (Twitter)</strong>
+                        {contentStudioSocial.xOAuthConnected && contentStudioSocial.xAccounts.length > 0 ? (
+                          <>
+                            {" "}
+                            —{" "}
+                            <span className="text-foreground font-medium">
+                              {contentStudioSocial.xAccounts.length} / {contentStudioSocial.xMaxConnections}
+                            </span>{" "}
+                            connected
+                            <ul className="mt-2 space-y-2 list-none">
+                              {contentStudioSocial.xAccounts.map((a) => (
+                                <li
+                                  key={a.accountId}
+                                  className="flex flex-wrap items-center gap-2 justify-between rounded border border-border bg-background/50 px-2 py-1.5"
+                                >
+                                  <span>
+                                    <span className="text-foreground font-medium">@{a.username}</span>
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs shrink-0"
+                                    disabled={socialBusy}
+                                    onClick={() =>
+                                      void disconnectSocialPath(
+                                        "/api/admin/integrations/social/x/disconnect",
+                                        { accountId: a.accountId },
+                                        "Remove this X account from Content Studio?",
+                                        "X account removed.",
+                                      )
+                                    }
+                                  >
+                                    Remove
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : contentStudioSocial.x ? (
+                          <> — connected via server environment (OAuth2 token)</>
+                        ) : (
+                          <> — use Connect X or env vars below</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
+                  {!contentStudioSocial.xOAuthAvailable ? (
+                    <p>
+                      Add <code className="text-xs">X_CLIENT_ID</code> and <code className="text-xs">X_CLIENT_SECRET</code>{" "}
+                      (OAuth 2.0 app), user authentication on, and the callback URL from the box above.
+                    </p>
+                  ) : null}
+                  <p>
+                    Optional env fallback: <code className="text-xs">X_OAUTH2_ACCESS_TOKEN</code> (or{" "}
+                    <code className="text-xs">TWITTER_*</code> variants).
+                  </p>
+                </li>
+                <li className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {contentStudioSocial.threadsCanAddConnection ? (
+                      <Button size="sm" asChild>
+                        <a href="/api/admin/integrations/social/threads/start">
+                          {contentStudioSocial.threadsOAuthConnected ? "Connect another profile" : "Connect Threads"}
+                        </a>
+                      </Button>
+                    ) : null}
+                    {contentStudioSocial.threadsOAuthConnected && contentStudioSocial.threadsAccounts.length > 1 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={socialBusy}
+                        onClick={() =>
+                          void disconnectSocialPath(
+                            "/api/admin/integrations/social/threads/disconnect",
+                            {},
+                            "Disconnect all Threads profiles? Env tokens still work if set.",
+                            "All Threads profiles disconnected.",
+                          )
+                        }
+                      >
+                        {socialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disconnect all Threads"}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {contentStudioSocial.threads ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="min-w-0">
+                        <strong className="text-foreground">Threads</strong>
+                        {contentStudioSocial.threadsOAuthConnected && contentStudioSocial.threadsAccounts.length > 0 ? (
+                          <>
+                            {" "}
+                            —{" "}
+                            <span className="text-foreground font-medium">
+                              {contentStudioSocial.threadsAccounts.length} / {contentStudioSocial.threadsMaxConnections}
+                            </span>{" "}
+                            connected
+                            <ul className="mt-2 space-y-2 list-none">
+                              {contentStudioSocial.threadsAccounts.map((a) => (
+                                <li
+                                  key={a.accountId}
+                                  className="flex flex-wrap items-center gap-2 justify-between rounded border border-border bg-background/50 px-2 py-1.5"
+                                >
+                                  <span>
+                                    <span className="text-foreground font-medium">
+                                      {a.username ? `@${a.username}` : "Threads user"}
+                                    </span>{" "}
+                                    <span className="text-xs text-muted-foreground">({a.threadsUserId})</span>
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs shrink-0"
+                                    disabled={socialBusy}
+                                    onClick={() =>
+                                      void disconnectSocialPath(
+                                        "/api/admin/integrations/social/threads/disconnect",
+                                        { accountId: a.accountId },
+                                        "Remove this Threads profile from Content Studio?",
+                                        "Threads profile removed.",
+                                      )
+                                    }
+                                  >
+                                    Remove
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : contentStudioSocial.threads ? (
+                          <> — connected via server environment (token + user id)</>
+                        ) : (
+                          <> — use Connect Threads or env vars below (Meta Threads API)</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
+                  {!contentStudioSocial.threadsOAuthAvailable ? (
+                    <p>
+                      Add <code className="text-xs">THREADS_APP_ID</code> / <code className="text-xs">THREADS_APP_SECRET</code>{" "}
+                      or reuse <code className="text-xs">FACEBOOK_APP_ID</code> /{" "}
+                      <code className="text-xs">FACEBOOK_APP_SECRET</code> with Threads permissions; whitelist both Meta
+                      callback URLs above.
+                    </p>
+                  ) : null}
+                  <p>
+                    Optional env fallback: <code className="text-xs">THREADS_ACCESS_TOKEN</code> +{" "}
+                    <code className="text-xs">THREADS_USER_ID</code> (or <code className="text-xs">META_THREADS_*</code>).
+                  </p>
                 </li>
                 <li className="flex items-center gap-2">
                   {contentStudioSocial.webhook ? (
@@ -525,7 +850,7 @@ export default function AdminIntegrationsPage() {
               <p className="text-sm font-medium">Blog scheduling (separate)</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Admin → Blog can schedule publish times for site posts. That path is not the same as Content Studio social
-                slots; use the calendar above for Facebook / LinkedIn / X via adapters.
+                slots; use the calendar above for Facebook / LinkedIn / X / Threads via adapters.
               </p>
               <Button variant="outline" size="sm" className="mt-3" asChild>
                 <Link href="/admin/blog">Open Blog</Link>

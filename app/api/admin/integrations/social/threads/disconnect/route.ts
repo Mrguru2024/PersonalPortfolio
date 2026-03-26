@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSuperUser } from "@/lib/auth-helpers";
-import { disconnectContentStudioFacebook } from "@server/services/contentStudioFacebookConnectService";
+import { disconnectContentStudioThreads } from "@server/services/contentStudioThreadsConnectService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
       accountId = body.accountId.trim();
     }
   } catch {
-    /* empty body */
+    /* empty */
   }
-  await disconnectContentStudioFacebook(accountId);
+  await disconnectContentStudioThreads(accountId);
   return NextResponse.json({ ok: true });
 }

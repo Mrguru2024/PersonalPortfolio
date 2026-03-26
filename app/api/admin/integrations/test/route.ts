@@ -6,6 +6,7 @@ import type { IntegrationId } from "../types";
 import {
   hasFacebookPagePublishConfig,
   hasLinkedInPublishConfig,
+  hasThreadsPublishConfig,
   hasXPublishConfig,
   hasWebhookPublishConfig,
 } from "@server/services/internalStudio/publishAdapters";
@@ -107,8 +108,9 @@ export async function POST(req: NextRequest) {
     if (service === "social-scheduling") {
       const parts = [
         (await hasFacebookPagePublishConfig()) ? "Facebook Page" : null,
-        hasLinkedInPublishConfig() ? "LinkedIn" : null,
-        hasXPublishConfig() ? "X" : null,
+        (await hasLinkedInPublishConfig()) ? "LinkedIn" : null,
+        (await hasXPublishConfig()) ? "X" : null,
+        (await hasThreadsPublishConfig()) ? "Threads" : null,
         hasWebhookPublishConfig() ? "Webhook hub" : null,
       ].filter((x): x is string => x != null);
       if (parts.length === 0) {

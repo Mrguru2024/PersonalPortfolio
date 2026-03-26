@@ -6,33 +6,44 @@ import {
   isGoogleCalendarConnected,
   isGoogleCalendarOAuthConfigured,
 } from "@server/services/googleCalendarSchedulingService";
-import type { IntegrationStatus } from "../types";
+import type { ContentStudioSocialPayload, IntegrationStatus } from "../types";
+import { MAX_SOCIAL_CONNECTIONS_PER_PLATFORM } from "@server/lib/contentStudioSocialConstants";
 import {
   hasFacebookPagePublishConfig,
   hasLinkedInPublishConfig,
+  hasThreadsPublishConfig,
   hasXPublishConfig,
   hasWebhookPublishConfig,
 } from "@server/services/internalStudio/publishAdapters";
 import {
-  getContentStudioFacebookDisplayInfo,
   getFacebookOAuthRedirectUri,
   isContentStudioFacebookOAuthConnected,
   isFacebookAppConfiguredForOAuth,
+  listFacebookAccountSummaries,
 } from "@server/services/contentStudioFacebookConnectService";
+import {
+  getLinkedInOAuthRedirectUri,
+  isContentStudioLinkedInOAuthConnected,
+  isLinkedInOAuthAppConfigured,
+  listLinkedInAccountSummaries,
+} from "@server/services/contentStudioLinkedInConnectService";
+import {
+  getThreadsOAuthRedirectUri,
+  isContentStudioThreadsOAuthConnected,
+  isThreadsOAuthConfigured,
+  listThreadsAccountSummaries,
+} from "@server/services/contentStudioThreadsConnectService";
+import {
+  getXOAuthRedirectUri,
+  isContentStudioXOAuthConnected,
+  isXOAuthAppConfigured,
+  listXAccountSummaries,
+} from "@server/services/contentStudioXConnectService";
 
 export const dynamic = "force-dynamic";
 
-export type ContentStudioSocialFlags = {
-  facebookPage: boolean;
-  facebookOAuthConnected: boolean;
-  facebookOAuthAvailable: boolean;
-  facebookPageDisplay: { pageId: string; pageName: string } | null;
-  /** Exact redirect_uri for Content Studio connect — whitelist in Meta. */
-  facebookContentStudioRedirectUri: string;
-  linkedin: boolean;
-  x: boolean;
-  webhook: boolean;
-};
+/** @deprecated Use ContentStudioSocialPayload from ../types */
+export type ContentStudioSocialFlags = ContentStudioSocialPayload;
 
 /**
  * GET /api/admin/integrations/status
@@ -50,30 +61,81 @@ export async function GET(req: NextRequest) {
     const gcalEnv = isGoogleCalendarOAuthConfigured();
     const gcalConnected = await isGoogleCalendarConnected();
 
-    const [facebookPage, facebookOAuthConnected, facebookPageDisplay] = await Promise.all([
+    const baseUrl = getOAuthBaseUrlFromRequest(req);
+    const [
+      facebookPage,
+      facebookOAuthConnected,
+      facebookAccounts,
+      linkedinOk,
+      linkedinOAuthConnected,
+      linkedinAccounts,
+      xOk,
+      xOAuthConnected,
+      xAccounts,
+      threadsOk,
+      threadsOAuthConnected,
+      threadsAccounts,
+    ] = await Promise.all([
       hasFacebookPagePublishConfig(),
       isContentStudioFacebookOAuthConnected(),
-      getContentStudioFacebookDisplayInfo(),
+      listFacebookAccountSummaries(),
+      hasLinkedInPublishConfig(),
+      isContentStudioLinkedInOAuthConnected(),
+      listLinkedInAccountSummaries(),
+      hasXPublishConfig(),
+      isContentStudioXOAuthConnected(),
+      listXAccountSummaries(),
+      hasThreadsPublishConfig(),
+      isContentStudioThreadsOAuthConnected(),
+      listThreadsAccountSummaries(),
     ]);
     const facebookOAuthAvailable = isFacebookAppConfiguredForOAuth();
-    const facebookContentStudioRedirectUri = getFacebookOAuthRedirectUri(
-      getOAuthBaseUrlFromRequest(req),
-    );
+    const facebookContentStudioRedirectUri = getFacebookOAuthRedirectUri(baseUrl);
+    const linkedinOAuthAvailable = isLinkedInOAuthAppConfigured();
+    const linkedinContentStudioRedirectUri = getLinkedInOAuthRedirectUri(baseUrl);
+    const xOAuthAvailable = isXOAuthAppConfigured();
+    const xContentStudioRedirectUri = getXOAuthRedirectUri(baseUrl);
+    const threadsOAuthAvailable = isThreadsOAuthConfigured();
+    const threadsContentStudioRedirectUri = getThreadsOAuthRedirectUri(baseUrl);
 
-    const contentStudioSocial: ContentStudioSocialFlags = {
+    const max = MAX_SOCIAL_CONNECTIONS_PER_PLATFORM;
+
+    const contentStudioSocial: ContentStudioSocialPayload = {
       facebookPage,
       facebookOAuthConnected,
       facebookOAuthAvailable,
-      facebookPageDisplay,
+      facebookAccounts,
+      facebookMaxConnections: max,
+      facebookCanAddConnection: facebookOAuthAvailable && facebookAccounts.length < max,
       facebookContentStudioRedirectUri,
-      linkedin: hasLinkedInPublishConfig(),
-      x: hasXPublishConfig(),
+      linkedin: linkedinOk,
+      linkedinOAuthConnected,
+      linkedinOAuthAvailable,
+      linkedinAccounts,
+      linkedinMaxConnections: max,
+      linkedinCanAddConnection: linkedinOAuthAvailable && linkedinAccounts.length < max,
+      linkedinContentStudioRedirectUri,
+      x: xOk,
+      xOAuthConnected,
+      xOAuthAvailable,
+      xAccounts,
+      xMaxConnections: max,
+      xCanAddConnection: xOAuthAvailable && xAccounts.length < max,
+      xContentStudioRedirectUri,
+      threads: threadsOk,
+      threadsOAuthConnected,
+      threadsOAuthAvailable,
+      threadsAccounts,
+      threadsMaxConnections: max,
+      threadsCanAddConnection: threadsOAuthAvailable && threadsAccounts.length < max,
+      threadsContentStudioRedirectUri,
       webhook: hasWebhookPublishConfig(),
     };
     const socialChannels = [
       contentStudioSocial.facebookPage ? "Facebook Page" : null,
       contentStudioSocial.linkedin ? "LinkedIn" : null,
       contentStudioSocial.x ? "X" : null,
+      contentStudioSocial.threads ? "Threads" : null,
       contentStudioSocial.webhook ? "Webhook hub" : null,
     ].filter((x): x is string => x != null);
     const socialAny = socialChannels.length > 0;
@@ -116,12 +178,12 @@ export async function GET(req: NextRequest) {
         id: "social-scheduling",
         name: "Content Studio — social publishing",
         description:
-          "Scheduled posts from Admin → Content Studio → Calendar to Facebook Page, LinkedIn, X, or an automation webhook. Distinct from Facebook Login (OAuth app) above.",
+          "Scheduled posts from Admin → Content Studio → Calendar to Facebook Page, LinkedIn, X, Threads, or an automation webhook. Distinct from Facebook Login (OAuth app) above.",
         configured: socialAny,
         status: socialAny ? "ok" : "not_configured",
         message: socialAny
           ? `Channels ready: ${socialChannels.join(", ")}. Match calendar entry targets (e.g. facebook_page) to a configured channel.`
-          : "No posting channel set. Connect Facebook Page below (Meta app required), or set LinkedIn / X / webhook env vars on your host.",
+          : "No posting channel set. Connect accounts below or set env fallbacks (see Integrations).",
         reconnectUrl: "https://developers.facebook.com/docs/pages-api/posts",
       },
       {

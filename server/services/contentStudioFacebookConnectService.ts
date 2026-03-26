@@ -1,12 +1,14 @@
 /**
  * Content Studio — Facebook Page OAuth (super-user integrations).
- * Stores page access token encrypted in scheduling_integration_configs.
- * Falls back to FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID env when not connected via UI.
+ * Up to MAX_FACEBOOK_CONNECTIONS Pages; tokens encrypted in scheduling_integration_configs.
+ * Falls back to FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID env when no OAuth rows.
  */
 
+import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@server/db";
 import { schedulingIntegrationConfigs } from "@shared/schedulingSchema";
+import { MAX_SOCIAL_CONNECTIONS_PER_PLATFORM } from "@server/lib/contentStudioSocialConstants";
 import {
   canEncryptSchedulingSecrets,
   decryptSchedulingSecret,
@@ -14,11 +16,24 @@ import {
 } from "@server/lib/schedulingSecrets";
 
 const PROVIDER = "content_studio_facebook";
+/** @deprecated Use MAX_SOCIAL_CONNECTIONS_PER_PLATFORM — same numeric cap. */
+export const MAX_FACEBOOK_CONNECTIONS = MAX_SOCIAL_CONNECTIONS_PER_PLATFORM;
+
+const KEY_ACCOUNTS = "accounts";
+/** Legacy flat keys (single Page) — migrated into accounts[] on read. */
 const KEY_ENC_TOKEN = "encryptedPageAccessToken";
 const KEY_PAGE_ID = "pageId";
 const KEY_PAGE_NAME = "pageName";
 
+export type FacebookConnectedAccount = {
+  accountId: string;
+  pageId: string;
+  pageName: string;
+  encryptedPageAccessToken: string;
+};
+
 export type ContentStudioFacebookConfigJson = {
+  [KEY_ACCOUNTS]?: FacebookConnectedAccount[];
   [KEY_ENC_TOKEN]?: string;
   [KEY_PAGE_ID]?: string;
   [KEY_PAGE_NAME]?: string;
@@ -62,54 +77,157 @@ async function getRow() {
   return row ?? null;
 }
 
-export async function isContentStudioFacebookOAuthConnected(): Promise<boolean> {
-  const row = await getRow();
-  if (!row?.enabled) return false;
-  const cfg = (row.configJson || {}) as ContentStudioFacebookConfigJson;
-  return typeof cfg[KEY_ENC_TOKEN] === "string" && typeof cfg[KEY_PAGE_ID] === "string";
+function accountsFromConfigJson(raw: Record<string, unknown>): FacebookConnectedAccount[] {
+  const cfg = raw as ContentStudioFacebookConfigJson;
+  const list = cfg[KEY_ACCOUNTS];
+  if (Array.isArray(list) && list.length > 0) {
+    return list.filter(
+      (a): a is FacebookConnectedAccount =>
+        typeof a === "object" &&
+        a !== null &&
+        typeof (a as FacebookConnectedAccount).accountId === "string" &&
+        typeof (a as FacebookConnectedAccount).pageId === "string" &&
+        typeof (a as FacebookConnectedAccount).encryptedPageAccessToken === "string",
+    );
+  }
+  const enc = cfg[KEY_ENC_TOKEN];
+  const pageId = cfg[KEY_PAGE_ID];
+  const pageName = cfg[KEY_PAGE_NAME];
+  if (typeof enc === "string" && enc.trim() && typeof pageId === "string" && pageId.trim()) {
+    return [
+      {
+        accountId: randomUUID(),
+        pageId: pageId.trim(),
+        pageName: typeof pageName === "string" && pageName.trim() ? pageName.trim() : "Facebook Page",
+        encryptedPageAccessToken: enc,
+      },
+    ];
+  }
+  return [];
 }
 
-/** Prefer OAuth row; else env FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID (or META_*). */
-export async function getFacebookPageCredentialsResolved(): Promise<{ token: string; pageId: string } | null> {
+/** Load connected accounts; migrates legacy single-Page shape to accounts[] on disk. */
+export async function listFacebookConnectedAccounts(): Promise<FacebookConnectedAccount[]> {
   const row = await getRow();
-  if (row?.enabled) {
-    const cfg = (row.configJson || {}) as ContentStudioFacebookConfigJson;
-    const enc = cfg[KEY_ENC_TOKEN];
-    const pageId = cfg[KEY_PAGE_ID];
-    if (typeof enc === "string" && enc.length > 0 && typeof pageId === "string" && pageId.length > 0) {
+  if (!row?.enabled) return [];
+  const accounts = accountsFromConfigJson((row.configJson || {}) as Record<string, unknown>);
+  if (accounts.length === 0) return [];
+
+  const cfg = (row.configJson || {}) as ContentStudioFacebookConfigJson;
+  if (!Array.isArray(cfg[KEY_ACCOUNTS]) || cfg[KEY_ACCOUNTS]!.length === 0) {
+    await db
+      .update(schedulingIntegrationConfigs)
+      .set({
+        configJson: { [KEY_ACCOUNTS]: accounts } as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .where(eq(schedulingIntegrationConfigs.id, row.id));
+  }
+
+  return accounts.slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
+}
+
+export async function listFacebookAccountSummaries(): Promise<
+  { accountId: string; pageId: string; pageName: string }[]
+> {
+  const accounts = await listFacebookConnectedAccounts();
+  return accounts.map((a) => ({
+    accountId: a.accountId,
+    pageId: a.pageId,
+    pageName: a.pageName,
+  }));
+}
+
+export async function facebookOAuthConnectionCount(): Promise<number> {
+  return (await listFacebookConnectedAccounts()).length;
+}
+
+export async function isContentStudioFacebookOAuthConnected(): Promise<boolean> {
+  return (await facebookOAuthConnectionCount()) > 0;
+}
+
+/**
+ * Resolve credentials for publish.
+ * @param accountId Optional — from platform target `facebook_page:<accountId>`. If omitted, uses first Page by name, then env.
+ */
+export async function getFacebookPageCredentialsResolved(
+  accountId?: string | null,
+): Promise<{ token: string; pageId: string } | null> {
+  const accounts = await listFacebookConnectedAccounts();
+
+  if (accountId?.trim()) {
+    const id = accountId.trim();
+    const hit = accounts.find((a) => a.accountId === id);
+    if (hit) {
       try {
-        return { token: decryptSchedulingSecret(enc), pageId };
+        return { token: decryptSchedulingSecret(hit.encryptedPageAccessToken), pageId: hit.pageId };
       } catch {
-        /* fall through */
+        return null;
       }
     }
+    return null;
   }
+
+  if (accounts.length > 0) {
+    const sorted = [...accounts].sort((a, b) =>
+      (a.pageName || "").localeCompare(b.pageName || "", undefined, { sensitivity: "base" }),
+    );
+    const first = sorted[0];
+    try {
+      return {
+        token: decryptSchedulingSecret(first.encryptedPageAccessToken),
+        pageId: first.pageId,
+      };
+    } catch {
+      /* fall through to env */
+    }
+  }
+
   const token = (process.env.FACEBOOK_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN)?.trim();
   const pid = (process.env.FACEBOOK_PAGE_ID ?? process.env.META_PAGE_ID)?.trim();
   if (token && pid) return { token, pageId: pid };
   return null;
 }
 
-export async function getContentStudioFacebookDisplayInfo(): Promise<{ pageId: string; pageName: string } | null> {
-  const row = await getRow();
-  if (!row?.enabled) return null;
-  const cfg = (row.configJson || {}) as ContentStudioFacebookConfigJson;
-  const id = cfg[KEY_PAGE_ID];
-  const name = cfg[KEY_PAGE_NAME];
-  if (typeof id === "string" && id.length > 0) {
-    return { pageId: id, pageName: typeof name === "string" && name.trim() ? name : "Facebook Page" };
-  }
-  return null;
-}
-
-export async function disconnectContentStudioFacebook(): Promise<void> {
+export async function disconnectContentStudioFacebook(accountId?: string | null): Promise<void> {
   const existing = await getRow();
   if (!existing) return;
+
+  if (!accountId?.trim()) {
+    await db
+      .update(schedulingIntegrationConfigs)
+      .set({
+        enabled: false,
+        configJson: {},
+        updatedAt: new Date(),
+      })
+      .where(eq(schedulingIntegrationConfigs.id, existing.id));
+    return;
+  }
+
+  if (!existing.enabled) return;
+
+  const id = accountId.trim();
+  const accounts = await listFacebookConnectedAccounts();
+  const next = accounts.filter((a) => a.accountId !== id).slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
+
+  if (next.length === 0) {
+    await db
+      .update(schedulingIntegrationConfigs)
+      .set({
+        enabled: false,
+        configJson: {},
+        updatedAt: new Date(),
+      })
+      .where(eq(schedulingIntegrationConfigs.id, existing.id));
+    return;
+  }
+
   await db
     .update(schedulingIntegrationConfigs)
     .set({
-      enabled: false,
-      configJson: {},
+      enabled: true,
+      configJson: { [KEY_ACCOUNTS]: next } as Record<string, unknown>,
       updatedAt: new Date(),
     })
     .where(eq(schedulingIntegrationConfigs.id, existing.id));
@@ -193,25 +311,52 @@ export async function saveFacebookPageTokensFromOAuthCode(
         "No Facebook Pages found for this account. Create a Page or grant Page access to this app, then try again.",
     };
   }
-  const sorted = [...pages.pages].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  const page = sorted.find((p) => p.access_token && p.id) ?? sorted[0];
-  if (!page?.access_token || !page.id) {
-    return { ok: false, error: "Facebook returned pages without access tokens." };
+
+  let accounts = await listFacebookConnectedAccounts();
+
+  if (accounts.length >= MAX_SOCIAL_CONNECTIONS_PER_PLATFORM) {
+    return {
+      ok: false,
+      error: `You already have ${MAX_SOCIAL_CONNECTIONS_PER_PLATFORM} Facebook Pages connected. Remove one before adding another.`,
+    };
   }
 
-  const encrypted = encryptSchedulingSecret(page.access_token);
-  const configJson: ContentStudioFacebookConfigJson = {
-    [KEY_ENC_TOKEN]: encrypted,
-    [KEY_PAGE_ID]: page.id,
-    [KEY_PAGE_NAME]: page.name ?? "Facebook Page",
-  };
+  const sorted = [...pages.pages]
+    .filter((p) => p.access_token && p.id)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
+
+  const usedPageIds = new Set(accounts.map((a) => a.pageId));
+  const page = sorted.find((p) => p.id && !usedPageIds.has(p.id));
+  if (!page?.access_token || !page.id) {
+    return {
+      ok: false,
+      error:
+        "No new Page to add — every Page returned for this login is already connected, or none have access tokens.",
+    };
+  }
+
+  accounts.push({
+    accountId: randomUUID(),
+    pageId: page.id,
+    pageName: page.name ?? "Facebook Page",
+    encryptedPageAccessToken: encryptSchedulingSecret(page.access_token),
+  });
+  accounts = accounts.slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
 
   await db
     .insert(schedulingIntegrationConfigs)
-    .values({ provider: PROVIDER, enabled: true, configJson })
+    .values({
+      provider: PROVIDER,
+      enabled: true,
+      configJson: { [KEY_ACCOUNTS]: accounts } as Record<string, unknown>,
+    })
     .onConflictDoUpdate({
       target: schedulingIntegrationConfigs.provider,
-      set: { enabled: true, configJson, updatedAt: new Date() },
+      set: {
+        enabled: true,
+        configJson: { [KEY_ACCOUNTS]: accounts } as Record<string, unknown>,
+        updatedAt: new Date(),
+      },
     });
 
   return { ok: true };

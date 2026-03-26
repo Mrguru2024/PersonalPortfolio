@@ -31,6 +31,10 @@ Use this guide to fill in your [Facebook Developer App](https://developers.faceb
 
 ---
 
+## 3a. Content Studio — multiple Pages (same app)
+
+You can connect **up to four** Facebook Pages for scheduled publishing (Admin → Integrations → Connect Facebook Page). Each “Connect another Page” run adds the next Page from your `/me/accounts` list that is not already linked. Calendar slots list each Page as a separate publish target (`facebook_page:<id>`).
+
 ## 3. Facebook Login → Settings
 
 Open **Facebook Login** → **Settings** in the left menu.
