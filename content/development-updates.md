@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-26 06:22 — Auto · 8a955ed
+
+- `chore: append development-updates for OAuth social connect commit` (`8a955ed`)
+
+---
+
 ## 2026-03-26 06:22 — Auto · b220845
 
 - `feat(content-studio): OAuth connect for LinkedIn, X, and Threads` (`b220845`)
