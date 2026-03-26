@@ -11,8 +11,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { BRAND_TEMP_RETENTION_DAYS } from "@shared/brandVaultSchema";
+import { BRAND_TEMP_RETENTION_DAYS, BRAND_VAULT_MAX_UPLOAD_BYTES } from "@shared/brandVaultSchema";
 import { format } from "date-fns";
+import { MediaPreview, MediaPreviewThumb } from "@/components/media/MediaPreview";
+
+const MAX_MB = Math.round(BRAND_VAULT_MAX_UPLOAD_BYTES / (1024 * 1024));
+
+function describeUploadFailure(res: Response, bodyText: string, parsed: unknown): string {
+  if (res.status === 413) {
+    return (
+      "The upload is larger than this deployment accepts. Many hosts stop at about 4.5MB per request, even when the app allows more — try compressing the file, reducing export quality, or splitting assets."
+    );
+  }
+  if (res.status === 503) {
+    return "The server returned unavailable — check your connection, disable offline mode if enabled, and try again.";
+  }
+  if (parsed && typeof parsed === "object" && parsed !== null) {
+    const o = parsed as { error?: unknown; message?: unknown };
+    if (typeof o.error === "string") return o.error;
+    if (typeof o.message === "string") return o.message;
+  }
+  const t = bodyText.trim();
+  if (t.length > 0 && t.length < 500) return t;
+  return res.statusText || `Request failed (${res.status})`;
+}
 
 interface BrandTempFolder {
   id: number;
@@ -41,7 +63,12 @@ export default function BrandVaultAdminPage() {
   const [newKind, setNewKind] = useState<"documents" | "images">("documents");
   const [openFolderId, setOpenFolderId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [stagedFile, setStagedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setStagedFile(null);
+  }, [openFolderId]);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -119,8 +146,25 @@ export default function BrandVaultAdminPage() {
     }
   };
 
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || openFolderId == null) return;
+    if (file.size > BRAND_VAULT_MAX_UPLOAD_BYTES) {
+      toast({
+        title: "File too large",
+        description: `Choose a file under ${MAX_MB}MB, or compress it first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setStagedFile(file);
+  };
+
+  const clearStagedFile = () => setStagedFile(null);
+
+  const commitStagedUpload = async () => {
+    const file = stagedFile;
     if (!file || openFolderId == null) return;
     setUploading(true);
     try {
@@ -131,16 +175,35 @@ export default function BrandVaultAdminPage() {
         body: fd,
         credentials: "include",
       });
-      const json = await res.json();
+      const bodyText = await res.text();
+      let parsed: unknown = null;
+      if (bodyText) {
+        try {
+          parsed = JSON.parse(bodyText) as unknown;
+        } catch {
+          parsed = null;
+        }
+      }
       if (!res.ok) {
-        toast({ title: "Upload failed", description: json?.error ?? res.statusText, variant: "destructive" });
+        toast({
+          title: "Upload failed",
+          description: describeUploadFailure(res, bodyText, parsed),
+          variant: "destructive",
+        });
         return;
       }
+      const row = parsed as BrandTempFileRow;
       queryClient.invalidateQueries({ queryKey: ["/api/admin/brand-vault/folders", openFolderId, "files"] });
-      toast({ title: "Uploaded", description: json.originalFilename });
+      toast({ title: "Uploaded", description: row?.originalFilename ?? file.name });
+      setStagedFile(null);
+    } catch {
+      toast({
+        title: "Upload failed",
+        description: "Could not reach the server — check your network or try again.",
+        variant: "destructive",
+      });
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   };
 
@@ -157,9 +220,14 @@ export default function BrandVaultAdminPage() {
   return (
     <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-10 max-w-4xl">
       <h1 className="text-3xl font-bold mb-2">Brand temp vault</h1>
-      <p className="text-muted-foreground mb-8 max-w-2xl">
+      <p className="text-muted-foreground mb-4 max-w-2xl">
         Short-term folders for documents or images (e.g. brand work in progress). Files are removed automatically after{" "}
         {BRAND_TEMP_RETENTION_DAYS} days to save server space — copy URLs and archive offshore before expiry.
+      </p>
+      <p className="text-sm text-muted-foreground mb-8 max-w-2xl border-l-2 border-amber-500/60 pl-3">
+        Per-file limit here is {MAX_MB}MB, but{" "}
+        <strong className="font-medium text-foreground">production hosts often enforce ~4.5MB per request</strong>. If the
+        browser reports a failed upload with no clear reason, try a smaller or compressed file first.
       </p>
 
       <Card className="mb-8">
@@ -168,7 +236,9 @@ export default function BrandVaultAdminPage() {
             <FolderPlus className="h-5 w-5" />
             New folder
           </CardTitle>
-          <CardDescription>Choose document types (PDF, Office, CSV…) or image types (JPEG, PNG, …).</CardDescription>
+          <CardDescription>
+            Documents (PDF, Office, CSV…) or media folders (images plus MP4, WebM, MOV, and other common video).
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4 sm:items-end">
           <div className="flex-1 space-y-2">
@@ -188,7 +258,7 @@ export default function BrandVaultAdminPage() {
               onChange={(e) => setNewKind(e.target.value as "documents" | "images")}
             >
               <option value="documents">Documents</option>
-              <option value="images">Images</option>
+              <option value="images">Images &amp; video</option>
             </select>
           </div>
           <Button
@@ -210,7 +280,8 @@ export default function BrandVaultAdminPage() {
               <div>
                 <CardTitle className="text-lg">{f.name}</CardTitle>
                 <CardDescription>
-                  {f.folderKind === "images" ? "Images" : "Documents"} · created {format(new Date(f.createdAt), "PP")}
+                  {f.folderKind === "images" ? "Images & video" : "Documents"} · created{" "}
+                  {format(new Date(f.createdAt), "PP")}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -238,27 +309,53 @@ export default function BrandVaultAdminPage() {
             </CardHeader>
             {openFolderId === f.id && (
               <CardContent className="space-y-4 border-t pt-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    key={openFolderId ?? 0}
-                    ref={fileInputRef}
-                    type="file"
-                    className="sr-only"
-                    disabled={uploading}
-                    onChange={onUpload}
-                    aria-label="Upload file to folder"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload file
-                  </Button>
-                  {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      key={openFolderId ?? 0}
+                      ref={fileInputRef}
+                      type="file"
+                      className="sr-only"
+                      disabled={uploading}
+                      onChange={onPickFile}
+                      aria-label="Choose file to preview and upload"
+                      accept={
+                        f.folderKind === "images"
+                          ? "image/*,video/mp4,video/webm,video/quicktime,video/ogg,video/x-msvideo,video/3gpp,video/x-matroska,video/x-ms-wmv,.mp4,.webm,.mov,.avi,.mkv,.wmv,.3gp,.ogv"
+                          : undefined
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose file
+                    </Button>
+                    {stagedFile && (
+                      <>
+                        <Button type="button" size="sm" disabled={uploading} onClick={() => void commitStagedUpload()}>
+                          {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          {uploading ? "Uploading…" : "Upload to folder"}
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" disabled={uploading} onClick={clearStagedFile}>
+                          Clear
+                        </Button>
+                      </>
+                    )}
+                    {uploading && !stagedFile && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  </div>
+                  {stagedFile && (
+                    <div className="rounded-lg border border-border bg-card/50 p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Preview — confirm upload or clear to pick another file.
+                      </p>
+                      <MediaPreview file={stagedFile} />
+                    </div>
+                  )}
                 </div>
                 {filesLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -269,12 +366,19 @@ export default function BrandVaultAdminPage() {
                     {files.map((row) => (
                       <li
                         key={row.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3"
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
                       >
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{row.originalFilename}</div>
-                          <div className="text-muted-foreground text-xs">
-                            {(row.sizeBytes / 1024).toFixed(1)} KB · expires {format(new Date(row.expiresAt), "PP")}
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <MediaPreviewThumb
+                            src={row.publicPath}
+                            mimeType={row.mimeType}
+                            label={row.originalFilename}
+                          />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{row.originalFilename}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {(row.sizeBytes / 1024).toFixed(1)} KB · expires {format(new Date(row.expiresAt), "PP")}
+                            </div>
                           </div>
                         </div>
                         <div className="flex gap-1 shrink-0">

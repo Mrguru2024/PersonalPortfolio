@@ -146,7 +146,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/reminders", title: "Reminders", category: "Admin · Core", audience: "admin", description: "Admin reminder tasks.", keywords: k("reminders", "tasks") },
   { path: "/admin/users", title: "User management", category: "Admin · Core", audience: "admin", description: "Approve users, permissions (super).", keywords: k("users", "permissions") },
   { path: "/admin/system", title: "System monitor", category: "Admin · Core", audience: "admin", description: "Health, logs, super-admin capture (super).", keywords: k("system", "logs", "health") },
-  { path: "/admin/integrations", title: "Integrations", category: "Admin · Core", audience: "admin", description: "Third-party integration status/tests (super).", keywords: k("integrations", "api") },
+  { path: "/admin/integrations", title: "Integrations", category: "Admin · Core", audience: "admin", description: "Integration status/tests (super): email, Facebook app, Google Calendar OAuth, Content Studio social env (Page/LinkedIn/X).", keywords: k("integrations", "api", "content studio", "facebook") },
   { path: "/admin/site-directory", title: "Pages & tools directory", category: "Admin · Core", audience: "admin", description: "Find any page by name or topic; open visitor or admin screens; optional JSON export for developers.", keywords: k("sitemap", "routes", "search", "ia", "directory", "pages"), relatedPaths: ["/api/admin/site-directory"] },
 
   // —— Admin: CRM

@@ -4,7 +4,7 @@ import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map, LineChart } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map, LineChart, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -532,7 +532,9 @@ export default function AdminDashboardPage() {
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
               <div className="min-w-0">
                 <p className="font-medium text-sm">New to the admin?</p>
-                <p className="text-xs text-muted-foreground">Take a short tour to see features and daily actions.</p>
+                <p className="text-xs text-muted-foreground">
+                  Prioritized walkthrough: suggested actions, CRM, shortcuts, changelog, and how-tos. You can replay anytime from “Suggested for you.”
+                </p>
               </div>
             </div>
             <div className="flex gap-2 shrink-0 sm:ml-4">
@@ -641,7 +643,20 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+        <Button
+          variant="default"
+          size="sm"
+          className="shrink-0 min-h-[44px] sm:min-h-0"
+          data-tour="crm-entry"
+          asChild
+        >
+          <Link href="/admin/crm">
+            <Users className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">CRM</span>
+          </Link>
+        </Button>
+        <div data-tour="quick-links" className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/site-directory">
             <Map className="h-4 w-4 mr-2 shrink-0" />
@@ -699,6 +714,7 @@ export default function AdminDashboardPage() {
             <span className="truncate">Content studio</span>
           </Link>
         </Button>
+        </div>
       </div>
 
       {/* Password reset control — send reset link to any user by email */}

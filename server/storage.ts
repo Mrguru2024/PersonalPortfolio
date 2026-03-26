@@ -85,7 +85,7 @@ import {
 } from "@shared/paidGrowthSchema";
 import {
   crmAccounts, type CrmAccount, type InsertCrmAccount,
-  crmContacts, type CrmContact, type InsertCrmContact,
+  crmContacts, type CrmContact, type CrmContactListItem, type InsertCrmContact,
   crmDeals, type CrmDeal, type InsertCrmDeal,
   crmActivities, type CrmActivity, type InsertCrmActivity,
   crmActivityLog, type CrmActivityLog, type InsertCrmActivityLog,
@@ -114,8 +114,27 @@ import {
   growthVariants, type GrowthVariant, type InsertGrowthVariant,
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
+import { marketingPersonas } from "@shared/ascendraIntelligenceSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte, ne, count, countDistinct } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  and,
+  sql,
+  inArray,
+  isNull,
+  isNotNull,
+  lt,
+  or,
+  gte,
+  lte,
+  ne,
+  count,
+  countDistinct,
+  getTableColumns,
+  ilike,
+} from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -360,6 +379,11 @@ export interface IStorage {
 
   // CRM operations
   getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
+  /** Contacts for admin list/detail tables: creator, account location, marketing persona label. */
+  getCrmContactsForAdminList(type?: "lead" | "client"): Promise<CrmContactListItem[]>;
+  /** Case-insensitive search on name, email, company — for admin pickers (not full list load). */
+  searchCrmContactsForAdminPicker(query: string, limit?: number): Promise<CrmContactListItem[]>;
+  enrichCrmContactsForAdminList(contacts: CrmContact[]): Promise<CrmContactListItem[]>;
   getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]>;
   getCrmContactById(id: number): Promise<CrmContact | undefined>;
   createCrmContact(contact: InsertCrmContact): Promise<CrmContact>;
@@ -600,7 +624,7 @@ export interface IStorage {
   getCrmSavedListById(id: number): Promise<CrmSavedList | undefined>;
   updateCrmSavedList(id: number, updates: Partial<InsertCrmSavedList>): Promise<CrmSavedList>;
   deleteCrmSavedList(id: number): Promise<void>;
-  getCrmContactsBySavedListFilters(filters: CrmSavedList["filters"]): Promise<CrmContact[]>;
+  getCrmContactsBySavedListFilters(filters: CrmSavedList["filters"]): Promise<CrmContactListItem[]>;
 
   // Business goal presets & admin reminders
   getBusinessGoalPresets(activeOnly?: boolean): Promise<BusinessGoalPreset[]>;
@@ -2510,6 +2534,82 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt));
   }
 
+  private async fetchCrmContactListRows(
+    whereClause: SQL | undefined,
+    orderByUpdated: boolean,
+    limit?: number
+  ): Promise<CrmContactListItem[]> {
+    const sel = db
+      .select({
+        ...getTableColumns(crmContacts),
+        createdByDisplayName: sql<string | null>`COALESCE(${users.full_name}, ${users.username})`,
+        createdByEmail: users.email,
+        accountLocation: crmAccounts.location,
+        displayLocation: sql<string | null>`NULLIF(TRIM(COALESCE(${crmAccounts.location}, ${crmContacts.location}, '')), '')`,
+        marketingPersonaId: sql<string | null>`NULLIF(TRIM(COALESCE((${crmContacts.customFields}->>'marketingPersonaId'), (${crmContacts.customFields}->>'personaId'), '')), '')`,
+        marketingPersonaLabel: marketingPersonas.displayName,
+      })
+      .from(crmContacts)
+      .leftJoin(users, eq(crmContacts.createdByUserId, users.id))
+      .leftJoin(crmAccounts, eq(crmContacts.accountId, crmAccounts.id))
+      .leftJoin(
+        marketingPersonas,
+        sql`${marketingPersonas.id} = COALESCE((${crmContacts.customFields}->>'marketingPersonaId'), (${crmContacts.customFields}->>'personaId'))`,
+      )
+      .where(whereClause ?? sql`1=1`);
+    if (orderByUpdated && limit != null) {
+      return (await sel.orderBy(desc(crmContacts.updatedAt)).limit(limit)) as CrmContactListItem[];
+    }
+    if (orderByUpdated) {
+      return (await sel.orderBy(desc(crmContacts.updatedAt))) as CrmContactListItem[];
+    }
+    if (limit != null) {
+      return (await sel.limit(limit)) as CrmContactListItem[];
+    }
+    return (await sel) as CrmContactListItem[];
+  }
+
+  async getCrmContactsForAdminList(type?: "lead" | "client"): Promise<CrmContactListItem[]> {
+    const where = type ? eq(crmContacts.type, type) : undefined;
+    return this.fetchCrmContactListRows(where, true);
+  }
+
+  async searchCrmContactsForAdminPicker(query: string, limit = 40): Promise<CrmContactListItem[]> {
+    const raw = query.trim();
+    if (!raw) return [];
+    const esc = raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    const pattern = `%${esc}%`;
+    const searchWhere = or(
+      ilike(crmContacts.name, pattern),
+      ilike(crmContacts.email, pattern),
+      ilike(crmContacts.company, pattern),
+      ilike(crmContacts.firstName, pattern),
+      ilike(crmContacts.lastName, pattern)
+    );
+    const cap = Math.min(100, Math.max(1, limit));
+    return this.fetchCrmContactListRows(searchWhere, true, cap);
+  }
+
+  async enrichCrmContactsForAdminList(contacts: CrmContact[]): Promise<CrmContactListItem[]> {
+    if (contacts.length === 0) return [];
+    const ids = [...new Set(contacts.map((c) => c.id))];
+    const rows = await this.fetchCrmContactListRows(inArray(crmContacts.id, ids), false);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    return contacts.map((c) => {
+      const row = byId.get(c.id);
+      if (row) return row;
+      return {
+        ...c,
+        createdByDisplayName: null,
+        createdByEmail: null,
+        accountLocation: null,
+        displayLocation: c.location?.trim() ? c.location.trim() : null,
+        marketingPersonaId: null,
+        marketingPersonaLabel: null,
+      };
+    });
+  }
+
   async getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]> {
     return db
       .select()
@@ -3970,7 +4070,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(crmSavedLists).where(eq(crmSavedLists.id, id));
   }
 
-  async getCrmContactsBySavedListFilters(filters: NonNullable<CrmSavedList["filters"]>): Promise<CrmContact[]> {
+  async getCrmContactsBySavedListFilters(filters: NonNullable<CrmSavedList["filters"]>): Promise<CrmContactListItem[]> {
     let contacts = await this.getCrmContacts();
     if (filters.type) contacts = contacts.filter((c) => c.type === filters.type);
     if (filters.status) contacts = contacts.filter((c) => c.status === filters.status);
@@ -4011,7 +4111,7 @@ export class DatabaseStorage implements IStorage {
       const accountIdsWithResearch = new Set(profiles.map((r) => r.accountId));
       contacts = contacts.filter((c) => c.accountId == null || !accountIdsWithResearch.has(c.accountId));
     }
-    return contacts;
+    return this.enrichCrmContactsForAdminList(contacts);
   }
 
   async getBusinessGoalPresets(activeOnly = true): Promise<BusinessGoalPreset[]> {

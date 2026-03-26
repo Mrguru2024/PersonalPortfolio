@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
 import { isSuperUser } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
 import {
@@ -6,8 +7,32 @@ import {
   isGoogleCalendarOAuthConfigured,
 } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationStatus } from "../types";
+import {
+  hasFacebookPagePublishConfig,
+  hasLinkedInPublishConfig,
+  hasXPublishConfig,
+  hasWebhookPublishConfig,
+} from "@server/services/internalStudio/publishAdapters";
+import {
+  getContentStudioFacebookDisplayInfo,
+  getFacebookOAuthRedirectUri,
+  isContentStudioFacebookOAuthConnected,
+  isFacebookAppConfiguredForOAuth,
+} from "@server/services/contentStudioFacebookConnectService";
 
 export const dynamic = "force-dynamic";
+
+export type ContentStudioSocialFlags = {
+  facebookPage: boolean;
+  facebookOAuthConnected: boolean;
+  facebookOAuthAvailable: boolean;
+  facebookPageDisplay: { pageId: string; pageName: string } | null;
+  /** Exact redirect_uri for Content Studio connect — whitelist in Meta. */
+  facebookContentStudioRedirectUri: string;
+  linkedin: boolean;
+  x: boolean;
+  webhook: boolean;
+};
 
 /**
  * GET /api/admin/integrations/status
@@ -24,6 +49,34 @@ export async function GET(req: NextRequest) {
 
     const gcalEnv = isGoogleCalendarOAuthConfigured();
     const gcalConnected = await isGoogleCalendarConnected();
+
+    const [facebookPage, facebookOAuthConnected, facebookPageDisplay] = await Promise.all([
+      hasFacebookPagePublishConfig(),
+      isContentStudioFacebookOAuthConnected(),
+      getContentStudioFacebookDisplayInfo(),
+    ]);
+    const facebookOAuthAvailable = isFacebookAppConfiguredForOAuth();
+    const facebookContentStudioRedirectUri = getFacebookOAuthRedirectUri(
+      getOAuthBaseUrlFromRequest(req),
+    );
+
+    const contentStudioSocial: ContentStudioSocialFlags = {
+      facebookPage,
+      facebookOAuthConnected,
+      facebookOAuthAvailable,
+      facebookPageDisplay,
+      facebookContentStudioRedirectUri,
+      linkedin: hasLinkedInPublishConfig(),
+      x: hasXPublishConfig(),
+      webhook: hasWebhookPublishConfig(),
+    };
+    const socialChannels = [
+      contentStudioSocial.facebookPage ? "Facebook Page" : null,
+      contentStudioSocial.linkedin ? "LinkedIn" : null,
+      contentStudioSocial.x ? "X" : null,
+      contentStudioSocial.webhook ? "Webhook hub" : null,
+    ].filter((x): x is string => x != null);
+    const socialAny = socialChannels.length > 0;
 
     const services: IntegrationStatus[] = [
       {
@@ -61,11 +114,15 @@ export async function GET(req: NextRequest) {
       },
       {
         id: "social-scheduling",
-        name: "Social post scheduling",
-        description: "Schedule posts to Facebook, LinkedIn, and other platforms from Ascendra.",
-        configured: false,
-        status: "not_configured",
-        message: "Connect accounts below to enable scheduling.",
+        name: "Content Studio — social publishing",
+        description:
+          "Scheduled posts from Admin → Content Studio → Calendar to Facebook Page, LinkedIn, X, or an automation webhook. Distinct from Facebook Login (OAuth app) above.",
+        configured: socialAny,
+        status: socialAny ? "ok" : "not_configured",
+        message: socialAny
+          ? `Channels ready: ${socialChannels.join(", ")}. Match calendar entry targets (e.g. facebook_page) to a configured channel.`
+          : "No posting channel set. Connect Facebook Page below (Meta app required), or set LinkedIn / X / webhook env vars on your host.",
+        reconnectUrl: "https://developers.facebook.com/docs/pages-api/posts",
       },
       {
         id: "google_calendar",
@@ -95,7 +152,7 @@ export async function GET(req: NextRequest) {
       },
     ];
 
-    return NextResponse.json({ services });
+    return NextResponse.json({ services, contentStudioSocial });
   } catch (error) {
     console.error("Integrations status error:", error);
     return NextResponse.json(

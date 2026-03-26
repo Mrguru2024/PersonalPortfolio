@@ -5,6 +5,7 @@
  */
 
 import { createHmac } from "node:crypto";
+import { getFacebookPageCredentialsResolved } from "@server/services/contentStudioFacebookConnectService";
 
 function escapeHtml(s: string): string {
   return s
@@ -33,20 +34,30 @@ export function htmlToPlainText(html: string): string {
     .trim();
 }
 
-function facebookPageCredentials(): { token: string; pageId: string } | null {
-  const token = (process.env.FACEBOOK_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN)?.trim();
-  const pageId = (process.env.FACEBOOK_PAGE_ID ?? process.env.META_PAGE_ID)?.trim();
-  if (!token || !pageId) return null;
-  return { token, pageId };
+/** OAuth-stored Page token (Integrations) or env FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID / META_*. */
+export async function hasFacebookPagePublishConfig(): Promise<boolean> {
+  return (await getFacebookPageCredentialsResolved()) !== null;
+}
+
+export function hasLinkedInPublishConfig(): boolean {
+  return linkedInCredentials() !== null;
+}
+
+export function hasXPublishConfig(): boolean {
+  return xOAuth2Token() !== null;
+}
+
+export function hasWebhookPublishConfig(): boolean {
+  return webhookPublishConfig() !== null;
 }
 
 async function publishFacebookPageFeed(message: string, link?: string): Promise<AdapterPublishResult> {
-  const cred = facebookPageCredentials();
+  const cred = await getFacebookPageCredentialsResolved();
   if (!cred) {
     return {
       ok: false,
       error:
-        "Facebook Page not configured: set FACEBOOK_ACCESS_TOKEN (or META_ACCESS_TOKEN) and FACEBOOK_PAGE_ID (or META_PAGE_ID). Token needs pages_manage_posts (or publish_pages for legacy apps).",
+        "Facebook Page not configured: use Integrations → Connect Facebook Page, or set FACEBOOK_ACCESS_TOKEN (or META_ACCESS_TOKEN) and FACEBOOK_PAGE_ID (or META_PAGE_ID). Token needs pages_manage_posts.",
     };
   }
   const endpoint = `https://graph.facebook.com/v21.0/${encodeURIComponent(cred.pageId)}/feed`;

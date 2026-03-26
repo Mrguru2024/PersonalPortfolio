@@ -4,20 +4,22 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { storage } from "@server/storage";
+import { ADMIN_VIDEO_MIME_TO_EXT } from "@shared/adminMediaMimes";
 
 export const dynamic = "force-dynamic";
 
 const MAX_SIZE = 80 * 1024 * 1024; // 80MB
 
+const VIDEO_MIME_MAP = Object.fromEntries(
+  Object.entries(ADMIN_VIDEO_MIME_TO_EXT).map(([mime, ext]) => [mime, { ext, kind: "video" as const }])
+) as Record<string, { ext: string; kind: "video" }>;
+
 /** MIME → extension + file kind for validation against chosen assetType */
 const MIME_MAP: Record<string, { ext: string; kind: "pdf" | "pptx" | "video" | "image" }> = {
+  ...VIDEO_MIME_MAP,
   "application/pdf": { ext: "pdf", kind: "pdf" },
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": { ext: "pptx", kind: "pptx" },
   "application/vnd.ms-powerpoint": { ext: "ppt", kind: "pptx" },
-  "video/mp4": { ext: "mp4", kind: "video" },
-  "video/webm": { ext: "webm", kind: "video" },
-  "video/quicktime": { ext: "mov", kind: "video" },
-  "video/x-msvideo": { ext: "avi", kind: "video" },
   "image/jpeg": { ext: "jpg", kind: "image" },
   "image/png": { ext: "png", kind: "image" },
   "image/gif": { ext: "gif", kind: "image" },
@@ -79,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Unsupported file type. Allowed: PDF, PPTX/PPT, MP4, WebM, MOV, AVI, JPEG, PNG, GIF, WebP, SVG.",
+            "Unsupported file type. Allowed: PDF, PPTX/PPT, common video (MP4, WebM, MOV, AVI, OGV, 3GP, MKV, WMV), JPEG, PNG, GIF, WebP, SVG.",
         },
         { status: 400 }
       );

@@ -26,7 +26,10 @@ import {
   List,
   ChevronDown,
   Camera,
+  MapPin,
+  UserCircle2,
 } from "lucide-react";
+import type { CrmContact, CrmContactListItem } from "@shared/crmSchema";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,26 +65,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { CrmContactQuickActions } from "@/components/admin/CrmContactQuickActions";
 
-interface CrmContact {
-  id: number;
-  type: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  company?: string | null;
-  jobTitle?: string | null;
-  industry?: string | null;
-  source?: string | null;
-  status?: string | null;
-  estimatedValue?: number | null;
-  notes?: string | null;
-  tags?: string[] | null;
-  leadScore?: number | null;
-  intentLevel?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface CrmDeal {
   id: number;
   contactId: number;
@@ -107,6 +90,8 @@ interface EngagementStats {
 const DEAL_STAGES = ["qualification", "proposal", "negotiation", "won", "lost"];
 const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 const INTENT_LEVELS = ["hot_lead", "high_intent", "moderate_intent", "low_intent"] as const;
+/** Select value for “no value set” in industry / location / persona filters */
+const FILTER_NONE = "__none__";
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest first" },
   { value: "score", label: "Lead score (high first)" },
@@ -129,6 +114,9 @@ export default function CrmPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [intentFilter, setIntentFilter] = useState<string>("");
+  const [industryFilter, setIndustryFilter] = useState<string>("");
+  const [locationFilter, setLocationFilter] = useState<string>("");
+  const [personaFilter, setPersonaFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]["value"]>("newest");
   const [viewMode, setViewMode] = useState<"list" | "pipeline">("list");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -136,7 +124,7 @@ export default function CrmPage() {
   const addFromCardInputRef = useRef<HTMLInputElement>(null);
   const [addFromCardLoading, setAddFromCardLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<CrmContact | null>(null);
+  const [editingContact, setEditingContact] = useState<CrmContactListItem | null>(null);
   const [form, setForm] = useState({
     type: "lead",
     name: "",
@@ -145,6 +133,7 @@ export default function CrmPage() {
     company: "",
     jobTitle: "",
     industry: "",
+    location: "",
     source: "",
     status: "new",
     estimatedValue: "",
@@ -160,7 +149,7 @@ export default function CrmPage() {
     if (typeFromUrl === "lead" || typeFromUrl === "client") setTypeFilter(typeFromUrl);
   }, [typeFromUrl]);
 
-  const { data: contactsFromApi = [], isLoading: contactsLoading } = useQuery<CrmContact[]>({
+  const { data: contactsFromApi, isLoading: contactsLoading } = useQuery<CrmContactListItem[]>({
     queryKey: ["/api/admin/crm/contacts", typeFilter || undefined],
     queryFn: async () => {
       const url = typeFilter ? `/api/admin/crm/contacts?type=${typeFilter}` : "/api/admin/crm/contacts";
@@ -170,7 +159,17 @@ export default function CrmPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved && !listId,
   });
 
-  const { data: savedListData, isLoading: savedListLoading } = useQuery<{ contacts: CrmContact[]; name: string }>({
+  const { data: personaOptionsData } = useQuery<{ personas: { id: string; displayName: string }[] }>({
+    queryKey: ["/api/admin/ascendra-intelligence/personas"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/ascendra-intelligence/personas");
+      if (!res.ok) throw new Error("Failed to load personas");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const { data: savedListData, isLoading: savedListLoading } = useQuery<{ contacts: CrmContactListItem[]; name: string }>({
     queryKey: ["/api/admin/crm/saved-lists", listId],
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/admin/crm/saved-lists/${listId}`);
@@ -180,7 +179,9 @@ export default function CrmPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved && !!listId,
   });
 
-  const contacts = listId ? (savedListData?.contacts ?? []) : contactsFromApi;
+  const contacts: CrmContactListItem[] = listId
+    ? (savedListData?.contacts ?? [])
+    : (contactsFromApi ?? []);
   const contactsLoadingState = listId ? savedListLoading : contactsLoading;
 
   const { data: deals = [], isLoading: dealsLoading } = useQuery<CrmDeal[]>({
@@ -220,7 +221,7 @@ export default function CrmPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
       setAddOpen(false);
-      setForm({ type: "lead", name: "", email: "", phone: "", company: "", jobTitle: "", industry: "", source: "", status: "new", estimatedValue: "", notes: "" });
+      setForm({ type: "lead", name: "", email: "", phone: "", company: "", jobTitle: "", industry: "", location: "", source: "", status: "new", estimatedValue: "", notes: "" });
       toast({ title: "Contact added" });
     },
     onError: (e: Error) => toast({ title: "Failed to add contact", description: e.message, variant: "destructive" }),
@@ -300,6 +301,7 @@ export default function CrmPage() {
         company: e.company ?? "",
         jobTitle: e.jobTitle ?? "",
         industry: "",
+        location: "",
         source: "business card",
         status: "new",
         estimatedValue: "",
@@ -352,6 +354,7 @@ export default function CrmPage() {
       company: form.company.trim() || null,
       jobTitle: form.jobTitle.trim() || null,
       industry: form.industry.trim() || null,
+      location: form.location.trim() || null,
       source: form.source.trim() || null,
       status: form.status,
       estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
@@ -371,6 +374,7 @@ export default function CrmPage() {
         company: form.company.trim() || null,
         jobTitle: form.jobTitle.trim() || null,
         industry: form.industry.trim() || null,
+        location: form.location.trim() || null,
         source: form.source.trim() || null,
         status: form.status,
         estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
@@ -379,7 +383,7 @@ export default function CrmPage() {
     });
   };
 
-  const openEdit = (c: CrmContact) => {
+  const openEdit = (c: CrmContactListItem) => {
     setEditingContact(c);
     setForm({
       type: c.type,
@@ -389,6 +393,7 @@ export default function CrmPage() {
       company: c.company || "",
       jobTitle: c.jobTitle || "",
       industry: c.industry || "",
+      location: c.location?.trim() || "",
       source: c.source || "",
       status: c.status || "new",
       estimatedValue: c.estimatedValue != null ? String(c.estimatedValue / 100) : "",
@@ -400,6 +405,24 @@ export default function CrmPage() {
     stage,
     deals: deals.filter((d) => d.stage === stage),
   }));
+
+  const industryOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of contacts) {
+      const v = c.industry?.trim();
+      if (v) set.add(v);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [contacts]);
+
+  const locationOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of contacts) {
+      const v = c.displayLocation?.trim();
+      if (v) set.add(v);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [contacts]);
 
   const filteredContacts = useMemo(() => {
     let list = [...contacts];
@@ -414,12 +437,22 @@ export default function CrmPage() {
           c.industry,
           c.source,
           c.status,
+          c.displayLocation,
+          c.createdByDisplayName,
+          c.createdByEmail,
+          c.marketingPersonaLabel,
           ...(c.tags ?? []),
         ]),
       );
     }
     if (statusFilter) list = list.filter((c) => (c.status ?? "new") === statusFilter);
     if (intentFilter) list = list.filter((c) => (c.intentLevel ?? "") === intentFilter);
+    if (industryFilter === FILTER_NONE) list = list.filter((c) => !c.industry?.trim());
+    else if (industryFilter) list = list.filter((c) => (c.industry ?? "") === industryFilter);
+    if (locationFilter === FILTER_NONE) list = list.filter((c) => !c.displayLocation?.trim());
+    else if (locationFilter) list = list.filter((c) => (c.displayLocation ?? "") === locationFilter);
+    if (personaFilter === FILTER_NONE) list = list.filter((c) => !c.marketingPersonaId?.trim());
+    else if (personaFilter) list = list.filter((c) => c.marketingPersonaId === personaFilter);
     if (sortBy === "newest")
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     else if (sortBy === "score")
@@ -430,7 +463,7 @@ export default function CrmPage() {
     else if (sortBy === "status")
       list.sort((a, b) => (a.status ?? "").localeCompare(b.status ?? ""));
     return list;
-  }, [contacts, searchQuery, statusFilter, intentFilter, sortBy]);
+  }, [contacts, searchQuery, statusFilter, intentFilter, industryFilter, locationFilter, personaFilter, sortBy]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -677,6 +710,42 @@ export default function CrmPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={industryFilter || "all"} onValueChange={(v) => setIndustryFilter(v === "all" ? "" : v)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All industries</SelectItem>
+                  <SelectItem value={FILTER_NONE}>No industry</SelectItem>
+                  {industryOptions.map((ind) => (
+                    <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={locationFilter || "all"} onValueChange={(v) => setLocationFilter(v === "all" ? "" : v)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All locations</SelectItem>
+                  <SelectItem value={FILTER_NONE}>No location</SelectItem>
+                  {locationOptions.map((loc) => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={personaFilter || "all"} onValueChange={(v) => setPersonaFilter(v === "all" ? "" : v)}>
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Persona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All personas</SelectItem>
+                  <SelectItem value={FILTER_NONE}>No persona</SelectItem>
+                  {(personaOptionsData?.personas ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.displayName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Sort" />
@@ -816,6 +885,16 @@ export default function CrmPage() {
                           )}
                           <div className="flex gap-2 items-stretch mt-2">
                             <CrmContactQuickActions contact={c} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 shrink-0 rounded-lg text-xs"
+                              onClick={() => openEdit(c)}
+                              aria-label={`Edit ${c.name}`}
+                            >
+                              <Edit className="h-3.5 w-3.5 mr-1" />
+                              Edit
+                            </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-9 flex-1 min-w-0 text-xs justify-between rounded-lg">
@@ -895,11 +974,26 @@ export default function CrmPage() {
                           {c.intentLevel && (
                             <Badge variant="secondary" className="rounded-md">{intentLevelLabel(c.intentLevel)}</Badge>
                           )}
+                          {c.marketingPersonaLabel?.trim() && (
+                            <Badge variant="outline" className="rounded-md">{c.marketingPersonaLabel}</Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1 flex-wrap">
                           <span className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /> {c.email}</span>
                           {c.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /> {c.phone}</span>}
                           {c.company && <span className="flex items-center gap-1"><Building2 className="h-3 w-3 shrink-0" /> {c.company}</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                          <span className="inline-flex items-center gap-1">
+                            <UserCircle2 className="h-3 w-3 shrink-0" />
+                            Added by {c.createdByDisplayName?.trim() || c.createdByEmail?.trim() || "Unknown"}
+                          </span>
+                          {c.displayLocation?.trim() ? (
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              {c.displayLocation}
+                            </span>
+                          ) : null}
                         </div>
                         {c.estimatedValue != null && (
                           <div className="text-sm mt-1 flex items-center gap-1 text-primary font-medium">
@@ -915,7 +1009,8 @@ export default function CrmPage() {
                         <Link href={`/admin/crm/${c.id}`}>View</Link>
                       </Button>
                       <Button variant="outline" size="sm" className="rounded-lg" onClick={() => openEdit(c)}>
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-4 w-4 mr-1.5" />
+                        Edit
                       </Button>
                       <Button
                         variant="outline"
@@ -1101,6 +1196,28 @@ export default function CrmPage() {
                 <Label>Company</Label>
                 <Input value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Job title</Label>
+                  <Input value={form.jobTitle} onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Industry</Label>
+                  <Input value={form.industry} onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <Label>Location</Label>
+                <Input value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder="City, region, or territory" />
+              </div>
+              <div>
+                <Label>Source</Label>
+                <Input value={form.source} onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))} placeholder="e.g. website, referral" />
+              </div>
+              <div>
+                <Label>Est. value ($)</Label>
+                <Input type="number" value={form.estimatedValue} onChange={(e) => setForm((f) => ({ ...f, estimatedValue: e.target.value }))} placeholder="e.g. 5000" />
+              </div>
               <div>
                 <Label>Notes</Label>
                 <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={2} />
@@ -1108,7 +1225,7 @@ export default function CrmPage() {
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEditingContact(null)}>Cancel</Button>
                 <Button onClick={submitEdit} disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
                 </Button>
               </div>
             </div>

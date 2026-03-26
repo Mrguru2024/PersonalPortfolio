@@ -6,10 +6,10 @@ jest.mock("next/navigation", () => ({
 }));
 
 describe("CommunicationsSubnav", () => {
-  it("renders dashboard and campaigns links", () => {
+  it("renders overview and campaigns links", () => {
     render(<CommunicationsSubnav />);
-    expect(screen.getByRole("navigation", { name: "Communications" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Dashboard/i })).toHaveAttribute("href", "/admin/communications");
+    expect(screen.getByRole("navigation", { name: "Communications sections" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Overview/i })).toHaveAttribute("href", "/admin/communications");
     expect(screen.getByRole("link", { name: /Campaigns/i })).toHaveAttribute("href", "/admin/communications/campaigns");
   });
 });

@@ -62,6 +62,10 @@ export const crmContacts = pgTable("crm_contacts", {
   lastName: text("last_name"),
   notesSummary: text("notes_summary"),
   ownerUserId: integer("owner_user_id"),
+  /** Admin user who created this row (manual add, import, etc.). */
+  createdByUserId: integer("created_by_user_id"),
+  /** Contact-level location; combined with linked account location in list views. */
+  location: text("location"),
   lastContactedAt: timestamp("last_contacted_at"),
   nextActionAt: timestamp("next_action_at"),
   aiFitScore: integer("ai_fit_score"), // 0–100, ideal client fit
@@ -119,6 +123,17 @@ export const insertCrmContactSchema = createInsertSchema(crmContacts).omit({
 });
 export type InsertCrmContact = z.infer<typeof insertCrmContactSchema>;
 export type CrmContact = typeof crmContacts.$inferSelect;
+
+/** Admin contacts list API row: base contact + joins for display and filters. */
+export type CrmContactListItem = CrmContact & {
+  createdByDisplayName: string | null;
+  createdByEmail: string | null;
+  accountLocation: string | null;
+  /** Account location, else contact `location`. */
+  displayLocation: string | null;
+  marketingPersonaId: string | null;
+  marketingPersonaLabel: string | null;
+};
 
 /** Deals / Leads / Opportunities pipeline */
 export const crmDeals = pgTable("crm_deals", {

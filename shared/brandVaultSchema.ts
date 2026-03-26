@@ -41,3 +41,6 @@ export type InsertBrandTempFile = typeof brandTempFiles.$inferInsert;
 
 /** Default retention for brand temp uploads */
 export const BRAND_TEMP_RETENTION_DAYS = 90;
+
+/** App-side max upload size (API enforces this). Hosting (e.g. Vercel serverless ~4.5MB) may reject earlier with HTTP 413. */
+export const BRAND_VAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024;

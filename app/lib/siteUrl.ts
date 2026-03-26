@@ -3,6 +3,9 @@
  * Set NEXT_PUBLIC_APP_URL in production (e.g. https://yoursite.com) so social shares show the correct URL and image.
  * After changing, use Facebook Sharing Debugger / Twitter Card Validator / LinkedIn Post Inspector to refresh cached metadata.
  */
+
+import type { NextRequest } from "next/server";
+
 export function getSiteBaseUrl(): string {
   const raw =
     (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_APP_URL?.trim()) ||
@@ -39,6 +42,46 @@ export function ensureAbsoluteUrl(url: string): string {
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed === "localhost" || /^localhost:\d+$/.test(trimmed)) return `http://${trimmed}`;
   return `https://${trimmed}`;
+}
+
+/**
+ * Base URL for OAuth redirect_uri — must match what Meta whitelists byte-for-byte.
+ * Prefer Host / reverse-proxy headers over NEXT_PUBLIC_APP_URL so www vs apex, port, and preview
+ * domains match the site you actually open in the browser.
+ */
+export function getOAuthBaseUrlFromRequest(req: NextRequest): string {
+  const forwardedHost = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = forwardedHost || req.headers.get("host")?.trim();
+  const forwardedProto = req.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]?.trim()
+    ?.toLowerCase();
+
+  if (host) {
+    const hostname = host.split(":")[0]?.toLowerCase() ?? "";
+    const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+    const proto = isLocal
+      ? forwardedProto === "https"
+        ? "https"
+        : "http"
+      : forwardedProto === "http" || forwardedProto === "https"
+        ? forwardedProto
+        : "https";
+    return ensureAbsoluteUrl(`${proto}://${host}`);
+  }
+
+  const origin = req.headers.get("origin")?.replace(/\/$/, "").trim();
+  if (origin) return ensureAbsoluteUrl(origin);
+
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "").trim();
+  if (explicit) return ensureAbsoluteUrl(explicit);
+
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return ensureAbsoluteUrl(/^https?:\/\//i.test(vercel) ? vercel : `https://${vercel}`);
+
+  if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
+
+  return ensureAbsoluteUrl(explicit || "http://localhost:3000");
 }
 
 /** Build absolute URL for og:image / twitter:image (handles /path or full URL). */

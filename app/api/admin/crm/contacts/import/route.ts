@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
         notes: (r.notes ?? "").trim() || null,
         source: (r.source ?? "").trim() || defaultSource,
         status: "new",
+        createdByUserId: user?.id ?? null,
       };
 
       try {

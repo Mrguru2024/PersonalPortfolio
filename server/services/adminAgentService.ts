@@ -16,6 +16,7 @@ import {
   mentorStateToPromptBlock,
   shouldAttachWebSources,
 } from "@server/services/adminAgentMentorService";
+import { buildSiteCrawlContextBlock } from "@server/services/adminAgentSiteCrawl";
 
 export type AgentActionType =
   | "navigate"
@@ -228,6 +229,8 @@ async function processWithOpenAI(input: {
   operatorKnowledgeBlock: string;
   /** Longer-form notes for research-style grounding (when enabled per entry). */
   operatorResearchBlock: string;
+  /** Excerpts from live public HTML on this deployment (when enabled). */
+  siteContextBlock: string;
 }): Promise<AgentResult | null> {
   const client = getOpenAIClient();
   if (!client) return null;
@@ -247,6 +250,11 @@ Spelling and labels: use correct product names — Ascendra, Ascendra Intelligen
       ? `\n\n${input.webContextBlock}\n\nWhen you teach general concepts or external facts, ground claims in the web results above and cite as [publisher or title](full_https_url) using only URLs from that list. If web results are empty or irrelevant, say you could not verify live sources and stick to CONTEXT + general process guidance.`
       : "\n\nNo live web results were attached for this turn. For external facts, say when you are unsure and suggest authoritative sources they can check; do not invent citations.";
 
+  const siteSection =
+    input.siteContextBlock.trim().length > 0
+      ? `\n\n${input.siteContextBlock}\n\nWhen LIVE PUBLIC PAGES are attached above, use them for exact visitor-facing wording (headlines, CTAs, promises). Prefer short quotes. If excerpts are missing or failed, say fetches were unavailable and rely on CONTEXT route titles — do not invent verbatim marketing copy. Admin screens are not the public site.`
+      : "\n\nNo live public HTML was attached for this turn. For exact marketing copy on visitor pages, say you are working from route metadata only unless they enable “live site” grounding in the chat widget or ask about the live site.";
+
   const system = `You are the Ascendra admin assistant and mentor for approved CMS/CRM operators. You address the operator by name when natural: ${input.operatorDisplayName}.
 
 Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.
@@ -256,8 +264,9 @@ ${input.mentorPromptBlock}
 
 Mission detail: give clear next steps, name the exact screen or API from CONTEXT when the task is in-app, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
 
-Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
+Grounding for THIS SITE: use CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. When LIVE PUBLIC PAGES are attached, they are server-fetched HTML excerpts from this deployment’s marketing URLs — treat them as the source of truth for visitor-visible text on those paths. If something is missing from CONTEXT, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
 ${webSection}
+${siteSection}
 
 Navigation and wayfinding: whenever you mention an in-app place to go, include a markdown link using ONLY internal paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination. External https links are allowed only when citing WEB RESULTS for teaching.
 
@@ -327,6 +336,8 @@ export interface ProcessAgentMessageInput {
   operatorKnowledgeBlock?: string;
   /** Research-oriented notes (from DB); empty string if none. */
   operatorResearchBlock?: string;
+  /** When true, fetch live public HTML for grounding; false disables; undefined uses heuristics. */
+  crawlSite?: boolean;
 }
 
 /**
@@ -357,6 +368,7 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
     if (shouldAttachWebSources(message)) {
       webContextBlock = await fetchWebContextForTeaching(message);
     }
+    const siteContextBlock = await buildSiteCrawlContextBlock(message, currentPath, input.crawlSite);
     const ai = await processWithOpenAI({
       message,
       history,
@@ -368,6 +380,7 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
       webContextBlock,
       operatorKnowledgeBlock: (input.operatorKnowledgeBlock ?? "").trim(),
       operatorResearchBlock: (input.operatorResearchBlock ?? "").trim(),
+      siteContextBlock,
     });
     if (ai) {
       if (ai.action && !canPerformActions) {

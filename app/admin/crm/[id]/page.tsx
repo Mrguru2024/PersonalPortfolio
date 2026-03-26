@@ -25,12 +25,20 @@ import {
   ExternalLink,
   Camera,
   BookOpen,
+  Pencil,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -56,6 +64,7 @@ interface CrmContact {
   company?: string | null;
   jobTitle?: string | null;
   industry?: string | null;
+  location?: string | null;
   source?: string | null;
   status?: string | null;
   estimatedValue?: number | null;
@@ -207,6 +216,21 @@ export default function CrmLeadProfilePage() {
   const id = Number(params?.id);
   const [noteText, setNoteText] = useState("");
   const [smsBody, setSmsBody] = useState("");
+  const [editContactOpen, setEditContactOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    type: "lead",
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    jobTitle: "",
+    industry: "",
+    location: "",
+    source: "",
+    status: "new",
+    estimatedValue: "",
+    notes: "",
+  });
 
   const { data: contact, isLoading: contactLoading } = useQuery<CrmContact>({
     queryKey: ["/api/admin/crm/contacts", id],
@@ -433,6 +457,66 @@ export default function CrmLeadProfilePage() {
     onError: () => toast({ title: "Failed to update status", variant: "destructive" }),
   });
 
+  const updateContactFieldsMutation = useMutation({
+    mutationFn: async (body: Record<string, unknown>) => {
+      const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, body);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error ?? "Failed to update contact");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/insights/contact", id] });
+      setEditContactOpen(false);
+      toast({ title: "Contact updated" });
+    },
+    onError: (e: Error) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+  });
+
+  const openEditContactDialog = () => {
+    if (!contact) return;
+    setEditForm({
+      type: contact.type,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || "",
+      company: contact.company || "",
+      jobTitle: contact.jobTitle || "",
+      industry: contact.industry || "",
+      location: (contact.location ?? "").trim(),
+      source: contact.source || "",
+      status: contact.status || "new",
+      estimatedValue: contact.estimatedValue != null ? String(contact.estimatedValue / 100) : "",
+      notes: contact.notes || "",
+    });
+    setEditContactOpen(true);
+  };
+
+  const submitEditContact = () => {
+    if (!editForm.name.trim() || !editForm.email.trim()) {
+      toast({ title: "Name and email are required", variant: "destructive" });
+      return;
+    }
+    updateContactFieldsMutation.mutate({
+      type: editForm.type,
+      name: editForm.name.trim(),
+      email: editForm.email.trim(),
+      phone: editForm.phone.trim() || null,
+      company: editForm.company.trim() || null,
+      jobTitle: editForm.jobTitle.trim() || null,
+      industry: editForm.industry.trim() || null,
+      location: editForm.location.trim() || null,
+      source: editForm.source.trim() || null,
+      status: editForm.status,
+      estimatedValue: editForm.estimatedValue ? Math.round(parseFloat(editForm.estimatedValue) * 100) : null,
+      notes: editForm.notes.trim() || null,
+    });
+  };
+
   const addNoteMutation = useMutation({
     mutationFn: async (body: { subject: string; body: string }) => {
       const res = await apiRequest("POST", "/api/admin/crm/activities", {
@@ -590,6 +674,10 @@ export default function CrmLeadProfilePage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={openEditContactDialog}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit contact
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -688,11 +776,12 @@ export default function CrmLeadProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(contact.source || contact.industry || contact.jobTitle || contact.linkedinUrl) && (
+            {(contact.source || contact.industry || contact.jobTitle || contact.location || contact.linkedinUrl) && (
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
                 {contact.source && <span>Source: {contact.source}</span>}
                 {contact.industry && <span>Industry: {contact.industry}</span>}
                 {contact.jobTitle && <span>Role: {contact.jobTitle}</span>}
+                {contact.location?.trim() && <span>Location: {contact.location.trim()}</span>}
                 {contact.linkedinUrl && (
                   <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                     <Linkedin className="h-3 w-3" /> LinkedIn
@@ -1510,6 +1599,101 @@ export default function CrmLeadProfilePage() {
         </Tabs>
       </div>
       </div>
+
+      <Dialog open={editContactOpen} onOpenChange={setEditContactOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit contact</DialogTitle>
+            <DialogDescription>Update core fields. Changes save to the CRM immediately.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Type</Label>
+                <Select value={editForm.type} onValueChange={(v) => setEditForm((f) => ({ ...f, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="client">Client</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm((f) => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-name">Name *</Label>
+              <Input id="edit-contact-name" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-email">Email *</Label>
+              <Input id="edit-contact-email" type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-phone">Phone</Label>
+              <Input id="edit-contact-phone" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-company">Company</Label>
+              <Input id="edit-contact-company" value={editForm.company} onChange={(e) => setEditForm((f) => ({ ...f, company: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-contact-job">Job title</Label>
+                <Input id="edit-contact-job" value={editForm.jobTitle} onChange={(e) => setEditForm((f) => ({ ...f, jobTitle: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="edit-contact-industry">Industry</Label>
+                <Input id="edit-contact-industry" value={editForm.industry} onChange={(e) => setEditForm((f) => ({ ...f, industry: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-location">Location</Label>
+              <Input
+                id="edit-contact-location"
+                value={editForm.location}
+                onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                placeholder="City, region, or territory"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-source">Source</Label>
+              <Input id="edit-contact-source" value={editForm.source} onChange={(e) => setEditForm((f) => ({ ...f, source: e.target.value }))} placeholder="e.g. website, referral" />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-value">Est. value ($)</Label>
+              <Input
+                id="edit-contact-value"
+                type="number"
+                value={editForm.estimatedValue}
+                onChange={(e) => setEditForm((f) => ({ ...f, estimatedValue: e.target.value }))}
+                placeholder="e.g. 5000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-contact-notes">Notes</Label>
+              <Textarea id="edit-contact-notes" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={3} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditContactOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={submitEditContact} disabled={updateContactFieldsMutation.isPending}>
+                {updateContactFieldsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

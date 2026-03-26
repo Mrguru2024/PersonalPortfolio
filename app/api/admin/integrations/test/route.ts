@@ -3,6 +3,12 @@ import { isSuperUser } from "@/lib/auth-helpers";
 import { testZoomConnection } from "@/lib/zoom";
 import { testGoogleCalendarConnection } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationId } from "../types";
+import {
+  hasFacebookPagePublishConfig,
+  hasLinkedInPublishConfig,
+  hasXPublishConfig,
+  hasWebhookPublishConfig,
+} from "@server/services/internalStudio/publishAdapters";
 
 export const dynamic = "force-dynamic";
 
@@ -99,9 +105,22 @@ export async function POST(req: NextRequest) {
     }
 
     if (service === "social-scheduling") {
+      const parts = [
+        (await hasFacebookPagePublishConfig()) ? "Facebook Page" : null,
+        hasLinkedInPublishConfig() ? "LinkedIn" : null,
+        hasXPublishConfig() ? "X" : null,
+        hasWebhookPublishConfig() ? "Webhook hub" : null,
+      ].filter((x): x is string => x != null);
+      if (parts.length === 0) {
+        return NextResponse.json({
+          ok: false,
+          message:
+            "No Content Studio channels configured. Connect Facebook Page from Integrations (or set FACEBOOK_ACCESS_TOKEN + FACEBOOK_PAGE_ID), and/or LinkedIn, X, CONTENT_STUDIO_PUBLISH_WEBHOOK_URL. See Integrations page.",
+        });
+      }
       return NextResponse.json({
-        ok: false,
-        message: "Social scheduling is not yet connected. Connect Facebook and other platforms above first.",
+        ok: true,
+        message: `Env looks ready for: ${parts.join(", ")}. Send a test publish from Content Studio calendar (draft due + approved doc) to verify live APIs.`,
       });
     }
 
