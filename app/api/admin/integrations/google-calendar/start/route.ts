@@ -15,11 +15,11 @@ const STATE_COOKIE = "gcal_oauth_state";
 
 export async function GET(req: NextRequest) {
   if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Super user access required" }, { status: 403 });
+    return NextResponse.json({ message: "Sign in with the site owner account to connect accounts." }, { status: 403 });
   }
   if (!isGoogleCalendarOAuthConfigured()) {
     return NextResponse.json(
-      { message: "Set GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET in environment." },
+      { message: "Add your Google Calendar app ID and secret in the site settings first." },
       { status: 400 },
     );
   }

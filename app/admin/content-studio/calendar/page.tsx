@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import {
   addDays,
   addMonths,
@@ -87,6 +88,30 @@ interface PlatformAdapterRow {
   key: string;
   displayName: string;
   active: boolean;
+}
+
+/** Shown in the UI; API still uses keys like `scheduled`. */
+const CALENDAR_STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  scheduled: "Ready to post",
+  published: "Posted",
+  skipped: "Skipped",
+  failed: "Needs fix",
+};
+
+function formatCalendarStatus(status: string): string {
+  return CALENDAR_STATUS_LABEL[status] ?? status;
+}
+
+const DOC_APPROVAL_LABEL: Record<string, string> = {
+  approved: "Approved to post",
+  rejected: "Not approved",
+  pending: "In review",
+  none: "Not reviewed",
+};
+
+function formatDocApproval(status: string): string {
+  return DOC_APPROVAL_LABEL[status] ?? status;
 }
 
 function dayDropId(d: Date) {
@@ -194,7 +219,7 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {entry.calendarStatus}
+          {format(new Date(entry.scheduledAt), "PPp")} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -263,7 +288,7 @@ function SortableRow({
     }
     void qc.invalidateQueries({ queryKey: calendarQueryKey });
     setEditOpen(false);
-    toast({ title: "Calendar entry updated" });
+      toast({ title: "Saved" });
   }
 
   return (
@@ -278,7 +303,7 @@ function SortableRow({
       <button
         type="button"
         className="mt-1 text-muted-foreground hover:text-foreground touch-none cursor-grab active:cursor-grabbing shrink-0 rounded-md p-1 hover:bg-muted/80"
-        aria-label="Drag to reorder or move to another day"
+        aria-label="Drag to reorder or move to another date"
         {...attributes}
         {...listeners}
       >
@@ -287,7 +312,7 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {entry.calendarStatus}
+          {format(new Date(entry.scheduledAt), "PPp")} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -299,7 +324,7 @@ function SortableRow({
         {entry.documentId != null && entry.documentApprovalStatus && (
           <div className="mt-1">
             <Badge variant={entry.documentApprovalStatus === "approved" ? "default" : "secondary"} className="text-[10px]">
-              Doc approval: {entry.documentApprovalStatus}
+              {formatDocApproval(entry.documentApprovalStatus)}
             </Badge>
           </div>
         )}
@@ -314,41 +339,42 @@ function SortableRow({
             href={`/admin/content-studio/documents/${entry.documentId}`}
             className="text-xs text-primary underline mt-1 inline-block"
           >
-            Linked document
+            Open linked post
           </Link>
         )}
       </div>
       <div className="flex flex-col gap-1 shrink-0">
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="ghost" aria-label="Edit targets and status">
+            <Button size="sm" variant="ghost" aria-label="Edit slot">
               <Pencil className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit publish targets</DialogTitle>
+              <DialogTitle>Where to post &amp; status</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Calendar status</Label>
+                <Label>Status</Label>
                 <Select value={editStatus} onValueChange={setEditStatus}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">draft</SelectItem>
-                    <SelectItem value="scheduled">scheduled (cron picks up when due)</SelectItem>
-                    <SelectItem value="published">published</SelectItem>
-                    <SelectItem value="skipped">skipped</SelectItem>
-                    <SelectItem value="failed">failed (fix + set back to scheduled)</SelectItem>
+                    <SelectItem value="draft">Draft — not queued</SelectItem>
+                    <SelectItem value="scheduled">Ready to post — runs when the time passes</SelectItem>
+                    <SelectItem value="published">Posted</SelectItem>
+                    <SelectItem value="skipped">Skipped</SelectItem>
+                    <SelectItem value="failed">Needs fix — correct the issue, then choose Ready to post again</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Platforms (multi-select)</Label>
+                <Label>Channels</Label>
                 <p className="text-xs text-muted-foreground">
-                  Use keys that match adapters (e.g. facebook_page, manual). Cron publishes each target when the slot is due.
+                  Check every network this slot should use. The site posts to each checked channel when the slot is due
+                  (if the channel is connected under Connections &amp; email).
                 </p>
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                   {activeAdapters.map((a) => (
@@ -403,6 +429,8 @@ function SortableRow({
 
 export default function ContentStudioCalendarPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const qc = useQueryClient();
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState(() => new Date());
@@ -653,7 +681,7 @@ export default function ContentStudioCalendarPage() {
       void qc.invalidateQueries({ queryKey: calendarQueryKey });
       setQuickOpen(false);
       setQTitle("");
-      toast({ title: "Scheduled" });
+      toast({ title: "Added to calendar" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -698,23 +726,37 @@ export default function ContentStudioCalendarPage() {
     <div className="space-y-6">
       <Card className="border-primary/25 bg-primary/5">
         <CardHeader className="py-3">
-          <CardTitle className="text-sm">Automated social publishing</CardTitle>
-          <CardDescription className="text-xs leading-relaxed">
-            Vercel cron calls <code className="text-[10px] bg-muted px-1 rounded">/api/cron/content-studio-publish</code>{" "}
-            every 10 minutes (Bearer <code className="text-[10px] bg-muted px-1 rounded">CRON_SECRET</code>). A row is
-            eligible when it is <strong>scheduled</strong>, <strong>scheduledAt</strong> is in the past, it has a{" "}
-            <strong>linked document</strong>, and <strong>platform targets</strong> are set (e.g.{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">facebook_page</code>,{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">manual</code>). By default the document must be{" "}
-            <strong>approval: approved</strong> for auto-publish; set{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">CONTENT_STUDIO_SCHEDULED_REQUIRE_APPROVAL=0</code> to
-            disable. Facebook Page posts need <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_ACCESS_TOKEN</code>{" "}
-            + <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_PAGE_ID</code>. Failures set calendar status{" "}
-            <strong>failed</strong> — fix tokens or copy, then set back to <strong>scheduled</strong>. Check{" "}
-            <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
-              workflow / publish logs
-            </Link>
-            .
+          <CardTitle className="text-sm">How scheduled posting works</CardTitle>
+          <CardDescription className="text-xs leading-relaxed space-y-2">
+            <p>
+              <strong className="text-foreground">1.</strong> Write the post and link it to this calendar row.{" "}
+              <strong className="text-foreground">2.</strong> When the copy is final, mark it approved on the document.{" "}
+              <strong className="text-foreground">3.</strong> Set this row to <strong>Ready to post</strong> and pick the
+              channels (Facebook, etc.). <strong className="text-foreground">4.</strong> After the scheduled time, the site
+              checks about every ten minutes and sends the post. If something breaks, the row shows{" "}
+              <strong>Needs fix</strong>—correct it, then set <strong>Ready to post</strong> again.
+            </p>
+            <p className="text-muted-foreground">
+              Connect social accounts under{" "}
+              <Link href="/admin/integrations" className="underline font-medium text-foreground">
+                Connections &amp; email
+              </Link>
+              . Recent activity is under{" "}
+              <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
+                Post history
+              </Link>
+              . You don&apos;t need to stay logged in—scheduled posts are picked up automatically.
+            </p>
+            {isSuperUser ? (
+              <details className="text-xs text-muted-foreground mt-2 rounded-md border border-dashed border-border bg-background/50 px-3 py-2">
+                <summary className="cursor-pointer font-medium text-foreground">Technical (super user)</summary>
+                <p className="mt-2 leading-relaxed">
+                  Publishing runs on a short interval (for example the{" "}
+                  <code className="text-[11px]">/api/cron/content-studio-publish</code> job, often about every ten minutes on
+                  Vercel). Production hosts must expose <code className="text-[11px]">CRON_SECRET</code> for that route.
+                </p>
+              </details>
+            ) : null}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -729,11 +771,11 @@ export default function ContentStudioCalendarPage() {
         <Card>
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>Editorial calendar</CardTitle>
+              <CardTitle>Calendar</CardTitle>
               <CardDescription>
-                Drag the grip to <strong className="text-foreground">reorder</strong> the day queue, or drop onto a{" "}
-                <strong className="text-foreground">day</strong> in month or week view to reschedule (time of day is
-                preserved).
+                Drag the handle to <strong className="text-foreground">change order</strong> for the same day. Drag a row
+                onto another <strong className="text-foreground">day</strong> in month or week view to move it—the clock time
+                stays the same.
               </CardDescription>
             </div>
             <div className="flex flex-col gap-3 w-full lg:max-w-none">
@@ -785,12 +827,12 @@ export default function ContentStudioCalendarPage() {
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="scheduled">Ready to post</SelectItem>
+                    <SelectItem value="published">Posted</SelectItem>
                     <SelectItem value="skipped">Skipped</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="failed">Needs fix</SelectItem>
                   </SelectContent>
                 </Select>
                 <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -849,30 +891,30 @@ export default function ContentStudioCalendarPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>New calendar entry</DialogTitle>
+                      <DialogTitle>New calendar slot</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3 py-2">
                       <div className="space-y-1">
-                        <Label>Title / headline</Label>
+                        <Label>Title</Label>
                         <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>When (local → stored UTC)</Label>
+                        <Label>Date and time</Label>
                         <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>CTA objective</Label>
+                        <Label>Call-to-action note (optional)</Label>
                         <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>Personas (comma)</Label>
+                        <Label>Audience tags (optional, comma-separated)</Label>
                         <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label>Platforms (publish targets)</Label>
+                        <Label>Channels for this slot</Label>
                         <p className="text-xs text-muted-foreground">
-                          Must match adapter keys. <code className="bg-muted px-1 rounded">facebook_page</code> uses Meta
-                          Graph when env is configured.
+                          Pick where this post should go when you mark it ready. Facebook and other options appear if they
+                          are set up.
                         </p>
                         <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                           {activeAdapters.map((a) => (
@@ -987,7 +1029,7 @@ export default function ContentStudioCalendarPage() {
                   variant="week"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Drop an entry here to move it to this day (same as week/month cells).
+                  Drop a row here to move it to this date.
                 </p>
               </div>
             )}
@@ -1008,10 +1050,10 @@ export default function ContentStudioCalendarPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{format(selectedDay, "EEEE, MMM d")} — queue</CardTitle>
+            <CardTitle>{format(selectedDay, "EEEE, MMM d")}</CardTitle>
             <CardDescription>
-              Reorder with drag-and-drop; items animate into place. Drag onto a day in month or week view (or the day
-              card in day view) to reschedule.
+              Drag to reorder. To change the day, drop a row on another date in month or week view (or the day card in day
+              view).
             </CardDescription>
           </CardHeader>
           <CardContent>

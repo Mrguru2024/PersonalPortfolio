@@ -78,11 +78,11 @@ export default function PaidGrowthCampaignDetailPage() {
       return j;
     },
     onSuccess: (d: { message?: string }) => {
-      toast({ title: "Publish", description: d.message ?? "OK" });
+      toast({ title: "Sent to Meta", description: d.message ?? "Done." });
       qc.invalidateQueries({ queryKey: ["/api/admin/paid-growth/campaigns", id] });
       qc.invalidateQueries({ queryKey: ["/api/admin/paid-growth/dashboard"] });
     },
-    onError: (e: Error) => toast({ title: "Publish error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Could not publish", description: e.message, variant: "destructive" }),
   });
 
   if (authLoading || !user?.isAdmin || !user?.adminApproved) {
@@ -111,21 +111,23 @@ export default function PaidGrowthCampaignDetailPage() {
   } | null;
 
   const gateLabels: Record<string, string> = {
-    adAccountConnected: "Ad account connected",
-    offerLinked: "Offer linked",
-    landingLinked: "Landing page linked",
-    conversionTrackingConfigured: "Conversion tracking (2+ of GTM / pixel / GA)",
-    crmRoutingConfigured: "CRM routing (Brevo)",
-    commsFollowUpConfigured: "Communications follow-up",
-    readinessThresholdPassed: `Readiness ≥ ${PPC_READINESS_MIN_SCORE}`,
+    adAccountConnected: "Ad account linked",
+    offerLinked: "Offer chosen",
+    landingLinked: "Landing page set",
+    conversionTrackingConfigured: "Tracking in place (tag manager, pixel, or analytics)",
+    crmRoutingConfigured: "Leads route to email (Brevo)",
+    commsFollowUpConfigured: "Follow-up messages ready",
+    readinessThresholdPassed: `Readiness score at least ${PPC_READINESS_MIN_SCORE}`,
   };
 
   const canPublishMeta =
     c.platform === "meta" && snap?.adReady === true;
   const publishBlockedReason =
-    c.platform === "google_ads" ? "Google Ads publish from the dashboard is not supported — use Ads Manager or extend the API integration."
-    : snap?.adReady !== true ? "Run readiness and clear all gates (Foundation remediation if needed)."
-    : null;
+    c.platform === "google_ads"
+      ? "Google Ads is not sent from here—use Google’s Ads Manager."
+      : snap?.adReady !== true
+        ? "Run readiness and fix every item in the checklist below first."
+        : null;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -156,14 +158,14 @@ export default function PaidGrowthCampaignDetailPage() {
             title={publishBlockedReason ?? undefined}
           >
             <Rocket className="h-4 w-4 mr-2" />
-            Publish
+            {c.platform === "meta" ? "Push live to Meta" : "Push live"}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Routing & attribution</CardTitle>
+          <CardTitle>Where traffic lands</CardTitle>
           <CardDescription>
             Offer <code className="text-xs">{c.offerSlug ?? "—"}</code> · Landing{" "}
             <code className="text-xs">{c.landingPagePath}</code>
@@ -174,7 +176,8 @@ export default function PaidGrowthCampaignDetailPage() {
             {JSON.stringify(c.trackingParamsJson ?? {}, null, 2)}
           </pre>
           <p className="mt-2">
-            Forms should pass these UTMs + hidden <code className="text-xs">ascendra_ppc={c.id}</code> for internal joins.
+            Forms should include these tracking fields plus the hidden id{" "}
+            <code className="text-xs">ascendra_ppc={c.id}</code> so leads tie back to this campaign.
           </p>
         </CardContent>
       </Card>
@@ -182,10 +185,9 @@ export default function PaidGrowthCampaignDetailPage() {
       {snap?.adReady === false && (
         <Card className="border-destructive/40">
           <CardHeader>
-            <CardTitle className="text-destructive">Not ad ready</CardTitle>
+            <CardTitle className="text-destructive">Not ready for ads</CardTitle>
             <CardDescription>
-              Required next step: <strong>Foundation</strong> package track — complete the remediation checklist below before
-              publishing.
+              Finish the steps in the checklist below—usually starting with the Foundation items—before you push live.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -194,8 +196,8 @@ export default function PaidGrowthCampaignDetailPage() {
       {snap?.gates && (
         <Card>
           <CardHeader>
-            <CardTitle>Publish gates</CardTitle>
-            <CardDescription>All must pass before dashboard publish (Meta: traffic / leads objectives only).</CardDescription>
+            <CardTitle>Before you push live</CardTitle>
+            <CardDescription>Every line below should show OK (Meta campaigns only for now).</CardDescription>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             {Object.entries(snap.gates).map(([k, ok]) => (
@@ -211,8 +213,8 @@ export default function PaidGrowthCampaignDetailPage() {
       {snap?.remediationChecklist && snap.remediationChecklist.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Remediation checklist</CardTitle>
-            <CardDescription>Generated from failed gates and scoring blockers</CardDescription>
+            <CardTitle>Fix-it list</CardTitle>
+            <CardDescription>Built from what failed above</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="list-decimal pl-5 text-sm space-y-1">
@@ -227,7 +229,7 @@ export default function PaidGrowthCampaignDetailPage() {
       {snap?.blockers && snap.blockers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Scoring blockers</CardTitle>
+            <CardTitle>Still blocking progress</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-5 text-sm space-y-1">
@@ -253,15 +255,15 @@ export default function PaidGrowthCampaignDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Publish log</CardTitle>
+            <CardTitle>Push history</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">
           {(c.publishLogs ?? []).length === 0 ? (
-            <p className="text-muted-foreground">No publish attempts yet.</p>
+            <p className="text-muted-foreground">Nothing pushed from this screen yet.</p>
           ) : (
             (c.publishLogs ?? []).map((l) => (
               <div key={l.id} className="flex justify-between border-b border-border/50 py-2">
-                <span>{l.success ? "OK" : "Failed"}</span>
+                <span>{l.success ? "Worked" : "Failed"}</span>
                 <span className="text-muted-foreground text-xs truncate max-w-[60%]">{l.errorMessage}</span>
               </div>
             ))

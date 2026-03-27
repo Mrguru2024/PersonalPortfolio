@@ -1,3 +1,26 @@
+import type { NextRequest } from "next/server";
+
+/**
+ * Public site URL for the current HTTP request (integrations docs, OAuth hints).
+ * Uses forwarded Host when present; falls back to NEXT_PUBLIC_APP_URL / Vercel / metadata origin.
+ */
+export function getPublicSiteUrlFromRequest(req: NextRequest): string {
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const hostHeader = forwardedHost || req.headers.get("host") || "";
+  const host = hostHeader.split(",")[0]?.trim() ?? "";
+  const protoHeader = req.headers.get("x-forwarded-proto") || "https";
+  const proto = protoHeader.split(",")[0]?.trim() || "https";
+  if (host && !/^localhost\b/i.test(host) && !/^127\.\d+\.\d+\.\d+/.test(host)) {
+    return ensureAbsoluteUrl(`${proto}://${host}`);
+  }
+  return getSiteOriginForMetadata();
+}
+
+/** OAuth redirect_uri base (Content Studio social connect). Same resolution as getPublicSiteUrlFromRequest. */
+export function getOAuthBaseUrlFromRequest(req: NextRequest): string {
+  return getPublicSiteUrlFromRequest(req);
+}
+
 /**
  * Canonical base URL for the site. Used for Open Graph, Twitter cards, canonical links, and emails.
  * Set NEXT_PUBLIC_APP_URL in production (e.g. https://yoursite.com) so social shares show the correct URL and image.

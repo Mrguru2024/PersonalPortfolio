@@ -93,10 +93,8 @@ const nextConfig = {
 
   // Enable experimental features if needed
   experimental: {
-    // Large multipart posts (e.g. brand vault uploads): align with BRAND_VAULT_MAX_UPLOAD_BYTES where the framework applies limits.
-    proxyClientMaxBodySize: '55mb',
     serverActions: {
-      bodySizeLimit: '55mb',
+      bodySizeLimit: '2mb',
       ...(getServerActionAllowedOrigins()?.length
         ? { allowedOrigins: getServerActionAllowedOrigins() }
         : {}),

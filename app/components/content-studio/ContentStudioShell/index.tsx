@@ -14,7 +14,7 @@ const NAV = [
   { href: "/admin/content-studio/calendar", label: "Calendar" },
   { href: "/admin/content-studio/campaigns", label: "Campaigns" },
   { href: "/admin/content-studio/import-export", label: "Import / export" },
-  { href: "/admin/content-studio/workflow", label: "Workflow & logs" },
+  { href: "/admin/content-studio/workflow", label: "Post history" },
 ] as const;
 
 function AuthLoadingFallback() {
@@ -62,10 +62,10 @@ export function ContentStudioShell({ children }: { children: ReactNode }) {
           <Badge variant="secondary">Content Studio · Admin only</Badge>
         </div>
         <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Internal Content Studio</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Content Studio</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Editorial CMS, calendar, campaigns, and publish workflow — separate from live blog/newsletter until you
-            promote content through existing pipelines.
+            Draft posts, plan them on the calendar, and go live on social when the time comes. The public blog and email
+            tools stay separate until you promote something there.
           </p>
         </header>
         <nav className="flex flex-wrap gap-2 border-b border-border/60 pb-4 mb-6" aria-label="Content studio">

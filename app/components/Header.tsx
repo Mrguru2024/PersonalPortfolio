@@ -24,6 +24,7 @@ import {
   UserCog,
   Activity,
   Link2,
+  CloudUpload,
   TrendingUp,
   LineChart,
   Settings,
@@ -95,7 +96,7 @@ const ADMIN_NAV_SECTION_ORDER = [
   "Analytics",
   "Operations",
   "Settings",
-  "Developer",
+  "Site tools",
 ] as const;
 
 export default function Header(_props: HeaderProps) {
@@ -200,9 +201,10 @@ export default function Header(_props: HeaderProps) {
     { section: "Operations", name: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
     { section: "Operations", name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
     { section: "Settings", name: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard" as const },
-    { section: "Developer", name: "Integrations", href: "/admin/integrations", icon: Link2, developerOnly: true },
-    { section: "Developer", name: "User management", href: "/admin/users", icon: UserCog, developerOnly: true },
-    { section: "Developer", name: "System monitor", href: "/admin/system", icon: Activity, developerOnly: true },
+    { section: "Site tools", name: "Connections & email", href: "/admin/integrations", icon: Link2, developerOnly: true },
+    { section: "Site tools", name: "Live site settings (hosting)", href: "/admin/deployment-env", icon: CloudUpload, developerOnly: true },
+    { section: "Site tools", name: "People & access", href: "/admin/users", icon: UserCog, developerOnly: true },
+    { section: "Site tools", name: "Health & activity", href: "/admin/system", icon: Activity, developerOnly: true },
   ];
 
   const isApprovedAdmin =

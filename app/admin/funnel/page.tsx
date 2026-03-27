@@ -126,7 +126,7 @@ export default function AdminFunnelPage() {
               <div className="min-w-0">
                 <CardTitle className="text-lg">Content Library</CardTitle>
                 <CardDescription className="text-sm mt-0.5">
-                  Upload PDFs, video, images, decks. Approve with Publish; set Members only for signed-in downloads on Free growth tools.
+                  Upload files, publish when ready, choose “Members only” for the signed-in download list on Free growth tools.
                 </CardDescription>
               </div>
             </div>

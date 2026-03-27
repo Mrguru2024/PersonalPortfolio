@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Settings, List, Clock, Tags } from "lucide-react";
+import { Calendar, Settings, List, Clock, Tags, UserCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -56,6 +56,22 @@ export default function AdminSchedulingHomePage() {
           <CardContent>
             <Button asChild variant="secondary">
               <Link href="/admin/scheduling/availability">Edit availability</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <UserCircle className="h-5 w-5" />
+              My availability
+            </CardTitle>
+            <CardDescription>
+              Per–founder hours and blocked dates for public /book (when guests choose you or you&apos;re the only host).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="secondary">
+              <Link href="/admin/scheduling/my-availability">Edit my calendar</Link>
             </Button>
           </CardContent>
         </Card>

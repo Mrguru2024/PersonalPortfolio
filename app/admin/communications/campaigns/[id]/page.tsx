@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,6 +68,7 @@ type CampaignDetail = {
 
 export default function CommCampaignDetailPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const params = useParams();
   const id = Number(params?.id);
@@ -150,20 +151,22 @@ export default function CommCampaignDetailPage() {
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       const primaryId = c?.design?.id;
-      const orgTrim = organizationIdText.trim();
-      const organizationId =
-        orgTrim === "" ? null : Number.isFinite(Number(orgTrim)) ? Number(orgTrim) : NaN;
-      if (orgTrim !== "" && !Number.isFinite(organizationId)) {
-        throw new Error("Organization ID must be a number");
-      }
       const body: Record<string, unknown> = {
         segmentFilters,
         savedListId: savedListId.trim() ? Number(savedListId) : null,
         abTestEnabled,
         abVariantBPercent: Number(abVariantBPercent),
         variantEmailDesignId: abTestEnabled ? Number(variantEmailDesignId) : null,
-        organizationId: orgTrim === "" ? null : organizationId,
       };
+      if (isSuperUser) {
+        const orgTrim = organizationIdText.trim();
+        const organizationId =
+          orgTrim === "" ? null : Number.isFinite(Number(orgTrim)) ? Number(orgTrim) : NaN;
+        if (orgTrim !== "" && !Number.isFinite(organizationId)) {
+          throw new Error("Organization must be a number");
+        }
+        body.organizationId = orgTrim === "" ? null : organizationId;
+      }
       if (abTestEnabled) {
         if (!variantEmailDesignId || Number(variantEmailDesignId) === primaryId) {
           throw new Error("Pick a variant design different from the primary");
@@ -356,10 +359,16 @@ export default function CommCampaignDetailPage() {
                 </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label>Organization ID (optional)</Label>
-              <Input value={organizationIdText} onChange={(e) => setOrganizationIdText(e.target.value)} inputMode="numeric" />
-            </div>
+            {isSuperUser ? (
+              <div className="space-y-2">
+                <Label>Organization ID (optional)</Label>
+                <Input
+                  value={organizationIdText}
+                  onChange={(e) => setOrganizationIdText(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+            ) : null}
             <Button
               type="button"
               onClick={() => saveSettingsMutation.mutate()}
@@ -391,11 +400,13 @@ export default function CommCampaignDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>UTM (stored on campaign)</CardTitle>
+          <CardTitle>Link tagging (UTM)</CardTitle>
           <CardDescription>
             {c.utmSource || c.utmMedium || c.utmCampaign
               ? `${c.utmSource ?? "—"} / ${c.utmMedium ?? "—"} / ${c.utmCampaign ?? "—"}`
-              : "None — add on edit via API or future form fields."}
+              : isSuperUser
+                ? "None set. Can be added via API if needed."
+                : "None set."}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -417,19 +428,25 @@ export default function CommCampaignDetailPage() {
               <li key={`${i}-${line.slice(0, 48)}`}>{line}</li>
             ))}
           </ul>
-          <details className="text-xs">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Technical details (advanced)</summary>
-            <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">
-              {JSON.stringify(c.status === "draft" ? segmentFilters : c.segmentFilters, null, 2)}
-            </pre>
-          </details>
+          {isSuperUser ? (
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                Technical details (site owner)
+              </summary>
+              <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">
+                {JSON.stringify(c.status === "draft" ? segmentFilters : c.segmentFilters, null, 2)}
+              </pre>
+            </details>
+          ) : null}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Send log</CardTitle>
-          <CardDescription>Per-recipient rows; A/B bucket and first-click block when tracked.</CardDescription>
+          <CardDescription>
+            One row per recipient. Shows A/B version and whether they clicked a tracked link in the email.
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -438,7 +455,7 @@ export default function CommCampaignDetailPage() {
                 <th className="py-2 pr-4">Recipient</th>
                 <th className="py-2 pr-4">Status</th>
                 <th className="py-2 pr-4">A/B</th>
-                <th className="py-2 pr-4">First block</th>
+                <th className="py-2 pr-4">{isSuperUser ? "First link (internal ref)" : "Clicked link"}</th>
                 <th className="py-2">Sent</th>
               </tr>
             </thead>
@@ -455,7 +472,9 @@ export default function CommCampaignDetailPage() {
                     <td className="py-2 pr-4">{s.recipientEmail}</td>
                     <td className="py-2 pr-4">{s.status}</td>
                     <td className="py-2 pr-4 tabular-nums">{s.abVariant ?? "—"}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{s.firstClickedBlockId ?? "—"}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">
+                      {isSuperUser ? (s.firstClickedBlockId ?? "—") : s.firstClickedBlockId ? "Yes" : "—"}
+                    </td>
                     <td className="py-2 text-muted-foreground">{s.sentAt ? new Date(s.sentAt).toLocaleString() : "—"}</td>
                   </tr>
                 ))

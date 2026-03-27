@@ -54,21 +54,21 @@ export default function ContentStudioWorkflowPage() {
   const manualPub = useMutation({
     mutationFn: async () => {
       const id = parseInt(docId, 10);
-      if (Number.isNaN(id)) throw new Error("Invalid document id");
+      if (Number.isNaN(id)) throw new Error("Enter a valid document number");
       const res = await fetch("/api/admin/content-studio/publish/manual", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId: id, platform }),
       });
-      if (!res.ok) throw new Error("Publish log failed");
+      if (!res.ok) throw new Error("Could not save");
       return res.json();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/admin/content-studio/publish-logs"] });
-      toast({ title: "Publish logged (scaffold)" });
+      toast({ title: "Recorded in history" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Something went wrong", description: e.message, variant: "destructive" }),
   });
 
   return (
@@ -77,32 +77,33 @@ export default function ContentStudioWorkflowPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ImageIcon className="h-5 w-5" />
-            Images in content
+            Images in posts
           </CardTitle>
           <CardDescription>
-            You do not need JSON or a separate upload screen for post images. Open any document, use the editor&apos;s{" "}
-            <strong>image</strong> button, then <strong>Upload from computer</strong> (JPEG, PNG, GIF, WebP) or paste an
-            image URL. The same editor is used for newsletters and email designs.
+            Open any document and use the editor&apos;s image button—upload from your computer or paste a link. Same editor
+            is used for email when you use it there.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/content-studio/documents">Go to document library</Link>
+            <Link href="/admin/content-studio/documents">Document library</Link>
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Platform adapters</CardTitle>
-          <CardDescription>Foundation for Buffer-style connectors; all inactive until API keys are wired.</CardDescription>
+          <CardTitle>Channels</CardTitle>
+          <CardDescription>
+            Places the calendar can send to. If one is greyed out or missing, set it up under Connections &amp; email.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm">
             {(adapters?.adapters ?? []).map((a) => (
-              <li key={a.key} className="flex justify-between rounded border border-border/60 px-3 py-2">
+              <li key={a.key} className="flex justify-between rounded border border-border/60 px-3 py-2 gap-2">
                 <span>{a.displayName}</span>
-                <span className="text-muted-foreground font-mono text-xs">{a.key}</span>
+                <span className="text-muted-foreground text-xs shrink-0">{a.active ? "On" : "Off"}</span>
               </li>
             ))}
           </ul>
@@ -111,37 +112,41 @@ export default function ContentStudioWorkflowPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Manual publish (log only)</CardTitle>
-          <CardDescription>Records intent in publish_logs — does not call external networks in phase 2.</CardDescription>
+          <CardTitle>Add a history row (support)</CardTitle>
+          <CardDescription>
+            Saves a line in the table below for troubleshooting. It does <strong>not</strong> post to Facebook or other
+            networks by itself.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4 items-end max-w-xl">
           <div className="space-y-1">
-            <Label>Document ID</Label>
-            <Input value={docId} onChange={(e) => setDocId(e.target.value)} />
+            <Label>Document number</Label>
+            <Input value={docId} onChange={(e) => setDocId(e.target.value)} inputMode="numeric" />
           </div>
           <div className="space-y-1">
-            <Label>Platform</Label>
+            <Label>Type</Label>
             <Select value={platform} onValueChange={setPlatform}>
               <SelectTrigger className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="manual">manual</SelectItem>
-                <SelectItem value="blog">blog</SelectItem>
-                <SelectItem value="newsletter">newsletter</SelectItem>
-                <SelectItem value="social_placeholder">social_placeholder</SelectItem>
+                <SelectItem value="manual">Internal note</SelectItem>
+                <SelectItem value="blog">Blog</SelectItem>
+                <SelectItem value="newsletter">Newsletter</SelectItem>
+                <SelectItem value="social_placeholder">Social (test)</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button onClick={() => manualPub.mutate()} disabled={manualPub.isPending}>
-            {manualPub.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log publish"}
+            {manualPub.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to history"}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Publish logs</CardTitle>
+          <CardTitle>Recent activity</CardTitle>
+          <CardDescription>What the system recorded for scheduled posts (success and errors).</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -151,7 +156,7 @@ export default function ContentStudioWorkflowPage() {
               {(logs?.logs ?? []).map((l) => (
                 <li key={l.id} className="rounded-lg border border-border/50 p-3">
                   <div className="font-medium">
-                    doc {l.documentId ?? "—"} · {l.platform} · {l.status}
+                    Document {l.documentId ?? "—"} · {l.platform} · {l.status}
                   </div>
                   <div className="text-xs text-muted-foreground">{format(new Date(l.createdAt), "PPp")}</div>
                   {l.errorMessage && <p className="text-destructive text-xs mt-1">{l.errorMessage}</p>}

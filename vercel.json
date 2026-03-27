@@ -12,6 +12,14 @@
     {
       "path": "/api/cron/brand-vault",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/email-hub-scheduled",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/email-hub-inbox-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

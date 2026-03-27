@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ const DEFAULT_SEGMENT: CommSegmentFilters = {
 
 export default function NewCommCampaignPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const { toast } = useToast();
   const [name, setName] = useState("");
@@ -97,7 +98,7 @@ export default function NewCommCampaignPage() {
       const organizationId =
         orgTrim === "" ? undefined : Number.isFinite(Number(orgTrim)) ? Number(orgTrim) : undefined;
       if (orgTrim !== "" && organizationId === undefined) {
-        throw new Error("Organization ID must be a number");
+        throw new Error("Organization must be a number");
       }
       const res = await apiRequest("POST", "/api/admin/communications/campaigns", {
         name,
@@ -148,9 +149,9 @@ export default function NewCommCampaignPage() {
         <CardHeader>
           <CardTitle>New campaign</CardTitle>
           <CardDescription>
-            Choose who receives this send using the form below (no JSON). At least one audience rule is required before
-            send. UTM fields at the bottom tag tracked links — they do not filter the list unless you also set UTM match
-            in the audience section.
+            Choose who receives this send with the audience rules below. At least one rule is required before you send.
+            The optional link tagging at the bottom labels tracked links for reports—it does not narrow the list unless you
+            also add matching UTM rules in the audience section.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -233,15 +234,17 @@ export default function NewCommCampaignPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Organization ID (optional)</Label>
-            <Input
-              value={organizationIdText}
-              onChange={(e) => setOrganizationIdText(e.target.value)}
-              placeholder="Multi-tenant prep — leave blank"
-              inputMode="numeric"
-            />
-          </div>
+          {isSuperUser ? (
+            <div className="space-y-2">
+              <Label>Organization ID (optional)</Label>
+              <Input
+                value={organizationIdText}
+                onChange={(e) => setOrganizationIdText(e.target.value)}
+                placeholder="Multi-tenant — leave blank for default"
+                inputMode="numeric"
+              />
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label>Audience</Label>

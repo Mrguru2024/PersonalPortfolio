@@ -3,6 +3,13 @@ import { isSuperUser } from "@/lib/auth-helpers";
 import { testZoomConnection } from "@/lib/zoom";
 import { testGoogleCalendarConnection } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationId } from "../types";
+import {
+  hasFacebookPagePublishConfig,
+  hasLinkedInPublishConfig,
+  hasThreadsPublishConfig,
+  hasXPublishConfig,
+  hasWebhookPublishConfig,
+} from "@server/services/internalStudio/publishAdapters";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!(await isSuperUser(req))) {
       return NextResponse.json(
-        { message: "Super user access required" },
+        { message: "Sign in with the site owner account." },
         { status: 403 }
       );
     }
@@ -38,8 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Missing or invalid service. Use: facebook, brevo, zoom, social-scheduling, google_calendar, or calendly.",
+          message: "That service name isn’t recognized.",
         },
         { status: 400 }
       );
@@ -51,12 +57,13 @@ export async function POST(req: NextRequest) {
       if (!appId || !appSecret) {
         return NextResponse.json({
           ok: false,
-          message: "Facebook App not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET.",
+          message: "Facebook isn’t configured yet. Add your Meta app ID and secret in the site settings.",
         });
       }
       return NextResponse.json({
         ok: true,
-        message: "Facebook App ID and Secret are set. Ensure Valid OAuth Redirect URIs are configured in Facebook Developer Console.",
+        message:
+          "Meta app ID and secret are saved. In Meta’s app settings, add the return link from Connections & email (yellow box).",
       });
     }
 
@@ -99,9 +106,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (service === "social-scheduling") {
+      const parts = [
+        (await hasFacebookPagePublishConfig()) ? "Facebook Page" : null,
+        (await hasLinkedInPublishConfig()) ? "LinkedIn" : null,
+        (await hasXPublishConfig()) ? "X" : null,
+        (await hasThreadsPublishConfig()) ? "Threads" : null,
+        hasWebhookPublishConfig() ? "Automation webhook" : null,
+      ].filter((x): x is string => x != null);
+      if (parts.length === 0) {
+        return NextResponse.json({
+          ok: false,
+          message:
+            "No social channel is ready yet. Connect a Facebook Page, LinkedIn, X, or Threads under Connections & email, or ask your host to set posting keys. A webhook URL is another option.",
+        });
+      }
       return NextResponse.json({
-        ok: false,
-        message: "Social scheduling is not yet connected. Connect Facebook and other platforms above first.",
+        ok: true,
+        message: `Saved settings look ready for: ${parts.join(", ")}. Schedule a test post from the content calendar to confirm it goes live.`,
       });
     }
 
@@ -115,12 +136,12 @@ export async function POST(req: NextRequest) {
       if (!tok) {
         return NextResponse.json({
           ok: false,
-          message: "CALENDLY_API_TOKEN not set (optional bridge).",
+          message: "Calendly isn’t configured (optional).",
         });
       }
       return NextResponse.json({
         ok: true,
-        message: "Calendly token is set. Import/sync tooling can use it when implemented.",
+        message: "Calendly token is saved.",
       });
     }
 
@@ -128,7 +149,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Integrations test error:", error);
     return NextResponse.json(
-      { message: "Failed to run test" },
+      { message: "Could not run the test. Try again." },
       { status: 500 }
     );
   }

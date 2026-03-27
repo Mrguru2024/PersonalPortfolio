@@ -7,7 +7,7 @@ export function describeCommSegmentFilters(f: CommSegmentFilters | null | undefi
   const lines: string[] = [];
 
   if (f.contactIds && f.contactIds.length > 0) {
-    lines.push(`Specific contacts: ${f.contactIds.length} selected (IDs: ${f.contactIds.slice(0, 8).join(", ")}${f.contactIds.length > 8 ? "…" : ""})`);
+    lines.push(`Specific people: ${f.contactIds.length} selected`);
   }
   if (f.type) lines.push(`Contact type: ${f.type}`);
   if (f.status) lines.push(`Status: ${f.status}`);
@@ -25,7 +25,7 @@ export function describeCommSegmentFilters(f: CommSegmentFilters | null | undefi
   if (f.utmSource) lines.push(`UTM source (match): ${f.utmSource}`);
   if (f.utmMedium) lines.push(`UTM medium (match): ${f.utmMedium}`);
   if (f.utmCampaign) lines.push(`UTM campaign (match): ${f.utmCampaign}`);
-  if (f.personaId) lines.push(`Marketing persona ID: ${f.personaId}`);
+  if (f.personaId) lines.push(`Marketing persona: ${f.personaId}`);
   if (f.bookedCall === true) lines.push("Booked a call");
   if (f.bookedCall === false) lines.push("Has not booked a call");
   if (f.serviceInterestContains?.trim()) lines.push(`Service interest contains: “${f.serviceInterestContains.trim()}”`);

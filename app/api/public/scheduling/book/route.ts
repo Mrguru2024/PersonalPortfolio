@@ -14,6 +14,12 @@ export async function POST(req: NextRequest) {
     const guestPhone = body.guestPhone != null ? String(body.guestPhone).trim() : undefined;
     const startAtIso = String(body.startAt ?? "").trim();
     const guestNotes = body.guestNotes != null ? String(body.guestNotes).trim() : undefined;
+    let hostUserId: number | undefined;
+    const hostUserIdRaw = body.hostUserId;
+    if (hostUserIdRaw != null && hostUserIdRaw !== "") {
+      const n = typeof hostUserIdRaw === "number" ? hostUserIdRaw : parseInt(String(hostUserIdRaw), 10);
+      if (Number.isFinite(n)) hostUserId = Math.trunc(n);
+    }
 
     if (!guestName || !guestEmail || !startAtIso) {
       return NextResponse.json({ error: "guestName, guestEmail, startAt required" }, { status: 400 });
@@ -29,6 +35,7 @@ export async function POST(req: NextRequest) {
       guestPhone,
       startAtIso,
       guestNotes,
+      hostUserId,
     });
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });

@@ -99,6 +99,9 @@ export default function CrmDashboardPage() {
               <Link href="/admin/crm/pipeline">Pipeline</Link>
             </Button>
             <Button variant="outline" size="sm" className="rounded-lg" asChild>
+              <Link href="/admin/crm/ltv">LTV snapshot</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/tasks">Tasks</Link>
             </Button>
           </div>

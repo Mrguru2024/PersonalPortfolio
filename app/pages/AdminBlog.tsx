@@ -20,7 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SEOPanel } from "@/components/SEOPanel";
 import ParallaxBackground from "@/components/ParallaxBackground";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import {
   Select,
   SelectContent,
@@ -92,6 +92,7 @@ const AdminBlog = () => {
   const [showTitleDialog, setShowTitleDialog] = useState(false);
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const { user } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   
   const { toast } = useToast();
   const router = useRouter();
@@ -403,8 +404,18 @@ const AdminBlog = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Leave empty to publish immediately. Pick a future date and time to schedule the post; it will appear on the blog when that time is reached.
+                            Leave empty to publish immediately. Pick a future date and time and the post will appear on
+                            the blog when that time is reached.
                           </FormDescription>
+                          {isSuperUser ? (
+                            <details className="mt-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                              <summary className="cursor-pointer font-medium text-foreground">Technical (super user)</summary>
+                              <p className="mt-2 leading-relaxed">
+                                Create/update sends <code className="text-[11px]">publishedAt</code> as ISO timestamps.
+                                Visibility on the public blog depends on how the list endpoint filters by that field.
+                              </p>
+                            </details>
+                          ) : null}
                           <FormMessage />
                         </FormItem>
                       )}

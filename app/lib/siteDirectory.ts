@@ -146,12 +146,14 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/reminders", title: "Reminders", category: "Admin · Core", audience: "admin", description: "Admin reminder tasks.", keywords: k("reminders", "tasks") },
   { path: "/admin/users", title: "User management", category: "Admin · Core", audience: "admin", description: "Approve users, permissions (super).", keywords: k("users", "permissions") },
   { path: "/admin/system", title: "System monitor", category: "Admin · Core", audience: "admin", description: "Health, logs, super-admin capture (super).", keywords: k("system", "logs", "health") },
-  { path: "/admin/integrations", title: "Integrations", category: "Admin · Core", audience: "admin", description: "Third-party integration status/tests (super).", keywords: k("integrations", "api") },
+  { path: "/admin/integrations", title: "Connections & email", category: "Admin · Core", audience: "admin", description: "See connected services, tests, and social sign-in (site owner).", keywords: k("integrations", "email", "social") },
+  { path: "/admin/deployment-env", title: "Live site settings (hosting)", category: "Admin · Core", audience: "admin", description: "Save name/value pairs on Vercel from the admin (site owner).", keywords: k("vercel", "hosting", "settings"), relatedPaths: ["/admin/integrations"] },
   { path: "/admin/site-directory", title: "Pages & tools directory", category: "Admin · Core", audience: "admin", description: "Find any page by name or topic; open visitor or admin screens; optional JSON export for developers.", keywords: k("sitemap", "routes", "search", "ia", "directory", "pages"), relatedPaths: ["/api/admin/site-directory"] },
 
   // —— Admin: CRM
   { path: "/admin/crm", title: "CRM home", category: "Admin · CRM", audience: "admin", description: "CRM overview and contacts entry.", keywords: k("crm", "contacts") },
-  { path: "/admin/crm/dashboard", title: "CRM dashboard", category: "Admin · CRM", audience: "admin", description: "CRM metrics and summaries.", keywords: k("crm", "dashboard") },
+  { path: "/admin/crm/dashboard", title: "CRM dashboard", category: "Admin · CRM", audience: "admin", description: "CRM metrics and summaries.", keywords: k("crm", "dashboard"), relatedPaths: ["/admin/crm/ltv"] },
+  { path: "/admin/crm/ltv", title: "LTV & revenue snapshot", category: "Admin · CRM", audience: "admin", description: "Pipeline value, client LTV proxy from estimates, source rollups, workflow links.", keywords: k("ltv", "revenue", "pipeline", "crm", "lifetime value"), relatedPaths: ["/admin/crm/pipeline", "/admin/crm"] },
   { path: "/admin/crm/[id]", title: "CRM contact / lead detail", category: "Admin · CRM", audience: "admin", description: "Single contact profile.", keywords: k("contact", "lead", "crm") },
   { path: "/admin/crm/pipeline", title: "CRM pipeline", category: "Admin · CRM", audience: "admin", description: "Deal pipeline board.", keywords: k("pipeline", "deals") },
   { path: "/admin/crm/accounts", title: "CRM accounts", category: "Admin · CRM", audience: "admin", description: "Account list.", keywords: k("accounts", "companies") },
@@ -174,6 +176,25 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/lead-intake", title: "Lead intake", category: "Admin · CRM", audience: "admin", description: "Inbound lead triage.", keywords: k("leads", "intake") },
 
   // —— Admin: content & comms
+  {
+    path: "/admin/email-hub",
+    title: "Email Hub",
+    category: "Admin · Communications",
+    audience: "admin",
+    description:
+      "Founder/admin outbound workspace: compose, drafts, scheduled sends, templates, brand assets, Brevo webhooks. Subroutes: inbox (Gmail/Graph sync), compose, drafts, scheduled, sent, templates, assets, tracking, settings.",
+    keywords: k("email", "hub", "brevo", "compose", "transactional", "templates", "inbox", "gmail"),
+    relatedPaths: ["/admin/communications", "/admin/crm", "/admin/newsletters"],
+  },
+  {
+    path: "/admin/email-hub/inbox",
+    title: "Email Hub · Inbox",
+    category: "Admin · Communications",
+    audience: "admin",
+    description: "Synced Gmail or Microsoft inbox: threads, read/unread, reply.",
+    keywords: k("inbox", "gmail", "microsoft", "graph", "email hub"),
+    relatedPaths: ["/admin/email-hub"],
+  },
   { path: "/admin/blog", title: "Blog admin", category: "Admin · Content", audience: "admin", description: "Manage blog posts.", keywords: k("blog", "cms") },
   { path: "/admin/blog/analytics", title: "Blog analytics", category: "Admin · Content", audience: "admin", description: "Post analytics.", keywords: k("blog", "analytics") },
   { path: "/admin/newsletters", title: "Newsletters", category: "Admin · Content", audience: "admin", description: "Newsletter campaigns list.", keywords: k("newsletter", "email") },
@@ -185,7 +206,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/content-studio/documents/[id]", title: "CS document editor", category: "Admin · Content", audience: "admin", description: "Edit single document.", keywords: k("document", "editor") },
   { path: "/admin/content-studio/calendar", title: "CS calendar", category: "Admin · Content", audience: "admin", description: "Scheduled posts.", keywords: k("calendar", "schedule") },
   { path: "/admin/content-studio/campaigns", title: "CS campaigns", category: "Admin · Content", audience: "admin", description: "Campaign grouping.", keywords: k("campaigns") },
-  { path: "/admin/content-studio/workflow", title: "CS workflow", category: "Admin · Content", audience: "admin", description: "Workflow / pipeline for content.", keywords: k("workflow") },
+  { path: "/admin/content-studio/workflow", title: "Post history", category: "Admin · Content", audience: "admin", description: "Social publish log and channel list.", keywords: k("publish", "content studio") },
   { path: "/admin/content-studio/import-export", title: "CS import/export", category: "Admin · Content", audience: "admin", description: "Bulk import export.", keywords: k("import", "export") },
 
   // —— Admin: marketing intelligence
@@ -212,7 +233,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
 
   // —— Admin: growth products
   { path: "/admin/growth-os", title: "Growth OS hub", category: "Admin · Growth OS", audience: "admin", description: "Client Growth OS admin shell.", keywords: k("growth os", "gos") },
-  { path: "/admin/scheduling", title: "Native scheduling", category: "Admin · Growth OS", audience: "admin", description: "Bookings, email templates, AI tools for /book.", keywords: k("scheduling", "calendar", "bookings"), relatedPaths: ["/book"] },
+  { path: "/admin/scheduling", title: "Native scheduling", category: "Admin · Growth OS", audience: "admin", description: "Bookings, email templates, AI tools for /book.", keywords: k("scheduling", "calendar", "bookings"), relatedPaths: ["/book", "/admin/scheduling/my-availability"] },
   { path: "/admin/growth-os/intelligence", title: "GOS intelligence", category: "Admin · Growth OS", audience: "admin", description: "Intel dashboards/automation.", keywords: k("intelligence", "automation") },
   { path: "/admin/growth-os/security", title: "GOS security", category: "Admin · Growth OS", audience: "admin", description: "Security settings for GOS.", keywords: k("security", "gos") },
   { path: "/admin/growth-os/shares", title: "GOS shares", category: "Admin · Growth OS", audience: "admin", description: "Shared reports/links.", keywords: k("shares", "tokens") },

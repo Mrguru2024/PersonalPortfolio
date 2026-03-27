@@ -8,11 +8,14 @@ import {
   schedulingAvailabilityRules,
   schedulingBookingTypes,
   schedulingGlobalSettings,
+  schedulingHostBlockedDates,
+  schedulingHostWeeklyRules,
   schedulingReminderJobs,
   type SchedulingAppointment,
   type SchedulingBookingType,
   type SchedulingGlobalSettings,
 } from "@shared/schedulingSchema";
+import { users } from "@shared/schema";
 import { crmContacts } from "@shared/crmSchema";
 import {
   deleteGoogleCalendarEventForAppointment,
@@ -336,10 +339,126 @@ export async function deleteAvailabilityRuleAdmin(id: number): Promise<{ ok: boo
   return { ok: true };
 }
 
+export async function listSchedulingHostUsers() {
+  return db
+    .select({
+      id: users.id,
+      username: users.username,
+      full_name: users.full_name,
+    })
+    .from(users)
+    .where(and(eq(users.isAdmin, true), eq(users.adminApproved, true)))
+    .orderBy(asc(users.id));
+}
+
+export async function isSchedulingHostUser(userId: number): Promise<boolean> {
+  const [row] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(
+      and(eq(users.id, userId), eq(users.isAdmin, true), eq(users.adminApproved, true)),
+    )
+    .limit(1);
+  return !!row;
+}
+
+export async function listHostWeeklyRulesForUser(userId: number) {
+  return db
+    .select()
+    .from(schedulingHostWeeklyRules)
+    .where(eq(schedulingHostWeeklyRules.userId, userId))
+    .orderBy(asc(schedulingHostWeeklyRules.dayOfWeek), asc(schedulingHostWeeklyRules.id));
+}
+
+export async function listHostBlockedDatesForUser(userId: number) {
+  const rows = await db
+    .select({ dateLocal: schedulingHostBlockedDates.dateLocal })
+    .from(schedulingHostBlockedDates)
+    .where(eq(schedulingHostBlockedDates.userId, userId))
+    .orderBy(asc(schedulingHostBlockedDates.dateLocal));
+  return rows.map((r) => r.dateLocal);
+}
+
+const DATE_LOCAL_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export async function replaceHostWeeklyRulesForUser(
+  userId: number,
+  rules: Array<{ dayOfWeek: number; startTimeLocal: string; endTimeLocal: string }>,
+): Promise<{ ok: true; inserted: number } | { ok: false; error: string }> {
+  if (!(await isSchedulingHostUser(userId))) {
+    return { ok: false, error: "Not a scheduling host." };
+  }
+  for (const r of rules) {
+    if (!Number.isInteger(r.dayOfWeek) || r.dayOfWeek < 0 || r.dayOfWeek > 6) {
+      return { ok: false, error: "Each rule needs dayOfWeek 0–6." };
+    }
+    if (!validHm(r.startTimeLocal) || !validHm(r.endTimeLocal)) {
+      return { ok: false, error: "Times must use HH:mm (24h)." };
+    }
+  }
+  await db.delete(schedulingHostWeeklyRules).where(eq(schedulingHostWeeklyRules.userId, userId));
+  let inserted = 0;
+  for (const r of rules) {
+    await db.insert(schedulingHostWeeklyRules).values({
+      userId,
+      dayOfWeek: r.dayOfWeek,
+      startTimeLocal: r.startTimeLocal,
+      endTimeLocal: r.endTimeLocal,
+    });
+    inserted++;
+  }
+  return { ok: true, inserted };
+}
+
+export async function replaceHostBlockedDatesForUser(
+  userId: number,
+  dates: string[],
+): Promise<{ ok: true; inserted: number } | { ok: false; error: string }> {
+  if (!(await isSchedulingHostUser(userId))) {
+    return { ok: false, error: "Not a scheduling host." };
+  }
+  const normalized: string[] = [];
+  for (const d of dates) {
+    const s = String(d).trim();
+    if (!DATE_LOCAL_RE.test(s)) return { ok: false, error: "Blocked dates must be YYYY-MM-DD." };
+    normalized.push(s);
+  }
+  const uniqueSorted = [...new Set(normalized)].sort();
+  await db.delete(schedulingHostBlockedDates).where(eq(schedulingHostBlockedDates.userId, userId));
+  for (const dateLocal of uniqueSorted) {
+    await db.insert(schedulingHostBlockedDates).values({ userId, dateLocal });
+  }
+  return { ok: true, inserted: uniqueSorted.length };
+}
+
+/**
+ * Resolve which admin receives the booking for public /book flows.
+ * - 0 hosts: null (legacy single-pool behavior).
+ * - 1 host: that admin unless client passes another id (ignored).
+ * - 2+ hosts: body/query must supply a valid host user id.
+ */
+export async function resolvePublicBookingHostUserId(
+  requested: number | null | undefined,
+): Promise<{ ok: true; hostUserId: number | null } | { ok: false; error: string }> {
+  const hosts = await listSchedulingHostUsers();
+  if (hosts.length === 0) {
+    return { ok: true, hostUserId: null };
+  }
+  if (hosts.length === 1) {
+    return { ok: true, hostUserId: hosts[0]!.id };
+  }
+  const rid = typeof requested === "number" && Number.isFinite(requested) ? Math.trunc(requested) : NaN;
+  if (!Number.isFinite(rid) || !hosts.some((h) => h.id === rid)) {
+    return { ok: false, error: "Pick who you’re meeting with (host)." };
+  }
+  return { ok: true, hostUserId: rid };
+}
+
 /** YYYY-MM-DD in business timezone → slot start instants (UTC) that fit type duration. */
 export async function computeAvailableSlots(
   dateStr: string,
   bookingTypeId: number,
+  hostUserId?: number | null,
 ): Promise<{ startAt: string; endAt: string; label: string }[]> {
   const settings = await getSchedulingSettings();
   if (!settings.publicBookingEnabled) return [];
@@ -360,15 +479,41 @@ export async function computeAvailableSlots(
   const probeUtc = fromZonedTime(new Date(y, mo - 1, da, 12, 0, 0, 0), tz);
   const dow = getDay(toZonedTime(probeUtc, tz));
 
-  const specific = await db
-    .select()
-    .from(schedulingAvailabilityRules)
-    .where(and(eq(schedulingAvailabilityRules.dayOfWeek, dow), eq(schedulingAvailabilityRules.bookingTypeId, bookingTypeId)));
-  const generic = await db
-    .select()
-    .from(schedulingAvailabilityRules)
-    .where(and(eq(schedulingAvailabilityRules.dayOfWeek, dow), isNull(schedulingAvailabilityRules.bookingTypeId)));
-  const rules = specific.length > 0 ? specific : generic;
+  if (hostUserId != null) {
+    if (!(await isSchedulingHostUser(hostUserId))) return [];
+    const [blocked] = await db
+      .select({ id: schedulingHostBlockedDates.id })
+      .from(schedulingHostBlockedDates)
+      .where(and(eq(schedulingHostBlockedDates.userId, hostUserId), eq(schedulingHostBlockedDates.dateLocal, dateStr)))
+      .limit(1);
+    if (blocked) return [];
+  }
+
+  const hostRows =
+    hostUserId != null
+      ? await db
+          .select()
+          .from(schedulingHostWeeklyRules)
+          .where(and(eq(schedulingHostWeeklyRules.userId, hostUserId), eq(schedulingHostWeeklyRules.dayOfWeek, dow)))
+      : [];
+
+  let rules: { startTimeLocal: string; endTimeLocal: string }[];
+  if (hostRows.length > 0) {
+    rules = hostRows;
+  } else {
+    const specific = await db
+      .select()
+      .from(schedulingAvailabilityRules)
+      .where(
+        and(eq(schedulingAvailabilityRules.dayOfWeek, dow), eq(schedulingAvailabilityRules.bookingTypeId, bookingTypeId)),
+      );
+    const generic = await db
+      .select()
+      .from(schedulingAvailabilityRules)
+      .where(and(eq(schedulingAvailabilityRules.dayOfWeek, dow), isNull(schedulingAvailabilityRules.bookingTypeId)));
+    const merged = specific.length > 0 ? specific : generic;
+    rules = merged;
+  }
   if (rules.length === 0) return [];
 
   const step = Math.max(5, settings.slotStepMinutes || 30);
@@ -380,12 +525,17 @@ export async function computeAvailableSlots(
 
   const dayStart = fromZonedTime(new Date(y, mo - 1, da, 0, 0, 0, 0), tz);
   const dayEnd = addMinutes(dayStart, 24 * 60);
+
+  const hostBookedCond =
+    hostUserId == null ? isNull(schedulingAppointments.hostUserId) : eq(schedulingAppointments.hostUserId, hostUserId);
+
   const booked = await db
     .select({ startAt: schedulingAppointments.startAt, endAt: schedulingAppointments.endAt })
     .from(schedulingAppointments)
     .where(
       and(
         inArray(schedulingAppointments.status, [...ACTIVE]),
+        hostBookedCond,
         lt(schedulingAppointments.startAt, dayEnd),
         gt(schedulingAppointments.endAt, dayStart),
       ),
@@ -446,14 +596,19 @@ export async function createBookingFromPublic(input: {
   guestPhone?: string;
   startAtIso: string;
   guestNotes?: string;
+  hostUserId?: number | null;
 }): Promise<{ ok: true; appointment: SchedulingAppointment } | { ok: false; error: string }> {
   const settings = await getSchedulingSettings();
   if (!settings.publicBookingEnabled) return { ok: false, error: "Public booking is disabled." };
 
+  const resolvedHost = await resolvePublicBookingHostUserId(input.hostUserId ?? undefined);
+  if (!resolvedHost.ok) return { ok: false, error: resolvedHost.error };
+  const hostUserId = resolvedHost.hostUserId;
+
   const startGuess = new Date(input.startAtIso);
   if (Number.isNaN(startGuess.getTime())) return { ok: false, error: "Invalid start time." };
   const dateKey = format(toZonedTime(startGuess, settings.businessTimezone), "yyyy-MM-dd");
-  const slots = await computeAvailableSlots(dateKey, input.bookingTypeId);
+  const slots = await computeAvailableSlots(dateKey, input.bookingTypeId, hostUserId);
   const t0 = startGuess.getTime();
   const match = slots.find((s) => Math.abs(new Date(s.startAt).getTime() - t0) < 90_000);
   if (!match) return { ok: false, error: "That time is no longer available." };
@@ -474,6 +629,7 @@ export async function createBookingFromPublic(input: {
     .insert(schedulingAppointments)
     .values({
       bookingTypeId: input.bookingTypeId,
+      hostUserId,
       guestName: input.guestName.trim(),
       guestEmail: input.guestEmail.trim().toLowerCase(),
       guestPhone: input.guestPhone?.trim() || null,

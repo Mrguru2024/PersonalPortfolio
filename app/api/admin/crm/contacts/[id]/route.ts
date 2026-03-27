@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { insertCrmContactSchema, type InsertCrmContact } from "@shared/crmSchema";
+
+const crmContactPatchSchema = insertCrmContactSchema.partial();
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +35,22 @@ export async function PATCH(
     }
     const id = Number((await params).id);
     const body = await req.json();
-    const contact = await storage.updateCrmContact(id, body);
+    const parsed = crmContactPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid contact fields", details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+    const updates = Object.fromEntries(
+      Object.entries(parsed.data).filter(([, v]) => v !== undefined),
+    ) as Partial<InsertCrmContact>;
+    if (Object.keys(updates).length === 0) {
+      const existing = await storage.getCrmContactById(id);
+      if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json(existing);
+    }
+    const contact = await storage.updateCrmContact(id, updates);
     return NextResponse.json(contact);
   } catch (error: any) {
     console.error("Error updating CRM contact:", error);

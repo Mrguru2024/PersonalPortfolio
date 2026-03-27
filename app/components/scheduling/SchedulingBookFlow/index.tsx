@@ -19,6 +19,8 @@ type MeetingType = {
   description: string | null;
 };
 
+type Host = { id: number; username: string; displayName: string };
+
 type Slot = { startAt: string; endAt: string; label: string };
 
 export function SchedulingBookFlow() {
@@ -28,6 +30,8 @@ export function SchedulingBookFlow() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [aiOn, setAiOn] = useState(false);
   const [types, setTypes] = useState<MeetingType[]>([]);
+  const [hosts, setHosts] = useState<Host[]>([]);
+  const [hostUserId, setHostUserId] = useState<number | null>(null);
   const [typeId, setTypeId] = useState<number | null>(null);
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -57,6 +61,10 @@ export function SchedulingBookFlow() {
         const t = (data.types || []) as MeetingType[];
         setTypes(t);
         if (t[0]) setTypeId(t[0].id);
+        const h = (data.hosts || []) as Host[];
+        setHosts(h);
+        if (h.length === 1) setHostUserId(h[0]!.id);
+        else setHostUserId(null);
       } catch {
         if (!cancelled) setEnabled(false);
       } finally {
@@ -84,7 +92,7 @@ export function SchedulingBookFlow() {
     } finally {
       setSlotsLoading(false);
     }
-  }, [date, typeId]);
+  }, [date, typeId, hosts.length, hostUserId]);
 
   useEffect(() => {
     if (typeId) void loadSlots();
@@ -111,6 +119,7 @@ export function SchedulingBookFlow() {
           guestPhone: phone.trim() || undefined,
           startAt: selectedStart,
           guestNotes: notes.trim() || undefined,
+          ...(hostUserId != null ? { hostUserId } : {}),
         }),
       });
       const data = await res.json();
@@ -186,6 +195,26 @@ export function SchedulingBookFlow() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {hosts.length > 1 ? (
+              <div className="space-y-2">
+                <Label>Who you&apos;re meeting with</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={hostUserId ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setHostUserId(v === "" ? null : Number(v));
+                  }}
+                >
+                  <option value="">Select…</option>
+                  {hosts.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label>Meeting type</Label>
               <select
@@ -257,7 +286,11 @@ export function SchedulingBookFlow() {
                 <Textarea id="g-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
               </div>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="submit" disabled={submitting || !selectedStart} className="min-h-[48px]">
+              <Button
+                type="submit"
+                disabled={submitting || !selectedStart || (hosts.length > 1 && hostUserId == null)}
+                className="min-h-[48px]"
+              >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm booking"}
               </Button>
             </form>

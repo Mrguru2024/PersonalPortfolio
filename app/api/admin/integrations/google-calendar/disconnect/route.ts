@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Super user access required" }, { status: 403 });
+    return NextResponse.json({ message: "Sign in with the site owner account." }, { status: 403 });
   }
   await disconnectGoogleCalendar();
   return NextResponse.json({ ok: true });

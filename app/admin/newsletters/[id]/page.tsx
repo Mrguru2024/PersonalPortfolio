@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ interface Newsletter {
 
 export default function NewsletterViewPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
@@ -310,19 +311,41 @@ export default function NewsletterViewPage() {
                 custom list, pick &quot;Specific list&quot;, add emails, then click <strong>Save recipients</strong>.
               </p>
               <p>
-                2. Use <strong>Send Now</strong> in the header when you are ready. Merge tags in subject or body:{" "}
-                <code className="text-xs bg-muted px-1 rounded">{"{{firstName}}"}</code>,{" "}
-                <code className="text-xs bg-muted px-1 rounded">{"{{Name}}"}</code>,{" "}
-                <code className="text-xs bg-muted px-1 rounded">{"{{company}}"}</code>,{" "}
-                <code className="text-xs bg-muted px-1 rounded">{"{{email}}"}</code> — filled from CRM when the address
-                matches a contact.
+                2. Use <strong>Send Now</strong> in the header when you are ready.{" "}
+                {isSuperUser ? (
+                  <>
+                    Merge tags in subject or body:{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{firstName}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{Name}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{company}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{email}}"}</code> — filled from CRM when the address
+                    matches a contact.
+                  </>
+                ) : (
+                  <>
+                    You can personalize the subject and body with names and company when the email matches someone in
+                    your CRM.
+                  </>
+                )}
               </p>
               <p>
-                If Brevo blocks the send (e.g. unrecognized IP), open{" "}
-                <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
-                  Admin → Settings → Brevo
-                </Link>
-                .
+                {isSuperUser ? (
+                  <>
+                    If Brevo blocks the send (e.g. unrecognized IP), open{" "}
+                    <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
+                      Admin → Settings → Brevo
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  <>
+                    If something prevents delivery, an administrator can check email settings under{" "}
+                    <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
+                      Admin → Settings → Brevo
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </AlertDescription>
           </Alert>
@@ -400,7 +423,7 @@ export default function NewsletterViewPage() {
                       value={recipientList}
                       onChange={(e) => setRecipientList(e.target.value)}
                       placeholder="one@example.com&#10;two@example.com"
-                      className="mt-1 min-h-[120px] font-mono text-sm"
+                      className="mt-1 min-h-[120px] text-sm"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">

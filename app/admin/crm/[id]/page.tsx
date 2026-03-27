@@ -418,6 +418,71 @@ export default function CrmLeadProfilePage() {
 
   const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 
+  const [detailEdit, setDetailEdit] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    jobTitle: "",
+    industry: "",
+    source: "",
+    linkedinUrl: "",
+    estimatedValueDollars: "",
+    notes: "",
+  });
+
+  const updateDetailsMutation = useMutation({
+    mutationFn: async () => {
+      const ev = detailEdit.estimatedValueDollars.trim();
+      let estimatedValue: number | null = null;
+      if (ev) {
+        const n = parseFloat(ev);
+        if (!Number.isFinite(n) || n < 0) throw new Error("Estimated value must be a valid number.");
+        estimatedValue = Math.round(n * 100);
+      }
+      const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, {
+        name: detailEdit.name.trim(),
+        email: detailEdit.email.trim(),
+        phone: detailEdit.phone.trim() || null,
+        company: detailEdit.company.trim() || null,
+        jobTitle: detailEdit.jobTitle.trim() || null,
+        industry: detailEdit.industry.trim() || null,
+        source: detailEdit.source.trim() || null,
+        linkedinUrl: detailEdit.linkedinUrl.trim() || null,
+        estimatedValue,
+        notes: detailEdit.notes.trim() || null,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error || "Update failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
+      toast({ title: "Contact details saved" });
+    },
+    onError: (e: Error) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+  });
+
+  useEffect(() => {
+    if (!contact) return;
+    setDetailEdit({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone ?? "",
+      company: contact.company ?? "",
+      jobTitle: contact.jobTitle ?? "",
+      industry: contact.industry ?? "",
+      source: contact.source ?? "",
+      linkedinUrl: contact.linkedinUrl ?? "",
+      estimatedValueDollars: contact.estimatedValue != null ? String(contact.estimatedValue / 100) : "",
+      notes: contact.notes ?? "",
+    });
+  }, [contact?.id, contact?.updatedAt]);
+
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, { status });
@@ -633,6 +698,12 @@ export default function CrmLeadProfilePage() {
               Proposal prep
             </Link>
           </Button>
+          <Button variant="default" size="sm" asChild>
+            <Link href={`/admin/email-hub/compose?contactId=${id}`}>
+              <Mail className="h-4 w-4 mr-2" />
+              Email Hub
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -732,6 +803,116 @@ export default function CrmLeadProfilePage() {
             {contact.notes && (
               <p className="text-sm border-l-2 border-muted pl-3">{contact.notes}</p>
             )}
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm font-medium text-foreground">Edit contact details</p>
+              <p className="text-xs text-muted-foreground">
+                Update source, role, company, and other fields. Changes save to this lead only.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-name">Name</Label>
+                  <Input
+                    id="detail-name"
+                    value={detailEdit.name}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-email">Email</Label>
+                  <Input
+                    id="detail-email"
+                    type="email"
+                    value={detailEdit.email}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-phone">Phone</Label>
+                  <Input
+                    id="detail-phone"
+                    value={detailEdit.phone}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, phone: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-company">Company</Label>
+                  <Input
+                    id="detail-company"
+                    value={detailEdit.company}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, company: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-job">Job title</Label>
+                  <Input
+                    id="detail-job"
+                    value={detailEdit.jobTitle}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, jobTitle: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-industry">Industry</Label>
+                  <Input
+                    id="detail-industry"
+                    value={detailEdit.industry}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, industry: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-source">Source</Label>
+                  <Input
+                    id="detail-source"
+                    value={detailEdit.source}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, source: e.target.value }))}
+                    placeholder="e.g. website, referral, event"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-li">LinkedIn URL</Label>
+                  <Input
+                    id="detail-li"
+                    value={detailEdit.linkedinUrl}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, linkedinUrl: e.target.value }))}
+                    placeholder="https://…"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-value">Estimated value (USD)</Label>
+                  <Input
+                    id="detail-value"
+                    inputMode="decimal"
+                    value={detailEdit.estimatedValueDollars}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, estimatedValueDollars: e.target.value }))}
+                    placeholder="e.g. 10000"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-notes">Notes</Label>
+                  <Textarea
+                    id="detail-notes"
+                    value={detailEdit.notes}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, notes: e.target.value }))}
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => updateDetailsMutation.mutate()}
+                disabled={
+                  updateDetailsMutation.isPending ||
+                  !detailEdit.name.trim() ||
+                  !detailEdit.email.trim()
+                }
+              >
+                {updateDetailsMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Save details
+              </Button>
+            </div>
             {contact.customFields?.businessCardImage && typeof contact.customFields.businessCardImage === "string" ? (
               <div className="mt-3 pt-3 border-t">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Business card</p>

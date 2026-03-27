@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CRM_PIPELINE_STAGES, getPipelineStageLabel } from "@/lib/crm-pipeline-stages";
+import { Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const LIFECYCLE_OPTIONS = ["cold", "warm", "qualified", "sales_ready"];
 const INTENT_OPTIONS = ["low_intent", "moderate_intent", "high_intent", "hot_lead"];
@@ -26,6 +28,8 @@ function sel(v: string | undefined): string {
 function out(v: string): string | undefined {
   return v === ANY || !v.trim() ? undefined : v;
 }
+
+type CrmContactRow = { id: number; name: string; email: string };
 
 export interface CommAudienceSegmentBuilderProps {
   value: CommSegmentFilters;
@@ -57,15 +61,97 @@ export function CommAudienceSegmentBuilder({
     patch({ tags: tags.length ? tags : undefined });
   };
 
-  const contactIdsStr = useMemo(() => (value.contactIds ?? []).join(", "), [value.contactIds]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<CrmContactRow[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedHydrated, setSelectedHydrated] = useState<CrmContactRow[]>([]);
 
-  const setContactIdsFromString = (s: string) => {
-    const ids = s
-      .split(/[\s,]+/)
-      .map((x) => Number(x.trim()))
-      .filter((n) => Number.isFinite(n) && n > 0);
-    const unique = [...new Set(ids)];
-    patch({ contactIds: unique.length ? unique : undefined });
+  const contactIdsKey = useMemo(
+    () => [...(value.contactIds ?? [])].sort((a, b) => a - b).join(","),
+    [value.contactIds],
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(contactSearch.trim()), 300);
+    return () => clearTimeout(t);
+  }, [contactSearch]);
+
+  useEffect(() => {
+    if (debouncedSearch.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    setSearchLoading(true);
+    void fetch(`/api/admin/crm/contacts?search=${encodeURIComponent(debouncedSearch)}`, {
+      credentials: "include",
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: unknown) => {
+        if (cancelled) return;
+        if (!Array.isArray(rows)) {
+          setSearchResults([]);
+          return;
+        }
+        setSearchResults(
+          rows.map((r) => {
+            const row = r as CrmContactRow;
+            return { id: row.id, name: row.name, email: row.email };
+          }),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setSearchResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSearchLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const ids = value.contactIds ?? [];
+    if (ids.length === 0) {
+      setSelectedHydrated([]);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/admin/crm/contacts?ids=${ids.join(",")}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: unknown) => {
+        if (cancelled || !Array.isArray(rows)) return;
+        const map = new Map(
+          rows.map((r) => {
+            const row = r as CrmContactRow;
+            return [row.id, { id: row.id, name: row.name, email: row.email }] as const;
+          }),
+        );
+        const ordered = ids.map((id) => map.get(id)).filter(Boolean) as CrmContactRow[];
+        setSelectedHydrated(ordered);
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedHydrated([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contactIdsKey]);
+
+  const addContact = (row: CrmContactRow) => {
+    const ids = [...(value.contactIds ?? [])];
+    if (!ids.includes(row.id)) ids.push(row.id);
+    patch({ contactIds: ids });
+    setContactSearch("");
+    setDebouncedSearch("");
+    setSearchResults([]);
+  };
+
+  const removeContact = (id: number) => {
+    const ids = (value.contactIds ?? []).filter((x) => x !== id);
+    patch({ contactIds: ids.length ? ids : undefined });
   };
 
   const bookedCallSel =
@@ -73,6 +159,8 @@ export function CommAudienceSegmentBuilder({
 
   const researchSel =
     value.hasResearch === true ? "yes" : value.hasResearch === false ? "no" : ANY;
+
+  const selectedIdSet = useMemo(() => new Set(value.contactIds ?? []), [value.contactIds]);
 
   return (
     <div className="space-y-6 rounded-lg border border-border bg-muted/20 p-4 dark:bg-muted/10">
@@ -108,15 +196,80 @@ export function CommAudienceSegmentBuilder({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="seg-contact-ids">Specific contact IDs (optional)</Label>
-        <Input
-          id="seg-contact-ids"
-          value={contactIdsStr}
-          onChange={(e) => setContactIdsFromString(e.target.value)}
-          placeholder="e.g. 12, 48, 90 — only these people if set"
-        />
+        <Label htmlFor="seg-contact-search">Specific people (optional)</Label>
+        {(value.contactIds?.length ?? 0) > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {(value.contactIds ?? []).map((id) => {
+              const row = selectedHydrated.find((r) => r.id === id);
+              return (
+                <li
+                  key={id}
+                  className="flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-sm max-w-full"
+                >
+                  <span className="truncate">
+                    {row ? (
+                      <>
+                        <span className="font-medium text-foreground">{row.name}</span>
+                        <span className="text-muted-foreground"> · {row.email}</span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">Loading…</span>
+                    )}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => removeContact(id)}
+                    aria-label={`Remove ${row?.name ?? "contact"}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div className="relative">
+          <Input
+            id="seg-contact-search"
+            value={contactSearch}
+            onChange={(e) => setContactSearch(e.target.value)}
+            placeholder="Search by name or email"
+            autoComplete="off"
+          />
+          {debouncedSearch.length >= 2 && searchLoading ? (
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : null}
+        </div>
+        {debouncedSearch.length >= 2 && !searchLoading && searchResults.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No leads match that search.</p>
+        ) : null}
+        {searchResults.some((r) => !selectedIdSet.has(r.id)) ? (
+          <ul
+            className="max-h-44 overflow-y-auto rounded-md border border-border bg-card text-sm"
+            role="listbox"
+            aria-label="Search results"
+          >
+            {searchResults
+              .filter((r) => !selectedIdSet.has(r.id))
+              .map((r) => (
+                <li key={r.id} className="border-b border-border/60 last:border-0">
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2.5 hover:bg-muted/80 transition-colors"
+                    onClick={() => addContact(r)}
+                  >
+                    <span className="font-medium text-foreground">{r.name}</span>
+                    <span className="text-muted-foreground"> — {r.email}</span>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        ) : null}
         <p className="text-xs text-muted-foreground">
-          When IDs are listed, the campaign targets only those contacts (other filters still apply).
+          When people are listed here, the campaign only goes to them (other filters still apply).
         </p>
       </div>
 
@@ -325,11 +478,11 @@ export function CommAudienceSegmentBuilder({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Marketing persona ID</Label>
+          <Label>Marketing persona</Label>
           <Input
             value={value.personaId ?? ""}
             onChange={(e) => patch({ personaId: e.target.value.trim() || undefined })}
-            placeholder="Persona id from Offer + Persona IQ"
+            placeholder="From Offer + Persona IQ"
           />
         </div>
         <div className="space-y-2">

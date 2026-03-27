@@ -115,7 +115,23 @@ import {
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte, ne, count, countDistinct } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  and,
+  sql,
+  inArray,
+  isNull,
+  isNotNull,
+  lt,
+  or,
+  gte,
+  lte,
+  ne,
+  count,
+  countDistinct,
+  ilike,
+} from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -361,6 +377,9 @@ export interface IStorage {
   // CRM operations
   getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
   getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]>;
+  getCrmContactsByIds(ids: number[]): Promise<CrmContact[]>;
+  /** Case-insensitive contains match on name, email, company, first/last name. */
+  searchCrmContacts(query: string, limit?: number): Promise<CrmContact[]>;
   getCrmContactById(id: number): Promise<CrmContact | undefined>;
   createCrmContact(contact: InsertCrmContact): Promise<CrmContact>;
   updateCrmContact(id: number, updates: Partial<InsertCrmContact>): Promise<CrmContact>;
@@ -464,6 +483,9 @@ export interface IStorage {
     discoveryWorkspacesIncomplete?: number;
     proposalPrepNeedingAttention?: number;
   }>;
+
+  /** Deal + contact value rollups for admin LTV workspace */
+  getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot>;
 
   // Lead intelligence: communication events
   createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent>;
@@ -2518,6 +2540,34 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(crmContacts.updatedAt));
   }
 
+  async getCrmContactsByIds(ids: number[]): Promise<CrmContact[]> {
+    const uniq = [...new Set(ids.filter((n) => Number.isFinite(n) && n > 0))] as number[];
+    if (uniq.length === 0) return [];
+    return db.select().from(crmContacts).where(inArray(crmContacts.id, uniq));
+  }
+
+  async searchCrmContacts(search: string, limit = 25): Promise<CrmContact[]> {
+    const q = search.trim();
+    if (q.length < 2) return [];
+    const lim = Math.min(Math.max(limit, 1), 50);
+    const escaped = q.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    const pattern = `%${escaped}%`;
+    return db
+      .select()
+      .from(crmContacts)
+      .where(
+        or(
+          ilike(crmContacts.name, pattern),
+          ilike(crmContacts.email, pattern),
+          ilike(crmContacts.firstName, pattern),
+          ilike(crmContacts.lastName, pattern),
+          ilike(crmContacts.company, pattern),
+        )!,
+      )
+      .orderBy(desc(crmContacts.updatedAt))
+      .limit(lim);
+  }
+
   async getCrmContactById(id: number): Promise<CrmContact | undefined> {
     const [row] = await db.select().from(crmContacts).where(eq(crmContacts.id, id));
     return row || undefined;
@@ -3073,6 +3123,77 @@ export class DatabaseStorage implements IStorage {
       topTags,
       discoveryWorkspacesIncomplete,
       proposalPrepNeedingAttention,
+    };
+  }
+
+  async getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot> {
+    const [contacts, deals] = await Promise.all([this.getCrmContacts(), this.getCrmDeals()]);
+    const effectiveDealStage = (d: (typeof deals)[number]) =>
+      (d.pipelineStage && String(d.pipelineStage).trim()) || d.stage || "new_lead";
+
+    let wonDealValueCents = 0;
+    let openPipelineValueCents = 0;
+    for (const d of deals) {
+      const st = effectiveDealStage(d);
+      const v = Number(d.value) || 0;
+      if (st === "won") wonDealValueCents += v;
+      else if (st !== "lost") openPipelineValueCents += v;
+    }
+
+    const clients = contacts.filter((c) => c.type === "client");
+    const leads = contacts.filter((c) => c.type === "lead");
+    const clientWithEst = clients.filter((c) => c.estimatedValue != null && c.estimatedValue > 0);
+    const leadWithEst = leads.filter((c) => c.estimatedValue != null && c.estimatedValue > 0);
+    const totalClientEstimatedLtvCents = clientWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
+    const totalLeadEstimatedValueCents = leadWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
+    const avgClientEstimatedLtvCents =
+      clientWithEst.length > 0 ? Math.round(totalClientEstimatedLtvCents / clientWithEst.length) : null;
+
+    const contactsMissingEstimateCount = contacts.filter(
+      (c) => (c.type === "lead" || c.type === "client") && (c.estimatedValue == null || c.estimatedValue <= 0),
+    ).length;
+
+    const bySource: Record<string, { totalCents: number; contactCount: number }> = {};
+    for (const c of contacts) {
+      if (c.estimatedValue == null || c.estimatedValue <= 0) continue;
+      const src = (c.source?.trim() || c.utmSource?.trim() || "Unknown") || "Unknown";
+      if (!bySource[src]) bySource[src] = { totalCents: 0, contactCount: 0 };
+      bySource[src].totalCents += c.estimatedValue;
+      bySource[src].contactCount += 1;
+    }
+    const topSourcesByValue = Object.entries(bySource)
+      .map(([source, agg]) => ({
+        source,
+        totalCents: agg.totalCents,
+        contactCount: agg.contactCount,
+      }))
+      .sort((a, b) => b.totalCents - a.totalCents)
+      .slice(0, 8);
+
+    const topContactsByEstimate = [...contacts]
+      .filter((c) => c.estimatedValue != null && c.estimatedValue > 0)
+      .sort((a, b) => (b.estimatedValue ?? 0) - (a.estimatedValue ?? 0))
+      .slice(0, 12)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        company: c.company ?? null,
+        type: c.type,
+        estimatedValueCents: c.estimatedValue!,
+      }));
+
+    return {
+      wonDealValueCents,
+      openPipelineValueCents,
+      clientCount: clients.length,
+      clientsWithEstimateCount: clientWithEst.length,
+      totalClientEstimatedLtvCents,
+      avgClientEstimatedLtvCents,
+      leadsWithEstimateCount: leadWithEst.length,
+      totalLeadEstimatedValueCents,
+      contactsMissingEstimateCount,
+      topSourcesByValue,
+      topContactsByEstimate,
     };
   }
 

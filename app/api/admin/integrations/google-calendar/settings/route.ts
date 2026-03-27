@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 /** GET — calendar id target (no secrets). */
 export async function GET(req: NextRequest) {
   if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Super user access required" }, { status: 403 });
+    return NextResponse.json({ message: "Sign in with the site owner account." }, { status: 403 });
   }
   const row = await getGoogleCalendarIntegrationRow();
   const cfg = (row?.configJson || {}) as { calendarId?: string };
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 /** PATCH { calendarId?: string } — which Google calendar receives Ascendra bookings (default primary). */
 export async function PATCH(req: NextRequest) {
   if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Super user access required" }, { status: 403 });
+    return NextResponse.json({ message: "Sign in with the site owner account." }, { status: 403 });
   }
   const body = await req.json().catch(() => ({}));
   const calendarId = typeof body.calendarId === "string" ? body.calendarId.trim() : "";

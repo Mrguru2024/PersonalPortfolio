@@ -1,4 +1,14 @@
-import { pgTable, text, serial, integer, boolean, json, timestamp, uniqueIndex, unique } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  json,
+  timestamp,
+  uniqueIndex,
+  unique,
+} from "drizzle-orm/pg-core";
 import { crmContacts } from "./crmSchema";
 
 /**
@@ -49,6 +59,32 @@ export const schedulingAvailabilityRules = pgTable("scheduling_availability_rule
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Per–approved-admin weekly windows for /book. When a host has rows for a weekday, those
+ * windows are used instead of global availability for that host; empty → inherit global rules.
+ */
+export const schedulingHostWeeklyRules = pgTable("scheduling_host_weekly_rules", {
+  id: serial("id").primaryKey(),
+  /** Approved admin (`users.id`); no Drizzle FK to avoid schema circular imports. */
+  userId: integer("user_id").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTimeLocal: text("start_time_local").notNull(),
+  endTimeLocal: text("end_time_local").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Calendar dates (YYYY-MM-DD in business timezone) when a host is unavailable for booking. */
+export const schedulingHostBlockedDates = pgTable(
+  "scheduling_host_blocked_dates",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    dateLocal: text("date_local").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("scheduling_host_blocked_user_date_uq").on(t.userId, t.dateLocal)],
+);
+
 export const schedulingAppointments = pgTable(
   "scheduling_appointments",
   {
@@ -56,6 +92,8 @@ export const schedulingAppointments = pgTable(
     bookingTypeId: integer("booking_type_id")
       .notNull()
       .references(() => schedulingBookingTypes.id, { onDelete: "restrict" }),
+    /** Approved admin receiving the meeting; null = legacy rows before host tracking. */
+    hostUserId: integer("host_user_id"),
     guestName: text("guest_name").notNull(),
     guestEmail: text("guest_email").notNull(),
     guestPhone: text("guest_phone"),
@@ -108,6 +146,8 @@ export const schedulingIntegrationConfigs = pgTable(
 export type SchedulingGlobalSettings = typeof schedulingGlobalSettings.$inferSelect;
 export type SchedulingBookingType = typeof schedulingBookingTypes.$inferSelect;
 export type SchedulingAvailabilityRule = typeof schedulingAvailabilityRules.$inferSelect;
+export type SchedulingHostWeeklyRule = typeof schedulingHostWeeklyRules.$inferSelect;
+export type SchedulingHostBlockedDate = typeof schedulingHostBlockedDates.$inferSelect;
 export type SchedulingAppointment = typeof schedulingAppointments.$inferSelect;
 export type SchedulingReminderJob = typeof schedulingReminderJobs.$inferSelect;
 export type SchedulingIntegrationConfig = typeof schedulingIntegrationConfigs.$inferSelect;

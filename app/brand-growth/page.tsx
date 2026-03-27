@@ -19,7 +19,6 @@ import {
   Megaphone,
   CheckCircle2,
   Target,
-  FileText,
 } from "lucide-react";
 import {
   BRAND_GROWTH_PATH,
@@ -93,11 +92,11 @@ const TEAM_ABOUT = [
     image: personalInfo.image,
     imageAlt: personalInfo.name,
     useLogo: false,
-    href: "/resume",
-    buttonLabel: "Download Resume",
-    buttonIcon: FileText,
-    secondaryHref: "/partners/ascendra-technologies",
-    secondaryLabel: "Visit Ascendra Technologies",
+    href: "/partners/ascendra-technologies",
+    buttonLabel: "Explore web, funnels & automation",
+    buttonIcon: Layout,
+    secondaryHref: STRATEGY_CALL_PATH,
+    secondaryLabel: "Book a strategy call",
   },
   {
     name: "Denishia",

@@ -8,6 +8,12 @@ export type EmailMergeFields = {
   firstName?: string | null;
   name?: string | null;
   company?: string | null;
+  /** Email Hub extended tags */
+  companyName?: string | null;
+  offerName?: string | null;
+  bookingLink?: string | null;
+  founderName?: string | null;
+  founderSignature?: string | null;
 };
 
 function escapeHtml(s: string): string {
@@ -75,7 +81,18 @@ export function applyEmailMergeTags(
   let out = text;
   out = replaceAliasGroup(out, ["firstName", "firstname", "FirstName", "FIRSTNAME"], escFirst);
   out = replaceAliasGroup(out, ["name", "NAME"], escName);
-  out = replaceAliasGroup(out, ["company", "COMPANY"], escCompany);
+  out = replaceAliasGroup(out, ["company", "COMPANY", "companyName", "CompanyName"], escCompany);
   out = replaceAliasGroup(out, ["email", "EMAIL"], escMail);
+
+  const offer = (fields.offerName?.trim() || "").length > 0 ? fields.offerName!.trim() : "";
+  const booking = (fields.bookingLink?.trim() || "").length > 0 ? fields.bookingLink!.trim() : "";
+  const founder = (fields.founderName?.trim() || "").length > 0 ? fields.founderName!.trim() : "";
+  const sigRaw = fields.founderSignature?.trim() || "";
+  const sigHtml = opts?.htmlEscape ? escapeHtml(sigRaw) : sigRaw;
+
+  out = replaceAliasGroup(out, ["offerName", "offer_name", "OFFERNAME"], esc(offer));
+  out = replaceAliasGroup(out, ["bookingLink", "booking_link", "BOOKINGLINK"], esc(booking));
+  out = replaceAliasGroup(out, ["founderName", "founder_name", "FOUNDERNAME"], esc(founder));
+  out = replaceAliasGroup(out, ["founderSignature", "founder_signature", "FOUNDERSIGNATURE"], sigHtml);
   return out;
 }

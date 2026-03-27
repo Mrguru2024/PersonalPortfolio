@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function CommunicationsDashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
 
   useEffect(() => {
@@ -92,8 +93,18 @@ export default function CommunicationsDashboardPage() {
               Integrated with CRM
             </CardTitle>
             <CardDescription>
-              Sends log to each lead&apos;s timeline, <code className="text-xs">communication_events</code>, and
-              activity log. Opens/clicks reuse <code className="text-xs">/api/track/email/*</code> with per-send IDs.
+              {isSuperUser ? (
+                <>
+                  Sends log to each lead&apos;s timeline, the <code className="text-xs">communication_events</code> table,
+                  and the activity log. Opens and clicks use <code className="text-xs">/api/track/email/*</code> with a
+                  unique id per send.
+                </>
+              ) : (
+                <>
+                  Each send is saved on the lead&apos;s timeline and in your communication history. Opens and clicks are
+                  counted from the tracking links in the email.
+                </>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">

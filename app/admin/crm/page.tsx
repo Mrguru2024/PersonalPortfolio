@@ -115,6 +115,14 @@ const SORT_OPTIONS = [
   { value: "status", label: "Status" },
 ] as const;
 
+function parseEstimatedValueCents(dollarsRaw: string): number | null {
+  const t = dollarsRaw.trim();
+  if (!t) return null;
+  const n = parseFloat(t);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
+
 export default function CrmPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -354,7 +362,7 @@ export default function CrmPage() {
       industry: form.industry.trim() || null,
       source: form.source.trim() || null,
       status: form.status,
-      estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
+      estimatedValue: parseEstimatedValueCents(form.estimatedValue),
       notes: form.notes.trim() || null,
     });
   };
@@ -373,7 +381,7 @@ export default function CrmPage() {
         industry: form.industry.trim() || null,
         source: form.source.trim() || null,
         status: form.status,
-        estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
+        estimatedValue: parseEstimatedValueCents(form.estimatedValue),
         notes: form.notes.trim() || null,
       },
     });
@@ -473,6 +481,9 @@ export default function CrmPage() {
           <nav className="flex flex-wrap gap-1.5 mt-4 p-1 rounded-xl bg-muted/50 border border-border/50 w-fit">
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/dashboard">Overview</Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-lg" asChild>
+              <Link href="/admin/crm/ltv">LTV</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/accounts">Accounts</Link>
@@ -1056,7 +1067,7 @@ export default function CrmPage() {
       </Dialog>
 
       <Dialog open={!!editingContact} onOpenChange={() => setEditingContact(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit contact</DialogTitle>
           </DialogHeader>
@@ -1100,6 +1111,34 @@ export default function CrmPage() {
               <div>
                 <Label>Company</Label>
                 <Input value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Job title</Label>
+                  <Input value={form.jobTitle} onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Industry</Label>
+                  <Input value={form.industry} onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <Label>Source</Label>
+                <Input
+                  value={form.source}
+                  onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
+                  placeholder="e.g. website, referral"
+                />
+              </div>
+              <div>
+                <Label>Est. value ($)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.estimatedValue}
+                  onChange={(e) => setForm((f) => ({ ...f, estimatedValue: e.target.value }))}
+                  placeholder="e.g. 5000"
+                />
               </div>
               <div>
                 <Label>Notes</Label>

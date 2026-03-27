@@ -1,9 +1,14 @@
 import { db } from "@server/db";
+import { listFacebookAccountSummaries } from "@server/services/contentStudioFacebookConnectService";
+import { listLinkedInAccountSummaries } from "@server/services/contentStudioLinkedInConnectService";
+import { listThreadsAccountSummaries } from "@server/services/contentStudioThreadsConnectService";
+import { listXAccountSummaries } from "@server/services/contentStudioXConnectService";
 import {
   internalPublishLogs,
   internalPlatformAdapters,
   internalCmsDocuments,
   internalEditorialCalendarEntries,
+  type InternalPlatformAdapter,
 } from "@shared/schema";
 import { eq, desc, asc, and } from "drizzle-orm";
 import {
@@ -19,6 +24,7 @@ const DEFAULT_ADAPTERS = [
   { key: "facebook_page", displayName: "Facebook Page (Graph API)", config: {} },
   { key: "linkedin", displayName: "LinkedIn (UGC API — OAuth token)", config: {} },
   { key: "x", displayName: "X / Twitter (API v2 — OAuth2 user token)", config: {} },
+  { key: "threads", displayName: "Threads (Meta Threads API — text posts)", config: {} },
   { key: "webhook_hub", displayName: "Webhook hub (Buffer / Make / Zapier URL)", config: {} },
   { key: "brevo_notify", displayName: "Brevo email notify-only", config: {} },
   { key: "blog", displayName: "Ascendra blog (future)", config: { route: "/api/admin/blog" } },
@@ -44,6 +50,148 @@ export async function ensureDefaultPlatformAdapters() {
 export async function listPlatformAdapters() {
   await ensureDefaultPlatformAdapters();
   return db.select().from(internalPlatformAdapters).orderBy(asc(internalPlatformAdapters.displayName));
+}
+
+function expandOAuthTargets(
+  out: InternalPlatformAdapter[],
+  r: InternalPlatformAdapter,
+  baseKey: string,
+  shortLabel: string,
+  summaries: { accountId: string; label: string }[],
+  hasEnvFallback: boolean,
+): void {
+  if (summaries.length === 0) {
+    if (hasEnvFallback) out.push(r);
+    return;
+  }
+  if (summaries.length === 1) {
+    out.push({
+      ...r,
+      displayName: `${shortLabel} — ${summaries[0].label}`,
+    });
+    return;
+  }
+  const sorted = [...summaries].sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
+  );
+  for (const acc of sorted) {
+    out.push({
+      ...r,
+      key: `${baseKey}:${acc.accountId}`,
+      displayName: `${shortLabel} — ${acc.label}`,
+      config: { ...(r.config as Record<string, unknown>), accountId: acc.accountId },
+    });
+  }
+}
+
+/**
+ * Calendar UI: expands facebook_page, linkedin, x, threads when multiple OAuth accounts exist.
+ */
+export async function listPlatformAdaptersForCalendar() {
+  await ensureDefaultPlatformAdapters();
+  const rows = await db.select().from(internalPlatformAdapters).orderBy(asc(internalPlatformAdapters.displayName));
+
+  const [fbSummaries, liSummaries, xSummaries, thSummaries] = await Promise.all([
+    listFacebookAccountSummaries(),
+    listLinkedInAccountSummaries(),
+    listXAccountSummaries(),
+    listThreadsAccountSummaries(),
+  ]);
+
+  const hasFbEnv =
+    !!(process.env.FACEBOOK_ACCESS_TOKEN ?? process.env.META_ACCESS_TOKEN)?.trim() &&
+    !!(process.env.FACEBOOK_PAGE_ID ?? process.env.META_PAGE_ID)?.trim();
+  const hasLiEnv = !!(
+    process.env.LINKEDIN_ACCESS_TOKEN?.trim() && process.env.LINKEDIN_AUTHOR_URN?.trim()
+  );
+  const hasXEnv = !!(
+    process.env.X_OAUTH2_ACCESS_TOKEN?.trim() ||
+    process.env.TWITTER_OAUTH2_ACCESS_TOKEN?.trim() ||
+    process.env.TWITTER_ACCESS_TOKEN?.trim()
+  );
+  const hasThEnv = !!(
+    (process.env.THREADS_ACCESS_TOKEN ?? process.env.META_THREADS_ACCESS_TOKEN)?.trim() &&
+    (process.env.THREADS_USER_ID ?? process.env.META_THREADS_USER_ID)?.trim()
+  );
+
+  const out: InternalPlatformAdapter[] = [];
+  for (const r of rows) {
+    if (r.key === "facebook_page") {
+      expandOAuthTargets(
+        out,
+        r,
+        "facebook_page",
+        "Facebook Page",
+        fbSummaries.map((a) => ({ accountId: a.accountId, label: a.pageName })),
+        hasFbEnv,
+      );
+      continue;
+    }
+    if (r.key === "linkedin") {
+      expandOAuthTargets(
+        out,
+        r,
+        "linkedin",
+        "LinkedIn",
+        liSummaries.map((a) => ({ accountId: a.accountId, label: a.displayLabel })),
+        hasLiEnv,
+      );
+      continue;
+    }
+    if (r.key === "x") {
+      expandOAuthTargets(
+        out,
+        r,
+        "x",
+        "X",
+        xSummaries.map((a) => ({ accountId: a.accountId, label: `@${a.username}` })),
+        hasXEnv,
+      );
+      continue;
+    }
+    if (r.key === "threads") {
+      expandOAuthTargets(
+        out,
+        r,
+        "threads",
+        "Threads",
+        thSummaries.map((a) => ({ accountId: a.accountId, label: `@${a.username}` })),
+        hasThEnv,
+      );
+      continue;
+    }
+    out.push(r);
+  }
+  return out;
+}
+
+/** Map calendar platform target (e.g. facebook_page:uuid) to internal_platform_adapters.key. */
+export function calendarAdapterBaseKey(platformKey: string): string {
+  const lower = platformKey.trim().toLowerCase();
+  if (
+    lower === "facebook_page" ||
+    lower.startsWith("facebook_page:") ||
+    lower === "facebook" ||
+    lower.startsWith("facebook:")
+  ) {
+    return "facebook_page";
+  }
+  if (lower === "linkedin_member" || lower.startsWith("linkedin_member:")) {
+    return "linkedin";
+  }
+  if (lower === "linkedin" || lower.startsWith("linkedin:")) {
+    return "linkedin";
+  }
+  if (lower === "threads" || lower.startsWith("threads:")) {
+    return "threads";
+  }
+  if (lower === "x" || lower.startsWith("x:") || lower === "twitter" || lower.startsWith("twitter:")) {
+    return "x";
+  }
+  const t = platformKey.trim();
+  const colon = t.indexOf(":");
+  if (colon !== -1) return t.slice(0, colon);
+  return t;
 }
 
 export async function appendPublishLog(data: typeof internalPublishLogs.$inferInsert) {
@@ -136,10 +284,11 @@ function canPublishDocument(
 
 async function isAdapterActive(platformKey: string): Promise<boolean> {
   await ensureDefaultPlatformAdapters();
+  const base = calendarAdapterBaseKey(platformKey);
   const [row] = await db
     .select()
     .from(internalPlatformAdapters)
-    .where(eq(internalPlatformAdapters.key, platformKey))
+    .where(eq(internalPlatformAdapters.key, base))
     .limit(1);
   return !!row?.active;
 }

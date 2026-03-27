@@ -930,6 +930,7 @@ export * from "./crmSchema";
 export * from "./newsletterSchema";
 export * from "./brandVaultSchema";
 export * from "./communicationsSchema";
+export * from "./emailHubSchema";
 export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";
 export * from "./afnSchema";
