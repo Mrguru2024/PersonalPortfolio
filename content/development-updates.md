@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-28 12:41 — Auto · 745156c
+
+- `feat: admin inbound alerts, market research nav, LinkedIn company pages` (`745156c`)
+
+---
+
 ## 2026-03-28 12:19 — Auto · 6518e52
 
 - `Threads OAuth state signing; Growth OS intel UI; research model 403 handling; GOS_OPENAI_MODEL helper` (`6518e52`)
