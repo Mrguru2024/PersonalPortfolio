@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-28 04:13 — Auto · 9878416
+
+- `PWA/offline, route-modules migration, Meta OAuth state signing, integrations and comms updates` (`9878416`)
+
+---
+
 ## 2026-03-26 06:02 — Auto · ba53a21
 
 - `feat: Content Studio Facebook OAuth and admin batch updates` (`ba53a21`)
