@@ -248,6 +248,11 @@ export default function NewCommCampaignPage() {
 
           <div className="space-y-2">
             <Label>Audience</Label>
+            <p className="text-sm text-muted-foreground">
+              Choose everyone in the CRM, filter by segment (status, tags, pipeline, etc.), hand-pick specific contacts,
+              add one-off email addresses, or use only a pasted list — same pattern as other CRM sends. Use Preview
+              audience to confirm count before you send.
+            </p>
             <CommAudienceSegmentBuilder
               value={segmentFilters}
               onChange={setSegmentFilters}

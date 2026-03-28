@@ -1,12 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { PRIMARY_CTA, SECONDARY_CTA, AUDIT_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
+import { AUDIT_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { MAIN_LINKS, GROWTH_LINKS, WHO_WE_SERVE_LINKS, LEGAL_LINKS } from "@/lib/siteNavLinks";
 import { COMPANY_ADDRESS, COMPANY_PHONE_DISPLAY, COMPANY_PHONE_E164 } from "@/lib/company";
 import { Search } from "lucide-react";
 import FooterLanguageControl from "@/components/FooterLanguageControl";
+import { useLocale } from "@/contexts/LocaleContext";
+import type { AppLocale } from "@/lib/i18n/constants";
+import {
+  footerCopyrightLine,
+  footerLinkLabel,
+  footerNavAriaLabel,
+  footerPartnershipLine,
+  footerPrimaryCta,
+  footerSecondaryCta,
+  footerSectionTitle,
+  footerAriaLabel,
+} from "@/lib/i18n/footerCopy";
 
 function LinkGroup({
   title,
@@ -22,7 +35,7 @@ function LinkGroup({
       </span>
       <ul className="flex min-w-0 max-w-full flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {links.map(({ label, href }) => (
-          <li key={label}>
+          <li key={href}>
             <Link href={href} className="hover:text-foreground transition-colors py-2.5 -my-1 sm:py-0 sm:my-0 block sm:inline">
               {label}
             </Link>
@@ -33,11 +46,30 @@ function LinkGroup({
   );
 }
 
+function mapLinks(
+  links: readonly { label: string; href: string }[],
+  locale: AppLocale,
+): { label: string; href: string }[] {
+  return links.map(({ label, href }) => ({
+    href,
+    label: footerLinkLabel(href, label, locale),
+  }));
+}
+
 export default function SiteFooter() {
+  const { locale } = useLocale();
+  const mainLinks = useMemo(() => mapLinks(MAIN_LINKS, locale), [locale]);
+  const growthLinks = useMemo(() => mapLinks(GROWTH_LINKS, locale), [locale]);
+  const whoLinks = useMemo(() => mapLinks(WHO_WE_SERVE_LINKS, locale), [locale]);
+  const legalLinks = useMemo(() => mapLinks(LEGAL_LINKS, locale), [locale]);
+  const primaryCta = footerPrimaryCta(locale);
+  const secondaryCta = footerSecondaryCta(locale);
+
   return (
     <footer
       className="w-full min-w-0 max-w-full border-t border-border bg-section/80 dark:bg-section/40 mt-auto shrink-0"
-      aria-label="Site footer"
+      aria-label={footerAriaLabel(locale)}
+      suppressHydrationWarning
     >
       <div className="container mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-10 pb-safe min-w-0 max-w-full">
         <div className="flex flex-col gap-6 sm:gap-8">
@@ -46,26 +78,26 @@ export default function SiteFooter() {
               <Button asChild size="sm" className="gap-1.5 min-h-[44px] sm:min-h-[36px] shadow-sm">
                 <Link href={AUDIT_PATH}>
                   <Search className="h-3.5 w-3.5 shrink-0" />
-                  {PRIMARY_CTA}
+                  {primaryCta}
                 </Link>
               </Button>
               <Button asChild size="sm" variant="outline" className="min-h-[44px] sm:min-h-[36px] border-border hover:bg-accent hover:text-accent-foreground">
-                <Link href={STRATEGY_CALL_PATH}>{SECONDARY_CTA}</Link>
+                <Link href={STRATEGY_CALL_PATH}>{secondaryCta}</Link>
               </Button>
             </div>
           </div>
           <nav
             className="grid min-w-0 max-w-full grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8"
-            aria-label="Footer navigation"
+            aria-label={footerNavAriaLabel(locale)}
             suppressHydrationWarning
           >
-            <LinkGroup title="Main" links={MAIN_LINKS} />
-            <LinkGroup title="Growth" links={GROWTH_LINKS} />
-            <LinkGroup title="Who we serve" links={WHO_WE_SERVE_LINKS} />
-            <LinkGroup title="Legal" links={LEGAL_LINKS} />
+            <LinkGroup title={footerSectionTitle("main", locale)} links={mainLinks} />
+            <LinkGroup title={footerSectionTitle("growth", locale)} links={growthLinks} />
+            <LinkGroup title={footerSectionTitle("who", locale)} links={whoLinks} />
+            <LinkGroup title={footerSectionTitle("legal", locale)} links={legalLinks} />
             <div className="flex flex-col gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Contact
+                {footerSectionTitle("contact", locale)}
               </span>
               <address className="not-italic text-sm text-muted-foreground space-y-1">
                 <a
@@ -87,11 +119,11 @@ export default function SiteFooter() {
             </div>
           </nav>
           <FooterLanguageControl />
-          <p className="text-xs text-muted-foreground">
-            Built in partnership with Style Studio Branding and Macon Designs®.
+          <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+            {footerPartnershipLine(locale)}
           </p>
           <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-            © {new Date().getFullYear()} Ascendra Technologies. All rights reserved.
+            {footerCopyrightLine(locale, new Date().getFullYear())}
           </p>
         </div>
       </div>

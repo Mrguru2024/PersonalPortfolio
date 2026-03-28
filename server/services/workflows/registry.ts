@@ -26,6 +26,7 @@ export const WORKFLOW_FORM_COMPLETED: WorkflowDefinition = {
   conditions: [alwaysTrue()],
   actions: [
     { type: "update_tags", params: { add: ["form_submit"] } },
+    { type: "update_status", params: { useJourneyRules: true } },
     { type: "create_task", params: { title: "Follow up after form submission", dueDays: 1, priority: "high" } },
     { type: "generate_ai_summary" },
   ],
@@ -38,6 +39,7 @@ export const WORKFLOW_CALCULATOR_COMPLETED: WorkflowDefinition = {
   conditions: [alwaysTrue()],
   actions: [
     { type: "update_tags", params: { add: ["offer_valuation"] } },
+    { type: "update_status", params: { useJourneyRules: true } },
     {
       type: "create_task",
       params: {
@@ -63,6 +65,7 @@ export const WORKFLOW_PROPOSAL_READY: WorkflowDefinition = {
   trigger: "opportunity_marked_proposal_ready",
   conditions: [alwaysTrue()],
   actions: [
+    { type: "update_status", params: { useJourneyRules: true } },
     { type: "generate_proposal_prep" },
     { type: "create_task", params: { title: "Prepare proposal / checklist", dueDays: 3, priority: "high" } },
     { type: "log_activity", params: { title: "Moved to proposal ready", content: "Workflow: proposal prep and task created." } },
@@ -110,7 +113,8 @@ export const WORKFLOW_OPPORTUNITY_WON: WorkflowDefinition = {
   trigger: "opportunity_marked_won",
   conditions: [alwaysTrue()],
   actions: [
-    { type: "log_activity", params: { title: "Deal won", content: "Opportunity marked won." } },
+    { type: "update_status", params: { status: "won" } },
+    { type: "log_activity", params: { title: "Deal won", content: "Opportunity marked won; contact status set to won." } },
     { type: "update_outreach_state", params: { state: "not_started" } },
   ],
 };
@@ -121,8 +125,45 @@ export const WORKFLOW_OPPORTUNITY_LOST: WorkflowDefinition = {
   trigger: "opportunity_marked_lost",
   conditions: [alwaysTrue()],
   actions: [
-    { type: "log_activity", params: { title: "Deal lost", content: "Opportunity marked lost." } },
+    { type: "update_status", params: { status: "lost" } },
+    { type: "log_activity", params: { title: "Deal lost", content: "Opportunity marked lost; contact status set to lost." } },
     { type: "update_nurture_state", params: { state: "follow_up_later", reason: "Lost; nurture later" } },
+  ],
+};
+
+/** When an outbound email is sent to a CRM contact, adjust lifecycle from event type (newsletter, campaign, sequence, …). */
+export const WORKFLOW_CONTACT_EMAIL_SENT: WorkflowDefinition = {
+  key: "contact_email_sent_journey",
+  name: "After email to contact — journey status",
+  trigger: "contact_email_sent",
+  conditions: [alwaysTrue()],
+  actions: [
+    { type: "update_status", params: { useJourneyRules: true } },
+    {
+      type: "log_activity",
+      params: {
+        title: "Outbound email",
+        content: "Automation: lifecycle status updated from outbound email context (newsletter, campaign, sequence, etc.).",
+      },
+    },
+  ],
+};
+
+/** When an outbound SMS is sent to a CRM contact, adjust lifecycle from SMS type (welcome, booking, manual, …). */
+export const WORKFLOW_CONTACT_SMS_SENT: WorkflowDefinition = {
+  key: "contact_sms_sent_journey",
+  name: "After SMS to contact — journey status",
+  trigger: "contact_sms_sent",
+  conditions: [alwaysTrue()],
+  actions: [
+    { type: "update_status", params: { useJourneyRules: true } },
+    {
+      type: "log_activity",
+      params: {
+        title: "Outbound SMS",
+        content: "Automation: lifecycle status updated from SMS context (welcome, booking link, manual, etc.).",
+      },
+    },
   ],
 };
 
@@ -131,7 +172,10 @@ export const WORKFLOW_AI_SUMMARY_GENERATED: WorkflowDefinition = {
   name: "After AI summary",
   trigger: "ai_summary_generated",
   conditions: [alwaysTrue()],
-  actions: [{ type: "log_activity", params: { title: "AI guidance generated", content: "Workflow recorded." } }],
+  actions: [
+    { type: "update_status", params: { useJourneyRules: true } },
+    { type: "log_activity", params: { title: "AI guidance generated", content: "Workflow recorded." } },
+  ],
 };
 
 export const WORKFLOW_RECOMMENDATION_ACCEPTED: WorkflowDefinition = {
@@ -139,7 +183,10 @@ export const WORKFLOW_RECOMMENDATION_ACCEPTED: WorkflowDefinition = {
   name: "After recommendation accepted",
   trigger: "recommendation_accepted",
   conditions: [alwaysTrue()],
-  actions: [{ type: "log_activity", params: { title: "AI recommendation accepted", content: "Task created from recommendation." } }],
+  actions: [
+    { type: "update_status", params: { useJourneyRules: true } },
+    { type: "log_activity", params: { title: "AI recommendation accepted", content: "Task created from recommendation." } },
+  ],
 };
 
 const ALL_WORKFLOWS: WorkflowDefinition[] = [
@@ -152,6 +199,8 @@ const ALL_WORKFLOWS: WorkflowDefinition[] = [
   WORKFLOW_MISSING_RESEARCH,
   WORKFLOW_OPPORTUNITY_WON,
   WORKFLOW_OPPORTUNITY_LOST,
+  WORKFLOW_CONTACT_EMAIL_SENT,
+  WORKFLOW_CONTACT_SMS_SENT,
   WORKFLOW_AI_SUMMARY_GENERATED,
   WORKFLOW_RECOMMENDATION_ACCEPTED,
 ];

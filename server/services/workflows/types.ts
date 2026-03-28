@@ -5,6 +5,21 @@
 import type { IStorage } from "@server/storage";
 import type { CrmContact, CrmAccount, CrmDeal, CrmResearchProfile } from "@shared/crmSchema";
 
+/** Channel + source for event-aware lifecycle automation (attached to workflow payload). */
+export type JourneyChannel = "email" | "sms";
+export type JourneyEmailSource = "newsletter" | "comm_campaign" | "sequence" | "other";
+export type JourneySmsVariant = "manual" | "welcome" | "booking" | "missed_call" | "other";
+
+export interface JourneyEventMetadata {
+  channel: JourneyChannel;
+  emailSource?: JourneyEmailSource;
+  commCampaignName?: string;
+  newsletterSubject?: string;
+  sequenceName?: string;
+  sequenceStepIndex?: number;
+  smsVariant?: JourneySmsVariant;
+}
+
 /** Supported trigger types. */
 export type WorkflowTriggerType =
   | "contact_created"
@@ -28,7 +43,11 @@ export type WorkflowTriggerType =
   | "stale_lead_detected"
   | "stale_proposal_detected"
   | "missing_research_detected"
-  | "missing_qualification_detected";
+  | "missing_qualification_detected"
+  /** Outbound email recorded for this contact (comm campaign, newsletter to CRM match, sequence email step). */
+  | "contact_email_sent"
+  /** Outbound SMS delivered to this contact (manual, welcome, booking link, revenue ops). */
+  | "contact_sms_sent";
 
 /** Supported action types. */
 export type WorkflowActionType =
@@ -70,12 +89,16 @@ export interface WorkflowPayload {
   previousStage?: string;
   newStage?: string;
   formSource?: string;
+  /** Optional: what happened (email vs SMS, newsletter vs sequence, etc.) for journey automation. */
+  journeyEvent?: JourneyEventMetadata;
   [key: string]: unknown;
 }
 
 export interface WorkflowContext {
   storage: IStorage;
   payload: WorkflowPayload;
+  /** Trigger that fired this workflow run (for event-driven status rules). */
+  triggerType?: WorkflowTriggerType | string;
 }
 
 export type ConditionFn = (ctx: WorkflowContext) => boolean | Promise<boolean>;

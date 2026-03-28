@@ -8,6 +8,7 @@ import SiteFooter from "./components/SiteFooter";
 import MobileBottomNav from "./components/MobileBottomNav";
 import { SiteMain } from "./components/SiteMain";
 import { MobileNavProvider } from "./contexts/MobileNavContext";
+import { FacebookJsSdk } from "./components/FacebookJsSdk";
 import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 
@@ -25,6 +26,13 @@ const gtmEnabled = /^GTM-[A-Z0-9]+$/i.test(GTM_ID);
 /** One shared gtag.js loader + inline init (GA4 and/or Google Ads — never duplicate the snippet). */
 const gtagSnippetEnabled = gaEnabled || googleAdsEnabled;
 const gtagJsQueryId = gaEnabled ? GA_MEASUREMENT_ID : GOOGLE_ADS_ID;
+
+/** Numeric Meta App ID only — enables FB.init client SDK (Login / xfbml / AppEvents). */
+const FACEBOOK_APP_ID_FOR_SDK =
+  process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() || process.env.FACEBOOK_APP_ID?.trim() || "";
+const FACEBOOK_GRAPH_API_VERSION =
+  process.env.NEXT_PUBLIC_FACEBOOK_GRAPH_VERSION?.trim() || "v21.0";
+const facebookSdkEnabled = /^\d+$/.test(FACEBOOK_APP_ID_FOR_SDK);
 
 function gtagInitScriptContent(): string {
   let s =
@@ -194,6 +202,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <div className="hero-page-gradient absolute inset-0" />
           <div className="page-edge-ambient absolute inset-0" />
         </div>
+        {facebookSdkEnabled && (
+          <>
+            <div id="fb-root" className="sr-only" aria-hidden />
+            <FacebookJsSdk appId={FACEBOOK_APP_ID_FOR_SDK} graphVersion={FACEBOOK_GRAPH_API_VERSION} />
+          </>
+        )}
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             <MobileNavProvider>

@@ -286,8 +286,8 @@ export default function CommCampaignDetailPage() {
           <CardHeader>
             <CardTitle>Audience</CardTitle>
             <CardDescription>
-              Change who receives this send (same controls as when creating a campaign). Use Preview to see match count,
-              then save below. After the campaign is sent, audience is locked for this run.
+              Same choices as other CRM workflows: all contacts, segment rules, selected people, extra emails, or
+              email-only list. Use Preview audience for the match count, then save. Audience locks after send.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

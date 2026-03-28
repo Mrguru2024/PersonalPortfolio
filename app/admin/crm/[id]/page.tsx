@@ -1092,7 +1092,10 @@ export default function CrmLeadProfilePage() {
               <Zap className="h-4 w-4" />
               Workflow & outreach
             </CardTitle>
-            <CardDescription>Automation state and last workflow run</CardDescription>
+            <CardDescription>
+              Automation updates lead status from real events (email/SMS type, forms, deals, AI steps). Override anytime
+              with the Status control above.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex flex-wrap gap-2">

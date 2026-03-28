@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isAdmin } from "@/lib/auth-helpers";
 import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
+import { tryCreateSignedOAuthState } from "@server/lib/oauthSignedState";
 import {
   buildLinkedInAuthorizeUrl,
   getLinkedInOAuthRedirectUri,
@@ -11,11 +11,9 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const STATE_COOKIE = "li_cs_oauth_state";
-
 export async function GET(req: NextRequest) {
-  if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Sign in with the site owner account to connect accounts." }, { status: 403 });
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ message: "Admin access required." }, { status: 403 });
   }
   if (!isLinkedInOAuthAppConfigured()) {
     return NextResponse.json(
@@ -28,15 +26,13 @@ export async function GET(req: NextRequest) {
   }
   const baseUrl = getOAuthBaseUrlFromRequest(req);
   const redirectUri = getLinkedInOAuthRedirectUri(baseUrl);
-  const state = randomBytes(24).toString("hex");
+  const state = tryCreateSignedOAuthState();
+  if (!state) {
+    return NextResponse.json(
+      { message: "OAuth signing is not configured. Set SESSION_SECRET or OAUTH_STATE_SECRET." },
+      { status: 500 },
+    );
+  }
   const url = buildLinkedInAuthorizeUrl(state, redirectUri);
-  const res = NextResponse.redirect(url);
-  res.cookies.set(STATE_COOKIE, state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 600,
-    path: "/",
-  });
-  return res;
+  return NextResponse.redirect(url);
 }

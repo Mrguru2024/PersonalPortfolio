@@ -6,6 +6,12 @@ import type { WorkflowContext, WorkflowActionType } from "./types";
 import { logActivity } from "@server/services/crmFoundationService";
 import { generateAndPersistLeadGuidance, generateAndPersistAccountGuidance } from "@server/services/crmAiGuidanceService";
 import { executeCommCampaignSend } from "@server/services/communications/sendCommCampaign";
+import {
+  getNextLeadContactStatus,
+  normalizeLeadContactStatus,
+} from "@server/lib/crmContactLifecycleStatus";
+import { resolveAutomatedContactStatusForTrigger } from "@server/lib/crmJourneyAutomation";
+import { refineJourneyStatusWithAiIfEnabled } from "@server/services/crmJourneyAiStatusService";
 
 const ACTION_KEYS: Record<WorkflowActionType, string> = {
   create_task: "create_task",
@@ -207,7 +213,35 @@ export async function executeAction(
         });
         return { ok: true, actionKey: key };
       }
-      case "update_status":
+      case "update_status": {
+        if (!contactId) return { ok: false, actionKey: key };
+        const contact = ctx.payload.contact ?? (await ctx.storage.getCrmContactById(contactId));
+        if (!contact) return { ok: false, actionKey: key };
+        const explicit = (params?.status as string | undefined)?.trim().toLowerCase();
+        const advanceNext = params?.advanceNext === true;
+        const useJourneyRules = params?.useJourneyRules === true;
+        let nextStatus: string | null = null;
+        if (useJourneyRules && ctx.triggerType) {
+          const rule = resolveAutomatedContactStatusForTrigger(
+            String(ctx.triggerType),
+            contact.status,
+            ctx.payload
+          );
+          nextStatus = await refineJourneyStatusWithAiIfEnabled({
+            ruleBasedStatus: rule,
+            triggerType: String(ctx.triggerType),
+            payload: ctx.payload,
+            contact,
+          });
+        } else if (advanceNext) {
+          nextStatus = getNextLeadContactStatus(contact.status);
+        } else if (explicit) {
+          nextStatus = normalizeLeadContactStatus(explicit);
+        }
+        if (!nextStatus) return { ok: true, actionKey: key };
+        await ctx.storage.updateCrmContact(contactId, { status: nextStatus });
+        return { ok: true, actionKey: key };
+      }
       case "update_priority":
       case "assign_owner":
       case "mark_proposal_ready":

@@ -499,3 +499,23 @@ header .container {
     @apply py-12 sm:py-16 md:py-20 lg:py-24;
   }
 }
+
+/* Installed PWA (Add to Home Screen / standalone): reinforce app-like tab bar chrome */
+html[data-pwa-standalone="true"] .mobile-app-tabbar {
+  border-top-color: hsl(var(--border));
+  background-color: hsl(var(--background) / 0.96) !important;
+  box-shadow:
+    0 -1px 0 hsl(var(--border) / 0.55),
+    0 -10px 36px rgba(15, 23, 42, 0.07);
+}
+html.dark[data-pwa-standalone="true"] .mobile-app-tabbar {
+  box-shadow:
+    0 -1px 0 hsl(var(--border) / 0.45),
+    0 -12px 44px rgba(0, 0, 0, 0.5);
+}
+@supports (backdrop-filter: blur(12px)) {
+  html[data-pwa-standalone="true"] .mobile-app-tabbar {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}

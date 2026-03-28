@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CRM_PIPELINE_STAGES, getPipelineStageLabel } from "@/lib/crm-pipeline-stages";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,16 @@ function sel(v: string | undefined): string {
 
 function out(v: string): string | undefined {
   return v === ANY || !v.trim() ? undefined : v;
+}
+
+type AudienceMode = "all" | "segment" | "selected" | "manual_only";
+
+function inferAudienceMode(v: CommSegmentFilters): AudienceMode {
+  if (v.audienceTargeting) return v.audienceTargeting;
+  if (v.allCrmContacts === true) return "all";
+  if (v.additionalRecipientsOnly === true) return "manual_only";
+  if (v.contactIds && v.contactIds.length > 0) return "selected";
+  return "segment";
 }
 
 type CrmContactRow = { id: number; name: string; email: string };
@@ -52,6 +64,23 @@ export function CommAudienceSegmentBuilder({
   };
 
   const tagsStr = useMemo(() => (value.tags ?? []).join(", "), [value.tags]);
+
+  const additionalEmailsStr = useMemo(
+    () => (value.additionalEmails ?? []).join("\n"),
+    [value.additionalEmails],
+  );
+
+  const setAdditionalEmailsFromString = (raw: string) => {
+    const emails = [
+      ...new Set(
+        raw
+          .split(/[\n,]+/)
+          .map((x) => x.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+    patch({ additionalEmails: emails.length > 0 ? emails : undefined });
+  };
 
   const setTagsFromString = (s: string) => {
     const tags = s
@@ -162,8 +191,104 @@ export function CommAudienceSegmentBuilder({
 
   const selectedIdSet = useMemo(() => new Set(value.contactIds ?? []), [value.contactIds]);
 
+  const audienceMode = inferAudienceMode(value);
+
+  const applyAudienceMode = (mode: AudienceMode) => {
+    if (mode === "all") {
+      onChange({
+        ...value,
+        audienceTargeting: "all",
+        allCrmContacts: true,
+        additionalRecipientsOnly: false,
+        contactIds: undefined,
+      });
+    } else if (mode === "manual_only") {
+      onChange({
+        ...value,
+        audienceTargeting: "manual_only",
+        allCrmContacts: false,
+        additionalRecipientsOnly: true,
+        contactIds: undefined,
+      });
+    } else if (mode === "selected") {
+      onChange({
+        ...value,
+        audienceTargeting: "selected",
+        allCrmContacts: false,
+        additionalRecipientsOnly: false,
+        contactIds: value.contactIds?.length ? value.contactIds : [],
+      });
+    } else {
+      onChange({
+        ...value,
+        audienceTargeting: "segment",
+        allCrmContacts: false,
+        additionalRecipientsOnly: false,
+        contactIds: undefined,
+      });
+    }
+  };
+
+  const showSegmentFilters = audienceMode === "segment";
+  const showContactPicker = audienceMode === "segment" || audienceMode === "selected";
+
   return (
     <div className="space-y-6 rounded-lg border border-border bg-muted/20 p-4 dark:bg-muted/10">
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Same audience pattern as newsletters and CRM sequences: everyone in the CRM, a filtered segment, selected
+        contacts only, or addresses you type (one-offs do not need a CRM row yet).
+      </p>
+      <div className="space-y-3">
+        <Label className="text-base">Who should receive this send?</Label>
+        <RadioGroup
+          value={audienceMode}
+          onValueChange={(v) => applyAudienceMode(v as AudienceMode)}
+          className="flex flex-col gap-2"
+        >
+          <label className="flex items-start gap-2 rounded-lg border border-border/80 bg-background/50 p-3 cursor-pointer has-[:checked]:border-primary/60">
+            <RadioGroupItem value="all" id="aud-all" className="mt-0.5" />
+            <div>
+              <span className="font-medium text-sm">Everyone in CRM</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                All contacts with an email (respects do-not-contact when enabled below). Segment rules below are ignored.
+              </p>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 rounded-lg border border-border/80 bg-background/50 p-3 cursor-pointer has-[:checked]:border-primary/60">
+            <RadioGroupItem value="segment" id="aud-seg" className="mt-0.5" />
+            <div>
+              <span className="font-medium text-sm">Segment rules</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Saved list, tags, status, pipeline, UTMs, and optional hand-picked people.
+              </p>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 rounded-lg border border-border/80 bg-background/50 p-3 cursor-pointer has-[:checked]:border-primary/60">
+            <RadioGroupItem value="selected" id="aud-sel" className="mt-0.5" />
+            <div>
+              <span className="font-medium text-sm">Selected contacts only</span>
+              <p className="text-xs text-muted-foreground mt-0.5">Search and add specific CRM contacts — no broad filters.</p>
+            </div>
+          </label>
+          <label className="flex items-start gap-2 rounded-lg border border-border/80 bg-background/50 p-3 cursor-pointer has-[:checked]:border-primary/60">
+            <RadioGroupItem value="manual_only" id="aud-man" className="mt-0.5" />
+            <div>
+              <span className="font-medium text-sm">Addresses I enter</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                One or more emails only (they do not need to exist in the CRM yet).
+              </p>
+            </div>
+          </label>
+        </RadioGroup>
+      </div>
+
+      {audienceMode === "selected" && (value.contactIds?.length ?? 0) === 0 ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+          Choose at least one contact before sending.
+        </p>
+      ) : null}
+
+      {showSegmentFilters ? (
       <div className="space-y-2">
         <Label>Start from saved list (optional)</Label>
         <Select value={savedListId || ANY} onValueChange={(v) => onSavedListIdChange(v === ANY ? "" : v)}>
@@ -183,7 +308,9 @@ export function CommAudienceSegmentBuilder({
           If you pick a list, its rules are combined with the fields below (below wins when both set).
         </p>
       </div>
+      ) : null}
 
+      {audienceMode !== "manual_only" ? (
       <div className="flex flex-wrap items-center gap-3">
         <Checkbox
           id="seg-dnc"
@@ -194,9 +321,17 @@ export function CommAudienceSegmentBuilder({
           Exclude do-not-contact leads
         </Label>
       </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Do-not-contact flags apply to CRM sends only; manual addresses are unchanged.
+        </p>
+      )}
 
+      {showContactPicker ? (
       <div className="space-y-2">
-        <Label htmlFor="seg-contact-search">Specific people (optional)</Label>
+        <Label htmlFor="seg-contact-search">
+          {audienceMode === "selected" ? "Contacts" : "Specific people (optional)"}
+        </Label>
         {(value.contactIds?.length ?? 0) > 0 && (
           <ul className="flex flex-wrap gap-2">
             {(value.contactIds ?? []).map((id) => {
@@ -269,10 +404,44 @@ export function CommAudienceSegmentBuilder({
           </ul>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          When people are listed here, the campaign only goes to them (other filters still apply).
+          {audienceMode === "selected"
+            ? "Only these CRM contacts receive the send (plus any extra addresses below)."
+            : "When people are listed here, the campaign only goes to them (other filters still apply)."}
+        </p>
+      </div>
+      ) : null}
+
+      <div className="space-y-2 rounded-md border border-dashed border-border/80 bg-muted/10 p-3">
+        <Label htmlFor="seg-additional-emails">Extra email addresses (optional)</Label>
+        <Textarea
+          id="seg-additional-emails"
+          value={additionalEmailsStr}
+          onChange={(e) => setAdditionalEmailsFromString(e.target.value)}
+          placeholder="one@example.com — one per line or comma-separated"
+          rows={4}
+          className="font-mono text-sm"
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Checkbox
+            id="seg-additional-only"
+            checked={value.additionalRecipientsOnly === true}
+            disabled={audienceMode === "manual_only"}
+            onCheckedChange={(c) =>
+              audienceMode === "manual_only" ? undefined : patch({ additionalRecipientsOnly: c === true ? true : undefined })
+            }
+          />
+          <Label htmlFor="seg-additional-only" className="cursor-pointer text-sm font-medium leading-snug">
+            Send only to these addresses (ignore CRM segment rules above)
+          </Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          These recipients do not need to exist in the CRM. Merge tags use the email address when there is no contact
+          row. If you leave the box unchecked, these addresses are added to the CRM-filtered audience (deduped by email).
         </p>
       </div>
 
+      {showSegmentFilters ? (
+      <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Type</Label>
@@ -494,6 +663,8 @@ export function CommAudienceSegmentBuilder({
           />
         </div>
       </div>
+      </>
+      ) : null}
     </div>
   );
 }

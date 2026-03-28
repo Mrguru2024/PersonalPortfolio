@@ -33,10 +33,10 @@ export async function fireWorkflows(
   const workflows = getWorkflowsByTrigger(triggerType);
   if (workflows.length === 0) return [];
 
-  const ctx = { storage, payload };
   const results: WorkflowExecutionResult[] = [];
 
   for (const w of workflows) {
+    const ctx = { storage, payload, triggerType };
     const startedAt = new Date();
     const executedActions: string[] = [];
     let status: "success" | "partial" | "failed" = "success";
@@ -80,7 +80,10 @@ export async function fireWorkflows(
         startedAt,
         finishedAt,
         errorMessage: errorMessage ?? null,
-        metadata: { trigger: triggerType },
+        metadata: {
+          trigger: triggerType,
+          journeyEvent: (payload as { journeyEvent?: unknown }).journeyEvent ?? null,
+        },
       });
     } catch (logErr) {
       console.error("Workflow execution log failed:", logErr);
@@ -96,7 +99,10 @@ export async function fireWorkflows(
       startedAt,
       finishedAt,
       errorMessage,
-      metadata: { trigger: triggerType },
+      metadata: {
+        trigger: triggerType,
+        journeyEvent: (payload as { journeyEvent?: unknown }).journeyEvent ?? null,
+      },
     });
   }
 

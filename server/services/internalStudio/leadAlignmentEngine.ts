@@ -354,16 +354,16 @@ export async function runLeadAlignmentEngine(_projectKey: string): Promise<{
       }
       case "cta_visibility_density": {
         const ctas = fileOk(CRITICAL_APP_PATHS.funnelCtas);
-        const home = fileOk("app/pages/Home.tsx");
+        const home = fileOk("app/route-modules/Home.tsx");
         evidence.push(ev("Shared funnel CTAs module", ctas, pathProof(CRITICAL_APP_PATHS.funnelCtas, ctas)));
-        evidence.push(ev("Home page module", home, pathProof("app/pages/Home.tsx", home)));
+        evidence.push(ev("Home page module", home, pathProof("app/route-modules/Home.tsx", home)));
         if (ctas) score += 25;
         if (home) score += 15;
         recs.push(
           rec(
             "Audit CTA hierarchy per persona page",
             "One primary CTA per section; remove competing actions above the fold.",
-            [CRITICAL_APP_PATHS.funnelCtas, "app/pages/Home.tsx"],
+            [CRITICAL_APP_PATHS.funnelCtas, "app/route-modules/Home.tsx"],
             "p2",
           ),
         );

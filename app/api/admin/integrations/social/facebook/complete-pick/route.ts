@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isAdmin } from "@/lib/auth-helpers";
+import { expireOAuthStateCookie } from "@/lib/siteUrl";
 import {
   addFacebookConnectedPageFromPick,
   FB_CS_PAGE_PICK_COOKIE,
@@ -13,8 +14,8 @@ export const runtime = "nodejs";
  * POST — Persists the selected Facebook Page and clears the pick cookie.
  */
 export async function POST(req: NextRequest) {
-  if (!(await isSuperUser(req))) {
-    return NextResponse.json({ message: "Sign in with the site owner account." }, { status: 403 });
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ message: "Admin access required." }, { status: 403 });
   }
   const raw = req.cookies.get(FB_CS_PAGE_PICK_COOKIE)?.value;
   if (!raw?.trim()) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const candidates = parseFacebookPagePickCookie(raw);
   if (!candidates?.length) {
     const res = NextResponse.json({ message: "Pending session expired or invalid." }, { status: 400 });
-    res.cookies.delete(FB_CS_PAGE_PICK_COOKIE);
+    expireOAuthStateCookie(res, req, FB_CS_PAGE_PICK_COOKIE);
     return res;
   }
 
@@ -44,6 +45,6 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.delete(FB_CS_PAGE_PICK_COOKIE);
+  expireOAuthStateCookie(res, req, FB_CS_PAGE_PICK_COOKIE);
   return res;
 }

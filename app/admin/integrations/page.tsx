@@ -17,7 +17,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import { useAuth, isAuthApprovedAdmin } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,7 +169,7 @@ export default function AdminIntegrationsPage() {
   const [mounted, setMounted] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const isSuperUser = isAuthSuperUser(user);
+  const isApprovedAdmin = isAuthApprovedAdmin(user);
   const { toast } = useToast();
 
   const [services, setServices] = useState<IntegrationStatus[]>([]);
@@ -286,13 +286,13 @@ export default function AdminIntegrationsPage() {
       router.push("/auth");
       return;
     }
-    if (!authLoading && user && !isSuperUser) {
+    if (!authLoading && user && !isApprovedAdmin) {
       router.push("/admin/dashboard");
     }
-  }, [mounted, user, authLoading, router, isSuperUser]);
+  }, [mounted, user, authLoading, router, isApprovedAdmin]);
 
   useEffect(() => {
-    if (!mounted || !user || !isSuperUser || typeof window === "undefined") return;
+    if (!mounted || !user || !isApprovedAdmin || typeof window === "undefined") return;
     const q = new URLSearchParams(window.location.search);
     if (q.get("facebook_pick") !== "1") return;
     let cancelled = false;
@@ -335,7 +335,7 @@ export default function AdminIntegrationsPage() {
     return () => {
       cancelled = true;
     };
-  }, [mounted, user, isSuperUser, toast]);
+  }, [mounted, user, isApprovedAdmin, toast]);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -375,10 +375,15 @@ export default function AdminIntegrationsPage() {
 
   async function startOAuthConnect(startPath: string) {
     setOauthStartPath(startPath);
+    const openingToast = () =>
+      toast({
+        title: "Opening sign-in…",
+        description: "Finish signing in there—you’ll come back here automatically.",
+      });
     try {
       const res = await fetch(startPath, { credentials: "include", redirect: "manual" });
       if (res.status === 401 || res.status === 403) {
-        const msg = "Super user session required.";
+        const msg = "Admin access required.";
         setSocialFlashVariant("destructive");
         setSocialFlash(msg);
         toast({ variant: "destructive", title: "Sign-in required", description: msg });
@@ -394,16 +399,18 @@ export default function AdminIntegrationsPage() {
         toast({ variant: "destructive", title: "Can’t start connection", description: msg });
         return;
       }
+      // Cross-origin OAuth redirects (307 → Meta, etc.): `redirect: "manual"` often yields `opaqueredirect`
+      // with status 0 and no readable `Location` header. Full navigation still applies Set-Cookie and follows the redirect.
+      if (res.type === "opaqueredirect" || res.status === 0) {
+        openingToast();
+        window.location.assign(startPath);
+        return;
+      }
       if (res.status >= 300 && res.status < 400) {
         const loc = res.headers.get("Location");
-        if (loc) {
-          toast({
-            title: "Opening sign-in…",
-            description: "Finish signing in there—you’ll come back here automatically.",
-          });
-          window.location.assign(loc);
-          return;
-        }
+        openingToast();
+        window.location.assign(loc || startPath);
+        return;
       }
       const msg = "Something unexpected happened when starting the connection.";
       setSocialFlashVariant("destructive");
@@ -448,10 +455,10 @@ export default function AdminIntegrationsPage() {
   }
 
   useEffect(() => {
-    if (!user || !isSuperUser) return;
+    if (!user || !isApprovedAdmin) return;
     setLoading(true);
     void fetchStatus();
-  }, [user, isSuperUser, fetchStatus]);
+  }, [user, isApprovedAdmin, fetchStatus]);
 
   function openDisconnectSocial(opts: {
     path: string;
@@ -569,7 +576,7 @@ export default function AdminIntegrationsPage() {
     );
   };
 
-  if (!mounted || authLoading || (user && !isSuperUser)) {
+  if (!mounted || authLoading || (user && !isApprovedAdmin)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -699,7 +706,7 @@ export default function AdminIntegrationsPage() {
             </div>
           ) : services.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4">
-              Could not load this list. Make sure you’re signed in with the site owner account, then tap Refresh.
+              Could not load this list. Make sure you’re signed in with an approved admin account, then tap Refresh.
             </p>
           ) : (
             services.map((s) => (

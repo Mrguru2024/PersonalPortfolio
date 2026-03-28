@@ -6,6 +6,9 @@
 
 This is a Next.js 16 full-stack portfolio/CMS application ("Ascendra Technologies") with React 19, Tailwind CSS, Drizzle ORM, and PostgreSQL (via `@neondatabase/serverless`). **Next.js 16 defaults `next dev` to Turbopack**; this repo runs **`next dev --webpack`** via **`npm run dev`** to avoid Turbopack HMR bugs (e.g. “module factory is not available”). Use **`npm run dev:turbo`** for Turbopack.
 
+- **Large route UIs** live in **`app/route-modules/`** (imported from real `app/**/page.tsx` files). This is not the Pages Router `pages/` directory.
+- **Knip** (`npm run knip`) checks unused files/deps; it exits non-zero while issues remain. See **`knip.config.ts`** ignores and `DATABASE_URL` in the script.
+
 ### Local database setup
 
 The app uses `@neondatabase/serverless` which connects to PostgreSQL via WebSocket. For local development, three components are needed:

@@ -1,4 +1,4 @@
-import Home from "@/pages/Home";
+import Home from "@/route-modules/Home";
 import type { Metadata } from "next";
 import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";

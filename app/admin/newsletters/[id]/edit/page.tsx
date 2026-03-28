@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { NewsletterPreviewDialog } from "@/components/newsletter/NewsletterPreviewDialog";
 
 export default function EditNewsletterPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -125,6 +126,9 @@ export default function EditNewsletterPage() {
           <CardDescription>Subject, inbox preview line, and HTML body</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex justify-end">
+            <NewsletterPreviewDialog subject={subject} previewText={previewText} contentHtml={content} />
+          </div>
           <div>
             <Label htmlFor="subject">Subject</Label>
             <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1" />

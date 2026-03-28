@@ -1,37 +1,143 @@
 # Finding and configuring environment variables
 
-This project loads local secrets from **`.env.local`** (git-ignored). The **authoritative list of variables** the app understands is **`.env.example`**: copy it, rename to `.env.local`, then fill values. Some keys are only created by hosts (Neon, Vercel) or by you in third-party dashboards.
+This project loads local secrets from **`.env.local`** (git-ignored). The **authoritative list of variable names** is **`.env.example`**.
+
+**Standard workflow**
+
+1. Copy **`.env.example`** to **`.env.local`** in the project root (same folder as `package.json`).
+2. Fill values locally. Use the sections below to find each value in the right dashboard.
+3. For **Vercel**: add the same keys under **Project → Settings → Environment Variables** (Production / Preview / Development as needed), then redeploy. To download what Vercel has: `vercel env pull` (creates/overwrites local env—be careful not to commit it).
 
 **Rules**
 
 - Never commit `.env.local` or paste secrets into tickets, chat, or screenshots.
-- After `vercel env pull`, you may see **extra** variables (e.g. OIDC tokens, duplicate Redis URLs). They are safe to leave if unused; `.env.example` still describes what the Next.js app expects.
-- **`NEXT_PUBLIC_*`** values are exposed to the browser—only put non-secrets there.
+- After `vercel env pull`, you may see **extra** variables (OIDC, duplicate Redis URLs). Safe to leave if unused; this doc and `.env.example` describe what the Next.js app expects.
+- **`NEXT_PUBLIC_*`** is exposed to the browser—only non-secrets there.
 
 ---
 
 ## 1. Database (PostgreSQL / Neon)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` | **Neon** (or your host): Project → **Connection details**. Use the **pooled** string for `DATABASE_URL` and **direct** for `DATABASE_URL_UNPOOLED` when Neon provides both. |
-| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, etc. | Often injected automatically when you connect Vercel ↔ Neon, or copy from the same connection UI. |
-| `POSTGRES_*` | Common on **Vercel Postgres** or Neon+Vercel integration; same connection string, different names. |
+### Variables
 
-Local WebSocket proxy mode (see `AGENTS.md`) may use a special localhost URL—only if you run the ws-proxy for local Neon driver testing.
+| Variable | Role |
+|----------|------|
+| `DATABASE_URL` | Primary connection string (prefer **pooled** when Neon offers pool + direct). |
+| `DATABASE_URL_UNPOOLED` | Direct connection (migrations, some tools). Optional if you only use one string. |
+| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, … | Sometimes set by Vercel↔Neon integration instead of a single URL. |
+| `POSTGRES_*` | Vercel Postgres style names; map to the same database. |
+
+### Step by step — Neon (browser)
+
+1. Open [https://console.neon.tech](https://console.neon.tech) and sign in.
+2. Open your **Project** (or create one).
+3. In the left sidebar, click **Dashboard** or stay on the project home.
+4. Find **Connection details** (or **Connect**): Neon shows connection strings.
+5. Copy the **pooled** connection string (often labeled “Pooled” or uses a `-pooler` host)—paste into `DATABASE_URL`.
+6. If Neon shows a separate **direct** connection string, paste into `DATABASE_URL_UNPOOLED` (recommended for `drizzle-kit` / some CLIs).
+7. If you only see one URI, use it for `DATABASE_URL` and skip `DATABASE_URL_UNPOOLED` until you need it.
+
+### Step by step — Vercel + Neon (integration)
+
+1. Open [https://vercel.com](https://vercel.com) → your **Project**.
+2. **Storage** (or **Integrations**) → add/link **Neon**.
+3. After linking, Vercel may inject `DATABASE_URL` (and related vars) automatically—check **Project → Settings → Environment Variables** to see names and values.
+
+Local WebSocket proxy mode for the Neon serverless driver is documented in **`AGENTS.md`** (optional; only for specific local setups).
 
 ---
 
 ## 2. Email (Brevo)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `BREVO_API_KEY` | [Brevo](https://app.brevo.com) → **Settings → SMTP & API → API Keys**. Use the **API key**, not SMTP password. |
-| `FROM_EMAIL`, `FROM_NAME` | Must be a **verified sender** (Brevo → Senders & IP). |
-| `ADMIN_EMAIL` | Your inbox for admin notifications. |
-| `BREVO_WEBHOOK_SECRET` (optional) | You define this string and configure the same value on Brevo’s webhook for bounces. |
+### Variables
 
-**Email Hub · synced inbox** (`/admin/email-hub/inbox`): separate OAuth clients from Calendar — use `EMAIL_HUB_GMAIL_CLIENT_ID` / `EMAIL_HUB_GMAIL_CLIENT_SECRET` (Gmail API; redirect `/api/admin/email-hub/mailbox/gmail/callback`) and `EMAIL_HUB_MICROSOFT_*` (Graph Mail; redirect `/api/admin/email-hub/mailbox/microsoft/callback`). Refresh tokens are encrypted with `SCHEDULING_TOKEN_ENCRYPTION_KEY` or `SESSION_SECRET` (same pattern as scheduling integrations). Optional Vercel cron: `/api/cron/email-hub-inbox-sync` with `CRON_SECRET`.
+| Variable | Role |
+|----------|------|
+| `BREVO_API_KEY` | REST API authentication. |
+| `FROM_EMAIL`, `FROM_NAME` | Default sender; must be **verified** in Brevo. |
+| `ADMIN_EMAIL` | Where admin notifications go (you choose the address). |
+| `BREVO_WEBHOOK_SECRET` (optional) | A **string you invent**; same value must appear on the webhook URL/query in Brevo. |
+
+### Step by step — Brevo API key
+
+1. Open [https://app.brevo.com](https://app.brevo.com) and log in.
+2. Click your **account menu** (top right) → **SMTP & API** (or go **Transational** → **Settings** depending on UI).
+3. Open **API Keys** (or **SMTP & API** → **API keys**).
+4. Click **Generate a new API key**, name it (e.g. `production-ascendra`), copy the key once—it may not show fully again.
+5. Paste into `.env.local` as `BREVO_API_KEY=...` (no quotes unless your shell needs them).
+
+### Step by step — Verified sender (`FROM_EMAIL` / `FROM_NAME`)
+
+1. In Brevo: **Marketing** or **Campaigns** area → **Senders, domains & dedicated IPs** (wording may be **Senders & IP** or **Senders**).
+2. Add and **verify** your domain or single sender email (DNS or confirmation email).
+3. Use exactly that verified address for `FROM_EMAIL` and a display string for `FROM_NAME`.
+
+### Step by step — Webhook secret (optional)
+
+1. Invent a long random string (e.g. `openssl rand -hex 32`) → `BREVO_WEBHOOK_SECRET` in `.env.local`.
+2. In Brevo: **Transactional** → **Settings** → **Webhooks** (or **Automations** / webhooks—location varies).
+3. Create webhook URL pointing to your site: `https://YOUR_DOMAIN/api/webhooks/brevo?secret=YOUR_SAME_STRING` (match `.env.example` pattern).
+4. Save; Brevo will call that URL for events you subscribe to.
+
+---
+
+## 2b. Email Hub — Gmail (`EMAIL_HUB_GMAIL_*`)
+
+Use a **separate** Google Cloud OAuth client from `GOOGLE_CALENDAR_*` (different API/scopes).
+
+**Redirect URIs (exact, including path)**
+
+- Production: `https://YOUR_DOMAIN/api/admin/email-hub/mailbox/gmail/callback`
+- Local: `http://localhost:3000/api/admin/email-hub/mailbox/gmail/callback`
+
+### Step by step — Google Cloud
+
+1. Open [https://console.cloud.google.com](https://console.cloud.google.com) and select a **Project** (create one if needed).
+2. Left menu **≡** → **APIs & Services** → **Library**.
+3. Search **Gmail API** → open it → **Enable**.
+4. **APIs & Services** → **OAuth consent screen**:
+   - Choose **External** (or Internal for Workspace-only).
+   - Fill app name, support email, developer contact.
+   - **Scopes**: later you can rely on the OAuth client request; for review you may add Gmail scopes (`gmail.readonly`, `gmail.send`, `gmail.modify`) if the console asks.
+   - Add **Test users** if the app stays in **Testing** (your Google account email).
+5. **APIs & Services** → **Credentials** → **+ Create credentials** → **OAuth client ID**.
+6. Application type: **Web application** — name it (e.g. `Email Hub Gmail`).
+7. **Authorized redirect URIs**: add both localhost and production URLs from the box above → **Create**.
+8. Copy **Client ID** → `EMAIL_HUB_GMAIL_CLIENT_ID`.
+9. Copy **Client secret** → `EMAIL_HUB_GMAIL_CLIENT_SECRET`.
+10. Token encryption: set `SCHEDULING_TOKEN_ENCRYPTION_KEY` (preferred) or ensure `SESSION_SECRET` is 16+ chars (see §3).
+
+Admin UI: **Email Hub → Inbox** → **Connect Gmail** (starts OAuth).
+
+---
+
+## 2c. Email Hub — Microsoft (`EMAIL_HUB_MICROSOFT_*`)
+
+**Redirect URIs (exact)**
+
+- Production: `https://YOUR_DOMAIN/api/admin/email-hub/mailbox/microsoft/callback`
+- Local: `http://localhost:3000/api/admin/email-hub/mailbox/microsoft/callback`
+
+### Step by step — Microsoft Entra (Azure AD) app registration
+
+1. Open [https://entra.microsoft.com](https://entra.microsoft.com) (or [Azure Portal](https://portal.azure.com) → **Microsoft Entra ID**).
+2. **Identity** → **Applications** → **App registrations** → **New registration**.
+3. **Name**: e.g. `Email Hub Inbox`.
+4. **Supported account types**: **Accounts in any organizational directory (any Microsoft 365 tenant) and personal Microsoft accounts** (multitenant + personal), unless you only want one tenant.
+5. **Redirect URI**: platform **Web**, URL = your **production** callback above (add localhost separately in next step) → **Register**.
+6. Open the new app → **Authentication**:
+   - Under **Web** → **Redirect URIs**, add **both** production and `http://localhost:3000/.../callback`.
+   - Enable **Access tokens** and **ID tokens** if shown as options for implicit/hybrid (SPA not required for server-side code exchange).
+7. **API permissions** → **Add a permission** → **Microsoft Graph** → **Delegated**:
+   - `Mail.ReadWrite`
+   - `Mail.Send`
+   - `User.Read`
+   - `offline_access` (under **OpenId permissions**)
+   - **Grant admin consent** if your tenant requires it (personal accounts: consent on first sign-in).
+8. **Certificates & secrets** → **New client secret** → description + expiry → **Add** → copy **Value** immediately (hidden later) → `EMAIL_HUB_MICROSOFT_CLIENT_SECRET`.
+9. **Overview** page: copy **Application (client) ID** → `EMAIL_HUB_MICROSOFT_CLIENT_ID`.
+
+Admin UI: **Email Hub → Inbox** → **Connect Microsoft**.
 
 ---
 
@@ -39,160 +145,210 @@ Local WebSocket proxy mode (see `AGENTS.md`) may use a special localhost URL—o
 
 | Variable | How to set |
 |----------|------------|
-| `SESSION_SECRET` | **Required in production**: `openssl rand -base64 32` (or similar). Min length enforced at boot. |
-| `TRACKING_SIGNATURE_SECRET` (optional) | Separate HMAC secret for email tracking tokens; if unset, code may fall back to `SESSION_SECRET`. Generate like `openssl rand -hex 32`. |
-| `CRON_SECRET` | Random string (see `.env.example` length note). Must match `Authorization: Bearer <value>` for `/api/cron/*` on Vercel. |
-| `SKIP_VERCEL_CRON_SECRET`, `VERCEL_CRONS_DISABLED` | Escape hatches documented in `.env.example`—prefer setting `CRON_SECRET` in production. |
+| `SESSION_SECRET` | **Production required.** Generate e.g. `openssl rand -base64 32` (Git Bash, WSL, or Windows OpenSSL). Or any 32+ random bytes encoded safely—see `.env.example` for minimum length. |
+| `SCHEDULING_TOKEN_ENCRYPTION_KEY` | Long random string (preferred for encrypting OAuth refresh tokens: scheduling, Email Hub mailbox). |
+| `TRACKING_SIGNATURE_SECRET` (optional) | `openssl rand -hex 32`; else code may use `SESSION_SECRET`. |
+| `CRON_SECRET` | Long random string; Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` to `/api/cron/*`. |
+| `SKIP_VERCEL_CRON_SECRET`, `VERCEL_CRONS_DISABLED` | Escape hatches in `.env.example`. |
+
+### Step by step — Vercel `CRON_SECRET`
+
+1. Generate a secret locally (32+ chars recommended; see `.env.example`).
+2. **Vercel** → **Project** → **Settings** → **Environment Variables**.
+3. Add `CRON_SECRET` for **Production** (and Preview if you test crons there).
+4. Redeploy. Crons defined in `vercel.json` will include the Bearer header automatically when the secret is set on Vercel.
 
 ---
 
 ## 4. OpenAI, Brave Search (optional)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `OPENAI_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) → API keys. |
-| `OPENAI_*_MODEL` overrides | Optional; defaults described in `.env.example`. |
-| `BRAVE_SEARCH_API_KEY` | [Brave Search API](https://brave.com/search/api/). |
+### OpenAI
+
+1. Open [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+2. **Create new secret key** → copy → `OPENAI_API_KEY`.
+3. Organization/billing: **Settings** / **Billing** on the same site if calls fail with quota errors.
+
+### Brave Search API
+
+1. Open [https://brave.com/search/api/](https://brave.com/search/api/) → sign up / dashboard.
+2. Create a **subscription** and copy the **API key** → `BRAVE_SEARCH_API_KEY`.
 
 ---
 
 ## 5. GitHub
 
-| Variable | Where to find it |
-|----------|------------------|
-| `GITHUB_TOKEN` | [GitHub → Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens). Scopes depend on what you automate (repo read for secrets digestion, etc.). |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | [GitHub → Settings → Developer settings → OAuth Apps](https://github.com/settings/developers). Redirect URL must match your app (`/api/auth/github/callback`). |
-| `DEVELOPMENT_UPDATES_GITHUB_TOKEN` | Same kind of PAT; used if the digest loaded from GitHub needs private-repo or Contents API access. |
+### Personal access token (`GITHUB_TOKEN`, `DEVELOPMENT_UPDATES_GITHUB_TOKEN`)
+
+1. GitHub (logged in) → **profile photo** (top right) → **Settings**.
+2. Left sidebar: **Developer settings** (bottom).
+3. **Personal access tokens** → **Fine-grained tokens** or **Tokens (classic)** per your org policy.
+4. **Generate**: select repos/scopes (e.g. **Contents read** for private markdown), generate, copy once.
+
+### OAuth app (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`)
+
+1. **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
+2. **Homepage URL**: your site root. **Authorization callback URL**: `https://YOUR_DOMAIN/api/auth/github/callback` plus `http://localhost:3000/api/auth/github/callback` if dev uses OAuth.
+3. After creation: **Client ID** and **Generate a new client secret** → map to env vars.
 
 ---
 
-## 6. Facebook / Meta (login, Content Studio, ads)
+## 6. Facebook / Meta
 
-| Variable | Where to find it |
-|----------|------------------|
-| `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` | [Meta for Developers](https://developers.facebook.com/apps/) → your app → **Settings → Basic**. More detail: `Docs/setup/FACEBOOK-APP-SETTINGS.md`. |
-| `FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID` | **Page** access token and Page ID for publishing—not the same as app secret. See Meta **Pages** / Graph API Explorer or long-lived token flow. |
-| Paid Growth **Meta ads** vars (`META_SYSTEM_USER_ACCESS_TOKEN`, etc.) | `Docs/implementation/PAID-GROWTH-MODULE.md`. |
+Summary table plus **`Docs/setup/FACEBOOK-APP-SETTINGS.md`** for deep setup.
 
-`META_APP_ID` / `META_APP_SECRET` in `.env.example` may mirror Facebook app credentials for Marketing API.
+### App ID and App Secret
+
+1. [https://developers.facebook.com/apps/](https://developers.facebook.com/apps/) → **Create app** or select existing.
+2. App type depends on use (Consumer / Business). Complete wizard.
+3. Left sidebar: **App settings** → **Basic**.
+4. **App ID** → `FACEBOOK_APP_ID`. **App secret** → **Show** → `FACEBOOK_APP_SECRET`.
+
+### Page access token & Page ID (Content Studio publishing)
+
+Not the same as app secret. Typical path:
+
+1. **Meta Business Suite** or **Graph API Explorer** (developers site **Tools**).
+2. Get a **Page** access token with `pages_manage_posts` / relevant permissions.
+3. Page ID: Page **About** / **Page info**, or from Graph API `me/accounts`.
+
+Paid ads vars: **`Docs/implementation/PAID-GROWTH-MODULE.md`**.
 
 ---
 
-## 7. Google (OAuth login, Calendar, GA4, Ads tags)
+## 7. Google (site login, Calendar, GA4 service account, public tags)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → **APIs & Services → Credentials → OAuth 2.0 Client ID** (Web application). Add authorized redirect URI: `https://YOUR_DOMAIN/api/auth/google/callback` and `http://localhost:3000/api/auth/google/callback`. |
-| `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET` | Separate OAuth client if you use **Integrations → Google Calendar**; enable **Google Calendar API** on the project. Redirect: `.../api/admin/integrations/google-calendar/callback`. |
-| `GA4_PROPERTY_ID` | **GA4 → Admin → Property settings** → **Property ID** (numeric, e.g. `123456789`). **Not** the `G-XXXXXXXX` measurement ID. |
-| `GA4_CLIENT_EMAIL`, `GA4_PRIVATE_KEY` | Service account: Cloud Console → **IAM → Service accounts → Keys → JSON**. In GA4, add that service account email as **Viewer** on the property. Paste `client_email` and PEM `private_key` (escape newlines as `\n` in `.env` if on one line). |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_GOOGLE_ADS_ID`, etc. | From **GA4** data stream and **Google Ads** conversion setup; safe as `NEXT_PUBLIC_*`. |
+### OAuth Web Client (`GOOGLE_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_ID`, etc.)
+
+1. [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials).
+2. **+ Create credentials** → **OAuth client ID**. Type **Web application**.
+3. **Authorized JavaScript origins**: `https://YOUR_DOMAIN`, `http://localhost:3000`.
+4. **Authorized redirect URIs**: Must match **exactly** each flow:
+   - Site login: `.../api/auth/google/callback`
+   - Calendar integration: `.../api/admin/integrations/google-calendar/callback`
+5. Enable the relevant **API** under **APIs & Services** → **Library** (e.g. **Google Calendar API** for scheduling).
+
+### GA4 numeric Property ID (`GA4_PROPERTY_ID`)
+
+1. [https://analytics.google.com](https://analytics.google.com) → **Admin** (gear, lower left).
+2. **Property** column → **Property settings**.
+3. Copy **Property ID** (digits only). Not the `G-XXXX` measurement ID.
+
+### GA4 service account (`GA4_CLIENT_EMAIL`, `GA4_PRIVATE_KEY`)
+
+1. Google Cloud → **IAM & Admin** → **Service accounts** → **Create service account** → **Keys** → **Add key** → **JSON** (downloads once).
+2. Open JSON: `client_email` and `private_key` → paste into env (multi-line key: often `\n` in one line in `.env`).
+3. GA4 **Admin** → **Property access management**: add the service account email with **Viewer**.
+
+### Public measurement IDs (`NEXT_PUBLIC_*`)
+
+- **GA4**: **Admin** → **Data streams** → select stream → **Measurement ID** (`G-...`).
+- **Google Ads**: from Ads conversion / tag setup (varies by account).
 
 ---
 
-## 8. LinkedIn, X (Twitter), Content Studio
+## 8. LinkedIn, X (Twitter)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | [LinkedIn Developer Portal](https://www.linkedin.com/developers/) → your app. |
-| `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_AUTHOR_URN` | From OAuth product flow or Developer portal; **author URN** looks like `urn:li:person:...` or `urn:li:organization:...`. |
-| `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_OAUTH2_ACCESS_TOKEN` | [X Developer Portal / OAuth 2.0](https://developer.twitter.com/). |
+### LinkedIn app
 
-Webhook / notify vars (`CONTENT_STUDIO_PUBLISH_WEBHOOK_*`, `CONTENT_STUDIO_BREVO_NOTIFY_TO`) are URLs and secrets you define or copy from your automation tool.
+1. [https://www.linkedin.com/developers/apps](https://www.linkedin.com/developers/apps) → **Create app**.
+2. **Auth** tab: **Client ID**, **Primary Client Secret** → env vars.
+3. **Redirect URLs**: must match your site’s OAuth callback route (see `.env.example` / integration docs).
+
+### X (Twitter) Developer Portal
+
+1. [https://developer.twitter.com/en/portal/dashboard](https://developer.twitter.com/en/portal/dashboard) → **Projects & Apps** → your app.
+2. **Keys and tokens**: **Client ID**, **Client Secret** (OAuth 2) or API key/secret depending on flow.
+3. **User authentication settings**: set callback URL to match this repo’s X OAuth callback path.
+
+Webhook vars (`CONTENT_STUDIO_PUBLISH_WEBHOOK_*`, etc.) are **URLs and secrets you create** on your automation side (Make, Zapier, etc.).
 
 ---
 
 ## 9. Zoom
 
-| Variable | Where to find it |
-|----------|------------------|
-| `ZOOM_ACCOUNT_ID`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET` | [Zoom Marketplace](https://marketplace.zoom.us/) → **Build App → Server-to-Server OAuth**. See also `Docs/setup/ZOOM-SERVER-TO-SERVER-SETUP.md`. |
+1. [https://marketplace.zoom.us/](https://marketplace.zoom.us/) → **Develop** → **Build App**.
+2. **Server-to-Server OAuth** app type.
+3. **App credentials** tab: **Account ID**, **Client ID**, **Client Secret** → env vars.
+4. More detail: **`Docs/setup/ZOOM-SERVER-TO-SERVER-SETUP.md`**.
 
 ---
 
 ## 10. Stripe (optional)
 
-| Variable | Where to find it |
-|----------|------------------|
-| `STRIPE_SECRET_KEY` | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) → Secret key (`sk_test_` / `sk_live_`). |
-| `STRIPE_WEBHOOK_SECRET` | Stripe → **Developers → Webhooks** → endpoint signing secret (`whsec_...`) for your deployed `/api/webhooks/stripe` URL. |
+1. [https://dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) → **Secret key** (`sk_test_` / `sk_live_`) → `STRIPE_SECRET_KEY`. Toggle **Test mode** for sandbox.
+2. **Developers** → **Webhooks** → **Add endpoint** → URL `https://YOUR_DOMAIN/api/webhooks/stripe` → after saving open the endpoint → **Signing secret** (`whsec_...`) → `STRIPE_WEBHOOK_SECRET`.
 
 ---
 
-## 11. Twilio, booking link secret (optional)
+## 11. Twilio; booking link secret
 
-| Variable | Where to find it |
-|----------|------------------|
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | [Twilio Console](https://console.twilio.com/). |
-| `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID` | Twilio phone numbers or Messaging Service. |
-| `REVENUE_OPS_BOOKING_LINK_SECRET` | Generate locally, e.g. `openssl rand -hex 32`. |
+1. [https://console.twilio.com](https://console.twilio.com) → **Account** dashboard: **Account SID**, **Auth Token** (`TWILIO_*`).
+2. **Phone Numbers** or **Messaging** → **Services** for **Messaging Service SID** / **From** number.
+3. `REVENUE_OPS_BOOKING_LINK_SECRET`: generate locally (`openssl rand -hex 32`).
 
 ---
 
-## 12. Redis / rate limits (Upstash)
+## 12. Redis / Upstash
 
-| Variable | Where to find it |
-|----------|------------------|
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | [Upstash Console](https://console.upstash.com/) → database → **REST API** tab. |
-
-You may also see legacy `KV_*` or `REDIS_URL` after Vercel/Neon pulls—they often duplicate Upstash/Vercel KV; prefer matching `.env.example` names for this repo.
+1. [https://console.upstash.com](https://console.upstash.com) → **Redis** → create database → **REST API** tab.
+2. Copy **UPSTASH_REDIS_REST_URL** and **UPSTASH_REDIS_REST_TOKEN**.
 
 ---
 
 ## 13. Push (VAPID)
 
-| Variable | How to set |
-|----------|------------|
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Run `npx web-push generate-vapid-keys` and paste both. |
+Terminal in project: `npx web-push generate-vapid-keys` → paste **public** and **private** into `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`.
 
 ---
 
 ## 14. Site URL and analytics tags
 
-| Variable | How to set |
-|----------|------------|
-| `NEXT_PUBLIC_APP_URL` | Production **`https://...`** origin (no trailing path). Used for OG URLs, emails, scheduling links, Server Actions origins. |
-| `NEXT_PUBLIC_BASE_URL` | Often localhost in dev; production should align with your canonical domain. |
-| `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_META_PIXEL_ID` | From Google Tag Manager container and Meta Events Manager. |
+| Variable | Notes |
+|----------|--------|
+| `NEXT_PUBLIC_APP_URL` | Production `https://domain.com` (no trailing slash). |
+| `NEXT_PUBLIC_BASE_URL` | Often aligned with canonical site URL. |
+| `NEXT_PUBLIC_GTM_ID` | [tagmanager.google.com](https://tagmanager.google.com) → container **GTM-xxxx**. |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Meta **Events Manager** → **Data sources** → Pixel ID. |
 
 ---
 
-## 15. Development updates digest (GitHub file)
+## 15. Development updates digest
 
-| Variable | How to set |
-|----------|------------|
-| `DEVELOPMENT_UPDATES_RAW_URL` | Optional override: raw GitHub URL to `content/development-updates.md`. |
-| `DEVELOPMENT_UPDATES_GITHUB_REF` | Branch name (default `main`). |
-| `GITHUB_TOKEN` / `DEVELOPMENT_UPDATES_GITHUB_TOKEN` | If the repo or file needs auth. |
+| Variable | Notes |
+|----------|--------|
+| `DEVELOPMENT_UPDATES_RAW_URL` | Optional full raw URL to `content/development-updates.md`. |
+| `DEVELOPMENT_UPDATES_GITHUB_REF` | Branch (default `main`). |
+| `GITHUB_TOKEN` / `DEVELOPMENT_UPDATES_GITHUB_TOKEN` | PAT if repo or file is private. |
 
-On Vercel, `VERCEL_GIT_REPO_OWNER` and `VERCEL_GIT_REPO_SLUG` are often set automatically to build a default raw URL.
+Vercel often sets `VERCEL_GIT_REPO_OWNER` and `VERCEL_GIT_REPO_SLUG` automatically to build a default raw GitHub URL.
 
 ---
 
-## 16. Vercel CLI / deployment env push
+## 16. Vercel CLI / deployment env
 
-| Variable | Where to find it |
-|----------|------------------|
-| `VERCEL_API_TOKEN` (or legacy `VERCEL_TOKEN`) | [Vercel → Account Settings → Tokens](https://vercel.com/account/tokens). |
-| `VERCEL_PROJECT_ID` | Project → **Settings → General**. |
-| `VERCEL_TEAM_ID` | Team **Settings** if the project is under a team. |
+### API token
 
-These support admin tooling that syncs env to Vercel—**store only in `.env.local`**, never in git.
+1. [https://vercel.com/account/tokens](https://vercel.com/account/tokens) → **Create** → copy → `VERCEL_API_TOKEN` (or legacy name in `.env.example`).
 
-**`vercel env pull`** downloads what exists in the Vercel project into `.env.local`. Variables you add only locally still need to be **added in Vercel → Project → Settings → Environment Variables** for Production/Preview if deployments should see them.
+### Project / team IDs
+
+1. **Vercel** → your **Project** → **Settings** → **General** → **Project ID** → `VERCEL_PROJECT_ID`.
+2. Team: **Team Settings** → **General** → **Team ID** → `VERCEL_TEAM_ID` if applicable.
+
+**`vercel env pull`**: downloads Vercel-stored env into `.env.local`. New keys must still be added in the Vercel UI (or CLI) for deployments to see them.
 
 ---
 
 ## 17. Scripts and seed (local only)
 
-`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` are for **local scripts** (`scripts/create-admin.ts`, seed, etc.). Do not rely on these for production session auth; follow normal admin signup/OAuth.
+`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SEED_*` support **local** scripts—they are not the same as production auth. See script headers in `scripts/`.
 
 ---
 
 ## Quick verification
 
-1. **Minimal run**: `DATABASE_URL`, `SESSION_SECRET` (production), and optionally `BREVO_*` / `OPENAI_*` depending on features you use.
-2. Run `npm run check` and `npm run dev` (see `AGENTS.md` for DB/WebSocket local quirks).
-3. For production deploy: mirror required keys in **Vercel environment variables** and redeploy.
+1. Minimum: `DATABASE_URL`, `SESSION_SECRET` (production), plus whatever features need (e.g. `BREVO_API_KEY`, `OPENAI_API_KEY`).
+2. Run `npm run check` and `npm run dev` (see **`AGENTS.md`** for DB / WebSocket local notes).
+3. Production: set the same keys in **Vercel → Environment Variables** and redeploy.
 
-For feature-specific depth, cross-check **`.env.example` comments** and linked docs (`PAID-GROWTH-MODULE.md`, `FACEBOOK-APP-SETTINGS.md`, `VERCEL-DEPLOYMENT.md`, `PRODUCTION-CHECKLIST.md`).
+For feature depth, use **`.env.example` comments** and **`FACEBOOK-APP-SETTINGS.md`**, **`PAID-GROWTH-MODULE.md`**, **`VERCEL-DEPLOYMENT.md`**, **`PRODUCTION-CHECKLIST.md`** where linked.

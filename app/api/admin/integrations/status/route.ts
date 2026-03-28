@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isAdmin } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
 import {
   isGoogleCalendarConnected,
@@ -47,13 +47,13 @@ export type ContentStudioSocialFlags = ContentStudioSocialPayload;
 
 /**
  * GET /api/admin/integrations/status
- * Super user only. Returns status of each integrated service (env/config only; no live API calls).
+ * Approved admin only. Returns status of each integrated service (env/config only; no live API calls).
  */
 export async function GET(req: NextRequest) {
   try {
-    if (!(await isSuperUser(req))) {
+    if (!(await isAdmin(req))) {
       return NextResponse.json(
-        { message: "Sign in with the site owner account." },
+        { message: "Admin access required." },
         { status: 403 }
       );
     }

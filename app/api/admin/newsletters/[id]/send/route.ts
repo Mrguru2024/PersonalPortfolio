@@ -6,8 +6,10 @@ import {
   mergeFieldsFromEmailOnly,
 } from "@/lib/emailMergeTags";
 import { resolveRelativeUrlsForEmail } from "@/lib/resolveEmailAssetUrls";
+import { appendNewsletterSiteVisitFooter, appendNewsletterSiteVisitFooterPlain } from "@shared/newsletterFooter";
 import { storage } from "@server/storage";
 import type { CrmContact } from "@shared/schema";
+import { fireWorkflows, buildPayloadFromContactId } from "@server/services/workflows/engine";
 
 function emailPublicBaseUrl(): string {
   return (
@@ -61,7 +63,26 @@ export async function POST(
       ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
     } else {
       const filter = newsletter.recipientFilter || {};
-      if (filter.crmLeads === true) {
+      const pickedIds = Array.isArray(filter.crmContactIds)
+        ? [...new Set(filter.crmContactIds.map((n) => Number(n)).filter((id) => Number.isFinite(id) && id > 0))]
+        : [];
+      if (pickedIds.length > 0) {
+        const contacts = await storage.getCrmContactsByIds(pickedIds);
+        const emails = [
+          ...new Set(contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else if (filter.crmAll === true) {
+        const contacts = await storage.getCrmContacts();
+        const emails = [
+          ...new Set(contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else if (filter.crmLeads === true) {
         const contacts = await storage.getCrmContacts("lead");
         const emails = [
           ...new Set(
@@ -139,7 +160,8 @@ export async function POST(
         const fields = crm ? mergeFieldsFromCrmContact(em, crm) : mergeFieldsFromEmailOnly(em);
         const subjectPersonalized = applyEmailMergeTags(newsletter.subject, fields, { htmlEscape: false });
         const htmlPersonalized = applyEmailMergeTags(newsletter.content, fields, { htmlEscape: true });
-        const htmlContent = resolveRelativeUrlsForEmail(htmlPersonalized, base);
+        let htmlContent = resolveRelativeUrlsForEmail(htmlPersonalized, base);
+        htmlContent = appendNewsletterSiteVisitFooter(htmlContent, base);
         const plainPersonalized = newsletter.plainText?.trim()
           ? applyEmailMergeTags(newsletter.plainText, fields, { htmlEscape: false })
           : applyEmailMergeTags(
@@ -147,7 +169,10 @@ export async function POST(
               fields,
               { htmlEscape: false }
             );
-        const textContent = plainPersonalized.replace(/\s+/g, " ").trim();
+        const textContent = appendNewsletterSiteVisitFooterPlain(
+          plainPersonalized.replace(/\s+/g, " ").trim(),
+          base
+        );
 
         const sendSmtpEmail = new brevoModule.SendSmtpEmail();
         sendSmtpEmail.subject = subjectPersonalized;
@@ -171,6 +196,22 @@ export async function POST(
           sentAt: new Date(),
           brevoMessageId: result.messageId?.toString(),
         });
+
+        if (crm?.id) {
+          const wfBase = await buildPayloadFromContactId(storage, crm.id).catch(() => ({
+            contactId: crm.id,
+            contact: crm,
+          }));
+          const wfPayload = {
+            ...wfBase,
+            journeyEvent: {
+              channel: "email" as const,
+              emailSource: "newsletter" as const,
+              newsletterSubject: newsletter.subject,
+            },
+          };
+          fireWorkflows(storage, "contact_email_sent", wfPayload).catch(() => {});
+        }
 
         return { success: true, email: subscriber.email };
       } catch (error: any) {

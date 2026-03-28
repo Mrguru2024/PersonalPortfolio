@@ -259,4 +259,4 @@ export function useAuth() {
   return context;
 }
 
-export { isAuthSuperUser } from "@/lib/super-admin";
+export { isAuthSuperUser, isAuthApprovedAdmin } from "@/lib/super-admin";

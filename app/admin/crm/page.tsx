@@ -512,6 +512,22 @@ export default function CrmPage() {
           </nav>
         </header>
 
+        <Card className="mb-6 border-dashed bg-muted/20">
+          <CardHeader className="py-3 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary shrink-0" aria-hidden />
+              Lifecycle automation
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm leading-relaxed">
+              Outbound email or SMS to a CRM contact (newsletters when the address matches a contact, Communications
+              campaigns, sequence steps, manual SMS) can advance their pipeline status one step when applicable (new →
+              contacted → qualified → …). Marking a deal <strong>won</strong> or <strong>lost</strong> sets the linked
+              contact to won or lost. Sequences and other sends let you target everyone in CRM, selected contacts, or a
+              new contact at enroll time.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
           <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">

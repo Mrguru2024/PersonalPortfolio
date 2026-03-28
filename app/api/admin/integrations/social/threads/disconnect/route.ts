@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isAdmin } from "@/lib/auth-helpers";
 import { disconnectContentStudioThreads } from "@server/services/contentStudioThreadsConnectService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  if (!(await isSuperUser(request))) {
-    return NextResponse.json({ message: "Sign in with the site owner account." }, { status: 403 });
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ message: "Admin access required." }, { status: 403 });
   }
   let accountId: string | undefined;
   try {

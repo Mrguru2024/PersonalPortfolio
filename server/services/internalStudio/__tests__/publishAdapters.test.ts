@@ -16,7 +16,11 @@ describe("publishViaAdapter", () => {
   afterEach(() => {
     delete process.env.CONTENT_STUDIO_PUBLISH_WEBHOOK_URL;
     delete process.env.CONTENT_STUDIO_PUBLISH_WEBHOOK_SECRET;
-    globalThis.fetch = prevFetch;
+    if (typeof prevFetch === "function") {
+      globalThis.fetch = prevFetch;
+    } else {
+      delete (globalThis as { fetch?: typeof fetch }).fetch;
+    }
   });
 
   it("webhook_hub POSTs JSON and optional signature", async () => {
@@ -51,17 +55,39 @@ describe("publishViaAdapter", () => {
   });
 
   it("linkedin returns config error when env missing", async () => {
+    jest.resetModules();
+    jest.doMock("@server/services/contentStudioLinkedInConnectService", () => {
+      const actual = jest.requireActual(
+        "@server/services/contentStudioLinkedInConnectService",
+      ) as typeof import("@server/services/contentStudioLinkedInConnectService");
+      return {
+        ...actual,
+        getLinkedInCredentialsResolved: jest.fn().mockResolvedValue(null),
+      };
+    });
+    const { publishViaAdapter: publish } = await import("../publishAdapters");
     delete process.env.LINKEDIN_ACCESS_TOKEN;
     delete process.env.LINKEDIN_AUTHOR_URN;
-    const out = await publishViaAdapter("linkedin", { title: "T", bodyText: "B", link: null });
+    const out = await publish("linkedin", { title: "T", bodyText: "B", link: null });
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.error).toMatch(/LINKEDIN_ACCESS_TOKEN/i);
   });
 
   it("x returns config error when token missing", async () => {
+    jest.resetModules();
+    jest.doMock("@server/services/contentStudioXConnectService", () => {
+      const actual = jest.requireActual(
+        "@server/services/contentStudioXConnectService",
+      ) as typeof import("@server/services/contentStudioXConnectService");
+      return {
+        ...actual,
+        getXAccessTokenResolved: jest.fn().mockResolvedValue(null),
+      };
+    });
+    const { publishViaAdapter: publish } = await import("../publishAdapters");
     delete process.env.X_OAUTH2_ACCESS_TOKEN;
     delete process.env.TWITTER_OAUTH2_ACCESS_TOKEN;
-    const out = await publishViaAdapter("x", { title: "T", bodyText: "B", link: null });
+    const out = await publish("x", { title: "T", bodyText: "B", link: null });
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.error).toMatch(/X_OAUTH2_ACCESS_TOKEN/i);
   });

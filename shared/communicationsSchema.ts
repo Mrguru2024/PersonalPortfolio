@@ -10,6 +10,22 @@ import type { CrmSavedList } from "./crmSchema";
 /** Segment filters: CRM saved-list shape plus communications-specific fields. */
 export type CommSegmentFilters = NonNullable<CrmSavedList["filters"]> & {
   contactIds?: number[];
+  /**
+   * Extra recipient addresses (not required to exist in CRM). Merged with the CRM-resolved audience
+   * unless `additionalRecipientsOnly` is true.
+   */
+  additionalEmails?: string[];
+  /**
+   * When true, only `additionalEmails` receive the send — CRM segment/list filters are ignored for recipient resolution.
+   */
+  additionalRecipientsOnly?: boolean;
+  /**
+   * When true, all CRM contacts with an email address are eligible (still respects `excludeDoNotContact` unless cleared).
+   * Mutually exclusive with narrow segment rules in the UI; resolution ignores saved-list filters except DNC.
+   */
+  allCrmContacts?: boolean;
+  /** Communications UI: disambiguates “selected only” before contactIds is populated. */
+  audienceTargeting?: "all" | "segment" | "selected" | "manual_only";
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;

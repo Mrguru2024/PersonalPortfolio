@@ -6,8 +6,23 @@ export function describeCommSegmentFilters(f: CommSegmentFilters | null | undefi
   if (!f || typeof f !== "object") return ["No audience rules set."];
   const lines: string[] = [];
 
+  if (f.allCrmContacts === true) {
+    lines.push("Everyone in CRM with an email (segment rules below are ignored for matching).");
+  }
+  if (f.audienceTargeting === "manual_only") {
+    lines.push("Send mode: typed addresses only.");
+  } else if (f.audienceTargeting === "selected") {
+    lines.push("Send mode: selected contacts only.");
+  } else if (f.audienceTargeting === "all") {
+    lines.push("Send mode: all CRM contacts.");
+  }
   if (f.contactIds && f.contactIds.length > 0) {
     lines.push(`Specific people: ${f.contactIds.length} selected`);
+  }
+  if (f.additionalRecipientsOnly && (f.additionalEmails?.length ?? 0) > 0) {
+    lines.push(`Send only to ${f.additionalEmails!.length} extra address(es) (not from CRM segment)`);
+  } else if ((f.additionalEmails?.length ?? 0) > 0) {
+    lines.push(`Also include ${f.additionalEmails!.length} extra address(es) if not already in the segment`);
   }
   if (f.type) lines.push(`Contact type: ${f.type}`);
   if (f.status) lines.push(`Status: ${f.status}`);

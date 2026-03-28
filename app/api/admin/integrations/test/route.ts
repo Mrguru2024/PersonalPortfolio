@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSuperUser } from "@/lib/auth-helpers";
+import { isAdmin } from "@/lib/auth-helpers";
 import { testZoomConnection } from "@/lib/zoom";
 import { testGoogleCalendarConnection } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationId } from "../types";
@@ -16,13 +16,13 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/admin/integrations/test
  * Body: { service: IntegrationId }
- * Super user only. Runs a quick test for the given service (e.g. Facebook app config validation).
+ * Approved admin only. Runs a quick test for the given service (e.g. Facebook app config validation).
  */
 export async function POST(req: NextRequest) {
   try {
-    if (!(await isSuperUser(req))) {
+    if (!(await isAdmin(req))) {
       return NextResponse.json(
-        { message: "Sign in with the site owner account." },
+        { message: "Admin access required." },
         { status: 403 }
       );
     }
