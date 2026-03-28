@@ -70,7 +70,7 @@ function parseFacebookAccountId(platformKey: string): string | undefined {
 }
 
 function parseLinkedInAccountId(platformKey: string): string | undefined {
-  const m = platformKey.match(/^linkedin(?:_member)?:(.+)$/i);
+  const m = platformKey.match(/^linkedin(?:_member|_org)?:(.+)$/i);
   return m?.[1]?.trim() || undefined;
 }
 
@@ -89,7 +89,14 @@ function contentStudioAdapterSwitchKey(platformKey: string): string {
   if (t === "facebook_page" || t.startsWith("facebook_page:") || t === "facebook" || t.startsWith("facebook:")) {
     return "facebook_page";
   }
-  if (t === "linkedin" || t.startsWith("linkedin:") || t === "linkedin_member" || t.startsWith("linkedin_member:")) {
+  if (
+    t === "linkedin" ||
+    t.startsWith("linkedin:") ||
+    t === "linkedin_member" ||
+    t.startsWith("linkedin_member:") ||
+    t === "linkedin_org" ||
+    t.startsWith("linkedin_org:")
+  ) {
     return "linkedin";
   }
   if (t === "threads" || t.startsWith("threads:")) {

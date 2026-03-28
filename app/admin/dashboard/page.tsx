@@ -4,7 +4,7 @@ import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map, LineChart } from "lucide-react";
+import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map, LineChart, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -505,12 +505,22 @@ export default function AdminDashboardPage() {
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
   const isSuperAdmin = isAuthSuperUser(user);
   const tourSteps = getStepsForRole(isSuperAdmin);
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const createdInLastWeek = (iso: string) => {
+    const t = new Date(iso).getTime();
+    return Number.isFinite(t) && t >= sevenDaysAgo;
+  };
+  const recentInboundWeekCount =
+    contacts.filter((c) => createdInLastWeek(c.createdAt)).length +
+    assessments.filter((a) => createdInLastWeek(a.createdAt)).length +
+    resumeRequests.filter((r) => createdInLastWeek(r.createdAt)).length;
   const nudgeItems = buildNudgeItems({
     pendingAssessments,
     totalContacts: contacts.length,
     unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
     isSuperAdmin,
     operatorRoleFocus: operatorProfileData?.profile?.roleSelection,
+    recentInboundWeekCount,
   });
 
   return (
@@ -679,6 +689,12 @@ export default function AdminDashboardPage() {
           <Link href="/admin/growth-os">
             <Radar className="h-4 w-4 mr-2 shrink-0" />
             <span className="truncate">Growth OS</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/growth-os/intelligence">
+            <Search className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Market research</span>
           </Link>
         </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>

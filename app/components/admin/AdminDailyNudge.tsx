@@ -137,8 +137,17 @@ export function buildNudgeItems(opts: {
   isSuperAdmin: boolean;
   /** From /admin/operator-profile — reorders first suggestion by focus role. */
   operatorRoleFocus?: string | null;
+  /** Contacts + assessments + resume requests created in the last 7 days (surface in lead intake). */
+  recentInboundWeekCount?: number;
 }): NudgeItem[] {
-  const { pendingAssessments, totalContacts, unaccessedResume, isSuperAdmin, operatorRoleFocus } = opts;
+  const {
+    pendingAssessments,
+    totalContacts,
+    unaccessedResume,
+    isSuperAdmin,
+    operatorRoleFocus,
+    recentInboundWeekCount = 0,
+  } = opts;
   const items: NudgeItem[] = [];
 
   if (pendingAssessments > 0) {
@@ -197,6 +206,16 @@ export function buildNudgeItems(opts: {
   const roleNudge = OPERATOR_ROLE_NUDGES[focus] ?? OPERATOR_ROLE_NUDGES.general;
   if (roleNudge && !items.some((i) => i.id === roleNudge.id)) {
     items.unshift(roleNudge);
+  }
+
+  if (recentInboundWeekCount > 0) {
+    items.unshift({
+      id: "recent-inbound-week",
+      label: "New inbound this week — review in lead intake",
+      href: "/admin/lead-intake",
+      count: recentInboundWeekCount,
+      icon: <Inbox className="h-4 w-4 shrink-0 text-primary" />,
+    });
   }
 
   return items;

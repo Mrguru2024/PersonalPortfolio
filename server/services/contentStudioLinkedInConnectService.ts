@@ -1,5 +1,10 @@
 /**
- * Content Studio — LinkedIn OAuth (up to MAX_SOCIAL_CONNECTIONS_PER_PLATFORM accounts).
+ * Content Studio — LinkedIn OAuth (up to MAX_SOCIAL_CONNECTIONS_PER_PLATFORM targets per deployment).
+ * One sign-in can add your member profile plus LinkedIn **company pages** you administer (same token).
+ * Calendar entries pick `linkedin:<accountId>` per post so you can schedule for Ascendra brands, other internal
+ * businesses, or future client orgs on this site; hard multi-tenant isolation is still “separate deployment”
+ * until workspace-scoped credentials exist elsewhere in Ascendra OS.
+ *
  * Falls back to LINKEDIN_ACCESS_TOKEN + LINKEDIN_AUTHOR_URN when no OAuth rows.
  */
 
@@ -25,6 +30,9 @@ export type LinkedInConnectedAccount = {
   authorUrn: string;
   displayLabel: string;
   encryptedAccessToken: string;
+  /** Person URN for the login that created this row; company rows share the member’s token. */
+  oauthMemberUrn?: string;
+  accountKind?: "member" | "organization";
 };
 
 type ConfigJson = {
@@ -42,9 +50,19 @@ export function getLinkedInOAuthRedirectUri(baseUrl: string): string {
   return `${baseUrl.replace(/\/$/, "")}/api/admin/integrations/social/linkedin/callback`;
 }
 
+/** Default scopes: personal posts + company pages you admin. Override with LINKEDIN_OAUTH_SCOPES if your app uses a slimmer allowlist. */
+const DEFAULT_LINKEDIN_OAUTH_SCOPES =
+  "openid profile w_member_social w_organization_social r_organization_admin";
+
+export function linkedInOAuthScopesForAuthorizeUrl(): string {
+  const raw = process.env.LINKEDIN_OAUTH_SCOPES?.trim();
+  if (raw) return raw.split(/\s+/).filter(Boolean).join(" ");
+  return DEFAULT_LINKEDIN_OAUTH_SCOPES;
+}
+
 export function buildLinkedInAuthorizeUrl(state: string, redirectUri: string): string {
   const clientId = process.env.LINKEDIN_CLIENT_ID!.trim();
-  const scope = ["openid", "profile", "w_member_social"].join(" ");
+  const scope = linkedInOAuthScopesForAuthorizeUrl();
   const params = new URLSearchParams({
     response_type: "code",
     client_id: clientId,
@@ -75,7 +93,15 @@ function accountsFromConfigJson(raw: Record<string, unknown>): LinkedInConnected
         typeof (a as LinkedInConnectedAccount).accountId === "string" &&
         typeof (a as LinkedInConnectedAccount).authorUrn === "string" &&
         typeof (a as LinkedInConnectedAccount).encryptedAccessToken === "string",
-    );
+    ).map((a) => ({
+      ...a,
+      oauthMemberUrn:
+        typeof a.oauthMemberUrn === "string" && a.oauthMemberUrn.trim()
+          ? a.oauthMemberUrn.trim()
+          : undefined,
+      accountKind:
+        a.accountKind === "member" || a.accountKind === "organization" ? a.accountKind : undefined,
+    }));
   }
   const enc = cfg[KEY_ENC_TOKEN];
   const urn = cfg[KEY_AUTHOR_URN];
@@ -87,6 +113,8 @@ function accountsFromConfigJson(raw: Record<string, unknown>): LinkedInConnected
         authorUrn: urn.trim(),
         displayLabel: typeof label === "string" && label.trim() ? label.trim() : "LinkedIn",
         encryptedAccessToken: enc,
+        oauthMemberUrn: urn.trim().startsWith("urn:li:person:") ? urn.trim() : undefined,
+        accountKind: urn.trim().startsWith("urn:li:organization:") ? "organization" : "member",
       },
     ];
   }
@@ -120,13 +148,16 @@ export async function listLinkedInConnectedAccounts(): Promise<LinkedInConnected
 }
 
 export async function listLinkedInAccountSummaries(): Promise<
-  { accountId: string; authorUrn: string; displayLabel: string }[]
+  { accountId: string; authorUrn: string; displayLabel: string; accountKind?: "member" | "organization" }[]
 > {
   const accounts = await listLinkedInConnectedAccounts();
   return accounts.map((a) => ({
     accountId: a.accountId,
     authorUrn: a.authorUrn,
     displayLabel: a.displayLabel,
+    accountKind:
+      a.accountKind ??
+      (a.authorUrn.startsWith("urn:li:organization:") ? "organization" : "member"),
   }));
 }
 
@@ -186,7 +217,25 @@ export async function disconnectContentStudioLinkedIn(accountId?: string | null)
   if (!existing.enabled) return;
 
   const accounts = await listLinkedInConnectedAccounts();
-  const next = accounts.filter((a) => a.accountId !== accountId.trim()).slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
+  const id = accountId.trim();
+  const target = accounts.find((a) => a.accountId === id);
+  let next: LinkedInConnectedAccount[];
+  if (!target) {
+    next = accounts.filter((a) => a.accountId !== id);
+  } else {
+    const kind =
+      target.accountKind ??
+      (target.authorUrn.startsWith("urn:li:organization:") ? "organization" : "member");
+    if (kind === "member") {
+      const personUrn = target.authorUrn;
+      next = accounts.filter(
+        (a) => a.authorUrn !== personUrn && a.oauthMemberUrn !== personUrn,
+      );
+    } else {
+      next = accounts.filter((a) => a.accountId !== id);
+    }
+  }
+  next = next.slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
 
   if (next.length === 0) {
     await db
@@ -204,6 +253,84 @@ export async function disconnectContentStudioLinkedIn(accountId?: string | null)
       updatedAt: new Date(),
     })
     .where(eq(schedulingIntegrationConfigs.id, existing.id));
+}
+
+type OrgAclElement = {
+  organization?: string;
+  "organization~"?: {
+    localizedName?: string | Record<string, string>;
+    name?: { localized?: Record<string, string> };
+    vanityName?: string;
+  };
+};
+
+function pickLocalizedName(decorated: OrgAclElement["organization~"]): string {
+  if (!decorated) return "";
+  const ln = decorated.localizedName;
+  if (typeof ln === "string" && ln.trim()) return ln.trim();
+  if (ln && typeof ln === "object" && !Array.isArray(ln)) {
+    const o = ln as Record<string, string>;
+    const name = o.en_US || o.en || Object.values(o)[0];
+    if (typeof name === "string" && name.trim()) return name.trim();
+  }
+  const loc = decorated.name?.localized;
+  if (loc && typeof loc === "object") {
+    const name = loc.en_US || loc.en || Object.values(loc)[0];
+    if (typeof name === "string" && name.trim()) return name.trim();
+  }
+  if (typeof decorated.vanityName === "string" && decorated.vanityName.trim()) {
+    return decorated.vanityName.trim();
+  }
+  return "";
+}
+
+/**
+ * Company pages the signed-in member can administer (requires r_organization_admin + relevant products on the LinkedIn app).
+ */
+async function fetchLinkedInAdministratorOrganizations(
+  accessToken: string,
+): Promise<{ ok: true; orgs: { urn: string; name: string }[] } | { ok: false; error: string }> {
+  const linkedInVersion = process.env.LINKEDIN_API_VERSION?.trim() || "202411";
+  const tryUrls = [
+    "https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&count=50&projection=(elements*(organization~(localizedName,vanityName)))",
+    "https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&count=50",
+  ];
+  let lastErr = "Unknown error";
+  for (const url of tryUrls) {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "LinkedIn-Version": linkedInVersion,
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      elements?: OrgAclElement[];
+      message?: string;
+    };
+    if (!res.ok) {
+      lastErr = data.message || `LinkedIn organizationAcls ${res.status}`;
+      continue;
+    }
+    const elements = data.elements ?? [];
+    const orgs: { urn: string; name: string }[] = [];
+    const seenUrns = new Set<string>();
+    for (const el of elements) {
+      const urn = typeof el.organization === "string" ? el.organization.trim() : "";
+      if (!urn.startsWith("urn:li:organization:")) continue;
+      if (seenUrns.has(urn)) continue;
+      seenUrns.add(urn);
+      let name = pickLocalizedName(el["organization~"]);
+      if (!name) {
+        const id = urn.replace("urn:li:organization:", "");
+        name = `Organization ${id}`;
+      }
+      orgs.push({ urn, name });
+    }
+    return { ok: true, orgs };
+  }
+  return { ok: false, error: lastErr };
 }
 
 async function exchangeLinkedInCode(code: string, redirectUri: string): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
@@ -249,7 +376,7 @@ async function fetchLinkedInUserMeta(accessToken: string): Promise<{ ok: true; s
 export async function saveLinkedInTokensFromOAuthCode(
   code: string,
   redirectUri: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; notice?: string } | { ok: false; error: string }> {
   if (!canEncryptSchedulingSecrets()) {
     return {
       ok: false,
@@ -266,27 +393,66 @@ export async function saveLinkedInTokensFromOAuthCode(
   const meta = await fetchLinkedInUserMeta(tok.token);
   if (!meta.ok) return meta;
 
-  const authorUrn = normalizePersonUrn(meta.sub);
-  let accounts = await listLinkedInConnectedAccounts();
+  const memberUrn = normalizePersonUrn(meta.sub);
+  const existingAll = await listLinkedInConnectedAccounts();
 
-  if (accounts.length >= MAX_SOCIAL_CONNECTIONS_PER_PLATFORM) {
-    return {
-      ok: false,
-      error: `Maximum ${MAX_SOCIAL_CONNECTIONS_PER_PLATFORM} LinkedIn accounts connected. Remove one first.`,
-    };
-  }
-
-  if (accounts.some((a) => a.authorUrn === authorUrn)) {
+  if (existingAll.some((a) => a.authorUrn === memberUrn)) {
     return { ok: false, error: "This LinkedIn profile is already connected." };
   }
 
-  accounts.push({
+  const orgFetch = await fetchLinkedInAdministratorOrganizations(tok.token);
+  if (!orgFetch.ok) {
+    console.warn(
+      "[contentStudioLinkedIn] Company pages not loaded (member-only connect).",
+      orgFetch.error,
+    );
+  }
+  const orgs = orgFetch.ok ? orgFetch.orgs : [];
+
+  const encToken = encryptSchedulingSecret(tok.token);
+  const memberRow: LinkedInConnectedAccount = {
     accountId: randomUUID(),
-    authorUrn,
+    authorUrn: memberUrn,
     displayLabel: meta.name,
-    encryptedAccessToken: encryptSchedulingSecret(tok.token),
-  });
-  accounts = accounts.slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
+    encryptedAccessToken: encToken,
+    oauthMemberUrn: memberUrn,
+    accountKind: "member",
+  };
+
+  const orgSeen = new Set<string>();
+  const orgRows: LinkedInConnectedAccount[] = [];
+  for (const o of orgs) {
+    if (orgSeen.has(o.urn)) continue;
+    orgSeen.add(o.urn);
+    orgRows.push({
+      accountId: randomUUID(),
+      authorUrn: o.urn,
+      displayLabel: `Page · ${o.name}`,
+      encryptedAccessToken: encToken,
+      oauthMemberUrn: memberUrn,
+      accountKind: "organization",
+    });
+  }
+
+  let newBundle = [memberRow, ...orgRows];
+  const others = existingAll.filter(
+    (a) => a.authorUrn !== memberUrn && a.oauthMemberUrn !== memberUrn,
+  );
+  const budget = MAX_SOCIAL_CONNECTIONS_PER_PLATFORM - others.length;
+  if (budget < 1) {
+    return {
+      ok: false,
+      error: `Maximum ${MAX_SOCIAL_CONNECTIONS_PER_PLATFORM} LinkedIn targets on this site. Disconnect another profile or company page first.`,
+    };
+  }
+
+  let notice: string | undefined;
+  if (newBundle.length > budget) {
+    notice = `Saved ${budget} of ${newBundle.length} targets (your profile first, then company pages). Disconnect unused targets or raise the limit in code if needed.`;
+    newBundle = newBundle.slice(0, budget);
+  }
+
+  const accounts = [...others, ...newBundle].slice(0, MAX_SOCIAL_CONNECTIONS_PER_PLATFORM);
 
   await db
     .insert(schedulingIntegrationConfigs)
@@ -304,5 +470,5 @@ export async function saveLinkedInTokensFromOAuthCode(
       },
     });
 
-  return { ok: true };
+  return notice ? { ok: true, notice } : { ok: true };
 }

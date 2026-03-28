@@ -248,11 +248,15 @@ export default function AdminIntegrationsPage() {
     }
     if (social === "linkedin_connected") {
       setSocialFlashVariant("success");
-      setSocialFlash("LinkedIn connected. If you use several profiles, pick the right one on the calendar.");
+      setSocialFlash(
+        "LinkedIn connected — your profile and administered company pages appear as separate targets on the content calendar.",
+      );
       setCelebration({ open: true, platform: "linkedin" });
+      const noticeRaw = q.get("social_notice");
+      const notice = noticeRaw ? decodeURIComponent(noticeRaw) : null;
       toast({
         title: "LinkedIn connected",
-        description: "Pick the matching LinkedIn target on calendar entries if you use several profiles.",
+        description: notice ?? "Pick the matching profile or company page on each calendar entry.",
       });
       window.history.replaceState({}, "", "/admin/integrations");
     }
@@ -1059,7 +1063,7 @@ export default function AdminIntegrationsPage() {
                       {oauthStartPath === "/api/admin/integrations/social/linkedin/start" ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : socialPayload.linkedinOAuthConnected ? (
-                        "Connect another profile"
+                        "Connect another sign-in"
                       ) : (
                         "Connect LinkedIn"
                       )}
@@ -1103,14 +1107,29 @@ export default function AdminIntegrationsPage() {
                             </span>{" "}
                             connected
                             <ul className="mt-2 space-y-2 list-none">
-                              {socialPayload.linkedinAccounts.map((a) => (
+                              {socialPayload.linkedinAccounts.map((a) => {
+                              const liKind =
+                                a.accountKind ??
+                                (a.authorUrn.startsWith("urn:li:organization:") ? "organization" : "member");
+                              return (
                                 <li
                                   key={a.accountId}
                                   className="flex flex-wrap items-center gap-2 justify-between rounded border border-border bg-background/50 px-2 py-1.5"
                                 >
-                                  <span>
-                                    <span className="text-foreground font-medium">{a.displayLabel}</span>{" "}
-                                    <span className="text-xs text-muted-foreground">({a.authorUrn})</span>
+                                  <span className="min-w-0">
+                                    <span className="inline-flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-foreground font-medium">{a.displayLabel}</span>
+                                      {liKind === "organization" ? (
+                                        <span className="text-[10px] uppercase tracking-wide rounded border border-border px-1.5 py-0.5 text-muted-foreground shrink-0">
+                                          Company page
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] uppercase tracking-wide rounded border border-border px-1.5 py-0.5 text-muted-foreground shrink-0">
+                                          Profile
+                                        </span>
+                                      )}
+                                    </span>{" "}
+                                    <span className="text-xs text-muted-foreground break-all">({a.authorUrn})</span>
                                   </span>
                                   <Button
                                     type="button"
@@ -1122,16 +1141,23 @@ export default function AdminIntegrationsPage() {
                                       openDisconnectSocial({
                                         path: "/api/admin/integrations/social/linkedin/disconnect",
                                         body: { accountId: a.accountId },
-                                        title: "Remove this LinkedIn profile?",
-                                        description: `${a.displayLabel} will be disconnected from Content Studio.`,
-                                        successMsg: "LinkedIn profile removed.",
+                                        title:
+                                          liKind === "organization"
+                                            ? "Remove this company page?"
+                                            : "Remove this LinkedIn sign-in?",
+                                        description:
+                                          liKind === "organization"
+                                            ? `${a.displayLabel} will no longer be a Content Studio target. Your personal sign-in targets stay unless you remove them.`
+                                            : `${a.displayLabel} and all company pages from this sign-in will be disconnected from Content Studio.`,
+                                        successMsg: "LinkedIn target removed.",
                                       })
                                     }
                                   >
                                     Remove
                                   </Button>
                                 </li>
-                              ))}
+                              );
+                            })}
                             </ul>
                           </>
                         ) : socialPayload.linkedin ? (
@@ -1150,6 +1176,13 @@ export default function AdminIntegrationsPage() {
                       box into your LinkedIn developer app.
                     </p>
                   ) : null}
+                  <p>
+                    Each sign-in adds your <strong className="text-foreground">member profile</strong> plus{" "}
+                    <strong className="text-foreground">company pages</strong> you administer (same deployment can hold many
+                    brands—pick the right target on the calendar). If company pages don’t appear, confirm your LinkedIn app
+                    has the requested scopes and products (see env comments for{" "}
+                    <code className="text-xs">LINKEDIN_OAUTH_SCOPES</code>).
+                  </p>
                   <p>
                     Advanced: <code className="text-xs">LINKEDIN_ACCESS_TOKEN</code> +{" "}
                     <code className="text-xs">LINKEDIN_AUTHOR_URN</code> in the example settings file.

@@ -18,7 +18,12 @@ export type ContentStudioSocialPayload = {
   linkedin: boolean;
   linkedinOAuthConnected: boolean;
   linkedinOAuthAvailable: boolean;
-  linkedinAccounts: { accountId: string; authorUrn: string; displayLabel: string }[];
+  linkedinAccounts: {
+    accountId: string;
+    authorUrn: string;
+    displayLabel: string;
+    accountKind?: "member" | "organization";
+  }[];
   linkedinMaxConnections: number;
   linkedinCanAddConnection: boolean;
   linkedinContentStudioRedirectUri: string;

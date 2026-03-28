@@ -42,7 +42,13 @@ export class EmailService {
       this.initializeBrevo().catch((error) => {
         console.error('Failed to initialize Brevo:', error);
       });
-      console.log(`📧 Email notifications: enabled (admin: ${this.adminEmail})`);
+      const extra = EmailService.parseAdminNotificationCcEmails(
+        this.adminEmail,
+        process.env.ADMIN_NOTIFICATION_EMAILS
+      ).length;
+      console.log(
+        `📧 Email notifications: enabled (admin: ${this.adminEmail}${extra ? `; +${extra} via ADMIN_NOTIFICATION_EMAILS` : ''})`
+      );
     } else {
       console.warn('⚠️  Email notifications: disabled. Form submissions (contact, resume, assessment) will not email you.');
       console.warn('   To enable: set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env). See .env.example.');
@@ -68,6 +74,34 @@ export class EmailService {
     const defaultClient = brevoModule.ApiClient.instance;
     const auth = defaultClient.authentications['api-key'];
     if (auth) auth.apiKey = process.env.BREVO_API_KEY;
+  }
+
+  /** Extra BCC recipients for form/opportunity alerts (comma- or semicolon-separated). Excludes duplicate of primary admin. */
+  static parseAdminNotificationCcEmails(
+    primaryAdminEmail: string,
+    rawList: string | undefined
+  ): Array<{ email: string }> {
+    const primary = (primaryAdminEmail || '').trim().toLowerCase();
+    const raw = rawList?.trim();
+    if (!raw) return [];
+    const seen = new Set<string>(primary ? [primary] : []);
+    const out: Array<{ email: string }> = [];
+    for (const part of raw.split(/[;,]/)) {
+      const e = part.trim();
+      if (!e || !e.includes('@')) continue;
+      const low = e.toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      out.push({ email: e });
+    }
+    return out;
+  }
+
+  private formNotificationBcc(): Array<{ email: string }> {
+    return EmailService.parseAdminNotificationCcEmails(
+      this.adminEmail,
+      process.env.ADMIN_NOTIFICATION_EMAILS
+    );
   }
 
   private formatContactEmail(data: any): { subject: string; html: string; text: string } {
@@ -524,6 +558,8 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       sendSmtpEmail.to = [{
         email: this.adminEmail
       }];
+      const formBcc = this.formNotificationBcc();
+      if (formBcc.length) sendSmtpEmail.bcc = formBcc;
       sendSmtpEmail.replyTo = {
         email: notification.data.email || this.adminEmail
       };
@@ -1051,6 +1087,8 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       sendSmtpEmail.textContent = `New lead: ${data.name} (${data.email}), ${data.businessName}. Score: ${data.totalScore}. Bottleneck: ${data.primaryBottleneck}. Recommendation: ${data.recommendation}.`;
       sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
       sendSmtpEmail.to = [{ email: this.adminEmail }];
+      const growthBcc = this.formNotificationBcc();
+      if (growthBcc.length) sendSmtpEmail.bcc = growthBcc;
       sendSmtpEmail.replyTo = { email: data.email };
       await this.ensureBrevoAuth();
       await this.apiInstance.sendTransacEmail(sendSmtpEmail);

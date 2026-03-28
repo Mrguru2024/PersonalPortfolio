@@ -57,7 +57,7 @@ function expandOAuthTargets(
   r: InternalPlatformAdapter,
   baseKey: string,
   shortLabel: string,
-  summaries: { accountId: string; label: string }[],
+  summaries: { accountId: string; label: string; keyPrefix?: string }[],
   hasEnvFallback: boolean,
 ): void {
   if (summaries.length === 0) {
@@ -75,9 +75,10 @@ function expandOAuthTargets(
     a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
   );
   for (const acc of sorted) {
+    const prefix = acc.keyPrefix ?? baseKey;
     out.push({
       ...r,
-      key: `${baseKey}:${acc.accountId}`,
+      key: `${prefix}:${acc.accountId}`,
       displayName: `${shortLabel} — ${acc.label}`,
       config: { ...(r.config as Record<string, unknown>), accountId: acc.accountId },
     });
@@ -133,7 +134,11 @@ export async function listPlatformAdaptersForCalendar() {
         r,
         "linkedin",
         "LinkedIn",
-        liSummaries.map((a) => ({ accountId: a.accountId, label: a.displayLabel })),
+        liSummaries.map((a) => ({
+          accountId: a.accountId,
+          label: a.displayLabel,
+          keyPrefix: a.accountKind === "organization" ? "linkedin_org" : undefined,
+        })),
         hasLiEnv,
       );
       continue;
@@ -177,6 +182,9 @@ export function calendarAdapterBaseKey(platformKey: string): string {
     return "facebook_page";
   }
   if (lower === "linkedin_member" || lower.startsWith("linkedin_member:")) {
+    return "linkedin";
+  }
+  if (lower === "linkedin_org" || lower.startsWith("linkedin_org:")) {
     return "linkedin";
   }
   if (lower === "linkedin" || lower.startsWith("linkedin:")) {

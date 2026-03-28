@@ -32,5 +32,6 @@ export async function GET(req: NextRequest) {
   if (!saved.ok) {
     return redirectWithClear(req, baseUrl, `?social_error=${encodeURIComponent(`LinkedIn: ${saved.error}`)}`);
   }
-  return redirectWithClear(req, baseUrl, "?social=linkedin_connected");
+  const notice = "notice" in saved && saved.notice ? `&social_notice=${encodeURIComponent(saved.notice)}` : "";
+  return redirectWithClear(req, baseUrl, `?social=linkedin_connected${notice}`);
 }
