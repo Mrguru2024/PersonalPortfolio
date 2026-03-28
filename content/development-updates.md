@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-28 12:19 — Auto · 6518e52
+
+- `Threads OAuth state signing; Growth OS intel UI; research model 403 handling; GOS_OPENAI_MODEL helper` (`6518e52`)
+
+---
+
 ## 2026-03-28 04:14 — Auto · efcfc0e
 
 - `Dev log: record commit 84b8b0d` (`efcfc0e`)
