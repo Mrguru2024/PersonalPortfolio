@@ -2,8 +2,11 @@ import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 const SEP = ".";
 
-/** Meta (Facebook / Threads) prefers app secret so start/callback stay aligned even when SESSION_SECRET varies. */
-export type OAuthStateSigningProfile = "default" | "meta";
+/**
+ * - `meta`: Facebook Page OAuth — matches FACEBOOK_APP_SECRET–first (then session).
+ * - `threads`: Threads uses same order as `threadsOAuthClientSecret()`: THREADS_APP_SECRET first, else FACEBOOK_APP_SECRET, so state and token exchange always share one app secret.
+ */
+export type OAuthStateSigningProfile = "default" | "meta" | "threads";
 
 const OAUTH_STATE_TTL_MS = 30 * 60 * 1000;
 
@@ -12,6 +15,14 @@ function signingSecret(profile: OAuthStateSigningProfile = "default"): string {
   if (oauthDedicated) return oauthDedicated;
 
   if (profile === "meta") {
+    const fb = process.env.FACEBOOK_APP_SECRET?.trim();
+    if (fb) return fb;
+    return process.env.SESSION_SECRET?.trim() || "";
+  }
+
+  if (profile === "threads") {
+    const threads = process.env.THREADS_APP_SECRET?.trim();
+    if (threads) return threads;
     const fb = process.env.FACEBOOK_APP_SECRET?.trim();
     if (fb) return fb;
     return process.env.SESSION_SECRET?.trim() || "";

@@ -11,7 +11,7 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/scheduling", label: "Scheduling", icon: Calendar },
   { href: "/admin/growth-os/revenue-ops", label: "Revenue ops", icon: TrendingUp },
   { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
-  { href: "/admin/growth-os/intelligence", label: "Intelligence", icon: Brain },
+  { href: "/admin/growth-os/intelligence", label: "Market research", icon: Brain },
   { href: "/admin/growth-os/security", label: "Activity log", icon: Shield },
   { href: "/admin/growth-os/shares", label: "Client shares", icon: FileKey },
   { href: "/admin/internal-audit", label: "Funnel audit", icon: ClipboardList },

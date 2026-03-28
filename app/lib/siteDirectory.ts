@@ -234,7 +234,14 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   // —— Admin: growth products
   { path: "/admin/growth-os", title: "Growth OS hub", category: "Admin · Growth OS", audience: "admin", description: "Client Growth OS admin shell.", keywords: k("growth os", "gos") },
   { path: "/admin/scheduling", title: "Native scheduling", category: "Admin · Growth OS", audience: "admin", description: "Bookings, email templates, AI tools for /book.", keywords: k("scheduling", "calendar", "bookings"), relatedPaths: ["/book", "/admin/scheduling/my-availability"] },
-  { path: "/admin/growth-os/intelligence", title: "GOS intelligence", category: "Admin · Growth OS", audience: "admin", description: "Intel dashboards/automation.", keywords: k("intelligence", "automation") },
+  {
+    path: "/admin/growth-os/intelligence",
+    title: "Market & growth intelligence",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description: "Topic discovery, lead/content/ops rollups, automation.",
+    keywords: k("intelligence", "market research", "research", "growth os", "automation"),
+  },
   { path: "/admin/growth-os/security", title: "GOS security", category: "Admin · Growth OS", audience: "admin", description: "Security settings for GOS.", keywords: k("security", "gos") },
   { path: "/admin/growth-os/shares", title: "GOS shares", category: "Admin · Growth OS", audience: "admin", description: "Shared reports/links.", keywords: k("shares", "tokens") },
   { path: "/admin/internal-audit", title: "Internal funnel audit", category: "Admin · Growth OS", audience: "admin", description: "Run internal audits.", keywords: k("audit", "internal") },

@@ -26,6 +26,7 @@ describe("oauthSignedState", () => {
     delete process.env.OAUTH_STATE_SECRET;
     delete process.env.SESSION_SECRET;
     delete process.env.FACEBOOK_APP_SECRET;
+    delete process.env.THREADS_APP_SECRET;
     expect(tryCreateSignedOAuthState()).toBeNull();
   });
 
@@ -42,11 +43,21 @@ describe("oauthSignedState", () => {
 
   it("meta profile signs with FACEBOOK_APP_SECRET before SESSION_SECRET", () => {
     delete process.env.OAUTH_STATE_SECRET;
+    delete process.env.THREADS_APP_SECRET;
     process.env.FACEBOOK_APP_SECRET = "fb-only-meta";
     process.env.SESSION_SECRET = "session-only-default";
     const state = createSignedOAuthState("meta");
     expect(verifySignedOAuthState(state, "meta")).toBe(true);
     expect(verifySignedOAuthState(state, "default")).toBe(false);
+  });
+
+  it("threads profile prefers THREADS_APP_SECRET over FACEBOOK_APP_SECRET", () => {
+    delete process.env.OAUTH_STATE_SECRET;
+    process.env.THREADS_APP_SECRET = "threads-app-secret";
+    process.env.FACEBOOK_APP_SECRET = "facebook-app-secret";
+    const state = createSignedOAuthState("threads");
+    expect(verifySignedOAuthState(state, "threads")).toBe(true);
+    expect(verifySignedOAuthState(state, "meta")).toBe(false);
   });
 
   it("verifies once-encoded state from URL query parsing", () => {

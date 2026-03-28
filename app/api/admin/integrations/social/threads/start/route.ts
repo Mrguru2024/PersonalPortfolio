@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
   }
   const baseUrl = getOAuthBaseUrlFromRequest(req);
   const redirectUri = getThreadsOAuthRedirectUri(baseUrl);
-  const state = tryCreateSignedOAuthState("meta");
+  const state = tryCreateSignedOAuthState("threads");
   if (!state) {
     return NextResponse.json(
       {
         message:
-          "OAuth signing is not configured. Set FACEBOOK_APP_SECRET, SESSION_SECRET, or OAUTH_STATE_SECRET.",
+          "OAuth signing is not configured. Set THREADS_APP_SECRET or FACEBOOK_APP_SECRET, SESSION_SECRET, or OAUTH_STATE_SECRET.",
       },
       { status: 500 },
     );

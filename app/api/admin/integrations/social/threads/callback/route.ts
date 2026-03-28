@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
   const code = searchParams.get("code");
   const state = searchParams.get("state");
-  if (!code || !state || !verifySignedOAuthState(state, "meta")) {
+  if (!code || !state || !verifySignedOAuthState(state, "threads")) {
     return redirectWithClear(req, baseUrl, "?social_error=threads_invalid_state");
   }
   const saved = await saveThreadsTokensFromOAuthCode(code, redirectUri);
