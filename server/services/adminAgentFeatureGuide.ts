@@ -30,7 +30,8 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Admin settings** ([/admin/settings](/admin/settings)):
 - **Ascendra OS** master switch for public \`/api/market/*\` and future subscriber-only tools (separate from per-admin notification toggles).
-- **AI agent:** whether the assistant may execute actions (navigate, reminders, etc.) vs chat-only.
+- **AI agent:** whether the assistant may execute actions (navigate, reminders, etc.) vs chat-only; confirm-before-run toggle.
+- **Mentor companion (opt-in):** \`ai_mentor_observe_usage\` — coarse admin **path** aggregation only (no form/keystroke logging) via POST \`/api/admin/agent/observation\`; \`ai_mentor_proactive_checkpoints\` — rare checkpoint lines in the floating panel. Persists to \`admin_agent_mentor_state\` (v2 adds \`topRoutes\`, \`workflowSignals\`). Chat still merges habits from OpenAI when configured.
 
 **Paid growth (Google Ads / PPC)** ([/admin/paid-growth](/admin/paid-growth)): Campaigns and accounts; AMIE integration hints suggest keyword seeds and campaign types.
 
@@ -42,6 +43,8 @@ export function getAdminAgentFeatureGuideText(): string {
 - Closed loop: link experiments to \`ppc_campaigns\` / comm campaigns; rollup merges \`ppc_performance_snapshots\` into daily metrics for linked campaigns.
 
 **CRM** ([/admin/crm](/admin/crm)): Contacts, deals, sequences, proposal prep; market intel card on proposal prep uses a separate live intel refresh (not AMIE unless you paste/export).
+
+**Lead command center** ([/admin/leads](/admin/leads)): Lead Control — extends \`crm_contacts\`, \`crm_activity_log\`, \`crm_tasks\`; not a parallel CRM. Priority queue + batch **recompute** (priority + routing hint). **Routing rules**: [/admin/leads/settings](/admin/leads/settings) → GET/PUT \`/api/admin/lead-control/routing-rules\` (singleton \`lead_control_org_settings.config\`); first matching rule sets \`lead_routing_hint\`. POST \`/api/admin/lead-control/recompute\` (optional \`contactIds\`, \`limit\`). **Quick follow-up**: POST \`/api/admin/lead-control/contacts/[id]/follow-up-task\` with preset \`tomorrow\` | \`two_days\` | \`one_week\` (creates \`crm_tasks\` + \`task_created\` log). Touch logging: POST \`/api/admin/lead-control/contacts/[id]/actions\`. Summary: GET \`/api/admin/lead-control/summary\`. Priority tuning: \`shared/leadControlPriority.ts\`; rules: \`shared/leadControlRouting.ts\`. \`npm run db:push\` for \`crm_contacts\` Lead Control columns and \`lead_control_org_settings\` table.
 
 **Ascendra Intelligence (Offer + Persona IQ)** ([/admin/ascendra-intelligence](/admin/ascendra-intelligence)): Marketing personas, scripts, lead magnets — distinct from AMIE scoring.
 

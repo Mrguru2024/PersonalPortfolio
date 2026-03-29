@@ -38,7 +38,7 @@ export default function AdminExperimentsReportsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="w-full min-w-0 max-w-3xl mx-auto space-y-6 sm:space-y-8">
       <div>
         <h2 className="text-lg font-medium">Reports</h2>
         <p className="text-sm text-muted-foreground mt-1">

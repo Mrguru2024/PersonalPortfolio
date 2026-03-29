@@ -47,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
 import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
+import { LeadControlActionBar } from "@/components/lead-control/LeadControlActionBar";
 
 interface AfnCommunitySnapshot {
   userId: number;
@@ -721,6 +722,7 @@ export default function CrmLeadProfilePage() {
       </div>
 
       <div className="grid gap-6">
+        <LeadControlActionBar contactId={contact.id} phone={contact.phone} email={contact.email} />
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-4">

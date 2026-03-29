@@ -38,6 +38,8 @@ interface AdminSettingsPayload {
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
   aiAgentRequireActionConfirmation: boolean;
+  aiMentorObserveUsage: boolean;
+  aiMentorProactiveCheckpoints: boolean;
   /** Optional — layout prefs for admin dashboards (main, CRM). */
   adminUiLayouts?: Record<string, { order: string[]; hidden: string[] }> | null;
 }
@@ -51,6 +53,8 @@ const DEFAULT_SETTINGS: AdminSettingsPayload = {
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
   aiAgentRequireActionConfirmation: true,
+  aiMentorObserveUsage: false,
+  aiMentorProactiveCheckpoints: true,
 };
 
 export default function AdminSettingsPage() {
@@ -417,6 +421,43 @@ export default function AdminSettingsPage() {
                     onCheckedChange={(v) => update("aiAgentRequireActionConfirmation", v)}
                     disabled={saving}
                   />
+                </div>
+                <div className="rounded-lg border border-border/80 bg-muted/30 p-4 space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Mentor companion (opt-in)</p>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      The floating assistant can learn coarse <strong>admin navigation only</strong> (page paths and time on page) to personalize checkpoints — never form fields, keystrokes, or customer PII. Pair with{" "}
+                      <strong>Allow agent to perform actions</strong> if you want it to suggest runnable steps (you still confirm when confirmation is on).
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="ai-mentor-observe" className="cursor-pointer">Let mentor learn my admin navigation</Label>
+                      <p className="text-xs text-muted-foreground max-w-md">
+                        Aggregates repeat routes so the mentor understands habits and stuck loops. Data stays on this deployment.
+                      </p>
+                    </div>
+                    <Switch
+                      id="ai-mentor-observe"
+                      checked={local.aiMentorObserveUsage}
+                      onCheckedChange={(v) => update("aiMentorObserveUsage", v)}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="ai-mentor-checkpoints" className="cursor-pointer">Occasional checkpoint prompts</Label>
+                      <p className="text-xs text-muted-foreground max-w-md">
+                        Rare, soft questions in the assistant panel — not blocking popups. Ignored if navigation learning is off and there is no prior memory yet.
+                      </p>
+                    </div>
+                    <Switch
+                      id="ai-mentor-checkpoints"
+                      checked={local.aiMentorProactiveCheckpoints}
+                      onCheckedChange={(v) => update("aiMentorProactiveCheckpoints", v)}
+                      disabled={saving}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

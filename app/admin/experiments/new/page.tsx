@@ -36,8 +36,14 @@ export default function AdminExperimentsNewPage() {
   }
 
   return (
-    <div>
-      <h2 className="text-lg font-medium mb-6">Create experiment</h2>
+    <div className="w-full min-w-0 space-y-4 sm:space-y-6">
+      <div className="max-w-3xl min-w-0">
+        <h2 className="text-lg font-semibold tracking-tight">Create a new test</h2>
+        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+          Four quick steps: name your idea, pick what you’re changing, set who sees which version, then save a draft. We fill
+          in the behind-the-scenes tracking code from your title unless you choose to edit it.
+        </p>
+      </div>
       <CreateExperimentWizard />
     </div>
   );

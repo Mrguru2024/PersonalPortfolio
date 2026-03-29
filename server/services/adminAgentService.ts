@@ -9,7 +9,7 @@ import OpenAI from "openai";
 import { stripConversationalSearchNoise } from "@/lib/advancedSearchQuery";
 import { searchSiteDirectory, SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getCachedAdminAgentContext } from "@server/services/adminAgentContextBuilder";
-import type { AdminAgentMentorStateV1 } from "@shared/schema";
+import type { AdminAgentMentorStateV2 } from "@shared/schema";
 import {
   ADMIN_AGENT_MENTOR_POLICY,
   fetchWebContextForTeaching,
@@ -263,7 +263,7 @@ function getReplyForAction(action: AgentAction): string {
     const label = titleForPath(action.url);
     return `**${label}** — ${mdLink(action.url, `Open ${label}`)}.\n\nTaking you there now.`;
   }
-  return "Done.";
+  return `Done. ${mdLink("/admin/site-directory", "Site directory")} — search if you need another screen, or open ${mdLink("/admin/dashboard", "Dashboard")}.`;
 }
 
 function stripJsonFence(raw: string): string {
@@ -307,6 +307,8 @@ async function processWithOpenAI(input: {
   operatorKnowledgeBlock: string;
   /** Longer-form notes for research-style grounding (when enabled per entry). */
   operatorResearchBlock: string;
+  mentorObserveUsage?: boolean;
+  mentorProactiveCheckpoints?: boolean;
 }): Promise<AgentResult | null> {
   const client = getOpenAIClient();
   if (!client) return null;
@@ -321,6 +323,17 @@ Otherwise set "action": null. Never invent types or URLs.
 Spelling and labels: use correct product names — Ascendra, Ascendra Intelligence, Growth OS, Content Studio, Brand Growth. Match directory titles for screen names.`
     : `Do not return an action. Always set "action": null (actions are disabled for this user).`;
 
+  const companionCadence =
+    input.mentorObserveUsage || input.mentorProactiveCheckpoints
+      ? `
+
+Companion mode: Checkpoints in the assistant panel are rare and optional (never blocking modals). Do not nag. Use OPERATOR MEMORY — including navigation summaries when present — to infer habits and struggles; speak naturally without saying you "monitor" unless they opted in under Admin settings. When they sound stuck on a workflow, offer one small next step.${
+          input.canPerformActions
+            ? " If actions are enabled for them, you may suggest **one** concrete runnable action (navigation or generate_reminders) when it clearly saves time — they still confirm when confirmation is on."
+            : ""
+        }`
+      : "";
+
   const webSection =
     input.webContextBlock.trim().length > 0
       ? `\n\n${input.webContextBlock}\n\nWhen you teach general concepts or external facts, ground claims in the web results above and cite as [publisher or title](full_https_url) using only URLs from that list. If web results are empty or irrelevant, say you could not verify live sources and stick to CONTEXT + general process guidance.`
@@ -328,12 +341,14 @@ Spelling and labels: use correct product names — Ascendra, Ascendra Intelligen
 
   const system = `You are the Ascendra admin assistant and mentor for approved CMS/CRM operators. You address the operator by name when natural: ${input.operatorDisplayName}.
 
-Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.
+Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.${companionCadence}
 
 Operator memory (INTERNAL — ${ADMIN_AGENT_MENTOR_POLICY}):
 ${input.mentorPromptBlock}
 
 Mission detail: give clear next steps, name the exact screen or API from CONTEXT when the task is in-app, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
+
+Non-negotiable for "reply": every message must include (1) **at least one markdown link** — internal [Label](/admin/...) style from CONTEXT for in-app destinations, or full https URLs only when grounded in WEB RESULTS — and (2) for anything beyond a one-line greeting/thanks, **concrete actionable steps** or the explicit next control to use. Do not end with only vague encouragement. For a bare hello/thanks, still add one useful link (e.g. ${mdLink("/admin/dashboard", "Dashboard")} or ${mdLink("/admin/site-directory", "Site directory")}).
 
 Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md, FEATURE GUIDE) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
 ${webSection}
@@ -412,7 +427,9 @@ export interface ProcessAgentMessageInput {
   /** Numeric user id for logging / future use */
   userId?: number;
   operatorDisplayName?: string;
-  mentorState?: AdminAgentMentorStateV1 | null;
+  mentorState?: AdminAgentMentorStateV2 | null;
+  mentorObserveUsage?: boolean;
+  mentorProactiveCheckpoints?: boolean;
   /** Pre-formatted operator knowledge (from DB); empty string if none. */
   operatorKnowledgeBlock?: string;
   /** Research-oriented notes (from DB); empty string if none. */
@@ -458,6 +475,8 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
       webContextBlock,
       operatorKnowledgeBlock: (input.operatorKnowledgeBlock ?? "").trim(),
       operatorResearchBlock: (input.operatorResearchBlock ?? "").trim(),
+      mentorObserveUsage: input.mentorObserveUsage === true,
+      mentorProactiveCheckpoints: input.mentorProactiveCheckpoints !== false,
     });
     if (ai) {
       if (ai.action && !canPerformActions) {

@@ -35,7 +35,18 @@ export type AmieRawSignals = {
     informational: number;
   };
   keywords: Array<{ term: string; volume: number; intent: "high" | "medium" | "low" }>;
-  competitorSamples: Array<{ name: string; rating: number; reviewCount: number; distanceKm: number }>;
+  competitorSamples: Array<{
+    name: string;
+    rating: number;
+    reviewCount: number;
+    distanceKm: number;
+    /** Present when sourced from Google Places. */
+    formattedAddress?: string;
+  }>;
+  /** Where competitor list & aggregates came from. */
+  competitorProvenance?: "google_places" | "synthetic";
+  /** Query sent to Google Places (for transparency). */
+  competitorSearchQuery?: string;
 };
 
 export type AmieMarketDataDTO = {

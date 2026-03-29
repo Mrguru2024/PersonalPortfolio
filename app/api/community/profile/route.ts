@@ -8,6 +8,8 @@ import {
   getAfnProfileNormalizedTags,
   getAfnProfileIntelligenceByUserId,
 } from "@server/afnStorage";
+import { mergePublicProfileStyle } from "@/lib/community/publicProfileStyle";
+import type { PublicProfileStyle } from "@shared/publicProfileStyle";
 import { isFounderType, isPublicProfileTheme } from "@/lib/community/constants";
 import {
   isCommunicationStyle,
@@ -77,6 +79,7 @@ export async function PATCH(req: NextRequest) {
     }
     const userId = Number(user.id);
     const body = await req.json().catch(() => ({}));
+    const existingRow = await getAfnProfileByUserId(userId);
 
     let founderTribe: string | null | undefined = undefined;
     if ("founderTribe" in body) {
@@ -189,6 +192,14 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    let publicProfileStyleJson: PublicProfileStyle | undefined = undefined;
+    if ("publicProfileStyle" in body) {
+      publicProfileStyleJson = mergePublicProfileStyle(
+        existingRow?.publicProfileStyleJson ?? null,
+        body.publicProfileStyle
+      );
+    }
+
     let inviteLikelihoodScore: number | null | undefined = undefined;
     if ("inviteLikelihoodScore" in body) {
       if (body.inviteLikelihoodScore === null) inviteLikelihoodScore = null;
@@ -222,6 +233,7 @@ export async function PATCH(req: NextRequest) {
       askMeAbout: body.askMeAbout !== undefined ? str("askMeAbout", 4000) : undefined,
       founderTribe,
       publicProfileTheme,
+      publicProfileStyleJson,
       featuredResourceUrl: body.featuredResourceUrl !== undefined ? optStr("featuredResourceUrl", 2000) : undefined,
       profileCompletionScore:
         body.profileCompletionScore !== undefined && body.profileCompletionScore !== null

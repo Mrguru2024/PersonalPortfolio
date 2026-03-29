@@ -10,6 +10,10 @@ export interface AdminSettingsApiPayload {
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
   aiAgentRequireActionConfirmation: boolean;
+  /** Opt-in: aggregate admin paths for the mentor (no form fields or keystrokes). */
+  aiMentorObserveUsage: boolean;
+  /** When observation is on, rare checkpoint prompts may appear in the assistant panel. */
+  aiMentorProactiveCheckpoints: boolean;
   adminUiLayouts: Record<string, { order: string[]; hidden: string[] }> | null;
 }
 
@@ -22,6 +26,8 @@ export const ADMIN_SETTINGS_DEFAULTS: Omit<AdminSettingsApiPayload, "adminUiLayo
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
   aiAgentRequireActionConfirmation: true,
+  aiMentorObserveUsage: false,
+  aiMentorProactiveCheckpoints: true,
 };
 
 export function toAdminSettingsApiPayload(
@@ -39,6 +45,8 @@ export function toAdminSettingsApiPayload(
     notifyOnRoleChange: row.notifyOnRoleChange,
     aiAgentCanPerformActions: row.aiAgentCanPerformActions,
     aiAgentRequireActionConfirmation: row.aiAgentRequireActionConfirmation,
+    aiMentorObserveUsage: row.aiMentorObserveUsage,
+    aiMentorProactiveCheckpoints: row.aiMentorProactiveCheckpoints,
     adminUiLayouts: row.adminUiLayouts ?? null,
   };
 }

@@ -651,6 +651,16 @@ export const adminSettings = pgTable("admin_settings", {
   /** When true, the admin assistant shows a confirm step before navigation or reminder runs. */
   aiAgentRequireActionConfirmation: boolean("ai_agent_require_action_confirmation").default(true).notNull(),
   /**
+   * When true, the app may record coarse admin navigation (paths, dwell hints) to personalize the floating mentor.
+   * Does not log form fields or keystrokes. Separate from action execution.
+   */
+  aiMentorObserveUsage: boolean("ai_mentor_observe_usage").default(false).notNull(),
+  /**
+   * When true (and mentor observation is enabled), the mentor may occasionally surface a short checkpoint question
+   * in the assistant panel based on usage patterns — never blocking the UI.
+   */
+  aiMentorProactiveCheckpoints: boolean("ai_mentor_proactive_checkpoints").default(true).notNull(),
+  /**
    * Per-surface module order + visibility for admin dashboards (syncs across devices).
    * Keys: `main` (/admin/dashboard), `crm` (/admin/crm/dashboard). Shape: { [surface]: { order: string[], hidden: string[] } }
    */
@@ -676,10 +686,34 @@ export type AdminAgentMentorStateV1 = {
   pendingMentorNudges: string[];
 };
 
+/** Aggregate route visits for mentor personalization (observation opt-in only). */
+export type MentorRouteStat = {
+  path: string;
+  visits: number;
+  lastVisitAt: string;
+};
+
+export type AdminAgentMentorStateV2 = {
+  v: 2;
+  habits: string[];
+  painPoints: string[];
+  goals: string[];
+  strengths: string[];
+  topicsOftenAsked: string[];
+  pendingMentorNudges: string[];
+  topRoutes?: MentorRouteStat[];
+  /** ISO timestamp — throttles auto checkpoint prompts */
+  lastCheckpointAt?: string;
+  /** Short inferred signals, e.g. rapid revisits */
+  workflowSignals?: string[];
+};
+
+export type AdminAgentMentorStateStored = AdminAgentMentorStateV1 | AdminAgentMentorStateV2;
+
 export const adminAgentMentorState = pgTable("admin_agent_mentor_state", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
-  state: json("state").$type<AdminAgentMentorStateV1>().notNull(),
+  state: json("state").$type<AdminAgentMentorStateStored>().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

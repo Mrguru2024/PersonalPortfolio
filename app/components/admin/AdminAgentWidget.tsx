@@ -27,6 +27,11 @@ interface AgentBootstrap {
   greetingLine: string;
   mentorNudge: string | null;
   policyNotice: string;
+  mentorCompanion?: {
+    observeUsage: boolean;
+    proactiveCheckpoints: boolean;
+    actionsEnabled: boolean;
+  };
 }
 
 /** Avoid `res.json()` on HTML error pages (throws "Unexpected token '<'"). */
@@ -165,8 +170,9 @@ export function AdminAgentWidget() {
       }
       return data;
     },
-    enabled: isAdmin && open,
+    enabled: isAdmin,
     staleTime: 60_000,
+    refetchInterval: (q) => (q.state.data?.mentorCompanion?.observeUsage ? 120_000 : false),
   });
 
   useEffect(() => {
@@ -320,8 +326,9 @@ export function AdminAgentWidget() {
                 <p className="text-sm leading-relaxed">
                   Ask where something lives, say “open …” for CRM or Content Studio, or attach screenshots (PNG, JPEG, WebP, GIF). Describe what you want done in text alongside images. With{" "}
                   <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can run navigation and reminders; with{" "}
-                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step and see an Action result line after it runs. Build optional notes in{" "}
-                  <span className="text-foreground/90">Assistant knowledge</span> (Settings) for facts, research context, and message flows.
+                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step and see an Action result line after it runs. Under{" "}
+                  <span className="text-foreground/90">Mentor companion</span>, you can opt in to coarse navigation learning (admin paths only) and occasional checkpoints — never blocking. Build optional notes in{" "}
+                  <span className="text-foreground/90">Assistant knowledge</span> for facts, research context, and message flows.
                 </p>
                 <p className="text-[11px] leading-snug text-muted-foreground/90 border-t border-border/60 pt-2">
                   {bootstrapQuery.data?.policyNotice ??
@@ -468,11 +475,17 @@ export function AdminAgentWidget() {
       )}
       <Button
         size="icon"
-        className="h-12 w-12 rounded-full shadow-lg"
+        className="h-12 w-12 rounded-full shadow-lg relative"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close mentor and assistant" : "Open admin mentor and assistant"}
       >
         <Bot className="h-6 w-6" />
+        {!open && bootstrapQuery.data?.mentorNudge ? (
+          <span
+            className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-background"
+            aria-hidden
+          />
+        ) : null}
       </Button>
     </div>
   );

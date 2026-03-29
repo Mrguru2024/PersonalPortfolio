@@ -9,6 +9,7 @@ import {
   real,
   unique,
 } from "drizzle-orm/pg-core";
+import type { LeadControlOrgConfig } from "./leadControlOrgSettingsTypes";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -108,6 +109,12 @@ export const crmContacts = pgTable("crm_contacts", {
   lostReason: text("lost_reason"),
   responseStatus: text("response_status"), // e.g. awaiting_reply | replied | no_response
   reactivationEligible: boolean("reactivation_eligible").default(false),
+  /** Lead Control System: P1 (urgent) … P5 (nurture/archive); computed + persisted for ops sorting */
+  leadControlPriority: text("lead_control_priority"), // P1 | P2 | P3 | P4 | P5
+  /** First outbound touch logged via Lead Control (speed-to-lead reporting) */
+  firstResponseAt: timestamp("first_response_at"),
+  /** Short routing hint: e.g. book_call | qualify_first | nurture (rules engine / manual) */
+  leadRoutingHint: text("lead_routing_hint"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -665,6 +672,16 @@ export const revenueOpsSettings = pgTable("revenue_ops_settings", {
 
 export type RevenueOpsSettingsRow = typeof revenueOpsSettings.$inferSelect;
 export type InsertRevenueOpsSettingsRow = typeof revenueOpsSettings.$inferInsert;
+
+/** Singleton (id=1): org-wide Lead Control routing rules — still writes hints to crm_contacts only. */
+export const leadControlOrgSettings = pgTable("lead_control_org_settings", {
+  id: integer("id").primaryKey().default(1),
+  config: json("config").$type<LeadControlOrgConfig>().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LeadControlOrgSettingsRow = typeof leadControlOrgSettings.$inferSelect;
+export type { LeadControlOrgConfig } from "./leadControlOrgSettingsTypes";
 
 // ——— Growth Intelligence: experiments and variant assignment ———
 

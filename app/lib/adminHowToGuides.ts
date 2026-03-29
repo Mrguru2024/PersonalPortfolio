@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Brain,
   CircleDollarSign,
+  FlaskConical,
   LayoutDashboard,
   Link2,
   Mail,
@@ -279,6 +280,34 @@ export const ADMIN_HOW_TO_GUIDES: AdminHowToGuide[] = [
     related: [
       { label: "Market intelligence", href: "/admin/market-intelligence" },
       { label: "Integrations", href: "/admin/integrations" },
+    ],
+  },
+  {
+    id: "experiments-ab-testing",
+    title: "A/B testing & Revenue experiments (interactive)",
+    description:
+      "Step-by-step tour of the Ascendra Experimentation Engine: variants, rollups, calculator, channel links, and AI insights — with checklist, diagrams, and examples.",
+    href: "/admin/how-to/experiments",
+    icon: FlaskConical,
+    whenToUse:
+      "You want to run or read a test (landing, email, ads), understand what each experiment screen does, or onboard a teammate without guessing.",
+    steps: [
+      "Start with the **interactive tutorial** (`/admin/how-to/experiments`): tabs for walkthrough, screen map, scenarios, and glossary; optional **Listen** reads the full narrative.",
+      "Concepts: experiments live in **`growth_experiments`** / **`growth_variants`**; daily totals surface on each detail page from **`aee_experiment_metrics_daily`** with **`dimension_key = total`**.",
+      "Assignment for live sites: public **`GET /api/growth-intelligence/variant`** with **`experiment`** (key) **`visitorId`** (stable id) returns **`variantKey`** and **`config`** — wire your UI to that response.",
+      "On **`/admin/experiments`**: workflow card, **two-proportion z-test** calculator (same math as `app/lib/aee/abTestMath.ts`), advanced panels, then the experiments table.",
+      "On **`/admin/experiments/[id]`**: channel links (PPC/email/web), optional PPC snapshot block, **Optimization preview** (~20 visitors / first lead heuristic), **Content & campaign AI insights** (needs `OPENAI_API_KEY`; model must not invent metrics).",
+      "Implement content changes in **Newsletters** or **Content Studio** after you decide what to ship — the tutorial links both.",
+    ],
+    tips: [
+      "Users need **experiments** permission (or super-user) to open `/admin/experiments/*`; this how-to page is readable by any approved admin for training.",
+      "Experiment **score** and **AI** summaries are previews — confirm revenue and lead quality in CRM before big budget moves.",
+    ],
+    related: [
+      { label: "Experiments hub", href: "/admin/experiments" },
+      { label: "New experiment", href: "/admin/experiments/new" },
+      { label: "Content Studio", href: "/admin/content-studio" },
+      { label: "Newsletters", href: "/admin/newsletters" },
     ],
   },
 ];

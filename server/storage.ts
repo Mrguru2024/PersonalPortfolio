@@ -27,7 +27,7 @@ import { users, type User, type InsertUser,
   adminSettings, type AdminSettings, type InsertAdminSettings,
   adminAgentMentorState,
   type AdminAgentMentorStateRow,
-  type AdminAgentMentorStateV1,
+  type AdminAgentMentorStateStored,
   adminAgentKnowledgeEntries,
   type AdminAgentKnowledgeEntryRow,
   type InsertAdminAgentKnowledgeEntryRow,
@@ -111,8 +111,11 @@ import {
   type CrmContactSocialSuggestion,
   type InsertCrmContactSocialSuggestion,
   revenueOpsSettings,
+  leadControlOrgSettings,
   type RevenueOpsSettingsRow,
   type RevenueOpsSettingsConfig,
+  type LeadControlOrgSettingsRow,
+  type LeadControlOrgConfig,
   growthExperiments, type GrowthExperiment, type InsertGrowthExperiment,
   growthVariants, type GrowthVariant, type InsertGrowthVariant,
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
@@ -432,6 +435,8 @@ export interface IStorage {
 
   getRevenueOpsSettings(): Promise<RevenueOpsSettingsRow>;
   upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow>;
+  getLeadControlOrgSettings(): Promise<LeadControlOrgSettingsRow>;
+  upsertLeadControlOrgSettings(config: LeadControlOrgConfig): Promise<LeadControlOrgSettingsRow>;
   getCrmContactByPhoneDigits(digits: string): Promise<CrmContact | undefined>;
   getCrmContactByStripeCustomerId(stripeCustomerId: string): Promise<CrmContact | undefined>;
   getRevenueOpsDashboardMetrics(): Promise<{
@@ -659,7 +664,7 @@ export interface IStorage {
   upsertAdminSettings(userId: number, settings: Partial<Omit<InsertAdminSettings, "id" | "userId" | "createdAt">>): Promise<AdminSettings>;
 
   getAdminAgentMentorState(userId: number): Promise<AdminAgentMentorStateRow | undefined>;
-  upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateV1): Promise<AdminAgentMentorStateRow>;
+  upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateStored): Promise<AdminAgentMentorStateRow>;
 
   listAdminAgentKnowledgeEntries(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
   getAdminAgentKnowledgeEntry(userId: number, id: number): Promise<AdminAgentKnowledgeEntryRow | undefined>;
@@ -2812,6 +2817,26 @@ export class DatabaseStorage implements IStorage {
     return updated!;
   }
 
+  async getLeadControlOrgSettings(): Promise<LeadControlOrgSettingsRow> {
+    const [row] = await db.select().from(leadControlOrgSettings).where(eq(leadControlOrgSettings.id, 1)).limit(1);
+    if (row) return row;
+    const [inserted] = await db
+      .insert(leadControlOrgSettings)
+      .values({ id: 1, config: { routingRules: [] } })
+      .returning();
+    return inserted!;
+  }
+
+  async upsertLeadControlOrgSettings(config: LeadControlOrgConfig): Promise<LeadControlOrgSettingsRow> {
+    await this.getLeadControlOrgSettings();
+    const [updated] = await db
+      .update(leadControlOrgSettings)
+      .set({ config, updatedAt: new Date() })
+      .where(eq(leadControlOrgSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
   async getCrmContactByPhoneDigits(digits: string): Promise<CrmContact | undefined> {
     const d = digits.replace(/\D/g, "");
     if (d.length < 10) return undefined;
@@ -4340,6 +4365,8 @@ export class DatabaseStorage implements IStorage {
       notifyOnRoleChange: true,
       aiAgentCanPerformActions: false,
       aiAgentRequireActionConfirmation: true,
+      aiMentorObserveUsage: false,
+      aiMentorProactiveCheckpoints: true,
     } as const;
     const payload = {
       emailNotifications: settings.emailNotifications ?? existing?.emailNotifications ?? def.emailNotifications,
@@ -4355,6 +4382,11 @@ export class DatabaseStorage implements IStorage {
         settings.aiAgentRequireActionConfirmation ??
         existing?.aiAgentRequireActionConfirmation ??
         def.aiAgentRequireActionConfirmation,
+      aiMentorObserveUsage: settings.aiMentorObserveUsage ?? existing?.aiMentorObserveUsage ?? def.aiMentorObserveUsage,
+      aiMentorProactiveCheckpoints:
+        settings.aiMentorProactiveCheckpoints ??
+        existing?.aiMentorProactiveCheckpoints ??
+        def.aiMentorProactiveCheckpoints,
       adminUiLayouts:
         settings.adminUiLayouts !== undefined ? settings.adminUiLayouts : existing?.adminUiLayouts ?? null,
       updatedAt: now,
@@ -4383,10 +4415,7 @@ export class DatabaseStorage implements IStorage {
     return row ?? undefined;
   }
 
-  async upsertAdminAgentMentorState(
-    userId: number,
-    state: AdminAgentMentorStateV1,
-  ): Promise<AdminAgentMentorStateRow> {
+  async upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateStored): Promise<AdminAgentMentorStateRow> {
     const now = new Date();
     const [row] = await db
       .insert(adminAgentMentorState)

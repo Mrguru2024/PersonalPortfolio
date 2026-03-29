@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   BookOpen,
   CircleDollarSign,
+  FlaskConical,
   Loader2,
   Search,
 } from "lucide-react";
@@ -103,6 +104,12 @@ export default function AdminHowToPage() {
                 <Link href="/admin/crm/ltv">
                   <CircleDollarSign className="h-4 w-4 shrink-0" aria-hidden />
                   LTV workspace
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link href="/admin/how-to/experiments">
+                  <FlaskConical className="h-4 w-4 shrink-0" aria-hidden />
+                  A/B testing tutorial
                 </Link>
               </Button>
             </div>

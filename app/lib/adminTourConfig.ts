@@ -74,6 +74,14 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
     roles: ["all"],
   },
   {
+    id: "lead-command-center",
+    title: "Lead command center (CRM-backed)",
+    description:
+      "Under **CRM & leads**, open **Lead command center** for a **priority queue** (P1–P5), **routing hints**, first-touch gaps, and follow-up load. Use **Lead Control settings** for ordered routing rules (hints still live on **CRM** contacts). **Batch recompute** refreshes priority + hints; on a contact, **Quick follow-up** creates **CRM tasks**. Same Ascendra OS stack — **crm_contacts** only.",
+    target: "center",
+    roles: ["all"],
+  },
+  {
     id: "daily-habits",
     title: "Daily habits",
     description:

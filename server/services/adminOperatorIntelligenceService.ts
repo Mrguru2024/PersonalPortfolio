@@ -36,6 +36,8 @@ export interface OperatorIntelligenceContext {
   dashboardStats: {
     pendingAssessments: number;
     totalContacts: number;
+    /** CRM leads + clients in unified CRM (complements legacy form `contacts` table). */
+    crmContactsCount: number;
   };
 }
 
@@ -85,7 +87,7 @@ function normalizeIntelligence(
 }
 
 function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOperatorIntelligencePayload {
-  const { pendingAssessments, totalContacts } = ctx.dashboardStats;
+  const { pendingAssessments, totalContacts, crmContactsCount } = ctx.dashboardStats;
   const role = ctx.roleSelection;
   const daily: AdminOperatorIntelligencePayload["dailyTasks"] = [];
   const weekly: AdminOperatorIntelligencePayload["weeklyTasks"] = [];
@@ -105,6 +107,14 @@ function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOpera
       title: "Review new contact form submissions",
       href: "/admin/dashboard",
       rationale: "Speed to lead improves conversion.",
+    });
+  }
+  if (crmContactsCount > 0) {
+    daily.push({
+      id: "crm-pipeline",
+      title: `Triage CRM (${crmContactsCount} records) — follow up on hottest leads`,
+      href: "/admin/crm",
+      rationale: "Unified CRM is the source of truth for ongoing relationships.",
     });
   }
   if (role === "content") {
@@ -270,7 +280,7 @@ Output ONLY valid JSON (no markdown) with this exact shape:
 Rules:
 - dailyTasks: 3–5 concrete actions doable today; weeklyTasks: 3–6 for this week.
 - href must be an internal admin path starting with /admin when you suggest a destination (e.g. /admin/crm, /admin/blog, /admin/invoices). Use null if none.
-- Align tasks with the operator's stated role, mission, vision, goals, and dashboard stats. Prioritize clearing pending work when counts are high.
+- Align tasks with the operator's stated role, mission, vision, goals, and dashboard stats. Prioritize clearing pending assessments and CRM follow-ups when counts are high. Mention CRM (/admin/crm) when crmContactsCount is non-trivial.
 - tips: 3–5 concise coaching tips (one sentence each).
 - Be practical; no generic fluff.`,
         },

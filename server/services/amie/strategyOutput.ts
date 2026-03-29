@@ -133,6 +133,8 @@ export function buildAmieFullAnalysis(
       avgCompetitorRating: raw.avgCompetitorRating,
       totalReviewCount: raw.totalReviewCount,
       samples: raw.competitorSamples,
+      provenance: raw.competitorProvenance ?? "synthetic",
+      searchQuery: raw.competitorSearchQuery,
     },
     sources,
     dataMode,

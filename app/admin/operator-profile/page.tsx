@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw, Sparkles, Target } from "lucide-react";
@@ -59,6 +59,7 @@ export default function AdminOperatorProfilePage() {
   const [vision, setVision] = useState("");
   const [goals, setGoals] = useState("");
   const [taskFocus, setTaskFocus] = useState("");
+  const didAutoGeneratePlan = useRef(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -86,6 +87,35 @@ export default function AdminOperatorProfilePage() {
     setTaskFocus(profile.taskFocus ?? "");
   }, [profile]);
 
+  const refresh = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/operator-profile/refresh", {});
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || "Refresh failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/operator-profile"] });
+      toast({ title: "AI plan regenerated" });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
+  /** First visit with no cached plan: build one using live dashboard + CRM signals (per logged-in admin). */
+  useEffect(() => {
+    if (!profile || profile.intelligence || didAutoGeneratePlan.current) return;
+    didAutoGeneratePlan.current = true;
+    refresh.mutate(undefined, {
+      onError: () => {
+        didAutoGeneratePlan.current = false;
+      },
+    });
+    // refresh.mutate is stable enough; we only key off profile identity + whether intel exists
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot when intel is missing
+  }, [profile?.userId, profile?.intelligence]);
+
   const save = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("PATCH", "/api/admin/operator-profile", {
@@ -101,28 +131,19 @@ export default function AdminOperatorProfilePage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       qc.invalidateQueries({ queryKey: ["/api/admin/operator-profile"] });
       toast({ title: "Profile saved" });
-    },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
-  });
-
-  const refresh = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/operator-profile/refresh", {
-        pendingAssessments: 0,
-        totalContacts: 0,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error || "Refresh failed");
+      try {
+        await apiRequest("POST", "/api/admin/operator-profile/refresh", {});
+        qc.invalidateQueries({ queryKey: ["/api/admin/operator-profile"] });
+        toast({ title: "AI plan updated to match your profile" });
+      } catch {
+        toast({
+          title: "Profile saved",
+          description: "Tap “Regenerate AI plan” if task suggestions still look stale.",
+        });
       }
-      return res.json();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/admin/operator-profile"] });
-      toast({ title: "AI plan regenerated" });
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
@@ -256,8 +277,8 @@ export default function AdminOperatorProfilePage() {
           <CardContent className="space-y-6">
             {!intel ? (
               <p className="text-sm text-muted-foreground">
-                No plan yet. Save your profile, then click <strong>Regenerate AI plan</strong> (dashboard refresh uses
-                live inbox counts).
+                No plan yet — a plan is generated automatically from your inbox and CRM counts; you can also click{" "}
+                <strong>Regenerate AI plan</strong>.
               </p>
             ) : (
               <>

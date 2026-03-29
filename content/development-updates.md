@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-29 12:04 — Auto · b72836c
+
+- `feat: AEE experiments engine, CRM attribution, admin UX, scheduler and revenue ops updates` (`b72836c`)
+
+---
+
 ## 2026-03-28 22:16 — Auto · 0f0f9d7
 
 - `Dev log: record 760be9a.` (`0f0f9d7`)

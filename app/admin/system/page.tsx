@@ -22,12 +22,14 @@ import {
   Contact,
   ScrollText,
   Gauge,
+  Zap,
 } from "lucide-react";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import {
   SYSTEM_ENV_CHECKLIST,
   type SystemEnvTier,
 } from "@/lib/system-env-checklist";
+import type { LiveFeedItem } from "@/lib/adminLiveFeedTypes";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +56,11 @@ interface HealthData {
   config: Record<string, boolean>;
   logStats: { total: number; errors: number };
   nodeEnv: string;
+  deploy?: {
+    vercelEnv: string | null;
+    region: string | null;
+    gitSha: string | null;
+  };
 }
 
 interface ActivityData {
@@ -138,6 +145,8 @@ export default function AdminSystemPage() {
   const [activityLogFilter, setActivityLogFilter] = useState<string>("");
   const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [liveFeed, setLiveFeed] = useState<LiveFeedItem[]>([]);
+  const [loadingLiveFeed, setLoadingLiveFeed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -227,6 +236,18 @@ export default function AdminSystemPage() {
       .finally(() => setLoadingActivityLog(false));
   }, [user, isSuperUser, refreshTick, activityLogFilter]);
 
+  useEffect(() => {
+    if (!user || !isSuperUser) return;
+    setLoadingLiveFeed(true);
+    apiRequest("GET", "/api/admin/system/live-feed?limit=80")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { items?: LiveFeedItem[] } | null) => {
+        setLiveFeed(Array.isArray(data?.items) ? data.items : []);
+      })
+      .catch(() => setLiveFeed([]))
+      .finally(() => setLoadingLiveFeed(false));
+  }, [user, isSuperUser, refreshTick]);
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchLogs();
@@ -278,7 +299,7 @@ export default function AdminSystemPage() {
   }
 
   return (
-    <div className="container max-w-5xl py-8 px-4">
+    <div className="container max-w-6xl py-8 px-4">
       <div className="flex items-center gap-4 mb-6">
         <Link href="/admin/dashboard">
           <Button variant="ghost" size="icon">
@@ -287,8 +308,9 @@ export default function AdminSystemPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">System monitor</h1>
-          <p className="text-muted-foreground text-sm">
-            Persisted login and audit events (database) plus a live in-memory error buffer (this instance only).
+          <p className="text-muted-foreground text-sm max-w-2xl">
+            SQL-backed counts and audit log, merged <strong>live feed</strong> (memory + audit + visitor events), and an
+            in-memory error buffer for this server instance only. Super-admin only.
           </p>
         </div>
         <Button
@@ -332,6 +354,16 @@ export default function AdminSystemPage() {
             Lead intake (diagnosis)
           </Link>
         </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/deployment-env" className="gap-2">
+            Deployment env
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/integrations" className="gap-2">
+            Integrations
+          </Link>
+        </Button>
       </div>
 
       {/* Health & overview */}
@@ -343,7 +375,7 @@ export default function AdminSystemPage() {
               Health & config
             </CardTitle>
             <CardDescription>
-              Database status, table counts, and environment variables (what each is for + how to obtain it).
+              Database status, <strong>COUNT(*)</strong> row totals (fast), optional deploy hints, and env checklist.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -458,7 +490,10 @@ export default function AdminSystemPage() {
               <Activity className="h-4 w-4" />
               Recent activity
             </CardTitle>
-            <CardDescription>Latest form submissions and CRM entries</CardDescription>
+            <CardDescription>
+              Newest rows by <strong>createdAt</strong> (legacy contacts, assessments, CRM leads) — not “last updated”
+              for CRM.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {loadingActivity ? (
@@ -472,9 +507,16 @@ export default function AdminSystemPage() {
                   ) : (
                     <ul className="text-xs space-y-0.5">
                       {activity.recentContacts.map((c) => (
-                        <li key={c.id} className="flex items-center gap-1 truncate">
-                          <User className="h-3 w-3 shrink-0" />
-                          {c.email} — {c.subject}
+                        <li key={c.id} className="text-xs space-y-0.5">
+                          <div className="flex items-center gap-1 truncate">
+                            <User className="h-3 w-3 shrink-0" />
+                            <span className="truncate">
+                              {c.email} — {c.subject}
+                            </span>
+                          </div>
+                          <span className="block text-[10px] text-muted-foreground pl-4">
+                            {formatLocaleMediumDateTime(c.createdAt)}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -487,9 +529,16 @@ export default function AdminSystemPage() {
                   ) : (
                     <ul className="text-xs space-y-0.5">
                       {activity.recentAssessments.map((a) => (
-                        <li key={a.id} className="flex items-center gap-1 truncate">
-                          <FileCheck className="h-3 w-3 shrink-0" />
-                          {a.email} — {a.status}
+                        <li key={a.id} className="text-xs space-y-0.5">
+                          <div className="flex items-center gap-1 truncate">
+                            <FileCheck className="h-3 w-3 shrink-0" />
+                            <span className="truncate">
+                              {a.email} — {a.status}
+                            </span>
+                          </div>
+                          <span className="block text-[10px] text-muted-foreground pl-4">
+                            {formatLocaleMediumDateTime(a.createdAt)}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -502,9 +551,16 @@ export default function AdminSystemPage() {
                   ) : (
                     <ul className="text-xs space-y-0.5">
                       {activity.recentCrmContacts.map((c) => (
-                        <li key={c.id} className="flex items-center gap-1 truncate">
-                          <Contact className="h-3 w-3 shrink-0" />
-                          {c.email} — {c.source}
+                        <li key={c.id} className="text-xs space-y-0.5">
+                          <div className="flex items-center gap-1 truncate">
+                            <Contact className="h-3 w-3 shrink-0" />
+                            <span className="truncate">
+                              {c.email} — {c.source}
+                            </span>
+                          </div>
+                          <span className="block text-[10px] text-muted-foreground pl-4">
+                            {formatLocaleMediumDateTime(c.createdAt)}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -517,6 +573,54 @@ export default function AdminSystemPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Unified live feed
+          </CardTitle>
+          <CardDescription>
+            Merges this instance&apos;s <strong>in-memory</strong> monitor, <strong>user_activity_log</strong> rows, and
+            recent <strong>visitor_activity</strong> (same sources as{" "}
+            <code className="text-xs">/api/admin/system/live-feed</code>). Use Refresh to pull the latest mix.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingLiveFeed ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          ) : liveFeed.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No feed items yet — generate traffic, sign in, or trigger an API error.</p>
+          ) : (
+            <ul className="max-h-[min(24rem,50vh)] overflow-y-auto space-y-2 pr-1 text-sm border rounded-md p-2">
+              {liveFeed.map((item) => (
+                <li
+                  key={item.id}
+                  className={`flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-border/40 pb-2 last:border-0 last:pb-0 ${
+                    item.severity === "error" ? "border-l-2 border-l-destructive/60 pl-2" : ""
+                  }`}
+                >
+                  <Badge
+                    variant={
+                      item.severity === "error" ? "destructive" : item.severity === "warn" ? "secondary" : "outline"
+                    }
+                    className="text-[10px] shrink-0"
+                  >
+                    {item.kind}
+                  </Badge>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                    {formatLocaleMediumDateTime(item.at)}
+                  </span>
+                  <span className="font-medium text-foreground break-words min-w-0 flex-1">{item.title}</span>
+                  {item.subtitle ? (
+                    <span className="text-xs text-muted-foreground w-full break-all">{item.subtitle}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Login & user activity log */}
       <Card className="mb-6">

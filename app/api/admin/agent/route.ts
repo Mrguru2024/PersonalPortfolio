@@ -38,7 +38,7 @@ function parseAgentHistory(raw: unknown): AgentChatTurn[] | undefined {
 
 function persistMentorMerge(
   userId: number,
-  baseState: ReturnType<typeof emptyMentorState>,
+  baseState: import("@server/services/adminAgentMentorService").AdminMentorWorkingState,
   userMessage: string,
   assistantReply: string,
 ): void {
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
     }
+    const settings = await storage.getAdminSettings(userId);
     const row = await storage.getAdminAgentMentorState(userId);
     const state = row ? parseStoredMentorState(row.state) : null;
     const mentorNudge = state?.pendingMentorNudges?.[0] ?? null;
@@ -70,6 +71,11 @@ export async function GET(req: NextRequest) {
       greetingLine: buildPersonalizedGreetingLine(firstNameFromUser(user)),
       mentorNudge,
       policyNotice: ADMIN_AGENT_MENTOR_POLICY,
+      mentorCompanion: {
+        observeUsage: settings?.aiMentorObserveUsage ?? false,
+        proactiveCheckpoints: settings?.aiMentorProactiveCheckpoints ?? true,
+        actionsEnabled: settings?.aiAgentCanPerformActions ?? false,
+      },
     });
   } catch (e) {
     console.error("GET admin agent error:", e);
@@ -110,6 +116,8 @@ export async function POST(req: NextRequest) {
     const settings = await storage.getAdminSettings(userId);
     const canPerformActions = settings?.aiAgentCanPerformActions === true;
     const requireActionConfirmation = settings?.aiAgentRequireActionConfirmation !== false;
+    const mentorObserveUsage = settings?.aiMentorObserveUsage === true;
+    const mentorProactiveCheckpoints = settings?.aiMentorProactiveCheckpoints !== false;
 
     const mediaAug = hasMedia
       ? await augmentAdminAgentMessageWithMedia({
@@ -145,6 +153,8 @@ export async function POST(req: NextRequest) {
       userId,
       operatorDisplayName: firstName,
       mentorState,
+      mentorObserveUsage,
+      mentorProactiveCheckpoints,
       operatorKnowledgeBlock,
       operatorResearchBlock,
     });

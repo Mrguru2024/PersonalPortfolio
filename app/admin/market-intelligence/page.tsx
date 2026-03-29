@@ -60,7 +60,15 @@ type AmieAnalyzeResponse = {
     keywordData: { keywords?: Array<{ term: string; volume: number; intent: string }> };
     competitionData: {
       competitorCount?: number;
-      samples?: Array<{ name: string; rating: number; reviewCount: number; distanceKm: number }>;
+      provenance?: "google_places" | "synthetic";
+      searchQuery?: string;
+      samples?: Array<{
+        name: string;
+        rating: number;
+        reviewCount: number;
+        distanceKm: number;
+        formattedAddress?: string;
+      }>;
     };
     dataMode: string;
     sources: Array<{ provider: string; label: string; note?: string }>;
@@ -527,7 +535,10 @@ export default function MarketIntelligencePage() {
                         ariaLabel="Help: Score overview chart"
                       />
                     </div>
-                    <CardDescription>0–100 scales (mock or mixed data until live adapters are wired).</CardDescription>
+                    <CardDescription>
+                      0–100 scales. Competition reflects Google listings when configured; demand and economics stay
+                      illustrative until Census/BLS adapters populate live fields (see data lineage).
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -620,33 +631,80 @@ export default function MarketIntelligencePage() {
                   <Card className="shadow-sm">
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <CardTitle className="text-base">Competition map</CardTitle>
-                          <CardDescription>Sample businesses (mock density — replace with Maps adapter)</CardDescription>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <CardTitle className="text-base">Competition map</CardTitle>
+                            {result.marketData.competitionData.provenance === "google_places" ? (
+                              <Badge variant="default" className="text-[10px] font-normal">
+                                Google Places
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[10px] font-normal">
+                                Illustrative
+                              </Badge>
+                            )}
+                          </div>
+                          <CardDescription>
+                            {result.marketData.competitionData.provenance === "google_places"
+                              ? "Local businesses returned for your service, industry, and location — ratings and reviews are from Google users."
+                              : "Set GOOGLE_API_KEY (Places API New + Geocoding) to load real competitors for each run."}
+                          </CardDescription>
+                          {result.marketData.competitionData.searchQuery ? (
+                            <p className="text-xs text-muted-foreground">
+                              Search:{" "}
+                              <span className="text-foreground font-medium">
+                                {result.marketData.competitionData.searchQuery}
+                              </span>
+                            </p>
+                          ) : null}
                         </div>
                         <AdminHelpTip
-                          content="Illustrative competitor list from mock signals (ratings, reviews, distance). Replace with Maps Places data when an adapter is connected."
+                          content={
+                            result.marketData.competitionData.provenance === "google_places"
+                              ? "Listings come from Google Places Text Search for the query built from your form. Count is the number of results in this response, not every competitor in the metro."
+                              : "Without GOOGLE_API_KEY, names and distances are illustrative. Enable Places API (New) and Geocoding API on the same key to fact-check competitors against your inputs."
+                          }
                           ariaLabel="Help: Competition map"
                         />
                       </div>
                     </CardHeader>
                     <CardContent className="text-sm space-y-2">
                       <p className="text-muted-foreground">
-                        Competitors modeled:{" "}
+                        Businesses in this result set:{" "}
                         <span className="text-foreground font-medium">
                           {result.marketData.competitionData.competitorCount ?? "—"}
                         </span>
                       </p>
-                      <ul className="rounded-md border border-border/60 divide-y divide-border/50 max-h-56 overflow-y-auto">
+                      <ul className="rounded-md border border-border/60 divide-y divide-border/50 max-h-72 overflow-y-auto">
                         {(result.marketData.competitionData.samples ?? []).map((c, i) => (
-                          <li key={i} className="px-3 py-2 flex justify-between gap-2 text-xs">
-                            <span className="text-foreground break-words">{c.name}</span>
-                            <span className="text-muted-foreground shrink-0 tabular-nums">
-                              {c.rating.toFixed(1)}★ · {c.reviewCount} rev · {c.distanceKm.toFixed(1)} km
-                            </span>
+                          <li key={i} className="px-3 py-2 space-y-0.5">
+                            <div className="flex justify-between gap-2 text-xs">
+                              <span className="text-foreground font-medium break-words">{c.name}</span>
+                              <span className="text-muted-foreground shrink-0 tabular-nums">
+                                {c.rating > 0 ? `${c.rating.toFixed(1)}★` : "—"}
+                                {" · "}
+                                {c.reviewCount} rev
+                                {c.distanceKm > 0 ? ` · ${c.distanceKm.toFixed(1)} km` : ""}
+                              </span>
+                            </div>
+                            {c.formattedAddress ? (
+                              <p className="text-[11px] text-muted-foreground leading-snug">{c.formattedAddress}</p>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
+                      {result.marketData.competitionData.provenance === "google_places" ? (
+                        <p className="text-[10px] text-muted-foreground pt-1">
+                          <a
+                            href="https://developers.google.com/maps/documentation/places/web-service/policies"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Google Places / Maps attribution policies
+                          </a>
+                        </p>
+                      ) : null}
                     </CardContent>
                   </Card>
                   <Card className="shadow-sm">
@@ -745,7 +803,7 @@ export default function MarketIntelligencePage() {
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-base text-muted-foreground">Data lineage</CardTitle>
                       <AdminHelpTip
-                        content="Shows mock vs mixed mode and which providers contributed. When live adapters (Census, BLS, etc.) are wired, sources list what was actually used."
+                        content="Shows mock vs mixed mode and providers. google_places = real listings for your form query. amie_baseline = illustrative demand/CPC/economics until Census/BLS populate those fields."
                         ariaLabel="Help: Data lineage"
                       />
                     </div>

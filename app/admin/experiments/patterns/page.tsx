@@ -36,7 +36,7 @@ export default function AdminExperimentsPatternsPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full min-w-0 max-w-3xl mx-auto space-y-6 sm:space-y-8">
       <h2 className="text-lg font-medium">Patterns &amp; Content DNA</h2>
       <ContentDNAPanel />
     </div>

@@ -31,7 +31,14 @@ import {
   PUBLIC_PROFILE_THEME_LABELS,
   isPublicProfileTheme,
 } from "@/lib/community/constants";
-import { Camera, ExternalLink, Loader2, Palette, Sparkles, UserCircle } from "lucide-react";
+import { AFN_PROFILE_FONT_PRESETS } from "@/lib/community/profileFonts";
+import {
+  mergePublicProfileStyle,
+  PUBLIC_PROFILE_LAYOUT_LABELS,
+  resolveProfileMotion,
+} from "@/lib/community/publicProfileStyle";
+import type { PublicProfileLayout, PublicProfileStyle } from "@shared/publicProfileStyle";
+import { Camera, ExternalLink, Loader2, Palette, Sparkles, Type, UserCircle } from "lucide-react";
 
 const PROFILE_BUILDER_KEYS = [
   "displayName",
@@ -75,12 +82,17 @@ export default function CommunityProfilePage() {
 
   const [founderTribe, setFounderTribe] = useState<string>("");
   const [publicProfileTheme, setPublicProfileTheme] = useState<string>("classic");
+  const [publicProfileStyle, setPublicProfileStyle] = useState<PublicProfileStyle>({});
+  const fontFileRef = useRef<HTMLInputElement>(null);
+  const [customFontLabel, setCustomFontLabel] = useState("");
 
   useEffect(() => {
     if (!profile) return;
     setFounderTribe(profile.founderTribe ?? "");
     const th = profile.publicProfileTheme ?? "classic";
     setPublicProfileTheme(isPublicProfileTheme(th) ? th : "classic");
+    setPublicProfileStyle(mergePublicProfileStyle(profile.publicProfileStyleJson ?? null, {}));
+    setCustomFontLabel(profile.publicProfileStyleJson?.customFontFamily ?? "");
   }, [profile]);
 
   const updateMutation = useMutation({
@@ -98,6 +110,46 @@ export default function CommunityProfilePage() {
     },
     onError: (e: Error) =>
       toast({ title: "Could not save", description: e.message, variant: "destructive" }),
+  });
+
+  const fontUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/community/profile/font", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        let msg = text || res.statusText;
+        try {
+          const j = JSON.parse(text) as { error?: string };
+          if (j.error) msg = j.error;
+        } catch {
+          /* use text */
+        }
+        throw new Error(msg);
+      }
+      return JSON.parse(text) as { url: string };
+    },
+    onSuccess: (data) => {
+      const label = customFontLabel.trim() || "My custom font";
+      setPublicProfileStyle((s) => ({
+        ...s,
+        customFontUrl: data.url,
+        customFontFamily: label,
+      }));
+      setCustomFontLabel(label);
+      if (fontFileRef.current) fontFileRef.current.value = "";
+      toast({
+        title: "Font uploaded",
+        description: "Click Save profile so your public page stores this font URL.",
+      });
+    },
+    onError: (e: Error) =>
+      toast({ title: "Font upload failed", description: e.message, variant: "destructive" }),
   });
 
   const avatarUploadMutation = useMutation({
@@ -158,6 +210,7 @@ export default function CommunityProfilePage() {
       askMeAbout: (form.querySelector('[name="askMeAbout"]') as HTMLTextAreaElement)?.value,
       founderTribe: tribeVal,
       publicProfileTheme,
+      publicProfileStyle,
     };
     updateMutation.mutate(body);
   };
@@ -335,6 +388,7 @@ export default function CommunityProfilePage() {
                         <select
                           id="businessStage"
                           name="businessStage"
+                          aria-label="Business stage"
                           defaultValue={profile?.businessStage ?? ""}
                           className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
@@ -415,10 +469,10 @@ export default function CommunityProfilePage() {
                     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Palette className="h-4 w-4" />
-                        Public page style
+                        Color theme
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Pick a look for your member page. This only changes colors and framing — your words stay the same.
+                        Gradient backdrop and accent classes for your public page.
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {PUBLIC_PROFILE_THEMES.map((t) => (
@@ -435,6 +489,251 @@ export default function CommunityProfilePage() {
                             <span className="font-medium block">{PUBLIC_PROFILE_THEME_LABELS[t]}</span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-medium">Page layout</div>
+                      <p className="text-sm text-muted-foreground">
+                        Choose how your story and hero blocks are arranged on desktop and mobile.
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(Object.keys(PUBLIC_PROFILE_LAYOUT_LABELS) as PublicProfileLayout[]).map((layout) => (
+                          <button
+                            key={layout}
+                            type="button"
+                            onClick={() => setPublicProfileStyle((s) => ({ ...s, layout }))}
+                            className={`rounded-lg border px-3 py-2 text-left text-xs sm:text-sm transition-colors ${
+                              (publicProfileStyle.layout ?? "editorial") === layout
+                                ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                                : "border-border bg-background hover:bg-muted/50"
+                            }`}
+                          >
+                            {PUBLIC_PROFILE_LAYOUT_LABELS[layout]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Type className="h-4 w-4" />
+                        Typography ({AFN_PROFILE_FONT_PRESETS.length} fonts + custom upload)
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Presets load from Google Fonts. Upload WOFF2, WOFF, TTF, or OTF (max 2MB) to use your own
+                        brand typeface; enter the CSS font name your file expects.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="profile-font-preset">Preset font</Label>
+                        <select
+                          id="profile-font-preset"
+                          aria-label="Preset font for public profile"
+                          className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={publicProfileStyle.fontPreset ?? "inter"}
+                          onChange={(e) =>
+                            setPublicProfileStyle((s) => ({
+                              ...s,
+                              fontPreset: e.target.value,
+                              customFontUrl: null,
+                              customFontFamily: null,
+                            }))
+                          }
+                        >
+                          {AFN_PROFILE_FONT_PRESETS.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {publicProfileStyle.customFontUrl && (
+                        <p className="text-xs text-muted-foreground">
+                          Using uploaded font — preset is ignored until you clear the upload.
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="custom-font-name">Custom font name (CSS)</Label>
+                          <Input
+                            id="custom-font-name"
+                            placeholder="e.g. Acme Sans"
+                            value={customFontLabel}
+                            onChange={(e) => setCustomFontLabel(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end gap-2">
+                          <input
+                            ref={fontFileRef}
+                            type="file"
+                            accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,application/octet-stream"
+                            className="sr-only"
+                            aria-label="Upload font file"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) fontUploadMutation.mutate(f);
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={fontUploadMutation.isPending}
+                            onClick={() => fontFileRef.current?.click()}
+                          >
+                            {fontUploadMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            Upload font file
+                          </Button>
+                          {(publicProfileStyle.customFontUrl || publicProfileStyle.customFontFamily) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground"
+                              onClick={() =>
+                                setPublicProfileStyle((s) => ({
+                                  ...s,
+                                  customFontUrl: null,
+                                  customFontFamily: null,
+                                }))
+                              }
+                            >
+                              Clear custom font
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                      <div className="text-sm font-medium">Fine-tuning</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="accent-hex">Accent color (optional)</Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              id="accent-hex"
+                              type="color"
+                              className="w-14 h-10 p-1 cursor-pointer"
+                              value={
+                                publicProfileStyle.primaryHex && /^#([0-9a-fA-F]{6})$/.test(publicProfileStyle.primaryHex)
+                                  ? publicProfileStyle.primaryHex
+                                  : "#6366f1"
+                              }
+                              onChange={(e) =>
+                                setPublicProfileStyle((s) => ({ ...s, primaryHex: e.target.value }))
+                              }
+                            />
+                            <Input
+                              placeholder="#6366f1"
+                              value={publicProfileStyle.primaryHex ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value.trim();
+                                setPublicProfileStyle((s) => ({
+                                  ...s,
+                                  primaryHex: v === "" ? null : v,
+                                }));
+                              }}
+                              className="font-mono text-sm flex-1"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="px-0 h-auto text-xs"
+                            onClick={() => setPublicProfileStyle((s) => ({ ...s, primaryHex: null }))}
+                          >
+                            Use theme default
+                          </Button>
+                        </div>
+                        <div>
+                          <Label htmlFor="surface-hex">Surface tint (optional)</Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              id="surface-hex"
+                              type="color"
+                              className="w-14 h-10 p-1 cursor-pointer"
+                              value={
+                                publicProfileStyle.surfaceHex && /^#([0-9a-fA-F]{6})$/.test(publicProfileStyle.surfaceHex)
+                                  ? publicProfileStyle.surfaceHex
+                                  : "#94a3b8"
+                              }
+                              onChange={(e) =>
+                                setPublicProfileStyle((s) => ({ ...s, surfaceHex: e.target.value }))
+                              }
+                            />
+                            <Input
+                              placeholder="#optional"
+                              value={publicProfileStyle.surfaceHex ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value.trim();
+                                setPublicProfileStyle((s) => ({
+                                  ...s,
+                                  surfaceHex: v === "" ? null : v,
+                                }));
+                              }}
+                              className="font-mono text-sm flex-1"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="px-0 h-auto text-xs"
+                            onClick={() => setPublicProfileStyle((s) => ({ ...s, surfaceHex: null }))}
+                          >
+                            Clear tint
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Card roundness</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {(["sm", "md", "lg", "xl"] as const).map((r) => (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => setPublicProfileStyle((s) => ({ ...s, radius: r }))}
+                                className={`rounded-md border px-3 py-1.5 text-xs uppercase ${
+                                  (publicProfileStyle.radius ?? "lg") === r
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border bg-background"
+                                }`}
+                              >
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Motion</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {(
+                              [
+                                ["on", "Interactive hover"],
+                                ["reduced", "Reduced motion"],
+                              ] as const
+                            ).map(([val, label]) => (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() =>
+                                  setPublicProfileStyle((s) => ({ ...s, motion: val }))
+                                }
+                                className={`rounded-md border px-3 py-1.5 text-xs ${
+                                  resolveProfileMotion(publicProfileStyle) === val
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border bg-background"
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 

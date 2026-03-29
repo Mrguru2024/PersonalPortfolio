@@ -1,42 +1,35 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
+import { ExperimentsSubnav } from "@/components/aee/ExperimentsSubnav";
 
 export default function AdminExperimentsLayout({ children }: { children: ReactNode }) {
-  const nav = [
-    { href: "/admin/experiments", label: "Overview" },
-    { href: "/admin/experiments/new", label: "New experiment" },
-    { href: "/admin/experiments/reports", label: "Reports" },
-    { href: "/admin/experiments/patterns", label: "Patterns" },
-  ];
-
   return (
-    <div className="container max-w-6xl py-8 space-y-6">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ascendra Experimentation Engine</p>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1">Revenue experiments</h1>
-        <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          One system for tests, tracking metadata, CRM outcomes, and paid media feedback. Extends{" "}
-          <code className="text-xs bg-muted px-1 rounded">growth_experiments</code>,{" "}
-          <code className="text-xs bg-muted px-1 rounded">visitor_activity</code>, and PPC CRM hooks — not a separate analytics product.
+    <div className="container mx-auto min-w-0 max-w-7xl px-3 fold:px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <header className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Ascendra Experimentation Engine
         </p>
-      </div>
-      <nav className="flex flex-wrap gap-2 border-b pb-3">
-        {nav.map((n) => (
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Revenue experiments</h1>
+        <p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">
+          One hub for A/B and multivariate tests, tracking metadata, CRM outcomes, and paid media feedback. Built on{" "}
+          <code className="text-xs bg-muted px-1 rounded">growth_experiments</code>,{" "}
+          <code className="text-xs bg-muted px-1 rounded">visitor_activity</code>, and PPC CRM hooks — not a separate
+          analytics product.
+        </p>
+        <p className="text-sm pt-1">
           <Link
-            key={n.href}
-            href={n.href}
-            className="text-sm px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            href="/admin/how-to/experiments"
+            className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline underline-offset-4"
           >
-            {n.label}
+            <BookOpen className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            Interactive tutorial: how A/B testing works here
           </Link>
-        ))}
-        <Link
-          href="/admin/analytics"
-          className="text-sm px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-auto"
-        >
-          Website analytics
-        </Link>
-      </nav>
+        </p>
+      </header>
+
+      <ExperimentsSubnav />
+
       {children}
     </div>
   );

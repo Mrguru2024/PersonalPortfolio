@@ -47,6 +47,8 @@ export async function PATCH(req: NextRequest) {
       "notifyOnRoleChange",
       "aiAgentCanPerformActions",
       "aiAgentRequireActionConfirmation",
+      "aiMentorObserveUsage",
+      "aiMentorProactiveCheckpoints",
     ];
     const notificationUpdates: Partial<typeof DEFAULTS> = {};
     for (const key of allowed) {

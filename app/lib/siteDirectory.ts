@@ -145,11 +145,30 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/operator-profile", title: "Operator profile", category: "Admin · Core", audience: "admin", description: "Operator positioning for AI/intelligence features.", keywords: k("operator", "profile") },
   { path: "/admin/reminders", title: "Reminders", category: "Admin · Core", audience: "admin", description: "Admin reminder tasks.", keywords: k("reminders", "tasks") },
   { path: "/admin/users", title: "User management", category: "Admin · Core", audience: "admin", description: "Approve users, permissions (super).", keywords: k("users", "permissions") },
-  { path: "/admin/system", title: "System monitor", category: "Admin · Core", audience: "admin", description: "Health, logs, super-admin capture (super).", keywords: k("system", "logs", "health") },
+  {
+    path: "/admin/system",
+    title: "System monitor",
+    category: "Admin · Core",
+    audience: "super",
+    description:
+      "Super-admin: SQL health counts, env checklist, unified live feed (memory + audit + visitors), persisted user_activity_log, in-memory error buffer.",
+    keywords: k("system", "logs", "health", "monitor", "super"),
+    relatedPaths: ["/api/admin/system/health", "/admin/deployment-env", "/admin/integrations"],
+  },
   { path: "/admin/integrations", title: "Connections & email", category: "Admin · Core", audience: "admin", description: "See connected services, tests, and social sign-in (approved admin).", keywords: k("integrations", "email", "social") },
   { path: "/admin/deployment-env", title: "Live site settings (hosting)", category: "Admin · Core", audience: "super", description: "Super admin only: save Vercel env name/value pairs from the browser. Nav link visible only to super admins.", keywords: k("vercel", "hosting", "settings", "env"), relatedPaths: ["/admin/integrations"] },
   { path: "/admin/site-directory", title: "Pages & tools directory", category: "Admin · Core", audience: "admin", description: "Find any page by name or topic; open visitor or admin screens; optional JSON export for developers.", keywords: k("sitemap", "routes", "search", "ia", "directory", "pages"), relatedPaths: ["/api/admin/site-directory"] },
-  { path: "/admin/how-to", title: "How-to & guides", category: "Admin · Core", audience: "admin", description: "Practical admin workflows (CRM, AMIE, Growth OS, Content Studio, integrations) with accurate routes; optional browser read-aloud on each guide.", keywords: k("how-to", "guide", "help", "ltv", "knowledge", "tutorial", "training", "documentation", "faq", "text to speech", "audio"), relatedPaths: ["/admin/site-directory", "/admin/agent-knowledge", "/admin/crm/ltv"] },
+  { path: "/admin/how-to", title: "How-to & guides", category: "Admin · Core", audience: "admin", description: "Practical admin workflows (CRM, AMIE, Growth OS, Content Studio, integrations) with accurate routes; optional browser read-aloud on each guide.", keywords: k("how-to", "guide", "help", "ltv", "knowledge", "tutorial", "training", "documentation", "faq", "text to speech", "audio"), relatedPaths: ["/admin/site-directory", "/admin/agent-knowledge", "/admin/crm/ltv", "/admin/how-to/experiments"] },
+  {
+    path: "/admin/how-to/experiments",
+    title: "How-to: A/B testing & experiments (interactive)",
+    category: "Admin · Core",
+    audience: "admin",
+    description:
+      "Interactive AEE tutorial: checklist, SVG data-flow diagram, screen map, scenario examples (landing, email, paid), variant API and glossary — aligned with growth_experiments and rollups.",
+    keywords: k("a/b test", "experiments", "tutorial", "training", "aee", "optimization", "multivariate", "statistics"),
+    relatedPaths: ["/admin/how-to", "/admin/experiments", "/admin/experiments/new"],
+  },
 
   // —— Admin: CRM
   { path: "/admin/crm", title: "CRM home", category: "Admin · CRM", audience: "admin", description: "CRM overview and contacts entry.", keywords: k("crm", "contacts") },
@@ -176,6 +195,36 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/crm/proposal-prep", title: "Proposal prep", category: "Admin · CRM", audience: "admin", description: "Proposal preparation queue.", keywords: k("proposal", "prep") },
   { path: "/admin/crm/proposal-prep/[id]", title: "Proposal prep detail", category: "Admin · CRM", audience: "admin", description: "Single prep workspace.", keywords: k("proposal") },
   { path: "/admin/lead-intake", title: "Lead intake", category: "Admin · CRM", audience: "admin", description: "Inbound lead triage.", keywords: k("leads", "intake") },
+  {
+    path: "/admin/leads",
+    title: "Lead command center",
+    category: "Admin · CRM",
+    audience: "admin",
+    description: "Lead Control System: priority queue, first-touch stats, links to CRM — same contacts as CRM, no duplicate lead DB.",
+    keywords: k("leads", "command", "inbound", "priority", "speed to lead", "spam", "qualification", "follow up"),
+    relatedPaths: [
+      "/admin/dashboard",
+      "/admin/crm",
+      "/admin/leads/settings",
+      "/admin/lead-intake",
+      "/admin/crm/tasks",
+      "/admin/funnel",
+      "/admin/scheduler",
+      "/admin/paid-growth",
+      "/admin/newsletters",
+      "/admin/analytics",
+      "/admin/experiments",
+    ],
+  },
+  {
+    path: "/admin/leads/settings",
+    title: "Lead Control routing rules",
+    category: "Admin · CRM",
+    audience: "admin",
+    description: "Org-wide Lead Control routing rules; first match sets crm_contacts.lead_routing_hint (CRM-backed, no parallel lead DB).",
+    keywords: k("leads", "routing", "qualification", "book call", "lead control", "rules"),
+    relatedPaths: ["/admin/leads", "/admin/crm"],
+  },
 
   // —— Admin: content & comms
   {
@@ -289,7 +338,13 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     description:
       "Unified A/B and multivariate tests with CRM + PPC closed-loop; extends growth_experiments and visitor_activity.",
     keywords: k("experiments", "a/b test", "attribution", "optimization", "aee"),
-    relatedPaths: ["/admin/analytics", "/admin/crm", "/admin/paid-growth", "/admin/communications/analytics"],
+    relatedPaths: [
+      "/admin/analytics",
+      "/admin/crm",
+      "/admin/paid-growth",
+      "/admin/communications/analytics",
+      "/admin/how-to/experiments",
+    ],
   },
   { path: "/admin/experiments/new", title: "New experiment (AEE)", category: "Admin · Ops", audience: "admin", description: "Create experiment and variants.", keywords: k("experiments", "wizard") },
   { path: "/admin/experiments/reports", title: "Experiment reports (AEE)", category: "Admin · Ops", audience: "admin", description: "Cross-experiment reporting and export entry.", keywords: k("experiments", "reports") },

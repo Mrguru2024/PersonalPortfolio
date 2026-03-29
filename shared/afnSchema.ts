@@ -13,6 +13,7 @@ import {
   integer,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { PublicProfileStyle } from "./publicProfileStyle";
 
 // —— Profiles (1:1 with users) ——
 export const afnProfiles = pgTable(
@@ -43,6 +44,8 @@ export const afnProfiles = pgTable(
     founderTribe: text("founder_tribe"),
     /** Public profile page accent preset (classic, ocean, sunset, …). */
     publicProfileTheme: text("public_profile_theme").default("classic").notNull(),
+    /** Optional layout, fonts, colors (see `shared/publicProfileStyle.ts`). */
+    publicProfileStyleJson: json("public_profile_style_json").$type<PublicProfileStyle | null>(),
     featuredResourceUrl: text("featured_resource_url"),
     profileCompletionScore: integer("profile_completion_score").default(0),
     isOnboardingComplete: boolean("is_onboarding_complete").default(false),

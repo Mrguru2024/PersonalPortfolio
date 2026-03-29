@@ -25,6 +25,7 @@ import { PersonaBreakdown } from "@/components/aee/PersonaBreakdown";
 import { MarketBreakdown } from "@/components/aee/MarketBreakdown";
 import { FunnelBreakdown } from "@/components/aee/FunnelBreakdown";
 import { ExperimentChannelLinksPanel, ExperimentRollupActions } from "@/components/aee/ExperimentChannelLinksPanel";
+import { ContentExperimentAiPanel } from "@/components/aee/ContentExperimentAiPanel";
 
 type DetailPayload = {
   experiment: {
@@ -142,7 +143,7 @@ export default function AdminExperimentDetailPage() {
   const exp = data.experiment;
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="w-full min-w-0 max-w-5xl mx-auto space-y-8">
       <div className="flex flex-wrap items-start gap-3">
         <Link href="/admin/experiments" className="text-sm text-muted-foreground hover:text-foreground">
           ← All experiments
@@ -205,6 +206,8 @@ export default function AdminExperimentDetailPage() {
       ) : null}
 
       <RecommendationPanel items={data.recommendations} />
+
+      <ContentExperimentAiPanel experimentId={id} defaultGoal={exp.hypothesis} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <PersonaBreakdown experimentName={exp.name} />

@@ -43,6 +43,7 @@ import {
   Calendar,
   CalendarClock,
   FlaskConical,
+  Crosshair,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -266,6 +267,20 @@ export default function Header(_props: HeaderProps) {
     { section: "Bookings & calendar", name: "Meetings & calendar", href: "/admin/scheduler", icon: Calendar, permission: "dashboard" as const },
     { section: "Bookings & calendar", name: "Booking & reminders setup", href: "/admin/scheduling", icon: CalendarClock, permission: "dashboard" as const },
     { section: "CRM & leads", name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
+    {
+      section: "CRM & leads",
+      name: "Lead command center",
+      href: "/admin/leads",
+      icon: Crosshair,
+      permission: "crm" as const,
+    },
+    {
+      section: "CRM & leads",
+      name: "Lead Control settings",
+      href: "/admin/leads/settings",
+      icon: Settings,
+      permission: "crm" as const,
+    },
     { section: "CRM & leads", name: "Discovery toolkit", href: "/admin/crm/discovery-tools", icon: Video, permission: "crm" as const },
     { section: "CRM & leads", name: "LTV & reports", href: "/admin/crm/ltv", icon: CircleDollarSign, permission: "crm" as const },
     { section: "CRM & leads", name: "Lead intake", href: "/admin/lead-intake", icon: Inbox, permission: "crm" as const },

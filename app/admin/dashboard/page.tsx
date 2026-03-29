@@ -1175,12 +1175,7 @@ export default function AdminDashboardPage() {
         "intelligence",
         () => (
         <div className="mb-6 sm:mb-8">
-          <AdminOperatorIntelligenceCard
-            dashboardStats={{
-              pendingAssessments,
-              totalContacts: contacts.length,
-            }}
-          />
+          <AdminOperatorIntelligenceCard />
         </div>
         ),
       )}
