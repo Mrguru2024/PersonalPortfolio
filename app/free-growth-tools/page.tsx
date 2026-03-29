@@ -45,7 +45,7 @@ export default function FreeGrowthToolsPage() {
                 Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
               </p>
               <Card className="max-w-2xl mx-auto mb-8 border-primary/20 bg-primary/5 dark:bg-primary/10">
-                <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                     <Signpost className="h-5 w-5" aria-hidden />
                   </div>

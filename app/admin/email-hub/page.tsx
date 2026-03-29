@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 
 type Overview = {
   sentToday: number;
@@ -33,6 +33,7 @@ type Overview = {
 
 export default function EmailHubOverviewPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuper = isAuthSuperUser(user);
   const router = useRouter();
 
   useEffect(() => {
@@ -74,6 +75,9 @@ export default function EmailHubOverviewPage() {
           <Link href="/admin/email-hub/assets">Upload asset</Link>
         </Button>
         <Button variant="outline" asChild>
+          <Link href="/admin/email-hub/contacts">Contacts</Link>
+        </Button>
+        <Button variant="outline" asChild>
           <Link href="/admin/email-hub/settings">Connect sender / settings</Link>
         </Button>
         <Button variant="outline" asChild>
@@ -91,19 +95,19 @@ export default function EmailHubOverviewPage() {
               title="Open rate (30d)"
               value={data.openRatePct != null ? `${data.openRatePct}%` : "—"}
               icon={MailOpen}
-              hint="Distinct messages with opens"
+              hint={isSuper ? "Distinct sent messages with ≥1 open" : "Share of sent mail that was opened"}
             />
             <MetricCard
               title="Click rate (30d)"
               value={data.clickRatePct != null ? `${data.clickRatePct}%` : "—"}
               icon={MousePointerClick}
-              hint="Distinct messages with clicks"
+              hint={isSuper ? "Distinct sent messages with ≥1 click" : "Share of sent mail with a link click"}
             />
             <MetricCard
               title="Bounces (30d)"
               value={String(data.bounceCount30d)}
               icon={AlertTriangle}
-              hint="From Brevo webhooks"
+              hint={isSuper ? "From Brevo webhook payloads" : "Addresses that could not be delivered"}
             />
           </div>
 
@@ -132,7 +136,11 @@ export default function EmailHubOverviewPage() {
               <CardContent className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {data.bySender.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No senders yet. Super admin can add verified Brevo senders in Settings.
+                    No senders yet.{" "}
+                    <Link href="/admin/email-hub/settings" className="text-primary underline font-medium">
+                      Add a verified sender in Settings
+                    </Link>{" "}
+                    — any approved admin can create one for their own use.
                   </p>
                 ) : (
                   data.bySender.map((s) => (
@@ -159,13 +167,19 @@ export default function EmailHubOverviewPage() {
           <Card className="rounded-2xl border-border/60 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Recent activity</CardTitle>
-              <CardDescription>Brevo events mapped to Email Hub messages</CardDescription>
+              <CardDescription>
+                {isSuper ? "Provider events mapped to Email Hub messages" : "Latest opens, clicks, and bounces"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {data.recentActivity.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No webhook events yet. Configure Brevo → Webhooks pointing at{" "}
-                  <code className="text-xs bg-muted px-1 rounded">/api/webhooks/brevo</code>.
+                  {isSuper ?
+                    <>
+                      No events recorded yet. In Brevo, point inbound notifications at{" "}
+                      <code className="text-xs bg-muted px-1 rounded">/api/webhooks/brevo</code>.
+                    </>
+                  : "No engagement data yet. Your administrator can confirm Brevo is connected if this stays empty."}
                 </p>
               ) : (
                 data.recentActivity.map((a) => (
@@ -181,7 +195,7 @@ export default function EmailHubOverviewPage() {
                       {a.subject ? <p className="truncate font-medium">{a.subject}</p> : null}
                     </div>
                     <div className="shrink-0 text-xs text-muted-foreground">
-                      {a.at ? format(new Date(a.at), "MMM d, HH:mm") : ""}
+                      {a.at ? formatLocaleDateTime(a.at, "monthDayTime", "") : ""}
                     </div>
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/admin/email-hub/sent?msg=${a.messageId}`}>View</Link>

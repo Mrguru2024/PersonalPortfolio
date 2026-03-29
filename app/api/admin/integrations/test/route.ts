@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
 import { testZoomConnection } from "@/lib/zoom";
-import { testGoogleCalendarConnection } from "@server/services/googleCalendarSchedulingService";
+import { testGoogleCalendarConnectionForUser } from "@server/services/googleCalendarSchedulingService";
 import type { IntegrationId } from "../types";
 import {
   hasFacebookPagePublishConfig,
@@ -127,7 +127,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (service === "google_calendar") {
-      const r = await testGoogleCalendarConnection();
+      const user = await getSessionUser(req);
+      const uid = user?.id != null ? Number(user.id) : NaN;
+      if (!Number.isFinite(uid) || uid <= 0) {
+        return NextResponse.json({
+          ok: false,
+          message: "Could not resolve your user id. Sign in again.",
+        });
+      }
+      const r = await testGoogleCalendarConnectionForUser(uid);
       return NextResponse.json(r);
     }
 

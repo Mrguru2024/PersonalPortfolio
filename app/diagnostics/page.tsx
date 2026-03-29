@@ -97,7 +97,7 @@ export default function DiagnosticsHubPage() {
                     key={p.href}
                     className="border-border/80 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start gap-4">
+                    <CardContent className="px-6 py-6 sm:px-8 sm:py-7 flex flex-col sm:flex-row sm:items-start gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Icon className="h-6 w-6" aria-hidden />
                       </div>

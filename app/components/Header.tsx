@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -27,13 +27,19 @@ import {
   CloudUpload,
   TrendingUp,
   LineChart,
-  Search,
   Settings,
   Brain,
   Inbox,
   Target,
   Map as MapIcon,
   FolderOpen,
+  Mails,
+  ScanSearch,
+  PenLine,
+  Gauge,
+  Video,
+  CircleDollarSign,
+  BookOpen,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -43,6 +49,23 @@ import {
   FREE_GROWTH_TOOLS_PATH,
   DIAGNOSTICS_HUB_PATH,
 } from "@/lib/funnelCtas";
+import {
+  shellAdminSectionLabel,
+  shellHeaderBookCall,
+  shellLogOut,
+  shellLogin,
+  shellLoggedInAs,
+  shellMainNavAria,
+  shellMenuButtonText,
+  shellMoreTrigger,
+  shellNavItemLabel,
+  shellOpenMenuAria,
+  shellPrimaryLinksAria,
+  shellPublicDashboard,
+  shellSectionLabel,
+  shellServicesTrigger,
+} from "@/lib/i18n/siteShellCopy";
+import { useLocale } from "@/contexts/LocaleContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
@@ -71,6 +94,66 @@ interface HeaderProps {
 type NavLink = { name: string; href: string };
 
 type NavSection = { label: string; links: NavLink[] };
+
+type PrimaryNavItem =
+  | { name: string; href: string; scrollOnHome: string }
+  | { name: string; href: string };
+
+const PRIMARY_NAV_BASE: PrimaryNavItem[] = [
+  { name: "Home", href: "/", scrollOnHome: "#home" },
+  { name: "Brand Growth", href: "/brand-growth" },
+  { name: "Free tools", href: FREE_GROWTH_TOOLS_PATH },
+  { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
+  { name: "Community", href: "/community" },
+];
+
+const SERVICES_NAV_SECTIONS_BASE: NavSection[] = [
+  {
+    label: "Service offerings",
+    links: [
+      { name: "Launch your brand", href: LAUNCH_YOUR_BRAND_PATH },
+      { name: "Rebrand your business", href: REBRAND_YOUR_BUSINESS_PATH },
+      { name: "Marketing assets", href: MARKETING_ASSETS_PATH },
+      { name: "All services", href: "/services" },
+    ],
+  },
+  {
+    label: "Who we serve",
+    links: [
+      { name: "For Contractors", href: "/contractor-systems" },
+      { name: "Local Business", href: "/local-business-growth" },
+      { name: "Startup MVP", href: "/startup-mvp-development" },
+    ],
+  },
+];
+
+const MORE_NAV_SECTIONS_BASE: NavSection[] = [
+  {
+    label: "Company",
+    links: [
+      { name: "About", href: "/about" },
+      { name: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    label: "Assess & grow",
+    links: [
+      { name: "Diagnostics hub", href: DIAGNOSTICS_HUB_PATH },
+      { name: "Your Growth Score", href: "/diagnosis/results" },
+    ],
+  },
+  {
+    label: "Resources",
+    links: [
+      { name: "Tools hub", href: FREE_GROWTH_TOOLS_PATH },
+      { name: "Website breakdowns", href: "/website-breakdowns" },
+    ],
+  },
+];
+
+function primaryNavKey(item: PrimaryNavItem): string {
+  return "scrollOnHome" in item ? `${item.href}:${item.scrollOnHome}` : item.href;
+}
 
 const sectionLabelClass =
   "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider";
@@ -102,6 +185,7 @@ const ADMIN_NAV_SECTION_ORDER = [
 
 export default function Header(_props: HeaderProps) {
   const { isOpen: mobileMenuOpen, close: closeMobileMenu, toggle: toggleMobileMenu } = useMobileNav();
+  const { locale } = useLocale();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { track } = useVisitorTracking();
@@ -125,69 +209,63 @@ export default function Header(_props: HeaderProps) {
 
   const isHomePage = pathname === "/";
 
-  /** Single source of truth: nav links, dropdowns, and CTAs. Kept minimal for clarity. */
-  const primaryNav = [
-    { name: "Home", href: "/", scrollOnHome: "#home" },
-    { name: "Brand Growth", href: "/brand-growth" },
-    { name: "Free tools", href: FREE_GROWTH_TOOLS_PATH },
-    { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
-    { name: "Community", href: "/community" },
-  ];
-  const servicesNavSections: NavSection[] = [
-    {
-      label: "Service offerings",
-      links: [
-        { name: "Launch your brand", href: LAUNCH_YOUR_BRAND_PATH },
-        { name: "Rebrand your business", href: REBRAND_YOUR_BUSINESS_PATH },
-        { name: "Marketing assets", href: MARKETING_ASSETS_PATH },
-        { name: "All services", href: "/services" },
-      ],
-    },
-    {
-      label: "Who we serve",
-      links: [
-        { name: "For Contractors", href: "/contractor-systems" },
-        { name: "Local Business", href: "/local-business-growth" },
-        { name: "Startup MVP", href: "/startup-mvp-development" },
-      ],
-    },
-  ];
-  const moreNavSections: NavSection[] = [
-    {
-      label: "Company",
-      links: [
-        { name: "About", href: "/about" },
-        { name: "Contact", href: "/contact" },
-      ],
-    },
-    {
-      label: "Assess & grow",
-      links: [
-        { name: "Diagnostics hub", href: DIAGNOSTICS_HUB_PATH },
-        { name: "Your Growth Score", href: "/diagnosis/results" },
-      ],
-    },
-    {
-      label: "Resources",
-      links: [
-        { name: "Tools hub", href: FREE_GROWTH_TOOLS_PATH },
-        { name: "Website breakdowns", href: "/website-breakdowns" },
-      ],
-    },
-  ];
-  const ctaButtons = [
-    { label: "Book a call", href: isHomePage ? "#contact" : STRATEGY_CALL_PATH, primary: true, isScroll: isHomePage },
-  ];
+  const primaryNav = useMemo(
+    () =>
+      PRIMARY_NAV_BASE.map((item) => ({
+        ...item,
+        name: shellNavItemLabel(item.href, item.name, locale),
+      })),
+    [locale],
+  );
+  const servicesNavSections = useMemo(
+    () =>
+      SERVICES_NAV_SECTIONS_BASE.map((section) => ({
+        label: shellSectionLabel(section.label, locale),
+        links: section.links.map((sub) => ({
+          ...sub,
+          name: shellNavItemLabel(sub.href, sub.name, locale),
+        })),
+      })),
+    [locale],
+  );
+  const moreNavSections = useMemo(
+    () =>
+      MORE_NAV_SECTIONS_BASE.map((section) => ({
+        label: shellSectionLabel(section.label, locale),
+        links: section.links.map((link) => ({
+          ...link,
+          name: shellNavItemLabel(link.href, link.name, locale),
+        })),
+      })),
+    [locale],
+  );
+  const ctaButtons = useMemo(
+    () => [
+      {
+        label: shellHeaderBookCall(locale),
+        href: isHomePage ? "#contact" : STRATEGY_CALL_PATH,
+        primary: true,
+        isScroll: isHomePage,
+      },
+    ],
+    [locale, isHomePage],
+  );
   const isScrollLink = (item: (typeof primaryNav)[0]) => isHomePage && "scrollOnHome" in item && item.scrollOnHome;
-  const getLinkHref = (item: (typeof primaryNav)[0]) => ("scrollOnHome" in item && item.scrollOnHome ? item.scrollOnHome : item.href);
+  const getLinkHref = (item: (typeof primaryNav)[0]) =>
+    "scrollOnHome" in item && item.scrollOnHome ? item.scrollOnHome : item.href;
 
   const adminPages = [
     { section: "Overview", name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
     { section: "Overview", name: "Pages directory", href: "/admin/site-directory", icon: MapIcon, permission: "dashboard" as const },
+    { section: "Overview", name: "How-to & guides", href: "/admin/how-to", icon: BookOpen, permission: "dashboard" as const },
     { section: "Overview", name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
     { section: "CRM & leads", name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
+    { section: "CRM & leads", name: "Discovery toolkit", href: "/admin/crm/discovery-tools", icon: Video, permission: "crm" as const },
+    { section: "CRM & leads", name: "LTV & reports", href: "/admin/crm/ltv", icon: CircleDollarSign, permission: "crm" as const },
     { section: "CRM & leads", name: "Lead intake", href: "/admin/lead-intake", icon: Inbox, permission: "crm" as const },
     { section: "Content & email", name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
+    { section: "Content & email", name: "Content studio", href: "/admin/content-studio", icon: PenLine, permission: "blog" as const },
+    { section: "Content & email", name: "Email hub", href: "/admin/email-hub", icon: Mails, permission: "newsletters" as const },
     { section: "Content & email", name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { section: "Content & email", name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { section: "Content & email", name: "Communications", href: "/admin/communications", icon: Send, permission: "newsletters" as const },
@@ -195,7 +273,8 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Offer + Persona IQ", href: "/admin/ascendra-intelligence", icon: Brain },
     { section: "Marketing & funnel", name: "Funnel", href: "/admin/funnel", icon: Filter, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Paid Growth", href: "/admin/paid-growth", icon: LineChart, permission: "funnel" as const },
-    { section: "Marketing & funnel", name: "Market research", href: "/admin/growth-os/intelligence", icon: Search, permission: "funnel" as const },
+    { section: "Marketing & funnel", name: "Growth OS", href: "/admin/growth-os", icon: Gauge, permission: "funnel" as const },
+    { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Analytics", name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
     { section: "Analytics", name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
     { section: "Operations", name: "Chat", href: "/admin/chat", icon: MessageSquare, permission: "dashboard" as const },
@@ -256,11 +335,11 @@ export default function Header(_props: HeaderProps) {
         {/* Left spacer (logo was here) */}
         <div className="hidden md:block flex-1 min-w-0" aria-hidden />
         {/* Center: primary links + Services (with Who we serve) + More dropdowns + CTAs */}
-        <nav className="hidden md:flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4" aria-label="Main navigation">
+        <nav className="hidden md:flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4" aria-label={shellMainNavAria(locale)}>
           {primaryNav.map((item) =>
             isScrollLink(item) ? (
               <button
-                key={item.name}
+                key={primaryNavKey(item)}
                 type="button"
                 suppressHydrationWarning
                 onClick={() => scrollToSection(getLinkHref(item) as string)}
@@ -270,7 +349,7 @@ export default function Header(_props: HeaderProps) {
               </button>
             ) : (
               <Link
-                key={item.name}
+                key={primaryNavKey(item)}
                 href={item.href}
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1"
               >
@@ -285,7 +364,7 @@ export default function Header(_props: HeaderProps) {
                 suppressHydrationWarning
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1 flex items-center gap-0.5 outline-none"
               >
-                Services <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                {shellServicesTrigger(locale)} <ChevronDown className="h-3.5 w-3.5 opacity-70" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[220px]">
@@ -391,7 +470,7 @@ export default function Header(_props: HeaderProps) {
                         <DropdownMenuItem asChild>
                           <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
                             <LayoutDashboard className="h-4 w-4 shrink-0" />
-                            <span>Dashboard</span>
+                            <span>{shellPublicDashboard(locale)}</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -401,7 +480,7 @@ export default function Header(_props: HeaderProps) {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel className={sectionLabelClass}>
-                          Admin
+                          {shellAdminSectionLabel(locale)}
                         </DropdownMenuLabel>
                         {groupedAdminPages.map((group, gi) => (
                           <DropdownMenuGroup key={group.label}>
@@ -444,7 +523,7 @@ export default function Header(_props: HeaderProps) {
                 className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 min-h-[44px] sm:min-h-[36px] px-3 shrink-0 whitespace-nowrap"
               >
                 <LogIn className="h-4 w-4 shrink-0" />
-                <span>Login</span>
+                <span>{shellLogin(locale)}</span>
               </Link>
             )}
             <span className="shrink-0"><ThemeToggle /></span>
@@ -460,7 +539,7 @@ export default function Header(_props: HeaderProps) {
             size="sm"
             onClick={toggleMobileMenu}
             className="h-10 min-h-[44px] min-w-[44px] px-3 gap-2 text-foreground font-medium border border-border/50 touch-manipulation"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={shellOpenMenuAria(mobileMenuOpen, locale)}
             aria-expanded={mobileMenuOpen}
             aria-haspopup="true"
             aria-controls="mobile-nav-panel"
@@ -471,7 +550,7 @@ export default function Header(_props: HeaderProps) {
               <Menu className="h-5 w-5 shrink-0" />
             )}
             {showMobileNavText ? (
-              <span className="shrink-0">{mobileMenuOpen ? "Close" : "Menu"}</span>
+              <span className="shrink-0">{shellMenuButtonText(mobileMenuOpen, locale)}</span>
             ) : null}
           </Button>
         </div>
@@ -486,10 +565,10 @@ export default function Header(_props: HeaderProps) {
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
-                <ul className="flex flex-col gap-0.5" aria-label="Primary links">
+                <ul className="flex flex-col gap-0.5" aria-label={shellPrimaryLinksAria(locale)}>
                   {primaryNav.map((item) =>
                     isScrollLink(item) ? (
-                      <li key={item.name}>
+                      <li key={primaryNavKey(item)}>
                         <button
                           type="button"
                           suppressHydrationWarning
@@ -515,7 +594,7 @@ export default function Header(_props: HeaderProps) {
 
                 <div className="mt-4 pt-3 border-t border-border/70" role="region" aria-labelledby="mobile-nav-services">
                   <h2 id="mobile-nav-services" className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Services
+                    {shellServicesTrigger(locale)}
                   </h2>
                   {servicesNavSections.map((section) => (
                     <div key={section.label} className="mt-1">
@@ -541,7 +620,7 @@ export default function Header(_props: HeaderProps) {
 
                 <div className="mt-2 pt-3 border-t border-border/70" role="region" aria-labelledby="mobile-nav-more">
                   <h2 id="mobile-nav-more" className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    More
+                    {shellMoreTrigger(locale)}
                   </h2>
                   {moreNavSections.map((section) => (
                     <div key={section.label} className="mt-1">
@@ -601,7 +680,7 @@ export default function Header(_props: HeaderProps) {
                   {mounted && user ? (
                     <div className="space-y-1">
                       <div className="px-4 py-2 text-sm font-medium text-foreground/80">
-                        Logged in as @{user.username}
+                        {shellLoggedInAs(locale, user.username)}
                       </div>
                       {!isApprovedAdmin && (
                         <Link
@@ -610,13 +689,13 @@ export default function Header(_props: HeaderProps) {
                           onClick={closeMobileMenu}
                         >
                           <LayoutDashboard className="h-4 w-4 shrink-0" />
-                          <span>Dashboard</span>
+                          <span>{shellPublicDashboard(locale)}</span>
                         </Link>
                       )}
                       {isApprovedAdmin && groupedAdminPages.length > 0 && (
                         <div className="space-y-2">
                           <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Admin
+                            {shellAdminSectionLabel(locale)}
                           </div>
                           {groupedAdminPages.map((group) => (
                             <div key={group.label} className="space-y-0.5">
@@ -653,7 +732,7 @@ export default function Header(_props: HeaderProps) {
                         }}
                         className="flex items-center w-full text-left text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                       >
-                        <LogOut className="h-4 w-4 mr-2 shrink-0" /> Log out
+                        <LogOut className="h-4 w-4 mr-2 shrink-0" /> {shellLogOut(locale)}
                       </button>
                     </div>
                   ) : (
@@ -662,7 +741,7 @@ export default function Header(_props: HeaderProps) {
                       className="flex items-center text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
                       onClick={closeMobileMenu}
                     >
-                      <LogIn className="h-4 w-4 mr-2 shrink-0" /> Login
+                      <LogIn className="h-4 w-4 mr-2 shrink-0" /> {shellLogin(locale)}
                     </Link>
                   )}
                 </div>

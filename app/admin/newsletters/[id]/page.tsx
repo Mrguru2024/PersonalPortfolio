@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import {
   Dialog,
@@ -413,9 +413,9 @@ export default function NewsletterViewPage() {
               {getStatusBadge(newsletter.status)}
             </div>
             <p className="text-muted-foreground">
-              Created {format(new Date(newsletter.createdAt), "PPp")}
+              Created {formatLocaleMediumDateTime(newsletter.createdAt)}
               {newsletter.sentAt && (
-                <> • Sent {format(new Date(newsletter.sentAt), "PPp")}</>
+                <> • Sent {formatLocaleMediumDateTime(newsletter.sentAt)}</>
               )}
             </p>
           </div>

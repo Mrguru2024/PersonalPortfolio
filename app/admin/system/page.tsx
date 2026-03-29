@@ -28,6 +28,7 @@ import {
   SYSTEM_ENV_CHECKLIST,
   type SystemEnvTier,
 } from "@/lib/system-env-checklist";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -266,10 +267,7 @@ export default function AdminSystemPage() {
     }
   };
 
-  const formatTime = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleString();
-  };
+  const formatTime = (ts: number) => formatLocaleMediumDateTime(ts);
 
   if (!mounted || authLoading || (user && !isSuperUser)) {
     return (
@@ -619,7 +617,7 @@ export default function AdminSystemPage() {
                               </Button>
                             </td>
                             <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
-                              {new Date(entry.createdAt).toLocaleString()}
+                              {formatLocaleMediumDateTime(entry.createdAt)}
                             </td>
                             <td className="py-2 px-2">
                               <Badge variant={isErrorType(entry) ? "destructive" : "secondary"}>

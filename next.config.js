@@ -68,21 +68,26 @@ const nextConfig = {
   // Mark server-side packages that use AMD modules as external
   // This prevents bundlers from trying to bundle them (Turbopack doesn't support AMD)
   serverExternalPackages: ['@getbrevo/brevo'],
+
+  /** Recharts + victory-vendor ESM re-exports confuse Webpack’s analyzer; transpiling stabilizes client bundles. */
+  transpilePackages: ['recharts'],
   
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000, // 1 year — uploads are immutable; CDN/browser cache longer
+    // Tight hosts only (drop http ** + permissive https **). Add hosts when using new remote Image src origins.
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
+      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'picsum.photos', pathname: '/**' },
+      /** GitHub OAuth / profile images (`*.png` on github.com, and avatars CDN). */
+      { protocol: 'https', hostname: 'github.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'mrguru.dev', pathname: '/**' },
+      { protocol: 'https', hostname: 'www.ascendra.tech', pathname: '/**' },
+      { protocol: 'https', hostname: 'ascendra.tech', pathname: '/**' },
+      { protocol: 'https', hostname: '**.vercel.app', pathname: '/**' },
     ],
   },
   
@@ -126,6 +131,9 @@ const nextConfig = {
       '@': path.resolve(process.cwd(), 'app'),
       '@shared': path.resolve(process.cwd(), 'shared'),
       '@server': path.resolve(process.cwd(), 'server'),
+      // Recharts → victory-vendor/d3-* re-exports break Webpack named-import analysis; point at d3 packages directly.
+      'victory-vendor/d3-shape': path.resolve(process.cwd(), 'node_modules/d3-shape/src/index.js'),
+      'victory-vendor/d3-scale': path.resolve(process.cwd(), 'node_modules/d3-scale/src/index.js'),
     };
     
     // Fix for Brevo package module resolution issue

@@ -1,9 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { Calendar, Settings, List, Clock, Tags, UserCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 
 export default function AdminSchedulingHomePage() {
+  const { user } = useAuth();
+  const isSuper = isAuthSuperUser(user);
+
   return (
     <div className="space-y-6">
       <div>
@@ -13,7 +19,13 @@ export default function AdminSchedulingHomePage() {
           <Link href="/admin/integrations" className="text-primary underline-offset-4 hover:underline">
             Integrations
           </Link>
-          (planned sync); cron runs reminders via <code className="text-xs">/api/cron/scheduling</code> or Growth OS cron.
+          {isSuper ?
+            <>
+              {" "}
+              (planned sync). Reminder jobs run on a schedule via <code className="text-xs">/api/cron/scheduling</code> or
+              Growth OS automation.
+            </>
+          : " (calendar sync is planned). Reminder emails run on an automated schedule."}
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -37,7 +49,11 @@ export default function AdminSchedulingHomePage() {
               <Tags className="h-5 w-5" />
               Meeting types
             </CardTitle>
-            <CardDescription>Durations, slugs, and active flags for /book.</CardDescription>
+            <CardDescription>
+              {isSuper ?
+                "Durations, slugs, and active flags for /book."
+              : "Durations and which meeting types appear on your public booking page."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="secondary">
@@ -66,7 +82,9 @@ export default function AdminSchedulingHomePage() {
               My availability
             </CardTitle>
             <CardDescription>
-              Per–founder hours and blocked dates for public /book (when guests choose you or you&apos;re the only host).
+              {isSuper ?
+                "Per–founder hours and blocked dates for public /book (when guests choose you or you're the only host)."
+              : "Your personal hours and blocked dates when guests book you—or when you are the only available host."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -81,7 +99,13 @@ export default function AdminSchedulingHomePage() {
               <Calendar className="h-5 w-5" />
               Public book page
             </CardTitle>
-            <CardDescription>Share <code className="text-xs">/book</code> with prospects.</CardDescription>
+            <CardDescription>
+              {isSuper ?
+                <>
+                  Share <code className="text-xs">/book</code> with prospects.
+                </>
+              : "Share your public booking link with prospects."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
@@ -91,22 +115,24 @@ export default function AdminSchedulingHomePage() {
             </Button>
           </CardContent>
         </Card>
-        <Card className="sm:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <List className="h-5 w-5" />
-              Appointments API
-            </CardTitle>
-            <CardDescription>List bookings: GET /api/admin/scheduling/appointments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="secondary">
-              <Link href="/api/admin/scheduling/appointments" target="_blank" rel="noreferrer">
-                Open JSON (auth required)
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {isSuper ?
+          <Card className="sm:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <List className="h-5 w-5" />
+                Appointments API
+              </CardTitle>
+              <CardDescription>List bookings: GET /api/admin/scheduling/appointments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="secondary">
+                <Link href="/api/admin/scheduling/appointments" target="_blank" rel="noreferrer">
+                  Open JSON (auth required)
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        : null}
       </div>
     </div>
   );

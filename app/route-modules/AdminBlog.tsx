@@ -21,6 +21,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { SEOPanel } from "@/components/SEOPanel";
 import ParallaxBackground from "@/components/ParallaxBackground";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import {
   Select,
   SelectContent,
@@ -139,7 +140,7 @@ const AdminBlog = () => {
       toast({
         title: "Success!",
         description: isFuture
-          ? `Post scheduled for ${at.toLocaleString()}. It will appear on the blog at that time.`
+          ? `Post scheduled for ${formatLocaleMediumDateTime(at)}. It will appear on the blog at that time.`
           : "Blog post created successfully.",
       });
       router.push("/blog");

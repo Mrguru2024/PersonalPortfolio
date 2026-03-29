@@ -39,9 +39,31 @@ export const afnProfiles = pgTable(
     lookingFor: text("looking_for"),
     collaborationInterests: text("collaboration_interests"),
     askMeAbout: text("ask_me_about"),
+    /** AFN "tribe" — founder type for matchmaking (see FOUNDER_TYPES in community constants). */
+    founderTribe: text("founder_tribe"),
+    /** Public profile page accent preset (classic, ocean, sunset, …). */
+    publicProfileTheme: text("public_profile_theme").default("classic").notNull(),
     featuredResourceUrl: text("featured_resource_url"),
     profileCompletionScore: integer("profile_completion_score").default(0),
     isOnboardingComplete: boolean("is_onboarding_complete").default(false),
+    /** Phase 1 — structured intelligence (nullable for backward compatibility). */
+    primaryRole: text("primary_role"),
+    secondaryRole: text("secondary_role"),
+    communicationStyle: text("communication_style"),
+    contentPreference: text("content_preference"),
+    timezone: text("timezone"),
+    availabilityJson: json("availability_json").$type<{ windows?: string[]; notes?: string } | null>(),
+    eventPreferencesJson: json("event_preferences_json").$type<string[] | null>(),
+    mentorshipInterest: text("mentorship_interest"),
+    projectInterest: text("project_interest"),
+    tribePreference: text("tribe_preference"),
+    personalityTraitsJson: json("personality_traits_json").$type<string[] | null>(),
+    /** Cached 0–100; recomputed with profile intelligence. */
+    inviteLikelihoodScore: integer("invite_likelihood_score"),
+    engagementStage: text("engagement_stage"),
+    communityMaturityLevel: text("community_maturity_level"),
+    /** Phase 10 — Timeline Live gate: viewer | active | trusted | featured */
+    timelineLiveAccessLevel: text("timeline_live_access_level").default("viewer").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -87,6 +109,193 @@ export const afnProfileMemberTags = pgTable("afn_profile_member_tags", {
 
 export type AfnProfileMemberTag = typeof afnProfileMemberTags.$inferSelect;
 export type InsertAfnProfileMemberTag = typeof afnProfileMemberTags.$inferInsert;
+
+// —— Normalized tag dimensions (Phase 1) — junction on afn_profiles.id ——
+export const afnSkillTags = pgTable("afn_skill_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileSkillTags = pgTable(
+  "afn_profile_skill_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    skillTagId: integer("skill_tag_id").notNull().references(() => afnSkillTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_skill_pair").on(t.profileId, t.skillTagId)]
+);
+
+export const afnIndustryTags = pgTable("afn_industry_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileIndustryTags = pgTable(
+  "afn_profile_industry_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    industryTagId: integer("industry_tag_id").notNull().references(() => afnIndustryTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_industry_pair").on(t.profileId, t.industryTagId)]
+);
+
+export const afnInterestTags = pgTable("afn_interest_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileInterestTags = pgTable(
+  "afn_profile_interest_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    interestTagId: integer("interest_tag_id").notNull().references(() => afnInterestTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_interest_pair").on(t.profileId, t.interestTagId)]
+);
+
+export const afnGoalTags = pgTable("afn_goal_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileGoalTags = pgTable(
+  "afn_profile_goal_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    goalTagId: integer("goal_tag_id").notNull().references(() => afnGoalTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_goal_pair").on(t.profileId, t.goalTagId)]
+);
+
+export const afnChallengeTags = pgTable("afn_challenge_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileChallengeTags = pgTable(
+  "afn_profile_challenge_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    challengeTagId: integer("challenge_tag_id").notNull().references(() => afnChallengeTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_challenge_pair").on(t.profileId, t.challengeTagId)]
+);
+
+export const afnCollabPreferenceTags = pgTable("afn_collab_preference_tags", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+});
+
+export const afnProfileCollabPreferenceTags = pgTable(
+  "afn_profile_collab_preference_tags",
+  {
+    id: serial("id").primaryKey(),
+    profileId: integer("profile_id").notNull().references(() => afnProfiles.id, { onDelete: "cascade" }),
+    collabPreferenceTagId: integer("collab_preference_tag_id")
+      .notNull()
+      .references(() => afnCollabPreferenceTags.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("afn_profile_collab_pref_pair").on(t.profileId, t.collabPreferenceTagId)]
+);
+
+/** Cached derived scores (Phase 2). */
+export const afnProfileIntelligence = pgTable("afn_profile_intelligence", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique(),
+  collaborationScore: integer("collaboration_score").default(0).notNull(),
+  tribeAffinityScore: integer("tribe_affinity_score").default(0).notNull(),
+  networkingScore: integer("networking_score").default(0).notNull(),
+  eventLikelihoodScore: integer("event_likelihood_score").default(0).notNull(),
+  mentorshipScore: integer("mentorship_score").default(0).notNull(),
+  projectScore: integer("project_score").default(0).notNull(),
+  contributionScore: integer("contribution_score").default(0).notNull(),
+  trustScore: integer("trust_score").default(0).notNull(),
+  consistencyScore: integer("consistency_score").default(0).notNull(),
+  inviteScore: integer("invite_score").default(0).notNull(),
+  churnRiskScore: integer("churn_risk_score").default(0).notNull(),
+  activationScore: integer("activation_score").default(0).notNull(),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export type AfnProfileIntelligenceRow = typeof afnProfileIntelligence.$inferSelect;
+export type InsertAfnProfileIntelligenceRow = typeof afnProfileIntelligence.$inferInsert;
+
+/** Peer invites (Phase 7). */
+export const afnInvites = pgTable("afn_invites", {
+  id: serial("id").primaryKey(),
+  inviterUserId: integer("inviter_user_id").notNull(),
+  inviteeEmail: text("invitee_email").notNull(),
+  status: text("status").default("sent").notNull(),
+  sourceMoment: text("source_moment"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AfnInvite = typeof afnInvites.$inferSelect;
+export type InsertAfnInvite = typeof afnInvites.$inferInsert;
+
+/** Single-row config for matcher / intelligence weights (Phase 12). Prefer id=1 row. */
+export const afnScoringConfig = pgTable("afn_scoring_config", {
+  id: serial("id").primaryKey(),
+  weightsJson: json("weights_json").$type<Record<string, number>>().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/** Timeline Live / group video sessions (Phase 9). */
+export const afnLiveSessions = pgTable("afn_live_sessions", {
+  id: serial("id").primaryKey(),
+  hostUserId: integer("host_user_id").notNull(),
+  sessionKind: text("session_kind").default("timeline_live").notNull(),
+  provider: text("provider").notNull(),
+  externalRoomId: text("external_room_id"),
+  roomName: text("room_name"),
+  title: text("title"),
+  joinUrl: text("join_url"),
+  livekitWsUrl: text("livekit_ws_url"),
+  livekitToken: text("livekit_token"),
+  status: text("status").default("created").notNull(),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AfnLiveSession = typeof afnLiveSessions.$inferSelect;
+
+/** Provider failover / health events (Phase 9). */
+export const afnLiveProviderLogs = pgTable("afn_live_provider_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id"),
+  sessionId: integer("session_id"),
+  provider: text("provider").notNull(),
+  eventType: text("event_type").notNull(),
+  message: text("message"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Admin-only Timeline Live tier override (Phase 10). */
+export const afnTimelineLiveOverrides = pgTable("afn_timeline_live_overrides", {
+  userId: integer("user_id").primaryKey(),
+  accessLevel: text("access_level").notNull(),
+  reason: text("reason"),
+  setByAdminUserId: integer("set_by_admin_user_id").notNull(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AfnTimelineLiveOverride = typeof afnTimelineLiveOverrides.$inferSelect;
 
 // —— Discussion categories ——
 export const afnDiscussionCategories = pgTable("afn_discussion_categories", {

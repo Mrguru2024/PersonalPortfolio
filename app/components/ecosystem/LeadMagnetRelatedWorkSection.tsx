@@ -53,7 +53,7 @@ export function LeadMagnetRelatedWorkSection({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {macon.map((project) => (
           <Card key={`macon-${project.id}`} className="border-border/90 bg-card h-full flex flex-col">
-            <CardContent className="p-5 sm:p-6 flex flex-col flex-1">
+            <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col flex-1">
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <Palette className="h-4 w-4 text-primary shrink-0" aria-hidden />
@@ -91,7 +91,7 @@ export function LeadMagnetRelatedWorkSection({
 
         {styleStudio.map((project) => (
           <Card key={`style-${project.id}`} className="border-border/90 bg-card h-full flex flex-col">
-            <CardContent className="p-5 sm:p-6 flex flex-col flex-1">
+            <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col flex-1">
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <Megaphone className="h-4 w-4 text-primary shrink-0" aria-hidden />
@@ -136,7 +136,7 @@ export function LeadMagnetRelatedWorkSection({
 
         {ascendra.map((project) => (
           <Card key={`ascendra-${project.id}`} className="border-border/90 bg-card h-full flex flex-col">
-            <CardContent className="p-5 sm:p-6 flex flex-col flex-1">
+            <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <Code2 className="h-4 w-4 text-primary shrink-0" aria-hidden />
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">Ascendra</p>

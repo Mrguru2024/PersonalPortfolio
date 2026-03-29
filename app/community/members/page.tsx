@@ -19,7 +19,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
-import { BUSINESS_STAGES } from "@/lib/community/constants";
+import {
+  BUSINESS_STAGES,
+  FOUNDER_TYPES,
+  FOUNDER_TYPE_LABELS,
+  isFounderType,
+} from "@/lib/community/constants";
 
 interface Profile {
   id: number;
@@ -30,6 +35,7 @@ interface Profile {
   headline: string | null;
   businessStage: string | null;
   industry: string | null;
+  founderTribe?: string | null;
 }
 
 interface Suggestion {
@@ -41,6 +47,7 @@ interface Suggestion {
   headline: string | null;
   businessStage: string | null;
   industry: string | null;
+  founderTribe: string | null;
   score: number;
   reasons: string[];
 }
@@ -50,6 +57,7 @@ export default function CommunityMembersPage() {
   const router = useRouter();
   const [industry, setIndustry] = useState<string>("");
   const [businessStage, setBusinessStage] = useState<string>("");
+  const [founderTribeFilter, setFounderTribeFilter] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -58,11 +66,12 @@ export default function CommunityMembersPage() {
   }, [user, authLoading, router]);
 
   const { data: members = [], isLoading } = useQuery<Profile[]>({
-    queryKey: ["/api/community/members", industry, businessStage],
+    queryKey: ["/api/community/members", industry, businessStage, founderTribeFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (industry) params.set("industry", industry);
       if (businessStage) params.set("businessStage", businessStage);
+      if (founderTribeFilter) params.set("founderTribe", founderTribeFilter);
       const res = await apiRequest("GET", `/api/community/members?${params.toString()}`);
       return res.json();
     },
@@ -124,6 +133,11 @@ export default function CommunityMembersPage() {
                             {s.headline && (
                               <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{s.headline}</p>
                             )}
+                            {s.founderTribe && FOUNDER_TYPE_LABELS[s.founderTribe as keyof typeof FOUNDER_TYPE_LABELS] && (
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {FOUNDER_TYPE_LABELS[s.founderTribe as keyof typeof FOUNDER_TYPE_LABELS]}
+                              </p>
+                            )}
                             <div className="flex flex-wrap gap-1 mt-2">
                               {s.reasons.slice(0, 3).map((r, i) => (
                                 <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -135,7 +149,9 @@ export default function CommunityMembersPage() {
                           </div>
                         </div>
                         <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
-                          <Link href={`/community/members/${s.username ?? s.userId}`}>
+                          <Link
+                            href={`/community/members/${encodeURIComponent(String(s.username ?? s.userId))}`}
+                          >
                             View profile
                           </Link>
                         </Button>
@@ -174,6 +190,19 @@ export default function CommunityMembersPage() {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={founderTribeFilter} onValueChange={setFounderTribeFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Community type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All types</SelectItem>
+              {FOUNDER_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {FOUNDER_TYPE_LABELS[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (
@@ -194,7 +223,7 @@ export default function CommunityMembersPage() {
                 <Card>
                   <CardContent className="pt-4">
                     <Link
-                      href={`/community/members/${member.username ?? member.userId}`}
+                      href={`/community/members/${encodeURIComponent(String(member.username ?? member.userId))}`}
                       className="flex items-start gap-3 hover:opacity-90"
                     >
                       <Avatar className="h-12 w-12">
@@ -218,7 +247,9 @@ export default function CommunityMembersPage() {
                       </div>
                     </Link>
                     <Button variant="outline" size="sm" className="mt-3 w-full" asChild>
-                      <Link href={`/community/members/${member.username ?? member.userId}`}>
+                      <Link
+                        href={`/community/members/${encodeURIComponent(String(member.username ?? member.userId))}`}
+                      >
                         View profile
                       </Link>
                     </Button>

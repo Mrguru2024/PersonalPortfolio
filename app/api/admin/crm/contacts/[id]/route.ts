@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { getAfnCommunitySnapshotByEmail } from "@server/afnStorage";
 import { insertCrmContactSchema, type InsertCrmContact } from "@shared/crmSchema";
 
 const crmContactPatchSchema = insertCrmContactSchema.partial();
@@ -18,7 +19,8 @@ export async function GET(
     const id = Number((await params).id);
     const contact = await storage.getCrmContactById(id);
     if (!contact) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(contact);
+    const afnCommunity = await getAfnCommunitySnapshotByEmail(contact.email);
+    return NextResponse.json({ ...contact, afnCommunity });
   } catch (error: any) {
     console.error("Error fetching CRM contact:", error);
     return NextResponse.json({ error: "Failed to fetch CRM contact" }, { status: 500 });

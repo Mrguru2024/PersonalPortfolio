@@ -1,15 +1,15 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { EmailHubContactDetailSheet } from "@/components/email-hub/EmailHubCrmContacts";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 import {
   Sheet,
   SheetContent,
@@ -17,13 +17,28 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { EmailHubMessage } from "@shared/emailHubSchema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmailHubSentPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuper = isAuthSuperUser(user);
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightId = searchParams.get("msg");
   const [drawerId, setDrawerId] = useState<number | null>(null);
+  const [contactSheetId, setContactSheetId] = useState<number | null>(null);
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const retrySend = useMutation({
+    mutationFn: async (messageId: number) => apiRequest("POST", `/api/admin/email-hub/messages/${messageId}/send-now`),
+    onSuccess: async () => {
+      toast({ title: "Retry sent", description: "Brevo accepted the send, or the row updated to failed again." });
+      await qc.invalidateQueries({ queryKey: ["/api/admin/email-hub/messages"] });
+      await qc.invalidateQueries({ queryKey: ["/api/admin/email-hub/overview"] });
+    },
+    onError: (e: Error) => toast({ title: "Retry failed", description: e.message, variant: "destructive" }),
+  });
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -84,24 +99,43 @@ export default function EmailHubSentPage() {
                 <p className="font-medium truncate">{m.subject}</p>
                 <p className="text-xs text-muted-foreground truncate">{(m.toJson as string[]).join(", ")}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {m.sentAt ? format(new Date(m.sentAt), "MMM d, yyyy HH:mm") : "—"}
+                  {m.sentAt ? formatLocaleDateTime(m.sentAt, "full") : "—"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={m.status === "failed" ? "destructive" : "secondary"}>{m.status}</Badge>
                 {m.relatedContactId ?
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/crm/${m.relatedContactId}`}>CRM</Link>
+                  <Button variant="outline" size="sm" onClick={() => setContactSheetId(m.relatedContactId!)}>
+                    Contact
                   </Button>
                 : null}
                 <Button variant="ghost" size="sm" onClick={() => setDrawerId(m.id)}>
                   Timeline
                 </Button>
+                {m.status === "failed" ?
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={retrySend.isPending}
+                    onClick={() => retrySend.mutate(m.id)}
+                  >
+                    Send now
+                  </Button>
+                : null}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <EmailHubContactDetailSheet
+        contactId={contactSheetId}
+        open={contactSheetId != null}
+        onOpenChange={(o) => {
+          if (!o) setContactSheetId(null);
+        }}
+      />
 
       <Sheet open={drawerId != null} onOpenChange={(o) => !o && setDrawerId(null)}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -112,7 +146,11 @@ export default function EmailHubSentPage() {
             <div className="mt-4 space-y-3 text-sm">
               <p className="text-muted-foreground">{drawerData.message.subject}</p>
               {drawerData.events.length === 0 ?
-                <p className="text-muted-foreground">No webhook events logged yet.</p>
+                <p className="text-muted-foreground">
+                  {isSuper ?
+                    "No provider events logged for this message yet."
+                  : "No opens or clicks recorded for this message yet."}
+                </p>
               : drawerData.events.map((e) => (
                   <div key={e.id} className="rounded-lg border border-border/50 p-2">
                     <Badge variant="outline" className="text-[10px]">
@@ -120,7 +158,7 @@ export default function EmailHubSentPage() {
                     </Badge>
                     <p className="text-xs mt-1">{e.recipientEmail}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {format(new Date(e.eventTimestamp), "MMM d, HH:mm:ss")}
+                      {formatLocaleDateTime(e.eventTimestamp, "monthDayTimeWithSeconds")}
                     </p>
                   </div>
                 ))}

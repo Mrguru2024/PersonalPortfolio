@@ -20,7 +20,8 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
   {
     id: "welcome",
     title: "Welcome to the Admin Dashboard",
-    description: "Here you can manage assessments, contacts, CRM, invoices, and more. This short tour will point you to the main areas.",
+    description:
+      "This page is your home for assessments, inbound contacts, resume requests, and snapshot cards. The tour walks through what each highlighted **area does** (counts, lists, updates). Throughout the app, small ? icons next to titles and fields explain that control—not how to use the top menu.",
     target: "center",
     roles: ["all"],
   },
@@ -53,23 +54,34 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
     roles: ["all"],
   },
   {
+    id: "learn-more",
+    title: "Learning on any admin page",
+    description:
+      "Multi-step playbooks (e.g. LTV, discovery) live in **How-to & guides** in this shortcuts row. The **Assistant knowledge** shortcut opens entries you can toggle so trusted text flows into the floating assistant. Prefer ? tips on each screen first—they describe the fields and buttons in front of you.",
+    target: "center",
+    roles: ["all"],
+  },
+  {
     id: "crm-link",
     title: "CRM and more",
-    description: "For full lead and deal management, use the CRM: contacts, pipeline, tasks, saved lists, and import. Go to CRM from the main nav or dashboard links.",
+    description:
+      "The CRM is for **doing** lead work: stages, tasks, imports, saved lists, and full contact records. Open it when you’re acting on prospects; each CRM screen has its own ? help for filters, bulk actions, and saves.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "daily-habits",
     title: "Daily habits",
-    description: "Each visit, check the “Suggested for you” nudges above—they’re tailored to your role and current counts (e.g. pending assessments, unaccessed resumes).",
+    description:
+      "The **Suggested for you** strip on this page reacts to your role and live counts (pending assessments, unaccessed resumes, etc.). Use it as a same-day checklist; follow into each area and rely on local ? tips for the next click.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "system",
     title: "System (super admin)",
-    description: "As a super admin you can access System (health, logs), Users, and Integrations. Use these for maintenance and troubleshooting.",
+    description:
+      "**System** surfaces health and logs; **Users** controls approvals and access; **Connections** verifies email and social integrations. Use those screens when debugging or onboarding—not for day-to-day CRM or content tasks. Each screen explains its own panels via ? icons.",
     target: "center",
     roles: ["super"],
   },

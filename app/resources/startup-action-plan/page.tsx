@@ -92,7 +92,7 @@ export default function StartupActionPlanPage() {
             <section className="space-y-6">
               {STEPS.map(({ icon: Icon, title, body }, i) => (
                 <Card key={title} className="border-border bg-card">
-                  <CardContent className="p-5 sm:p-6 flex gap-4">
+                  <CardContent className="px-6 py-5 sm:px-8 sm:py-7 flex gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="h-6 w-6" />
                     </div>

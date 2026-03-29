@@ -34,6 +34,8 @@ export const PPC_LEAD_MAGNET_PATH = "/ppc-lead-system";
 export const REVENUE_CALCULATOR_PATH = "/website-revenue-calculator";
 export const OFFER_AUDIT_PATH = "/offer-audit";
 export const WEBSITE_SCORE_PATH = "/website-performance-score";
+/** Public AMIE-powered Market Score funnel (CRM + nurture). */
+export const MARKET_SCORE_PATH = "/market-score";
 export const BOOK_CALL_HREF = "/strategy-call";
 
 /** Ecosystem funnel (Brand Growth hub + paths) — Ascendra + Macon Designs + Style Studio */

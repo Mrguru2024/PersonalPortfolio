@@ -1,7 +1,9 @@
 import { createHmac } from "crypto";
 import {
   createSignedOAuthState,
+  createSignedOAuthStateWithSubject,
   tryCreateSignedOAuthState,
+  verifyGoogleCalendarOAuthState,
   verifySignedOAuthState,
 } from "../oauthSignedState";
 
@@ -65,5 +67,22 @@ describe("oauthSignedState", () => {
     const state = createSignedOAuthState();
     const encoded = encodeURIComponent(state);
     expect(verifySignedOAuthState(encoded)).toBe(true);
+  });
+
+  it("google_calendar profile uses GOOGLE_CALENDAR_OAUTH_STATE_SECRET when set", () => {
+    process.env.GOOGLE_CALENDAR_OAUTH_STATE_SECRET = "cal-only";
+    delete process.env.OAUTH_STATE_SECRET;
+    delete process.env.SESSION_SECRET;
+    delete process.env.FACEBOOK_APP_SECRET;
+    const state = createSignedOAuthStateWithSubject("99", "google_calendar");
+    expect(verifyGoogleCalendarOAuthState(state, null)).toEqual({ ok: true, subject: "99" });
+  });
+
+  it("verifyGoogleCalendarOAuthState falls back to cookie when query empty", () => {
+    delete process.env.GOOGLE_CALENDAR_OAUTH_STATE_SECRET;
+    process.env.OAUTH_STATE_SECRET = "cookie-fallback";
+    const state = createSignedOAuthStateWithSubject("7", "google_calendar");
+    expect(verifyGoogleCalendarOAuthState("", state)).toEqual({ ok: true, subject: "7" });
+    expect(verifyGoogleCalendarOAuthState(null, state)).toEqual({ ok: true, subject: "7" });
   });
 });

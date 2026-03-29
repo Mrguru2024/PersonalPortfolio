@@ -41,7 +41,7 @@ export function AdminDailyNudge({ items, onStartTour, showTourCta }: AdminDailyN
           Suggested for you
         </CardTitle>
         <CardDescription>
-          Based on your role and current activity. Tackle these to stay on top.
+          Based on your operator focus, inbound signals, and queue depth. Each row opens the right admin screen or dashboard tab.
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6 pb-4">
@@ -81,14 +81,14 @@ export function AdminDailyNudge({ items, onStartTour, showTourCta }: AdminDailyN
 const OPERATOR_ROLE_NUDGES: Record<string, NudgeItem> = {
   content: {
     id: "op-focus-content",
-    label: "Content focus: blog or newsletter",
-    href: "/admin/blog",
+    label: "Content focus: Content Studio & calendar",
+    href: "/admin/content-studio",
     icon: <FileText className="h-4 w-4 shrink-0 text-primary" />,
   },
   growth_marketing: {
     id: "op-focus-growth",
-    label: "Growth focus: analytics + funnel",
-    href: "/admin/analytics",
+    label: "Growth & marketing: Growth OS hub",
+    href: "/admin/growth-os",
     icon: <Target className="h-4 w-4 shrink-0 text-primary" />,
   },
   client_success: {
@@ -129,6 +129,12 @@ const OPERATOR_ROLE_NUDGES: Record<string, NudgeItem> = {
   },
 };
 
+const DASHBOARD_TAB = {
+  assessments: "/admin/dashboard?tab=assessments#admin-dashboard-inbox-tabs",
+  contacts: "/admin/dashboard?tab=contacts#admin-dashboard-inbox-tabs",
+  resume: "/admin/dashboard?tab=resume-requests#admin-dashboard-inbox-tabs",
+} as const;
+
 /** Build nudge list from dashboard counts and role. */
 export function buildNudgeItems(opts: {
   pendingAssessments: number;
@@ -139,6 +145,8 @@ export function buildNudgeItems(opts: {
   operatorRoleFocus?: string | null;
   /** Contacts + assessments + resume requests created in the last 7 days (surface in lead intake). */
   recentInboundWeekCount?: number;
+  /** Contact form rows created in the last 7 days (actionable follow-up). */
+  recentContactsWeek?: number;
 }): NudgeItem[] {
   const {
     pendingAssessments,
@@ -147,51 +155,64 @@ export function buildNudgeItems(opts: {
     isSuperAdmin,
     operatorRoleFocus,
     recentInboundWeekCount = 0,
+    recentContactsWeek = 0,
   } = opts;
   const items: NudgeItem[] = [];
+  const focus = (operatorRoleFocus || "general").trim();
 
   if (pendingAssessments > 0) {
     items.push({
-      id: "assessments",
+      id: "assessments-pending",
       label: "Review pending assessments",
-      href: "/admin/dashboard",
+      href: DASHBOARD_TAB.assessments,
       count: pendingAssessments,
       icon: <FileCheck className="h-4 w-4 shrink-0 text-primary" />,
     });
   }
-  if (totalContacts > 0) {
+
+  if (recentContactsWeek > 0) {
     items.push({
-      id: "contacts",
-      label: "Check contact form submissions",
-      href: "/admin/dashboard",
+      id: "contacts-recent-week",
+      label: "New contact submissions this week",
+      href: DASHBOARD_TAB.contacts,
+      count: recentContactsWeek,
+      icon: <MessageSquare className="h-4 w-4 shrink-0 text-primary" />,
+    });
+  } else if (totalContacts > 0) {
+    items.push({
+      id: "contacts-inbox",
+      label: "Contact form inbox",
+      href: DASHBOARD_TAB.contacts,
       count: totalContacts,
       icon: <MessageSquare className="h-4 w-4 shrink-0 text-primary" />,
     });
   }
+
   if (unaccessedResume > 0) {
     items.push({
-      id: "resume",
-      label: "View unaccessed resume requests",
-      href: "/admin/dashboard",
+      id: "resume-unaccessed",
+      label: "Resume requests to review",
+      href: DASHBOARD_TAB.resume,
       count: unaccessedResume,
       icon: <FileText className="h-4 w-4 shrink-0 text-primary" />,
     });
   }
 
-  items.push(
-    {
-      id: "crm",
-      label: "Open CRM (leads & pipeline)",
-      href: "/admin/crm",
-      icon: <Users className="h-4 w-4 shrink-0 text-primary" />,
-    },
-    {
+  items.push({
+    id: "crm",
+    label: "Open CRM (leads & pipeline)",
+    href: "/admin/crm",
+    icon: <Users className="h-4 w-4 shrink-0 text-primary" />,
+  });
+
+  if (focus !== "finance") {
+    items.push({
       id: "invoices",
       label: "Manage invoices",
       href: "/admin/invoices",
       icon: <Receipt className="h-4 w-4 shrink-0 text-primary" />,
-    }
-  );
+    });
+  }
 
   if (isSuperAdmin) {
     items.push({
@@ -202,7 +223,6 @@ export function buildNudgeItems(opts: {
     });
   }
 
-  const focus = (operatorRoleFocus || "general").trim();
   const roleNudge = OPERATOR_ROLE_NUDGES[focus] ?? OPERATOR_ROLE_NUDGES.general;
   if (roleNudge && !items.some((i) => i.id === roleNudge.id)) {
     items.unshift(roleNudge);
@@ -211,7 +231,7 @@ export function buildNudgeItems(opts: {
   if (recentInboundWeekCount > 0) {
     items.unshift({
       id: "recent-inbound-week",
-      label: "New inbound this week — review in lead intake",
+      label: "New inbound this week — triage in lead intake",
       href: "/admin/lead-intake",
       count: recentInboundWeekCount,
       icon: <Inbox className="h-4 w-4 shrink-0 text-primary" />,

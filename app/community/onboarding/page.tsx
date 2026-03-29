@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FOUNDER_TYPES, BUSINESS_STAGES, PROFILE_VISIBILITY, MESSAGE_PERMISSION } from "@/lib/community/constants";
+import {
+  FOUNDER_TYPES,
+  BUSINESS_STAGES,
+  PROFILE_VISIBILITY,
+  MESSAGE_PERMISSION,
+  COMMUNICATION_STYLES,
+  MENTORSHIP_INTERESTS,
+} from "@/lib/community/constants";
 import { Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -38,10 +45,39 @@ export default function CommunityOnboardingPage() {
     whatBuilding: "",
     biggestChallenge: "",
     goals: "",
+    lookingFor: "",
+    whatYouOffer: "",
+    communicationStyle: "unspecified",
+    mentorshipInterest: "none",
+    skillSlugs: [] as string[],
+    goalSlugs: [] as string[],
     openToCollaborate: false,
     profileVisibility: "public",
     messagePermission: "none",
   });
+
+  const { data: tagVocab } = useQuery({
+    queryKey: ["/api/community/tags"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/community/tags");
+      if (!res.ok) return null;
+      return res.json() as Promise<{
+        skills: { slug: string; label: string }[];
+        goals: { slug: string; label: string }[];
+      }>;
+    },
+    enabled: !!user,
+  });
+
+  const toggleSlug = (key: "skillSlugs" | "goalSlugs", slug: string, max: number) => {
+    setForm((f) => {
+      const cur = [...((f[key] as string[]) ?? [])];
+      const i = cur.indexOf(slug);
+      if (i >= 0) cur.splice(i, 1);
+      else if (cur.length < max) cur.push(slug);
+      return { ...f, [key]: cur };
+    });
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -171,6 +207,100 @@ export default function CommunityOnboardingPage() {
                   className="mt-2 min-h-[80px]"
                 />
               </div>
+              <div>
+                <Label>Who you want to meet (optional)</Label>
+                <Textarea
+                  placeholder="Roles, backgrounds, or founder types"
+                  value={String(form.lookingFor ?? "")}
+                  onChange={(e) => setForm((f) => ({ ...f, lookingFor: e.target.value }))}
+                  className="mt-2 min-h-[72px]"
+                />
+              </div>
+              <div>
+                <Label>What you can offer (optional)</Label>
+                <Textarea
+                  placeholder="Skills, intros, or help you can give"
+                  value={String(form.whatYouOffer ?? "")}
+                  onChange={(e) => setForm((f) => ({ ...f, whatYouOffer: e.target.value }))}
+                  className="mt-2 min-h-[72px]"
+                />
+              </div>
+              <div>
+                <Label>Interaction style</Label>
+                <select
+                  className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={String(form.communicationStyle ?? "unspecified")}
+                  onChange={(e) => setForm((f) => ({ ...f, communicationStyle: e.target.value }))}
+                >
+                  {COMMUNICATION_STYLES.map((s) => (
+                    <option key={s} value={s}>
+                      {s.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label>Mentorship interest</Label>
+                <select
+                  className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={String(form.mentorshipInterest ?? "none")}
+                  onChange={(e) => setForm((f) => ({ ...f, mentorshipInterest: e.target.value }))}
+                >
+                  {MENTORSHIP_INTERESTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {tagVocab && (
+                <>
+                  <div>
+                    <Label>Skill tags (up to 5)</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {tagVocab.skills?.map((t) => {
+                        const active = ((form.skillSlugs as string[]) ?? []).includes(t.slug);
+                        return (
+                          <button
+                            key={t.slug}
+                            type="button"
+                            onClick={() => toggleSlug("skillSlugs", t.slug, 5)}
+                            className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                              active
+                                ? "border-primary bg-primary/15 text-primary"
+                                : "border-border/80 text-muted-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Goal tags (up to 5)</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {tagVocab.goals?.map((t) => {
+                        const active = ((form.goalSlugs as string[]) ?? []).includes(t.slug);
+                        return (
+                          <button
+                            key={t.slug}
+                            type="button"
+                            onClick={() => toggleSlug("goalSlugs", t.slug, 5)}
+                            className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                              active
+                                ? "border-primary bg-primary/15 text-primary"
+                                : "border-border/80 text-muted-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -229,7 +359,7 @@ export default function CommunityOnboardingPage() {
                 Your profile is set up. Explore the feed, find collaborators, and join the conversation.
               </p>
               <Button asChild className="mt-6 gap-2">
-                <Link href="/community/feed">Go to feed <ArrowRight className="h-4 w-4" /></Link>
+                <Link href="/community/home">Open your AFN home <ArrowRight className="h-4 w-4" /></Link>
               </Button>
             </div>
           )}

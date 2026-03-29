@@ -8,6 +8,16 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-28 — Admin workspace sync
+
+- Admin read-aloud: browser voices, reading styles, and optional OpenAI natural TTS; how-to guides page; email hub tracking, templates, inbox, and crons; market intelligence and community APIs; AMIE-related services and schema; paid-growth campaigns hydration guard; integrations and shared schema updates.
+
+## 2026-03-28 13:03 — Auto · dafc408
+
+- `chore: dev log for 745156c` (`dafc408`)
+
+---
+
 ## 2026-03-28 12:43 — Auto · 6d289ff
 
 - `chore: dev log for 745156c` (`6d289ff`)

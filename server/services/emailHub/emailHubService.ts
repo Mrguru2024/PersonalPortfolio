@@ -7,9 +7,11 @@ import {
   emailHubEvents,
   emailHubTemplates,
   emailHubAssets,
+  type EmailHubMessage,
 } from "@shared/emailHubSchema";
 import { commEmailDesigns } from "@shared/communicationsSchema";
-import { eq, and, desc, sql, gte, inArray, or, isNull } from "drizzle-orm";
+import { users } from "@shared/schema";
+import { eq, and, desc, sql, gte, inArray, or, isNull, isNotNull, lte, ilike } from "drizzle-orm";
 import { sendEmailHubViaBrevo, type BrevoRecipient } from "./emailHubBrevo";
 import { userMayUseSender, listSendersForUser, type EmailHubSessionUser } from "./emailHubAccess";
 import { applyEmailMergeTags, type EmailMergeFields } from "@/lib/emailMergeTags";
@@ -515,78 +517,129 @@ export async function sendEmailHubNow(input: SendNowInput) {
   };
 }
 
-export async function processScheduledEmailHubMessages() {
-  const now = new Date();
-  const rows = await db
-    .select()
-    .from(emailHubMessages)
-    .where(and(eq(emailHubMessages.status, "scheduled"), sql`${emailHubMessages.scheduledFor} <= ${now}`));
-
-  for (const msg of rows) {
-    const [sender] = await db
-      .select()
-      .from(emailHubSenders)
-      .where(eq(emailHubSenders.id, msg.senderId))
-      .limit(1);
-    if (!sender) continue;
-    const html = msg.htmlBody;
-    const toRecipients: BrevoRecipient[] = msg.toJson.map((e: string) => ({ email: e }));
-    const ccRecipients = msg.ccJson?.length ? msg.ccJson.map((e: string) => ({ email: e })) : undefined;
-    const bccRecipients = msg.bccJson?.length ? msg.bccJson.map((e: string) => ({ email: e })) : undefined;
-    const replyTo =
-      sender.replyToEmail?.trim() ?
-        { email: sender.replyToEmail.trim(), name: sender.replyToName ?? undefined }
-      : undefined;
-
-    const brevo = await sendEmailHubViaBrevo({
-      to: toRecipients,
-      cc: ccRecipients,
-      bcc: bccRecipients,
-      subject: msg.subject,
-      htmlContent: html,
-      textContent: msg.textBody ?? undefined,
-      sender: { email: sender.email.trim(), name: sender.name.trim() },
-      replyTo,
-      emailHubMessageId: msg.id,
-      trackingOpen: msg.trackingOpen,
-      trackingClick: msg.trackingClick,
-    });
-
-    if (brevo.ok) {
-      await db
-        .update(emailHubMessages)
-        .set({
-          status: "sent",
-          brevoMessageId: brevo.messageId,
-          sentAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(emailHubMessages.id, msg.id));
-    } else {
-      await db
-        .update(emailHubMessages)
-        .set({
-          status: "failed",
-          errorMessage: brevo.error,
-          updatedAt: new Date(),
-        })
-        .where(eq(emailHubMessages.id, msg.id));
-    }
-  }
-  return { processed: rows.length };
+async function loadOwnerIsSuperForScheduledDraftSend(ownerUserId: number): Promise<boolean> {
+  const [u] = await db
+    .select({ username: users.username, email: users.email, role: users.role })
+    .from(users)
+    .where(eq(users.id, ownerUserId))
+    .limit(1);
+  if (!u) return false;
+  return isSuperAdminUser({ username: u.username, email: u.email, role: u.role });
 }
 
-export async function processScheduledEmailHubDrafts() {
-  const now = new Date();
-  const drafts = await db
+/** Deliver a queued hub message via Brevo (used by cron and “send now”). */
+export async function deliverEmailHubMessageRow(
+  msg: EmailHubMessage,
+): Promise<{ ok: true; brevoMessageId: string } | { ok: false; error: string }> {
+  const [sender] = await db
     .select()
-    .from(emailHubDrafts)
-    .where(and(eq(emailHubDrafts.status, "scheduled"), sql`${emailHubDrafts.scheduledFor} <= ${now}`));
+    .from(emailHubSenders)
+    .where(eq(emailHubSenders.id, msg.senderId))
+    .limit(1);
+  if (!sender) return { ok: false, error: "Sender not found" };
 
-  for (const d of drafts) {
-    await sendEmailHubNow({
+  const html = msg.htmlBody;
+  const toRecipients: BrevoRecipient[] = msg.toJson.map((e: string) => ({ email: e }));
+  const ccRecipients = msg.ccJson?.length ? msg.ccJson.map((e: string) => ({ email: e })) : undefined;
+  const bccRecipients = msg.bccJson?.length ? msg.bccJson.map((e: string) => ({ email: e })) : undefined;
+  const replyTo =
+    sender.replyToEmail?.trim() ?
+      { email: sender.replyToEmail.trim(), name: sender.replyToName ?? undefined }
+    : undefined;
+
+  const brevo = await sendEmailHubViaBrevo({
+    to: toRecipients,
+    cc: ccRecipients,
+    bcc: bccRecipients,
+    subject: msg.subject,
+    htmlContent: html,
+    textContent: msg.textBody ?? undefined,
+    sender: { email: sender.email.trim(), name: sender.name.trim() },
+    replyTo,
+    emailHubMessageId: msg.id,
+    trackingOpen: msg.trackingOpen,
+    trackingClick: msg.trackingClick,
+  });
+
+  if (brevo.ok) {
+    await db
+      .update(emailHubMessages)
+      .set({
+        status: "sent",
+        brevoMessageId: brevo.messageId,
+        sentAt: new Date(),
+        updatedAt: new Date(),
+        scheduledFor: null,
+        errorMessage: null,
+        providerJson: { brevoMessageId: brevo.messageId },
+      })
+      .where(eq(emailHubMessages.id, msg.id));
+
+    if (msg.relatedContactId) {
+      try {
+        await storage.createCommunicationEvent({
+          leadId: msg.relatedContactId,
+          eventType: "delivered",
+          emailId: `emailhub-${msg.id}`,
+          metadata: { source: "email_hub", subject: msg.subject.slice(0, 300) },
+        });
+      } catch {
+        /* optional */
+      }
+    }
+    return { ok: true, brevoMessageId: brevo.messageId };
+  }
+
+  await db
+    .update(emailHubMessages)
+    .set({
+      status: "failed",
+      errorMessage: brevo.error,
+      updatedAt: new Date(),
+    })
+    .where(eq(emailHubMessages.id, msg.id));
+  return { ok: false, error: brevo.error };
+}
+
+const FORCE_SEND_MESSAGE_STATUSES = new Set(["scheduled", "pending", "failed"]);
+
+/**
+ * Send immediately: scheduled (before cron), stuck pending, or failed retry.
+ */
+export async function forceSendEmailHubMessageNow(
+  messageId: number,
+  actingUserId: number,
+  actingIsSuper: boolean,
+): Promise<{ ok: true; brevoMessageId: string } | { ok: false; error: string }> {
+  const msg = await getEmailHubMessageById(messageId, actingUserId, actingIsSuper);
+  if (!msg) return { ok: false, error: "Message not found" };
+  if (!FORCE_SEND_MESSAGE_STATUSES.has(msg.status)) {
+    return { ok: false, error: "Only scheduled, pending, or failed messages can be sent now." };
+  }
+  if (!(await userMayUseSender(actingUserId, msg.senderId, actingIsSuper))) {
+    return { ok: false, error: "Sender not allowed for this user" };
+  }
+  return deliverEmailHubMessageRow(msg);
+}
+
+/**
+ * Send a scheduled draft immediately (same pipeline as cron, no scheduledFor).
+ */
+export async function forceSendEmailHubScheduledDraftNow(
+  draftId: number,
+  actingUserId: number,
+  actingIsSuper: boolean,
+): Promise<{ ok: true; messageId: number; brevoMessageId: string } | { ok: false; error: string }> {
+  const d = await getEmailHubDraft(draftId, actingUserId, actingIsSuper);
+  if (!d) return { ok: false, error: "Draft not found" };
+  if (d.status !== "scheduled") {
+    return { ok: false, error: "Only scheduled drafts can be sent now from this action." };
+  }
+  const ownerIsSuper = await loadOwnerIsSuperForScheduledDraftSend(d.ownerUserId);
+  try {
+    const result = await sendEmailHubNow({
       userId: d.ownerUserId,
-      isSuper: false,
+      isSuper: ownerIsSuper,
       senderId: d.senderId,
       to: d.toJson,
       cc: d.ccJson ?? undefined,
@@ -598,44 +651,169 @@ export async function processScheduledEmailHubDrafts() {
       templateId: d.templateId,
       relatedContactId: d.relatedContactId,
     });
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
+    if (result.scheduled) {
+      return { ok: false, error: "Draft was queued as scheduled again; remove a future send time and retry." };
+    }
+    const messageId = result.messageId;
+    const brevoMessageId = result.brevoMessageId;
+    if (messageId == null || brevoMessageId == null) {
+      return { ok: false, error: "Send did not return message details." };
+    }
+    return {
+      ok: true,
+      messageId,
+      brevoMessageId,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Send failed";
+    return { ok: false, error: msg };
   }
-  return { draftsProcessed: drafts.length };
 }
 
-/** Super-only: create sender + optional permission for a user. */
-export async function adminUpsertEmailHubSender(input: {
-  id?: number;
-  founderUserId?: number | null;
-  brevoSenderId?: string | null;
-  name: string;
-  email: string;
-  replyToEmail?: string | null;
-  replyToName?: string | null;
-  isVerified?: boolean;
-  isDefault?: boolean;
-  signatureHtml?: string | null;
-  brandProfileId?: number | null;
-  grantUserId?: number | null;
-}) {
+export async function processScheduledEmailHubMessages() {
+  const now = new Date();
+  const rows = await db
+    .select()
+    .from(emailHubMessages)
+    .where(
+      and(
+        eq(emailHubMessages.status, "scheduled"),
+        isNotNull(emailHubMessages.scheduledFor),
+        lte(emailHubMessages.scheduledFor, now),
+      ),
+    );
+
+  for (const msg of rows) {
+    await deliverEmailHubMessageRow(msg);
+  }
+  return { processed: rows.length };
+}
+
+export async function processScheduledEmailHubDrafts() {
+  const now = new Date();
+  const drafts = await db
+    .select()
+    .from(emailHubDrafts)
+    .where(
+      and(
+        eq(emailHubDrafts.status, "scheduled"),
+        isNotNull(emailHubDrafts.scheduledFor),
+        lte(emailHubDrafts.scheduledFor, now),
+      ),
+    );
+
+  let draftsProcessed = 0;
+  let draftsFailed = 0;
+  for (const d of drafts) {
+    try {
+      const isSuper = await loadOwnerIsSuperForScheduledDraftSend(d.ownerUserId);
+      await sendEmailHubNow({
+        userId: d.ownerUserId,
+        isSuper,
+        senderId: d.senderId,
+        to: d.toJson,
+        cc: d.ccJson ?? undefined,
+        bcc: d.bccJson ?? undefined,
+        subject: d.subject,
+        htmlBody: d.htmlBody,
+        textBody: d.textBody,
+        draftId: d.id,
+        templateId: d.templateId,
+        relatedContactId: d.relatedContactId,
+      });
+      draftsProcessed++;
+    } catch (e) {
+      draftsFailed++;
+      console.error("[email-hub] Scheduled draft send failed", { draftId: d.id, ownerUserId: d.ownerUserId }, e);
+    }
+  }
+  return { draftsProcessed, draftsFailed, draftsDue: drafts.length };
+}
+
+/** Resolve an approved admin user id from email (case-insensitive) or username (exact, then case-insensitive). */
+export async function resolveApprovedAdminUserIdByEmailOrUsername(raw: string): Promise<number | null> {
+  const q = raw.trim();
+  if (!q) return null;
+
+  const isApprovedAdmin = and(eq(users.isAdmin, true), eq(users.adminApproved, true));
+
+  if (q.includes("@")) {
+    const [row] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(isApprovedAdmin, ilike(users.email, q)))
+      .limit(1);
+    return row?.id ?? null;
+  }
+
+  const [exact] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(isApprovedAdmin, eq(users.username, q)))
+    .limit(1);
+  if (exact) return exact.id;
+
+  const [fold] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(isApprovedAdmin, ilike(users.username, q)))
+    .limit(1);
+  return fold?.id ?? null;
+}
+
+/**
+ * Create or update a sender identity. Any approved admin can create a sender scoped to themselves (and use it immediately).
+ * Super admins may set org-wide defaults, reassign founder, and grant other users access.
+ */
+export async function adminUpsertEmailHubSender(
+  actingUserId: number,
+  actingIsSuper: boolean,
+  input: {
+    id?: number;
+    founderUserId?: number | null;
+    brevoSenderId?: string | null;
+    name: string;
+    email: string;
+    replyToEmail?: string | null;
+    replyToName?: string | null;
+    isVerified?: boolean;
+    isDefault?: boolean;
+    signatureHtml?: string | null;
+    brandProfileId?: number | null;
+    grantUserId?: number | null;
+  },
+) {
   if (input.id) {
+    const [existing] = await db.select().from(emailHubSenders).where(eq(emailHubSenders.id, input.id)).limit(1);
+    if (!existing) throw new Error("Sender not found");
+    if (!actingIsSuper) {
+      if (existing.founderUserId !== actingUserId) throw new Error("Forbidden");
+    }
+
+    const nextDefault = actingIsSuper ? Boolean(input.isDefault) : existing.isDefault;
+    const nextFounder = actingIsSuper ? (input.founderUserId ?? existing.founderUserId) : existing.founderUserId;
+
     const [u] = await db
       .update(emailHubSenders)
       .set({
-        founderUserId: input.founderUserId ?? null,
+        founderUserId: nextFounder ?? null,
         brevoSenderId: input.brevoSenderId ?? null,
         name: input.name,
         email: input.email,
         replyToEmail: input.replyToEmail ?? null,
         replyToName: input.replyToName ?? null,
         isVerified: input.isVerified ?? false,
-        isDefault: input.isDefault ?? false,
+        isDefault: nextDefault,
         signatureHtml: input.signatureHtml ?? null,
         brandProfileId: input.brandProfileId ?? null,
         updatedAt: new Date(),
       })
       .where(eq(emailHubSenders.id, input.id))
       .returning();
-    if (input.grantUserId && u) {
+    if (actingIsSuper && input.grantUserId && u) {
       try {
         await db.insert(emailHubSenderPermissions).values({ userId: input.grantUserId, emailSenderId: u.id });
       } catch {
@@ -644,26 +822,38 @@ export async function adminUpsertEmailHubSender(input: {
     }
     return u;
   }
+
+  const founderUserId = actingIsSuper ? (input.founderUserId ?? null) : actingUserId;
+  const isDefault = actingIsSuper ? Boolean(input.isDefault) : false;
+
   const [ins] = await db
     .insert(emailHubSenders)
     .values({
-      founderUserId: input.founderUserId ?? null,
+      founderUserId,
       brevoSenderId: input.brevoSenderId ?? null,
       name: input.name,
       email: input.email,
       replyToEmail: input.replyToEmail ?? null,
       replyToName: input.replyToName ?? null,
       isVerified: input.isVerified ?? false,
-      isDefault: input.isDefault ?? false,
+      isDefault,
       signatureHtml: input.signatureHtml ?? null,
       brandProfileId: input.brandProfileId ?? null,
     })
     .returning();
-  if (input.grantUserId && ins) {
+
+  if (ins) {
     try {
-      await db.insert(emailHubSenderPermissions).values({ userId: input.grantUserId, emailSenderId: ins.id });
+      await db.insert(emailHubSenderPermissions).values({ userId: actingUserId, emailSenderId: ins.id });
     } catch {
-      /* duplicate permission */
+      /* duplicate */
+    }
+    if (actingIsSuper && input.grantUserId != null && input.grantUserId !== actingUserId) {
+      try {
+        await db.insert(emailHubSenderPermissions).values({ userId: input.grantUserId, emailSenderId: ins.id });
+      } catch {
+        /* duplicate */
+      }
     }
   }
   return ins;
@@ -671,6 +861,15 @@ export async function adminUpsertEmailHubSender(input: {
 
 export async function grantSenderPermission(userId: number, emailSenderId: number) {
   await db.insert(emailHubSenderPermissions).values({ userId, emailSenderId });
+}
+
+export async function getEmailHubTemplateForUser(userId: number, isSuper: boolean, id: number) {
+  const [row] = await db.select().from(emailHubTemplates).where(eq(emailHubTemplates.id, id)).limit(1);
+  if (!row) return null;
+  if (isSuper) return row;
+  if (row.ownerUserId === userId) return row;
+  if (row.accessScope === "org" || row.accessScope === "global") return row;
+  return null;
 }
 
 export async function listEmailHubTemplates(userId: number, isSuper: boolean) {

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart, Target } from "lucide-react";
+import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart, Target, Radar } from "lucide-react";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
@@ -7,6 +7,7 @@ import {
   DIGITAL_GROWTH_AUDIT_PATH,
   PPC_LEAD_MAGNET_PATH,
   OFFER_AUDIT_PATH,
+  MARKET_SCORE_PATH,
 } from "@/lib/funnelCtas";
 
 export interface FreeGrowthToolMagnet {
@@ -21,6 +22,16 @@ export interface FreeGrowthToolMagnet {
 }
 
 export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
+  {
+    id: "market-score",
+    title: "Market Score (demand & competition)",
+    who: "Operators and marketers who need a fast read on whether a market is worth the squeeze.",
+    problem: "You don't have time for a full study—but you're flying blind on demand, crowding, and buying power.",
+    get: "A scored snapshot: demand, competition, and purchase power—saved to CRM with tags, lead score, and a three-step email follow-up. Full strategy report unlocks on a call.",
+    cta: "Run Market Score",
+    href: MARKET_SCORE_PATH,
+    icon: Radar,
+  },
   {
     id: "growth-diagnosis",
     title: "Website growth diagnosis",

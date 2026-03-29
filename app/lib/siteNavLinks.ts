@@ -29,7 +29,6 @@ export const MAIN_LINKS = [
 
 export const GROWTH_LINKS = [
   { label: "Choose your diagnosis", href: DIAGNOSTICS_HUB_PATH },
-  { label: "Free trial", href: FREE_TRIAL_PATH },
   { label: "Free diagnosis", href: GROWTH_DIAGNOSIS_ENGINE_PATH },
   { label: "Free audit", href: DIGITAL_GROWTH_AUDIT_PATH },
   { label: "PPC & lead systems", href: PPC_LEAD_MAGNET_PATH },

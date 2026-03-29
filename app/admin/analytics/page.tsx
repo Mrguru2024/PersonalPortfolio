@@ -41,7 +41,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
-import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 
 type TimeRange = "7d" | "30d" | "90d" | "all";
 
@@ -1387,7 +1387,7 @@ export default function AdminAnalyticsPage() {
                                 ) : null}
                               </td>
                               <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">
-                                {format(new Date(e.createdAt), "MMM d, HH:mm:ss")}
+                                {formatLocaleDateTime(e.createdAt, "monthDayTimeWithSeconds")}
                               </td>
                               <td className="py-1 px-2 font-mono text-xs" title={e.visitorId}>
                                 {e.visitorId.slice(0, 12)}…
@@ -1603,7 +1603,7 @@ export default function AdminAnalyticsPage() {
                             <tbody>
                               {reportData.events.slice(0, 200).map((e) => (
                                 <tr key={e.id} className="border-b border-border/50">
-                                  <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">{format(new Date(e.createdAt), "MMM d, HH:mm")}</td>
+                                  <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">{formatLocaleDateTime(e.createdAt, "monthDayTime")}</td>
                                   <td className="py-1 px-2 font-mono text-xs truncate max-w-[100px]" title={e.visitorId}>{e.visitorId.slice(0, 10)}…</td>
                                   <td className="py-1 px-2">{e.eventType}</td>
                                   <td className="py-1 px-2 truncate max-w-[140px]" title={e.pageVisited ?? ""}>{e.pageVisited ?? "—"}</td>

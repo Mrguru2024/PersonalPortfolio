@@ -21,6 +21,23 @@ export async function GET(req: NextRequest) {
   }
   const ok = await userMayAccessMailbox(mailboxId, user.id, isSuper);
   if (!ok) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  const threads = await listInboxThreads(mailboxId, 80);
+
+  const sp = new URL(req.url).searchParams;
+  const q = sp.get("q")?.trim() || undefined;
+  const unreadOnly = sp.get("unreadOnly") === "1" || sp.get("unread") === "1";
+  const archivedRaw = sp.get("archived");
+  const archived: "exclude" | "only" | "all" =
+    archivedRaw === "1" || archivedRaw === "only" ? "only" : archivedRaw === "all" ? "all" : "exclude";
+  const fromEmail = sp.get("from")?.trim() || undefined;
+  const limit = sp.get("limit") ? Number(sp.get("limit")) : undefined;
+
+  const threads = await listInboxThreads(mailboxId, {
+    q,
+    unreadOnly,
+    archived,
+    fromEmail,
+    limit: Number.isFinite(limit) ? limit : undefined,
+  });
+
   return NextResponse.json({ threads });
 }

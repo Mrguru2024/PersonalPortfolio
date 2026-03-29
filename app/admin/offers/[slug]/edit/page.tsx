@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ImagePicker } from "@/components/admin/ImagePicker";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DEFAULT_OFFER_SECTIONS,
@@ -678,7 +679,7 @@ export default function EditOfferPage() {
                   <span><strong>Grade:</strong> {offer.grading.overallGrade}</span>
                 </div>
                 {offer.grading.gradedAt && (
-                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>Graded {new Date(offer.grading.gradedAt).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>Graded {formatLocaleMediumDateTime(offer.grading.gradedAt)}</p>
                 )}
                 {/* Targets & measured — confirms grading accuracy for diagnostics/audits */}
                 {offer.grading.targets && offer.grading.measured && (

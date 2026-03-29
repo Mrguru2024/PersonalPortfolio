@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { useToast } from "@/hooks/use-toast";
 import {
   ADMIN_OPERATOR_ROLE_OPTIONS,
@@ -264,7 +265,7 @@ export default function AdminOperatorProfilePage() {
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">{intel.source === "openai" ? "OpenAI" : "Fallback engine"}</Badge>
                   <span className="text-xs text-muted-foreground self-center">
-                    Generated {new Date(intel.generatedAt).toLocaleString()}
+                    Generated {formatLocaleMediumDateTime(intel.generatedAt)}
                   </span>
                 </div>
                 <div>

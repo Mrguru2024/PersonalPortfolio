@@ -20,6 +20,7 @@ import {
 import { useAuth, isAuthApprovedAdmin } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { CollapsibleLongList } from "@/components/admin/CollapsibleLongList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,8 @@ function oauthPathToProviderCopy(path: string): { name: string; description: str
   if (path.includes("/threads/")) {
     return {
       name: "Threads",
-      description: "Sign in with the Meta account tied to Threads and allow posting.",
+      description:
+        "Threads opens its own permission screen (not Facebook Login). Sign in and allow threads_basic + posting so scheduled posts can publish.",
     };
   }
   if (path.includes("/x/")) {
@@ -220,7 +222,9 @@ export default function AdminIntegrationsPage() {
     const q = new URLSearchParams(window.location.search);
     if (q.get("gcal") === "connected") {
       setGcalFlashVariant("success");
-      setGcalFlash("Google Calendar connected. New bookings will create events on your calendar.");
+      setGcalFlash(
+        "Google calendar connected for your admin account. Native bookings you host can sync to your selected Google Calendar.",
+      );
       toast({
         title: "Google Calendar connected",
         description: "New bookings will sync as events on your linked calendar.",
@@ -229,7 +233,16 @@ export default function AdminIntegrationsPage() {
     }
     const err = q.get("gcal_error");
     if (err) {
-      const msg = decodeURIComponent(err);
+      let msg = decodeURIComponent(err);
+      if (msg === "invalid_state") {
+        msg =
+          "OAuth state expired or didn’t match. Use the same browser you started in, finish within ~30 minutes, and start Connect again from this page. If it persists, set OAUTH_STATE_SECRET (or GOOGLE_CALENDAR_OAUTH_STATE_SECRET) in env so start and callback use the same signing key.";
+      } else if (msg === "session_mismatch") {
+        msg =
+          "The Google account finished in a different browser session than the admin who started Connect. Open Integrations in this browser while signed in, then try Connect again.";
+      } else if (msg === "admin_required") {
+        msg = "You must be signed in as an approved admin to finish Google Calendar connection.";
+      }
       setGcalFlashVariant("destructive");
       setGcalFlash(`Google Calendar: ${msg}`);
       toast({ variant: "destructive", title: "Calendar connection issue", description: msg });
@@ -354,7 +367,7 @@ export default function AdminIntegrationsPage() {
       const gcal = ((data as { services?: IntegrationStatus[] }).services ?? []).find(
         (x) => x.id === "google_calendar",
       );
-      if (gcal?.configured) {
+      if (gcal) {
         try {
           const cr = await fetch("/api/admin/integrations/google-calendar/settings", { credentials: "include" });
           const cj = await cr.json().catch(() => ({}));
@@ -713,11 +726,17 @@ export default function AdminIntegrationsPage() {
               Could not load this list. Make sure you’re signed in with an approved admin account, then tap Refresh.
             </p>
           ) : (
-            services.map((s) => (
-              <div
-                key={s.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-border bg-muted/20"
-              >
+            <CollapsibleLongList
+              items={services}
+              previewCount={6}
+              nounPlural="services"
+              listClassName="space-y-4"
+              getKey={(s) => s.id}
+              renderItem={(s) => (
+                <div
+                  id={`integration-${s.id}`}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-border bg-muted/20 scroll-mt-24"
+                >
                 <div className="flex items-start gap-3 min-w-0">
                   {statusIcon(s)}
                   <div>
@@ -795,7 +814,8 @@ export default function AdminIntegrationsPage() {
                   ) : null}
                 </div>
               </div>
-            ))
+              )}
+            />
           )}
         </CardContent>
       </Card>

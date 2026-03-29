@@ -744,6 +744,21 @@ export const offerValuationSettings = pgTable("offer_valuation_settings", {
 export type OfferValuationSettings = typeof offerValuationSettings.$inferSelect;
 export type InsertOfferValuationSettings = typeof offerValuationSettings.$inferInsert;
 
+/**
+ * Ascendra OS — global access toggles (singleton id=1).
+ * When public access is off, gated public /api/market/* and client lead-magnet flows stay internal-only;
+ * subscription checks layer on top when you ship client auth.
+ */
+export const ascendraOsSettings = pgTable("ascendra_os_settings", {
+  id: integer("id").primaryKey().default(1),
+  /** Master switch for public/guest market tools and future client-facing OS surfaces (AMIE-related APIs, etc.). */
+  publicAccessEnabled: boolean("public_access_enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AscendraOsSettings = typeof ascendraOsSettings.$inferSelect;
+export type InsertAscendraOsSettings = typeof ascendraOsSettings.$inferInsert;
+
 /** Offer Valuation Engine submissions and scored outputs. */
 export const offerValuations = pgTable("offer_valuations", {
   id: serial("id").primaryKey(),
@@ -935,3 +950,4 @@ export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
+export * from "./amieSchema";

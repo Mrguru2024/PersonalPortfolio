@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ClipboardCheck, BarChart3, Target } from "lucide-react";
@@ -16,7 +17,6 @@ import { FREE_TRIAL_PATH, PERSONA_JOURNEY_PATH } from "@/lib/funnelCtas";
 import { PersonaJourneySelector } from "@/components/persona-journey/PersonaJourneySelector";
 import type { PersonaJourneyId } from "@shared/personaJourneys";
 import { getLatestBlogPostsForBusiness } from "@/lib/blogSeedData";
-import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightPerFounder } from "@/lib/partnerFounders";
 import {
   SectionReveal,
@@ -25,14 +25,47 @@ import {
   SpotlightCard,
   AnimatedCard,
   MagneticButton,
-  ProcessExplorer,
-  StickyStorySection,
   BeforeAfterToggle,
   SectionConnector,
   StatsStrip,
 } from "@/components/motion";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
-import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
+
+const AscendraPromoVideo = dynamic(
+  () => import("@/components/media/AscendraPromoVideo").then((m) => ({ default: m.AscendraPromoVideo })),
+  {
+    loading: () => (
+      <div className="mx-auto max-w-5xl w-full aspect-video rounded-2xl bg-muted/40 animate-pulse" aria-hidden />
+    ),
+  },
+);
+
+const StickyStorySection = dynamic(
+  () => import("@/components/motion/StickyStorySection").then((m) => ({ default: m.StickyStorySection })),
+  {
+    loading: () => (
+      <div className="min-h-[240px] max-w-5xl mx-auto rounded-xl bg-muted/30 animate-pulse" aria-hidden />
+    ),
+  },
+);
+
+const ProcessExplorer = dynamic(
+  () => import("@/components/motion/ProcessExplorer").then((m) => ({ default: m.ProcessExplorer })),
+  {
+    loading: () => (
+      <div className="min-h-[200px] max-w-5xl mx-auto rounded-xl bg-muted/30 animate-pulse" aria-hidden />
+    ),
+  },
+);
+
+const InsightsFromEcosystem = dynamic(
+  () => import("@/components/authority/InsightsFromEcosystem").then((m) => ({ default: m.InsightsFromEcosystem })),
+  {
+    loading: () => (
+      <div className="min-h-[180px] max-w-5xl mx-auto rounded-xl bg-muted/30 animate-pulse" aria-hidden />
+    ),
+  },
+);
 
 const processStepItems = [
   {

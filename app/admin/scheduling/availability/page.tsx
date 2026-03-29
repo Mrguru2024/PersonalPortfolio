@@ -267,14 +267,14 @@ export default function AdminSchedulingAvailabilityPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Start (HH:mm)</Label>
+            <Label>Start time</Label>
             <Input
               value={newRule.startTimeLocal}
               onChange={(e) => setNewRule({ ...newRule, startTimeLocal: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label>End (HH:mm)</Label>
+            <Label>End time</Label>
             <Input
               value={newRule.endTimeLocal}
               onChange={(e) => setNewRule({ ...newRule, endTimeLocal: e.target.value })}

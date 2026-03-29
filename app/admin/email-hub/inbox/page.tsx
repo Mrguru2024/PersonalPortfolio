@@ -1,28 +1,51 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RefreshCw, Mail, Trash2, Send, Building2 } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, RefreshCw, Mail, Trash2, Send, Building2, Archive, ArchiveRestore, Search } from "lucide-react";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { EmailHubInboxMessage, EmailHubInboxThread, EmailHubMailboxAccount } from "@shared/emailHubSchema";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 type AccountRow = Omit<EmailHubMailboxAccount, "encryptedRefreshToken">;
 
+type InboxStatsResponse = {
+  messageCount: number;
+  approxBodyBytes: number;
+  approxUsagePercent: number;
+  limits: {
+    syncMaxThreads: number;
+    maxHtmlCharsPerMessage: number;
+    retentionDaysNonArchived: number;
+    estimatedCapBytesPerMailbox: number;
+    archivedExemptFromRetention: boolean;
+  };
+};
+
 export default function EmailHubInboxPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuper = isAuthSuperUser(user);
   const router = useRouter();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
   const [selectedMailboxId, setSelectedMailboxId] = useState<number | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<number | null>(null);
   const [replyHtml, setReplyHtml] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebouncedValue(searchInput, 350);
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [folder, setFolder] = useState<"inbox" | "archived" | "all">("inbox");
+  const [fromFilter, setFromFilter] = useState("");
+  const debouncedFrom = useDebouncedValue(fromFilter, 350);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -59,12 +82,35 @@ export default function EmailHubInboxPage() {
     if (accounts.length === 1) setSelectedMailboxId(accounts[0]!.id);
   }, [accounts, selectedMailboxId]);
 
-  const { data: threadsData, isLoading: threadsLoading } = useQuery({
-    queryKey: ["/api/admin/email-hub/inbox/threads", selectedMailboxId],
+  const { data: statsData } = useQuery({
+    queryKey: ["/api/admin/email-hub/inbox/stats", selectedMailboxId],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/email-hub/inbox/threads?mailboxId=${selectedMailboxId}`, {
+      const res = await fetch(`/api/admin/email-hub/inbox/stats?mailboxId=${selectedMailboxId}`, {
         credentials: "include",
       });
+      if (!res.ok) throw new Error("Failed to load stats");
+      return (await res.json()) as InboxStatsResponse;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && selectedMailboxId != null,
+  });
+
+  const { data: threadsData, isLoading: threadsLoading } = useQuery({
+    queryKey: [
+      "/api/admin/email-hub/inbox/threads",
+      selectedMailboxId,
+      debouncedSearch,
+      unreadOnly,
+      folder,
+      debouncedFrom,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams({ mailboxId: String(selectedMailboxId) });
+      if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+      if (unreadOnly) params.set("unreadOnly", "1");
+      if (folder === "archived") params.set("archived", "only");
+      else if (folder === "all") params.set("archived", "all");
+      if (debouncedFrom.trim()) params.set("from", debouncedFrom.trim());
+      const res = await fetch(`/api/admin/email-hub/inbox/threads?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load threads");
       return (await res.json()) as { threads: EmailHubInboxThread[] };
     },
@@ -103,6 +149,7 @@ export default function EmailHubInboxPage() {
       void qc.invalidateQueries({
         queryKey: ["/api/admin/email-hub/inbox/thread-detail", mailboxAccountId, selectedThreadId],
       });
+      void qc.invalidateQueries({ queryKey: ["/api/admin/email-hub/inbox/stats", mailboxAccountId] });
     },
   });
 
@@ -139,6 +186,29 @@ export default function EmailHubInboxPage() {
       void qc.invalidateQueries({
         queryKey: ["/api/admin/email-hub/inbox/thread-detail", selectedMailboxId, selectedThreadId],
       });
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async (payload: { threadId: number; archived: boolean }) => {
+      if (selectedMailboxId == null) throw new Error("No mailbox");
+      const res = await fetch(`/api/admin/email-hub/inbox/threads/${payload.threadId}/archive`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mailboxId: selectedMailboxId, archived: payload.archived }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(j.message || "Archive failed");
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["/api/admin/email-hub/inbox/threads", selectedMailboxId] });
+      void qc.invalidateQueries({
+        queryKey: ["/api/admin/email-hub/inbox/thread-detail", selectedMailboxId, selectedThreadId],
+      });
+      void qc.invalidateQueries({ queryKey: ["/api/admin/email-hub/inbox/stats", selectedMailboxId] });
     },
   });
 
@@ -193,8 +263,12 @@ export default function EmailHubInboxPage() {
             Connected mailboxes
           </CardTitle>
           <CardDescription>
-            OAuth is separate from Google Calendar — use dedicated Gmail / Microsoft app registrations (see{" "}
-            <code className="text-xs bg-muted px-1 rounded">.env.example</code>).
+            {isSuper ?
+              <>
+                OAuth is separate from Google Calendar. Gmail and Microsoft each need their own app registration (see{" "}
+                <code className="text-xs bg-muted px-1 rounded">.env.example</code>).
+              </>
+            : "Connecting Gmail or Microsoft here is separate from Calendar. If connect fails, your technical contact may need to finish provider setup."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -214,6 +288,10 @@ export default function EmailHubInboxPage() {
                   const v = e.target.value ? Number(e.target.value) : null;
                   setSelectedMailboxId(v);
                   setSelectedThreadId(null);
+                  setSearchInput("");
+                  setFromFilter("");
+                  setUnreadOnly(false);
+                  setFolder("inbox");
                 }}
               >
                 <option value="">Select mailbox…</option>
@@ -261,16 +339,83 @@ export default function EmailHubInboxPage() {
         <p className="text-sm text-muted-foreground">
           Connect a mailbox, then pick it from the list to load inbox threads.
         </p>
-      : <div className="grid gap-4 lg:grid-cols-5 min-h-[420px]">
-          <Card className="rounded-2xl border-border/60 lg:col-span-2 flex flex-col max-h-[70vh]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Threads</CardTitle>
-              {activeMailbox ?
-                <CardDescription className="flex items-center gap-1 text-xs">
-                  <Building2 className="h-3 w-3" />
-                  {activeMailbox.emailAddress}
+      : <div className="space-y-4">
+          {statsData?.limits ?
+            <Card className="rounded-2xl border-border/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Storage & retention</CardTitle>
+                <CardDescription className="text-xs leading-relaxed">
+                  Synced copy is capped per message (~{(statsData.limits.maxHtmlCharsPerMessage / 1024).toFixed(0)} KB
+                  HTML), up to {statsData.limits.syncMaxThreads} threads per sync. Non-archived messages older than{" "}
+                  {statsData.limits.retentionDaysNonArchived} days are removed automatically
+                  {isSuper ? " (daily scheduled job)" : " overnight"}; <strong>archived</strong> threads stay in the hub
+                  until you disconnect the mailbox.
                 </CardDescription>
-              : null}
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    ~{(statsData.approxBodyBytes / (1024 * 1024)).toFixed(1)} MB stored ({statsData.messageCount}{" "}
+                    messages)
+                  </span>
+                  <span>
+                    Guidance ~{(statsData.limits.estimatedCapBytesPerMailbox / (1024 * 1024)).toFixed(0)} MB per mailbox
+                  </span>
+                </div>
+                <Progress value={statsData.approxUsagePercent} className="h-2" />
+              </CardContent>
+            </Card>
+          : null}
+          <div className="grid gap-4 lg:grid-cols-5 min-h-[420px]">
+          <Card className="rounded-2xl border-border/60 lg:col-span-2 flex flex-col max-h-[70vh]">
+            <CardHeader className="pb-2 space-y-3">
+              <div>
+                <CardTitle className="text-sm font-medium">Threads</CardTitle>
+                {activeMailbox ?
+                  <CardDescription className="flex items-center gap-1 text-xs">
+                    <Building2 className="h-3 w-3" />
+                    {activeMailbox.emailAddress}
+                  </CardDescription>
+                : null}
+              </div>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search subject or preview…"
+                    className="pl-8 h-9 text-sm"
+                    value={searchInput}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
+                  />
+                </div>
+                <Input
+                  placeholder="Participant email contains…"
+                  className="h-9 text-sm"
+                  value={fromFilter}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFromFilter(e.target.value)}
+                />
+                <div className="flex flex-wrap gap-2 items-center text-xs">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={unreadOnly}
+                      onChange={(e) => setUnreadOnly(e.target.checked)}
+                      className="rounded border-border"
+                    />
+                    Unread only
+                  </label>
+                  <span className="text-muted-foreground">|</span>
+                  <select
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    value={folder}
+                    onChange={(e) => setFolder(e.target.value as "inbox" | "archived" | "all")}
+                  >
+                    <option value="inbox">Inbox (active)</option>
+                    <option value="archived">Archived</option>
+                    <option value="all">All threads</option>
+                  </select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto pr-1 space-y-1">
               {threadsLoading ?
@@ -291,15 +436,22 @@ export default function EmailHubInboxPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-medium line-clamp-2">{t.subject ?? "(no subject)"}</span>
-                      {!t.isRead ?
-                        <Badge variant="secondary" className="shrink-0 text-[10px]">
-                          Unread
-                        </Badge>
-                      : null}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                        {t.isArchived ?
+                          <Badge variant="outline" className="text-[10px]">
+                            Archived
+                          </Badge>
+                        : null}
+                        {!t.isRead ?
+                          <Badge variant="secondary" className="text-[10px]">
+                            Unread
+                          </Badge>
+                        : null}
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{t.snippet}</p>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {t.lastMessageAt ? format(new Date(t.lastMessageAt), "MMM d, HH:mm") : ""}
+                      {t.lastMessageAt ? formatLocaleDateTime(t.lastMessageAt, "monthDayTime", "") : ""}
                     </p>
                   </button>
                 ))}
@@ -351,7 +503,7 @@ export default function EmailHubInboxPage() {
                             <span className="font-medium text-foreground">{m.fromName || m.fromEmail || "—"}</span>
                             {m.fromEmail ? ` <${m.fromEmail}>` : null}
                           </span>
-                          <span>{m.internalDate ? format(new Date(m.internalDate), "MMM d, yyyy HH:mm") : ""}</span>
+                          <span>{m.internalDate ? formatLocaleDateTime(m.internalDate, "full", "") : ""}</span>
                         </div>
                         {m.htmlBody ?
                           <div
@@ -380,6 +532,7 @@ export default function EmailHubInboxPage() {
               }
             </CardContent>
           </Card>
+        </div>
         </div>
       }
     </div>

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
 import { getOAuthBaseUrlFromRequest, expireOAuthStateCookie } from "@/lib/siteUrl";
 import {
   getGoogleCalendarRedirectUri,
+  GOOGLE_CALENDAR_OAUTH_STATE_COOKIE,
   saveGoogleCalendarTokensFromCode,
 } from "@server/services/googleCalendarSchedulingService";
-import { verifySignedOAuthState } from "@server/lib/oauthSignedState";
+import { verifyGoogleCalendarOAuthState } from "@server/lib/oauthSignedState";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,13 +29,29 @@ export async function GET(req: NextRequest) {
     return redirectWithCookieClear(req, baseUrl, `?gcal_error=${encodeURIComponent(err)}`);
   }
   const code = searchParams.get("code");
-  const state = searchParams.get("state");
+  const stateQ = searchParams.get("state")?.trim() ?? null;
+  const stateCookie = req.cookies.get(GOOGLE_CALENDAR_OAUTH_STATE_COOKIE)?.value ?? null;
 
-  if (!code || !state || !verifySignedOAuthState(state)) {
+  const verified = verifyGoogleCalendarOAuthState(stateQ, stateCookie);
+  if (!code || !verified.ok) {
     return redirectWithCookieClear(req, baseUrl, "?gcal_error=invalid_state");
   }
 
-  const saved = await saveGoogleCalendarTokensFromCode(code, redirectUri);
+  const userId = Number(verified.subject);
+  if (!Number.isFinite(userId) || userId <= 0) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=invalid_state");
+  }
+
+  if (!(await isAdmin(req))) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=admin_required");
+  }
+  const sessionUser = await getSessionUser(req);
+  const sessionId = sessionUser?.id != null ? Number(sessionUser.id) : NaN;
+  if (!Number.isFinite(sessionId) || sessionId !== userId) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=session_mismatch");
+  }
+
+  const saved = await saveGoogleCalendarTokensFromCode(code, redirectUri, userId);
   if (!saved.ok) {
     return redirectWithCookieClear(req, baseUrl, `?gcal_error=${encodeURIComponent(saved.error)}`);
   }

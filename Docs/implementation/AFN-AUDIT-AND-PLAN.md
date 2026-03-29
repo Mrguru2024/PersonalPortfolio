@@ -248,3 +248,111 @@
 ---
 
 *Document generated as part of AFN implementation. Phases B through E are complete.*
+
+---
+
+## Current implementation snapshot (2026-03)
+
+**Purpose:** Single source of truth for product and engineering: what ships today in AFN, which APIs exist, and how Phase 1–12 foundations map to code.
+
+### Tables (`shared/afnSchema.ts`)
+
+| Table / entity | Role |
+|----------------|------|
+| `afn_profiles` | 1:1 with `users.id`; legacy text fields **plus** Phase 1 columns: `primary_role`, `secondary_role`, `communication_style`, `content_preference`, `timezone`, `availability_json`, `event_preferences_json`, `mentorship_interest`, `project_interest`, `tribe_preference`, `personality_traits_json`, `invite_likelihood_score`, `engagement_stage`, `community_maturity_level`, `timeline_live_access_level` |
+| `afn_profile_settings` | Visibility, messaging, notification prefs (unchanged) |
+| `afn_member_tags` / `afn_profile_member_tags` | Legacy broad member labels |
+| `afn_skill_tags` / `afn_profile_skill_tags` | Normalized skills → `afn_profiles.id` |
+| `afn_industry_tags` / `afn_profile_industry_tags` | Normalized industries |
+| `afn_interest_tags` / `afn_profile_interest_tags` | Interests |
+| `afn_goal_tags` / `afn_profile_goal_tags` | Goals |
+| `afn_challenge_tags` / `afn_profile_challenge_tags` | Challenges |
+| `afn_collab_preference_tags` / `afn_profile_collab_preference_tags` | Collaboration preferences |
+| `afn_profile_intelligence` | Phase 2 cached scores (one row per `user_id`) |
+| `afn_invites` | Phase 7 invite log (`inviter_user_id`, `invitee_email`, `status`, `source_moment`) |
+| `afn_scoring_config` | Phase 12 tunable `weights_json` (admin) |
+| `afn_live_sessions` / `afn_live_provider_logs` | Phase 9 — provisioned rooms + provider failover audit |
+| `afn_timeline_live_overrides` | Phase 10 — admin Timeline Live tier override |
+| *(existing)* discussions, collab, messages, resources, connections, lead_signals, notifications, moderation | Unchanged |
+
+### ERD — profile extensions & tag normalization
+
+All normalized tag junctions reference **`afn_profiles.id`** (`profile_id`), not `users.id`, so one graph row anchors taxonomy links. `users.id` remains the auth key on `afn_profiles.user_id` only.
+
+```mermaid
+erDiagram
+  users ||--o| afn_profiles : "user_id"
+  afn_profiles ||--o{ afn_profile_skill_tags : "profile_id"
+  afn_profiles ||--o{ afn_profile_industry_tags : "profile_id"
+  afn_profiles ||--o{ afn_profile_interest_tags : "profile_id"
+  afn_profiles ||--o{ afn_profile_goal_tags : "profile_id"
+  afn_profiles ||--o{ afn_profile_challenge_tags : "profile_id"
+  afn_profiles ||--o{ afn_profile_collab_preference_tags : "profile_id"
+  afn_skill_tags ||--o{ afn_profile_skill_tags : "skill_tag_id"
+  afn_industry_tags ||--o{ afn_profile_industry_tags : "industry_tag_id"
+  afn_interest_tags ||--o{ afn_profile_interest_tags : "interest_tag_id"
+  afn_goal_tags ||--o{ afn_profile_goal_tags : "goal_tag_id"
+  afn_challenge_tags ||--o{ afn_profile_challenge_tags : "challenge_tag_id"
+  afn_collab_preference_tags ||--o{ afn_profile_collab_preference_tags : "collab_preference_tag_id"
+  users ||--o| afn_profile_intelligence : "user_id"
+```
+
+**Rule:** No second “user profile” system — extend `afn_profiles` and junctions only.
+
+### `app/api/community/*` routes (trace when adding fields)
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET/PATCH | `/api/community/profile` | GET returns `{ profile, tags, intelligence }`. PATCH: only keys present in JSON update scalars; tag arrays use `skillSlugs`, `industrySlugs`, etc. Omitted tag keys **do not** clear junctions (backward compatible). |
+| POST | `/api/community/onboarding` | Sets `founderTribe` from `founderType`, structured text (`lookingFor`, `whatYouOffer` → `ask_me_about`), `communicationStyle`, `mentorshipInterest`, tag slugs; syncs junctions; fires intelligence + nudges async. |
+| GET | `/api/community/tags` | Full tag vocabulary for forms |
+| GET | `/api/community/dashboard` | Phase 5 home payload: profile, tags, intelligence, NBA, top suggestion summaries, module links |
+| GET | `/api/community/next-best-action` | Phase 4 primary CTA |
+| POST | `/api/community/invites` | Phase 7 invite log |
+| GET | `/api/community/live/status` | Provider readiness + effective Timeline Live tier (`canHostTimelineLive`) |
+| POST | `/api/community/live/timeline-room` | Phase 9 — provision LiveKit or Daily room (active+ tier) |
+| GET | `/api/community/live/session/[id]` | Host-only session join payload |
+| PATCH | `/api/admin/community/live-access` | Phase 10 — admin override / clear (`users.id`, `accessLevel`, optional `expiresAt`) |
+| *(unchanged)* | categories, posts, collab, members, messages, resources, notifications, suggestions, report, profile/settings sub-routes | **When adding profile fields:** always extend GET/PATCH profile + POST onboarding together; avoid breaking existing clients (optional keys only). |
+
+### Services (`server/services/`)
+
+- `afnIntelligenceService.ts` — recomputes `afn_profile_intelligence` + `invite_likelihood_score` on profile.
+- `afnNextBestActionService.ts` — NBA selection.
+- `afnNudgeService.ts` — lightweight nudges → `afn_notifications`.
+- `afnLiveRouterService.ts` — LiveKit + Daily REST provisioning, failover logging (`afn_live_provider_logs`).
+- `afnTimelineLiveAccessService.ts` — computed tier + effective access (override-aware).
+- `afnFounderCrmBridge.ts` — Phase 11 CRM sync into `crm_contacts.custom_fields.afn_engagement` when email matches.
+
+### UI
+
+- `/community/home` — AFN dashboard (Next Best Action, intelligence cards, suggestions, module links).
+- `/community/tribes`, `/community/speed-networking`, `/community/projects` — Phase 8 placeholders; collab board remains canonical for projects until workflows deepen.
+- `CommunityShell` — **Home** nav item → `/community/home`.
+- Onboarding — skill/goal chip pickers + structured questions; completion CTA → home.
+- `/admin/community/scoring` — edit `afn_scoring_config.weights_json` (approved admins).
+- `/admin/community/live-access` — Timeline Live tier override / clear (Phase 10).
+
+### Seed
+
+- `seedAfnNormalizedTagVocabulary()` in `server/seed.ts` — run after `npm run db:push`.
+
+### Phase completion map (implementation status)
+
+| Phase | Status |
+|-------|--------|
+| 1 Profile + tags | **Shipped** — schema, seed, APIs, onboarding + profile PATCH |
+| 2 Intelligence object | **Shipped** — table + recompute + hooks |
+| 3 Matching | **Extended** — tag Jaccard in `connectionAlgorithm`; weights file for future tuning |
+| 4 NBA | **Shipped** — API + dashboard card |
+| 5 Adaptive dashboard | **Shipped** — `/community/home` + `/api/community/dashboard` |
+| 6 Nudges | **Shipped** — minimal rules → notifications |
+| 7 Invites | **Shipped** — `afn_invites` + POST API (delivery out-of-band) |
+| 8 Core modules | **Partial** — placeholders + existing collab/discussions |
+| 9 Live | **Shipped** — `afn_live_sessions` + logs; LiveKit (`livekit-server-sdk`) + Daily REST; `/api/community/live/timeline-room` |
+| 10 Live gating | **Shipped** — auto tier from intelligence + moderation; `afn_timeline_live_overrides`; `/admin/community/live-access` |
+| 11 CRM | **Shipped** — sync on intelligence recompute when CRM contact email matches user |
+| 12 Admin scoring | **Shipped** — admin page + GET/PATCH API |
+| 13–14 Engineering / UX | **Ongoing** — patterns preserved (Tailwind, cards, dark mode) |
+
+**Database:** run `npm run db:push` then `npm run db:seed` to apply new tables/columns and tag vocabulary.

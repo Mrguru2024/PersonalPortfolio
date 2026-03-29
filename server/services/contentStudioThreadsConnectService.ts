@@ -1,6 +1,8 @@
 /**
- * Content Studio — Meta Threads API OAuth (same Login flow as Facebook/Instagram products).
- * Up to MAX_SOCIAL_CONNECTIONS_PER_PLATFORM threads profiles; encrypted tokens in DB.
+ * Content Studio — Threads API OAuth (native Threads flow, not Facebook Login).
+ * Auth window: https://threads.net/oauth/authorize — scopes threads_basic / threads_content_publish
+ * are valid only there (they are not Facebook Login permissions).
+ * Token exchange: graph.threads.net. Up to MAX_SOCIAL_CONNECTIONS_PER_PLATFORM profiles; encrypted tokens in DB.
  * Falls back to THREADS_ACCESS_TOKEN + THREADS_USER_ID (or META_THREADS_*) when set.
  */
 
@@ -18,12 +20,9 @@ import { schedulingIntegrationConfigs } from "@shared/schedulingSchema";
 const PROVIDER = "content_studio_threads";
 const KEY_ACCOUNTS = "accounts";
 const THREADS_GRAPH = "https://graph.threads.net/v1.0";
-
-function graphFbOrigin(): string {
-  const v = process.env.META_GRAPH_API_VERSION?.trim() || "v21.0";
-  const ver = v.startsWith("v") ? v : `v${v}`;
-  return `https://graph.facebook.com/${ver}`;
-}
+const THREADS_OAUTH_AUTHORIZE = "https://threads.net/oauth/authorize";
+const THREADS_OAUTH_TOKEN_ENDPOINT = "https://graph.threads.net/oauth/access_token";
+const THREADS_LONG_LIVED_TOKEN_URL = "https://graph.threads.net/access_token";
 
 export type ThreadsConnectedAccount = {
   accountId: string;
@@ -53,8 +52,6 @@ export function getThreadsOAuthRedirectUri(baseUrl: string): string {
 
 export function buildThreadsAuthorizeUrl(state: string, redirectUri: string): string {
   const clientId = threadsOAuthClientId()!;
-  const v = process.env.META_GRAPH_API_VERSION?.trim() || "v21.0";
-  const ver = v.startsWith("v") ? v : `v${v}`;
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -62,7 +59,7 @@ export function buildThreadsAuthorizeUrl(state: string, redirectUri: string): st
     scope: ["threads_basic", "threads_content_publish"].join(","),
     state,
   });
-  return `https://www.facebook.com/${ver}/dialog/oauth?${params.toString()}`;
+  return `${THREADS_OAUTH_AUTHORIZE}?${params.toString()}`;
 }
 
 async function getRow() {
@@ -191,32 +188,46 @@ export async function disconnectContentStudioThreads(accountId?: string | null):
 async function exchangeCodeForShortLived(code: string, redirectUri: string): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
   const clientId = threadsOAuthClientId()!;
   const clientSecret = threadsOAuthClientSecret()!;
-  const url = new URL(`${graphFbOrigin()}/oauth/access_token`);
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("client_secret", clientSecret);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("code", code);
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  const data = (await res.json().catch(() => ({}))) as { access_token?: string; error?: { message?: string } };
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: "authorization_code",
+    redirect_uri: redirectUri,
+    code,
+  });
+  const res = await fetch(THREADS_OAUTH_TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+    cache: "no-store",
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    access_token?: string;
+    error_message?: string;
+    error?: { message?: string } | string;
+  };
   if (!res.ok || !data.access_token) {
-    const msg = data.error?.message || `HTTP ${res.status}`;
+    const fromObj = typeof data.error === "object" && data.error && "message" in data.error ? data.error.message : null;
+    const msg = data.error_message || fromObj || (typeof data.error === "string" ? data.error : null) || `HTTP ${res.status}`;
     return { ok: false, error: msg };
   }
   return { ok: true, token: data.access_token };
 }
 
 async function exchangeLongLived(shortToken: string): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
-  const clientId = threadsOAuthClientId()!;
   const clientSecret = threadsOAuthClientSecret()!;
-  const url = new URL(`${graphFbOrigin()}/oauth/access_token`);
-  url.searchParams.set("grant_type", "fb_exchange_token");
-  url.searchParams.set("client_id", clientId);
+  const url = new URL(THREADS_LONG_LIVED_TOKEN_URL);
+  url.searchParams.set("grant_type", "th_exchange_token");
   url.searchParams.set("client_secret", clientSecret);
-  url.searchParams.set("fb_exchange_token", shortToken);
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  const data = (await res.json().catch(() => ({}))) as { access_token?: string; error?: { message?: string } };
+  url.searchParams.set("access_token", shortToken);
+  const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+  const data = (await res.json().catch(() => ({}))) as {
+    access_token?: string;
+    error_message?: string;
+    error?: { message?: string };
+  };
   if (!res.ok || !data.access_token) {
-    const msg = data.error?.message || `HTTP ${res.status}`;
+    const msg = data.error_message || data.error?.message || `HTTP ${res.status}`;
     return { ok: false, error: msg };
   }
   return { ok: true, token: data.access_token };

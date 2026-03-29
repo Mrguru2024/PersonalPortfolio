@@ -10,7 +10,7 @@ import {
   type ParsedAdvancedSearchQuery,
 } from "./advancedSearchQuery";
 
-export type SiteDirectoryAudience = "public" | "admin" | "client" | "token";
+export type SiteDirectoryAudience = "public" | "admin" | "client" | "token" | "super";
 
 export interface SiteDirectoryEntry {
   path: string;
@@ -50,6 +50,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/free-trial", title: "Free trial narrative", category: "Public · Tools", audience: "public", description: "Value-first trial positioning (call + audit story).", keywords: k("trial", "free trial"), cluster: "lead-entry", relatedPaths: ["/free-growth-tools"] },
   { path: "/digital-growth-audit", title: "Digital growth audit", category: "Public · Tools", audience: "public", description: "Human-positioned audit lead magnet.", keywords: k("audit", "growth audit"), cluster: "audit-lead-magnet", relatedPaths: ["/free-growth-tools"] },
   { path: "/ppc-lead-system", title: "PPC, CRM & lead conversion", category: "Public · Tools", audience: "public", description: "Lead magnet for prospecting, custom CRM, conversion, and paid ad management.", keywords: k("ppc", "ads", "crm", "leads", "prospecting", "conversion", "google ads", "meta ads"), cluster: "lead-entry", relatedPaths: ["/free-growth-tools", "/strategy-call", "/digital-growth-audit"] },
+  { path: "/market-score", title: "Market Score (AMIE funnel)", category: "Public · Tools", audience: "public", description: "Free demand, competition, and purchase-power snapshot; CRM + Brevo nurture; full AMIE report on strategy call.", keywords: k("market score", "amie", "demand", "competition", "funnel", "lead magnet"), cluster: "tools-hub", relatedPaths: ["/free-growth-tools", "/strategy-call", "/admin/market-intelligence"] },
   { path: "/audit", title: "Audit (redirect)", category: "Public · Tools", audience: "public", description: "Legacy URL; redirects to /digital-growth-audit.", keywords: k("redirect", "audit"), cluster: "audit-lead-magnet", consolidateNote: "Already consolidated via redirect." },
   { path: "/journey", title: "Persona journey", category: "Public · Marketing", audience: "public", description: "Self-select business type and problem; routes to tailored lead magnets, services, and CTAs.", keywords: k("persona", "journey", "funnel", "path", "selector"), cluster: "marketing-core", relatedPaths: ["/diagnostics", "/digital-growth-audit", "/strategy-call", "/free-growth-tools"] },
   { path: "/diagnostics", title: "Diagnostics hub", category: "Public · Tools", audience: "public", description: "Choose automated scan, questionnaire, or full assessment.", keywords: k("diagnosis", "hub", "choose", "path"), cluster: "diagnostics-hub", relatedPaths: ["/growth-diagnosis", "/diagnosis", "/assessment", "/free-growth-tools", "/journey"] },
@@ -147,13 +148,15 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/users", title: "User management", category: "Admin · Core", audience: "admin", description: "Approve users, permissions (super).", keywords: k("users", "permissions") },
   { path: "/admin/system", title: "System monitor", category: "Admin · Core", audience: "admin", description: "Health, logs, super-admin capture (super).", keywords: k("system", "logs", "health") },
   { path: "/admin/integrations", title: "Connections & email", category: "Admin · Core", audience: "admin", description: "See connected services, tests, and social sign-in (approved admin).", keywords: k("integrations", "email", "social") },
-  { path: "/admin/deployment-env", title: "Live site settings (hosting)", category: "Admin · Core", audience: "admin", description: "Save name/value pairs on Vercel from the admin (site owner).", keywords: k("vercel", "hosting", "settings"), relatedPaths: ["/admin/integrations"] },
+  { path: "/admin/deployment-env", title: "Live site settings (hosting)", category: "Admin · Core", audience: "super", description: "Super admin only: save Vercel env name/value pairs from the browser. Nav link visible only to super admins.", keywords: k("vercel", "hosting", "settings", "env"), relatedPaths: ["/admin/integrations"] },
   { path: "/admin/site-directory", title: "Pages & tools directory", category: "Admin · Core", audience: "admin", description: "Find any page by name or topic; open visitor or admin screens; optional JSON export for developers.", keywords: k("sitemap", "routes", "search", "ia", "directory", "pages"), relatedPaths: ["/api/admin/site-directory"] },
+  { path: "/admin/how-to", title: "How-to & guides", category: "Admin · Core", audience: "admin", description: "Practical admin workflows (CRM, AMIE, Growth OS, Content Studio, integrations) with accurate routes; optional browser read-aloud on each guide.", keywords: k("how-to", "guide", "help", "ltv", "knowledge", "tutorial", "training", "documentation", "faq", "text to speech", "audio"), relatedPaths: ["/admin/site-directory", "/admin/agent-knowledge", "/admin/crm/ltv"] },
 
   // —— Admin: CRM
   { path: "/admin/crm", title: "CRM home", category: "Admin · CRM", audience: "admin", description: "CRM overview and contacts entry.", keywords: k("crm", "contacts") },
   { path: "/admin/crm/dashboard", title: "CRM dashboard", category: "Admin · CRM", audience: "admin", description: "CRM metrics and summaries.", keywords: k("crm", "dashboard"), relatedPaths: ["/admin/crm/ltv"] },
-  { path: "/admin/crm/ltv", title: "LTV & revenue snapshot", category: "Admin · CRM", audience: "admin", description: "Pipeline value, client LTV proxy from estimates, source rollups, workflow links.", keywords: k("ltv", "revenue", "pipeline", "crm", "lifetime value"), relatedPaths: ["/admin/crm/pipeline", "/admin/crm"] },
+  { path: "/admin/crm/ltv", title: "LTV & revenue reports", category: "Admin · CRM", audience: "admin", description: "Parameterized pipeline and client-estimate rollups, optional scenario inputs, CSV export.", keywords: k("ltv", "revenue", "pipeline", "crm", "lifetime value", "report"), relatedPaths: ["/admin/crm/pipeline", "/admin/crm", "/admin/how-to"] },
+  { path: "/admin/crm/discovery-tools", title: "Discovery toolkit", category: "Admin · CRM", audience: "admin", description: "Hub for discovery workspaces, Zoom (connections), proposal prep, and LTV reports.", keywords: k("discovery", "zoom", "calls", "crm", "prep"), relatedPaths: ["/admin/crm/discovery", "/admin/integrations", "/admin/crm/ltv"] },
   { path: "/admin/crm/[id]", title: "CRM contact / lead detail", category: "Admin · CRM", audience: "admin", description: "Single contact profile.", keywords: k("contact", "lead", "crm") },
   { path: "/admin/crm/pipeline", title: "CRM pipeline", category: "Admin · CRM", audience: "admin", description: "Deal pipeline board.", keywords: k("pipeline", "deals") },
   { path: "/admin/crm/accounts", title: "CRM accounts", category: "Admin · CRM", audience: "admin", description: "Account list.", keywords: k("accounts", "companies") },
@@ -165,7 +168,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/crm/import", title: "CRM import", category: "Admin · CRM", audience: "admin", description: "CSV import leads.", keywords: k("import", "csv") },
   { path: "/admin/crm/saved-lists", title: "Saved lists", category: "Admin · CRM", audience: "admin", description: "Segment saved lists.", keywords: k("lists", "segments") },
   { path: "/admin/crm/personas", title: "Sales segments & CRM insights", category: "Admin · CRM", audience: "admin", description: "Firmographics from contacts/deals—not Offer + Persona IQ marketing personas.", keywords: k("segments", "crm", "sales", "industry") },
-  { path: "/admin/crm/discovery", title: "Discovery inbox", category: "Admin · CRM", audience: "admin", description: "Discovery call prep queue.", keywords: k("discovery") },
+  { path: "/admin/crm/discovery", title: "Discovery inbox", category: "Admin · CRM", audience: "admin", description: "Discovery workspaces: recent across CRM or filtered by contact.", keywords: k("discovery", "zoom", "prep"), relatedPaths: ["/admin/crm/discovery-tools"] },
   { path: "/admin/crm/discovery/[id]", title: "Discovery detail", category: "Admin · CRM", audience: "admin", description: "Single discovery record.", keywords: k("discovery") },
   { path: "/admin/crm/playbooks", title: "Playbooks", category: "Admin · CRM", audience: "admin", description: "Sales playbooks list.", keywords: k("playbooks") },
   { path: "/admin/crm/playbooks/new", title: "New playbook", category: "Admin · CRM", audience: "admin", description: "Create playbook.", keywords: k("playbook", "new") },
@@ -241,6 +244,17 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     audience: "admin",
     description: "Topic discovery, lead/content/ops rollups, automation.",
     keywords: k("intelligence", "market research", "research", "growth os", "automation"),
+    relatedPaths: ["/admin/market-intelligence"],
+  },
+  {
+    path: "/admin/market-intelligence",
+    title: "AMIE — market intelligence",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description:
+      "Ascendra Market Intelligence Engine: scored demand, competition, economics, strategy, CRM/PPC/funnel hints.",
+    keywords: k("amie", "market intelligence", "decision intelligence", "TAM", "competition", "persona"),
+    relatedPaths: ["/admin/growth-os/intelligence", "/admin/paid-growth", "/admin/crm"],
   },
   { path: "/admin/growth-os/security", title: "GOS security", category: "Admin · Growth OS", audience: "admin", description: "Security settings for GOS.", keywords: k("security", "gos") },
   { path: "/admin/growth-os/shares", title: "GOS shares", category: "Admin · Growth OS", audience: "admin", description: "Shared reports/links.", keywords: k("shares", "tokens") },

@@ -4,6 +4,15 @@ import {
   saveEmailHubTemplate,
   listCommunicationsDesignsAsTemplates,
 } from "@server/services/emailHub/emailHubService";
+
+async function safeListCommunicationsDesigns() {
+  try {
+    return await listCommunicationsDesignsAsTemplates();
+  } catch (e) {
+    console.error("listCommunicationsDesignsAsTemplates:", e);
+    return [];
+  }
+}
 import { requireEmailHubSession } from "../lib/session";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +21,7 @@ export async function GET(req: NextRequest) {
   const user = await requireEmailHubSession(req);
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const hub = await listEmailHubTemplates(user.id, user.isSuper);
-  const commDesigns = await listCommunicationsDesignsAsTemplates();
+  const commDesigns = await safeListCommunicationsDesigns();
   return NextResponse.json({ hubTemplates: hub, communicationsDesigns: commDesigns });
 }
 

@@ -15,11 +15,19 @@
     },
     {
       "path": "/api/cron/email-hub-scheduled",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/2 * * * *"
     },
     {
       "path": "/api/cron/email-hub-inbox-sync",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/email-hub-inbox-retention",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/market-score-nurture",
+      "schedule": "0 * * * *"
     }
   ]
 }

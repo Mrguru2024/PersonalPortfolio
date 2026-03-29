@@ -273,11 +273,7 @@ export async function POST(req: NextRequest) {
 
       if (lead) {
         const strategyCallUrl = `${getSiteOriginForMetadata()}${STRATEGY_CALL_PATH}`;
-        emailService
-          .sendDirectMessageEmail({
-            to: b.leadCapture.email,
-            subject: `Your Offer Audit Results — ${b.offerName}`,
-            body: `Hi ${b.leadCapture.name},
+        const textBody = `Hi ${b.leadCapture.name},
 
 Your offer valuation score is ${valuation.finalScore}/10.
 
@@ -286,10 +282,29 @@ Top strategic fix:
 
 Next step:
 Book a strategy call to turn this into a conversion-focused execution plan: ${strategyCallUrl}
-`,
+`;
+        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const htmlBody = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.6;color:#1a1a1a;max-width:560px;margin:0 auto;padding:24px">${esc(textBody).replace(/\n/g, "<br/>\n")}</body></html>`;
+
+        void (async () => {
+          const viaDm = await emailService.sendDirectMessageEmail({
+            to: b.leadCapture!.email,
+            subject: `Your Offer Audit Results — ${b.offerName}`,
+            body: textBody,
             senderName: "Ascendra Technologies",
-          })
-          .catch(() => {});
+          });
+          if (!viaDm) {
+            const viaHtml = await emailService.sendTransactionalHtmlEmail({
+              to: b.leadCapture!.email,
+              subject: `Your Offer Audit Results — ${b.offerName}`,
+              htmlContent: htmlBody,
+              textContent: textBody,
+            });
+            if (!viaHtml) {
+              console.warn("[offer-valuation] Could not email results to", b.leadCapture!.email);
+            }
+          }
+        })().catch(() => {});
 
         emailService
           .sendNotification({

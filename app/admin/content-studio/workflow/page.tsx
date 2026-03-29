@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 export default function ContentStudioWorkflowPage() {
   const { toast } = useToast();
@@ -158,7 +158,7 @@ export default function ContentStudioWorkflowPage() {
                   <div className="font-medium">
                     Document {l.documentId ?? "—"} · {l.platform} · {l.status}
                   </div>
-                  <div className="text-xs text-muted-foreground">{format(new Date(l.createdAt), "PPp")}</div>
+                  <div className="text-xs text-muted-foreground">{formatLocaleMediumDateTime(l.createdAt)}</div>
                   {l.errorMessage && <p className="text-destructive text-xs mt-1">{l.errorMessage}</p>}
                 </li>
               ))}

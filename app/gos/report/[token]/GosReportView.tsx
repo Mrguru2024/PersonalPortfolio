@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 interface ApiOk {
   ok: true;
@@ -84,7 +85,7 @@ export function GosReportView({ token }: { token: string }) {
           <FileText className="h-4 w-4" aria-hidden />
           <span>Shared report</span>
           {data.expiresAt ? (
-            <span className="text-xs">· Expires {new Date(data.expiresAt).toLocaleString()}</span>
+            <span className="text-xs">· Expires {formatLocaleMediumDateTime(data.expiresAt)}</span>
           ) : null}
         </div>
         <Card>
@@ -131,7 +132,7 @@ export function GosReportView({ token }: { token: string }) {
                   {(display.entries as Array<{ title?: string; scheduledAt?: string }>).map((e, i) => (
                     <li key={i}>
                       <span className="text-foreground font-medium">{e.title}</span>
-                      {e.scheduledAt ? ` · ${new Date(e.scheduledAt).toLocaleString()}` : null}
+                      {e.scheduledAt ? ` · ${formatLocaleMediumDateTime(e.scheduledAt)}` : null}
                     </li>
                   ))}
                 </ul>

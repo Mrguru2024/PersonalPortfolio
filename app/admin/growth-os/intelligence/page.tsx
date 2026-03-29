@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Copy,
   FlaskConical,
+  LayoutList,
   LineChart,
   Link2,
   Loader2,
@@ -167,6 +168,8 @@ function GrowthOsIntelligencePageContent() {
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
   const [batchFilterId, setBatchFilterId] = useState<number | null>(null);
   const [runStatusFilter, setRunStatusFilter] = useState<"all" | "completed" | "failed" | "active">("all");
+  /** Narrow overview tables/lists without changing the query. */
+  const [overviewRowFilter, setOverviewRowFilter] = useState("");
 
   const automationNeedsDocumentId =
     automationJob === "content_insight_save" ||
@@ -389,10 +392,18 @@ function GrowthOsIntelligencePageContent() {
   }, [automationRuns.data?.runs, runStatusFilter]);
 
   const overviewCardShell = "transition-all duration-200 hover:shadow-md border-border/80";
+  const overviewScrollMargin = "scroll-mt-28";
+
+  const scrollToOverviewSection = useCallback((panel: OverviewPanel, id: string) => {
+    setOverviewPanel(panel);
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
   return (
     <TooltipProvider delayDuration={280}>
-      <div className="space-y-6 pb-8">
+      <div className="space-y-6 pb-8 min-w-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Market & growth intelligence</h1>
@@ -567,6 +578,65 @@ function GrowthOsIntelligencePageContent() {
                   <span className="font-medium text-foreground">Client shares</span>.
                 </p>
 
+                <div
+                  className={cn(
+                    "sticky top-0 z-20 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
+                    "rounded-lg border border-border/70 bg-background/90 px-3 py-2.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/85",
+                    "shadow-sm",
+                  )}
+                >
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+                      <LayoutList className="h-3.5 w-3.5" aria-hidden />
+                      Overview
+                    </span>
+                    <div className="h-4 w-px bg-border shrink-0 hidden sm:block" aria-hidden />
+                    <nav className="flex flex-wrap gap-1.5" aria-label="Jump to overview section">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => scrollToOverviewSection("leads", "intel-overview-leads")}
+                      >
+                        Lead generation
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => scrollToOverviewSection("content", "intel-overview-content")}
+                      >
+                        Content
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => scrollToOverviewSection("ops", "intel-overview-ops")}
+                      >
+                        Operations
+                      </Button>
+                    </nav>
+                  </div>
+                  <div className="relative w-full sm:max-w-xs md:max-w-sm">
+                    <Search
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+                      aria-hidden
+                    />
+                    <Input
+                      type="search"
+                      value={overviewRowFilter}
+                      onChange={(e) => setOverviewRowFilter(e.target.value)}
+                      placeholder="Filter rows in all cards…"
+                      className="h-9 pl-8 text-sm"
+                      aria-label="Filter overview tables and lists"
+                    />
+                  </div>
+                </div>
+
                 <div className="xl:hidden space-y-2">
                   <p className="text-xs font-medium text-foreground">Focus (small screens)</p>
                   <ToggleGroup
@@ -588,55 +658,73 @@ function GrowthOsIntelligencePageContent() {
                   </ToggleGroup>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-3">
+                <div className="grid gap-6 xl:grid-cols-3 xl:items-start">
                   <Card
+                    id="intel-overview-leads"
                     className={cn(
                       overviewPanel === "leads" ? "block" : "hidden",
                       "xl:block",
                       overviewCardShell,
+                      "h-fit min-w-0",
+                      overviewScrollMargin,
                     )}
                   >
                     <CardHeader>
                       <CardTitle className="text-base">Lead generation</CardTitle>
-                      <CardDescription>Sources, campaigns, content attribution, tasks</CardDescription>
+                      <CardDescription>CRM + tasks rollup — sources, campaigns, landing pages, attribution</CardDescription>
                     </CardHeader>
-                    <CardContent className="max-h-[560px] overflow-y-auto pr-1">
+                    <CardContent className="min-w-0 pt-0">
                       {dash.data?.leadGeneration ? (
-                        <LeadGenerationDashboardPanel data={dash.data.leadGeneration} />
+                        <LeadGenerationDashboardPanel
+                          data={dash.data.leadGeneration}
+                          filterText={overviewRowFilter}
+                        />
                       ) : null}
                     </CardContent>
                   </Card>
                   <Card
+                    id="intel-overview-content"
                     className={cn(
                       overviewPanel === "content" ? "block" : "hidden",
                       "xl:block",
                       overviewCardShell,
+                      "h-fit min-w-0",
+                      overviewScrollMargin,
                     )}
                   >
                     <CardHeader>
                       <CardTitle className="text-base">Content performance</CardTitle>
-                      <CardDescription>Blog, library mix, personas, timing hints</CardDescription>
+                      <CardDescription>Blog + internal studio mix — funnel stage, hooks, posting windows</CardDescription>
                     </CardHeader>
-                    <CardContent className="max-h-[560px] overflow-y-auto pr-1">
+                    <CardContent className="min-w-0 pt-0">
                       {dash.data?.contentPerformance ? (
-                        <ContentPerformanceDashboardPanel data={dash.data.contentPerformance} />
+                        <ContentPerformanceDashboardPanel
+                          data={dash.data.contentPerformance}
+                          filterText={overviewRowFilter}
+                        />
                       ) : null}
                     </CardContent>
                   </Card>
                   <Card
+                    id="intel-overview-ops"
                     className={cn(
                       overviewPanel === "ops" ? "block" : "hidden",
                       "xl:block",
                       overviewCardShell,
+                      "h-fit min-w-0",
+                      overviewScrollMargin,
                     )}
                   >
                     <CardHeader>
-                      <CardTitle className="text-base">Operations & follow-through</CardTitle>
-                      <CardDescription>Calendar health, drafts, AI suggestions, audits</CardDescription>
+                      <CardTitle className="text-base">Operational discipline</CardTitle>
+                      <CardDescription>Calendar + AI review queue — schedules, drafts, audits, follow-ups</CardDescription>
                     </CardHeader>
-                    <CardContent className="max-h-[560px] overflow-y-auto pr-1">
+                    <CardContent className="min-w-0 pt-0">
                       {dash.data?.operational ? (
-                        <OperationalDashboardPanel data={dash.data.operational} />
+                        <OperationalDashboardPanel
+                          data={dash.data.operational}
+                          filterText={overviewRowFilter}
+                        />
                       ) : null}
                     </CardContent>
                   </Card>
@@ -736,7 +824,7 @@ function GrowthOsIntelligencePageContent() {
                       <p className="text-muted-foreground tabular-nums">
                         Total items this window: <span className="font-medium text-foreground">{weekly.data?.totalItems ?? 0}</span>
                       </p>
-                      <ul className="text-xs bg-muted/50 p-2 rounded-md space-y-1 max-h-40 overflow-auto">
+                      <ul className="text-xs bg-muted/50 p-2 rounded-md space-y-1">
                         {Object.keys(weekly.data?.byKind ?? {}).length === 0 ? (
                           <li className="text-muted-foreground">No items yet this week.</li>
                         ) : (
@@ -1142,7 +1230,7 @@ function GrowthOsIntelligencePageContent() {
                   </ToggleGroupItem>
                 </ToggleGroup>
               </CardHeader>
-              <CardContent className="text-sm space-y-2 max-h-72 overflow-auto pr-1">
+              <CardContent className="text-sm space-y-2 pr-1">
                 {filteredRuns.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No runs match this filter.</p>
                 ) : (

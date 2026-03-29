@@ -19,19 +19,20 @@ export default function EmailHubLayout({ children }: { children: React.ReactNode
             <Link href="/admin/communications">Communications (campaigns)</Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/crm">CRM</Link>
+            <Link href="/admin/crm">Full CRM</Link>
           </Button>
         </div>
         <header className="mb-8">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ascendra OS</p>
           <h1 className="text-3xl font-bold tracking-tight mt-1">Email Hub</h1>
           <p className="text-muted-foreground mt-2 max-w-3xl text-sm sm:text-base">
-            Polished outbound email built on Brevo — compose, templates, brand assets, scheduling, and tracking.
+            Polished outbound email built on Brevo — compose, templates, brand assets, scheduling, and tracking. Every
+            approved admin has their own mailbox here; sender access can be per-person or shared org-wide (see Settings).
             Campaign broadcasts stay under{" "}
             <Link href="/admin/communications" className="text-primary underline-offset-2 hover:underline">
               Communications
             </Link>
-            .
+            ; CRM and social tools are shared across the team from their own sections.
           </p>
         </header>
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">

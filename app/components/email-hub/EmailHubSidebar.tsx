@@ -68,7 +68,8 @@ export function EmailHubSidebar() {
         })}
       </nav>
       <p className="mt-4 px-2 text-[11px] text-muted-foreground leading-snug hidden lg:block">
-        Connect Gmail or Microsoft under Inbox to sync threads, read state, and reply alongside Brevo outbound.
+        Each admin connects their own Gmail or Microsoft under Inbox. CRM and integrations are shared for the whole team—
+        open Settings for links.
       </p>
     </aside>
   );

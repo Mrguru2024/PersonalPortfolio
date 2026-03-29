@@ -134,11 +134,13 @@ export async function POST(req: NextRequest) {
     const mentorParsed = mentorRow ? parseStoredMentorState(mentorRow.state) : null;
     const mentorState = mentorParsed ?? emptyMentorState();
 
+    const openaiConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
+
     const result = await processAgentMessage({
       message: effectiveMessage,
       canPerformActions,
       currentPath,
-      openaiAvailable: !!process.env.OPENAI_API_KEY,
+      openaiAvailable: openaiConfigured,
       history,
       userId,
       operatorDisplayName: firstName,
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest) {
       operatorResearchBlock,
     });
 
-    if (process.env.OPENAI_API_KEY) {
+    if (openaiConfigured) {
       const mentorUserLine =
         message.trim() ||
         (mediaAug?.mediaInterpretation

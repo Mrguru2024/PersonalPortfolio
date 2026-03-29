@@ -141,7 +141,7 @@ export function AuditRequestForm() {
 
   return (
     <Card className="border-border bg-card">
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="px-5 py-5 sm:px-8 sm:py-7">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => mutate(values))}

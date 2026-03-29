@@ -36,10 +36,15 @@ export default function CrmLtvPage() {
         </Button>
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">LTV & revenue snapshot</h1>
-            <p className="text-muted-foreground mt-0.5">Pipeline value, client estimates, and shortcuts into CRM work</p>
+            <h1 className="text-2xl font-bold tracking-tight">LTV & revenue reports</h1>
+            <p className="text-muted-foreground mt-0.5">
+              Set filters and optional scenario inputs, run the report on demand, and download CSV.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/crm/discovery-tools">Discovery toolkit</Link>
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href="/admin/crm">Contacts</Link>
             </Button>

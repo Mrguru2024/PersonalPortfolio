@@ -1,11 +1,11 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail, Globe2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,14 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FieldHint } from "@/lib/field-hint";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
+
+interface AscendraOsPlatformPayload {
+  publicAccessEnabled: boolean;
+  effectivePublicAccessEnabled: boolean;
+  envLockForcesInternal: boolean;
+  updatedAt: string | null;
+}
 
 interface AdminSettingsPayload {
   emailNotifications: boolean;
@@ -68,6 +76,31 @@ export default function AdminSettingsPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
+  const { data: osPlatform, isLoading: osPlatformLoading } = useQuery<AscendraOsPlatformPayload>({
+    queryKey: ["/api/admin/platform/ascendra-os"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/platform/ascendra-os");
+      if (!res.ok) throw new Error("Failed to load Ascendra OS settings");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const osPlatformMutation = useMutation({
+    mutationFn: async (publicAccessEnabled: boolean) => {
+      const res = await apiRequest("PATCH", "/api/admin/platform/ascendra-os", { publicAccessEnabled });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json() as Promise<AscendraOsPlatformPayload>;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/admin/platform/ascendra-os"], data);
+      toast({ title: "Ascendra OS access updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update Ascendra OS settings", variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
     if (settings) setLocal(settings);
   }, [settings]);
@@ -98,7 +131,9 @@ export default function AdminSettingsPage() {
     return null;
   }
 
+  const isSuper = isAuthSuperUser(user);
   const saving = patchMutation.isPending;
+  const osSaving = osPlatformMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -115,6 +150,87 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground text-sm mb-8">
           Control notifications, push, reminders, and AI agent permissions. Role and permission changes are recognized by the backend and AI helpers.
         </p>
+
+        <Card className="mb-6 border-muted">
+          <CardHeader className="py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Globe2 className="h-5 w-5" />
+              Ascendra OS — public vs internal
+            </CardTitle>
+            <CardDescription>
+              {isSuper ?
+                <>
+                  Master switch for gated public tools such as <code className="text-xs">/api/market/*</code> and future
+                  client lead-magnet flows. Admin AMIE at{" "}
+                  <Link href="/admin/market-intelligence" className="text-primary underline font-medium">
+                    Market intelligence
+                  </Link>{" "}
+                  stays available to your team either way. When you go live, turn this on for subscribers; layer
+                  per-client auth and billing on top of this flag.
+                </>
+              : (
+                <>
+                  Controls whether selected public Ascendra OS experiences are available to subscribers. Your internal{" "}
+                  <Link href="/admin/market-intelligence" className="text-primary underline font-medium">
+                    Market intelligence
+                  </Link>{" "}
+                  workspace stays available to admins either way.
+                </>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4 space-y-4">
+            {osPlatformLoading || !osPlatform ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading platform access…
+              </div>
+            ) : (
+              <>
+                {osPlatform.envLockForcesInternal && (
+                  <p className="text-sm rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-950 dark:text-amber-100">
+                    {isSuper ?
+                      <>
+                        <strong className="font-medium">Environment lock:</strong>{" "}
+                        <code className="text-xs">ASCENDRA_OS_PUBLIC_ACCESS_LOCK=internal</code> is set, so public tools
+                        stay off until that variable is removed—regardless of the toggle below.
+                      </>
+                    : (
+                      <>
+                        <strong className="font-medium">Hosting lock:</strong> Public Ascendra OS access is forced off in
+                        hosting configuration until your developer clears the internal lock.
+                      </>
+                    )}
+                  </p>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="ascendra-os-public" className="cursor-pointer">
+                      Allow public Ascendra OS (market APIs & client tools)
+                    </Label>
+                    <p className="text-xs text-muted-foreground max-w-lg">
+                      Off = internal team only (default). On = effective access for public routes once you wire
+                      subscription checks.{" "}
+                      <span className="whitespace-nowrap">
+                        Effective now:{" "}
+                        <strong>{osPlatform.effectivePublicAccessEnabled ? "public allowed" : "internal only"}</strong>
+                      </span>
+                    </p>
+                  </div>
+                  <Switch
+                    id="ascendra-os-public"
+                    checked={osPlatform.publicAccessEnabled}
+                    onCheckedChange={(v) => osPlatformMutation.mutate(v)}
+                    disabled={osSaving}
+                  />
+                </div>
+                {osPlatform.updatedAt && (
+                  <p className="text-xs text-muted-foreground">Last updated {formatLocaleMediumDateTime(osPlatform.updatedAt)}</p>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="mb-6 border-primary/20 bg-primary/5">
           <CardHeader className="py-4">

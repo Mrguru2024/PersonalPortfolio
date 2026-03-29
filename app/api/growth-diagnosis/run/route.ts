@@ -14,12 +14,38 @@ import {
   buildSummary,
 } from "@/lib/growth-diagnosis/scoring";
 import { buildDemoReport } from "@/lib/growth-diagnosis/demo-report";
-import type { AuditRequest, ExtractedPage, CrawlTargets, ExtractedPageSummary } from "@/lib/growth-diagnosis/types";
+import type {
+  AuditRequest,
+  ExtractedPage,
+  CrawlTargets,
+  ExtractedPageSummary,
+  AuditSummary,
+} from "@/lib/growth-diagnosis/types";
 import { db } from "@server/db";
 import { growthDiagnosisReports } from "@shared/schema";
+import { emailService } from "@server/services/emailService";
 
 const CRAWL_TIMEOUT_MS = 12000;
 const MAX_PAGES = 8;
+
+/** Maps engine summary to legacy funnel bottleneck labels used in the results email template. */
+function mapSummaryToLegacyBottleneck(summary: AuditSummary): "brand" | "design" | "system" {
+  const blocker = summary.topBlockers[0];
+  if (blocker) {
+    switch (blocker.category) {
+      case "trust_authority":
+      case "content_clarity":
+        return "brand";
+      case "performance":
+      case "mobile_experience":
+      case "accessibility_basics":
+        return "design";
+      default:
+        return "system";
+    }
+  }
+  return "system";
+}
 
 function normalizeAuditUrl(input: string): string {
   let url = input.trim();
@@ -182,6 +208,32 @@ export async function POST(req: NextRequest) {
       });
     } catch (persistErr) {
       console.warn("Growth diagnosis report persist failed:", persistErr);
+    }
+
+    const leadEmail = request.email?.trim();
+    if (leadEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)) {
+      const biz = request.businessName?.trim();
+      const primaryBottleneck = mapSummaryToLegacyBottleneck(summary);
+      const recommendation = summary.topBlockers[0]?.title ?? "Review your site priorities in the full report";
+      const recommendationLabel =
+        summary.quickWins[0]?.title ??
+        summary.gradeLabel ??
+        summary.topBlockers[0]?.description ??
+        recommendation;
+
+      void emailService
+        .sendGrowthDiagnosisToUser({
+          to: leadEmail,
+          name: biz || "there",
+          totalScore: summary.overallScore,
+          primaryBottleneck,
+          recommendation,
+          recommendationLabel,
+        })
+        .then((ok) => {
+          if (!ok) console.warn("[growth-diagnosis] Results email not delivered to", leadEmail);
+        })
+        .catch((err) => console.warn("[growth-diagnosis] Results email error:", err));
     }
 
     return NextResponse.json({ report, reportId });

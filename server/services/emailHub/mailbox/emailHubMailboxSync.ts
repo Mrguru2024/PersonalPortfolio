@@ -7,14 +7,15 @@ import {
 import { eq } from "drizzle-orm";
 import { getMailboxAccountById } from "./emailHubMailboxAccess";
 import { getMailboxAccessToken } from "./emailHubMailboxTokens";
-
-const MAX_THREADS = 40;
-const MAX_HTML_BYTES = 400_000;
+import {
+  EMAIL_HUB_INBOX_MAX_HTML_CHARS,
+  EMAIL_HUB_INBOX_SYNC_MAX_THREADS,
+} from "@server/services/emailHub/emailHubLimits";
 
 function clampHtml(html: string | null): string | null {
   if (!html) return null;
-  if (html.length <= MAX_HTML_BYTES) return html;
-  return `${html.slice(0, MAX_HTML_BYTES)}\n<!-- truncated -->`;
+  if (html.length <= EMAIL_HUB_INBOX_MAX_HTML_CHARS) return html;
+  return `${html.slice(0, EMAIL_HUB_INBOX_MAX_HTML_CHARS)}\n<!-- truncated -->`;
 }
 
 type GmailPart = {
@@ -94,7 +95,7 @@ type GmailThreadFull = {
 async function syncGmailInbox(mailboxAccountId: number, accessToken: string): Promise<void> {
   const list = await gmailApi<{ threads?: { id: string }[] }>(
     accessToken,
-    `/threads?q=${encodeURIComponent("in:inbox")}&maxResults=${MAX_THREADS}`,
+    `/threads?q=${encodeURIComponent("in:inbox")}&maxResults=${EMAIL_HUB_INBOX_SYNC_MAX_THREADS}`,
   );
   const threadIds = (list.threads || []).map((t) => t.id);
 
@@ -244,7 +245,7 @@ async function syncMicrosoftInbox(mailboxAccountId: number, accessToken: string)
     "from",
     "toRecipients",
   ].join(",");
-  const path = `/me/mailFolders/inbox/messages?$top=${MAX_THREADS}&$orderby=receivedDateTime desc&$select=${select}`;
+  const path = `/me/mailFolders/inbox/messages?$top=${EMAIL_HUB_INBOX_SYNC_MAX_THREADS}&$orderby=receivedDateTime desc&$select=${select}`;
   const page = await graphApi<{ value?: GraphMessage[] }>(accessToken, path);
   const messages = page.value || [];
 

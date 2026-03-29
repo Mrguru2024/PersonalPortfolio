@@ -57,6 +57,7 @@ import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil } f
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { calendarCollisionDetection, CALENDAR_SORTABLE_TRANSITION } from "@/components/content-studio/calendarDndConfig";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -219,7 +220,7 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {formatCalendarStatus(entry.calendarStatus)}
+          {formatLocaleMediumDateTime(entry.scheduledAt)} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -312,7 +313,7 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {formatCalendarStatus(entry.calendarStatus)}
+          {formatLocaleMediumDateTime(entry.scheduledAt)} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -1040,7 +1041,7 @@ export default function ContentStudioCalendarPage() {
                   .map((e) => (
                     <li key={e.id} className="rounded-lg border p-3 text-sm">
                       <div className="font-medium">{e.title}</div>
-                      <div className="text-xs text-muted-foreground">{format(new Date(e.scheduledAt), "PPp")}</div>
+                      <div className="text-xs text-muted-foreground">{formatLocaleMediumDateTime(e.scheduledAt)}</div>
                     </li>
                   ))}
               </ul>

@@ -34,6 +34,9 @@ import { users, type User, type InsertUser,
   offerValuationSettings,
   type OfferValuationSettings,
   type InsertOfferValuationSettings,
+  ascendraOsSettings,
+  type AscendraOsSettings,
+  type InsertAscendraOsSettings,
   offerValuations,
   type OfferValuation,
   type InsertOfferValuation,
@@ -114,6 +117,12 @@ import {
   growthVariants, type GrowthVariant, type InsertGrowthVariant,
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
+import {
+  DEFAULT_CRM_LTV_REPORT_PARAMS,
+  type CrmLtvReport,
+  type CrmLtvReportParams,
+  type CrmLtvScenarioAdjustment,
+} from "@shared/crmLtvSnapshot";
 import { db } from "./db";
 import {
   eq,
@@ -190,6 +199,10 @@ export interface IStorage {
   upsertOfferValuationSettings(
     updates: Partial<Omit<InsertOfferValuationSettings, "id" | "updatedAt">>,
   ): Promise<OfferValuationSettings>;
+  getAscendraOsSettings(): Promise<AscendraOsSettings>;
+  upsertAscendraOsSettings(
+    updates: Partial<Omit<InsertAscendraOsSettings, "id" | "updatedAt">>,
+  ): Promise<AscendraOsSettings>;
   createOfferValuation(data: InsertOfferValuation): Promise<OfferValuation>;
   listOfferValuations(filters?: {
     userId?: number;
@@ -375,7 +388,7 @@ export interface IStorage {
   deleteAnnouncement(id: number): Promise<void>;
 
   // CRM operations
-  getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
+  getCrmContacts(type?: "lead" | "client", limit?: number): Promise<CrmContact[]>;
   getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]>;
   getCrmContactsByIds(ids: number[]): Promise<CrmContact[]>;
   /** Case-insensitive contains match on name, email, company, first/last name. */
@@ -453,6 +466,9 @@ export interface IStorage {
   getCrmDiscoveryWorkspaceById(id: number): Promise<CrmDiscoveryWorkspace | undefined>;
   getCrmDiscoveryWorkspacesByContactId(contactId: number): Promise<CrmDiscoveryWorkspace[]>;
   getCrmDiscoveryWorkspacesByDealId(dealId: number): Promise<CrmDiscoveryWorkspace[]>;
+  getCrmDiscoveryWorkspacesRecentWithContact(
+    limit: number,
+  ): Promise<Array<CrmDiscoveryWorkspace & { contactName: string; contactCompany: string | null }>>;
   updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace>;
   createCrmProposalPrepWorkspace(entry: InsertCrmProposalPrepWorkspace): Promise<CrmProposalPrepWorkspace>;
   getCrmProposalPrepWorkspaceById(id: number): Promise<CrmProposalPrepWorkspace | undefined>;
@@ -486,6 +502,11 @@ export interface IStorage {
 
   /** Deal + contact value rollups for admin LTV workspace */
   getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot>;
+
+  /** Parameterized LTV report (filters + optional scenario overlays). */
+  getCrmLtvReport(
+    params: import("@shared/crmLtvSnapshot").CrmLtvReportParams,
+  ): Promise<import("@shared/crmLtvSnapshot").CrmLtvReport>;
 
   // Lead intelligence: communication events
   createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent>;
@@ -1037,6 +1058,33 @@ export class DatabaseStorage implements IStorage {
       .update(offerValuationSettings)
       .set(nextValues)
       .where(eq(offerValuationSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
+  async getAscendraOsSettings(): Promise<AscendraOsSettings> {
+    const [row] = await db
+      .select()
+      .from(ascendraOsSettings)
+      .where(eq(ascendraOsSettings.id, 1))
+      .limit(1);
+    if (row) return row;
+    const [inserted] = await db.insert(ascendraOsSettings).values({ id: 1 }).returning();
+    return inserted!;
+  }
+
+  async upsertAscendraOsSettings(
+    updates: Partial<Omit<InsertAscendraOsSettings, "id" | "updatedAt">>,
+  ): Promise<AscendraOsSettings> {
+    const current = await this.getAscendraOsSettings();
+    const nextValues = {
+      publicAccessEnabled: updates.publicAccessEnabled ?? current.publicAccessEnabled,
+      updatedAt: new Date(),
+    };
+    const [updated] = await db
+      .update(ascendraOsSettings)
+      .set(nextValues)
+      .where(eq(ascendraOsSettings.id, 1))
       .returning();
     return updated!;
   }
@@ -2521,15 +2569,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // CRM implementation
-  async getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]> {
-    if (type) {
-      return db
-        .select()
-        .from(crmContacts)
-        .where(eq(crmContacts.type, type))
-        .orderBy(desc(crmContacts.updatedAt));
+  async getCrmContacts(type?: "lead" | "client", limit?: number): Promise<CrmContact[]> {
+    const lim =
+      limit != null && Number.isFinite(limit) ? Math.min(Math.max(Number(limit), 1), 200) : undefined;
+    const base =
+      type ?
+        db.select().from(crmContacts).where(eq(crmContacts.type, type))
+      : db.select().from(crmContacts);
+    const ordered = base.orderBy(desc(crmContacts.updatedAt));
+    if (lim != null) {
+      return ordered.limit(lim);
     }
-    return db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt));
+    return ordered;
   }
 
   async getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]> {
@@ -2943,6 +2994,27 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(crmDiscoveryWorkspaces.updatedAt));
   }
 
+  async getCrmDiscoveryWorkspacesRecentWithContact(
+    limit: number,
+  ): Promise<Array<CrmDiscoveryWorkspace & { contactName: string; contactCompany: string | null }>> {
+    const lim = Math.max(1, Math.min(200, Math.floor(limit)));
+    const rows = await db
+      .select({
+        workspace: crmDiscoveryWorkspaces,
+        contactName: crmContacts.name,
+        contactCompany: crmContacts.company,
+      })
+      .from(crmDiscoveryWorkspaces)
+      .innerJoin(crmContacts, eq(crmDiscoveryWorkspaces.contactId, crmContacts.id))
+      .orderBy(desc(crmDiscoveryWorkspaces.updatedAt))
+      .limit(lim);
+    return rows.map((r) => ({
+      ...r.workspace,
+      contactName: r.contactName,
+      contactCompany: r.contactCompany ?? null,
+    }));
+  }
+
   async updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace> {
     const [updated] = await db
       .update(crmDiscoveryWorkspaces)
@@ -3127,6 +3199,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot> {
+    const full = await this.getCrmLtvReport(DEFAULT_CRM_LTV_REPORT_PARAMS);
+    const { reportMeta, scenarioAdjustments, combinedScenarioClientLtvCents, ...snap } = full;
+    void reportMeta;
+    void scenarioAdjustments;
+    void combinedScenarioClientLtvCents;
+    return snap;
+  }
+
+  async getCrmLtvReport(params: CrmLtvReportParams): Promise<CrmLtvReport> {
     const [contacts, deals] = await Promise.all([this.getCrmContacts(), this.getCrmDeals()]);
     const effectiveDealStage = (d: (typeof deals)[number]) =>
       (d.pipelineStage && String(d.pipelineStage).trim()) || d.stage || "new_lead";
@@ -3136,29 +3217,44 @@ export class DatabaseStorage implements IStorage {
     for (const d of deals) {
       const st = effectiveDealStage(d);
       const v = Number(d.value) || 0;
-      if (st === "won") wonDealValueCents += v;
-      else if (st !== "lost") openPipelineValueCents += v;
+      if (params.dealView === "won_only") {
+        if (st === "won") wonDealValueCents += v;
+      } else if (params.dealView === "open_only") {
+        if (st !== "lost" && st !== "won") openPipelineValueCents += v;
+      } else {
+        if (st === "won") wonDealValueCents += v;
+        else if (st !== "lost") openPipelineValueCents += v;
+      }
     }
 
-    const clients = contacts.filter((c) => c.type === "client");
-    const leads = contacts.filter((c) => c.type === "lead");
-    const clientWithEst = clients.filter((c) => c.estimatedValue != null && c.estimatedValue > 0);
-    const leadWithEst = leads.filter((c) => c.estimatedValue != null && c.estimatedValue > 0);
+    const inContactScope = (c: CrmContact) => {
+      if (params.contactTypeFilter === "all") return c.type === "lead" || c.type === "client";
+      return c.type === params.contactTypeFilter;
+    };
+    const scoped = contacts.filter(inContactScope);
+    const minc = params.minEstimatedValueCents;
+    const meetsMin = (c: CrmContact) =>
+      c.estimatedValue != null && c.estimatedValue >= minc && c.estimatedValue > 0;
+
+    const clients = scoped.filter((c) => c.type === "client");
+    const leads = scoped.filter((c) => c.type === "lead");
+    const clientWithEst = clients.filter(meetsMin);
+    const leadWithEst = leads.filter(meetsMin);
     const totalClientEstimatedLtvCents = clientWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
     const totalLeadEstimatedValueCents = leadWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
     const avgClientEstimatedLtvCents =
       clientWithEst.length > 0 ? Math.round(totalClientEstimatedLtvCents / clientWithEst.length) : null;
 
-    const contactsMissingEstimateCount = contacts.filter(
+    const contactsMissingEstimateCount = scoped.filter(
       (c) => (c.type === "lead" || c.type === "client") && (c.estimatedValue == null || c.estimatedValue <= 0),
     ).length;
 
     const bySource: Record<string, { totalCents: number; contactCount: number }> = {};
-    for (const c of contacts) {
-      if (c.estimatedValue == null || c.estimatedValue <= 0) continue;
+    for (const c of scoped) {
+      if (!meetsMin(c)) continue;
       const src = (c.source?.trim() || c.utmSource?.trim() || "Unknown") || "Unknown";
       if (!bySource[src]) bySource[src] = { totalCents: 0, contactCount: 0 };
-      bySource[src].totalCents += c.estimatedValue;
+      bySource[src].totalCents += c.estimatedValue!;
       bySource[src].contactCount += 1;
     }
     const topSourcesByValue = Object.entries(bySource)
@@ -3168,12 +3264,12 @@ export class DatabaseStorage implements IStorage {
         contactCount: agg.contactCount,
       }))
       .sort((a, b) => b.totalCents - a.totalCents)
-      .slice(0, 8);
+      .slice(0, params.topSourcesLimit);
 
-    const topContactsByEstimate = [...contacts]
-      .filter((c) => c.estimatedValue != null && c.estimatedValue > 0)
+    const topContactsByEstimate = [...scoped]
+      .filter(meetsMin)
       .sort((a, b) => (b.estimatedValue ?? 0) - (a.estimatedValue ?? 0))
-      .slice(0, 12)
+      .slice(0, params.topContactsLimit)
       .map((c) => ({
         id: c.id,
         name: c.name,
@@ -3181,6 +3277,37 @@ export class DatabaseStorage implements IStorage {
         type: c.type,
         estimatedValueCents: c.estimatedValue!,
       }));
+
+    const scenarioAdjustments: CrmLtvScenarioAdjustment[] = [];
+    let afterUplift = totalClientEstimatedLtvCents;
+    if (params.clientLtvUpliftPercent !== 0) {
+      afterUplift = Math.round(totalClientEstimatedLtvCents * (1 + params.clientLtvUpliftPercent / 100));
+      scenarioAdjustments.push({
+        label: `Client estimate total after ${params.clientLtvUpliftPercent > 0 ? "+" : ""}${params.clientLtvUpliftPercent}% adjustment`,
+        valueCents: afterUplift,
+      });
+    }
+
+    let combinedScenarioClientLtvCents: number | null = null;
+    const missingLeadCount = leads.filter(
+      (c) => c.estimatedValue == null || c.estimatedValue <= 0,
+    ).length;
+    let imputedTotal = 0;
+    if (
+      params.imputedMissingLeadEstimateCents != null &&
+      params.imputedMissingLeadEstimateCents > 0 &&
+      missingLeadCount > 0
+    ) {
+      imputedTotal = missingLeadCount * params.imputedMissingLeadEstimateCents;
+      scenarioAdjustments.push({
+        label: `Imputed value for ${missingLeadCount} lead(s) without an estimate ($${(params.imputedMissingLeadEstimateCents / 100).toFixed(0)} each)`,
+        valueCents: imputedTotal,
+      });
+    }
+
+    if (params.clientLtvUpliftPercent !== 0 || imputedTotal > 0) {
+      combinedScenarioClientLtvCents = afterUplift + imputedTotal;
+    }
 
     return {
       wonDealValueCents,
@@ -3194,6 +3321,12 @@ export class DatabaseStorage implements IStorage {
       contactsMissingEstimateCount,
       topSourcesByValue,
       topContactsByEstimate,
+      reportMeta: {
+        params,
+        generatedAt: new Date().toISOString(),
+      },
+      scenarioAdjustments,
+      combinedScenarioClientLtvCents,
     };
   }
 

@@ -52,7 +52,7 @@ export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
 
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden py-8 sm:py-10">
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-5xl">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-7xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <Button variant="ghost" size="sm" className="w-fit -ml-2" asChild>
             <Link href="/admin/dashboard">

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
 import {
-  isGoogleCalendarConnected,
+  isGoogleCalendarConnectedForUser,
+  isGoogleCalendarLegacyConnected,
   isGoogleCalendarOAuthConfigured,
+  isGoogleCalendarPersonalConnected,
 } from "@server/services/googleCalendarSchedulingService";
 import type { ContentStudioSocialPayload, IntegrationStatus } from "../types";
 import { MAX_SOCIAL_CONNECTIONS_PER_PLATFORM } from "@server/lib/contentStudioSocialConstants";
@@ -59,7 +61,12 @@ export async function GET(req: NextRequest) {
     }
 
     const gcalEnv = isGoogleCalendarOAuthConfigured();
-    const gcalConnected = await isGoogleCalendarConnected();
+    const sessionUser = await getSessionUser(req);
+    const gcalUserId = sessionUser?.id != null ? Number(sessionUser.id) : NaN;
+    const gcalUid = Number.isFinite(gcalUserId) && gcalUserId > 0 ? gcalUserId : 0;
+    const gcalPersonal = gcalUid > 0 ? await isGoogleCalendarPersonalConnected(gcalUid) : false;
+    const gcalLegacy = await isGoogleCalendarLegacyConnected();
+    const gcalConnected = gcalUid > 0 ? await isGoogleCalendarConnectedForUser(gcalUid) : gcalLegacy;
 
     const baseUrl = getOAuthBaseUrlFromRequest(req);
     const [
@@ -194,12 +201,16 @@ export async function GET(req: NextRequest) {
         configured: gcalEnv && gcalConnected,
         status: gcalConnected ? "ok" : gcalEnv ? "not_configured" : "not_configured",
         message: gcalConnected
-          ? "Connected — new bookings will show on your calendar."
+          ? gcalPersonal
+            ? "Your calendar is connected — bookings you host sync to your Google Calendar."
+            : gcalLegacy
+              ? "A shared site calendar is connected. Connect your own so bookings you host use your Google Calendar."
+              : "Connected — new bookings will show on your calendar."
           : gcalEnv
-            ? "Almost there — click “Connect Google Calendar” to finish."
+            ? "Almost there — click “Connect Google Calendar” (each admin connects their own)."
             : "Add your Google Calendar app details in the site’s settings, then connect here.",
         reconnectUrl: "https://console.cloud.google.com/apis/credentials",
-        connectHref: gcalEnv && !gcalConnected ? "/api/admin/integrations/google-calendar/start" : undefined,
+        connectHref: gcalEnv && !gcalPersonal ? "/api/admin/integrations/google-calendar/start" : undefined,
       },
       {
         id: "calendly",

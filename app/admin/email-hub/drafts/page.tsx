@@ -2,19 +2,21 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { EmailHubContactDetailSheet } from "@/components/email-hub/EmailHubCrmContacts";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 import type { EmailHubDraft } from "@shared/emailHubSchema";
 
 export default function EmailHubDraftsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [contactSheetId, setContactSheetId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -52,6 +54,14 @@ export default function EmailHubDraftsPage() {
           <Link href="/admin/email-hub/compose">New email</Link>
         </Button>
       </div>
+      <EmailHubContactDetailSheet
+        contactId={contactSheetId}
+        open={contactSheetId != null}
+        onOpenChange={(o) => {
+          if (!o) setContactSheetId(null);
+        }}
+      />
+
       {isLoading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       ) : list.length === 0 ? (
@@ -64,11 +74,16 @@ export default function EmailHubDraftsPage() {
                 <p className="font-medium truncate">{d.subject || "(no subject)"}</p>
                 <p className="text-xs text-muted-foreground truncate">{(d.toJson as string[]).join(", ")}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Updated {format(new Date(d.updatedAt), "MMM d, yyyy HH:mm")}
+                  Updated {formatLocaleDateTime(d.updatedAt, "full")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{d.status}</Badge>
+                {d.relatedContactId ?
+                  <Button variant="ghost" size="sm" onClick={() => setContactSheetId(d.relatedContactId!)}>
+                    Contact
+                  </Button>
+                : null}
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/admin/email-hub/compose?draftId=${d.id}`}>Open</Link>
                 </Button>

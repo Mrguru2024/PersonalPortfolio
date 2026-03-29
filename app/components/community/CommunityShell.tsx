@@ -8,6 +8,7 @@ import {
   BookOpen,
   Handshake,
   LayoutDashboard,
+  Home,
   User,
   Settings,
   Mail,
@@ -18,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
+  { href: "/community/home", label: "Home", icon: Home },
   { href: "/community/feed", label: "Feed", icon: MessageSquare },
   { href: "/community/collab", label: "Collaboration", icon: Handshake },
   { href: "/community/members", label: "Members", icon: Users },

@@ -7,6 +7,7 @@
 import { readdir, readFile } from "fs/promises";
 import path from "path";
 import { SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
+import { getAdminAgentFeatureGuideText } from "@server/services/adminAgentFeatureGuide";
 
 const TTL_MS = 5 * 60 * 1000; // 5 minutes — “periodic” refresh
 
@@ -83,15 +84,20 @@ export async function buildAdminAgentContextText(): Promise<{
 
   const scripts = await readPackageScriptsSnippet(repoRoot);
 
+  const featureGuide = getAdminAgentFeatureGuideText();
+
   const parts: string[] = [
     "You are assisting an approved admin of the Ascendra portfolio app (Next.js, Drizzle, PostgreSQL).",
     "The data below is loaded from the deployed codebase on the server and refreshed every few minutes.",
+    "When the admin asks how to use a feature, prefer the FEATURE GUIDE section below plus site directory paths.",
     "",
     "### npm scripts (subset)",
     scripts || "(none)",
     "",
     `### Site & admin routes (${siteEntryCount} entries; showing ${siteLines.length}) — tab-separated: path, title, audience, category`,
     siteLines.join("\n"),
+    "",
+    featureGuide,
     "",
     `### Admin API base paths (${apiRouteCount} from filesystem; showing ${apiSlice.length})`,
     apiSlice.join("\n"),

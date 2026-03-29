@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 interface IntelligencePayload {
   dailyTasks: Array<{ id: string; title: string; rationale?: string; href?: string | null }>;
@@ -105,7 +106,7 @@ export function AdminOperatorIntelligenceCard({
               {intel.source === "openai" ? "AI generated" : "Smart fallback"}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              Updated {new Date(intel.generatedAt).toLocaleString()}
+              Updated {formatLocaleMediumDateTime(intel.generatedAt)}
             </span>
           </div>
         ) : (

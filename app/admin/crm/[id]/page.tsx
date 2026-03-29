@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Camera,
   BookOpen,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,8 +45,19 @@ import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
-import { format } from "date-fns";
+import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
+
+interface AfnCommunitySnapshot {
+  userId: number;
+  username: string;
+  founderTribe: string | null;
+  founderTribeLabel: string | null;
+  headline: string | null;
+  profileVisibility: string | null;
+  publicProfilePath: string | null;
+  isOnboardingComplete: boolean | null;
+}
 
 interface CrmContact {
   id: number;
@@ -82,6 +94,7 @@ interface CrmContact {
   accountId?: number | null;
   createdAt: string;
   updatedAt: string;
+  afnCommunity?: AfnCommunitySnapshot | null;
 }
 
 interface TimelineItem {
@@ -759,6 +772,37 @@ export default function CrmLeadProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {contact.afnCommunity && (
+              <div className="rounded-lg border border-primary/25 bg-primary/5 p-4 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Users className="h-4 w-4 text-primary shrink-0" />
+                  Ascendra Founder Network (matched by email)
+                </div>
+                <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+                  {contact.afnCommunity.founderTribeLabel && (
+                    <span>
+                      <span className="text-foreground font-medium">Community type: </span>
+                      {contact.afnCommunity.founderTribeLabel}
+                    </span>
+                  )}
+                  {contact.afnCommunity.headline && (
+                    <span className="min-w-0 max-w-full">{contact.afnCommunity.headline}</span>
+                  )}
+                  <span>
+                    Visibility: {contact.afnCommunity.profileVisibility ?? "—"}
+                    {contact.afnCommunity.isOnboardingComplete === false && " · profile incomplete"}
+                  </span>
+                </div>
+                {contact.afnCommunity.publicProfilePath && (
+                  <Button variant="outline" size="sm" className="gap-1" asChild>
+                    <Link href={contact.afnCommunity.publicProfilePath} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3" />
+                      View public member page
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
             {(contact.source || contact.industry || contact.jobTitle || contact.linkedinUrl) && (
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
                 {contact.source && <span>Source: {contact.source}</span>}
@@ -1020,7 +1064,7 @@ export default function CrmLeadProfilePage() {
                 <Badge variant="secondary">Booked call logged</Badge>
               )}
               {contact.lastContactedAt && (
-                <span>Last contact: {format(new Date(contact.lastContactedAt), "MMM d, yyyy")}</span>
+                <span>Last contact: {formatLocaleMediumDate(contact.lastContactedAt)}</span>
               )}
               {contact.stripeCustomerId && <span>Stripe customer linked</span>}
             </div>
@@ -1105,12 +1149,12 @@ export default function CrmLeadProfilePage() {
               {contact.doNotContact && <Badge variant="destructive">Do not contact</Badge>}
             </div>
             {contact.nextFollowUpAt && (
-              <p className="text-muted-foreground">Next follow-up: {format(new Date(contact.nextFollowUpAt), "PPp")}</p>
+              <p className="text-muted-foreground">Next follow-up: {formatLocaleMediumDateTime(contact.nextFollowUpAt)}</p>
             )}
             {contact.nurtureReason && <p className="text-muted-foreground">{contact.nurtureReason}</p>}
             {workflowExecutions.length > 0 && (
               <p className="text-muted-foreground pt-1">
-                Last automation: {workflowExecutions[0].workflowKey} ({workflowExecutions[0].status}) — {workflowExecutions[0].startedAt ? format(new Date(workflowExecutions[0].startedAt), "PP") : ""}
+                Last automation: {workflowExecutions[0].workflowKey} ({workflowExecutions[0].status}) — {workflowExecutions[0].startedAt ? formatLocaleMediumDate(workflowExecutions[0].startedAt) : ""}
               </p>
             )}
           </CardContent>
@@ -1164,7 +1208,7 @@ export default function CrmLeadProfilePage() {
                             ))}
                           </ul>
                         )}
-                        <p className="text-xs text-muted-foreground">{guidanceData.guidance.lead_summary.generatedAt ? format(new Date(guidanceData.guidance.lead_summary.generatedAt), "PPp") : ""} · {guidanceData.guidance.lead_summary.providerType}</p>
+                        <p className="text-xs text-muted-foreground">{guidanceData.guidance.lead_summary.generatedAt ? formatLocaleMediumDateTime(guidanceData.guidance.lead_summary.generatedAt) : ""} · {guidanceData.guidance.lead_summary.providerType}</p>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -1344,7 +1388,7 @@ export default function CrmLeadProfilePage() {
                           {item.metadata?.body && item.metadata.activityType === "meeting" && (
                             <div className="mt-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground whitespace-pre-wrap">{item.metadata.body}</div>
                           )}
-                          <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(item.createdAt), "PPp")}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{formatLocaleMediumDateTime(item.createdAt)}</p>
                         </div>
                       </li>
                     ))}
@@ -1520,7 +1564,7 @@ export default function CrmLeadProfilePage() {
                           <li key={item.id} className="rounded-lg border p-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="font-medium text-sm">{item.title}</span>
-                              <span className="text-xs text-muted-foreground">{format(new Date(item.createdAt), "PPp")}</span>
+                              <span className="text-xs text-muted-foreground">{formatLocaleMediumDateTime(item.createdAt)}</span>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-2">
                               {item.metadata?.startUrl && (
@@ -1583,7 +1627,7 @@ export default function CrmLeadProfilePage() {
                           <p className="font-medium text-sm">{t.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {t.type} · {t.priority}
-                            {t.dueAt && ` · Due ${format(new Date(t.dueAt), "PP")}`}
+                            {t.dueAt && ` · Due ${formatLocaleMediumDate(t.dueAt)}`}
                           </p>
                         </div>
                         {!t.completedAt && (
@@ -1618,7 +1662,7 @@ export default function CrmLeadProfilePage() {
                             {e.totalViewTimeSeconds != null && e.totalViewTimeSeconds > 0 && ` · ${Math.round(e.totalViewTimeSeconds / 60)} min total`}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            First: {format(new Date(e.firstViewedAt), "PPp")} · Last: {format(new Date(e.lastViewedAt), "PPp")}
+                            First: {formatLocaleMediumDateTime(e.firstViewedAt)} · Last: {formatLocaleMediumDateTime(e.lastViewedAt)}
                           </p>
                         </div>
                       </li>
@@ -1649,7 +1693,7 @@ export default function CrmLeadProfilePage() {
                         <li key={e.id} className="flex flex-col gap-0.5 text-sm py-2 border-b last:border-0">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="capitalize font-medium">{label}</span>
-                            <span className="text-muted-foreground text-xs">{format(new Date(e.createdAt), "PPp")}</span>
+                            <span className="text-muted-foreground text-xs">{formatLocaleMediumDateTime(e.createdAt)}</span>
                           </div>
                           {meta?.subject && <span className="text-xs text-muted-foreground truncate">{meta.subject}</span>}
                           {meta?.url && (

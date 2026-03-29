@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { describeCommSegmentFilters } from "@/lib/describe-comm-segment-filters";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
 import { CommAudienceSegmentBuilder } from "@/components/communications/CommAudienceSegmentBuilder";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 const DEFAULT_SEGMENT: CommSegmentFilters = {
   status: "new",
@@ -392,7 +393,7 @@ export default function CommCampaignDetailPage() {
             Recipients {c.totalRecipients ?? 0} · Sent {c.sentCount ?? 0} · Failed {c.failedCount ?? 0} · Opens{" "}
             {c.openedCount ?? 0} · Clicks {c.clickedCount ?? 0}
             {c.sentAt && (
-              <span className="block text-xs mt-1">Last send: {new Date(c.sentAt).toLocaleString()}</span>
+              <span className="block text-xs mt-1">Last send: {formatLocaleMediumDateTime(c.sentAt)}</span>
             )}
           </CardDescription>
         </CardHeader>
@@ -475,7 +476,7 @@ export default function CommCampaignDetailPage() {
                     <td className="py-2 pr-4 font-mono text-xs">
                       {isSuperUser ? (s.firstClickedBlockId ?? "—") : s.firstClickedBlockId ? "Yes" : "—"}
                     </td>
-                    <td className="py-2 text-muted-foreground">{s.sentAt ? new Date(s.sentAt).toLocaleString() : "—"}</td>
+                    <td className="py-2 text-muted-foreground">{s.sentAt ? formatLocaleMediumDateTime(s.sentAt) : "—"}</td>
                   </tr>
                 ))
               )}

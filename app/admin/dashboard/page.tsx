@@ -1,10 +1,38 @@
 "use client";
 
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map, LineChart, Search } from "lucide-react";
+import {
+  Loader2,
+  FileText,
+  MessageSquare,
+  FileCheck,
+  CheckCircle,
+  Clock,
+  Archive,
+  Receipt,
+  Trash2,
+  Send,
+  Copy,
+  ExternalLink,
+  RotateCcw,
+  Download,
+  BookOpen,
+  RefreshCw,
+  Sparkles,
+  KeyRound,
+  Tag,
+  Radar,
+  ClipboardList,
+  PenLine,
+  Inbox,
+  Map,
+  LineChart,
+  Search,
+  ChevronDown,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,8 +42,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  formatDevUpdateDateLabel,
+  formatDevUpdateTimeInEastern,
+  formatDevUpdatesLastChecked,
+} from "@/lib/devUpdatesEastern";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -23,6 +58,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import {
   Dialog,
   DialogContent,
@@ -160,9 +197,110 @@ function formatPricingAsText(pb: Record<string, unknown> | null | undefined): st
   return lines.join("\n");
 }
 
+const DASHBOARD_INBOX_TABS = ["assessments", "contacts", "resume-requests"] as const;
+type DashboardInboxTab = (typeof DASHBOARD_INBOX_TABS)[number];
+
+function parseDashboardInboxTab(raw: string | null): DashboardInboxTab {
+  if (raw === "contacts" || raw === "resume-requests" || raw === "assessments") return raw;
+  return "assessments";
+}
+
+type DevDigestEntry = {
+  date: string;
+  time?: string;
+  title: string;
+  items: string[];
+  sourceBranches?: string[];
+};
+
+function DevUpdateDigestEntry({ entry, defaultOpen }: { entry: DevDigestEntry; defaultOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const dateLabel = formatDevUpdateDateLabel(entry.date);
+  const timeInfo = entry.time ? formatDevUpdateTimeInEastern(entry.date, entry.time) : null;
+  const dateTimeAttr = timeInfo?.instant ? timeInfo.instant.toISOString() : entry.date;
+
+  const hasBody =
+    (entry.sourceBranches && entry.sourceBranches.length > 1) || (entry.items && entry.items.length > 0);
+
+  const headerInner = (
+    <div className="min-w-0 flex-1 space-y-0.5">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <time className="text-sm font-medium tabular-nums text-foreground" dateTime={dateTimeAttr} suppressHydrationWarning>
+          {dateLabel}
+        </time>
+        {timeInfo ? (
+          <>
+            <span className="text-muted-foreground" aria-hidden>
+              ·
+            </span>
+            <span className="text-sm tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
+              {timeInfo.label}
+            </span>
+          </>
+        ) : null}
+        <span className="text-muted-foreground" aria-hidden>
+          —
+        </span>
+        <span className="text-sm font-semibold text-foreground">{entry.title}</span>
+      </div>
+      {!hasBody ? (
+        <p className="text-xs text-muted-foreground">No detail bullets for this entry.</p>
+      ) : !open ? (
+        <p className="text-xs text-muted-foreground">
+          {entry.items.length} change{entry.items.length === 1 ? "" : "s"} · expand for full
+          {entry.sourceBranches && entry.sourceBranches.length > 1 ? " list and branches" : " list"}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  if (!hasBody) {
+    return (
+      <div className="flex items-start gap-2 border-b border-muted/60 pb-3 last:border-0 last:pb-0">
+        <span className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+        {headerInner}
+      </div>
+    );
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border-b border-muted/60 pb-3 last:border-0 last:pb-0">
+      <CollapsibleTrigger
+        className={cn(
+          "flex w-full items-start gap-2 rounded-lg py-1.5 text-left -mx-1 px-1",
+          "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+        aria-expanded={open}
+      >
+        <ChevronDown
+          className={cn("h-4 w-4 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200", open && "rotate-180")}
+          aria-hidden
+        />
+        {headerInner}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pl-7 space-y-2 pt-1 overflow-hidden data-[state=closed]:animate-none">
+        {entry.sourceBranches && entry.sourceBranches.length > 1 && (
+          <p className="text-xs text-muted-foreground">Also on branches: {entry.sourceBranches.join(", ")}</p>
+        )}
+        {entry.items.length > 0 && (
+          <ul className="mt-1 space-y-1 list-none pl-0 text-sm text-muted-foreground">
+            {entry.items.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-primary shrink-0">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export default function AdminDashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<number | null>(null);
@@ -174,6 +312,8 @@ export default function AdminDashboardPage() {
   const [showTourBanner, setShowTourBanner] = useState(false);
   const [tourCompletedOrDismissed, setTourCompletedOrDismissed] = useState(false);
   const [passwordResetEmail, setPasswordResetEmail] = useState("");
+  const [inboxTab, setInboxTab] = useState<DashboardInboxTab>("assessments");
+  const inboxTabsRef = useRef<HTMLDivElement>(null);
   const handled403 = useRef(false);
   /** Avoid hydration mismatch: server vs client can disagree on auth (e.g. sessionStorage placeholderData). */
   const [clientReady, setClientReady] = useState(false);
@@ -236,6 +376,22 @@ export default function AdminDashboardPage() {
       router.push("/");
     }
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    setInboxTab(parseDashboardInboxTab(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const onInboxTabChange = useCallback(
+    (value: string) => {
+      const next = parseDashboardInboxTab(value);
+      setInboxTab(next);
+      router.replace(`/admin/dashboard?tab=${next}`, { scroll: false });
+      requestAnimationFrame(() =>
+        inboxTabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    },
+    [router],
+  );
 
   // Fetch assessments (summary only for fast mobile load)
   const { data: assessments = [], isLoading: assessmentsLoading, error: assessmentsError } = useQuery<AssessmentSummary[]>({
@@ -510,8 +666,9 @@ export default function AdminDashboardPage() {
     const t = new Date(iso).getTime();
     return Number.isFinite(t) && t >= sevenDaysAgo;
   };
+  const recentContactsWeek = contacts.filter((c) => createdInLastWeek(c.createdAt)).length;
   const recentInboundWeekCount =
-    contacts.filter((c) => createdInLastWeek(c.createdAt)).length +
+    recentContactsWeek +
     assessments.filter((a) => createdInLastWeek(a.createdAt)).length +
     resumeRequests.filter((r) => createdInLastWeek(r.createdAt)).length;
   const nudgeItems = buildNudgeItems({
@@ -521,9 +678,11 @@ export default function AdminDashboardPage() {
     isSuperAdmin,
     operatorRoleFocus: operatorProfileData?.profile?.roleSelection,
     recentInboundWeekCount,
+    recentContactsWeek,
   });
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
@@ -651,70 +810,179 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-foreground">Shortcuts</span>
+        <AdminHelpTip
+          content="One-click launchers for heavy workspaces (billing, intel, content). After you open any of them, use the ? icons next to headings and fields on that page—that’s where we explain what each control does and how to run it, not the top navigation bar."
+          ariaLabel="Help: Shortcuts row"
+        />
+      </div>
       <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/site-directory">
-            <Map className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Pages directory</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/invoices">
-            <Receipt className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Invoices</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/announcements">
-            <span className="truncate">Project updates</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/feedback">
-            <span className="truncate">Feedback</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/offers">
-            <Tag className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Site offers</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/challenge/leads">
-            <span className="truncate">Challenge leads</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/growth-os">
-            <Radar className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Growth OS</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/growth-os/intelligence">
-            <Search className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Market research</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/internal-audit">
-            <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Funnel audit</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/offer-valuation">
-            <LineChart className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Offer valuation</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/content-studio">
-            <PenLine className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Content studio</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/site-directory">
+              <Map className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Pages directory</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="On the directory screen: search and filter every route, open a page, or copy full JSON for tools. Tip: narrow by audience when you only want admin tools."
+            ariaLabel="Help: Pages directory shortcut"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/how-to">
+              <BookOpen className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">How-to & guides</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Curated step-by-step articles (LTV, discovery, intelligence, knowledge base). Read a section, then work in the target tool using its own ? tips on each field."
+            ariaLabel="Help: How-to and guides"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/invoices">
+              <Receipt className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Invoices</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Build invoices, line items, and tax; send for payment when Stripe is connected. Check statuses as clients pay."
+            ariaLabel="Help: Invoices"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/announcements">
+              <span className="truncate">Project updates</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Write admin-facing project news that shows in digest and related surfaces. Use for shipped work and operating notes."
+            ariaLabel="Help: Project updates"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/feedback">
+              <span className="truncate">Feedback</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Review submissions from site feedback flows; triage and archive so nothing important sits unread."
+            ariaLabel="Help: Feedback inbox"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/offers">
+              <Tag className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Site offers</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site."
+            ariaLabel="Help: Site offers"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/challenge/leads">
+              <span className="truncate">Challenge leads</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Leads captured from challenge funnels; use filters and exports there to move people into CRM follow-up."
+            ariaLabel="Help: Challenge leads"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/growth-os">
+              <Radar className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Growth OS</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Configure the Growth OS product: security, client shares, revenue settings. Explore sub-pages from there; each has its own forms and ? help."
+            ariaLabel="Help: Growth OS"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/growth-os/intelligence">
+              <Search className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Market research</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Run keyword/topic batches, read performance rollups, and wire automations—creative ops research, not the scored AMIE economics model."
+            ariaLabel="Help: Growth OS market research"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/market-intelligence">
+              <Radar className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">AMIE intelligence</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Fill market inputs, run analysis, read scores and opportunity tier, then copy JSON or save a research row. ? icons on that page decode each card and field."
+            ariaLabel="Help: AMIE intelligence"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/internal-audit">
+              <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Funnel audit</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Internal checklist and scoring for funnel assets before launch. Work the items on that screen to clear readiness gaps."
+            ariaLabel="Help: Funnel audit"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/offer-valuation">
+              <LineChart className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Offer valuation</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Monitor the public offer-valuation funnel: submissions, status, and follow-up from the admin side of that flow."
+            ariaLabel="Help: Offer valuation"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/content-studio">
+              <PenLine className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Content studio</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Draft documents, manage the editorial calendar, and schedule social posts from one hub. Each sub-view explains approvals and publishing on that page."
+            ariaLabel="Help: Content studio"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/agent-knowledge">
+              <BookOpen className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Assistant knowledge</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Create entries and toggle where they’re allowed (assistant, research, messages). The floating mentor reads enabled text as trusted context—edit titles and bodies on that screen."
+            ariaLabel="Help: Assistant knowledge"
+          />
+        </div>
       </div>
 
       {/* Password reset control — send reset link to any user by email */}
@@ -767,15 +1035,18 @@ export default function AdminDashboardPage() {
                 Development updates
               </CardTitle>
               <CardDescription className="mt-0.5">
-                Features and fixes shipped to production. In production, the list loads from{" "}
-                <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> on GitHub{" "}
-                <code className="text-xs bg-muted px-1 rounded">main</code> by default (
-                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On Vercel, the raw
-                URL is built from{" "}
-                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_OWNER</code> /{" "}
-                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
-                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the markdown on{" "}
-                <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes automatically.
+                {isSuperAdmin ?
+                  <>
+                    Features and fixes shipped to production. In production, the list loads from{" "}
+                    <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> on GitHub{" "}
+                    <code className="text-xs bg-muted px-1 rounded">main</code> by default (
+                    <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On Vercel, the
+                    raw URL is built from <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_OWNER</code> /{" "}
+                    <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
+                    <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the markdown on{" "}
+                    <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes automatically.
+                  </>
+                : "Highlights of what shipped to production. The list updates from your team’s release notes on GitHub."}
               </CardDescription>
             </div>
             <Button
@@ -801,7 +1072,7 @@ export default function AdminDashboardPage() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 {devUpdatesCheckedAt > 0 && (
                   <span suppressHydrationWarning>
-                    Last checked: {format(new Date(devUpdatesCheckedAt), "MMM d, yyyy · h:mm a")}
+                    Last checked: {formatDevUpdatesLastChecked(devUpdatesCheckedAt)} (US Eastern)
                   </span>
                 )}
                 {devUpdatesData?.source && (
@@ -823,6 +1094,7 @@ export default function AdminDashboardPage() {
                 {devUpdatesData?.source === "github" && (
                   <span>New pushes may take up to ~5 min to appear.</span>
                 )}
+                <span className="text-muted-foreground/90">Entry dates and headline times use US Eastern (America/New_York).</span>
               </div>
               {devUpdatesData?.sourceNote && (
                 <p className="text-xs text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
@@ -836,58 +1108,28 @@ export default function AdminDashboardPage() {
             </div>
           ) : !devUpdatesData?.updates?.length ? (
             <p className="text-sm text-muted-foreground py-4">
-              No entries yet. Add sections to content/development-updates.md: start each section with{" "}
-              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD — Title</code> or include time like{" "}
-              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD 14:30 — Title</code>, then bullet points. Push to
-              production to see them here.
+              {isSuperAdmin ?
+                <>
+                  No entries yet. Add sections to content/development-updates.md: start each section with{" "}
+                  <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD — Title</code> or include time like{" "}
+                  <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD 14:30 — Title</code>, then bullet points.
+                  Push to production to see them here.
+                </>
+              : "No release notes in the feed yet. Ask your technical lead to publish updates to the development-updates log."}
             </p>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-1">
               {devUpdatesData.updates.map((entry, idx) => (
-                <div key={idx} className="border-b border-muted/60 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date + "T12:00:00"} suppressHydrationWarning>
-                      {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
-                    </time>
-                    {entry.time ? (
-                      <>
-                        <span className="text-muted-foreground" aria-hidden>
-                          ·
-                        </span>
-                        <span className="text-sm tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
-                          {entry.time}
-                        </span>
-                      </>
-                    ) : null}
-                    <span className="text-muted-foreground" aria-hidden>
-                      —
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">{entry.title}</span>
-                  </div>
-                  {entry.sourceBranches && entry.sourceBranches.length > 1 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Also on branches: {entry.sourceBranches.join(", ")}
-                    </p>
-                  )}
-                  {entry.items.length > 0 && (
-                    <ul className="mt-2 space-y-1 list-none pl-0 text-sm text-muted-foreground">
-                      {entry.items.map((item, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="text-primary shrink-0">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <DevUpdateDigestEntry key={`${entry.date}-${entry.title}-${idx}`} entry={entry} defaultOpen={idx === 0} />
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="assessments" className="space-y-4" data-tour="tabs">
+      {/* Tabs — sync with ?tab=assessments|contacts|resume-requests (e.g. from Suggested for you) */}
+      <div ref={inboxTabsRef} id="admin-dashboard-inbox-tabs" className="scroll-mt-20">
+        <Tabs value={inboxTab} onValueChange={onInboxTabChange} className="space-y-4" data-tour="tabs">
         <TabsList className="w-full sm:w-auto flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
           <TabsTrigger value="assessments">
             Assessments ({assessments.length})
@@ -992,7 +1234,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                          Submitted: {formatLocaleMediumDateTime(assessment.createdAt)}
                         </p>
                       </CardContent>
                     </Card>
@@ -1072,7 +1314,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                          Submitted: {formatLocaleMediumDateTime(assessment.createdAt)}
                         </p>
                       </CardContent>
                     </Card>
@@ -1122,7 +1364,7 @@ export default function AdminDashboardPage() {
                           <p className="font-medium truncate">{assessment.name}</p>
                           <p className="text-sm text-muted-foreground break-all">{assessment.email}</p>
                           <p className="text-xs text-muted-foreground mt-1" suppressHydrationWarning>
-                            Removed {assessment.deletedAt ? format(new Date(assessment.deletedAt), "PPp") : "—"}
+                            Removed {assessment.deletedAt ? formatLocaleMediumDateTime(assessment.deletedAt) : "—"}
                           </p>
                         </div>
                         <Button
@@ -1248,7 +1490,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                         Submitted:{" "}
                         {contact.createdAt
-                          ? format(new Date(contact.createdAt), "PPp")
+                          ? formatLocaleMediumDateTime(contact.createdAt)
                           : "N/A"}
                       </p>
                     </CardContent>
@@ -1311,8 +1553,8 @@ export default function AdminDashboardPage() {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      Requested: {format(new Date(request.createdAt), "PPp")}
-                      {request.accessedAt && ` • Accessed: ${format(new Date(request.accessedAt), "PPp")}`}
+                      Requested: {formatLocaleMediumDateTime(request.createdAt)}
+                      {request.accessedAt && ` • Accessed: ${formatLocaleMediumDateTime(request.accessedAt)}`}
                     </p>
                   </CardContent>
                 </Card>
@@ -1321,6 +1563,7 @@ export default function AdminDashboardPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Delete assessment confirmation (soft delete: recoverable from Deleted section) */}
       <AlertDialog open={deleteAssessmentId !== null} onOpenChange={(open) => !open && setDeleteAssessmentId(null)}>
@@ -1566,5 +1809,6 @@ export default function AdminDashboardPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }

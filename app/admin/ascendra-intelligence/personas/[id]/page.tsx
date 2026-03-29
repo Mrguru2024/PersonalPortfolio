@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 interface Persona {
   id: string;
@@ -156,7 +157,7 @@ export default function AscendraPersonaDetailPage() {
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-1">{persona.id}</p>
           <h1 className="text-2xl font-bold">Edit persona</h1>
-          <p className="text-sm text-muted-foreground mt-1">Updated {new Date(persona.updatedAt).toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground mt-1">Updated {formatLocaleMediumDateTime(persona.updatedAt)}</p>
         </div>
 
         <Card>

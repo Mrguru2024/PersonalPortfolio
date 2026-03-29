@@ -4,12 +4,14 @@
 
 import "openai/shims/node";
 import OpenAI from "openai";
+import { getAdminAgentOpenAiModel } from "@server/services/growthIntelligence/growthIntelligenceConfig";
 
 let client: OpenAI | null = null;
 
 function getClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) return null;
+  if (!client) client = new OpenAI({ apiKey: key });
   return client;
 }
 
@@ -68,7 +70,7 @@ export async function augmentAdminAgentMessageWithMedia(input: {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: getAdminAgentOpenAiModel(),
       temperature: 0.2,
       max_tokens: 900,
       response_format: { type: "json_object" },

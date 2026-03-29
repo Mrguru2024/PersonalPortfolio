@@ -14,7 +14,7 @@ export function assertEmailHubUser(user: EmailHubSessionUser | null | undefined)
   }
 }
 
-/** Super users see all senders and all analytics; others only permitted senders + own rows. */
+/** Super users see all senders and all analytics; others see owned, explicitly permitted, and org-default senders. */
 export async function getAllowedSenderIdsForUser(userId: number, isSuperAdmin: boolean): Promise<number[] | "all"> {
   if (isSuperAdmin) return "all";
 
@@ -28,9 +28,15 @@ export async function getAllowedSenderIdsForUser(userId: number, isSuperAdmin: b
     .from(emailHubSenderPermissions)
     .where(eq(emailHubSenderPermissions.userId, userId));
 
+  const orgDefaults = await db
+    .select({ id: emailHubSenders.id })
+    .from(emailHubSenders)
+    .where(eq(emailHubSenders.isDefault, true));
+
   const ids = new Set<number>();
   for (const r of owned) ids.add(r.id);
   for (const r of permitted) ids.add(r.emailSenderId);
+  for (const r of orgDefaults) ids.add(r.id);
   return [...ids];
 }
 

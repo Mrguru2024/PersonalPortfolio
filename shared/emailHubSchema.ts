@@ -2,7 +2,7 @@
  * Email Hub — founder/admin outbound workspace (Brevo-backed).
  * Complements comm_campaigns / comm_email_designs (campaign sends) without duplicating them.
  */
-import { pgTable, serial, text, timestamp, boolean, json, integer, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, boolean, json, integer, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -147,6 +147,15 @@ export const emailHubEvents = pgTable("email_hub_events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/** Per-user defaults for Brevo open/click tracking on new sends (compose reads these). */
+export const emailHubUserPrefs = pgTable("email_hub_user_prefs", {
+  userId: integer("user_id").primaryKey(),
+  defaultTrackingOpen: boolean("default_tracking_open").notNull().default(true),
+  defaultTrackingClick: boolean("default_tracking_click").notNull().default(true),
+  defaultUnsubFooter: boolean("default_unsub_footer").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 /** Connected personal inbox (Gmail / Microsoft) — Phase 2. One row per admin user per provider. */
 export const emailHubMailboxAccounts = pgTable(
   "email_hub_mailbox_accounts",
@@ -179,11 +188,17 @@ export const emailHubInboxThreads = pgTable(
     snippet: text("snippet"),
     lastMessageAt: timestamp("last_message_at"),
     isRead: boolean("is_read").notNull().default(true),
+    /** Archived threads skip 90-day auto-purge and remain until disconnect. */
+    isArchived: boolean("is_archived").notNull().default(false),
+    archivedAt: timestamp("archived_at"),
     participantEmailsJson: json("participant_emails_json").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("email_hub_inbox_thread_mailbox_provider_uq").on(t.mailboxAccountId, t.providerThreadId)],
+  (t) => [
+    uniqueIndex("email_hub_inbox_thread_mailbox_provider_uq").on(t.mailboxAccountId, t.providerThreadId),
+    index("email_hub_inbox_threads_mailbox_archived_lm_idx").on(t.mailboxAccountId, t.isArchived, t.lastMessageAt),
+  ],
 );
 
 export const emailHubInboxMessages = pgTable(
@@ -206,7 +221,10 @@ export const emailHubInboxMessages = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("email_hub_inbox_msg_mailbox_provider_uq").on(t.mailboxAccountId, t.providerMessageId)],
+  (t) => [
+    uniqueIndex("email_hub_inbox_msg_mailbox_provider_uq").on(t.mailboxAccountId, t.providerMessageId),
+    index("email_hub_inbox_msg_mailbox_internal_idx").on(t.mailboxAccountId, t.internalDate),
+  ],
 );
 
 export const insertEmailHubSenderSchema = createInsertSchema(emailHubSenders).omit({
@@ -220,6 +238,7 @@ export type EmailHubSender = typeof emailHubSenders.$inferSelect;
 export type EmailHubMessage = typeof emailHubMessages.$inferSelect;
 export type EmailHubDraft = typeof emailHubDrafts.$inferSelect;
 export type EmailHubEvent = typeof emailHubEvents.$inferSelect;
+export type EmailHubUserPrefsRow = typeof emailHubUserPrefs.$inferSelect;
 export type EmailHubTemplateRow = typeof emailHubTemplates.$inferSelect;
 export type EmailHubAsset = typeof emailHubAssets.$inferSelect;
 export type EmailHubMailboxAccount = typeof emailHubMailboxAccounts.$inferSelect;

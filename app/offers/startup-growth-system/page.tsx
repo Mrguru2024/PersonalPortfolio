@@ -126,7 +126,7 @@ export default function StartupGrowthSystemOfferPage() {
                   const Icon = getIcon(d.icon);
                   return (
                     <Card key={i} className="border-border bg-card">
-                      <CardContent className="p-4 sm:p-5 flex gap-3 sm:gap-4">
+                      <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex gap-3 sm:gap-4">
                         {d.imageUrl ? (
                           <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-primary/10">
                             <Image src={d.imageUrl} alt="" fill className="object-cover" sizes="40px" />

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 import { getPipelineStageLabel } from "@/lib/crm-pipeline-stages";
 
 interface DashboardStats {
@@ -375,7 +376,7 @@ export default function CrmDashboardPage() {
                     {stats.recentActivity.slice(0, 5).map((a) => (
                       <li key={a.id} className="text-sm py-1.5 px-2 rounded-lg hover:bg-muted/50">
                         <span className="font-medium">{a.title}</span>
-                        <span className="text-muted-foreground ml-2">{format(new Date(a.createdAt), "MMM d, HH:mm")}</span>
+                        <span className="text-muted-foreground ml-2">{formatLocaleDateTime(a.createdAt, "monthDayTime")}</span>
                       </li>
                     ))}
                   </ul>

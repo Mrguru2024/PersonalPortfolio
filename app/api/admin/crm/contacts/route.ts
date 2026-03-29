@@ -35,7 +35,12 @@ export async function GET(req: NextRequest) {
       const contacts = await storage.getCrmContactsByAccountId(Number(accountId));
       return NextResponse.json(contacts);
     }
-    const contacts = await storage.getCrmContacts(type ?? undefined);
+    const limitRaw = searchParams.get("limit");
+    const limit =
+      limitRaw != null && limitRaw !== "" && Number.isFinite(Number(limitRaw)) ?
+        Math.min(Math.max(Number(limitRaw), 1), 200)
+      : undefined;
+    const contacts = await storage.getCrmContacts(type ?? undefined, limit);
     return NextResponse.json(contacts);
   } catch (error: any) {
     const msg = error?.message ?? String(error);

@@ -25,3 +25,11 @@ export function shouldAutoRunContentInsightOnSchedule(): boolean {
 export function getGosOpenAiModel(): string {
   return process.env.GOS_OPENAI_MODEL?.trim() || "gpt-4o-mini";
 }
+
+/**
+ * Admin assistant + vision (default gpt-4o).
+ * If your OpenAI project returns 403 for this model, set `OPENAI_ADMIN_AGENT_MODEL` to one you have access to (e.g. gpt-4o-mini — supports vision for screenshots).
+ */
+export function getAdminAgentOpenAiModel(): string {
+  return process.env.OPENAI_ADMIN_AGENT_MODEL?.trim() || "gpt-4o";
+}

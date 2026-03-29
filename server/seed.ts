@@ -24,6 +24,7 @@ try {
 }
 
 import { db } from "./db";
+import { ensureSuperAdminOwnerAccount } from "./ensureSuperAdminOwnerAccount";
 import { eq } from "drizzle-orm";
 import {
   projects,
@@ -36,7 +37,14 @@ import {
   siteOffers,
   businessGoalPresets,
   afnDiscussionCategories,
+  afnSkillTags,
+  afnIndustryTags,
+  afnInterestTags,
+  afnGoalTags,
+  afnChallengeTags,
+  afnCollabPreferenceTags,
   marketingPersonas,
+  ascendraOsSettings,
 } from "@shared/schema";
 import { DEFAULT_MARKETING_PERSONAS } from "@shared/ascendraPersonaSeed";
 import {
@@ -696,11 +704,6 @@ async function seedBlogPosts() {
 
 async function seedCrmPlaybooks() {
   try {
-    const existing = await db.select().from(crmSalesPlaybooks).limit(1);
-    if (existing.length > 0) {
-      console.log("CRM playbooks already seeded, skipping.");
-      return;
-    }
     const playbooks = [
       {
         title: "Qualify web design leads",
@@ -741,11 +744,72 @@ async function seedCrmPlaybooks() {
         followUpGuidance: "Create proposal prep workspace if outcome is proposal_ready. Create tasks for any follow-up items.",
         active: true,
       },
+      {
+        title: "Kristopher lane — studio brand production & trade clients",
+        slug: "kristopher-studio-brand-production",
+        category: "qualification",
+        serviceType: "brand_production",
+        description:
+          "For prospects matching IQ marketing persona id kristopher (branding studio / trades-owner archetype from seed): production-heavy branding—logos, vehicle wraps, uniforms, signage, quick-turn packages—and feast–famine revenue. Align with Style Studio positioning: dependable creative ops, scope control, and repeatable packages so the owner stops living in reactive quotes.",
+        checklistItems: [
+          "Confirm they sell physical or field services (trades, contractors, fleet, retail) and brand assets ship to production (print, vinyl, embroidery), not only digital.",
+          "Map revenue pattern: busy season vs dry spells; ask what a slow month costs in payroll or missed jobs.",
+          "Inventory last three brand or redesign projects: who drove scope, what blew the timeline, and whether they had one source of truth for files and specs.",
+          "Validate decision maker: owner or GM who can sign a packaged engagement—not only an office manager collecting three quotes.",
+          "Gauge appetite for productized tiers (identity + fleet + uniform checklist) vs fully custom every time; note if they want naming workshops or execution-only.",
+          "Surface readiness for a light retainer (file updates, seasonal campaigns) vs project-only engagements.",
+        ],
+        qualificationRules:
+          "Route here when the contact self-identifies as a studio serving trades or regional SMBs, or when notes mention vehicle fleets, job sites, uniforms, or local reputation over pure SEO. Strong fit if they complain about scope creep, revision loops without a brief, or clients who treat them like a print shop with no strategy. Cross-check persona id kristopher or journey kristopher-studio in IQ or CRM tags. Prefer engagements where Ascendra can define package boundaries, approval gates, and asset handoff so the owner reclaims calendar.",
+        redFlags:
+          "Unrealistic turnaround with no locked scope. Expectation of unlimited concept rounds or free spec work. No clear beneficiary of the rebrand—\"just freshen the logo\" with zero business outcome. Price shopping only, no discussion of production constraints or file delivery. If they need deep strategy, naming, and narrative positioning first, pair with the Denishia lane or a discovery call before locking production scope.",
+        proposalRequirements:
+          "Proposal must name deliverables by format (vector masters, print PDFs, Pantone/CMYK, mockups) and round limits for concepts and revisions. Include a timeline tied to their production window (for example wrap install date). Use Style Studio tone: fast, professional, predictable. Add optional retainer line for seasonal updates. Explicitly exclude items not in scope (photography, media buy) unless sold separately. Tie fees to business risk: missed season, fleet downtime, or reprint cost.",
+        followUpGuidance:
+          "Send recap within 24 hours with an asset checklist they must gather (existing logos, vehicle templates, vendor contacts). If stalled, offer a 15-minute scope-lock call—not another full pitch. For long cycles, share one production tip (for example wrap bleed specs) to prove expertise. Schedule the next touch against their busy season, not arbitrary weekly pings. Tag persona kristopher and suggest IQ journey kristopher-studio when it helps on-site narrative.",
+        active: true,
+      },
+      {
+        title: "Denishia lane — strategic brand identity & Macon-aligned creative partners",
+        slug: "denishia-brand-identity-macon",
+        category: "qualification",
+        serviceType: "brand_identity",
+        description:
+          "For prospects matching IQ marketing persona id denishia (creative studio owner, Macon Designs archetype from seed): strategic brand identity, narrative, and visual systems for clients who need a partner—not a template funnel. Use when the buyer cares about creative control, differentiated voice, and systems that amplify vision without generic automation tone.",
+        checklistItems: [
+          "Clarify whether they are the end client or a creative lead hiring Ascendra; denishia-shaped leads often wear both hats—document who approves creative.",
+          "Ask what on-brand means beyond fonts: voice, cultural cues, inclusivity, and what felt off-brand in past campaigns.",
+          "Surface tension between performance metrics and brand integrity; note if they reject tacky urgency copy or stock funnel voice.",
+          "Review existing brand kit: strategy doc, mood boards, accessibility or DEI commitments—gaps signal discovery work before build.",
+          "Confirm they want co-creation workshops (positioning, messaging hierarchy) vs delivery-only; adjust phase gates accordingly.",
+          "Identify downstream touchpoints (site, social, events) so the identity system is expandable, not a one-off logo deck.",
+        ],
+        qualificationRules:
+          "Route here when CRM or IQ shows persona denishia, journey denishia-creative, or language matching Macon Designs—community-rooted, identity-led, wary of generic growth hacks. Strong fit if they articulate audience psychographics and values, not only lead volume. Prioritize prospects who share briefs and constraints early and treat revisions as collaborative. If they are purely performance or media focused with no brand owner, use the funnel playbook or general discovery instead.",
+        redFlags:
+          "Template-only mindset (\"just make it like Competitor X\"). Refusal to allocate time for positioning or stakeholder interviews. Demands full IP transfer and unlimited revisions at a low fixed fee. Marketing lead who overrides creative without a brand guardian. Expectation that AI writes everything with no human tone review. If the real need is production at scale (fleet, signage) with minimal strategy, shift toward the Kristopher lane or brand_production.",
+        proposalRequirements:
+          "Structure as phases: discovery and positioning, visual identity, system guidelines, then optional implementation. Name deliverables: narrative pillars, voice chart, logo system, color and type, component rules, example applications. Include rounds and workshop cadence explicitly. Frame Ascendra as extending their studio, not replacing creative direction. For Macon-aligned prospects, acknowledge local and community context where relevant. Separate optional IQ or analytics add-ons so brand work is not conflated with funnel tinkering.",
+        followUpGuidance:
+          "Echo their language from the call (values, audience, what felt generic before). Share one concrete artifact—a messaging snippet or mini mood direction—not a generic deck. If they go quiet, propose a working session over a checking-in email. Tag denishia and suggest IQ journey denishia-creative for site and funnel copy alignment. If competitive bids appear, restate scope boundaries in writing.",
+        active: true,
+      },
     ];
+
+    let inserted = 0;
     for (const pb of playbooks) {
+      const [row] = await db
+        .select({ id: crmSalesPlaybooks.id })
+        .from(crmSalesPlaybooks)
+        .where(eq(crmSalesPlaybooks.slug, pb.slug))
+        .limit(1);
+      if (row) continue;
       await db.insert(crmSalesPlaybooks).values(pb);
+      inserted++;
     }
-    console.log(`Seeded ${playbooks.length} CRM sales playbooks`);
+    if (inserted > 0) {
+      console.log(`Seeded ${inserted} new CRM sales playbooks`);
+    }
   } catch (error: unknown) {
     if ((error as { code?: string })?.code === "42P01") {
       console.log("CRM playbooks table does not exist. Run db:push first.");
@@ -934,6 +998,100 @@ async function seedMarketingPersonas() {
   }
 }
 
+async function seedAfnNormalizedTagVocabulary() {
+  console.log("Seeding AFN normalized tags (skills, industries, interests, goals, challenges, collab prefs)...");
+  try {
+    const skills = [
+      { slug: "product_strategy", label: "Product strategy" },
+      { slug: "engineering", label: "Engineering / dev" },
+      { slug: "growth_marketing", label: "Growth & marketing" },
+      { slug: "sales", label: "Sales" },
+      { slug: "design_ux", label: "Design & UX" },
+      { slug: "operations", label: "Operations" },
+      { slug: "fundraising", label: "Fundraising" },
+    ];
+    for (const row of skills) {
+      await db
+        .insert(afnSkillTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnSkillTags.slug, set: { label: row.label } });
+    }
+    const industries = [
+      { slug: "saas", label: "SaaS" },
+      { slug: "ecommerce", label: "E-commerce" },
+      { slug: "services", label: "Professional services" },
+      { slug: "agency", label: "Agency / studio" },
+      { slug: "hardware", label: "Hardware / deep tech" },
+      { slug: "creator", label: "Creator / media" },
+    ];
+    for (const row of industries) {
+      await db
+        .insert(afnIndustryTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnIndustryTags.slug, set: { label: row.label } });
+    }
+    const interests = [
+      { slug: "ai_ml", label: "AI & ML" },
+      { slug: "automation", label: "Automation" },
+      { slug: "community_building", label: "Community building" },
+      { slug: "public_speaking", label: "Public speaking" },
+      { slug: "writing", label: "Writing & content" },
+    ];
+    for (const row of interests) {
+      await db
+        .insert(afnInterestTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnInterestTags.slug, set: { label: row.label } });
+    }
+    const goals = [
+      { slug: "first_customers", label: "Land first paying customers" },
+      { slug: "scale_revenue", label: "Scale revenue" },
+      { slug: "hire_team", label: "Hire core team" },
+      { slug: "raise_funding", label: "Raise funding" },
+      { slug: "launch_product", label: "Launch product" },
+      { slug: "improve_conversion", label: "Improve conversion" },
+    ];
+    for (const row of goals) {
+      await db
+        .insert(afnGoalTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnGoalTags.slug, set: { label: row.label } });
+    }
+    const challenges = [
+      { slug: "lead_gen", label: "Lead generation" },
+      { slug: "positioning", label: "Positioning & messaging" },
+      { slug: "retention", label: "Retention & churn" },
+      { slug: "technical_debt", label: "Technical debt" },
+      { slug: "time_focus", label: "Time & focus" },
+    ];
+    for (const row of challenges) {
+      await db
+        .insert(afnChallengeTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnChallengeTags.slug, set: { label: row.label } });
+    }
+    const collab = [
+      { slug: "async_remote", label: "Prefer async / remote" },
+      { slug: "live_sessions", label: "Live working sessions" },
+      { slug: "accountability_partner", label: "Accountability partner" },
+      { slug: "project_based", label: "Project-based collaboration" },
+    ];
+    for (const row of collab) {
+      await db
+        .insert(afnCollabPreferenceTags)
+        .values(row)
+        .onConflictDoUpdate({ target: afnCollabPreferenceTags.slug, set: { label: row.label } });
+    }
+    console.log("Seeded AFN normalized tag dimensions");
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("AFN tag tables missing. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedAfnDiscussionCategories() {
   console.log("Seeding AFN discussion categories...");
   try {
@@ -964,10 +1122,38 @@ async function seedAfnDiscussionCategories() {
   }
 }
 
+async function seedAscendraOsSettings() {
+  try {
+    const [existing] = await db
+      .select({ id: ascendraOsSettings.id })
+      .from(ascendraOsSettings)
+      .where(eq(ascendraOsSettings.id, 1))
+      .limit(1);
+    if (!existing) {
+      await db.insert(ascendraOsSettings).values({ id: 1, publicAccessEnabled: false });
+    }
+    console.log("Ascendra OS platform settings row ensured (internal-only by default)");
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "42P01") {
+      console.log("ascendra_os_settings table does not exist. Run db:push first.");
+      return;
+    }
+    throw error;
+  }
+}
+
 async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
 
+    const owner = await ensureSuperAdminOwnerAccount();
+    if (owner.ok) {
+      console.log(`✅ ${owner.message}`);
+    } else {
+      console.log(`⚠️  ${owner.message}`);
+    }
+
+    await seedAscendraOsSettings();
     await seedProjects();
     await seedSkills();
     await seedBlogPosts();
@@ -976,6 +1162,7 @@ async function seedDatabase() {
     await seedMarketingPersonas();
     await seedBusinessGoalPresets();
     await seedAfnDiscussionCategories();
+    await seedAfnNormalizedTagVocabulary();
 
     console.log("Database seeding completed successfully!");
   } catch (error) {

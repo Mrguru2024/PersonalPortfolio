@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import Header from "./Header";
 import { useViewMode } from "@/lib/view-mode-context";
+import { useLocale } from "@/contexts/LocaleContext";
+import { shellHomeLogoAria } from "@/lib/i18n/siteShellCopy";
 
 const SCROLL_THRESHOLD = 60;
 
@@ -13,6 +16,7 @@ const SCROLL_THRESHOLD = 60;
  * Standard: always visible for consistent navigation.
  */
 export default function FixedHeaderWrapper() {
+  const { locale } = useLocale();
   const { isImmersive } = useViewMode();
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
@@ -53,14 +57,15 @@ export default function FixedHeaderWrapper() {
         <Link
           href="/"
           className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded min-h-[44px] items-center"
-          aria-label="Ascendra Technologies – Home"
+          aria-label={shellHomeLogoAria(locale)}
         >
-          <img
+          <Image
             src="/ascendra-logo.svg"
             alt="Ascendra Technologies"
-            className="header-logo h-14 fold:h-16 sm:h-20 md:h-24 lg:h-28 w-auto max-w-[200px] fold:max-w-none object-contain bg-transparent"
             width={320}
             height={128}
+            priority
+            className="header-logo h-14 fold:h-16 sm:h-20 md:h-24 lg:h-28 w-auto max-w-[200px] fold:max-w-none object-contain bg-transparent"
           />
         </Link>
       </div>

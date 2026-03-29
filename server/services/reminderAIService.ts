@@ -8,11 +8,12 @@ import OpenAI from "openai";
 let openai: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) {
+    throw new Error("OPENAI_API_KEY is not set. AI reminder suggestions are disabled.");
+  }
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not set. AI reminder suggestions are disabled.");
-    }
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    openai = new OpenAI({ apiKey: key });
   }
   return openai;
 }
@@ -43,7 +44,7 @@ export async function suggestNextStepsForReminder(input: SuggestNextStepsInput):
   const type = input.relatedType ?? "general";
   const fallback = FALLBACK_STEPS[type] ?? FALLBACK_STEPS.task;
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.OPENAI_API_KEY?.trim()) {
     return { steps: fallback, summary: null };
   }
 

@@ -57,7 +57,7 @@ export function FreeLeadPrioritySection({
           return (
             <li key={offer.id}>
               <Card className="h-full border-border/80 bg-card shadow-sm">
-                <CardContent className="p-4 sm:p-5 flex flex-col h-full">
+                <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-col h-full">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                       {offer.rank}

@@ -150,4 +150,20 @@ export type SchedulingHostWeeklyRule = typeof schedulingHostWeeklyRules.$inferSe
 export type SchedulingHostBlockedDate = typeof schedulingHostBlockedDates.$inferSelect;
 export type SchedulingAppointment = typeof schedulingAppointments.$inferSelect;
 export type SchedulingReminderJob = typeof schedulingReminderJobs.$inferSelect;
+
+/** Per–approved-admin Google Calendar OAuth (native booking sync). */
+export const schedulingAdminGoogleCalendar = pgTable(
+  "scheduling_admin_google_calendar",
+  {
+    id: serial("id").primaryKey(),
+    /** `users.id` of the admin who connected this calendar */
+    userId: integer("user_id").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    configJson: json("config_json").$type<Record<string, unknown>>().notNull().default({}),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("scheduling_admin_google_calendar_user_uq").on(t.userId)],
+);
+
+export type SchedulingAdminGoogleCalendar = typeof schedulingAdminGoogleCalendar.$inferSelect;
 export type SchedulingIntegrationConfig = typeof schedulingIntegrationConfigs.$inferSelect;

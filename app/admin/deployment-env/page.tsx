@@ -115,7 +115,8 @@ export default function AdminDeploymentEnvPage() {
     }
   }
 
-  if (!mounted || authLoading || (user && !isSuperUser)) {
+  /** Never render the form until we have a session that matches super-admin identity (API enforces the same). */
+  if (!mounted || authLoading || !user || !isSuperUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -137,8 +138,8 @@ export default function AdminDeploymentEnvPage() {
             Live site settings (hosting)
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Add or update a saved name and secret on your host (Vercel). Only names are listed here—values stay hidden after
-            you save.{" "}
+            Super-admin only. Add or update a saved name and secret on your host (Vercel). Only names are listed
+            here—values stay hidden after you save.{" "}
             <Link href="/admin/integrations" className="underline text-foreground font-medium">
               Connect Facebook, LinkedIn, X, or Threads
             </Link>{" "}

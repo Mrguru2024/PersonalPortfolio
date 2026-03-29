@@ -55,6 +55,13 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 - **Admin UI:** `/admin/site-directory` — search, audience filter, consolidation clusters, **Copy JSON for AI**.
 - **API:** `GET /api/admin/site-directory` (approved admin session). Optional query `?q=crm` returns filtered `entries` plus `clusters`. Use for agents that can call authenticated APIs.
 
+### Admin AI assistant — context and knowledge
+
+- **Automatic context:** `server/services/adminAgentContextBuilder.ts` rebuilds every few minutes: npm scripts, **site directory** listings, **`server/services/adminAgentFeatureGuide.ts`** (how-tos: AMIE, Growth OS intelligence, assistant knowledge, CRM, PPC, etc.), scanned `/api/admin/*` routes, and this **AGENTS.md** file.
+- **Operator knowledge:** `/admin/agent-knowledge` — per-admin entries; toggles control injection into the **assistant** prompt, **research** grounding block, and (where supported) **messages** AI.
+- **AMIE (market scoring):** `/admin/market-intelligence` — Ascendra Market Intelligence Engine; **not** a duplicate of Growth OS topic research (`/admin/growth-os/intelligence`). AMIE persists scored reports and exports JSON with `integrationHints` for CRM/funnel/PPC.
+- **Floating widget:** Admins enable **action execution** under `/admin/settings` (AI admin agent); otherwise the assistant is chat/navigation-help only.
+
 ### Development updates (admin dashboard digest)
 
 - Production loads `content/development-updates.md` from GitHub. **Branch defaults to `main`** (`DEVELOPMENT_UPDATES_GITHUB_REF`).

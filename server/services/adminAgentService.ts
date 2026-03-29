@@ -16,6 +16,7 @@ import {
   mentorStateToPromptBlock,
   shouldAttachWebSources,
 } from "@server/services/adminAgentMentorService";
+import { getAdminAgentOpenAiModel } from "@server/services/growthIntelligence/growthIntelligenceConfig";
 
 export type AgentActionType =
   | "navigate"
@@ -69,6 +70,18 @@ export function isKnownSitePath(pathname: string): boolean {
   return false;
 }
 
+/** Paths for model-returned `open_*` actions (AdminAgentWidget navigates via `action.url`). */
+const OPEN_ACTION_URLS: Partial<Record<AgentActionType, string>> = {
+  open_reminders: "/admin/reminders",
+  open_crm: "/admin/crm",
+  open_dashboard: "/admin/dashboard",
+  open_settings: "/admin/settings",
+  open_contacts: "/admin/crm",
+  open_blog: "/admin/blog",
+  open_invoices: "/admin/invoices",
+  open_chat: "/admin/chat",
+};
+
 function normalizeModelAction(
   raw: unknown,
   canPerformActions: boolean
@@ -85,6 +98,11 @@ function normalizeModelAction(
     const url = o.url.trim();
     if (!isKnownSitePath(url)) return undefined;
     return { type: "navigate", url };
+  }
+  if (typeof type === "string" && type in OPEN_ACTION_URLS && OPEN_ACTION_URLS[type as AgentActionType]) {
+    if (!canPerformActions) return undefined;
+    const url = OPEN_ACTION_URLS[type as AgentActionType]!;
+    return { type: type as AgentActionType, url };
   }
   return undefined;
 }
@@ -104,6 +122,15 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   },
   { keywords: ["lead intake", "inbound leads"], action: { type: "navigate", url: "/admin/lead-intake" } },
   { keywords: ["growth os", "gos hub", "gos dashboard"], action: { type: "navigate", url: "/admin/growth-os" } },
+  {
+    keywords: ["amie", "market intelligence engine", "decision intelligence", "ascendra market intelligence"],
+    action: { type: "navigate", url: "/admin/market-intelligence" },
+  },
+  {
+    keywords: ["growth os intelligence", "gos intelligence", "topic discovery", "intelligence tab growth os"],
+    action: { type: "navigate", url: "/admin/growth-os/intelligence" },
+  },
+  { keywords: ["assistant knowledge", "agent knowledge", "knowledge base assistant"], action: { type: "navigate", url: "/admin/agent-knowledge" } },
   { keywords: ["internal audit", "funnel audit"], action: { type: "navigate", url: "/admin/internal-audit" } },
   { keywords: ["growth diagnosis", "diagnosis admin", "diagnosis submissions"], action: { type: "navigate", url: "/admin/growth-diagnosis" } },
   { keywords: ["funnel admin", "funnel pages", "growth kit admin"], action: { type: "navigate", url: "/admin/funnel" } },
@@ -121,6 +148,11 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   { keywords: ["crm import", "import leads"], action: { type: "navigate", url: "/admin/crm/import" } },
   { keywords: ["email sequences", "sequences"], action: { type: "navigate", url: "/admin/crm/sequences" } },
   { keywords: ["discovery inbox"], action: { type: "navigate", url: "/admin/crm/discovery" } },
+  {
+    keywords: ["discovery toolkit", "zoom prep", "discovery tools hub"],
+    action: { type: "navigate", url: "/admin/crm/discovery-tools" },
+  },
+  { keywords: ["ltv report", "client ltv", "revenue report admin"], action: { type: "navigate", url: "/admin/crm/ltv" } },
   { keywords: ["playbooks"], action: { type: "navigate", url: "/admin/crm/playbooks" } },
   { keywords: ["proposal prep"], action: { type: "navigate", url: "/admin/crm/proposal-prep" } },
   { keywords: ["reminders", "reminder"], action: { type: "open_reminders", url: "/admin/reminders" } },
@@ -215,6 +247,26 @@ function stripJsonFence(raw: string): string {
   return t;
 }
 
+/** Parse agent JSON reply; tolerate extra prose or fenced blocks from the model. */
+function parseAgentModelJson(raw: string): { reply?: string; action?: unknown } | null {
+  const cleaned = stripJsonFence(raw);
+  try {
+    return JSON.parse(cleaned) as { reply?: string; action?: unknown };
+  } catch {
+    try {
+      const t = cleaned.trim();
+      const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const body = fenced ? fenced[1]!.trim() : t;
+      const start = body.indexOf("{");
+      const end = body.lastIndexOf("}");
+      if (start === -1 || end <= start) return null;
+      return JSON.parse(body.slice(start, end + 1)) as { reply?: string; action?: unknown };
+    } catch {
+      return null;
+    }
+  }
+}
+
 async function processWithOpenAI(input: {
   message: string;
   history: AgentChatTurn[];
@@ -234,7 +286,7 @@ async function processWithOpenAI(input: {
 
   const actionRules = input.canPerformActions
     ? `You may set "action" to run something in the app (exact JSON shapes only):
-- {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os.
+- {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os, /admin/market-intelligence, /admin/agent-knowledge.
 - Alternatively you may use these exact types (no url needed): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM).
 - {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate, run, or refresh reminders.
 Otherwise set "action": null. Never invent types or URLs.
@@ -256,7 +308,7 @@ ${input.mentorPromptBlock}
 
 Mission detail: give clear next steps, name the exact screen or API from CONTEXT when the task is in-app, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
 
-Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
+Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md, FEATURE GUIDE) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
 ${webSection}
 
 Navigation and wayfinding: whenever you mention an in-app place to go, include a markdown link using ONLY internal paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination. External https links are allowed only when citing WEB RESULTS for teaching.
@@ -288,9 +340,10 @@ ${input.contextText}`;
     content: m.content.slice(0, 4000),
   }));
 
+  const model = getAdminAgentOpenAiModel();
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4o",
+      model,
       temperature: 0.25,
       max_tokens: 1100,
       response_format: { type: "json_object" },
@@ -301,14 +354,24 @@ ${input.contextText}`;
       ],
     });
     const raw = response.choices[0]?.message?.content ?? "";
-    const cleaned = stripJsonFence(raw);
-    const parsed = JSON.parse(cleaned) as { reply?: string; action?: unknown };
+    const parsed = parseAgentModelJson(raw);
+    if (!parsed) {
+      console.warn("[admin agent] model output was not valid JSON object");
+      return null;
+    }
     const reply = typeof parsed.reply === "string" ? parsed.reply.trim().slice(0, 8000) : "";
     if (!reply) return null;
     const action = normalizeModelAction(parsed.action, input.canPerformActions);
     return { reply, action };
-  } catch (e) {
-    console.error("admin agent OpenAI error:", e);
+  } catch (e: unknown) {
+    if (e instanceof OpenAI.APIError && (e.status === 403 || e.code === "model_not_found")) {
+      console.error(
+        `[admin agent] OpenAI rejected model "${model}" (403 / model_not_found). Set OPENAI_ADMIN_AGENT_MODEL to an allowed model for this API key.`,
+        e.message,
+      );
+    } else {
+      console.error("admin agent OpenAI error:", e);
+    }
     return null;
   }
 }

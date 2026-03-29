@@ -146,7 +146,7 @@ export default async function StartupGrowthKitPage() {
               <div className="space-y-3">
                 {FOUR_LAYERS.map(({ icon: Icon, title, desc }) => (
                   <Card key={title} className="border-border bg-card">
-                    <CardContent className="p-4 sm:p-5 flex gap-3 sm:gap-4">
+                    <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex gap-3 sm:gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-5 w-5" />
                       </div>
