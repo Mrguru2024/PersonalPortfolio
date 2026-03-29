@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-28 22:16 — Auto · 0f0f9d7
+
+- `Dev log: record 760be9a.` (`0f0f9d7`)
+
+---
+
 ## 2026-03-28 22:15 — Auto · 760be9a
 
 - `Move AFN to /Afn with redirects; scheduler admin and public booking.` (`760be9a`)
