@@ -32,18 +32,25 @@ export function LeadControlActionBar({ contactId, phone, email }: LeadControlAct
   const { toast } = useToast();
   const qc = useQueryClient();
   const [note, setNote] = useState("");
+  /** After a call/voicemail log, surface one-tap next steps without leaving the page. */
+  const [fastCue, setFastCue] = useState<null | "post_call">(null);
 
   const act = useMutation({
     mutationFn: async (payload: { action: string; note?: string | null }) => {
       const res = await apiRequest("POST", `/api/admin/lead-control/contacts/${contactId}/actions`, payload);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", contactId] });
       qc.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", contactId, "timeline"] });
       qc.invalidateQueries({ queryKey: ["/api/admin/lead-control/summary"] });
       toast({ title: "Logged to timeline" });
       setNote("");
+      if (variables.action === "call_attempt" || variables.action === "voicemail") {
+        setFastCue("post_call");
+      } else {
+        setFastCue(null);
+      }
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
@@ -63,6 +70,7 @@ export function LeadControlActionBar({ contactId, phone, email }: LeadControlAct
       qc.invalidateQueries({ queryKey: ["/api/admin/lead-control/summary"] });
       toast({ title: "CRM follow-up task created" });
       setNote("");
+      setFastCue(null);
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
@@ -102,6 +110,28 @@ export function LeadControlActionBar({ contactId, phone, email }: LeadControlAct
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {fastCue === "post_call" ? (
+          <div className="rounded-md border border-teal-500/35 bg-teal-500/[0.07] px-3 py-2.5 space-y-2">
+            <p className="text-xs font-medium text-foreground">Fast workflow — what&apos;s next?</p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={followUp.isPending}
+                onClick={() => followUp.mutate("tomorrow")}
+              >
+                Schedule follow-up (tomorrow)
+              </Button>
+              <Button type="button" size="sm" variant="outline" asChild>
+                <Link href={`/admin/email-hub/compose?contactId=${contactId}`}>Compose email</Link>
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setFastCue(null)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-xs font-medium text-muted-foreground shrink-0 flex items-center gap-1">
             <CalendarClock className="h-3.5 w-3.5" />

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/lib/view-mode-context";
+import { AdminAudienceViewProvider } from "@/contexts/AdminAudienceViewContext";
 import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
 import PwaRegistration from "@/components/PwaRegistration";
 import { FunnelProvider } from "@/lib/funnel-store";
@@ -20,12 +21,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <LocaleProvider>
             <ViewModeProvider>
               <AuthProvider>
-                <FunnelProvider>
-                  <PwaRegistration />
-                  {children}
-                  <Toaster />
-                  <SuperAdminErrorReporter />
-                </FunnelProvider>
+                <AdminAudienceViewProvider>
+                  <FunnelProvider>
+                    <PwaRegistration />
+                    {children}
+                    <Toaster />
+                    <SuperAdminErrorReporter />
+                  </FunnelProvider>
+                </AdminAudienceViewProvider>
               </AuthProvider>
             </ViewModeProvider>
           </LocaleProvider>

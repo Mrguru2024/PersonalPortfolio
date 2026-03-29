@@ -11,9 +11,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { FUNNEL_SLUGS, type FunnelSlug } from "@/lib/funnelContent";
+import type { FunnelAccessModel, FunnelFrictionLevel } from "@shared/funnelConversionSettings";
+import {
+  FUNNEL_ACCESS_MODEL_LABELS,
+  FUNNEL_FRICTION_LABELS,
+} from "@shared/funnelConversionSettings";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
@@ -74,6 +86,8 @@ const DEFAULT_CONTENT: Record<string, Record<string, unknown>> = {
     ctaScore: "Get your startup website score",
     ctaRevenue: "Estimate revenue opportunity",
     ctaActionPlan: "View startup action plan",
+    accessModel: "request_call",
+    leadFrictionLevel: "balanced",
   },
   "website-score": {
     heroTitle: "Startup website score",
@@ -82,6 +96,8 @@ const DEFAULT_CONTENT: Record<string, Record<string, unknown>> = {
     ctaGrowthKit: "Read the startup growth kit",
     ctaRevenue: "Revenue calculator",
     ctaActionPlan: "Startup action plan",
+    accessModel: "form_only",
+    leadFrictionLevel: "open",
   },
   "action-plan": {
     heroTitle: "Startup action plan",
@@ -109,6 +125,8 @@ const DEFAULT_CONTENT: Record<string, Record<string, unknown>> = {
     secondaryCtaKit: "Startup growth kit",
     secondaryCtaScore: "Website score tool",
     secondaryCtaRevenue: "Revenue calculator",
+    accessModel: "apply_first",
+    leadFrictionLevel: "balanced",
   },
   offer: {
     heroTitle: "Startup growth system",
@@ -133,16 +151,22 @@ const DEFAULT_CONTENT: Record<string, Record<string, unknown>> = {
     bullet3: "Focused on what matters most for early-stage growth.",
     ctaButtonText: "Get startup growth system",
     ctaNote: "You'll be taken to book a short call. We'll confirm scope and next steps—no pressure.",
+    accessModel: "book_now",
+    leadFrictionLevel: "controlled",
   },
 };
 
+const FUNNEL_OS_META_KEYS = new Set(["accessModel", "leadFrictionLevel"]);
+
 function getEditableFields(slug: string): { key: string; label: string; multiline?: boolean }[] {
   const data = DEFAULT_CONTENT[slug] ?? {};
-  return Object.keys(data).map((key) => ({
-    key,
-    label: key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()),
-    multiline: (data[key] as string)?.length > 80,
-  }));
+  return Object.keys(data)
+    .filter((key) => !FUNNEL_OS_META_KEYS.has(key))
+    .map((key) => ({
+      key,
+      label: key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()),
+      multiline: typeof data[key] === "string" && (data[key] as string).length > 80,
+    }));
 }
 
 export default function AdminFunnelEditPage() {
@@ -262,7 +286,70 @@ export default function AdminFunnelEditPage() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Card className="border-border bg-card">
+          <div className="space-y-6">
+            <Card className="border-primary/20 bg-primary/[0.03]">
+              <CardHeader>
+                <CardTitle className="text-base">Ascendra OS — conversion posture</CardTitle>
+                <CardDescription>
+                  Per-funnel controls for what visitors see first (book, call, apply, or forms).{" "}
+                  <strong>Friction</strong> documents how strict capture is—mirror the same angles in{" "}
+                  <Link href="/admin/experiments" className="text-primary underline-offset-4 hover:underline">
+                    Revenue experiments
+                  </Link>{" "}
+                  when A/B testing open vs qualified leads.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label>Primary access model</Label>
+                  <Select
+                    value={(formData.accessModel as string) || "request_call"}
+                    onValueChange={(v) => updateField("accessModel", v as FunnelAccessModel)}
+                  >
+                    <SelectTrigger className="max-w-md">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(FUNNEL_ACCESS_MODEL_LABELS) as FunnelAccessModel[]).map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {FUNNEL_ACCESS_MODEL_LABELS[k].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+                    {(FUNNEL_ACCESS_MODEL_LABELS[(formData.accessModel as FunnelAccessModel) || "request_call"] ??
+                      FUNNEL_ACCESS_MODEL_LABELS.request_call
+                    ).description}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Lead capture friction</Label>
+                  <Select
+                    value={(formData.leadFrictionLevel as string) || "balanced"}
+                    onValueChange={(v) => updateField("leadFrictionLevel", v as FunnelFrictionLevel)}
+                  >
+                    <SelectTrigger className="max-w-md">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(FUNNEL_FRICTION_LABELS) as FunnelFrictionLevel[]).map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {FUNNEL_FRICTION_LABELS[k].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+                    {(FUNNEL_FRICTION_LABELS[(formData.leadFrictionLevel as FunnelFrictionLevel) || "balanced"] ??
+                      FUNNEL_FRICTION_LABELS.balanced
+                    ).description}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-card">
             <CardHeader>
               <CardTitle className="text-base">Content fields</CardTitle>
               <CardDescription>
@@ -295,6 +382,7 @@ export default function AdminFunnelEditPage() {
               ))}
             </CardContent>
           </Card>
+          </div>
         )}
       </div>
     </div>

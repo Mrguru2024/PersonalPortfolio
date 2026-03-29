@@ -44,6 +44,7 @@ import {
   CalendarClock,
   FlaskConical,
   Crosshair,
+  Home,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -73,6 +74,8 @@ import { useLocale } from "@/contexts/LocaleContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import { useAdminAudienceView } from "@/contexts/AdminAudienceViewContext";
+import { isAuthApprovedAdmin } from "@/lib/super-admin";
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { useMobileNav } from "@/contexts/MobileNavContext";
 import { Button } from "@/components/ui/button";
@@ -315,8 +318,10 @@ export default function Header(_props: HeaderProps) {
     { section: "Site tools", name: "Health & activity", href: "/admin/system", icon: Activity, developerOnly: true },
   ];
 
-  const isApprovedAdmin =
-    user?.isAdmin === true && user?.adminApproved === true;
+  const isApprovedAdmin = isAuthApprovedAdmin(user);
+  const { mode: audienceViewMode } = useAdminAudienceView();
+  /** Hide Ascendra OS chrome on the public site when admin previews as customer or community member. */
+  const showAdminChrome = isApprovedAdmin && audienceViewMode === "admin";
 
   const isSuperUser = isAuthSuperUser(user);
   const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
@@ -472,9 +477,7 @@ export default function Header(_props: HeaderProps) {
             )}
             {mounted && user ? (
               <>
-                {isApprovedAdmin && (
-                  <AdminChatNotificationBell />
-                )}
+                {showAdminChrome ? <AdminChatNotificationBell /> : null}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -491,19 +494,50 @@ export default function Header(_props: HeaderProps) {
                     <DropdownMenuLabel className="font-normal">
                       @{user.username}
                     </DropdownMenuLabel>
-                    {!isApprovedAdmin && (
+                    {!showAdminChrome && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
-                            <LayoutDashboard className="h-4 w-4 shrink-0" />
-                            <span>{shellPublicDashboard(locale)}</span>
-                          </Link>
-                        </DropdownMenuItem>
+                        {isApprovedAdmin && audienceViewMode === "community" ? (
+                          <>
+                            <DropdownMenuLabel className={sectionLabelClass}>Community (preview)</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href="/Afn" className="cursor-pointer flex items-center gap-2 py-2">
+                                <Home className="h-4 w-4 shrink-0" />
+                                <span>AFN home</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href="/Afn/feed" className="cursor-pointer flex items-center gap-2 py-2">
+                                <MessageSquare className="h-4 w-4 shrink-0" />
+                                <span>Feed</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href="/Afn/profile" className="cursor-pointer flex items-center gap-2 py-2">
+                                <User className="h-4 w-4 shrink-0" />
+                                <span>Your profile</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
+                                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                                <span>{shellPublicDashboard(locale)}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem asChild>
+                            <Link href="/dashboard" className="cursor-pointer flex items-center gap-2 py-2">
+                              <LayoutDashboard className="h-4 w-4 shrink-0" />
+                              <span>{shellPublicDashboard(locale)}</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                       </>
                     )}
-                    {isApprovedAdmin && groupedAdminPages.length > 0 && (
+                    {showAdminChrome && groupedAdminPages.length > 0 ? (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel className={sectionLabelClass}>
@@ -533,7 +567,7 @@ export default function Header(_props: HeaderProps) {
                         ))}
                         <DropdownMenuSeparator />
                       </>
-                    )}
+                    ) : null}
                     <DropdownMenuItem
                       onClick={() => logoutMutation.mutate()}
                       className="cursor-pointer"
@@ -709,17 +743,57 @@ export default function Header(_props: HeaderProps) {
                       <div className="px-4 py-2 text-sm font-medium text-foreground/80">
                         {shellLoggedInAs(locale, user.username)}
                       </div>
-                      {!isApprovedAdmin && (
-                        <Link
-                          href="/dashboard"
-                          className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
-                          onClick={closeMobileMenu}
-                        >
-                          <LayoutDashboard className="h-4 w-4 shrink-0" />
-                          <span>{shellPublicDashboard(locale)}</span>
-                        </Link>
-                      )}
-                      {isApprovedAdmin && groupedAdminPages.length > 0 && (
+                      {!showAdminChrome ? (
+                        isApprovedAdmin && audienceViewMode === "community" ? (
+                          <div className="space-y-1">
+                            <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Community (preview)
+                            </div>
+                            <Link
+                              href="/Afn"
+                              className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+                              onClick={closeMobileMenu}
+                            >
+                              <Home className="h-4 w-4 shrink-0" />
+                              <span>AFN home</span>
+                            </Link>
+                            <Link
+                              href="/Afn/feed"
+                              className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+                              onClick={closeMobileMenu}
+                            >
+                              <MessageSquare className="h-4 w-4 shrink-0" />
+                              <span>Feed</span>
+                            </Link>
+                            <Link
+                              href="/Afn/profile"
+                              className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+                              onClick={closeMobileMenu}
+                            >
+                              <User className="h-4 w-4 shrink-0" />
+                              <span>Your profile</span>
+                            </Link>
+                            <Link
+                              href="/dashboard"
+                              className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+                              onClick={closeMobileMenu}
+                            >
+                              <LayoutDashboard className="h-4 w-4 shrink-0" />
+                              <span>{shellPublicDashboard(locale)}</span>
+                            </Link>
+                          </div>
+                        ) : (
+                          <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 text-foreground font-medium min-h-[48px] px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 touch-manipulation"
+                            onClick={closeMobileMenu}
+                          >
+                            <LayoutDashboard className="h-4 w-4 shrink-0" />
+                            <span>{shellPublicDashboard(locale)}</span>
+                          </Link>
+                        )
+                      ) : null}
+                      {showAdminChrome && groupedAdminPages.length > 0 ? (
                         <div className="space-y-2">
                           <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             {shellAdminSectionLabel(locale)}
@@ -749,7 +823,7 @@ export default function Header(_props: HeaderProps) {
                             </div>
                           ))}
                         </div>
-                      )}
+                      ) : null}
                       <button
                         type="button"
                         suppressHydrationWarning

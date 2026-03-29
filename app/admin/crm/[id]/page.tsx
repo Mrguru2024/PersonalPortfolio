@@ -48,6 +48,7 @@ import { intentLevelLabel } from "@/lib/crm-intent";
 import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
 import { LeadControlActionBar } from "@/components/lead-control/LeadControlActionBar";
+import { HotLeadClockBadge } from "@/components/lead-control/HotLeadClockBadge";
 
 interface AfnCommunitySnapshot {
   userId: number;
@@ -93,6 +94,8 @@ interface CrmContact {
   doNotContact?: boolean | null;
   nurtureReason?: string | null;
   accountId?: number | null;
+  leadControlPriority?: string | null;
+  firstResponseAt?: string | null;
   createdAt: string;
   updatedAt: string;
   afnCommunity?: AfnCommunitySnapshot | null;
@@ -722,6 +725,16 @@ export default function CrmLeadProfilePage() {
       </div>
 
       <div className="grid gap-6">
+        {contact.type === "lead" ? (
+          <HotLeadClockBadge
+            contact={{
+              createdAt: contact.createdAt,
+              firstResponseAt: contact.firstResponseAt ?? null,
+              intentLevel: contact.intentLevel ?? null,
+              leadControlPriority: contact.leadControlPriority ?? null,
+            }}
+          />
+        ) : null}
         <LeadControlActionBar contactId={contact.id} phone={contact.phone} email={contact.email} />
         <Card>
           <CardHeader>

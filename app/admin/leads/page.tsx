@@ -35,6 +35,20 @@ import { computeLeadControlPriority, leadControlPriorityLabel } from "@shared/le
 import type { CrmContact } from "@shared/crmSchema";
 import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import { intentLevelLabel } from "@/lib/crm-intent";
+import { describeLeadAge, getHotLeadUrgency } from "@/lib/leadHotness";
+
+interface SourceQualityChannel {
+  channel: string;
+  total: number;
+  seriousCount: number;
+  avgLeadScore: number | null;
+  bookedCount: number;
+  seriousRate: number;
+}
+
+interface SourceQualityResponse {
+  channels: SourceQualityChannel[];
+}
 
 interface SummaryResponse {
   totals: {
@@ -80,6 +94,15 @@ export default function AdminLeadCommandCenterPage() {
       toast({ title: `Updated ${r.updated} of ${r.scanned} leads (priority + routing hint)` });
     },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
+  const { data: sourceQuality, isLoading: sourceLoading } = useQuery({
+    queryKey: ["/api/admin/lead-control/source-quality"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/lead-control/source-quality?limit=24");
+      return res.json() as Promise<SourceQualityResponse>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -318,6 +341,72 @@ export default function AdminLeadCommandCenterPage() {
       ) : null}
 
       <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Source quality</CardTitle>
+          <CardDescription>
+            CRM leads grouped by <code className="text-xs bg-muted px-1 rounded">utm_source</code> or{" "}
+            <code className="text-xs bg-muted px-1 rounded">source</code>.{" "}
+            <strong className="text-foreground">Serious</strong> = hot or high intent; use this to shift budget
+            away from junk channels and toward serious buyers — same data can inform AEE creatives.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sourceLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !sourceQuality?.channels?.length ? (
+            <p className="text-sm text-muted-foreground">No lead rows yet.</p>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Channel</TableHead>
+                    <TableHead className="text-right">Leads</TableHead>
+                    <TableHead className="text-right">Serious %</TableHead>
+                    <TableHead className="text-right">Avg score</TableHead>
+                    <TableHead className="text-right">Booked</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sourceQuality.channels.map((row) => {
+                    const junky = row.total >= 5 && row.seriousRate < 0.05;
+                    const strong = row.seriousRate >= 0.15 && row.total >= 3;
+                    return (
+                      <TableRow key={row.channel}>
+                        <TableCell className="font-medium">
+                          {row.channel}
+                          {junky ? (
+                            <Badge variant="outline" className="ml-2 text-xs border-amber-600/40 text-amber-800 dark:text-amber-200">
+                              Low intent mix
+                            </Badge>
+                          ) : null}
+                          {strong ? (
+                            <Badge variant="outline" className="ml-2 text-xs border-emerald-600/40 text-emerald-800 dark:text-emerald-200">
+                              Strong
+                            </Badge>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{row.total}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {(row.seriousRate * 100).toFixed(0)}%
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {row.avgLeadScore != null ? row.avgLeadScore : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{row.bookedCount}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <CardTitle>Lead queue</CardTitle>
@@ -359,7 +448,7 @@ export default function AdminLeadCommandCenterPage() {
                 <TableBody>
                   {rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                         No leads match. Try clearing search or import from{" "}
                         <Link href="/admin/lead-intake" className="text-primary underline">
                           Lead intake
@@ -368,8 +457,21 @@ export default function AdminLeadCommandCenterPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    rows.map(({ contact: c, priority: p }) => (
-                      <TableRow key={c.id}>
+                    rows.map(({ contact: c, priority: p }) => {
+                      const age = describeLeadAge(c.createdAt);
+                      const hot = getHotLeadUrgency({
+                        createdAt: c.createdAt,
+                        firstResponseAt: c.firstResponseAt ?? null,
+                        intentLevel: c.intentLevel ?? null,
+                        leadControlPriority: p,
+                      });
+                      return (
+                      <TableRow
+                        key={c.id}
+                        className={
+                          hot === "immediate" ? "bg-amber-500/[0.06] dark:bg-amber-500/10" : undefined
+                        }
+                      >
                         <TableCell>
                           <Badge variant="outline" className={priorityBadgeClass(p)} title={leadControlPriorityLabel(p)}>
                             {p}
@@ -387,6 +489,14 @@ export default function AdminLeadCommandCenterPage() {
                         >
                           {c.leadRoutingHint ?? "—"}
                         </TableCell>
+                        <TableCell className="text-sm tabular-nums">
+                          <span title={`${age.minutes} minutes since created`}>{age.label}</span>
+                          {hot === "immediate" ? (
+                            <Badge variant="outline" className="ml-1 text-[10px] border-amber-600/50">
+                              Now
+                            </Badge>
+                          ) : null}
+                        </TableCell>
                         <TableCell className="text-sm">{c.status ?? "—"}</TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="outline" asChild>
@@ -396,7 +506,8 @@ export default function AdminLeadCommandCenterPage() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))
+                    );
+                    })
                   )}
                 </TableBody>
               </Table>

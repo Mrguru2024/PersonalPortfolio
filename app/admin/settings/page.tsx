@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail, Globe2 } from "lucide-react";
+import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail, Globe2, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FieldHint } from "@/lib/field-hint";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAdminAudienceView, type AdminAudienceViewMode } from "@/contexts/AdminAudienceViewContext";
 
 interface AscendraOsPlatformPayload {
   publicAccessEnabled: boolean;
@@ -59,6 +61,7 @@ const DEFAULT_SETTINGS: AdminSettingsPayload = {
 
 export default function AdminSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const { mode: audienceViewMode, setMode: setAudienceViewMode } = useAdminAudienceView();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -156,6 +159,61 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground text-sm mb-8">
           Control notifications, push, reminders, and AI agent permissions. Role and permission changes are recognized by the backend and AI helpers.
         </p>
+
+        <Card className="mb-6 border-dashed border-primary/25 bg-primary/5">
+          <CardHeader className="py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Eye className="h-5 w-5" />
+              Website &amp; community preview
+            </CardTitle>
+            <CardDescription>
+              On the marketing site and AFN pages, hide Ascendra OS menus and use the account menu as a customer or community
+              member would. Your real permissions are unchanged—you can still open any{" "}
+              <code className="text-xs bg-muted px-1 rounded">/admin</code> URL. Stored in this browser only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4">
+            <RadioGroup
+              value={audienceViewMode}
+              onValueChange={(v) => setAudienceViewMode(v as AdminAudienceViewMode)}
+              className="space-y-3"
+            >
+              {(
+                [
+                  {
+                    id: "view-audience-admin",
+                    value: "admin" as const,
+                    title: "Ascendra OS (normal)",
+                    body: "Full operator navigation, admin chat bell, and shortcuts on the public shell.",
+                  },
+                  {
+                    id: "view-audience-customer",
+                    value: "customer" as const,
+                    title: "Customer — website + client dashboard",
+                    body: "Same top navigation as visitors; account menu shows the client dashboard entry only (no operator links).",
+                  },
+                  {
+                    id: "view-audience-community",
+                    value: "community" as const,
+                    title: "Community — AFN member",
+                    body: "Account menu highlights AFN home, feed, and profile, plus the client dashboard—similar to a founder using the network.",
+                  },
+                ] as const
+              ).map((opt) => (
+                <div
+                  key={opt.value}
+                  className="flex items-start gap-3 rounded-lg border border-border/80 bg-background/80 p-3 dark:bg-background/40"
+                >
+                  <RadioGroupItem value={opt.value} id={opt.id} className="mt-1" />
+                  <Label htmlFor={opt.id} className="cursor-pointer font-normal leading-snug">
+                    <span className="font-medium text-foreground">{opt.title}</span>
+                    <p className="text-sm text-muted-foreground mt-1">{opt.body}</p>
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </CardContent>
+        </Card>
 
         <Card className="mb-6 border-muted">
           <CardHeader className="py-4">

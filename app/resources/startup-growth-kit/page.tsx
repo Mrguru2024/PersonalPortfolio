@@ -12,12 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
-import {
-  STARTUP_WEBSITE_SCORE_PATH,
-  REVENUE_CALCULATOR_PATH,
-  STARTUP_ACTION_PLAN_PATH,
-} from "@/lib/funnelCtas";
 import { getFunnelContent } from "@/lib/funnelContent.server";
+import { parseFunnelConversionSettings } from "@shared/funnelConversionSettings";
+import { growthKitNextStepCtas } from "@/lib/funnelConversionCtas";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
@@ -54,6 +51,10 @@ const FOUR_LAYERS = [
 
 export default async function StartupGrowthKitPage() {
   const stored = await getFunnelContent("growth-kit");
+  const storedObj =
+    stored && typeof stored === "object" && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};
+  const { accessModel } = parseFunnelConversionSettings(storedObj);
+  const nextStepCtas = growthKitNextStepCtas(accessModel);
   const heroTitle: string =
     (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroTitle === "string")
       ? (stored as Record<string, unknown>).heroTitle as string
@@ -203,23 +204,20 @@ export default async function StartupGrowthKitPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     See how your current site stacks up, then get a practical action plan—without spending a fortune.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button asChild className="gap-2 min-h-[44px]">
-                      <Link href={STARTUP_WEBSITE_SCORE_PATH}>
-                        Get your startup website score
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="gap-2 min-h-[44px]">
-                      <Link href={REVENUE_CALCULATOR_PATH}>
-                        Estimate revenue opportunity
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="gap-2 min-h-[44px]">
-                      <Link href={STARTUP_ACTION_PLAN_PATH}>
-                        View startup action plan
-                      </Link>
-                    </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+                    {nextStepCtas.map((cta) => (
+                      <Button
+                        key={cta.href + cta.label}
+                        asChild
+                        variant={cta.variant}
+                        className="gap-2 min-h-[44px]"
+                      >
+                        <Link href={cta.href}>
+                          {cta.label}
+                          {cta.variant === "default" ? <ArrowRight className="h-4 w-4" /> : null}
+                        </Link>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

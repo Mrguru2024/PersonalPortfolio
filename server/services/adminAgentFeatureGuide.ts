@@ -35,16 +35,22 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Paid growth (Google Ads / PPC)** ([/admin/paid-growth](/admin/paid-growth)): Campaigns and accounts; AMIE integration hints suggest keyword seeds and campaign types.
 
+### Ascendra OS — growth + leads (one connected system)
+
+Treat **market intelligence**, **funnels**, **experiments**, and **lead operations** as one loop: positioning → published experience → measured behavior → CRM outcomes → tuning.
+
+**Funnel admin — conversion posture** ([/admin/funnel](/admin/funnel)): Each funnel slug (\`growth-kit\`, \`website-score\`, \`action-plan\`, \`offer\`) stores JSON in \`funnel_content\`. **Access model** (\`accessModel\`): \`book_now\` | \`request_call\` | \`apply_first\` | \`form_only\` — controls which CTAs visitors see first (e.g. growth kit next-step buttons). **Friction** (\`leadFrictionLevel\`): \`open\` | \`balanced\` | \`controlled\` — documents how strict capture is; mirror the same angles in **Revenue experiments** when A/B testing volume vs qualification. Public JSON: GET \`/api/funnel/[slug]\` (no auth). Types: \`shared/funnelConversionSettings.ts\`.
+
 **Ascendra Experimentation Engine (AEE)** ([/admin/experiments](/admin/experiments)):
 - Extends \`growth_experiments\` / \`growth_variants\` plus \`aee_*\` tables (metrics daily, insights, channel links, CRM attribution events, optional paid-media dimension stats).
 - Tracking: merge \`buildAeeEventMetadata\` keys into \`/api/track/visitor\` metadata; reuse \`visitor_activity\` (no second pixel layer).
-- APIs: GET/POST \`/api/admin/experiments\`, GET \`/api/admin/experiments/[id]\` (includes \`ppcSnapshotJoin\` from linked campaigns), GET/POST \`/api/admin/experiments/[id]/channel-links\`, DELETE \`/api/admin/experiments/[id]/channel-links/[linkId]\`, POST \`/api/admin/experiments/rollup\` (recompute \`aee_experiment_metrics_daily\`). Cron: GET \`/api/cron/aee-rollup\` (Bearer \`CRON_SECRET\`).
-- Forms can pass \`experiment_key\` / \`variant_key\` (or ids) with \`visitorId\`; new CRM contacts write \`aee_crm_attribution_events\` (\`lead_created\`).
-- Closed loop: link experiments to \`ppc_campaigns\` / comm campaigns; rollup merges \`ppc_performance_snapshots\` into daily metrics for linked campaigns.
+- APIs: GET/POST \`/api/admin/experiments\`, GET \`/api/admin/experiments/[id]\` (includes \`ppcSnapshotJoin\` + **Content & campaign AI insights** POST \`/api/admin/experiments/[id]/content-ai-insights\` when OpenAI is set), channel links CRUD, POST \`/api/admin/experiments/rollup\`. Cron: GET \`/api/cron/aee-rollup\` (Bearer \`CRON_SECRET\`). Variant assignment for sites: GET \`/api/growth-intelligence/variant?experiment=…&visitorId=…\`.
+- Forms can pass \`experiment_key\` / \`variant_key\` with \`visitorId\`; new CRM contacts write \`aee_crm_attribution_events\` (\`lead_created\`).
+- **Interactive how-to**: [/admin/how-to/experiments](/admin/how-to/experiments).
 
-**CRM** ([/admin/crm](/admin/crm)): Contacts, deals, sequences, proposal prep; market intel card on proposal prep uses a separate live intel refresh (not AMIE unless you paste/export).
+**CRM** ([/admin/crm](/admin/crm)): Contacts, deals, sequences, proposal prep.
 
-**Lead command center** ([/admin/leads](/admin/leads)): Lead Control — extends \`crm_contacts\`, \`crm_activity_log\`, \`crm_tasks\`; not a parallel CRM. Priority queue + batch **recompute** (priority + routing hint). **Routing rules**: [/admin/leads/settings](/admin/leads/settings) → GET/PUT \`/api/admin/lead-control/routing-rules\` (singleton \`lead_control_org_settings.config\`); first matching rule sets \`lead_routing_hint\`. POST \`/api/admin/lead-control/recompute\` (optional \`contactIds\`, \`limit\`). **Quick follow-up**: POST \`/api/admin/lead-control/contacts/[id]/follow-up-task\` with preset \`tomorrow\` | \`two_days\` | \`one_week\` (creates \`crm_tasks\` + \`task_created\` log). Touch logging: POST \`/api/admin/lead-control/contacts/[id]/actions\`. Summary: GET \`/api/admin/lead-control/summary\`. Priority tuning: \`shared/leadControlPriority.ts\`; rules: \`shared/leadControlRouting.ts\`. \`npm run db:push\` for \`crm_contacts\` Lead Control columns and \`lead_control_org_settings\` table.
+**Lead command center + Lead Control** ([/admin/leads](/admin/leads)): Same \`crm_contacts\` rows — priority (P1–P5), **hot-lead age** in the queue, **source quality** table (GET \`/api/admin/lead-control/source-quality\` — volume vs serious-intent rate by channel), batch recompute, routing rules [/admin/leads/settings](/admin/leads/settings) → GET/PUT \`/api/admin/lead-control/routing-rules\`. Quick follow-up: POST \`/api/admin/lead-control/contacts/[id]/follow-up-task\`. Touch logging: POST \`/api/admin/lead-control/contacts/[id]/actions\`. On the **CRM contact** page: **HotLeadClockBadge** + **LeadControlActionBar** includes a **fast workflow** strip after call/voicemail logs (schedule follow-up / email without leaving). Summary: GET \`/api/admin/lead-control/summary\`. Tuning: \`shared/leadControlPriority.ts\`, \`shared/leadControlRouting.ts\`.
 
 **Ascendra Intelligence (Offer + Persona IQ)** ([/admin/ascendra-intelligence](/admin/ascendra-intelligence)): Marketing personas, scripts, lead magnets — distinct from AMIE scoring.
 

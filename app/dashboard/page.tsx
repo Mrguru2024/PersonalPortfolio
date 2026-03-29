@@ -17,6 +17,7 @@ import {
   Megaphone,
   CheckCircle,
   Clock,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -181,6 +182,25 @@ export default function ClientDashboardPage() {
           <Link href="/updates">View change log &amp; updates</Link>
         </Button>
       </div>
+
+      <Card className="mb-6 sm:mb-8 border-2 border-teal-500/25 bg-gradient-to-r from-emerald-500/[0.07] via-background to-teal-500/[0.07] dark:from-emerald-500/10 dark:to-teal-500/10 overflow-hidden">
+        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
+          <div className="flex gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+              <TrendingUp className="h-5 w-5" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm sm:text-base">Your growth system</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                See Diagnose, Build, and Scale in one place—tailored to your business and project data.
+              </p>
+            </div>
+          </div>
+          <Button asChild className="shrink-0 w-full sm:w-auto">
+            <Link href="/growth-system">Open growth system</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <TabsList className="w-full sm:max-w-2xl grid grid-cols-2 sm:grid-cols-4 min-h-[44px] h-auto sm:h-12 gap-1 p-1.5 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button]:min-w-0 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">

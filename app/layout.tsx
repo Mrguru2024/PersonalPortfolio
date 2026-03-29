@@ -125,6 +125,12 @@ export default function RootLayout({
             <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           </>
         ) : null}
+        <link rel="dns-prefetch" href="https://tools.luckyorange.com" />
+        <script
+          async
+          defer
+          src="https://tools.luckyorange.com/core/lo.js?site-id=d5055c22"
+        />
       </head>
       {/* suppressHydrationWarning: only affects this node; extension attrs on descendants are handled via suppressHydrationWarning on ui/Button and Header <button>s (fdprocessedid, etc.). */}
       <body

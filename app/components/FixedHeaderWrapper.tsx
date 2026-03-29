@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "./Header";
+import { AdminAudiencePreviewBanner } from "@/components/admin/AdminAudiencePreviewBanner";
 import { useViewMode } from "@/lib/view-mode-context";
 import { useLocale } from "@/contexts/LocaleContext";
 import { shellHomeLogoAria } from "@/lib/i18n/siteShellCopy";
@@ -72,6 +73,7 @@ export default function FixedHeaderWrapper() {
       <div style={{ background: "transparent" }}>
         <Header />
       </div>
+      <AdminAudiencePreviewBanner />
     </div>
   );
 }
