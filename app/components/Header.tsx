@@ -40,6 +40,9 @@ import {
   Video,
   CircleDollarSign,
   BookOpen,
+  Calendar,
+  CalendarClock,
+  FlaskConical,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -174,6 +177,7 @@ function groupAdminPagesBySection<
 
 const ADMIN_NAV_SECTION_ORDER = [
   "Overview",
+  "Bookings & calendar",
   "CRM & leads",
   "Content & email",
   "Marketing & funnel",
@@ -259,6 +263,8 @@ export default function Header(_props: HeaderProps) {
     { section: "Overview", name: "Pages directory", href: "/admin/site-directory", icon: MapIcon, permission: "dashboard" as const },
     { section: "Overview", name: "How-to & guides", href: "/admin/how-to", icon: BookOpen, permission: "dashboard" as const },
     { section: "Overview", name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
+    { section: "Bookings & calendar", name: "Meetings & calendar", href: "/admin/scheduler", icon: Calendar, permission: "dashboard" as const },
+    { section: "Bookings & calendar", name: "Booking & reminders setup", href: "/admin/scheduling", icon: CalendarClock, permission: "dashboard" as const },
     { section: "CRM & leads", name: "CRM", href: "/admin/crm", icon: Contact, permission: "crm" as const },
     { section: "CRM & leads", name: "Discovery toolkit", href: "/admin/crm/discovery-tools", icon: Video, permission: "crm" as const },
     { section: "CRM & leads", name: "LTV & reports", href: "/admin/crm/ltv", icon: CircleDollarSign, permission: "crm" as const },
@@ -276,6 +282,12 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Growth OS", href: "/admin/growth-os", icon: Gauge, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Analytics", name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
+    {
+      section: "Analytics",
+      name: "Experiments (AEE)",
+      href: "/admin/experiments",
+      icon: FlaskConical,
+    },
     { section: "Analytics", name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
     { section: "Operations", name: "Chat", href: "/admin/chat", icon: MessageSquare, permission: "dashboard" as const },
     { section: "Operations", name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },

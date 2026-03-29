@@ -179,8 +179,8 @@ export default function AdminSchedulingAvailabilityPage() {
         <div>
           <h1 className="text-2xl font-bold">Availability rules</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Per–meeting-type rules override “all types” for that day. Times are wall clock in your business timezone
-            (Scheduling settings).
+            Per–meeting-type rules override “all types” for that day. Times use your business time zone from Booking &amp;
+            reminders settings.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -190,9 +190,10 @@ export default function AdminSchedulingAvailabilityPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>AI: parse &amp; save</CardTitle>
+          <CardTitle>Assistant: apply hours from a description</CardTitle>
           <CardDescription>
-            Replaces every rule for the selected scope with AI-parsed windows (same engine as Scheduling settings).
+            Replaces every rule for the scope you pick with hours parsed from plain language (same behavior as under
+            Booking &amp; reminders settings).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 max-w-2xl">

@@ -1,4 +1,5 @@
 import { SchedulerMasterCalendar } from "@/components/scheduler/SchedulerMasterCalendar";
+import { SchedulerWorkflowActivityCard } from "@/components/scheduler/SchedulerWorkflowActivityCard";
 
 export default function SchedulerCalendarPage() {
   return (
@@ -10,7 +11,12 @@ export default function SchedulerCalendarPage() {
           score, and history.
         </p>
       </div>
-      <SchedulerMasterCalendar />
+      <div className="grid gap-4 xl:grid-cols-[1fr_320px] xl:items-start">
+        <SchedulerMasterCalendar />
+        <div className="xl:sticky xl:top-4 space-y-4">
+          <SchedulerWorkflowActivityCard />
+        </div>
+      </div>
     </div>
   );
 }

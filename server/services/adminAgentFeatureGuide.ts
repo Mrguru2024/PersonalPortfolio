@@ -34,6 +34,13 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Paid growth (Google Ads / PPC)** ([/admin/paid-growth](/admin/paid-growth)): Campaigns and accounts; AMIE integration hints suggest keyword seeds and campaign types.
 
+**Ascendra Experimentation Engine (AEE)** ([/admin/experiments](/admin/experiments)):
+- Extends \`growth_experiments\` / \`growth_variants\` plus \`aee_*\` tables (metrics daily, insights, channel links, CRM attribution events, optional paid-media dimension stats).
+- Tracking: merge \`buildAeeEventMetadata\` keys into \`/api/track/visitor\` metadata; reuse \`visitor_activity\` (no second pixel layer).
+- APIs: GET/POST \`/api/admin/experiments\`, GET \`/api/admin/experiments/[id]\` (includes \`ppcSnapshotJoin\` from linked campaigns), GET/POST \`/api/admin/experiments/[id]/channel-links\`, DELETE \`/api/admin/experiments/[id]/channel-links/[linkId]\`, POST \`/api/admin/experiments/rollup\` (recompute \`aee_experiment_metrics_daily\`). Cron: GET \`/api/cron/aee-rollup\` (Bearer \`CRON_SECRET\`).
+- Forms can pass \`experiment_key\` / \`variant_key\` (or ids) with \`visitorId\`; new CRM contacts write \`aee_crm_attribution_events\` (\`lead_created\`).
+- Closed loop: link experiments to \`ppc_campaigns\` / comm campaigns; rollup merges \`ppc_performance_snapshots\` into daily metrics for linked campaigns.
+
 **CRM** ([/admin/crm](/admin/crm)): Contacts, deals, sequences, proposal prep; market intel card on proposal prep uses a separate live intel refresh (not AMIE unless you paste/export).
 
 **Ascendra Intelligence (Offer + Persona IQ)** ([/admin/ascendra-intelligence](/admin/ascendra-intelligence)): Marketing personas, scripts, lead magnets — distinct from AMIE scoring.
@@ -42,7 +49,7 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Funnel admin** ([/admin/funnel](/admin/funnel)): Funnel pages and assets.
 
-**Admin dashboard inbox**: [/admin/dashboard](/admin/dashboard) — tabs sync with \`?tab=assessments\`, \`?tab=contacts\`, or \`?tab=resume-requests\` (used by “Suggested for you”). Optional hash \`#admin-dashboard-inbox-tabs\` scrolls to the tab strip.
+**Admin dashboard inbox**: [/admin/dashboard](/admin/dashboard) — tabs sync with \`?tab=assessments\` or \`?tab=contacts\` (used by “Suggested for you”). Optional hash \`#admin-dashboard-inbox-tabs\` scrolls to the tab strip.
 
 **Commands**: \`npm run check\` (TypeScript), \`npm run db:push\` (schema), \`npm run dev\` (Next dev with webpack per AGENTS.md).
 `.trim();

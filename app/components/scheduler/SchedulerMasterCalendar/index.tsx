@@ -139,6 +139,12 @@ export function SchedulerMasterCalendar({
     });
   }, [rows, search]);
 
+  /** Labels for Sun–Sat (matches `weekStartsOn: 0` on the month grid). */
+  const monthWeekdayLabels = useMemo(() => {
+    const start = startOfWeek(new Date(2024, 0, 7), { weekStartsOn: 0 });
+    return Array.from({ length: 7 }, (_, i) => format(addDays(start, i), "EEE"));
+  }, []);
+
   const daysInView = useMemo(() => {
     if (view === "month") {
       const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -260,12 +266,30 @@ export function SchedulerMasterCalendar({
           )}
         </div>
       ) : (
-        <div
-          className={cn(
-            "grid gap-2",
-            view === "day" ? "grid-cols-1" : view === "week" ? "grid-cols-1 sm:grid-cols-7" : "grid-cols-7",
-          )}
-        >
+        <div className="space-y-2">
+          {view === "month" ? (
+            <div
+              className="grid grid-cols-7 gap-2"
+              role="row"
+              aria-label="Days of the week"
+            >
+              {monthWeekdayLabels.map((label) => (
+                <div
+                  key={label}
+                  role="columnheader"
+                  className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground py-2 border-b border-border/50"
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <div
+            className={cn(
+              "grid gap-2",
+              view === "day" ? "grid-cols-1" : view === "week" ? "grid-cols-1 sm:grid-cols-7" : "grid-cols-7",
+            )}
+          >
           {daysInView.map((day) => {
             const inMonth = view !== "month" || isSameMonth(day, cursor);
             const dayApps = filtered.filter((r) => isSameDay(new Date(r.appointment.startAt), day));
@@ -277,7 +301,7 @@ export function SchedulerMasterCalendar({
                   !inMonth && view === "month" ? "opacity-40" : "",
                 )}
               >
-                <div className="text-xs font-semibold text-foreground mb-1">
+                <div className="text-xs font-semibold text-foreground mb-1 tabular-nums">
                   {format(day, view === "month" ? "d" : "EEE d")}
                 </div>
                 <div className="space-y-1">
@@ -305,6 +329,7 @@ export function SchedulerMasterCalendar({
               </div>
             );
           })}
+        </div>
         </div>
       )}
 

@@ -7,9 +7,9 @@ export default function SchedulerTeamPage() {
     <div className="space-y-4 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>Team scheduling</CardTitle>
+          <CardTitle>Team</CardTitle>
           <CardDescription>
-            Per–approved-admin hours, blocked dates, and host pool behavior for public /book flows.
+            Approved admins can set their own hours and blocked days for the booking flows visitors use.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
@@ -17,7 +17,7 @@ export default function SchedulerTeamPage() {
             <Link href="/admin/scheduling/my-availability">My availability</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/admin/scheduling">Native scheduling hub</Link>
+            <Link href="/admin/scheduling">Booking &amp; reminders setup</Link>
           </Button>
         </CardContent>
       </Card>

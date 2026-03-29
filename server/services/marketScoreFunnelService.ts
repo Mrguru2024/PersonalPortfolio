@@ -6,6 +6,7 @@ import { db } from "@server/db";
 import { marketScoreNurtureJobs } from "@shared/schema";
 import { storage } from "@server/storage";
 import { ensureCrmLeadFromFormSubmission, type FormAttribution } from "@server/services/leadFromFormService";
+import { aeeFieldsForFormAttribution } from "@/lib/aeeFormAttributionZod";
 import { runAmieAnalysis, saveAmieAnalysis } from "@server/services/amie/amieAnalysisService";
 import { addScoreFromEvent } from "@server/services/leadScoringService";
 import { mergeSegmentTags } from "@server/services/leadSegmentationService";
@@ -179,6 +180,7 @@ export async function processMarketScoreSubmission(
     referrer: body.attribution?.referrer ?? undefined,
     landing_page: body.attribution?.landing_page ?? "/market-score",
     visitorId: body.visitorId ?? undefined,
+    ...aeeFieldsForFormAttribution(body.attribution ?? undefined),
   };
 
   const utmExtra: Record<string, string> = {};

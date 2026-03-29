@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BookBySlugPage({ params }: PageProps) {
   const { slug } = await params;
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
-      <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-4xl">
-        <p className="text-sm text-muted-foreground mb-6">
-          Secure booking powered by Ascendra Scheduler — you&apos;ll receive confirmation by email.
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-background">
+      <div className="container mx-auto px-3 fold:px-4 sm:px-6 max-w-5xl pb-16">
+        <p className="text-sm text-muted-foreground text-center sm:text-left pt-6 pb-2 max-w-2xl">
+          You&apos;ll receive a confirmation by email after you choose a time.
         </p>
         <SchedulingBookFlow bookingPageSlug={slug} />
       </div>

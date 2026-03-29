@@ -113,7 +113,6 @@ export default function AdminOperatorProfilePage() {
       const res = await apiRequest("POST", "/api/admin/operator-profile/refresh", {
         pendingAssessments: 0,
         totalContacts: 0,
-        unaccessedResume: 0,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

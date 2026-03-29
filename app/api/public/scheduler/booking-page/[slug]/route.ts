@@ -4,6 +4,7 @@ import {
   getSchedulingSettings,
   listSchedulingHostUsers,
 } from "@server/services/schedulingService";
+import { bookingPageThemeFromSettingsJson } from "@/lib/bookingPageTheme";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -53,5 +54,6 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ slug: stri
       durationMinutes: bookingType.durationMinutes,
       description: bookingType.description,
     },
+    branding: bookingPageThemeFromSettingsJson(page.settingsJson),
   });
 }

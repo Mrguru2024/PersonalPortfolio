@@ -650,6 +650,11 @@ export const adminSettings = pgTable("admin_settings", {
   aiAgentCanPerformActions: boolean("ai_agent_can_perform_actions").default(false).notNull(),
   /** When true, the admin assistant shows a confirm step before navigation or reminder runs. */
   aiAgentRequireActionConfirmation: boolean("ai_agent_require_action_confirmation").default(true).notNull(),
+  /**
+   * Per-surface module order + visibility for admin dashboards (syncs across devices).
+   * Keys: `main` (/admin/dashboard), `crm` (/admin/crm/dashboard). Shape: { [surface]: { order: string[], hidden: string[] } }
+   */
+  adminUiLayouts: json("admin_ui_layouts").$type<Record<string, { order: string[]; hidden: string[] }> | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -951,3 +956,4 @@ export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
 export * from "./amieSchema";
+export * from "./experimentationEngineSchema";

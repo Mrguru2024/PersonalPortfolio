@@ -132,18 +132,16 @@ const OPERATOR_ROLE_NUDGES: Record<string, NudgeItem> = {
 const DASHBOARD_TAB = {
   assessments: "/admin/dashboard?tab=assessments#admin-dashboard-inbox-tabs",
   contacts: "/admin/dashboard?tab=contacts#admin-dashboard-inbox-tabs",
-  resume: "/admin/dashboard?tab=resume-requests#admin-dashboard-inbox-tabs",
 } as const;
 
 /** Build nudge list from dashboard counts and role. */
 export function buildNudgeItems(opts: {
   pendingAssessments: number;
   totalContacts: number;
-  unaccessedResume: number;
   isSuperAdmin: boolean;
   /** From /admin/operator-profile — reorders first suggestion by focus role. */
   operatorRoleFocus?: string | null;
-  /** Contacts + assessments + resume requests created in the last 7 days (surface in lead intake). */
+  /** Contacts + assessments created in the last 7 days (surface in lead intake). */
   recentInboundWeekCount?: number;
   /** Contact form rows created in the last 7 days (actionable follow-up). */
   recentContactsWeek?: number;
@@ -151,7 +149,6 @@ export function buildNudgeItems(opts: {
   const {
     pendingAssessments,
     totalContacts,
-    unaccessedResume,
     isSuperAdmin,
     operatorRoleFocus,
     recentInboundWeekCount = 0,
@@ -185,16 +182,6 @@ export function buildNudgeItems(opts: {
       href: DASHBOARD_TAB.contacts,
       count: totalContacts,
       icon: <MessageSquare className="h-4 w-4 shrink-0 text-primary" />,
-    });
-  }
-
-  if (unaccessedResume > 0) {
-    items.push({
-      id: "resume-unaccessed",
-      label: "Resume requests to review",
-      href: DASHBOARD_TAB.resume,
-      count: unaccessedResume,
-      icon: <FileText className="h-4 w-4 shrink-0 text-primary" />,
     });
   }
 

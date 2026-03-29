@@ -8,7 +8,7 @@ import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain, Inbox,
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/scheduler", label: "Scheduler", icon: Calendar },
+  { href: "/admin/scheduler", label: "Bookings & calendar", icon: Calendar },
   { href: "/admin/growth-os/revenue-ops", label: "Revenue ops", icon: TrendingUp },
   { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
   { href: "/admin/growth-os/intelligence", label: "Market research", icon: Brain },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zOptionalAeeAttribution } from "@/lib/aeeFormAttributionZod";
 
 const trimmed = z.string().trim();
 
@@ -28,6 +29,7 @@ export const marketScoreFunnelBodySchema = z.object({
       referrer: trimmed.max(2000).optional().nullable(),
       landing_page: trimmed.max(500).optional().nullable(),
     })
+    .merge(zOptionalAeeAttribution)
     .optional()
     .nullable(),
 });

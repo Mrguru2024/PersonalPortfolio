@@ -36,7 +36,6 @@ export interface OperatorIntelligenceContext {
   dashboardStats: {
     pendingAssessments: number;
     totalContacts: number;
-    unaccessedResume: number;
   };
 }
 
@@ -86,7 +85,7 @@ function normalizeIntelligence(
 }
 
 function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOperatorIntelligencePayload {
-  const { pendingAssessments, totalContacts, unaccessedResume } = ctx.dashboardStats;
+  const { pendingAssessments, totalContacts } = ctx.dashboardStats;
   const role = ctx.roleSelection;
   const daily: AdminOperatorIntelligencePayload["dailyTasks"] = [];
   const weekly: AdminOperatorIntelligencePayload["weeklyTasks"] = [];
@@ -108,14 +107,6 @@ function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOpera
       rationale: "Speed to lead improves conversion.",
     });
   }
-  if (unaccessedResume > 0) {
-    daily.push({
-      id: "resume",
-      title: `Follow up on ${unaccessedResume} resume request(s)`,
-      href: "/admin/dashboard",
-    });
-  }
-
   if (role === "content") {
     daily.push({
       id: "blog",
@@ -252,7 +243,7 @@ export async function generateOperatorIntelligence(
     return buildFallbackIntelligence(ctx);
   }
 
-  const statsLine = `Dashboard signals: ${ctx.dashboardStats.pendingAssessments} pending assessments, ${ctx.dashboardStats.totalContacts} contact submissions, ${ctx.dashboardStats.unaccessedResume} unaccessed resume requests.`;
+  const statsLine = `Dashboard signals: ${ctx.dashboardStats.pendingAssessments} pending assessments, ${ctx.dashboardStats.totalContacts} contact submissions.`;
 
   const profileBlock = [
     `Operator focus role: ${roleLabel(ctx.roleSelection)} (${ctx.roleSelection}).`,

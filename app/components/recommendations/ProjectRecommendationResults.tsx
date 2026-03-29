@@ -10,12 +10,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -127,66 +122,60 @@ const ProjectRecommendationResults: React.FC<ProjectRecommendationResultsProps> 
               
               <CardFooter className="flex gap-2 pt-2">
                 {recommendation.project.demoUrl && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => window.open(recommendation.project.demoUrl, '_blank')}
-                        >
-                          <ExternalLink size={16} className="mr-1" />
-                          View Demo
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>See the live demo</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                
-                {recommendation.project.githubUrl && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => window.open(recommendation.project.githubUrl, '_blank')}
-                        >
-                          <Github size={16} className="mr-1" />
-                          GitHub
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View source code</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                
-                <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => {
-                          const url = window.location.href.split('?')[0];
-                          navigator.clipboard.writeText(`${url}?project=${recommendation.project.id}`);
-                        }}
+                        className="flex-1"
+                        onClick={() => window.open(recommendation.project.demoUrl, '_blank')}
                       >
-                        <Share2 size={16} />
+                        <ExternalLink size={16} className="mr-1" />
+                        View Demo
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Copy link to this project</p>
+                      <p>See the live demo</p>
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
+                )}
+                
+                {recommendation.project.githubUrl && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => window.open(recommendation.project.githubUrl, '_blank')}
+                      >
+                        <Github size={16} className="mr-1" />
+                        GitHub
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View source code</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const url = window.location.href.split('?')[0];
+                        navigator.clipboard.writeText(`${url}?project=${recommendation.project.id}`);
+                      }}
+                    >
+                      <Share2 size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Copy link to this project</p>
+                  </TooltipContent>
+                </Tooltip>
               </CardFooter>
             </Card>
           </motion.div>

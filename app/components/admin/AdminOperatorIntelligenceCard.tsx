@@ -28,7 +28,6 @@ interface AdminOperatorIntelligenceCardProps {
   dashboardStats: {
     pendingAssessments: number;
     totalContacts: number;
-    unaccessedResume: number;
   };
   compact?: boolean;
 }

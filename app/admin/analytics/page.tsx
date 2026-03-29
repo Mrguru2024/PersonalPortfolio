@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
@@ -42,6 +42,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { formatLocaleDateTime } from "@/lib/localeDateTime";
+import { useUnifiedAdminLayouts } from "@/hooks/useAdminUiLayouts";
+import { AdminUnifiedLayoutSheetTrigger } from "@/components/admin/AdminUnifiedLayoutSheet";
+import { SecondaryDashboardPlaceholder } from "@/components/admin/SecondaryDashboardPlaceholder";
+import { CrmKpisWidget } from "@/components/admin/dashboard-widgets/CrmKpisWidget";
+import { CrmSourcesTagsWidget } from "@/components/admin/dashboard-widgets/CrmSourcesTagsWidget";
+import { CrmPipelineOverdueWidget } from "@/components/admin/dashboard-widgets/CrmPipelineOverdueWidget";
+import { CrmTasksActivityWidget } from "@/components/admin/dashboard-widgets/CrmTasksActivityWidget";
+import { AnalyticsSummaryCardsWidget } from "@/components/admin/dashboard-widgets/AnalyticsSummaryCardsWidget";
 
 type TimeRange = "7d" | "30d" | "90d" | "all";
 
@@ -206,8 +214,57 @@ function getSince(range: TimeRange): string | null {
   return null;
 }
 
+function renderAnalyticsHostWidget(id: string): ReactNode {
+  switch (id) {
+    case "analytics_summary":
+      return (
+        <div className="min-w-0">
+          <AnalyticsSummaryCardsWidget />
+        </div>
+      );
+    case "kpis":
+      return (
+        <div className="min-w-0">
+          <CrmKpisWidget />
+        </div>
+      );
+    case "sourcesTags":
+      return (
+        <div className="min-w-0">
+          <CrmSourcesTagsWidget />
+        </div>
+      );
+    case "pipeline":
+      return (
+        <div className="min-w-0">
+          <CrmPipelineOverdueWidget />
+        </div>
+      );
+    case "tasksActivity":
+      return (
+        <div className="min-w-0">
+          <CrmTasksActivityWidget />
+        </div>
+      );
+    case "suggested":
+    case "reminders":
+    case "summary":
+    case "inbox":
+    case "intelligence":
+    case "shortcuts":
+    case "password":
+    case "devUpdates":
+      return (
+        <SecondaryDashboardPlaceholder widgetId={id} href="/admin/dashboard" surfaceLabel="main admin dashboard" />
+      );
+    default:
+      return null;
+  }
+}
+
 export default function AdminAnalyticsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const unifiedLayout = useUnifiedAdminLayouts();
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
@@ -403,6 +460,62 @@ export default function AdminAnalyticsPage() {
     return null;
   }
 
+  if (unifiedLayout.ready && unifiedLayout.analyticsCustomized) {
+    const widgetIds = unifiedLayout.visibleOrder("analytics");
+    return (
+      <div className="container max-w-6xl py-8 px-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link href="/admin/dashboard">
+              <Button variant="ghost" size="icon" className="shrink-0 min-h-[44px] min-w-[44px] sm:min-h-10 sm:min-w-10">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold">Website analytics (custom)</h1>
+              <p className="text-muted-foreground text-sm">
+                Compact layout — open <span className="font-medium text-foreground">Customize pages</span> or restore the
+                full report.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center justify-end w-full sm:w-auto">
+            {unifiedLayout.ready ? <AdminUnifiedLayoutSheetTrigger initialSurface="analytics" /> : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[44px] sm:min-h-9"
+              disabled={unifiedLayout.isPersisting}
+              onClick={() => unifiedLayout.restoreAnalyticsFullPage()}
+            >
+              Full report (all tabs)
+            </Button>
+          </div>
+        </div>
+        {widgetIds.length === 0 ? (
+          <Card className="border-dashed border-amber-500/40 bg-amber-500/[0.06]">
+            <CardHeader>
+              <CardTitle className="text-base">No modules on this page</CardTitle>
+              <CardDescription>
+                Add blocks from <span className="font-medium text-foreground">Customize pages</span> → Analytics, or
+                restore the full analytics experience.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-8 w-full min-w-0">
+            {widgetIds.map((wid) => (
+              <div key={wid} className="w-full min-w-0" id={`admin-widget-${wid}`}>
+                {renderAnalyticsHostWidget(wid)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-6xl py-8 px-4">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -420,6 +533,7 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
+          {unifiedLayout.ready ? <AdminUnifiedLayoutSheetTrigger initialSurface="analytics" /> : null}
           <Button
             variant="outline"
             size="sm"

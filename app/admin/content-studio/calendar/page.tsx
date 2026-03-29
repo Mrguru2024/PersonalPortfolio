@@ -59,8 +59,10 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { calendarCollisionDetection, CALENDAR_SORTABLE_TRANSITION } from "@/components/content-studio/calendarDndConfig";
+import { ContentStudioFunnelStageSelect } from "@/components/content-studio/ContentStudioFunnelStageSelect";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFunnelStage } from "@/lib/growth-os/friendlyCopy";
 
 const WEEK_START_LS_KEY = "content-studio-calendar-week-starts-on";
 const MONTH_DENSITY_LS_KEY = "content-studio-calendar-month-density";
@@ -77,6 +79,7 @@ interface CalEntry {
   platformTargets: string[];
   personaTags: string[];
   ctaObjective: string | null;
+  funnelStage?: string | null;
   warningsJson: string[] | null;
   documentId: number | null;
   sortOrder?: number;
@@ -255,11 +258,13 @@ function SortableRow({
   const [editOpen, setEditOpen] = useState(false);
   const [editStatus, setEditStatus] = useState(entry.calendarStatus);
   const [editPlatforms, setEditPlatforms] = useState<string[]>([...(entry.platformTargets ?? [])]);
+  const [editFunnelStage, setEditFunnelStage] = useState(entry.funnelStage ?? "");
 
   useEffect(() => {
     if (editOpen) {
       setEditStatus(entry.calendarStatus);
       setEditPlatforms([...(entry.platformTargets ?? [])]);
+      setEditFunnelStage(entry.funnelStage ?? "");
     }
   }, [editOpen, entry]);
 
@@ -281,7 +286,11 @@ function SortableRow({
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ calendarStatus: editStatus, platformTargets: editPlatforms }),
+      body: JSON.stringify({
+        calendarStatus: editStatus,
+        platformTargets: editPlatforms,
+        funnelStage: editFunnelStage.trim() || null,
+      }),
     });
     if (!res.ok) {
       toast({ title: "Save failed", variant: "destructive" });
@@ -321,6 +330,11 @@ function SortableRow({
               {p}
             </Badge>
           ))}
+          {entry.funnelStage ? (
+            <Badge variant="secondary" className="text-xs">
+              {formatFunnelStage(entry.funnelStage)}
+            </Badge>
+          ) : null}
         </div>
         {entry.documentId != null && entry.documentApprovalStatus && (
           <div className="mt-1">
@@ -370,6 +384,11 @@ function SortableRow({
                     <SelectItem value="failed">Needs fix — correct the issue, then choose Ready to post again</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Funnel stage</Label>
+                <p className="text-xs text-muted-foreground">Used for Growth OS content mix and reporting.</p>
+                <ContentStudioFunnelStageSelect value={editFunnelStage} onValueChange={setEditFunnelStage} />
               </div>
               <div className="space-y-2">
                 <Label>Channels</Label>
@@ -444,6 +463,7 @@ export default function ContentStudioCalendarPage() {
   const [qWhen, setQWhen] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [qCta, setQCta] = useState("");
   const [qPersonas, setQPersonas] = useState("");
+  const [qFunnelStage, setQFunnelStage] = useState("");
   const [qSelectedPlatforms, setQSelectedPlatforms] = useState<string[]>(["facebook_page", "manual"]);
   const [activeDragEntry, setActiveDragEntry] = useState<CalEntry | null>(null);
   const [statusFilter, setStatusFilter] = useState<
@@ -682,6 +702,7 @@ export default function ContentStudioCalendarPage() {
       void qc.invalidateQueries({ queryKey: calendarQueryKey });
       setQuickOpen(false);
       setQTitle("");
+      setQFunnelStage("");
       toast({ title: "Added to calendar" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -910,6 +931,10 @@ export default function ContentStudioCalendarPage() {
                       <div className="space-y-1">
                         <Label>Audience tags (optional, comma-separated)</Label>
                         <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Funnel stage</Label>
+                        <ContentStudioFunnelStageSelect value={qFunnelStage} onValueChange={setQFunnelStage} />
                       </div>
                       <div className="space-y-2">
                         <Label>Channels for this slot</Label>

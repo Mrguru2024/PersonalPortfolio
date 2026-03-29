@@ -3,6 +3,10 @@ import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { getAfnCommunitySnapshotByEmail } from "@server/afnStorage";
 import { insertCrmContactSchema, type InsertCrmContact } from "@shared/crmSchema";
+import {
+  getLatestAeeAttributionForContact,
+  recordAeeCrmAttributionEvent,
+} from "@server/services/experimentation/aeeCrmAttributionService";
 
 const crmContactPatchSchema = insertCrmContactSchema.partial();
 
@@ -47,12 +51,25 @@ export async function PATCH(
     const updates = Object.fromEntries(
       Object.entries(parsed.data).filter(([, v]) => v !== undefined),
     ) as Partial<InsertCrmContact>;
+    const existing = await storage.getCrmContactById(id);
+    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (Object.keys(updates).length === 0) {
-      const existing = await storage.getCrmContactById(id);
-      if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
       return NextResponse.json(existing);
     }
     const contact = await storage.updateCrmContact(id, updates);
+    const bookedBecameSet = updates.bookedCallAt != null && existing.bookedCallAt == null;
+    if (bookedBecameSet) {
+      const aee = await getLatestAeeAttributionForContact(id).catch(() => null);
+      if (aee) {
+        await recordAeeCrmAttributionEvent({
+          contactId: id,
+          experimentId: aee.experimentId,
+          variantId: aee.variantId,
+          eventKind: "booked_call",
+          metadataJson: { source: "crm_contact_patch" },
+        }).catch(() => {});
+      }
+    }
     return NextResponse.json(contact);
   } catch (error: any) {
     console.error("Error updating CRM contact:", error);

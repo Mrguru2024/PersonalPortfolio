@@ -10,7 +10,6 @@ const statsSchema = z
   .object({
     pendingAssessments: z.number().int().min(0).optional(),
     totalContacts: z.number().int().min(0).optional(),
-    unaccessedResume: z.number().int().min(0).optional(),
   })
   .strict();
 
@@ -33,7 +32,6 @@ export async function POST(req: NextRequest) {
     const profile = await refreshOperatorIntelligence(sessionUser.id, {
       pendingAssessments: s.pendingAssessments ?? 0,
       totalContacts: s.totalContacts ?? 0,
-      unaccessedResume: s.unaccessedResume ?? 0,
     });
     return NextResponse.json({ profile });
   } catch (e) {

@@ -39,7 +39,6 @@ import {
 } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminHelpTip, AdminTipLabel } from "@/components/admin/AdminHelpTip";
 
 type AmieAnalyzeResponse = {
@@ -258,8 +257,7 @@ export default function MarketIntelligencePage() {
   const tier = result?.opportunity.opportunityTier ?? "";
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-7xl">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-1">
@@ -770,7 +768,6 @@ export default function MarketIntelligencePage() {
         </div>
       </div>
     </div>
-    </TooltipProvider>
   );
 }
 

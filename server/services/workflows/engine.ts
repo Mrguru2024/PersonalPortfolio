@@ -7,6 +7,14 @@ import type { WorkflowPayload, WorkflowExecutionResult } from "./types";
 import { getWorkflowsByTrigger } from "./registry";
 import { executeAction } from "./actions";
 
+function resolveWorkflowLogEntity(payload: WorkflowPayload): { type: string; id: number } {
+  if (payload.contactId != null) return { type: "contact", id: payload.contactId };
+  if (payload.dealId != null) return { type: "deal", id: payload.dealId };
+  if (payload.accountId != null) return { type: "account", id: payload.accountId };
+  if (payload.appointmentId != null) return { type: "appointment", id: payload.appointmentId };
+  return { type: "contact", id: 0 };
+}
+
 export interface FireOptions {
   contactId?: number;
   accountId?: number;
@@ -66,8 +74,7 @@ export async function fireWorkflows(
     }
 
     const finishedAt = new Date();
-    const relatedEntityType = payload.contactId != null ? "contact" : payload.dealId != null ? "deal" : payload.accountId != null ? "account" : "contact";
-    const relatedEntityId = payload.contactId ?? payload.dealId ?? payload.accountId ?? 0;
+    const { type: relatedEntityType, id: relatedEntityId } = resolveWorkflowLogEntity(payload);
 
     try {
       await storage.createCrmWorkflowExecution({
@@ -83,6 +90,8 @@ export async function fireWorkflows(
         metadata: {
           trigger: triggerType,
           journeyEvent: (payload as { journeyEvent?: unknown }).journeyEvent ?? null,
+          appointmentId: payload.appointmentId ?? null,
+          appointmentGuestEmail: payload.appointmentGuestEmail ?? null,
         },
       });
     } catch (logErr) {
@@ -102,6 +111,8 @@ export async function fireWorkflows(
       metadata: {
         trigger: triggerType,
         journeyEvent: (payload as { journeyEvent?: unknown }).journeyEvent ?? null,
+        appointmentId: payload.appointmentId ?? null,
+        appointmentGuestEmail: payload.appointmentGuestEmail ?? null,
       },
     });
   }
@@ -110,13 +121,10 @@ export async function fireWorkflows(
 }
 
 /**
- * Resolve primary entity for execution log (contact > deal > account).
+ * Resolve primary entity for execution log (contact > deal > account > appointment).
  */
 export function getPrimaryEntity(payload: WorkflowPayload): { type: string; id: number } {
-  if (payload.contactId != null) return { type: "contact", id: payload.contactId };
-  if (payload.dealId != null) return { type: "deal", id: payload.dealId };
-  if (payload.accountId != null) return { type: "account", id: payload.accountId };
-  return { type: "contact", id: 0 };
+  return resolveWorkflowLogEntity(payload);
 }
 
 /**

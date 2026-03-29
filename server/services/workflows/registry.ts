@@ -3,7 +3,7 @@
  */
 
 import type { WorkflowDefinition } from "./types";
-import { contactHasAccount, noActivityForDays, alwaysTrue } from "./conditions";
+import { contactHasAccount, hasContact, noActivityForDays, alwaysTrue } from "./conditions";
 
 export const WORKFLOW_NEW_QUALIFIED_LEAD: WorkflowDefinition = {
   key: "new_qualified_lead",
@@ -189,6 +189,163 @@ export const WORKFLOW_RECOMMENDATION_ACCEPTED: WorkflowDefinition = {
   ],
 };
 
+/** Scheduler: always rows an activity note (contact optional). */
+export const WORKFLOW_APPOINTMENT_BOOKED_AUDIT: WorkflowDefinition = {
+  key: "appointment_booked_audit",
+  name: "Meeting booked — activity log",
+  trigger: "appointment_booked",
+  conditions: [alwaysTrue()],
+  actions: [
+    {
+      type: "log_activity",
+      params: {
+        title: "Meeting booked (scheduler)",
+        content:
+          "Someone booked a meeting via the public scheduler. Open Meetings & calendar for time and details.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_BOOKED_CRM: WorkflowDefinition = {
+  key: "appointment_booked_crm",
+  name: "Meeting booked — CRM prep",
+  trigger: "appointment_booked",
+  conditions: [hasContact],
+  actions: [
+    { type: "update_tags", params: { add: ["meeting_booked"] } },
+    {
+      type: "create_task",
+      params: { title: "Prep for scheduled meeting", dueDays: 1, priority: "high" },
+    },
+    {
+      type: "log_activity",
+      params: {
+        title: "Booking linked to contact",
+        content: "Scheduler automation: tagged meeting_booked and added a prep task.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_CANCELLED_AUDIT: WorkflowDefinition = {
+  key: "appointment_cancelled_audit",
+  name: "Meeting cancelled — activity log",
+  trigger: "appointment_cancelled",
+  conditions: [alwaysTrue()],
+  actions: [
+    {
+      type: "log_activity",
+      params: {
+        title: "Meeting cancelled (scheduler)",
+        content: "A scheduled meeting was cancelled.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_CANCELLED_CRM: WorkflowDefinition = {
+  key: "appointment_cancelled_crm",
+  name: "Meeting cancelled — CRM alert",
+  trigger: "appointment_cancelled",
+  conditions: [hasContact],
+  actions: [
+    {
+      type: "update_tags",
+      params: { add: ["meeting_cancelled"] },
+    },
+    {
+      type: "create_internal_alert",
+      params: {
+        alertType: "high_engagement",
+        title: "Meeting cancelled",
+        message: "A booking was cancelled; consider re-engaging if appropriate.",
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_COMPLETED_AUDIT: WorkflowDefinition = {
+  key: "appointment_completed_audit",
+  name: "Meeting completed — activity log",
+  trigger: "appointment_completed",
+  conditions: [alwaysTrue()],
+  actions: [
+    {
+      type: "log_activity",
+      params: {
+        title: "Meeting completed (scheduler)",
+        content: "A meeting was marked completed.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_COMPLETED_CRM: WorkflowDefinition = {
+  key: "appointment_completed_crm",
+  name: "Meeting completed — CRM tag",
+  trigger: "appointment_completed",
+  conditions: [hasContact],
+  actions: [
+    { type: "update_tags", params: { add: ["meeting_completed"] } },
+    {
+      type: "log_activity",
+      params: {
+        title: "Meeting completed",
+        content: "Scheduler automation: tagged meeting_completed.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_NO_SHOW_AUDIT: WorkflowDefinition = {
+  key: "appointment_no_show_audit",
+  name: "No-show — activity log",
+  trigger: "appointment_no_show",
+  conditions: [alwaysTrue()],
+  actions: [
+    {
+      type: "log_activity",
+      params: {
+        title: "No-show (scheduler)",
+        content: "A meeting was marked no-show.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
+export const WORKFLOW_APPOINTMENT_NO_SHOW_CRM: WorkflowDefinition = {
+  key: "appointment_no_show_crm",
+  name: "No-show — follow-up",
+  trigger: "appointment_no_show",
+  conditions: [hasContact],
+  actions: [
+    { type: "mark_follow_up_required", params: { days: 1 } },
+    {
+      type: "create_internal_alert",
+      params: {
+        alertType: "high_engagement",
+        title: "Meeting no-show",
+        message: "Follow up with the guest and reschedule if appropriate.",
+      },
+    },
+    {
+      type: "log_activity",
+      params: {
+        title: "No-show follow-up",
+        content: "Scheduler automation: marked follow-up due and created an alert.",
+        metadata: { scheduler: true },
+      },
+    },
+  ],
+};
+
 const ALL_WORKFLOWS: WorkflowDefinition[] = [
   WORKFLOW_NEW_QUALIFIED_LEAD,
   WORKFLOW_FORM_COMPLETED,
@@ -203,6 +360,14 @@ const ALL_WORKFLOWS: WorkflowDefinition[] = [
   WORKFLOW_CONTACT_SMS_SENT,
   WORKFLOW_AI_SUMMARY_GENERATED,
   WORKFLOW_RECOMMENDATION_ACCEPTED,
+  WORKFLOW_APPOINTMENT_BOOKED_AUDIT,
+  WORKFLOW_APPOINTMENT_BOOKED_CRM,
+  WORKFLOW_APPOINTMENT_CANCELLED_AUDIT,
+  WORKFLOW_APPOINTMENT_CANCELLED_CRM,
+  WORKFLOW_APPOINTMENT_COMPLETED_AUDIT,
+  WORKFLOW_APPOINTMENT_COMPLETED_CRM,
+  WORKFLOW_APPOINTMENT_NO_SHOW_AUDIT,
+  WORKFLOW_APPOINTMENT_NO_SHOW_CRM,
 ];
 
 export function getWorkflowsByTrigger(trigger: string): WorkflowDefinition[] {

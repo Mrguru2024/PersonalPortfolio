@@ -21,7 +21,7 @@ export interface AdminHelpTipProps {
  * and how to use it **on the current screen**. Prefer concrete behavior (“what happens when you save”) over
  * telling people where to click in the top navigation.
  *
- * The `/admin` layout provides `TooltipProvider`; pages may wrap again for a different delay.
+ * `GlobalTooltipProvider` in `app/providers.tsx` supplies the Radix scope (calmer default delays).
  */
 export function AdminHelpTip({
   content,

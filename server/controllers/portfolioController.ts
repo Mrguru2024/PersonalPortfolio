@@ -481,6 +481,10 @@ export const portfolioController = {
             referrer: body.referrer ?? null,
             landing_page: body.landing_page ?? body.landingPage ?? null,
             visitorId: body.visitorId ?? null,
+            experimentKey: body.experiment_key ?? body.experimentKey ?? null,
+            variantKey: body.variant_key ?? body.variantKey ?? null,
+            experimentId: body.experiment_id ?? body.experimentId ?? null,
+            variantId: body.variant_id ?? body.variantId ?? null,
           },
           demographics: {
             ageRange: savedContact.ageRange ?? undefined,

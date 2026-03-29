@@ -21,36 +21,40 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
     id: "welcome",
     title: "Welcome to the Admin Dashboard",
     description:
-      "This page is your home for assessments, inbound contacts, resume requests, and snapshot cards. The tour walks through what each highlighted **area does** (counts, lists, updates). Throughout the app, small ? icons next to titles and fields explain that control—not how to use the top menu.",
+      "This page prioritizes **inbound work** first (suggested actions, reminders, inbox lists), then shortcuts and utilities. The tour walks through the main areas in that order. Throughout the app, small ? icons next to titles and fields explain that screen—not the top menu.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "summary-cards",
     title: "Summary at a glance",
-    description: "These cards show counts for assessments, contact form submissions, and resume requests. Check pending items first to prioritize your day.",
+    description:
+      "These counts mirror your inbox: assessments and contacts. Use them with the **Inbox** section right below to spot volume before you triage.",
     target: "[data-tour=\"summary-cards\"]",
     roles: ["all"],
   },
   {
+    id: "tabs",
+    title: "Inbox — Assessments, Contacts, Resume",
+    description:
+      "Your primary work queue. Switch tabs to review submissions, update assessment status, and follow up. Use Lead intake hub when routing quizzes and CRM import.",
+    target: "[data-tour=\"tabs\"]",
+    roles: ["all"],
+  },
+  {
     id: "quick-links",
-    title: "Quick links",
-    description: "Jump to Invoices, Project updates (announcements), and Feedback. Use these daily to stay on top of client work.",
+    title: "Workspace shortcuts",
+    description:
+      "Meetings & calendar and booking setup appear first; then invoices, Growth OS, Content Studio, site directory, and more.",
     target: "[data-tour=\"quick-links\"]",
     roles: ["all"],
   },
   {
     id: "development-updates",
     title: "Development updates",
-    description: "See what’s new in production. Features and fixes are logged here so you know what’s available.",
+    description:
+      "Optional release notes near the bottom of the dashboard. Expand when you want to see what shipped to production.",
     target: "[data-tour=\"development-updates\"]",
-    roles: ["all"],
-  },
-  {
-    id: "tabs",
-    title: "Assessments, Contacts, Resume",
-    description: "Switch between Assessments (project quotes), Contacts (form submissions), and Resume requests. Review and update statuses here.",
-    target: "[data-tour=\"tabs\"]",
     roles: ["all"],
   },
   {
@@ -73,7 +77,7 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
     id: "daily-habits",
     title: "Daily habits",
     description:
-      "The **Suggested for you** strip on this page reacts to your role and live counts (pending assessments, unaccessed resumes, etc.). Use it as a same-day checklist; follow into each area and rely on local ? tips for the next click.",
+      "The **Suggested for you** strip on this page reacts to your role and live counts (pending assessments, new contacts, etc.). Use it as a same-day checklist; follow into each area and rely on local ? tips for the next click.",
     target: "center",
     roles: ["all"],
   },

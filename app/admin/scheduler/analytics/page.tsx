@@ -4,13 +4,15 @@ export default function SchedulerAnalyticsPage() {
   return (
     <Card className="max-w-2xl border-dashed">
       <CardHeader>
-        <CardTitle>Scheduler analytics</CardTitle>
+        <CardTitle>Reports</CardTitle>
         <CardDescription>
-          Phase 2: funnels from page view → booking → show rate, cohorts by source, slot heatmaps, and value tiers —
-          fed from <code className="text-xs">bookingSource</code> and completed timestamps already on appointments.
+          Funnels from page visit through booking and show rate, plus simple breakdowns by source and time slot, are
+          planned here once core booking flows are stable end to end.
         </CardDescription>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">Operational reports ship after payment + webhook parity.</CardContent>
+      <CardContent className="text-sm text-muted-foreground">
+        Nothing to configure yet—check back after your team is actively using Meetings &amp; calendar.
+      </CardContent>
     </Card>
   );
 }

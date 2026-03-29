@@ -6,15 +6,15 @@ export default function SchedulerSettingsPage() {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Scheduler settings</CardTitle>
+        <CardTitle>Booking settings</CardTitle>
         <CardDescription>
-          Timezone, slot step, notice windows, email templates, and public booking toggle remain in native scheduling
-          settings.
+          Time zone, how long each slot is, how far ahead guests can book, email wording, optional booking assistant, and
+          whether public booking is turned on—all live under Booking &amp; reminders setup.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button asChild>
-          <Link href="/admin/scheduling/settings">Open scheduling settings</Link>
+          <Link href="/admin/scheduling/settings">Open booking &amp; reminders settings</Link>
         </Button>
       </CardContent>
     </Card>

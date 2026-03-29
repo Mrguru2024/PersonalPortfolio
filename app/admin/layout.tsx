@@ -1,6 +1,5 @@
 import { AdminGlobalTips } from "@/components/admin/AdminGlobalTips";
 import { AdminAgentWidget } from "@/components/admin/AdminAgentWidget";
-import { AdminTooltipBoundary } from "@/components/admin/AdminTooltipBoundary";
 
 export default function AdminLayout({
   children,
@@ -9,10 +8,8 @@ export default function AdminLayout({
 }) {
   return (
     <>
-      <AdminTooltipBoundary>
-        <AdminGlobalTips />
-        {children}
-      </AdminTooltipBoundary>
+      <AdminGlobalTips />
+      {children}
       <AdminAgentWidget />
     </>
   );

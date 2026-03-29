@@ -44,12 +44,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   AUTOMATION_JOB_VALUES,
@@ -402,8 +397,7 @@ function GrowthOsIntelligencePageContent() {
   }, []);
 
   return (
-    <TooltipProvider delayDuration={280}>
-      <div className="space-y-6 pb-8 min-w-0">
+    <div className="space-y-6 pb-8 min-w-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Market & growth intelligence</h1>
@@ -1335,7 +1329,6 @@ function GrowthOsIntelligencePageContent() {
           </TabsContent>
         </Tabs>
       </div>
-    </TooltipProvider>
   );
 }
 

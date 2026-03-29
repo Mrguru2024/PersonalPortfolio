@@ -354,6 +354,13 @@ export async function hasPermission(
   return perms?.[permission] === true;
 }
 
+/** AEE (experiments) — approved admins today; super user; optional `experiments` permission for staff. */
+export async function canAccessExperimentationEngine(req?: NextRequest): Promise<boolean> {
+  if (await isAdmin(req)) return true;
+  if (await isSuperUser(req)) return true;
+  return hasPermission(req, "experiments");
+}
+
 // Check if user is admin or approved writer
 export async function canCreateBlog(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);

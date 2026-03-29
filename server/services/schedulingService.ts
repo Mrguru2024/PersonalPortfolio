@@ -24,6 +24,7 @@ import {
   deleteGoogleCalendarEventForAppointment,
   syncAppointmentToGoogleCalendar,
 } from "@server/services/googleCalendarSchedulingService";
+import { fireAppointmentWorkflows } from "@server/services/schedulingWorkflowHooks";
 
 const ACTIVE = ["confirmed", "pending"] as const;
 
@@ -743,6 +744,7 @@ export async function cancelAppointmentByGuestToken(token: string): Promise<{ ok
     .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
     .where(eq(schedulingAppointments.id, appt.id));
   await db.delete(schedulingReminderJobs).where(eq(schedulingReminderJobs.appointmentId, appt.id));
+  void fireAppointmentWorkflows("appointment_cancelled", appt);
   return { ok: true };
 }
 
@@ -915,17 +917,28 @@ export async function updateAppointmentAdmin(
     completedAt: Date | null;
   }>,
 ): Promise<{ ok: true; row: SchedulingAppointment } | { ok: false; error: string }> {
+  const [existing] = await db.select().from(schedulingAppointments).where(eq(schedulingAppointments.id, id)).limit(1);
+  if (!existing) return { ok: false, error: "Not found." };
+
   const entries = Object.entries(patch).filter(([, v]) => v !== undefined);
   if (entries.length === 0) {
-    const [row] = await db.select().from(schedulingAppointments).where(eq(schedulingAppointments.id, id)).limit(1);
-    return row ? { ok: true, row } : { ok: false, error: "Not found." };
+    return { ok: true, row: existing };
   }
+  const prevStatus = existing.status;
   const [row] = await db
     .update(schedulingAppointments)
     .set({ ...Object.fromEntries(entries), updatedAt: new Date() })
     .where(eq(schedulingAppointments.id, id))
     .returning();
   if (!row) return { ok: false, error: "Not found." };
+
+  if (typeof patch.status === "string" && patch.status !== prevStatus) {
+    const next = row.status;
+    if (next === "cancelled") void fireAppointmentWorkflows("appointment_cancelled", row);
+    else if (next === "completed") void fireAppointmentWorkflows("appointment_completed", row);
+    else if (next === "no_show") void fireAppointmentWorkflows("appointment_no_show", row);
+  }
+
   return { ok: true, row };
 }
 

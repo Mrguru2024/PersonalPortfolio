@@ -28,7 +28,10 @@ export type AgentActionType =
   | "open_blog"
   | "open_invoices"
   | "open_chat"
-  | "generate_reminders";
+  | "generate_reminders"
+  | "open_scheduler"
+  | "open_scheduler_calendar"
+  | "open_scheduler_workflows";
 
 export interface AgentAction {
   type: AgentActionType;
@@ -157,6 +160,30 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   { keywords: ["proposal prep"], action: { type: "navigate", url: "/admin/crm/proposal-prep" } },
   { keywords: ["reminders", "reminder"], action: { type: "open_reminders", url: "/admin/reminders" } },
   { keywords: ["crm", "contacts", "leads"], action: { type: "open_crm", url: "/admin/crm" } },
+  {
+    keywords: [
+      "scheduler workflows",
+      "booking automations",
+      "meeting automations",
+      "scheduler automation",
+    ],
+    action: { type: "open_scheduler_workflows", url: "/admin/scheduler/workflows" },
+  },
+  {
+    keywords: ["scheduler calendar", "meetings calendar", "booking calendar", "master calendar"],
+    action: { type: "open_scheduler_calendar", url: "/admin/scheduler/calendar" },
+  },
+  {
+    keywords: [
+      "scheduler",
+      "scheduling",
+      "bookings and calendar",
+      "meetings & calendar",
+      "booking pages",
+      "meeting types",
+    ],
+    action: { type: "open_scheduler", url: "/admin/scheduler" },
+  },
   { keywords: ["dashboard", "admin home"], action: { type: "open_dashboard", url: "/admin/dashboard" } },
   { keywords: ["settings", "preferences"], action: { type: "open_settings", url: "/admin/settings" } },
   { keywords: ["blog", "posts", "cms"], action: { type: "open_blog", url: "/admin/blog" } },
@@ -287,7 +314,7 @@ async function processWithOpenAI(input: {
   const actionRules = input.canPerformActions
     ? `You may set "action" to run something in the app (exact JSON shapes only):
 - {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os, /admin/market-intelligence, /admin/agent-knowledge.
-- Alternatively you may use these exact types (no url needed): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM).
+- Alternatively you may use these exact types (no url needed): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM), "open_scheduler", "open_scheduler_calendar", "open_scheduler_workflows" (Meetings & calendar hub, master calendar, booking automations).
 - {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate, run, or refresh reminders.
 Otherwise set "action": null. Never invent types or URLs.
 

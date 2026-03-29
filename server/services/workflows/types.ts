@@ -47,7 +47,12 @@ export type WorkflowTriggerType =
   /** Outbound email recorded for this contact (comm campaign, newsletter to CRM match, sequence email step). */
   | "contact_email_sent"
   /** Outbound SMS delivered to this contact (manual, welcome, booking link, revenue ops). */
-  | "contact_sms_sent";
+  | "contact_sms_sent"
+  /** Ascendra Scheduler — public booking created or admin/guest status transitions. */
+  | "appointment_booked"
+  | "appointment_cancelled"
+  | "appointment_completed"
+  | "appointment_no_show";
 
 /** Supported action types. */
 export type WorkflowActionType =
@@ -91,6 +96,12 @@ export interface WorkflowPayload {
   formSource?: string;
   /** Optional: what happened (email vs SMS, newsletter vs sequence, etc.) for journey automation. */
   journeyEvent?: JourneyEventMetadata;
+  /** Scheduler: booking row id when firing appointment_* triggers. */
+  appointmentId?: number;
+  appointmentGuestName?: string;
+  appointmentGuestEmail?: string;
+  /** Meeting type label at booking time (optional). */
+  bookingTypeName?: string;
   [key: string]: unknown;
 }
 

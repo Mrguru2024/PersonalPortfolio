@@ -4,14 +4,14 @@ export default function SchedulerRoutingRulesPage() {
   return (
     <Card className="max-w-2xl border-dashed">
       <CardHeader>
-        <CardTitle>Routing rules</CardTitle>
+        <CardTitle>Routing</CardTitle>
         <CardDescription>
-          Skill-based, geographic, and score-driven assignment lands in Phase 2 so it can reuse Growth OS automation
-          hooks without duplicating workflow engines.
+          Route new bookings by skill, region, or priority host—designed to complement how you already run Growth OS, so
+          rules stay in one mental model.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
-        Planned: round robin, priority host, manual override, and rule packs per booking page.
+        Coming soon: round robin, priority host, manual override, and saved rule sets per booking page.
       </CardContent>
     </Card>
   );

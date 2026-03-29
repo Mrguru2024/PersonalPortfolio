@@ -14,7 +14,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminHelpTip, AdminTipLabel } from "@/components/admin/AdminHelpTip";
 
 type KnowledgeEntry = {
@@ -112,7 +111,6 @@ export default function AdminAgentKnowledgePage() {
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto min-w-0 px-3 fold:px-4 sm:px-6 py-8 max-w-3xl space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -299,6 +297,5 @@ export default function AdminAgentKnowledgePage() {
         </div>
       </div>
     </div>
-    </TooltipProvider>
   );
 }

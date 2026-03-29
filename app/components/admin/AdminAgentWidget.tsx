@@ -29,10 +29,65 @@ interface AgentBootstrap {
   policyNotice: string;
 }
 
+/** Avoid `res.json()` on HTML error pages (throws "Unexpected token '<'"). */
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const trimmed = text.trimStart();
+  if (
+    trimmed.startsWith("<!DOCTYPE") ||
+    trimmed.startsWith("<!doctype") ||
+    trimmed.startsWith("<html") ||
+    trimmed.startsWith("<HTML")
+  ) {
+    throw new Error(
+      "The assistant received a web page instead of API data (often a sign-in redirect, server error, or bad URL). Refresh the page, sign in again, or check the Network tab for /api/admin/agent.",
+    );
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      text.length > 0
+        ? `Assistant returned a non-JSON response (HTTP ${res.status}).`
+        : `Assistant request failed (HTTP ${res.status}).`,
+    );
+  }
+}
+
 const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 /** Runs a server-confirmed action and returns markdown for the chat transcript. */
+/** Local slash commands (no API round-trip) — scheduler / wayfinding shortcuts. */
+function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?: string } | null {
+  const t = text.trim();
+  if (!t.startsWith("/") || t.includes("\n")) return null;
+  const cmd = t.slice(1).trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  if (!cmd) return null;
+
+  if (cmd === "help" || cmd === "commands") {
+    return {
+      reply:
+        "## Commands\n\n" +
+        "- `/calendar` — Master scheduler calendar\n" +
+        "- `/scheduler` — Meetings & calendar hub\n" +
+        "- `/workflows` — Booking automations\n" +
+        "- `/help` — This list\n\n" +
+        "Natural language still works (e.g. “open scheduler workflows”).",
+    };
+  }
+  if (cmd === "calendar" || cmd === "meetings") {
+    return { reply: "Opening the **master calendar**.", navigateTo: "/admin/scheduler/calendar" };
+  }
+  if (cmd === "scheduler" || cmd === "bookings") {
+    return { reply: "Opening **Meetings & calendar**.", navigateTo: "/admin/scheduler" };
+  }
+  if (cmd === "workflows" || cmd === "automations") {
+    return { reply: "Opening **booking automations**.", navigateTo: "/admin/scheduler/workflows" };
+  }
+  return null;
+}
+
 async function runAgentAction(
   action: NonNullable<AgentResponse["action"]>,
   router: ReturnType<typeof useRouter>,
@@ -104,11 +159,11 @@ export function AdminAgentWidget() {
     queryKey: ["/api/admin/agent", "bootstrap"],
     queryFn: async (): Promise<AgentBootstrap> => {
       const res = await fetch("/api/admin/agent", { credentials: "include" });
+      const data = await readJsonResponse<AgentBootstrap & { message?: string }>(res);
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(typeof err.message === "string" ? err.message : "Bootstrap failed");
+        throw new Error(typeof data.message === "string" ? data.message : "Bootstrap failed");
       }
-      return res.json() as Promise<AgentBootstrap>;
+      return data;
     },
     enabled: isAdmin && open,
     staleTime: 60_000,
@@ -137,7 +192,7 @@ export function AdminAgentWidget() {
         }),
         credentials: "include",
       });
-      const data = (await res.json()) as AgentResponse & { message?: string };
+      const data = await readJsonResponse<AgentResponse & { message?: string }>(res);
       if (!res.ok) throw new Error(data.reply || data.message || "Request failed");
       return data;
     },
@@ -190,6 +245,19 @@ export function AdminAgentWidget() {
   const handleSubmit = () => {
     const text = input.trim();
     if ((!text && imageAttachments.length === 0) || sendMutation.isPending) return;
+
+    const slash = text && imageAttachments.length === 0 ? interpretAdminSlashCommand(text) : null;
+    if (slash) {
+      setInput("");
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: text },
+        { role: "assistant", content: slash.reply },
+      ]);
+      if (slash.navigateTo) router.push(slash.navigateTo);
+      return;
+    }
+
     setInput("");
     sendMutation.mutate({ message: text, history: messages, imageAttachments });
   };

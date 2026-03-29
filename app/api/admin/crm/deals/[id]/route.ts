@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { fireWorkflows, buildPayloadFromDealId } from "@server/services/workflows/engine";
+import {
+  getLatestAeeAttributionForContact,
+  recordAeeCrmAttributionEvent,
+} from "@server/services/experimentation/aeeCrmAttributionService";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +29,39 @@ export async function PATCH(
       if (newStage === "proposal_ready") fireWorkflows(storage, "opportunity_marked_proposal_ready", { ...payload, ...meta }).catch(() => {});
       else if (newStage === "won") fireWorkflows(storage, "opportunity_marked_won", { ...payload, ...meta }).catch(() => {});
       else if (newStage === "lost") fireWorkflows(storage, "opportunity_marked_lost", { ...payload, ...meta }).catch(() => {});
+
+      const aee = await getLatestAeeAttributionForContact(deal.contactId).catch(() => null);
+      if (aee) {
+        if (newStage === "proposal_ready") {
+          await recordAeeCrmAttributionEvent({
+            contactId: deal.contactId,
+            dealId: id,
+            experimentId: aee.experimentId,
+            variantId: aee.variantId,
+            eventKind: "proposal",
+            metadataJson: { source: "crm_deal_patch" },
+          }).catch(() => {});
+        } else if (newStage === "won") {
+          await recordAeeCrmAttributionEvent({
+            contactId: deal.contactId,
+            dealId: id,
+            experimentId: aee.experimentId,
+            variantId: aee.variantId,
+            eventKind: "closed_won",
+            valueCents: typeof deal.value === "number" ? deal.value : 0,
+            metadataJson: { source: "crm_deal_patch" },
+          }).catch(() => {});
+        } else if (newStage === "lost") {
+          await recordAeeCrmAttributionEvent({
+            contactId: deal.contactId,
+            dealId: id,
+            experimentId: aee.experimentId,
+            variantId: aee.variantId,
+            eventKind: "closed_lost",
+            metadataJson: { source: "crm_deal_patch" },
+          }).catch(() => {});
+        }
+      }
     }
     return NextResponse.json(deal);
   } catch (error: any) {

@@ -80,6 +80,8 @@ export async function POST(req: NextRequest) {
           metadata: {
             stripeInvoiceId: invoice.id,
             hostedInvoiceUrl: invoice.hosted_invoice_url,
+            amountPaidCents: typeof invoice.amount_paid === "number" ? invoice.amount_paid : 0,
+            currency: typeof invoice.currency === "string" ? invoice.currency : "usd",
           },
         });
         await mergeContactCustomFields(contactId, {

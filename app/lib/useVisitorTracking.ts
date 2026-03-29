@@ -57,6 +57,7 @@ function markPageViewSent(path: string): void {
 /**
  * Fire-and-forget visitor tracking to POST /api/track/visitor.
  * Page views are deduped: at most one per path per 30s per session. Other events are sent as-is.
+ * For AEE, merge `buildAeeEventMetadata` from `@/lib/aeeTracking` into `options.metadata` (experiment_key, variant_id, persona_key, …).
  */
 export function useVisitorTracking() {
   const visitorIdRef = useRef<string>("");

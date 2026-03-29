@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Palette, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookingPageBrandingSheet } from "@/components/scheduling/BookingPageBrandingSheet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ type BookingPage = {
   depositCents: number | null;
   active: boolean;
   formFieldsJson: Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>;
+  settingsJson?: Record<string, unknown> | null;
 };
 
 export default function SchedulerBookingPagesPage() {
@@ -38,6 +40,8 @@ export default function SchedulerBookingPagesPage() {
   const [pages, setPages] = useState<BookingPage[]>([]);
   const [types, setTypes] = useState<MeetingType[]>([]);
   const [saving, setSaving] = useState(false);
+  const [brandingPage, setBrandingPage] = useState<BookingPage | null>(null);
+  const [brandingOpen, setBrandingOpen] = useState(false);
   const [form, setForm] = useState({
     slug: "",
     title: "",
@@ -64,6 +68,18 @@ export default function SchedulerBookingPagesPage() {
       }
     })();
   }, [load]);
+
+  useEffect(() => {
+    if (!types.length) return;
+    setForm((s) => {
+      const id = s.bookingTypeId;
+      const n = typeof id === "number" ? id : parseInt(String(id), 10);
+      if (id === "" || !Number.isFinite(n) || !types.some((t) => t.id === n)) {
+        return { ...s, bookingTypeId: types[0]!.id };
+      }
+      return s;
+    });
+  }, [types]);
 
   async function createPage(e: React.FormEvent) {
     e.preventDefault();
@@ -141,9 +157,8 @@ export default function SchedulerBookingPagesPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Booking pages</h1>
         <p className="text-muted-foreground mt-1 text-sm max-w-2xl">
-          Each page maps to one meeting type and gets a public URL at{" "}
-          <code className="text-xs rounded bg-muted px-1">/book/your-slug</code>. Deposit and Stripe capture arrive in
-          Phase 2; today we record payment expectation on the appointment.
+          Each page matches one meeting type and gets its own shareable booking link. You can note whether a deposit or
+          full payment is expected; card charging is configured separately in Payments when enabled.
         </p>
       </div>
 
@@ -154,12 +169,12 @@ export default function SchedulerBookingPagesPage() {
               <Plus className="h-5 w-5" />
               New booking page
             </CardTitle>
-            <CardDescription>Slug becomes the public path; keep it short and memorable.</CardDescription>
+            <CardDescription>The short name becomes part of the public link—keep it simple and memorable.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={createPage} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="bp-slug">Slug</Label>
+                <Label htmlFor="bp-slug">Short link name</Label>
                 <Input
                   id="bp-slug"
                   value={form.slug}
@@ -216,7 +231,7 @@ export default function SchedulerBookingPagesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="inherit">Inherit pool</SelectItem>
-                      <SelectItem value="fixed">Fixed host (set in DB / Phase 2 UI)</SelectItem>
+                      <SelectItem value="fixed">Fixed host (always the same person)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -273,16 +288,32 @@ export default function SchedulerBookingPagesPage() {
                     <div>
                       <div className="font-medium">{p.title}</div>
                       <div className="text-xs text-muted-foreground">
-                        /book/{p.slug} · {p.paymentRequirement}
+                        Link: {p.slug}
+                        {p.paymentRequirement !== "none"
+                          ? ` · Payment: ${p.paymentRequirement === "deposit" ? "deposit" : "full"}`
+                          : ""}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="secondary">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 min-h-[44px] sm:min-h-9"
+                        onClick={() => {
+                          setBrandingPage(p);
+                          setBrandingOpen(true);
+                        }}
+                      >
+                        <Palette className="h-4 w-4 shrink-0" aria-hidden />
+                        Customize look
+                      </Button>
+                      <Button asChild size="sm" variant="secondary" className="min-h-[44px] sm:min-h-9">
                         <Link href={`/book/${p.slug}`} target="_blank" rel="noreferrer">
                           Preview
                         </Link>
                       </Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => deactivatePage(p.id)}>
+                      <Button type="button" size="sm" variant="ghost" className="min-h-[44px] sm:min-h-9" onClick={() => deactivatePage(p.id)}>
                         <Trash2 className="h-4 w-4" aria-hidden />
                       </Button>
                     </div>
@@ -292,6 +323,22 @@ export default function SchedulerBookingPagesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <BookingPageBrandingSheet
+        open={brandingOpen}
+        onOpenChange={setBrandingOpen}
+        page={
+          brandingPage
+            ? {
+                id: brandingPage.id,
+                slug: brandingPage.slug,
+                title: brandingPage.title,
+                settingsJson: brandingPage.settingsJson ?? null,
+              }
+            : null
+        }
+        onSaved={() => void load()}
+      />
     </div>
   );
 }

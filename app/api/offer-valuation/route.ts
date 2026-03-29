@@ -18,6 +18,10 @@ import { getLeadCustomFields } from "@shared/leadCustomFields";
 import { canUseOfferValuation, sanitizePersonaTag } from "./lib";
 import { getSiteOriginForMetadata } from "@/lib/siteUrl";
 import { STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
+import {
+  aeeFieldsForFormAttribution,
+  zOptionalAeeAttribution,
+} from "@/lib/aeeFormAttributionZod";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -53,6 +57,7 @@ const bodySchema = z.object({
       referrer: z.string().trim().max(500).optional().nullable(),
       landing_page: z.string().trim().max(240).optional().nullable(),
     })
+    .merge(zOptionalAeeAttribution)
     .optional(),
 });
 
@@ -74,6 +79,10 @@ async function attachPublicLeadAndAutomation(input: {
     utm_campaign?: string | null;
     referrer?: string | null;
     landing_page?: string | null;
+    experimentKey?: string | null;
+    variantKey?: string | null;
+    experimentId?: number | string | null;
+    variantId?: number | string | null;
   };
 }) {
   const lead = await ensureCrmLeadFromFormSubmission({
@@ -87,6 +96,7 @@ async function attachPublicLeadAndAutomation(input: {
       referrer: input.attribution?.referrer ?? null,
       landing_page: input.attribution?.landing_page ?? "/offer-audit",
       visitorId: input.attribution?.visitorId ?? null,
+      ...aeeFieldsForFormAttribution(input.attribution),
     },
     customFields: {
       firstTouchSource: "offer_audit",

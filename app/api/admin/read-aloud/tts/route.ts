@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const voiceRaw = typeof body.voice === "string" ? body.voice.toLowerCase().trim() : "nova";
   const voice = ALLOWED_VOICES.has(voiceRaw) ? voiceRaw : "nova";
 
-  const model = process.env.OPENAI_READ_ALOUD_MODEL?.trim() || "tts-1-hd";
+  const model = process.env.OPENAI_READ_ALOUD_MODEL?.trim() || "tts-1";
 
   try {
     const res = await fetch("https://api.openai.com/v1/audio/speech", {

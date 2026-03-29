@@ -4,32 +4,23 @@ import Link from "next/link";
 import { Calendar, Settings, List, Clock, Tags, UserCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 
 export default function AdminSchedulingHomePage() {
-  const { user } = useAuth();
-  const isSuper = isAuthSuperUser(user);
-
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Scheduling</h1>
-        <p className="text-muted-foreground mt-1">
-          For the operations calendar, inbox, and booking pages, open{" "}
-          <Link href="/admin/scheduler" className="text-primary underline-offset-4 hover:underline">
-            Ascendra Scheduler
+        <h1 className="text-2xl font-bold text-foreground">Booking &amp; reminders setup</h1>
+        <p className="text-muted-foreground mt-1 max-w-3xl">
+          Tune how public booking works: meeting types, your hours, emails, and whether the book-a-time page is on. For
+          the calendar, inbox, and shareable booking links, open{" "}
+          <Link href="/admin/scheduler" className="text-primary underline-offset-4 hover:underline font-medium">
+            Meetings &amp; calendar
           </Link>
-          . Native booking on Ascendra—confirmations and reminder emails. Optional: connect Google Calendar or Calendly in{" "}
+          . To connect Google Calendar or other tools, use{" "}
           <Link href="/admin/integrations" className="text-primary underline-offset-4 hover:underline">
             Integrations
           </Link>
-          {isSuper ?
-            <>
-              {" "}
-              (planned sync). Reminder jobs run on a schedule via <code className="text-xs">/api/cron/scheduling</code> or
-              Growth OS automation.
-            </>
-          : " (calendar sync is planned). Reminder emails run on an automated schedule."}
+          . Confirmation and reminder emails send automatically while booking stays enabled.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -37,9 +28,9 @@ export default function AdminSchedulingHomePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Settings className="h-5 w-5" />
-              Settings & templates
+              Settings &amp; templates
             </CardTitle>
-            <CardDescription>Timezone, slot step, email copy, AI assistant, public on/off.</CardDescription>
+            <CardDescription>Timezone, time-slot steps, email wording, optional booking assistant, and public on/off.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild>
@@ -53,11 +44,7 @@ export default function AdminSchedulingHomePage() {
               <Tags className="h-5 w-5" />
               Meeting types
             </CardTitle>
-            <CardDescription>
-              {isSuper ?
-                "Durations, slugs, and active flags for /book."
-              : "Durations and which meeting types appear on your public booking page."}
-            </CardDescription>
+            <CardDescription>Durations and which meeting types guests can choose when they book.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="secondary">
@@ -71,7 +58,7 @@ export default function AdminSchedulingHomePage() {
               <Clock className="h-5 w-5" />
               Availability
             </CardTitle>
-            <CardDescription>Weekly windows, per-type overrides, AI parse &amp; save.</CardDescription>
+            <CardDescription>Weekly hours, overrides, and an optional assistant to turn a description into rules.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="secondary">
@@ -86,9 +73,7 @@ export default function AdminSchedulingHomePage() {
               My availability
             </CardTitle>
             <CardDescription>
-              {isSuper ?
-                "Per–founder hours and blocked dates for public /book (when guests choose you or you're the only host)."
-              : "Your personal hours and blocked dates when guests book you—or when you are the only available host."}
+              Your personal hours and blocked dates when guests book with you—or when you are the only available host.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -101,42 +86,32 @@ export default function AdminSchedulingHomePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calendar className="h-5 w-5" />
-              Public book page
+              Public booking page
             </CardTitle>
-            <CardDescription>
-              {isSuper ?
-                <>
-                  Share <code className="text-xs">/book</code> with prospects.
-                </>
-              : "Share your public booking link with prospects."}
-            </CardDescription>
+            <CardDescription>Preview what visitors see when they choose a time.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
               <Link href="/book" target="_blank" rel="noreferrer">
-                Preview /book
+                Open booking page
               </Link>
             </Button>
           </CardContent>
         </Card>
-        {isSuper ?
-          <Card className="sm:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <List className="h-5 w-5" />
-                Appointments API
-              </CardTitle>
-              <CardDescription>List bookings: GET /api/admin/scheduling/appointments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="secondary">
-                <Link href="/api/admin/scheduling/appointments" target="_blank" rel="noreferrer">
-                  Open JSON (auth required)
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        : null}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <List className="h-5 w-5" />
+              Operations hub
+            </CardTitle>
+            <CardDescription>Calendar, appointment list, and branded booking links live in one place.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="secondary">
+              <Link href="/admin/scheduler">Open Meetings &amp; calendar</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -207,6 +207,7 @@ const FUNNEL_STAGE_LABELS: Record<string, string> = {
   awareness: "Awareness",
   consideration: "Consideration",
   conversion: "Conversion",
+  nurture: "Nurture",
   retention: "Retention",
 };
 

@@ -460,6 +460,7 @@ export interface IStorage {
   // CRM workflow executions (Stage 4)
   createCrmWorkflowExecution(entry: InsertCrmWorkflowExecution): Promise<CrmWorkflowExecution>;
   getCrmWorkflowExecutionsByEntity(entityType: string, entityId: number, limit?: number): Promise<CrmWorkflowExecution[]>;
+  getRecentCrmWorkflowExecutionsByTriggers(triggerTypes: string[], limit?: number): Promise<CrmWorkflowExecution[]>;
 
   // CRM Stage 3.5: Discovery workspace, proposal prep, playbook
   createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace>;
@@ -2789,7 +2790,20 @@ export class DatabaseStorage implements IStorage {
 
   async upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow> {
     const existing = await this.getRevenueOpsSettings();
-    const merged = { ...existing.config, ...config };
+    const prev = existing.config ?? {};
+    const merged: RevenueOpsSettingsConfig = { ...prev, ...config };
+    if (config.finance) {
+      merged.finance = {
+        ...prev.finance,
+        ...config.finance,
+        operatingCostLines:
+          config.finance.operatingCostLines !== undefined
+            ? config.finance.operatingCostLines
+            : prev.finance?.operatingCostLines,
+        ledgerEntries:
+          config.finance.ledgerEntries !== undefined ? config.finance.ledgerEntries : prev.finance?.ledgerEntries,
+      };
+    }
     const [updated] = await db
       .update(revenueOpsSettings)
       .set({ config: merged, updatedAt: new Date() })
@@ -2833,64 +2847,8 @@ export class DatabaseStorage implements IStorage {
     bookingClicks30d: number;
     topSources: { source: string; count: number }[];
   }> {
-    const now = Date.now();
-    const sevenDaysAgo = new Date(now - 7 * 86400000);
-    const thirtyDaysAgo = new Date(now - 30 * 86400000);
-
-    const [totalLeadsRow] = await db.select({ n: count() }).from(crmContacts).where(eq(crmContacts.type, "lead"));
-    const [withPhoneRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.phone), sql`length(trim(${crmContacts.phone})) > 5`));
-    const [bookedRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.bookedCallAt)));
-    const [contactedRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(
-        and(eq(crmContacts.type, "lead"), or(isNotNull(crmContacts.lastContactedAt), ne(crmContacts.status, "new")))
-      );
-    const [paymentsRow] = await db
-      .select({ n: countDistinct(crmActivityLog.contactId) })
-      .from(crmActivityLog)
-      .where(
-        and(eq(crmActivityLog.type, "revenue_ops_payment_completed"), gte(crmActivityLog.createdAt, thirtyDaysAgo))
-      );
-    const [missedRow] = await db
-      .select({ n: count() })
-      .from(crmActivityLog)
-      .where(and(eq(crmActivityLog.type, "revenue_ops_missed_call"), gte(crmActivityLog.createdAt, sevenDaysAgo)));
-    const [clicksRow] = await db
-      .select({ n: count() })
-      .from(crmActivityLog)
-      .where(and(eq(crmActivityLog.type, "revenue_ops_booking_link_click"), gte(crmActivityLog.createdAt, thirtyDaysAgo)));
-
-    const leadSources = await db
-      .select({ utm: crmContacts.utmSource, src: crmContacts.source })
-      .from(crmContacts)
-      .where(eq(crmContacts.type, "lead"));
-    const sourceMap = new Map<string, number>();
-    for (const row of leadSources) {
-      const label = (row.utm?.trim() || row.src?.trim() || "(none)") as string;
-      sourceMap.set(label, (sourceMap.get(label) ?? 0) + 1);
-    }
-    const topSources = [...sourceMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([source, n]) => ({ source, count: n }));
-
-    return {
-      totalLeads: Number(totalLeadsRow?.n ?? 0),
-      leadsWithPhone: Number(withPhoneRow?.n ?? 0),
-      bookedLeads: Number(bookedRow?.n ?? 0),
-      contactedLeads: Number(contactedRow?.n ?? 0),
-      paymentsLogged: Number(paymentsRow?.n ?? 0),
-      missedCalls7d: Number(missedRow?.n ?? 0),
-      bookingClicks30d: Number(clicksRow?.n ?? 0),
-      topSources,
-    };
+    const { getRevenueOpsFunnelMetrics } = await import("@server/services/revenueOpsMetricsService");
+    return getRevenueOpsFunnelMetrics();
   }
 
   async getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined> {
@@ -2966,6 +2924,17 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(crmWorkflowExecutions.relatedEntityType, entityType), eq(crmWorkflowExecutions.relatedEntityId, entityId)))
       .orderBy(desc(crmWorkflowExecutions.startedAt))
       .limit(limit);
+  }
+
+  async getRecentCrmWorkflowExecutionsByTriggers(triggerTypes: string[], limit = 20): Promise<CrmWorkflowExecution[]> {
+    if (triggerTypes.length === 0) return [];
+    const cap = Math.min(Math.max(limit, 1), 50);
+    return db
+      .select()
+      .from(crmWorkflowExecutions)
+      .where(inArray(crmWorkflowExecutions.triggerType, triggerTypes))
+      .orderBy(desc(crmWorkflowExecutions.startedAt))
+      .limit(cap);
   }
 
   async createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace> {
@@ -4084,8 +4053,19 @@ export class DatabaseStorage implements IStorage {
       const variant = exp.variants.find((v) => v.id === existing[0]!.variantId);
       return variant ? { variantKey: variant.key, config: (variant.config ?? null) as Record<string, unknown> | null } : null;
     }
-    const idx = Math.floor(Math.random() * exp.variants.length);
-    const chosen = exp.variants[idx]!;
+    const weights = exp.variants.map((v) =>
+      typeof v.allocationWeight === "number" && v.allocationWeight > 0 ? v.allocationWeight : 1,
+    );
+    const totalW = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * totalW;
+    let chosen = exp.variants[0]!;
+    for (let i = 0; i < exp.variants.length; i++) {
+      roll -= weights[i]!;
+      if (roll <= 0) {
+        chosen = exp.variants[i]!;
+        break;
+      }
+    }
     try {
       await db.insert(growthAssignments).values({
         experimentId: exp.id,
@@ -4351,15 +4331,32 @@ export class DatabaseStorage implements IStorage {
   ): Promise<AdminSettings> {
     const now = new Date();
     const existing = await this.getAdminSettings(userId);
+    const def = {
+      emailNotifications: true,
+      inAppNotifications: true,
+      pushNotificationsEnabled: true,
+      remindersEnabled: true,
+      reminderFrequency: "realtime",
+      notifyOnRoleChange: true,
+      aiAgentCanPerformActions: false,
+      aiAgentRequireActionConfirmation: true,
+    } as const;
     const payload = {
-      emailNotifications: settings.emailNotifications,
-      inAppNotifications: settings.inAppNotifications,
-      pushNotificationsEnabled: settings.pushNotificationsEnabled,
-      remindersEnabled: settings.remindersEnabled,
-      reminderFrequency: settings.reminderFrequency,
-      notifyOnRoleChange: settings.notifyOnRoleChange,
-      aiAgentCanPerformActions: settings.aiAgentCanPerformActions,
-      aiAgentRequireActionConfirmation: settings.aiAgentRequireActionConfirmation,
+      emailNotifications: settings.emailNotifications ?? existing?.emailNotifications ?? def.emailNotifications,
+      inAppNotifications: settings.inAppNotifications ?? existing?.inAppNotifications ?? def.inAppNotifications,
+      pushNotificationsEnabled:
+        settings.pushNotificationsEnabled ?? existing?.pushNotificationsEnabled ?? def.pushNotificationsEnabled,
+      remindersEnabled: settings.remindersEnabled ?? existing?.remindersEnabled ?? def.remindersEnabled,
+      reminderFrequency: settings.reminderFrequency ?? existing?.reminderFrequency ?? def.reminderFrequency,
+      notifyOnRoleChange: settings.notifyOnRoleChange ?? existing?.notifyOnRoleChange ?? def.notifyOnRoleChange,
+      aiAgentCanPerformActions:
+        settings.aiAgentCanPerformActions ?? existing?.aiAgentCanPerformActions ?? def.aiAgentCanPerformActions,
+      aiAgentRequireActionConfirmation:
+        settings.aiAgentRequireActionConfirmation ??
+        existing?.aiAgentRequireActionConfirmation ??
+        def.aiAgentRequireActionConfirmation,
+      adminUiLayouts:
+        settings.adminUiLayouts !== undefined ? settings.adminUiLayouts : existing?.adminUiLayouts ?? null,
       updatedAt: now,
     };
     if (existing) {

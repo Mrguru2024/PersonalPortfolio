@@ -7,16 +7,16 @@ export default function SchedulerEventTypesPage() {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Event types</CardTitle>
+        <CardTitle>Meeting types</CardTitle>
         <CardDescription>
-          Meeting types, durations, and slugs are shared with native <code className="text-xs">/book</code>. Use the
-          existing editor to avoid duplicate data.
+          Names, lengths, and which types appear on your public booking flows are edited in one place so nothing gets
+          out of sync.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button asChild>
           <Link href="/admin/scheduling/booking-types" className="inline-flex items-center gap-2">
-            Open meeting types
+            Edit meeting types
             <ExternalLink className="h-4 w-4" aria-hidden />
           </Link>
         </Button>

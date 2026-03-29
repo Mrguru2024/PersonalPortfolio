@@ -36,6 +36,7 @@ const nextConfig = {
       { source: '/ecosystem-founders', destination: '/about?founders=1', permanent: true },
       { source: '/community', destination: '/Afn', permanent: true },
       { source: '/community/:path*', destination: '/Afn/:path*', permanent: true },
+      { source: '/resume', destination: '/contact', permanent: true },
     ];
   },
 

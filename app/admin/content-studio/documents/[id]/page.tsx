@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/newsletter/RichTextEditor";
+import { ContentStudioFunnelStageSelect } from "@/components/content-studio/ContentStudioFunnelStageSelect";
 import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -242,7 +243,11 @@ export default function ContentStudioDocumentEditPage() {
             </div>
             <div className="space-y-1">
               <Label>Funnel stage</Label>
-              <Input value={funnelStage} onChange={(e) => setFunnelStage(e.target.value)} placeholder="awareness / consideration…" />
+              <p className="text-xs text-muted-foreground mb-1">
+                Presets match Growth OS experiments. Non-standard saved values appear as an extra option until you
+                change them.
+              </p>
+              <ContentStudioFunnelStageSelect value={funnelStage} onValueChange={setFunnelStage} />
             </div>
             <div className="space-y-1">
               <Label>Offer slug</Label>

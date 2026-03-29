@@ -7,6 +7,10 @@ import { storage } from "@server/storage";
 import { addScoreFromEvent } from "@server/services/leadScoringService";
 import { computeSegmentTags, mergeSegmentTags } from "@server/services/leadSegmentationService";
 import { onNewCrmContactCreated } from "@server/services/revenueOpsService";
+import {
+  recordAeeCrmAttributionEvent,
+  resolveAeeExperimentVariantForAttribution,
+} from "@server/services/experimentation/aeeCrmAttributionService";
 
 export interface FormAttribution {
   utm_source?: string | null;
@@ -15,6 +19,11 @@ export interface FormAttribution {
   referrer?: string | null;
   landing_page?: string | null;
   visitorId?: string | null;
+  /** AEE: stable experiment key or numeric ids from forms / tracking. */
+  experimentKey?: string | null;
+  variantKey?: string | null;
+  experimentId?: number | string | null;
+  variantId?: number | string | null;
 }
 
 /** Self-reported fields from forms — stored on crm_contacts for analytics + tagging */
@@ -168,5 +177,18 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
   if (vid) await storage.attachVisitorToLead(vid, lead.id);
   const created = await storage.getCrmContactById(lead.id);
   if (created) await onNewCrmContactCreated(storage, created).catch(() => {});
+  if (created) {
+    const aeeResolved = await resolveAeeExperimentVariantForAttribution(attribution).catch(() => null);
+    if (aeeResolved) {
+      await recordAeeCrmAttributionEvent({
+        contactId: created.id,
+        visitorId: attribution?.visitorId ?? null,
+        experimentId: aeeResolved.experimentId,
+        variantId: aeeResolved.variantId,
+        eventKind: "lead_created",
+        metadataJson: { source: "ensureCrmLeadFromFormSubmission" },
+      }).catch(() => {});
+    }
+  }
   return created;
 }

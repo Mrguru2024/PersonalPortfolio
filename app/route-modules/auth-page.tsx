@@ -187,7 +187,7 @@ const AuthPage = () => {
                 <span className="text-primary font-bold">03</span>
               </div>
               <p className="font-medium">
-                View analytics, feedback, and resume requests
+                View analytics, feedback, and inbound messages
               </p>
             </div>
           </div>

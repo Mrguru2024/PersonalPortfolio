@@ -8,9 +8,8 @@ export default function SchedulerPaymentsPage() {
       <CardHeader>
         <CardTitle>Payments &amp; deposits</CardTitle>
         <CardDescription>
-          Booking pages can mark deposit/full expectations today; appointment rows show{" "}
-          <code className="text-xs">paymentStatus</code>. Stripe checkout wiring stays aligned with existing revenue
-          modules.
+          Booking pages can show whether you expect a deposit or full payment. Collecting card payments ties into the same
+          revenue settings you use elsewhere—this area will surface controls as they roll out.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">

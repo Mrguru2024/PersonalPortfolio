@@ -38,6 +38,8 @@ interface AdminSettingsPayload {
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
   aiAgentRequireActionConfirmation: boolean;
+  /** Optional — layout prefs for admin dashboards (main, CRM). */
+  adminUiLayouts?: Record<string, { order: string[]; hidden: string[] }> | null;
 }
 
 const DEFAULT_SETTINGS: AdminSettingsPayload = {

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
 import { getLeadCustomFields } from "@shared/leadCustomFields";
+import { aeeFieldsForFormAttribution } from "@/lib/aeeFormAttributionZod";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,12 @@ export async function POST(req: NextRequest) {
     const businessType = String(body.businessType ?? "").trim();
     const source = String(body.source ?? "challenge").trim();
     const orderBump = Boolean(body.orderBump);
+    const aeePayload = {
+      experimentKey: typeof body.experimentKey === "string" ? body.experimentKey : null,
+      variantKey: typeof body.variantKey === "string" ? body.variantKey : null,
+      experimentId: body.experimentId ?? null,
+      variantId: body.variantId ?? null,
+    };
 
     if (!fullName || !email) {
       return NextResponse.json(
@@ -54,6 +61,8 @@ export async function POST(req: NextRequest) {
         utm_source: "challenge",
         landing_page: "/challenge",
         referrer: body.referrer ?? undefined,
+        visitorId: typeof body.visitorId === "string" ? body.visitorId : undefined,
+        ...aeeFieldsForFormAttribution(aeePayload),
       },
       customFields,
       demographics: businessType ? { industry: businessType } : undefined,
