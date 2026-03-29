@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-29 14:58 — Auto · 43706c4
+
+- `feat: experiments tutorial, A/B tools, AI insights, lead control, admin and AMIE updates` (`43706c4`)
+
+---
+
 ## 2026-03-29 12:04 — Auto · b72836c
 
 - `feat: AEE experiments engine, CRM attribution, admin UX, scheduler and revenue ops updates` (`b72836c`)
