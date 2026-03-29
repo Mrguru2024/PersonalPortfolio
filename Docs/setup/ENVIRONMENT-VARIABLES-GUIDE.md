@@ -219,13 +219,14 @@ Paid ads vars: **`Docs/implementation/PAID-GROWTH-MODULE.md`**.
 
 ### OAuth Web Client (`GOOGLE_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_ID`, etc.)
 
-1. [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials).
-2. **+ Create credentials** → **OAuth client ID**. Type **Web application**.
-3. **Authorized JavaScript origins**: `https://YOUR_DOMAIN`, `http://localhost:3000`.
-4. **Authorized redirect URIs**: Must match **exactly** each flow:
+1. **Enable APIs first** — [API Library](https://console.cloud.google.com/apis/library/calendar.googleapis.com) → **Google Calendar API** → **Enable** (required before Calendar OAuth succeeds; the REST reference alone is not enough).
+2. [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) → **+ Create credentials** → **OAuth client ID**. Type **Web application** (not Desktop).
+3. **Authorized JavaScript origins**: `https://YOUR_DOMAIN`, `http://localhost:3000` (no trailing path).
+4. **Authorized redirect URIs**: Must match **character-for-character** each flow (on `/admin/integrations`, open **Google Cloud checklist** for the exact redirect this deployment uses):
    - Site login: `.../api/auth/google/callback`
    - Calendar integration: `.../api/admin/integrations/google-calendar/callback`
-5. Enable the relevant **API** under **APIs & Services** → **Library** (e.g. **Google Calendar API** for scheduling).
+5. OAuth consent screen → **Scopes**: add the Calendar scopes your app requests (see checklist on Integrations or `GOOGLE_CALENDAR_OAUTH_SCOPES` in code). If the app is in **Testing**, add your Google account under **Test users**.
+6. Env: `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` for Calendar (often a **separate** client from site login). `NEXT_PUBLIC_APP_URL` should match the URL you use in the browser (www vs apex) so the computed redirect URI matches Google Cloud.
 
 ### GA4 numeric Property ID (`GA4_PROPERTY_ID`)
 

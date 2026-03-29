@@ -3,8 +3,7 @@ export type IntegrationId =
   | "brevo"
   | "zoom"
   | "social-scheduling"
-  | "google_calendar"
-  | "calendly";
+  | "google_calendar";
 
 /** GET /api/admin/integrations/status → contentStudioSocial */
 export type ContentStudioSocialPayload = {

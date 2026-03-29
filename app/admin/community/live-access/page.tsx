@@ -36,7 +36,7 @@ export default function AdminAfnLiveAccessPage() {
     mutationFn: async () => {
       const userId = Number(userIdStr);
       if (!Number.isFinite(userId) || userId < 1) throw new Error("userid");
-      const res = await apiRequest("PATCH", "/api/admin/community/live-access", {
+      const res = await apiRequest("PATCH", "/api/admin/Afn/live-access", {
         userId,
         accessLevel,
         reason: reason.trim() || null,
@@ -59,7 +59,7 @@ export default function AdminAfnLiveAccessPage() {
     mutationFn: async () => {
       const userId = Number(userIdStr);
       if (!Number.isFinite(userId) || userId < 1) throw new Error("User ID required");
-      const res = await apiRequest("PATCH", "/api/admin/community/live-access", {
+      const res = await apiRequest("PATCH", "/api/admin/Afn/live-access", {
         userId,
         accessLevel: null,
       });

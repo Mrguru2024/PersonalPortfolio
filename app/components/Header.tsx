@@ -104,7 +104,7 @@ const PRIMARY_NAV_BASE: PrimaryNavItem[] = [
   { name: "Brand Growth", href: "/brand-growth" },
   { name: "Free tools", href: FREE_GROWTH_TOOLS_PATH },
   { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
-  { name: "Community", href: "/community" },
+  { name: "Community", href: "/Afn" },
 ];
 
 const SERVICES_NAV_SECTIONS_BASE: NavSection[] = [

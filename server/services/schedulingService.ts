@@ -1,22 +1,25 @@
 import { randomBytes } from "crypto";
 import { addMinutes, format, getDay, isBefore, isEqual } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
 import { db } from "@server/db";
 import {
   schedulingAppointments,
   schedulingAvailabilityRules,
+  schedulingBookingPages,
   schedulingBookingTypes,
   schedulingGlobalSettings,
   schedulingHostBlockedDates,
   schedulingHostWeeklyRules,
   schedulingReminderJobs,
   type SchedulingAppointment,
+  type SchedulingBookingPage,
   type SchedulingBookingType,
   type SchedulingGlobalSettings,
 } from "@shared/schedulingSchema";
 import { users } from "@shared/schema";
-import { crmContacts } from "@shared/crmSchema";
+import { crmContacts, type CrmContact } from "@shared/crmSchema";
+import { deriveSchedulerQualification } from "@server/lib/schedulerQualification";
 import {
   deleteGoogleCalendarEventForAppointment,
   syncAppointmentToGoogleCalendar,
@@ -596,14 +599,49 @@ export async function createBookingFromPublic(input: {
   guestPhone?: string;
   startAtIso: string;
   guestNotes?: string;
+  guestCompany?: string | null;
   hostUserId?: number | null;
+  bookingPageSlug?: string | null;
+  formAnswers?: Record<string, unknown> | null;
+  bookingSource?: string | null;
 }): Promise<{ ok: true; appointment: SchedulingAppointment } | { ok: false; error: string }> {
   const settings = await getSchedulingSettings();
   if (!settings.publicBookingEnabled) return { ok: false, error: "Public booking is disabled." };
 
-  const resolvedHost = await resolvePublicBookingHostUserId(input.hostUserId ?? undefined);
-  if (!resolvedHost.ok) return { ok: false, error: resolvedHost.error };
-  const hostUserId = resolvedHost.hostUserId;
+  const formAnswers =
+    input.formAnswers && typeof input.formAnswers === "object" && !Array.isArray(input.formAnswers)
+      ? input.formAnswers
+      : {};
+
+  let pageRow: SchedulingBookingPage | null = null;
+  if (input.bookingPageSlug && input.bookingPageSlug.trim()) {
+    const slug = input.bookingPageSlug.trim().toLowerCase();
+    const [p] = await db
+      .select()
+      .from(schedulingBookingPages)
+      .where(
+        and(eq(schedulingBookingPages.slug, slug), eq(schedulingBookingPages.active, true)),
+      )
+      .limit(1);
+    if (!p) return { ok: false, error: "This booking link is not available." };
+    if (p.bookingTypeId !== input.bookingTypeId) {
+      return { ok: false, error: "Meeting type does not match this booking page." };
+    }
+    pageRow = p;
+  }
+
+  let hostUserId: number | null;
+  if (pageRow?.hostMode === "fixed" && pageRow.fixedHostUserId != null) {
+    const fid = pageRow.fixedHostUserId;
+    if (!(await isSchedulingHostUser(fid))) {
+      return { ok: false, error: "This page’s host is not available for booking." };
+    }
+    hostUserId = fid;
+  } else {
+    const resolvedHost = await resolvePublicBookingHostUserId(input.hostUserId ?? undefined);
+    if (!resolvedHost.ok) return { ok: false, error: resolvedHost.error };
+    hostUserId = resolvedHost.hostUserId;
+  }
 
   const startGuess = new Date(input.startAtIso);
   if (Number.isNaN(startGuess.getTime())) return { ok: false, error: "Invalid start time." };
@@ -624,6 +662,23 @@ export async function createBookingFromPublic(input: {
   const endAt = addMinutes(startAt, bt.durationMinutes);
   const guestToken = randomBytes(24).toString("hex");
   const contactId = await findContactIdByEmail(input.guestEmail);
+  const qual = deriveSchedulerQualification({
+    formAnswers,
+    guestEmail: input.guestEmail.trim().toLowerCase(),
+    guestPhone: input.guestPhone,
+    guestNotes: input.guestNotes,
+    guestCompany: input.guestCompany,
+  });
+
+  const paymentRequirement = pageRow?.paymentRequirement ?? "none";
+  const paymentStatus =
+    paymentRequirement === "none" || paymentRequirement === ""
+      ? "none"
+      : paymentRequirement === "deposit" || paymentRequirement === "full"
+        ? "pending"
+        : "none";
+
+  const bookingSource = input.bookingSource?.trim() || (pageRow ? `page:${pageRow.slug}` : "native_booking");
 
   const [appt] = await db
     .insert(schedulingAppointments)
@@ -633,6 +688,15 @@ export async function createBookingFromPublic(input: {
       guestName: input.guestName.trim(),
       guestEmail: input.guestEmail.trim().toLowerCase(),
       guestPhone: input.guestPhone?.trim() || null,
+      guestCompany: input.guestCompany?.trim() || null,
+      bookingPageId: pageRow?.id ?? null,
+      leadScoreTier: qual.leadScoreTier,
+      intentClassification: qual.intentClassification,
+      noShowRiskTier: qual.noShowRiskTier,
+      paymentStatus,
+      estimatedValueCents: qual.estimatedValueCents,
+      bookingSource,
+      formAnswersJson: formAnswers,
       startAt,
       endAt,
       status: "confirmed",
@@ -693,4 +757,335 @@ export async function listAppointmentsAdmin(opts?: { from?: Date; to?: Date; lim
       .limit(limit);
   }
   return db.select().from(schedulingAppointments).orderBy(desc(schedulingAppointments.startAt)).limit(limit);
+}
+
+export type AppointmentAdminEnrichedRow = {
+  appointment: SchedulingAppointment;
+  bookingTypeName: string | null;
+  bookingTypeSlug: string | null;
+  bookingTypeColor: null;
+  contactCompany: string | null;
+  contactName: string | null;
+  hostDisplay: string | null;
+  bookingPageSlug: string | null;
+};
+
+/** Joins hosts, CRM contacts, booking types, and booking pages for Scheduler admin UI. */
+export async function listAppointmentsAdminEnriched(opts?: { from?: Date; to?: Date; limit?: number }) {
+  const limit = Math.min(opts?.limit ?? 200, 500);
+  const selectShape = {
+    appointment: schedulingAppointments,
+    bookingTypeName: schedulingBookingTypes.name,
+    bookingTypeSlug: schedulingBookingTypes.slug,
+    contactCompany: crmContacts.company,
+    contactName: crmContacts.name,
+    hostUsername: users.username,
+    hostFullName: users.full_name,
+    bookingPageSlug: schedulingBookingPages.slug,
+  };
+  const rows =
+    opts?.from && opts?.to
+      ? await db
+          .select(selectShape)
+          .from(schedulingAppointments)
+          .leftJoin(schedulingBookingTypes, eq(schedulingAppointments.bookingTypeId, schedulingBookingTypes.id))
+          .leftJoin(crmContacts, eq(schedulingAppointments.contactId, crmContacts.id))
+          .leftJoin(users, eq(schedulingAppointments.hostUserId, users.id))
+          .leftJoin(schedulingBookingPages, eq(schedulingAppointments.bookingPageId, schedulingBookingPages.id))
+          .where(
+            and(gte(schedulingAppointments.startAt, opts.from), lte(schedulingAppointments.startAt, opts.to)),
+          )
+          .orderBy(desc(schedulingAppointments.startAt))
+          .limit(limit)
+      : await db
+          .select(selectShape)
+          .from(schedulingAppointments)
+          .leftJoin(schedulingBookingTypes, eq(schedulingAppointments.bookingTypeId, schedulingBookingTypes.id))
+          .leftJoin(crmContacts, eq(schedulingAppointments.contactId, crmContacts.id))
+          .leftJoin(users, eq(schedulingAppointments.hostUserId, users.id))
+          .leftJoin(schedulingBookingPages, eq(schedulingAppointments.bookingPageId, schedulingBookingPages.id))
+          .orderBy(desc(schedulingAppointments.startAt))
+          .limit(limit);
+
+  return rows.map((r) => {
+    const hostDisplay =
+      r.hostFullName?.trim() || r.hostUsername?.trim()
+        ? (r.hostFullName?.trim() || r.hostUsername) ?? null
+        : null;
+    return {
+      appointment: r.appointment,
+      bookingTypeName: r.bookingTypeName,
+      bookingTypeSlug: r.bookingTypeSlug,
+      bookingTypeColor: null,
+      contactCompany: r.contactCompany,
+      contactName: r.contactName,
+      hostDisplay,
+      bookingPageSlug: r.bookingPageSlug,
+    } satisfies AppointmentAdminEnrichedRow;
+  });
+}
+
+export async function listPriorAppointmentsForGuestEmail(
+  email: string,
+  excludeAppointmentId: number,
+  limit = 25,
+): Promise<SchedulingAppointment[]> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return [];
+  return db
+    .select()
+    .from(schedulingAppointments)
+    .where(and(eq(schedulingAppointments.guestEmail, normalized), ne(schedulingAppointments.id, excludeAppointmentId)))
+    .orderBy(desc(schedulingAppointments.startAt))
+    .limit(Math.min(limit, 100));
+}
+
+export type SchedulerAppointmentDetailAdmin = AppointmentAdminEnrichedRow & {
+  crmContact: CrmContact | null;
+  priorAppointments: SchedulingAppointment[];
+};
+
+export async function getSchedulerAppointmentDetailAdmin(
+  id: number,
+): Promise<SchedulerAppointmentDetailAdmin | null> {
+  const base = await getAppointmentAdminEnriched(id);
+  if (!base) return null;
+  let crmContact: CrmContact | null = null;
+  if (base.appointment.contactId != null) {
+    const [c] = await db
+      .select()
+      .from(crmContacts)
+      .where(eq(crmContacts.id, base.appointment.contactId))
+      .limit(1);
+    crmContact = c ?? null;
+  }
+  const priorAppointments = await listPriorAppointmentsForGuestEmail(base.appointment.guestEmail, id);
+  return { ...base, crmContact, priorAppointments };
+}
+
+export async function getAppointmentAdminEnriched(id: number): Promise<AppointmentAdminEnrichedRow | null> {
+  const [r] = await db
+    .select({
+      appointment: schedulingAppointments,
+      bookingTypeName: schedulingBookingTypes.name,
+      bookingTypeSlug: schedulingBookingTypes.slug,
+      contactCompany: crmContacts.company,
+      contactName: crmContacts.name,
+      hostUsername: users.username,
+      hostFullName: users.full_name,
+      bookingPageSlug: schedulingBookingPages.slug,
+    })
+    .from(schedulingAppointments)
+    .leftJoin(schedulingBookingTypes, eq(schedulingAppointments.bookingTypeId, schedulingBookingTypes.id))
+    .leftJoin(crmContacts, eq(schedulingAppointments.contactId, crmContacts.id))
+    .leftJoin(users, eq(schedulingAppointments.hostUserId, users.id))
+    .leftJoin(schedulingBookingPages, eq(schedulingAppointments.bookingPageId, schedulingBookingPages.id))
+    .where(eq(schedulingAppointments.id, id))
+    .limit(1);
+
+  if (!r) return null;
+  const hostDisplay =
+    r.hostFullName?.trim() || r.hostUsername?.trim()
+      ? (r.hostFullName?.trim() || r.hostUsername) ?? null
+      : null;
+
+  return {
+    appointment: r.appointment,
+    bookingTypeName: r.bookingTypeName,
+    bookingTypeSlug: r.bookingTypeSlug,
+    bookingTypeColor: null,
+    contactCompany: r.contactCompany,
+    contactName: r.contactName,
+    hostDisplay,
+    bookingPageSlug: r.bookingPageSlug,
+  };
+}
+
+export async function updateAppointmentAdmin(
+  id: number,
+  patch: Partial<{
+    status: string;
+    internalNotes: string | null;
+    guestCompany: string | null;
+    leadScoreTier: string | null;
+    intentClassification: string | null;
+    noShowRiskTier: string | null;
+    paymentStatus: string;
+    estimatedValueCents: number | null;
+    completedAt: Date | null;
+  }>,
+): Promise<{ ok: true; row: SchedulingAppointment } | { ok: false; error: string }> {
+  const entries = Object.entries(patch).filter(([, v]) => v !== undefined);
+  if (entries.length === 0) {
+    const [row] = await db.select().from(schedulingAppointments).where(eq(schedulingAppointments.id, id)).limit(1);
+    return row ? { ok: true, row } : { ok: false, error: "Not found." };
+  }
+  const [row] = await db
+    .update(schedulingAppointments)
+    .set({ ...Object.fromEntries(entries), updatedAt: new Date() })
+    .where(eq(schedulingAppointments.id, id))
+    .returning();
+  if (!row) return { ok: false, error: "Not found." };
+  return { ok: true, row };
+}
+
+export async function getPublicBookingPageBySlug(slug: string): Promise<
+  | { ok: true; page: SchedulingBookingPage; bookingType: SchedulingBookingType }
+  | { ok: false; error: string }
+> {
+  await ensureSchedulingDefaults();
+  const normalized = slug.trim().toLowerCase();
+  if (!normalized) return { ok: false, error: "Invalid slug." };
+  const [page] = await db
+    .select()
+    .from(schedulingBookingPages)
+    .where(and(eq(schedulingBookingPages.slug, normalized), eq(schedulingBookingPages.active, true)))
+    .limit(1);
+  if (!page) return { ok: false, error: "Not found." };
+  const [bt] = await db
+    .select()
+    .from(schedulingBookingTypes)
+    .where(and(eq(schedulingBookingTypes.id, page.bookingTypeId), eq(schedulingBookingTypes.active, true)))
+    .limit(1);
+  if (!bt) return { ok: false, error: "Meeting type unavailable." };
+  return { ok: true, page, bookingType: bt };
+}
+
+export async function listBookingPagesAdmin(): Promise<SchedulingBookingPage[]> {
+  await ensureSchedulingDefaults();
+  return db
+    .select()
+    .from(schedulingBookingPages)
+    .orderBy(desc(schedulingBookingPages.updatedAt), desc(schedulingBookingPages.id));
+}
+
+export async function createBookingPageAdmin(input: {
+  slug: string;
+  title: string;
+  shortDescription?: string | null;
+  bestForBullets?: string[];
+  bookingTypeId: number;
+  fixedHostUserId?: number | null;
+  hostMode?: string;
+  locationType?: string;
+  paymentRequirement?: string;
+  depositCents?: number | null;
+  confirmationMessage?: string | null;
+  postBookingNextSteps?: string | null;
+  redirectUrl?: string | null;
+  formFieldsJson?: Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>;
+  settingsJson?: Record<string, unknown>;
+  active?: boolean;
+}): Promise<{ ok: true; row: SchedulingBookingPage } | { ok: false; error: string }> {
+  await ensureSchedulingDefaults();
+  const slug = input.slug.trim().toLowerCase();
+  if (!SLUG_RE.test(slug)) return { ok: false, error: "Slug: lowercase letters, numbers, hyphens only." };
+  const title = input.title.trim();
+  if (!title) return { ok: false, error: "Title required." };
+  const [bt] = await db
+    .select({ id: schedulingBookingTypes.id })
+    .from(schedulingBookingTypes)
+    .where(eq(schedulingBookingTypes.id, input.bookingTypeId))
+    .limit(1);
+  if (!bt) return { ok: false, error: "Meeting type not found." };
+  try {
+    const [row] = await db
+      .insert(schedulingBookingPages)
+      .values({
+        slug,
+        title,
+        shortDescription: input.shortDescription?.trim() || null,
+        bestForBullets: input.bestForBullets?.length ? input.bestForBullets : [],
+        bookingTypeId: input.bookingTypeId,
+        fixedHostUserId: input.fixedHostUserId ?? null,
+        hostMode: input.hostMode === "fixed" ? "fixed" : "inherit",
+        locationType: input.locationType?.trim() || "video",
+        paymentRequirement: input.paymentRequirement?.trim() || "none",
+        depositCents: input.depositCents ?? null,
+        confirmationMessage: input.confirmationMessage?.trim() || null,
+        postBookingNextSteps: input.postBookingNextSteps?.trim() || null,
+        redirectUrl: input.redirectUrl?.trim() || null,
+        formFieldsJson: input.formFieldsJson ?? [],
+        settingsJson: input.settingsJson ?? {},
+        active: input.active !== false,
+      })
+      .returning();
+    if (!row) return { ok: false, error: "Insert failed." };
+    return { ok: true, row };
+  } catch {
+    return { ok: false, error: "Slug may already exist." };
+  }
+}
+
+export async function updateBookingPageAdmin(
+  id: number,
+  patch: Partial<{
+    slug: string;
+    title: string;
+    shortDescription: string | null;
+    bestForBullets: string[];
+    bookingTypeId: number;
+    fixedHostUserId: number | null;
+    hostMode: string;
+    locationType: string;
+    paymentRequirement: string;
+    depositCents: number | null;
+    confirmationMessage: string | null;
+    postBookingNextSteps: string | null;
+    redirectUrl: string | null;
+    formFieldsJson: Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>;
+    settingsJson: Record<string, unknown>;
+    active: boolean;
+  }>,
+): Promise<{ ok: true; row: SchedulingBookingPage } | { ok: false; error: string }> {
+  const [existing] = await db.select().from(schedulingBookingPages).where(eq(schedulingBookingPages.id, id)).limit(1);
+  if (!existing) return { ok: false, error: "Not found." };
+  const data: Partial<typeof schedulingBookingPages.$inferInsert> = { updatedAt: new Date() };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    if (k === "slug" && typeof v === "string") {
+      const s = v.trim().toLowerCase();
+      if (!SLUG_RE.test(s)) return { ok: false, error: "Invalid slug." };
+      data.slug = s;
+    } else if (k === "title" && typeof v === "string") data.title = v.trim();
+    else if (k === "shortDescription") data.shortDescription = v === null ? null : String(v).trim() || null;
+    else if (k === "bestForBullets" && Array.isArray(v) && v.every((x) => typeof x === "string")) {
+      data.bestForBullets = v as string[];
+    }
+    else if (k === "bookingTypeId" && typeof v === "number") data.bookingTypeId = v;
+    else if (k === "fixedHostUserId") data.fixedHostUserId = v as number | null;
+    else if (k === "hostMode" && typeof v === "string") data.hostMode = v === "fixed" ? "fixed" : "inherit";
+    else if (k === "locationType" && typeof v === "string") data.locationType = v;
+    else if (k === "paymentRequirement" && typeof v === "string") data.paymentRequirement = v;
+    else if (k === "depositCents") data.depositCents = v as number | null;
+    else if (k === "confirmationMessage") data.confirmationMessage = v === null ? null : String(v).trim() || null;
+    else if (k === "postBookingNextSteps") data.postBookingNextSteps = v === null ? null : String(v).trim() || null;
+    else if (k === "redirectUrl") data.redirectUrl = v === null ? null : String(v).trim() || null;
+    else if (k === "formFieldsJson") data.formFieldsJson = v as typeof data.formFieldsJson;
+    else if (k === "settingsJson") data.settingsJson = v as Record<string, unknown>;
+    else if (k === "active" && typeof v === "boolean") data.active = v;
+  }
+  try {
+    const [row] = await db
+      .update(schedulingBookingPages)
+      .set(data)
+      .where(eq(schedulingBookingPages.id, id))
+      .returning();
+    if (!row) return { ok: false, error: "Update failed." };
+    return { ok: true, row };
+  } catch {
+    return { ok: false, error: "Update failed (duplicate slug?)." };
+  }
+}
+
+export async function deleteBookingPageAdmin(id: number): Promise<{ ok: true } | { ok: false; error: string }> {
+  const [cnt] = await db
+    .select({ n: count() })
+    .from(schedulingAppointments)
+    .where(eq(schedulingAppointments.bookingPageId, id));
+  if ((cnt?.n ?? 0) > 0) {
+    return { ok: false, error: "Deactivate this page instead — it has appointments." };
+  }
+  await db.delete(schedulingBookingPages).where(eq(schedulingBookingPages.id, id));
+  return { ok: true };
 }

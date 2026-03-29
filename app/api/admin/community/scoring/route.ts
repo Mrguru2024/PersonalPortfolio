@@ -4,7 +4,7 @@ import { ensureAfnScoringConfig, getAfnScoringConfigRow, updateAfnScoringWeights
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/community/scoring */
+/** GET /api/admin/Afn/scoring */
 export async function GET(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** PATCH /api/admin/community/scoring — body: { weights: Record<string, number> } */
+/** PATCH /api/admin/Afn/scoring — body: { weights: Record<string, number> } */
 export async function PATCH(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) {

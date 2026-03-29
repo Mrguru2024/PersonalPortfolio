@@ -114,7 +114,7 @@ export async function getAfnCommunitySnapshotByEmail(
     founderTribeLabel,
     headline: profile.headline ?? null,
     profileVisibility: settings?.profileVisibility ?? null,
-    publicProfilePath: isPublic && slug ? `/community/members/${encodeURIComponent(slug)}` : null,
+    publicProfilePath: isPublic && slug ? `/Afn/members/${encodeURIComponent(slug)}` : null,
     isOnboardingComplete: profile.isOnboardingComplete ?? null,
   };
 }

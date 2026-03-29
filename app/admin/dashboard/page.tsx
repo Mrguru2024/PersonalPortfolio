@@ -213,87 +213,64 @@ type DevDigestEntry = {
   sourceBranches?: string[];
 };
 
-function DevUpdateDigestEntry({ entry, defaultOpen }: { entry: DevDigestEntry; defaultOpen: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
+/** One release note block — full text always visible; the whole feed is collapsed via a parent Collapsible. */
+function DevUpdateDigestEntry({ entry, index }: { entry: DevDigestEntry; index: number }) {
+  const headingId = `dev-update-heading-${index}`;
   const dateLabel = formatDevUpdateDateLabel(entry.date);
   const timeInfo = entry.time ? formatDevUpdateTimeInEastern(entry.date, entry.time) : null;
   const dateTimeAttr = timeInfo?.instant ? timeInfo.instant.toISOString() : entry.date;
-
-  const hasBody =
-    (entry.sourceBranches && entry.sourceBranches.length > 1) || (entry.items && entry.items.length > 0);
-
-  const headerInner = (
-    <div className="min-w-0 flex-1 space-y-0.5">
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <time className="text-sm font-medium tabular-nums text-foreground" dateTime={dateTimeAttr} suppressHydrationWarning>
-          {dateLabel}
-        </time>
-        {timeInfo ? (
-          <>
-            <span className="text-muted-foreground" aria-hidden>
-              ·
-            </span>
-            <span className="text-sm tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
-              {timeInfo.label}
-            </span>
-          </>
-        ) : null}
-        <span className="text-muted-foreground" aria-hidden>
-          —
-        </span>
-        <span className="text-sm font-semibold text-foreground">{entry.title}</span>
-      </div>
-      {!hasBody ? (
-        <p className="text-xs text-muted-foreground">No detail bullets for this entry.</p>
-      ) : !open ? (
-        <p className="text-xs text-muted-foreground">
-          {entry.items.length} change{entry.items.length === 1 ? "" : "s"} · expand for full
-          {entry.sourceBranches && entry.sourceBranches.length > 1 ? " list and branches" : " list"}
-        </p>
-      ) : null}
-    </div>
-  );
-
-  if (!hasBody) {
-    return (
-      <div className="flex items-start gap-2 border-b border-muted/60 pb-3 last:border-0 last:pb-0">
-        <span className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
-        {headerInner}
-      </div>
-    );
-  }
+  const hasItems = entry.items && entry.items.length > 0;
+  const hasBranchNote = entry.sourceBranches && entry.sourceBranches.length > 1;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="border-b border-muted/60 pb-3 last:border-0 last:pb-0">
-      <CollapsibleTrigger
-        className={cn(
-          "flex w-full items-start gap-2 rounded-lg py-1.5 text-left -mx-1 px-1",
-          "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-        aria-expanded={open}
-      >
-        <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200", open && "rotate-180")}
-          aria-hidden
-        />
-        {headerInner}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="pl-7 space-y-2 pt-1 overflow-hidden data-[state=closed]:animate-none">
-        {entry.sourceBranches && entry.sourceBranches.length > 1 && (
-          <p className="text-xs text-muted-foreground">Also on branches: {entry.sourceBranches.join(", ")}</p>
-        )}
-        {entry.items.length > 0 && (
-          <ul className="mt-1 space-y-1 list-none pl-0 text-sm text-muted-foreground">
-            {entry.items.map((item, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-primary shrink-0">•</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
+    <article className="border-b border-border/70 pb-6 last:border-b-0 last:pb-0 scroll-mt-2" aria-labelledby={headingId}>
+      <header className="mb-3 space-y-1 max-w-3xl">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-3 sm:gap-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 text-sm shrink-0">
+            <time
+              className="font-medium tabular-nums text-foreground"
+              dateTime={dateTimeAttr}
+              suppressHydrationWarning
+            >
+              {dateLabel}
+            </time>
+            {timeInfo ? (
+              <>
+                <span className="text-muted-foreground" aria-hidden>
+                  ·
+                </span>
+                <span className="tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
+                  {timeInfo.label}
+                </span>
+              </>
+            ) : null}
+          </div>
+          <h3 id={headingId} className="text-base font-semibold text-foreground leading-snug tracking-tight min-w-0 flex-1">
+            {entry.title}
+          </h3>
+        </div>
+        {!hasItems && !hasBranchNote ? (
+          <p className="text-sm text-muted-foreground">No detail bullets for this entry.</p>
+        ) : null}
+      </header>
+      {hasBranchNote ? (
+        <p className="text-sm text-muted-foreground mb-3 max-w-3xl leading-relaxed">
+          Also on branches: {entry.sourceBranches!.join(", ")}
+        </p>
+      ) : null}
+      {hasItems ? (
+        <ul className="space-y-3 list-none pl-0 m-0 max-w-3xl text-sm leading-relaxed text-foreground">
+          {entry.items.map((item, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="text-primary shrink-0 mt-0.5 select-none" aria-hidden>
+                •
+              </span>
+              <span className="min-w-0 break-words">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
   );
 }
 
@@ -312,6 +289,8 @@ export default function AdminDashboardPage() {
   const [showTourBanner, setShowTourBanner] = useState(false);
   const [tourCompletedOrDismissed, setTourCompletedOrDismissed] = useState(false);
   const [passwordResetEmail, setPasswordResetEmail] = useState("");
+  /** Entire development-updates feed (metadata + entries) — not per-row. */
+  const [devUpdatesOpen, setDevUpdatesOpen] = useState(true);
   const [inboxTab, setInboxTab] = useState<DashboardInboxTab>("assessments");
   const inboxTabsRef = useRef<HTMLDivElement>(null);
   const handled403 = useRef(false);
@@ -1025,106 +1004,143 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Development updates log — digestible, auto-updates from content/development-updates.md */}
+      {/* Development updates log — single collapsible for the whole feed; entries are always fully readable when open */}
       <Card data-tour="development-updates" className="mb-6 sm:mb-8 border bg-card shadow-sm overflow-hidden">
-        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                Development updates
-              </CardTitle>
-              <CardDescription className="mt-0.5">
+        <Collapsible open={devUpdatesOpen} onOpenChange={setDevUpdatesOpen}>
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6 space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex min-w-0 flex-1 items-start gap-2 rounded-lg text-left -m-1 p-1",
+                    "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  aria-expanded={devUpdatesOpen}
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200",
+                      devUpdatesOpen && "rotate-180",
+                    )}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <CardTitle className="text-base sm:text-lg flex flex-wrap items-center gap-2">
+                      <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      Development updates
+                      {devUpdatesData?.updates?.length ? (
+                        <Badge variant="secondary" className="font-normal text-xs">
+                          {devUpdatesData.updates.length}
+                        </Badge>
+                      ) : null}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {devUpdatesOpen ? "Click to hide the full log" : "Click to show release notes and source details"}
+                    </p>
+                  </div>
+                </button>
+              </CollapsibleTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void refetchDevUpdates();
+                }}
+                disabled={devUpdatesLoading}
+              >
+                {devUpdatesLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span className="sr-only">Refresh</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CollapsibleContent className="data-[state=closed]:animate-none">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0">
+              <CardDescription className="text-sm leading-relaxed max-w-3xl mb-4">
                 {isSuperAdmin ?
                   <>
                     Features and fixes shipped to production. In production, the list loads from{" "}
-                    <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> on GitHub{" "}
-                    <code className="text-xs bg-muted px-1 rounded">main</code> by default (
-                    <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On Vercel, the
-                    raw URL is built from <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_OWNER</code> /{" "}
-                    <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
-                    <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the markdown on{" "}
-                    <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes automatically.
+                    <code className="text-xs bg-muted px-1 rounded break-all">content/development-updates.md</code> on
+                    GitHub <code className="text-xs bg-muted px-1 rounded">main</code> by default (
+                    <code className="text-xs bg-muted px-1 rounded break-all">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On
+                    Vercel, the raw URL is built from{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">VERCEL_GIT_REPO_OWNER</code> /{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the
+                    markdown on <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes
+                    automatically.
                   </>
                 : "Highlights of what shipped to production. The list updates from your team’s release notes on GitHub."}
               </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0"
-              onClick={() => refetchDevUpdates()}
-              disabled={devUpdatesLoading}
-            >
-              {devUpdatesLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {(devUpdatesData || devUpdatesCheckedAt) && (
+                <div className="space-y-2 mb-5 pb-4 border-b border-border/60 max-w-3xl">
+                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground leading-relaxed">
+                    {devUpdatesCheckedAt > 0 && (
+                      <span suppressHydrationWarning>
+                        Last checked: {formatDevUpdatesLastChecked(devUpdatesCheckedAt)} (US Eastern)
+                      </span>
+                    )}
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {devUpdatesData?.source && (
+                        <span>
+                          Source:{" "}
+                          {devUpdatesData.source === "github"
+                            ? devUpdatesData.mergeInfo?.mode === "multi_branch"
+                              ? "GitHub (live, merged branches)"
+                              : "GitHub (live)"
+                            : "file"}
+                        </span>
+                      )}
+                      {devUpdatesData?.source === "github" && devUpdatesData.mergeInfo?.mode === "multi_branch" && (
+                        <span>
+                          · {devUpdatesData.mergeInfo.branchesWithFile}/{devUpdatesData.mergeInfo.branchesScanned}{" "}
+                          branches had the file
+                        </span>
+                      )}
+                      {devUpdatesData?.source === "github" && <span>New pushes may take up to ~5 min to appear.</span>}
+                    </div>
+                    <span className="text-muted-foreground/90">
+                      Entry dates and headline times use US Eastern (America/New_York).
+                    </span>
+                  </div>
+                  {devUpdatesData?.sourceNote && (
+                    <p className="text-sm leading-relaxed text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
+                  )}
+                </div>
+              )}
+              {devUpdatesLoading && !devUpdatesData ? (
+                <div className="flex items-center gap-2 py-6 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  <span className="text-sm">Loading updates…</span>
+                </div>
+              ) : !devUpdatesData?.updates?.length ? (
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl py-2">
+                  {isSuperAdmin ?
+                    <>
+                      No entries yet. Add sections to content/development-updates.md: start each section with{" "}
+                      <code className="text-xs bg-muted px-1 rounded break-all">## YYYY-MM-DD — Title</code> or include
+                      time like{" "}
+                      <code className="text-xs bg-muted px-1 rounded break-all">## YYYY-MM-DD 14:30 — Title</code>, then
+                      bullet points. Push to production to see them here.
+                    </>
+                  : "No release notes in the feed yet. Ask your technical lead to publish updates to the development-updates log."}
+                </p>
               ) : (
-                <RefreshCw className="h-4 w-4" />
+                <div className="space-y-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-4 sm:px-4 sm:py-5">
+                  {devUpdatesData.updates.map((entry, idx) => (
+                    <DevUpdateDigestEntry key={`${entry.date}-${entry.title}-${idx}`} entry={entry} index={idx} />
+                  ))}
+                </div>
               )}
-              <span className="sr-only">Refresh</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-          {/* Update time log: when data was last checked and source */}
-          {(devUpdatesData || devUpdatesCheckedAt) && (
-            <div className="space-y-1.5 mb-4 pb-3 border-b border-border/60">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                {devUpdatesCheckedAt > 0 && (
-                  <span suppressHydrationWarning>
-                    Last checked: {formatDevUpdatesLastChecked(devUpdatesCheckedAt)} (US Eastern)
-                  </span>
-                )}
-                {devUpdatesData?.source && (
-                  <span>
-                    Source:{" "}
-                    {devUpdatesData.source === "github"
-                      ? devUpdatesData.mergeInfo?.mode === "multi_branch"
-                        ? "GitHub (live, merged branches)"
-                        : "GitHub (live)"
-                      : "file"}
-                  </span>
-                )}
-                {devUpdatesData?.source === "github" && devUpdatesData.mergeInfo?.mode === "multi_branch" && (
-                  <span>
-                    · {devUpdatesData.mergeInfo.branchesWithFile}/{devUpdatesData.mergeInfo.branchesScanned} branches
-                    had the file
-                  </span>
-                )}
-                {devUpdatesData?.source === "github" && (
-                  <span>New pushes may take up to ~5 min to appear.</span>
-                )}
-                <span className="text-muted-foreground/90">Entry dates and headline times use US Eastern (America/New_York).</span>
-              </div>
-              {devUpdatesData?.sourceNote && (
-                <p className="text-xs text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
-              )}
-            </div>
-          )}
-          {devUpdatesLoading && !devUpdatesData ? (
-            <div className="flex items-center gap-2 py-6 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              <span className="text-sm">Loading updates…</span>
-            </div>
-          ) : !devUpdatesData?.updates?.length ? (
-            <p className="text-sm text-muted-foreground py-4">
-              {isSuperAdmin ?
-                <>
-                  No entries yet. Add sections to content/development-updates.md: start each section with{" "}
-                  <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD — Title</code> or include time like{" "}
-                  <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD 14:30 — Title</code>, then bullet points.
-                  Push to production to see them here.
-                </>
-              : "No release notes in the feed yet. Ask your technical lead to publish updates to the development-updates log."}
-            </p>
-          ) : (
-            <div className="space-y-1">
-              {devUpdatesData.updates.map((entry, idx) => (
-                <DevUpdateDigestEntry key={`${entry.date}-${entry.title}-${idx}`} entry={entry} defaultOpen={idx === 0} />
-              ))}
-            </div>
-          )}
-        </CardContent>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       {/* Tabs — sync with ?tab=assessments|contacts|resume-requests (e.g. from Suggested for you) */}

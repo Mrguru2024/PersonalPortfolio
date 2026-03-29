@@ -26,9 +26,9 @@ export default function AdminAfnScoringPage() {
   }, [user, isLoading, router]);
 
   const { data, isFetching } = useQuery({
-    queryKey: ["/api/admin/community/scoring"],
+    queryKey: ["/api/admin/Afn/scoring"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/community/scoring");
+      const res = await apiRequest("GET", "/api/admin/Afn/scoring");
       if (!res.ok) throw new Error("forbidden");
       return res.json() as Promise<{ weightsJson: Record<string, number>; id: number }>;
     },
@@ -42,12 +42,12 @@ export default function AdminAfnScoringPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const weights = JSON.parse(jsonText) as Record<string, number>;
-      const res = await apiRequest("PATCH", "/api/admin/community/scoring", { weights });
+      const res = await apiRequest("PATCH", "/api/admin/Afn/scoring", { weights });
       if (!res.ok) throw new Error("save failed");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/community/scoring"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/Afn/scoring"] });
       toast({ title: "Scoring weights saved" });
     },
     onError: () =>

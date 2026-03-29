@@ -16,6 +16,7 @@ import {
   Share2,
   Sparkles,
   X,
+  Copy,
 } from "lucide-react";
 import { useAuth, isAuthApprovedAdmin } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,18 @@ import { MAX_SOCIAL_CONNECTIONS_PER_PLATFORM } from "@shared/contentStudioSocial
 
 type SocialFlashVariant = "success" | "destructive" | "info";
 type CelebrationPlatform = "facebook" | "linkedin" | "x" | "threads";
+
+type GoogleCalendarSetupPayload = {
+  oauthClientConfigured: boolean;
+  redirectUri: string;
+  javascriptOrigin: string;
+  scopes: string[];
+  calendarApiConsoleUrl: string;
+  credentialsConsoleUrl: string;
+  /** OAuth client ID loaded by this server run (public; compare to Google Cloud). */
+  clientId?: string;
+  clientSecretPresent?: boolean;
+};
 
 const CELEBRATION_COPY: Record<
   CelebrationPlatform,
@@ -124,8 +137,6 @@ function integrationReconnectLabel(id: IntegrationId): string {
       return "Zoom";
     case "social-scheduling":
       return "Facebook help";
-    case "calendly":
-      return "Calendly";
     default:
       return "Open";
   }
@@ -180,6 +191,7 @@ export default function AdminIntegrationsPage() {
   const [testingId, setTestingId] = useState<IntegrationId | null>(null);
   const [testResult, setTestResult] = useState<{ id: IntegrationId; ok: boolean; message: string } | null>(null);
   const [gcalFlash, setGcalFlash] = useState<string | null>(null);
+  const [gcalSetup, setGcalSetup] = useState<GoogleCalendarSetupPayload | null>(null);
   const [socialFlash, setSocialFlash] = useState<string | null>(null);
   const [gcalCalendarId, setGcalCalendarId] = useState("primary");
   const [gcalSaving, setGcalSaving] = useState(false);
@@ -234,6 +246,8 @@ export default function AdminIntegrationsPage() {
     const err = q.get("gcal_error");
     if (err) {
       let msg = decodeURIComponent(err);
+      const errDetail = q.get("gcal_error_detail");
+      const detailDecoded = errDetail ? decodeURIComponent(errDetail) : "";
       if (msg === "invalid_state") {
         msg =
           "OAuth state expired or didn’t match. Use the same browser you started in, finish within ~30 minutes, and start Connect again from this page. If it persists, set OAUTH_STATE_SECRET (or GOOGLE_CALENDAR_OAUTH_STATE_SECRET) in env so start and callback use the same signing key.";
@@ -242,6 +256,20 @@ export default function AdminIntegrationsPage() {
           "The Google account finished in a different browser session than the admin who started Connect. Open Integrations in this browser while signed in, then try Connect again.";
       } else if (msg === "admin_required") {
         msg = "You must be signed in as an approved admin to finish Google Calendar connection.";
+      } else if (msg === "access_denied") {
+        msg =
+          "Google sign-in was cancelled or your account isn’t allowed for this app. If the app is in Testing on Google Cloud, add your Google account under OAuth consent screen → Test users.";
+      } else if (msg === "redirect_uri_mismatch") {
+        msg =
+          "redirect_uri_mismatch — Google rejected the return URL. In Google Cloud → APIs & Services → Credentials → your OAuth Web client, add the exact redirect URI shown under “Google Cloud checklist” on this page (same scheme, host, and path). If you use www, match www; if you use apex, match apex. Set NEXT_PUBLIC_APP_URL to that same public URL in Vercel.";
+      } else if (msg === "invalid_client" || /^invalid_client\b/i.test(msg)) {
+        msg =
+          "invalid_client — Google rejects client auth at the token step. The ID must end in .apps.googleusercontent.com and pair with that Web client’s secret in GOOGLE_CALENDAR_* ; redeploy after changes. This app tries HTTP Basic then form credentials; if both fail, create a fresh OAuth 2.0 Web application client, re-add redirect URI + scopes, paste the new ID and secret, redeploy, connect again.";
+      } else if (/invalid_grant/i.test(msg)) {
+        msg = `${msg} — Often fixed by adding the exact redirect URI in Google Cloud, or revoking the app under myaccount.google.com/permissions and connecting again.`;
+      }
+      if (detailDecoded && !msg.includes(detailDecoded)) {
+        msg = `${msg} ${detailDecoded}`;
       }
       setGcalFlashVariant("destructive");
       setGcalFlash(`Google Calendar: ${msg}`);
@@ -361,9 +389,31 @@ export default function AdminIntegrationsPage() {
       if (!res.ok) {
         throw new Error((data as { message?: string }).message || "Could not load this page. Try Refresh.");
       }
-      const payload = data as { services?: IntegrationStatus[]; contentStudioSocial?: ContentStudioSocialPayload };
+      const payload = data as {
+        services?: IntegrationStatus[];
+        contentStudioSocial?: ContentStudioSocialPayload;
+        googleCalendarSetup?: GoogleCalendarSetupPayload;
+      };
       setServices(payload.services ?? []);
       setContentStudioSocial(payload.contentStudioSocial ?? null);
+      const gcs = payload.googleCalendarSetup;
+      if (
+        gcs &&
+        typeof gcs.redirectUri === "string" &&
+        typeof gcs.javascriptOrigin === "string" &&
+        Array.isArray(gcs.scopes)
+      ) {
+        setGcalSetup({
+          ...gcs,
+          clientId: typeof gcs.clientId === "string" ? gcs.clientId : "",
+          clientSecretPresent:
+            typeof gcs.clientSecretPresent === "boolean"
+              ? gcs.clientSecretPresent
+              : Boolean(gcs.oauthClientConfigured),
+        });
+      } else {
+        setGcalSetup(null);
+      }
       const gcal = ((data as { services?: IntegrationStatus[] }).services ?? []).find(
         (x) => x.id === "google_calendar",
       );
@@ -381,29 +431,54 @@ export default function AdminIntegrationsPage() {
     } catch {
       setServices([]);
       setContentStudioSocial(null);
+      setGcalSetup(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
+  const copyGcalSetupValue = useCallback(
+    (label: string, value: string) => {
+      void navigator.clipboard?.writeText(value).then(
+        () => toast({ title: "Copied", description: label }),
+        () =>
+          toast({
+            variant: "destructive",
+            title: "Copy failed",
+            description: "Your browser may block clipboard access.",
+          }),
+      );
+    },
+    [toast],
+  );
+
   const socialPayload =
     contentStudioSocial ?? (siteOrigin ? buildOfflineSocialPayload(siteOrigin) : null);
 
   async function startOAuthConnect(startPath: string) {
     setOauthStartPath(startPath);
+    const isGcal = startPath.includes("google-calendar");
     const openingToast = () =>
       toast({
         title: "Opening sign-in…",
         description: "Finish signing in there—you’ll come back here automatically.",
       });
+    const flashOAuthErr = (msg: string, title: string) => {
+      if (isGcal) {
+        setGcalFlashVariant("destructive");
+        setGcalFlash(msg);
+      } else {
+        setSocialFlashVariant("destructive");
+        setSocialFlash(msg);
+      }
+      toast({ variant: "destructive", title, description: msg });
+    };
     try {
       const res = await fetch(startPath, { credentials: "include", redirect: "manual" });
       if (res.status === 401 || res.status === 403) {
         const msg = "Admin access required.";
-        setSocialFlashVariant("destructive");
-        setSocialFlash(msg);
-        toast({ variant: "destructive", title: "Sign-in required", description: msg });
+        flashOAuthErr(msg, "Sign-in required");
         return;
       }
       if (res.status === 400) {
@@ -411,9 +486,13 @@ export default function AdminIntegrationsPage() {
         const msg =
           data.message ??
           "This connection isn’t set up yet. Add the app details in your site settings, then add the return link shown in the yellow box on this page.";
-        setSocialFlashVariant("destructive");
-        setSocialFlash(msg);
-        toast({ variant: "destructive", title: "Can’t start connection", description: msg });
+        flashOAuthErr(msg, isGcal ? "Can’t start Google Calendar" : "Can’t start connection");
+        return;
+      }
+      if (res.status >= 500) {
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        const msg = data.message ?? "Server error starting OAuth.";
+        flashOAuthErr(msg, isGcal ? "Google Calendar OAuth error" : "Couldn’t start");
         return;
       }
       // Cross-origin OAuth redirects (307 → Meta, etc.): `redirect: "manual"` often yields `opaqueredirect`
@@ -430,14 +509,10 @@ export default function AdminIntegrationsPage() {
         return;
       }
       const msg = "Something unexpected happened when starting the connection.";
-      setSocialFlashVariant("destructive");
-      setSocialFlash(msg);
-      toast({ variant: "destructive", title: "Couldn’t start", description: msg });
+      flashOAuthErr(msg, "Couldn’t start");
     } catch {
       const msg = "Network error starting OAuth.";
-      setSocialFlashVariant("destructive");
-      setSocialFlash(msg);
-      toast({ variant: "destructive", title: "Network error", description: msg });
+      flashOAuthErr(msg, "Network error");
     } finally {
       setOauthStartPath(null);
     }
@@ -704,6 +779,129 @@ export default function AdminIntegrationsPage() {
         </Alert>
       ) : null}
 
+      {gcalSetup ? (
+        <Card className="mb-6 border-primary/25 bg-primary/[0.04] dark:bg-primary/[0.08]">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calendar className="h-5 w-5 shrink-0" aria-hidden />
+              Google Calendar — Google Cloud checklist
+            </CardTitle>
+            <CardDescription>
+              Your site talks to the{" "}
+              <a
+                href="https://developers.google.com/workspace/calendar/api/guides/overview"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium text-foreground"
+              >
+                Calendar API
+              </a>{" "}
+              after OAuth. The values below are computed from this request so they match{" "}
+              <strong className="text-foreground">Connect Google Calendar</strong> and the token exchange.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              <li>
+                Enable the API:{" "}
+                <a
+                  href={gcalSetup.calendarApiConsoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline font-medium"
+                >
+                  Open Google Calendar API in API Library
+                </a>{" "}
+                → <strong className="text-foreground">Enable</strong>.
+              </li>
+              <li>
+                OAuth consent screen → <strong className="text-foreground">Scopes</strong>: add non-sensitive scopes that match:{" "}
+                <code className="text-xs break-all bg-muted/80 px-1 rounded border">{gcalSetup.scopes.join(", ")}</code>
+              </li>
+              <li>
+                <a
+                  href={gcalSetup.credentialsConsoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline font-medium"
+                >
+                  Credentials
+                </a>{" "}
+                → your <strong className="text-foreground">OAuth 2.0 Client ID</strong> (type{" "}
+                <strong className="text-foreground">Web application</strong>, not Desktop) →{" "}
+                <strong className="text-foreground">Authorized redirect URIs</strong> → add{" "}
+                <span className="text-foreground">exactly</span>:
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <code className="text-xs break-all bg-background border rounded px-2 py-1 max-w-full flex-1 min-w-[12rem]">
+                    {gcalSetup.redirectUri}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => copyGcalSetupValue("Redirect URI", gcalSetup.redirectUri)}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" aria-hidden />
+                    Copy
+                  </Button>
+                </div>
+              </li>
+              <li>
+                <strong className="text-foreground">Authorized JavaScript origins</strong> → add:
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <code className="text-xs break-all bg-background border rounded px-2 py-1 max-w-full flex-1 min-w-[12rem]">
+                    {gcalSetup.javascriptOrigin}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => copyGcalSetupValue("JavaScript origin", gcalSetup.javascriptOrigin)}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" aria-hidden />
+                    Copy
+                  </Button>
+                </div>
+              </li>
+              <li>
+                In Vercel (or <code className="text-xs bg-muted/80 px-1 rounded">.env</code>), set{" "}
+                <code className="text-xs bg-muted/80 px-1 rounded">GOOGLE_CALENDAR_CLIENT_ID</code> and{" "}
+                <code className="text-xs bg-muted/80 px-1 rounded">GOOGLE_CALENDAR_CLIENT_SECRET</code> from that
+                client. Set <code className="text-xs bg-muted/80 px-1 rounded">NEXT_PUBLIC_APP_URL</code> to the same
+                public URL you use in the browser (including <code className="text-xs bg-muted/80 px-1 rounded">www</code>{" "}
+                if you use it) so the redirect URI stays consistent.
+              </li>
+            </ol>
+            {gcalSetup.oauthClientConfigured && gcalSetup.clientId ? (
+              <div className="rounded-md border border-border bg-background/60 px-3 py-2 space-y-1">
+                <p className="text-xs font-medium text-foreground">Server-loaded OAuth client ID</p>
+                <p className="text-xs text-muted-foreground">
+                  Compare this <strong className="text-foreground">exactly</strong> to{" "}
+                  <strong className="text-foreground">Client ID</strong> on the same Web client you copied the secret
+                  from. If you edited <code className="bg-muted/80 px-1 rounded">.env.local</code> only, restart{" "}
+                  <code className="bg-muted/80 px-1 rounded">npm run dev</code>. On Vercel, set env for{" "}
+                  <strong className="text-foreground">Production</strong> (and Preview if you test there), then{" "}
+                  <strong className="text-foreground">redeploy</strong>.
+                </p>
+                <code className="text-xs break-all block bg-muted/50 rounded px-2 py-1.5">{gcalSetup.clientId}</code>
+                {!gcalSetup.clientSecretPresent ? (
+                  <p className="text-xs text-destructive">Client secret missing in this environment.</p>
+                ) : null}
+              </div>
+            ) : null}
+            {!gcalSetup.oauthClientConfigured ? (
+              <p className="text-amber-700 dark:text-amber-400 text-xs">
+                Calendar OAuth env vars are not detected on the server yet. After you add them, refresh this page — then
+                the <strong className="font-medium">Connect Google Calendar</strong> button will appear if your account
+                is not already linked.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Integrated services */}
       <Card className="mb-6">
         <CardHeader>
@@ -760,8 +958,17 @@ export default function AdminIntegrationsPage() {
                 <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
                   <div className="flex flex-wrap gap-2 justify-end">
                     {s.connectHref ? (
-                      <Button variant="default" size="sm" asChild>
-                        <a href={s.connectHref}>Connect Google Calendar</a>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        type="button"
+                        disabled={oauthStartPath !== null}
+                        onClick={() => void startOAuthConnect(s.connectHref!)}
+                      >
+                        {oauthStartPath === s.connectHref ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1.5" aria-hidden />
+                        ) : null}
+                        Connect Google Calendar
                       </Button>
                     ) : null}
                     {s.id === "google_calendar" && s.configured ? (

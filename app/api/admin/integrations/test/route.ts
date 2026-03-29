@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const service = body.service as IntegrationId | undefined;
     if (
       !service ||
-      !["facebook", "brevo", "zoom", "social-scheduling", "google_calendar", "calendly"].includes(service)
+      !["facebook", "brevo", "zoom", "social-scheduling", "google_calendar"].includes(service)
     ) {
       return NextResponse.json(
         {
@@ -137,20 +137,6 @@ export async function POST(req: NextRequest) {
       }
       const r = await testGoogleCalendarConnectionForUser(uid);
       return NextResponse.json(r);
-    }
-
-    if (service === "calendly") {
-      const tok = process.env.CALENDLY_API_TOKEN?.trim();
-      if (!tok) {
-        return NextResponse.json({
-          ok: false,
-          message: "Calendly isn’t configured (optional).",
-        });
-      }
-      return NextResponse.json({
-        ok: true,
-        message: "Calendly token is saved.",
-      });
     }
 
     return NextResponse.json({ ok: false, message: "Unknown service." }, { status: 400 });

@@ -23,7 +23,24 @@ type Host = { id: number; username: string; displayName: string };
 
 type Slot = { startAt: string; endAt: string; label: string };
 
-export function SchedulingBookFlow() {
+type BookingPagePayload = {
+  slug: string;
+  title: string;
+  shortDescription: string | null;
+  bestForBullets: string[];
+  hostMode: string;
+  fixedHostUserId: number | null;
+  formFieldsJson: Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>;
+  redirectUrl: string | null;
+  bookingTypeId: number;
+};
+
+export interface SchedulingBookFlowProps {
+  /** When set, loads `/api/public/scheduler/booking-page/:slug` and locks meeting type + funnel copy. */
+  bookingPageSlug?: string;
+}
+
+export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -47,11 +64,42 @@ export function SchedulingBookFlow() {
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [pagePayload, setPagePayload] = useState<BookingPagePayload | null>(null);
+  const [extraFieldValues, setExtraFieldValues] = useState<Record<string, string>>({});
+  const [company, setCompany] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        if (bookingPageSlug) {
+          const pres = await fetch(`/api/public/scheduler/booking-page/${encodeURIComponent(bookingPageSlug)}`);
+          const pdata = await pres.json();
+          if (cancelled) return;
+          if (!pres.ok) {
+            setEnabled(false);
+            return;
+          }
+          setEnabled(!!pdata.enabled);
+          setTimezone(pdata.timezone || "America/New_York");
+          setAiOn(!!pdata.aiAssistantEnabled);
+          const p = pdata.page as BookingPagePayload;
+          const bt = pdata.bookingType as MeetingType;
+          setPagePayload(p);
+          setTypes([bt]);
+          setTypeId(bt.id);
+          const h = (pdata.hosts || []) as Host[];
+          setHosts(h);
+          if (p.hostMode === "fixed" && p.fixedHostUserId != null) {
+            setHostUserId(p.fixedHostUserId);
+          } else if (h.length === 1) {
+            setHostUserId(h[0]!.id);
+          } else {
+            setHostUserId(null);
+          }
+          return;
+        }
+
         const res = await fetch("/api/public/scheduling/types");
         const data = await res.json();
         if (cancelled) return;
@@ -74,7 +122,7 @@ export function SchedulingBookFlow() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bookingPageSlug]);
 
   const loadSlots = useCallback(async () => {
     if (!typeId || !date) return;
@@ -82,7 +130,10 @@ export function SchedulingBookFlow() {
     setSelectedStart(null);
     setError(null);
     try {
-      const res = await fetch(`/api/public/scheduling/slots?date=${encodeURIComponent(date)}&typeId=${typeId}`);
+      const hostQs = hostUserId != null ? `&hostUserId=${hostUserId}` : "";
+      const res = await fetch(
+        `/api/public/scheduling/slots?date=${encodeURIComponent(date)}&typeId=${typeId}${hostQs}`,
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not load times");
       setSlots(data.slots || []);
@@ -106,9 +157,18 @@ export function SchedulingBookFlow() {
       setError("Pick a time and enter your name and email.");
       return;
     }
+    if (pagePayload?.formFieldsJson?.length) {
+      for (const f of pagePayload.formFieldsJson) {
+        if (f.required && !(extraFieldValues[f.id] || "").trim()) {
+          setError(`Please complete: ${f.label}`);
+          return;
+        }
+      }
+    }
     setSubmitting(true);
     setError(null);
     try {
+      const formAnswers: Record<string, unknown> = { ...extraFieldValues };
       const res = await fetch("/api/public/scheduling/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,9 +177,11 @@ export function SchedulingBookFlow() {
           guestName: name.trim(),
           guestEmail: email.trim(),
           guestPhone: phone.trim() || undefined,
+          guestCompany: company.trim() || undefined,
           startAt: selectedStart,
           guestNotes: notes.trim() || undefined,
           ...(hostUserId != null ? { hostUserId } : {}),
+          ...(bookingPageSlug ? { bookingPageSlug, formAnswers, bookingSource: `page:${bookingPageSlug}` } : {}),
         }),
       });
       const data = await res.json();
@@ -130,7 +192,11 @@ export function SchedulingBookFlow() {
         sessionStorage.setItem(THANK_YOU_SESSION.bookingManageHref, `/book/manage/${token}`);
         sessionStorage.setItem(THANK_YOU_SESSION.bookingEmailSent, String(emailSent !== false));
       }
-      router.push(funnelThankYouUrl("native_booking"));
+      if (pagePayload?.redirectUrl) {
+        router.push(pagePayload.redirectUrl);
+      } else {
+        router.push(funnelThankYouUrl("native_booking"));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
     } finally {
@@ -188,14 +254,26 @@ export function SchedulingBookFlow() {
       <div className="lg:col-span-2 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Pick a meeting</CardTitle>
-            <CardDescription>
-              Times shown in <span className="text-foreground font-medium">{timezone}</span>
-              {selectedType ? ` · ${selectedType.durationMinutes} minutes` : null}
+            <CardTitle>{pagePayload?.title ?? "Pick a meeting"}</CardTitle>
+            <CardDescription className="space-y-2">
+              <span>
+                Times shown in <span className="text-foreground font-medium">{timezone}</span>
+                {selectedType ? ` · ${selectedType.durationMinutes} minutes` : null}
+              </span>
+              {pagePayload?.shortDescription ? (
+                <span className="block text-muted-foreground">{pagePayload.shortDescription}</span>
+              ) : null}
+              {pagePayload?.bestForBullets?.length ? (
+                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                  {pagePayload.bestForBullets.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              ) : null}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {hosts.length > 1 ? (
+            {hosts.length > 1 && pagePayload?.hostMode !== "fixed" ? (
               <div className="space-y-2">
                 <Label>Who you&apos;re meeting with</Label>
                 <select
@@ -215,23 +293,27 @@ export function SchedulingBookFlow() {
                 </select>
               </div>
             ) : null}
-            <div className="space-y-2">
-              <Label>Meeting type</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={typeId ?? ""}
-                onChange={(e) => setTypeId(Number(e.target.value))}
-              >
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              {selectedType?.description ? (
-                <p className="text-sm text-muted-foreground">{selectedType.description}</p>
-              ) : null}
-            </div>
+            {!pagePayload ? (
+              <div className="space-y-2">
+                <Label>Meeting type</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={typeId ?? ""}
+                  onChange={(e) => setTypeId(Number(e.target.value))}
+                >
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedType?.description ? (
+                  <p className="text-sm text-muted-foreground">{selectedType.description}</p>
+                ) : null}
+              </div>
+            ) : selectedType?.description ? (
+              <p className="text-sm text-muted-foreground">{selectedType.description}</p>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="book-date">Date</Label>
               <Input id="book-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -281,6 +363,30 @@ export function SchedulingBookFlow() {
                 <Label htmlFor="g-phone">Phone (optional)</Label>
                 <Input id="g-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
+              {pagePayload?.formFieldsJson?.map((f) => (
+                <div key={f.id} className="space-y-2">
+                  <Label htmlFor={`bf-${f.id}`}>
+                    {f.label}
+                    {f.required ? " *" : ""}
+                  </Label>
+                  {f.type === "textarea" ? (
+                    <Textarea
+                      id={`bf-${f.id}`}
+                      value={extraFieldValues[f.id] ?? ""}
+                      onChange={(e) => setExtraFieldValues((s) => ({ ...s, [f.id]: e.target.value }))}
+                      rows={3}
+                      required={!!f.required}
+                    />
+                  ) : (
+                    <Input
+                      id={`bf-${f.id}`}
+                      value={extraFieldValues[f.id] ?? ""}
+                      onChange={(e) => setExtraFieldValues((s) => ({ ...s, [f.id]: e.target.value }))}
+                      required={!!f.required}
+                    />
+                  )}
+                </div>
+              ))}
               <div className="space-y-2">
                 <Label htmlFor="g-notes">Notes (optional)</Label>
                 <Textarea id="g-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />

@@ -26,7 +26,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const err = searchParams.get("error");
   if (err) {
-    return redirectWithCookieClear(req, baseUrl, `?gcal_error=${encodeURIComponent(err)}`);
+    const desc = searchParams.get("error_description")?.trim() ?? "";
+    const qs = new URLSearchParams();
+    qs.set("gcal_error", err);
+    if (desc) qs.set("gcal_error_detail", desc.slice(0, 600));
+    return redirectWithCookieClear(req, baseUrl, `?${qs.toString()}`);
   }
   const code = searchParams.get("code");
   const stateQ = searchParams.get("state")?.trim() ?? null;

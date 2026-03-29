@@ -34,6 +34,8 @@ const nextConfig = {
       { source: '/insights/:path*', destination: '/blog', permanent: true },
       { source: '/results', destination: '/diagnosis/results', permanent: true },
       { source: '/ecosystem-founders', destination: '/about?founders=1', permanent: true },
+      { source: '/community', destination: '/Afn', permanent: true },
+      { source: '/community/:path*', destination: '/Afn/:path*', permanent: true },
     ];
   },
 

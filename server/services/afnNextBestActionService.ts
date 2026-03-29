@@ -23,7 +23,7 @@ export async function getAfnNextBestAction(userId: number): Promise<AfnNextBestA
       id: "join",
       title: "Set up your founder profile",
       description: "Join the network with a short onboarding flow.",
-      href: "/community/onboarding",
+      href: "/Afn/onboarding",
       priority: 100,
     };
   }
@@ -32,7 +32,7 @@ export async function getAfnNextBestAction(userId: number): Promise<AfnNextBestA
       id: "onboarding",
       title: "Finish onboarding",
       description: "A few steps so we can match you with the right people.",
-      href: "/community/onboarding",
+      href: "/Afn/onboarding",
       priority: 95,
     };
   }
@@ -52,7 +52,7 @@ export async function getAfnNextBestAction(userId: number): Promise<AfnNextBestA
       id: "profile_depth",
       title: "Deepen your profile",
       description: "Add skills, goals, and interests so suggestions stay relevant.",
-      href: "/community/profile",
+      href: "/Afn/profile",
       priority: 85,
     };
   }
@@ -63,7 +63,7 @@ export async function getAfnNextBestAction(userId: number): Promise<AfnNextBestA
       id: "network",
       title: "Meet your first connections",
       description: "Browse suggested founders aligned with your stage and focus.",
-      href: "/community/home",
+      href: "/Afn/home",
       priority: 80,
     };
   }
@@ -72,7 +72,7 @@ export async function getAfnNextBestAction(userId: number): Promise<AfnNextBestA
     id: "discuss",
     title: "Join a discussion",
     description: "Share a win, ask for help, or learn from peers in structured threads.",
-    href: "/community/feed",
+    href: "/Afn/feed",
     priority: 50,
   };
 }

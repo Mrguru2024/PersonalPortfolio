@@ -35,7 +35,7 @@ const LINK_ES: Record<string, string> = {
   [CHALLENGE_LANDING_PATH]: "Reto de 5 días (de pago)",
   [PROJECT_GROWTH_ASSESSMENT_PATH]: "Evaluación de crecimiento (completa)",
   [BRAND_GROWTH_PATH]: "Crecimiento de marca",
-  "/community": "Comunidad",
+  "/Afn": "Comunidad",
   "/website-breakdowns": "Análisis de sitios web",
   [LAUNCH_YOUR_BRAND_PATH]: "Lanza tu marca",
   [REBRAND_YOUR_BUSINESS_PATH]: "Renueva tu negocio",

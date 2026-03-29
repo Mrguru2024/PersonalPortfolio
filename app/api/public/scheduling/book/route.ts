@@ -14,6 +14,16 @@ export async function POST(req: NextRequest) {
     const guestPhone = body.guestPhone != null ? String(body.guestPhone).trim() : undefined;
     const startAtIso = String(body.startAt ?? "").trim();
     const guestNotes = body.guestNotes != null ? String(body.guestNotes).trim() : undefined;
+    const guestCompany = body.guestCompany != null ? String(body.guestCompany).trim() : undefined;
+    const bookingPageSlug =
+      body.bookingPageSlug != null && String(body.bookingPageSlug).trim() !== ""
+        ? String(body.bookingPageSlug).trim().toLowerCase()
+        : undefined;
+    const formAnswers =
+      body.formAnswers && typeof body.formAnswers === "object" && !Array.isArray(body.formAnswers)
+        ? (body.formAnswers as Record<string, unknown>)
+        : undefined;
+    const bookingSource = body.bookingSource != null ? String(body.bookingSource).trim() : undefined;
     let hostUserId: number | undefined;
     const hostUserIdRaw = body.hostUserId;
     if (hostUserIdRaw != null && hostUserIdRaw !== "") {
@@ -35,7 +45,11 @@ export async function POST(req: NextRequest) {
       guestPhone,
       startAtIso,
       guestNotes,
+      guestCompany: guestCompany || null,
       hostUserId,
+      bookingPageSlug: bookingPageSlug || null,
+      formAnswers: formAnswers ?? null,
+      bookingSource: bookingSource || null,
     });
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });

@@ -45,6 +45,39 @@ export const schedulingBookingTypes = pgTable("scheduling_booking_types", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Conversion-focused public booking pages (Ascendra Scheduler). One page = one primary event type + funnel copy.
+ * Future: payment capture, routing rules, scoped branding (see settingsJson).
+ */
+export const schedulingBookingPages = pgTable("scheduling_booking_pages", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  shortDescription: text("short_description"),
+  bestForBullets: json("best_for_bullets").$type<string[]>().default([]),
+  bookingTypeId: integer("booking_type_id")
+    .notNull()
+    .references(() => schedulingBookingTypes.id, { onDelete: "restrict" }),
+  /** When host_mode is fixed, public flow uses this approved admin as host. */
+  fixedHostUserId: integer("fixed_host_user_id"),
+  /** inherit | fixed — round_robin/collective reserved for Phase 2 routing engine */
+  hostMode: text("host_mode").notNull().default("inherit"),
+  locationType: text("location_type").notNull().default("video"),
+  /** none | deposit | full — deposit/full collection wires to Stripe in Phase 2 */
+  paymentRequirement: text("payment_requirement").notNull().default("none"),
+  depositCents: integer("deposit_cents"),
+  confirmationMessage: text("confirmation_message"),
+  postBookingNextSteps: text("post_booking_next_steps"),
+  redirectUrl: text("redirect_url"),
+  formFieldsJson: json("form_fields_json")
+    .$type<Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>>()
+    .default([]),
+  settingsJson: json("settings_json").$type<Record<string, unknown>>().default({}),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const schedulingAvailabilityRules = pgTable("scheduling_availability_rules", {
   id: serial("id").primaryKey(),
   /** When null, rule applies to every booking type. */
@@ -97,6 +130,19 @@ export const schedulingAppointments = pgTable(
     guestName: text("guest_name").notNull(),
     guestEmail: text("guest_email").notNull(),
     guestPhone: text("guest_phone"),
+    guestCompany: text("guest_company"),
+    bookingPageId: integer("booking_page_id").references(() => schedulingBookingPages.id, {
+      onDelete: "set null",
+    }),
+    /** Ascendra Scheduler — operational tiers (Phase 1 heuristics; Phase 3 ML-ready). */
+    leadScoreTier: text("lead_score_tier"),
+    intentClassification: text("intent_classification"),
+    noShowRiskTier: text("no_show_risk_tier"),
+    paymentStatus: text("payment_status").notNull().default("none"),
+    estimatedValueCents: integer("estimated_value_cents"),
+    /** Page slug, UTM summary, or "native_booking" */
+    bookingSource: text("booking_source"),
+    formAnswersJson: json("form_answers_json").$type<Record<string, unknown>>().default({}),
     startAt: timestamp("start_at").notNull(),
     endAt: timestamp("end_at").notNull(),
     status: text("status").notNull().default("confirmed"),
@@ -145,6 +191,7 @@ export const schedulingIntegrationConfigs = pgTable(
 
 export type SchedulingGlobalSettings = typeof schedulingGlobalSettings.$inferSelect;
 export type SchedulingBookingType = typeof schedulingBookingTypes.$inferSelect;
+export type SchedulingBookingPage = typeof schedulingBookingPages.$inferSelect;
 export type SchedulingAvailabilityRule = typeof schedulingAvailabilityRules.$inferSelect;
 export type SchedulingHostWeeklyRule = typeof schedulingHostWeeklyRules.$inferSelect;
 export type SchedulingHostBlockedDate = typeof schedulingHostBlockedDates.$inferSelect;

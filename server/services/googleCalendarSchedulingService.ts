@@ -30,26 +30,104 @@ export type GoogleCalendarConfigJson = {
   [CONFIG_CAL_KEY]?: string;
 };
 
+/**
+ * Normalizes values from .env / Vercel (common causes of invalid_client on every environment:
+ * wrapping quotes, BOM, pasted newlines, literal \\n in secrets).
+ */
+function normalizeGoogleCalendarOAuthEnvValue(value: string | undefined): string {
+  if (value == null || typeof value !== "string") return "";
+  let t = value.trim();
+  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1).trim();
+  if (t.length >= 2) {
+    const open = t[0];
+    const close = t[t.length - 1];
+    if (
+      (open === '"' && close === '"') ||
+      (open === "'" && close === "'") ||
+      (open === "`" && close === "`")
+    ) {
+      t = t.slice(1, -1).trim();
+    }
+  }
+  t = t.replace(/\\n/g, "").replace(/\r/g, "").replace(/\n/g, "");
+  return t.trim();
+}
+
+export function getGoogleCalendarOAuthClientId(): string {
+  return normalizeGoogleCalendarOAuthEnvValue(process.env.GOOGLE_CALENDAR_CLIENT_ID);
+}
+
+export function getGoogleCalendarOAuthClientSecret(): string {
+  return normalizeGoogleCalendarOAuthEnvValue(process.env.GOOGLE_CALENDAR_CLIENT_SECRET);
+}
+
 export function isGoogleCalendarOAuthConfigured(): boolean {
-  return !!(
-    process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim() && process.env.GOOGLE_CALENDAR_CLIENT_SECRET?.trim()
-  );
+  return !!(getGoogleCalendarOAuthClientId() && getGoogleCalendarOAuthClientSecret());
+}
+
+const GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+function tokenErrorLooksLikeClientAuth(j: { error?: string }): boolean {
+  const e = String(j?.error ?? "").toLowerCase();
+  return e === "invalid_client" || e === "unauthorized_client";
+}
+
+/**
+ * Google accepts client credentials in the POST body or via RFC 6749 HTTP Basic.
+ * Some secrets / host configs only succeed with Basic — try that first, then form body.
+ */
+async function postGoogleCalendarTokenRequest(
+  formWithoutClientCreds: URLSearchParams,
+  formWithClientCreds: URLSearchParams,
+): Promise<Response> {
+  const clientId = getGoogleCalendarOAuthClientId();
+  const clientSecret = getGoogleCalendarOAuthClientSecret();
+  const basic = Buffer.from(`${clientId}:${clientSecret}`, "utf8").toString("base64");
+  const resBasic = await fetch(GOOGLE_OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: formWithoutClientCreds,
+  });
+  const text = await resBasic.text();
+  let j: { error?: string } = {};
+  try {
+    j = JSON.parse(text) as { error?: string };
+  } catch {
+    /* non-JSON error body */
+  }
+  if (resBasic.ok || !tokenErrorLooksLikeClientAuth(j)) {
+    return new Response(text, {
+      status: resBasic.status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return fetch(GOOGLE_OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: formWithClientCreds,
+  });
 }
 
 export function getGoogleCalendarRedirectUri(baseUrl: string): string {
   return `${baseUrl.replace(/\/$/, "")}/api/admin/integrations/google-calendar/callback`;
 }
 
+/** Scopes requested at authorize time — add the same URLs under OAuth consent screen → Scopes in Google Cloud. */
+export const GOOGLE_CALENDAR_OAUTH_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
+] as const;
+
 export function buildGoogleCalendarAuthorizeUrl(state: string, redirectUri: string): string {
-  const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID!.trim();
+  const clientId = getGoogleCalendarOAuthClientId();
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: [
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/calendar.readonly",
-    ].join(" "),
+    scope: [...GOOGLE_CALENDAR_OAUTH_SCOPES].join(" "),
     access_type: "offline",
     prompt: "consent",
     state,
@@ -177,8 +255,8 @@ export async function getGoogleCalendarAccessToken(): Promise<
 async function refreshAccessTokenWithRefreshToken(
   refreshToken: string | null
 ): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
-  const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET?.trim();
+  const clientId = getGoogleCalendarOAuthClientId();
+  const clientSecret = getGoogleCalendarOAuthClientSecret();
   if (!clientId || !clientSecret || !refreshToken) {
     return { ok: false, error: "Google Calendar not connected or OAuth client missing." };
   }
@@ -193,9 +271,22 @@ async function refreshAccessTokenWithRefreshToken(
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
   });
-  const data = (await res.json().catch(() => ({}))) as { access_token?: string; error?: string };
+  const data = (await res.json().catch(() => ({}))) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
   if (!res.ok || !data.access_token) {
-    return { ok: false, error: data.error || `Token refresh failed (${res.status})` };
+    const detail =
+      typeof data.error_description === "string" && data.error_description.trim()
+        ? data.error_description.trim()
+        : "";
+    const code = typeof data.error === "string" ? data.error.trim() : "";
+    const msg =
+      detail || code
+        ? [code, detail].filter(Boolean).join(": ")
+        : `Token refresh failed (${res.status})`;
+    return { ok: false, error: msg };
   }
   return { ok: true, token: data.access_token };
 }
@@ -221,30 +312,41 @@ export async function saveGoogleCalendarTokensFromCode(
       error: "Server cannot encrypt tokens — set SCHEDULING_TOKEN_ENCRYPTION_KEY or SESSION_SECRET.",
     };
   }
-  const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET?.trim();
+  const clientId = getGoogleCalendarOAuthClientId();
+  const clientSecret = getGoogleCalendarOAuthClientSecret();
   if (!clientId || !clientSecret) {
     return { ok: false, error: "GOOGLE_CALENDAR_CLIENT_ID / SECRET not set." };
   }
-  const body = new URLSearchParams({
+  const minimal = new URLSearchParams({
+    code,
+    redirect_uri: redirectUri,
+    grant_type: "authorization_code",
+  });
+  const full = new URLSearchParams({
     code,
     client_id: clientId,
     client_secret: clientSecret,
     redirect_uri: redirectUri,
     grant_type: "authorization_code",
   });
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const res = await postGoogleCalendarTokenRequest(minimal, full);
   const data = (await res.json().catch(() => ({}))) as {
     refresh_token?: string;
     access_token?: string;
     error?: string;
+    error_description?: string;
   };
   if (!res.ok) {
-    return { ok: false, error: data.error || `Token exchange failed (${res.status})` };
+    const detail =
+      typeof data.error_description === "string" && data.error_description.trim()
+        ? data.error_description.trim()
+        : "";
+    const code = typeof data.error === "string" ? data.error.trim() : "";
+    const msg =
+      detail || code
+        ? [code, detail].filter(Boolean).join(": ")
+        : `Token exchange failed (${res.status})`;
+    return { ok: false, error: msg };
   }
   const rt = data.refresh_token;
   if (!rt) {

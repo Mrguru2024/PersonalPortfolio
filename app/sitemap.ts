@@ -21,9 +21,9 @@ const EXCLUDE_PREFIXES = [
   "/book/manage",
   "/api",
   "/admin",
-  "/community/inbox",
-  "/community/profile",
-  "/community/settings",
+  "/Afn/inbox",
+  "/Afn/profile",
+  "/Afn/settings",
   "/challenge/checkout",
   "/challenge/dashboard",
 ];
@@ -60,7 +60,7 @@ function isExcludedPath(path: string): boolean {
 function changeFrequency(path: string): MetadataRoute.Sitemap[0]["changeFrequency"] {
   if (path === "/") return "daily";
   if (path.startsWith("/blog")) return "weekly";
-  if (path.startsWith("/community")) return "daily";
+  if (path.startsWith("/Afn")) return "daily";
   if (path.includes("tools") || path.startsWith("/free-") || path.startsWith("/diagn")) {
     return "monthly";
   }

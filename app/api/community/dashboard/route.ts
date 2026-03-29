@@ -99,9 +99,9 @@ export async function GET(req: NextRequest) {
       nextBestAction,
       topSuggestions,
       modules: {
-        tribes: { href: "/community/tribes", label: "Find your tribe" },
-        speedNetworking: { href: "/community/speed-networking", label: "Speed networking" },
-        projects: { href: "/community/projects", label: "Collaboration projects" },
+        tribes: { href: "/Afn/tribes", label: "Find your tribe" },
+        speedNetworking: { href: "/Afn/speed-networking", label: "Speed networking" },
+        projects: { href: "/Afn/projects", label: "Collaboration projects" },
       },
     });
   } catch (e) {

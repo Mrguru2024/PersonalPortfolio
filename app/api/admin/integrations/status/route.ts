@@ -3,6 +3,10 @@ import { getOAuthBaseUrlFromRequest } from "@/lib/siteUrl";
 import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
 import { isZoomConfigured } from "@/lib/zoom";
 import {
+  getGoogleCalendarOAuthClientId,
+  getGoogleCalendarOAuthClientSecret,
+  getGoogleCalendarRedirectUri,
+  GOOGLE_CALENDAR_OAUTH_SCOPES,
   isGoogleCalendarConnectedForUser,
   isGoogleCalendarLegacyConnected,
   isGoogleCalendarOAuthConfigured,
@@ -69,6 +73,10 @@ export async function GET(req: NextRequest) {
     const gcalConnected = gcalUid > 0 ? await isGoogleCalendarConnectedForUser(gcalUid) : gcalLegacy;
 
     const baseUrl = getOAuthBaseUrlFromRequest(req);
+    const googleCalendarRedirectUri = getGoogleCalendarRedirectUri(baseUrl);
+    const googleCalendarJavascriptOrigin = baseUrl.replace(/\/$/, "");
+    const gcalClientId = getGoogleCalendarOAuthClientId();
+    const gcalSecretPresent = Boolean(getGoogleCalendarOAuthClientSecret());
     const [
       facebookPage,
       facebookOAuthConnected,
@@ -210,22 +218,31 @@ export async function GET(req: NextRequest) {
             ? "Almost there — click “Connect Google Calendar” (each admin connects their own)."
             : "Add your Google Calendar app details in the site’s settings, then connect here.",
         reconnectUrl: "https://console.cloud.google.com/apis/credentials",
+        /** Personal calendar not linked yet — offer OAuth (legacy-only connection still shows this). */
         connectHref: gcalEnv && !gcalPersonal ? "/api/admin/integrations/google-calendar/start" : undefined,
-      },
-      {
-        id: "calendly",
-        name: "Calendly (optional)",
-        description: "Optional link or future hook to Calendly alongside native booking.",
-        configured: !!process.env.CALENDLY_API_TOKEN?.trim(),
-        status: process.env.CALENDLY_API_TOKEN?.trim() ? "ok" : "not_configured",
-        message: process.env.CALENDLY_API_TOKEN?.trim()
-          ? "Calendly token is saved."
-          : "Optional — only if you use Calendly with this site.",
-        reconnectUrl: "https://calendly.com/integrations/api_webhooks",
       },
     ];
 
-    return NextResponse.json({ services, contentStudioSocial });
+    return NextResponse.json({
+      services,
+      contentStudioSocial,
+      googleCalendarSetup: {
+        oauthClientConfigured: gcalEnv,
+        /** Paste into Google Cloud → Credentials → OAuth 2.0 Client → Authorized redirect URIs (must match exactly). */
+        redirectUri: googleCalendarRedirectUri,
+        /** Usually add as Authorized JavaScript origin (same host as redirect, no path). */
+        javascriptOrigin: googleCalendarJavascriptOrigin,
+        scopes: [...GOOGLE_CALENDAR_OAUTH_SCOPES],
+        calendarApiConsoleUrl: "https://console.cloud.google.com/apis/library/calendar.googleapis.com",
+        credentialsConsoleUrl: "https://console.cloud.google.com/apis/credentials",
+        /**
+         * OAuth client ID this server reads from env (not a secret). Must match the Web client in Cloud Console.
+         */
+        clientId: gcalEnv ? gcalClientId : "",
+        /** False if GOOGLE_CALENDAR_CLIENT_SECRET is missing in this runtime (never exposes the secret). */
+        clientSecretPresent: gcalEnv && gcalSecretPresent,
+      },
+    });
   } catch (error) {
     console.error("Integrations status error:", error);
     return NextResponse.json(

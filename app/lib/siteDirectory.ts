@@ -93,18 +93,18 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/updates", title: "Updates / changelog", category: "Public · Content", audience: "public", description: "Product or site updates feed page.", keywords: k("changelog", "updates") },
 
   // —— Public: community
-  { path: "/community", title: "Community home", category: "Public · Community", audience: "public", description: "Community hub.", keywords: k("community", "forum") },
-  { path: "/community/feed", title: "Community feed", category: "Public · Community", audience: "public", description: "Activity feed.", keywords: k("feed", "posts") },
-  { path: "/community/members", title: "Members directory", category: "Public · Community", audience: "public", description: "Member list.", keywords: k("members") },
-  { path: "/community/members/[username]", title: "Member profile", category: "Public · Community", audience: "public", description: "Public member profile.", keywords: k("profile", "member") },
-  { path: "/community/post/[id]", title: "Community post", category: "Public · Community", audience: "public", description: "Single post thread.", keywords: k("post", "thread") },
-  { path: "/community/resources", title: "Community resources", category: "Public · Community", audience: "public", description: "Resource library index.", keywords: k("resources") },
-  { path: "/community/resources/[slug]", title: "Community resource", category: "Public · Community", audience: "public", description: "Single resource.", keywords: k("resource") },
-  { path: "/community/inbox", title: "Messages inbox", category: "Public · Community", audience: "public", description: "Direct messages.", keywords: k("inbox", "dm") },
-  { path: "/community/collab", title: "Collab", category: "Public · Community", audience: "public", description: "Collaboration board / listings.", keywords: k("collab") },
-  { path: "/community/onboarding", title: "Community onboarding", category: "Public · Community", audience: "public", description: "New member onboarding.", keywords: k("onboarding") },
-  { path: "/community/profile", title: "My community profile", category: "Public · Community", audience: "public", description: "Edit/view own profile.", keywords: k("profile", "settings") },
-  { path: "/community/settings", title: "Community settings", category: "Public · Community", audience: "public", description: "Community-related settings.", keywords: k("settings") },
+  { path: "/Afn", title: "Community home", category: "Public · Community", audience: "public", description: "Community hub.", keywords: k("community", "forum") },
+  { path: "/Afn/feed", title: "Community feed", category: "Public · Community", audience: "public", description: "Activity feed.", keywords: k("feed", "posts") },
+  { path: "/Afn/members", title: "Members directory", category: "Public · Community", audience: "public", description: "Member list.", keywords: k("members") },
+  { path: "/Afn/members/[username]", title: "Member profile", category: "Public · Community", audience: "public", description: "Public member profile.", keywords: k("profile", "member") },
+  { path: "/Afn/post/[id]", title: "Community post", category: "Public · Community", audience: "public", description: "Single post thread.", keywords: k("post", "thread") },
+  { path: "/Afn/resources", title: "Community resources", category: "Public · Community", audience: "public", description: "Resource library index.", keywords: k("resources") },
+  { path: "/Afn/resources/[slug]", title: "Community resource", category: "Public · Community", audience: "public", description: "Single resource.", keywords: k("resource") },
+  { path: "/Afn/inbox", title: "Messages inbox", category: "Public · Community", audience: "public", description: "Direct messages.", keywords: k("inbox", "dm") },
+  { path: "/Afn/collab", title: "Collab", category: "Public · Community", audience: "public", description: "Collaboration board / listings.", keywords: k("collab") },
+  { path: "/Afn/onboarding", title: "Community onboarding", category: "Public · Community", audience: "public", description: "New member onboarding.", keywords: k("onboarding") },
+  { path: "/Afn/profile", title: "My community profile", category: "Public · Community", audience: "public", description: "Edit/view own profile.", keywords: k("profile", "settings") },
+  { path: "/Afn/settings", title: "Community settings", category: "Public · Community", audience: "public", description: "Community-related settings.", keywords: k("settings") },
 
   // —— Public: challenge (paid)
   { path: "/challenge", title: "Challenge landing", category: "Public · Challenge", audience: "public", description: "Paid 5-day challenge marketing.", keywords: k("challenge", "paid") },
@@ -236,7 +236,24 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
 
   // —— Admin: growth products
   { path: "/admin/growth-os", title: "Growth OS hub", category: "Admin · Growth OS", audience: "admin", description: "Client Growth OS admin shell.", keywords: k("growth os", "gos") },
-  { path: "/admin/scheduling", title: "Native scheduling", category: "Admin · Growth OS", audience: "admin", description: "Bookings, email templates, AI tools for /book.", keywords: k("scheduling", "calendar", "bookings"), relatedPaths: ["/book", "/admin/scheduling/my-availability"] },
+  {
+    path: "/admin/scheduler",
+    title: "Ascendra Scheduler",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description: "Operations calendar, appointments inbox, booking pages, lead signals on native appointments.",
+    keywords: k("scheduler", "calendar", "bookings", "routing"),
+    relatedPaths: ["/admin/scheduling", "/book"],
+  },
+  {
+    path: "/admin/scheduling",
+    title: "Native scheduling (classic)",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description: "Availability, email templates, AI tools for /book — shared data with Scheduler.",
+    keywords: k("scheduling", "calendar", "bookings"),
+    relatedPaths: ["/book", "/admin/scheduler", "/admin/scheduling/my-availability"],
+  },
   {
     path: "/admin/growth-os/intelligence",
     title: "Market & growth intelligence",

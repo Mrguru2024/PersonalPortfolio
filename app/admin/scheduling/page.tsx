@@ -15,7 +15,11 @@ export default function AdminSchedulingHomePage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Scheduling</h1>
         <p className="text-muted-foreground mt-1">
-          Native booking on Ascendra—confirmations and reminder emails. Optional: connect Google Calendar or Calendly in{" "}
+          For the operations calendar, inbox, and booking pages, open{" "}
+          <Link href="/admin/scheduler" className="text-primary underline-offset-4 hover:underline">
+            Ascendra Scheduler
+          </Link>
+          . Native booking on Ascendra—confirmations and reminder emails. Optional: connect Google Calendar or Calendly in{" "}
           <Link href="/admin/integrations" className="text-primary underline-offset-4 hover:underline">
             Integrations
           </Link>
