@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Sparkles, Target, Users, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type DashboardPayload = {
@@ -28,10 +29,15 @@ type DashboardPayload = {
 export default function CommunityHomePage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/auth?redirect=/Afn/home");
-  }, [user, authLoading, router]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) router.replace("/auth?redirect=/Afn/home");
+  }, [mounted, user, authLoading, router]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/community/dashboard"],
@@ -43,7 +49,7 @@ export default function CommunityHomePage() {
     enabled: !!user,
   });
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   return (
     <CommunityShell>

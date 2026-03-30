@@ -19,6 +19,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 /** Hero asset in `public/Ascendra images/` (same area as other Ascendra brand art). */
 const AFN_HERO_IMAGE = "/Ascendra images/Ascendra AFN Hero.png";
@@ -58,6 +60,13 @@ const VALUE_ITEMS = [
 
 export default function CommunityLandingPage() {
   const { user, isLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const showAuthedUi = mounted && !isLoading && !!user;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -83,8 +92,10 @@ export default function CommunityLandingPage() {
                 A premium space for founders, builders, and business owners to connect, discuss, collaborate, and grow—backed
                 by the same team that builds brands and tech for growth.
               </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                {!isLoading && user ? (
+              <div className="mt-8 flex min-h-[40px] flex-wrap items-center justify-center gap-3 lg:justify-start">
+                {!mounted || isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading" />
+                ) : showAuthedUi ? (
                   <>
                     <Button asChild size="lg" className="gap-2">
                       <Link href="/Afn/feed">
@@ -194,15 +205,16 @@ export default function CommunityLandingPage() {
               Create your profile, set your visibility and messaging preferences, and start connecting.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center">
-            {!isLoading && !user && (
-              <Button asChild size="lg" className="gap-2">
-                <Link href="/auth?redirect=/Afn/onboarding">Join Ascendra Founder Network</Link>
-              </Button>
-            )}
-            {!isLoading && user && (
+          <CardContent className="flex min-h-[48px] justify-center">
+            {!mounted || isLoading ? (
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
+            ) : showAuthedUi ? (
               <Button asChild size="lg" variant="outline" className="gap-2">
                 <Link href="/Afn/feed">Go to community feed</Link>
+              </Button>
+            ) : (
+              <Button asChild size="lg" className="gap-2">
+                <Link href="/auth?redirect=/Afn/onboarding">Join Ascendra Founder Network</Link>
               </Button>
             )}
           </CardContent>

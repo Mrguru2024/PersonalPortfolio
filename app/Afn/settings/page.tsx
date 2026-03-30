@@ -2,8 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { Loader2 } from "lucide-react";
 export default function CommunitySettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -45,8 +47,12 @@ export default function CommunitySettingsPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/auth?redirect=/Afn/settings");
-  }, [user, authLoading, router]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) router.replace("/auth?redirect=/Afn/settings");
+  }, [mounted, user, authLoading, router]);
 
   const settings = data?.settings ?? {
     profileVisibility: "public",
@@ -64,7 +70,7 @@ export default function CommunitySettingsPage() {
   const handleShowActivity = (v: boolean) => updateMutation.mutate({ ...settings, showActivity: v });
   const handleShowContactLinks = (v: boolean) => updateMutation.mutate({ ...settings, showContactLinks: v });
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   return (
     <CommunityShell>

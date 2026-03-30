@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Loader2, UserPlus, Sparkles } from "lucide-react";
+import { Users, Loader2, Sparkles } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,10 @@ import {
   BUSINESS_STAGES,
   FOUNDER_TYPES,
   FOUNDER_TYPE_LABELS,
-  isFounderType,
 } from "@/lib/community/constants";
+
+/** Radix Select forbids `value=""` on items; use this for “show all” instead of clearing to empty string. */
+const MEMBERS_FILTER_ANY = "__all__";
 
 interface Profile {
   id: number;
@@ -53,25 +56,32 @@ interface Suggestion {
 }
 
 export default function CommunityMembersPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isAuthPlaceholder } = useAuth();
   const router = useRouter();
-  const [industry, setIndustry] = useState<string>("");
-  const [businessStage, setBusinessStage] = useState<string>("");
-  const [founderTribeFilter, setFounderTribeFilter] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+  const [industry, setIndustry] = useState<string>(MEMBERS_FILTER_ANY);
+  const [businessStage, setBusinessStage] = useState<string>(MEMBERS_FILTER_ANY);
+  const [founderTribeFilter, setFounderTribeFilter] = useState<string>(MEMBERS_FILTER_ANY);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
       router.replace("/auth?redirect=/Afn/members");
     }
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const { data: members = [], isLoading } = useQuery<Profile[]>({
     queryKey: ["/api/community/members", industry, businessStage, founderTribeFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (industry) params.set("industry", industry);
-      if (businessStage) params.set("businessStage", businessStage);
-      if (founderTribeFilter) params.set("founderTribe", founderTribeFilter);
+      if (industry !== MEMBERS_FILTER_ANY) params.set("industry", industry);
+      if (businessStage !== MEMBERS_FILTER_ANY) params.set("businessStage", businessStage);
+      if (founderTribeFilter !== MEMBERS_FILTER_ANY) {
+        params.set("founderTribe", founderTribeFilter);
+      }
       const res = await apiRequest("GET", `/api/community/members?${params.toString()}`);
       return res.json();
     },
@@ -88,7 +98,8 @@ export default function CommunityMembersPage() {
   });
   const suggestions = suggestionsData?.suggestions ?? [];
 
-  if (authLoading || !user) return null;
+  const authBlocking = !mounted || authLoading || isAuthPlaceholder || !user;
+  if (authBlocking) return <CommunityAuthLoading />;
 
   return (
     <CommunityShell>
@@ -170,7 +181,7 @@ export default function CommunityMembersPage() {
               <SelectValue placeholder="Stage" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All stages</SelectItem>
+              <SelectItem value={MEMBERS_FILTER_ANY}>All stages</SelectItem>
               {BUSINESS_STAGES.map((s) => (
                 <SelectItem key={s} value={s}>
                   {s.replace(/_/g, " ")}
@@ -183,7 +194,7 @@ export default function CommunityMembersPage() {
               <SelectValue placeholder="Industry" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All industries</SelectItem>
+              <SelectItem value={MEMBERS_FILTER_ANY}>All industries</SelectItem>
               <SelectItem value="tech">Tech</SelectItem>
               <SelectItem value="services">Services</SelectItem>
               <SelectItem value="creative">Creative</SelectItem>
@@ -195,7 +206,7 @@ export default function CommunityMembersPage() {
               <SelectValue placeholder="Community type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value={MEMBERS_FILTER_ANY}>All types</SelectItem>
               {FOUNDER_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>
                   {FOUNDER_TYPE_LABELS[t]}

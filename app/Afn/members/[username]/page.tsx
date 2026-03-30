@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSessionUser } from "@/lib/auth-helpers";
-import { getSiteOriginForMetadata } from "@/lib/siteUrl";
+import { absoluteFromSiteBase, getSiteOriginForMetadata } from "@/lib/siteUrl";
 import { getAfnProfileByUsername, getAfnProfileSettings } from "@server/afnStorage";
 import { FOUNDER_TYPE_LABELS, isFounderType } from "@/lib/community/constants";
 import { MemberProfilePageClient } from "./MemberProfilePageClient";
@@ -35,6 +35,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : null;
   const description = tribe ? `${baseDesc} ${tribe}.` : baseDesc;
 
+  const shareImage =
+    profile.coverImageUrl?.trim() ||
+    profile.avatarUrl?.trim() ||
+    "";
+  const shareImageAbs = shareImage ? absoluteFromSiteBase(base, shareImage) : undefined;
+
   return {
     title: `${name} | Ascendra Founder Network`,
     description,
@@ -44,13 +50,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: `${base}${path}`,
       type: "profile",
-      ...(profile.avatarUrl ? { images: [{ url: profile.avatarUrl }] } : {}),
+      ...(shareImageAbs ? { images: [{ url: shareImageAbs }] } : {}),
     },
     twitter: {
-      card: profile.avatarUrl ? "summary_large_image" : "summary",
+      card: shareImageAbs ? "summary_large_image" : "summary",
       title: name,
       description,
-      ...(profile.avatarUrl ? { images: [profile.avatarUrl] } : {}),
+      ...(shareImageAbs ? { images: [shareImageAbs] } : {}),
     },
     robots: { index: true, follow: true },
   };
@@ -77,7 +83,11 @@ export default async function CommunityMemberProfilePage({ params }: PageProps) 
     name: displayName,
     description: profile.headline || profile.bio?.slice(0, 280) || undefined,
     url: publicUrl,
-    ...(profile.avatarUrl ? { image: profile.avatarUrl } : {}),
+    ...(profile.coverImageUrl?.trim()
+      ? { image: absoluteFromSiteBase(siteBase, profile.coverImageUrl.trim()) }
+      : profile.avatarUrl?.trim()
+        ? { image: absoluteFromSiteBase(siteBase, profile.avatarUrl.trim()) }
+        : {}),
     ...(profile.location ? { workLocation: { "@type": "Place", name: profile.location } } : {}),
     ...(profile.linkedinUrl ? { sameAs: [profile.linkedinUrl] } : {}),
   };

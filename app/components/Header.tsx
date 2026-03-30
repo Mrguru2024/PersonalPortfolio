@@ -53,6 +53,7 @@ import {
   MARKETING_ASSETS_PATH,
   FREE_GROWTH_TOOLS_PATH,
   DIAGNOSTICS_HUB_PATH,
+  COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
 import {
   shellAdminSectionLabel,
@@ -111,7 +112,7 @@ const PRIMARY_NAV_BASE: PrimaryNavItem[] = [
   { name: "Brand Growth", href: "/brand-growth" },
   { name: "Free tools", href: FREE_GROWTH_TOOLS_PATH },
   { name: "Blog", href: "/blog", scrollOnHome: "#blog" },
-  { name: "Community", href: "/Afn" },
+  { name: "Community", href: COMMUNITY_HUB_PUBLIC_PATH },
 ];
 
 const SERVICES_NAV_SECTIONS_BASE: NavSection[] = [
@@ -383,6 +384,7 @@ export default function Header(_props: HeaderProps) {
               <Link
                 key={primaryNavKey(item)}
                 href={item.href}
+                prefetch={item.href === COMMUNITY_HUB_PUBLIC_PATH ? false : undefined}
                 className="text-foreground/80 hover:text-primary font-medium transition text-sm py-2 px-1"
               >
                 {item.name}
@@ -640,9 +642,10 @@ export default function Header(_props: HeaderProps) {
                         </button>
                       </li>
                     ) : (
-                      <li key={item.name}>
+                      <li key={primaryNavKey(item)}>
                         <Link
                           href={item.href}
+                          prefetch={item.href === COMMUNITY_HUB_PUBLIC_PATH ? false : undefined}
                           onClick={closeMobileMenu}
                           className="w-full text-left text-foreground font-medium min-h-[48px] flex items-center px-4 py-3 rounded-lg hover:bg-background/70 active:bg-background/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 block touch-manipulation"
                         >

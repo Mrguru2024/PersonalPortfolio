@@ -19,6 +19,8 @@ import {
   ECOSYSTEM_CTA_LAUNCH,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_LAUNCH } from "@/lib/landingPageOutcomeFramework";
 
 const LAUNCH_FAQ = [
   { q: "How long does a typical launch project take?", a: "Timeline depends on scope—brand only, brand + site, or full launch kit. Most launch projects run a few weeks to a few months. Book a call and we'll outline a timeline for your situation." },
@@ -85,6 +87,12 @@ export default function LaunchYourBrandPage() {
                 <span>Brand identity by Macon Designs</span>
               </Link>
             </motion.div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_LAUNCH} />
           </div>
         </section>
 

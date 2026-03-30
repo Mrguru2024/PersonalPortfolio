@@ -25,6 +25,8 @@ export const afnProfiles = pgTable(
     displayName: text("display_name"),
     username: text("username").unique(),
     avatarUrl: text("avatar_url"),
+    /** Wide banner for public member profile; user-uploaded via /api/community/profile/cover */
+    coverImageUrl: text("cover_image_url"),
     headline: text("headline"),
     bio: text("bio"),
     businessName: text("business_name"),

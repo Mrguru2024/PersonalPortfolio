@@ -14,6 +14,8 @@ import {
   ECOSYSTEM_CTA_REBRAND,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_REBRAND } from "@/lib/landingPageOutcomeFramework";
 
 const REBRAND_FAQ = [
   { q: "How long does a rebrand take?", a: "It depends on scope. Most rebrands run from a few weeks to a few months. Book a strategy call and we'll outline a timeline for your situation." },
@@ -73,6 +75,12 @@ export default function RebrandYourBusinessPage() {
                 <span>Brand identity by Macon Designs</span>
               </Link>
             </motion.div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_REBRAND} />
           </div>
         </section>
 

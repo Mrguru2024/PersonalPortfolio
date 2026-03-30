@@ -16,6 +16,7 @@ import {
   SECONDARY_CTA,
   STARTUP_GROWTH_KIT_PATH,
   STRATEGY_CALL_PATH,
+  COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
 
 /** Spanish labels keyed by exact `href` from `siteNavLinks` (paths imported for parity). */
@@ -36,6 +37,7 @@ const LINK_ES: Record<string, string> = {
   [PROJECT_GROWTH_ASSESSMENT_PATH]: "Evaluación de crecimiento (completa)",
   [BRAND_GROWTH_PATH]: "Crecimiento de marca",
   "/Afn": "Comunidad",
+  [COMMUNITY_HUB_PUBLIC_PATH]: "Comunidad",
   "/website-breakdowns": "Análisis de sitios web",
   [LAUNCH_YOUR_BRAND_PATH]: "Lanza tu marca",
   [REBRAND_YOUR_BUSINESS_PATH]: "Renueva tu negocio",

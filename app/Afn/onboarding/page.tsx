@@ -37,6 +37,7 @@ export default function CommunityOnboardingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<Record<string, unknown>>({
     founderType: "",
@@ -80,10 +81,14 @@ export default function CommunityOnboardingPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
       router.replace("/auth?redirect=/Afn/onboarding");
     }
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -108,7 +113,14 @@ export default function CommunityOnboardingPage() {
     else submitMutation.mutate();
   };
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) {
+    return (
+      <div className="mx-auto flex min-h-[40vh] max-w-xl flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-sm">Loading…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-xl py-8">

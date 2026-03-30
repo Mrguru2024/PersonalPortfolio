@@ -29,6 +29,7 @@
 | `/portal` | Client workspace sign-in |
 | `/portal/welcome` | Signed in but not eligible for full dashboard |
 | `/dashboard` | Client dashboard (overview, invoices, proposals, feedback, projects) |
+| `/growth-system` | Client Growth System — 3-step snapshot (Diagnose / Build / Scale) |
 | `/dashboard/proposals/[id]` | Proposal detail |
 
 **Site directory:** `app/lib/siteDirectory.ts` tags these as `audience: "client"` where listed.
@@ -124,13 +125,11 @@
 | Second project assessment store | `project_assessments` exists |
 | Raw Market Score UI inside Growth System | Link out or embed summary card only |
 
-### P1.11 Gaps for the 3-step product (facts)
+### P1.11 Remaining product gaps (post MVP)
 
-1. **No** dedicated client route for Diagnose / Build / Scale narrative.
-2. **No** `ClientGrowthSnapshot`-style DTO or mapper service.
-3. **No** client API that joins email → CRM aggregates safely.
-4. **No** persisted workflow state machine (optional).
-5. **Personas (e.g. Marcus)** — copy/config only today, not a DB enum.
+1. **Persisted workflow state** — still computed in `buildClientGrowthSnapshot`; optional `client_growth_workflow` (see P2.4 2b).
+2. **Personas (e.g. Marcus)** — copy/config only today, not a DB enum.
+3. **Snapshot history / versioning** — only latest row per user in `client_growth_snapshots` today.
 
 ### P1.12 Phase 1 completion checklist
 
@@ -243,14 +242,28 @@ All **presentational**; data from one React Query call to `/api/client/growth-sn
 - [x] **9.** Schema strategy defined (minimal first).
 - [x] **10.** Major components + page structure defined.
 
-**Phase 2 status: COMPLETE** (architecture only; no production code in this document).
+**Phase 2 status: COMPLETE** (architecture; implementation of this plan is **Phase 3** below).
 
 ---
 
-## Next step
+## Phase 3 — Implementation status (in repo)
 
-**Phase 3 — Implementation:** execute P2.8 in `CLIENT-GROWTH-SYSTEM` tracker or PR, starting with API + types + empty UI shell.
+| P2.8 item | Status |
+|-----------|--------|
+| `GET /api/client/growth-snapshot` + `buildClientGrowthSnapshot` | Done (`shared/clientGrowthSnapshot.ts`, `server/services/clientGrowth/buildClientGrowthSnapshot.ts`) |
+| `/growth-system` page + eligibility gate | Done (`app/growth-system/page.tsx`) |
+| Diagnose from assessments + diagnosis/funnel leads by email | Done |
+| Build from `funnel_content` slugs + line items | Done (parallel `getFunnelContent` for kit/score/action-plan/offer/qualify-funnel) |
+| Scale from CRM by email | Done (aggregates over `crmRows` from normalized email match) |
+| Dashboard CTA + `siteDirectory.ts` | Done |
+| Tests (401 / 200, Zod shape) | Done (`app/api/client/growth-snapshot/__tests__/`, `shared/__tests__/clientGrowthSnapshot.test.ts`) |
+| Presentational split (`GrowthStepTracker`, sections, activity) | Done (`app/components/client-growth/*`) |
+| HTTP `Cache-Control`, persisted `client_growth_snapshots` (TTL `CLIENT_GROWTH_SNAPSHOT_CACHE_TTL_SEC`) | Done |
+| Sub-routes `/growth-system/diagnose`, `/build`, `/scale` | Done |
+| AMIE-linked Diagnose digest (CRM → latest `amie_market_research` by contact) | Done |
+
+**Optional later:** workflow override table (P2.4 2b), snapshot version history, richer AMIE exports for clients.
 
 ---
 
-*Last updated: audit and architecture aligned to repo paths as of doc authoring. When adding `/growth-system`, register in `app/lib/siteDirectory.ts` and optionally `adminAgentFeatureGuide` for admin assistant awareness.*
+*Last updated: Phase 1–2 audit/architecture unchanged; Phase 3 tracker reflects shipped MVP.*

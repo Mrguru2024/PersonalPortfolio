@@ -959,6 +959,17 @@ export type ClientAnnouncement = typeof clientAnnouncements.$inferSelect;
 export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
 export type ClientFeedback = typeof clientFeedback.$inferSelect;
 
+/** Server-side cache row for GET /api/client/growth-snapshot (short TTL; JSON validated on read). */
+export const clientGrowthSnapshots = pgTable("client_growth_snapshots", {
+  userId: integer("user_id")
+    .primaryKey()
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  snapshotJson: json("snapshot_json").$type<Record<string, unknown>>().notNull(),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+});
+export type ClientGrowthSnapshotRow = typeof clientGrowthSnapshots.$inferSelect;
+
 /** Growth Diagnosis Engine: persisted audit reports (for admin and email/export). */
 export const growthDiagnosisReports = pgTable("growth_diagnosis_reports", {
   id: serial("id").primaryKey(),
@@ -991,3 +1002,6 @@ export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
 export * from "./amieSchema";
 export * from "./experimentationEngineSchema";
+export * from "./serviceAgreementSchema";
+export * from "./behaviorIntelligenceSchema";
+export * from "./agencyOsSchema";

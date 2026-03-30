@@ -15,6 +15,8 @@ import { MemberFreeDownloads } from "@/components/MemberFreeDownloads";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_FREE_TOOLS } from "@/lib/landingPageOutcomeFramework";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth tools | Ascendra Technologies",
@@ -44,6 +46,7 @@ export default function FreeGrowthToolsPage() {
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
                 Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
               </p>
+              <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_FREE_TOOLS} className="pb-8 text-left" />
               <Card className="max-w-2xl mx-auto mb-8 border-primary/20 bg-primary/5 dark:bg-primary/10">
                 <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">

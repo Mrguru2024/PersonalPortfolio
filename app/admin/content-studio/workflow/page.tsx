@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ImageIcon, Loader2 } from "lucide-react";
+import { ClipboardList, ImageIcon, Loader2 } from "lucide-react";
+import { LANDING_LEAD_MAGNET_WORKFLOW_TEMPLATE } from "@/lib/landingPageOutcomeFramework";
 import Link from "next/link";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
@@ -73,6 +74,25 @@ export default function ContentStudioWorkflowPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardList className="h-5 w-5 shrink-0" />
+            Landing pages &amp; lead magnets — outcome framework (pre-template)
+          </CardTitle>
+          <CardDescription>
+            Copy this into a new document or brief before you draft. Public UI:{" "}
+            <code className="text-xs bg-muted px-1 rounded">OutcomeLandingFramework</code> + presets in{" "}
+            <code className="text-xs bg-muted px-1 rounded">app/lib/landingPageOutcomeFramework.ts</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <pre className="text-xs sm:text-sm whitespace-pre-wrap font-mono bg-muted/50 border border-border/70 rounded-lg p-4 max-h-[min(420px,50vh)] overflow-y-auto">
+            {LANDING_LEAD_MAGNET_WORKFLOW_TEMPLATE}
+          </pre>
+        </CardContent>
+      </Card>
+
       <Card className="border-border/80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

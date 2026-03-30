@@ -26,6 +26,8 @@ import {
   BOOK_CALL_HREF,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_LOCAL_BUSINESS } from "@/lib/landingPageOutcomeFramework";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
 
@@ -98,6 +100,12 @@ export default function LocalBusinessGrowthPage() {
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 sm:mt-5 text-xs sm:text-sm text-muted-foreground">
               Free audit · No obligation · Results in 24–48 hours
             </motion.p>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_LOCAL_BUSINESS} />
           </div>
         </section>
 

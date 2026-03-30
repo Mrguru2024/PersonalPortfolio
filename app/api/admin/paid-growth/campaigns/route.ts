@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { parseCampaignModel } from "@shared/ppcCampaignModel";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,11 @@ export async function POST(req: NextRequest) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const platform = typeof body.platform === "string" ? body.platform : "meta";
     if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
+    const campaignModel =
+      typeof body.campaignModel === "string" ? parseCampaignModel(body.campaignModel) : parseCampaignModel(undefined);
     const row = await storage.createPpcCampaign({
       name,
+      campaignModel,
       clientLabel: typeof body.clientLabel === "string" ? body.clientLabel : null,
       platform: platform === "google_ads" ? "google_ads" : "meta",
       objective: typeof body.objective === "string" ? body.objective : "traffic",

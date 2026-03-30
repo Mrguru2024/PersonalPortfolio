@@ -2,10 +2,11 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Loader2, Star } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
@@ -24,12 +25,17 @@ interface Resource {
 export default function CommunityResourcesPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
       router.replace("/auth?redirect=/Afn/resources");
     }
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const { data: resources = [], isLoading } = useQuery<Resource[]>({
     queryKey: ["/api/community/resources"],
@@ -43,7 +49,7 @@ export default function CommunityResourcesPage() {
   const featured = resources.filter((r) => r.isFeatured);
   const rest = resources.filter((r) => !r.isFeatured);
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   return (
     <CommunityShell>

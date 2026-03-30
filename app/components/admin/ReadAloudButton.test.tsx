@@ -11,7 +11,7 @@ describe("ReadAloudButton", () => {
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ openaiTts: false }),
+      json: async () => ({ openaiTts: false, geminiTts: false }),
     }) as unknown as typeof fetch;
 
     globalThis.SpeechSynthesisUtterance = jest.fn().mockImplementation(() => ({

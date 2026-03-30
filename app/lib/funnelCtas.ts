@@ -23,6 +23,12 @@ export const PROJECT_GROWTH_ASSESSMENT_PATH = "/assessment";
 /** Persona-based journey selector + tailored paths (`?journey=`). */
 export const PERSONA_JOURNEY_PATH = "/journey";
 
+/**
+ * Public nav entry for the AFN hub. Next.js redirects `/community` → `/Afn` (see `next.config.js`).
+ * Use this in header/footer so SSR and client always share the same `href` (avoids Link + redirect hydration drift).
+ */
+export const COMMUNITY_HUB_PUBLIC_PATH = "/community";
+
 /** Single landing: pick automated scan vs questionnaire vs full paid assessment. */
 export const DIAGNOSTICS_HUB_PATH = "/diagnostics";
 

@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -183,24 +184,46 @@ export default function ClientDashboardPage() {
         </Button>
       </div>
 
-      <Card className="mb-6 sm:mb-8 border-2 border-teal-500/25 bg-gradient-to-r from-emerald-500/[0.07] via-background to-teal-500/[0.07] dark:from-emerald-500/10 dark:to-teal-500/10 overflow-hidden">
-        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
-          <div className="flex gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
-              <TrendingUp className="h-5 w-5" aria-hidden />
+      <div className="mb-6 sm:mb-8 grid gap-4 sm:grid-cols-2">
+        <Card className="border-2 border-teal-500/25 bg-gradient-to-r from-emerald-500/[0.07] via-background to-teal-500/[0.07] dark:from-emerald-500/10 dark:to-teal-500/10 overflow-hidden">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
+            <div className="flex gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+                <TrendingUp className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm sm:text-base">Your growth system</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Diagnose → Build → Scale: clarity on what&apos;s blocking consistency, what we&apos;re installing, and
+                  what to scale—tailored to your data (expected aims, not guaranteed results).
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-sm sm:text-base">Your growth system</p>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                See Diagnose, Build, and Scale in one place—tailored to your business and project data.
-              </p>
+            <Button asChild className="shrink-0 w-full sm:w-auto">
+              <Link href="/growth-system">Open growth system</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="border-2 border-teal-500/20 bg-gradient-to-br from-background to-teal-500/[0.06] dark:to-teal-950/20 overflow-hidden">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
+            <div className="flex gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm">
+                <BarChart3 className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm sm:text-base">Advertising &amp; lead results</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Simple counts for leads, booked calls, and wins from your paid campaigns—with short explanations if you need
+                  them.
+                </p>
+              </div>
             </div>
-          </div>
-          <Button asChild className="shrink-0 w-full sm:w-auto">
-            <Link href="/growth-system">Open growth system</Link>
-          </Button>
-        </CardContent>
-      </Card>
+            <Button asChild variant="secondary" className="shrink-0 w-full sm:w-auto border-teal-500/30">
+              <Link href="/dashboard/ppc-results">View results</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <TabsList className="w-full sm:max-w-2xl grid grid-cols-2 sm:grid-cols-4 min-h-[44px] h-auto sm:h-12 gap-1 p-1.5 bg-muted/50 rounded-lg [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-2 sm:[&>button]:px-3 [&>button]:min-w-0 [&>button[data-state=active]]:bg-emerald-600 [&>button[data-state=active]]:text-white">

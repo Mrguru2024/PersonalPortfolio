@@ -19,6 +19,8 @@ import {
 } from "@/lib/funnelCtas";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_MARKETING_ASSETS } from "@/lib/landingPageOutcomeFramework";
 
 const SERVICES = [
   { icon: Megaphone, title: "Ad creatives", desc: "Paid social and display ads that stop the scroll and convert." },
@@ -106,6 +108,12 @@ export default function MarketingAssetsPage() {
                 />
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_MARKETING_ASSETS} />
           </div>
         </section>
 

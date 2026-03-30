@@ -5,6 +5,8 @@ import { TrackPageView } from "@/components/TrackPageView";
 import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import OfferValuationTool from "@/components/offer-valuation";
 import { Button } from "@/components/ui/button";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_OFFER_AUDIT } from "@/lib/landingPageOutcomeFramework";
 
 export const metadata: Metadata = {
   title: "Offer audit | Find why your offer is not converting",
@@ -32,6 +34,8 @@ export default function OfferAuditPage() {
               strategic fixes tailored to your weakest variables.
             </p>
           </section>
+
+          <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_OFFER_AUDIT} />
 
           <OfferValuationTool surface="public" />
 

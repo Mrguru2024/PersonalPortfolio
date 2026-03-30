@@ -89,6 +89,7 @@ export function MemberProfilePageClient({
   viewerUserId,
 }: MemberProfilePageClientProps) {
   const displayName = profile.displayName || profile.username || profile.fullName || "Member";
+  const coverUrl = profile.coverImageUrl?.trim() || null;
   const showContact = showContactLinks;
   const themeKey = isPublicProfileTheme(profile.publicProfileTheme) ? profile.publicProfileTheme : "classic";
   const theme = PUBLIC_PROFILE_THEME_CLASSES[themeKey];
@@ -286,6 +287,11 @@ export function MemberProfilePageClient({
   const EditorialLayout = () => (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)] lg:items-start">
       <div className="space-y-6">
+        {coverUrl ? (
+          <div className={`overflow-hidden border shadow-md ${radiusClass} ${theme.card}`}>
+            <img src={coverUrl} alt="" className="h-40 sm:h-48 w-full object-cover" />
+          </div>
+        ) : null}
         <SectionCard className={`p-6 sm:p-8 border-dashed ${theme.card}`}>
           <div className="flex flex-col sm:flex-row gap-6 items-start">
             <div className="relative shrink-0">
@@ -333,7 +339,17 @@ export function MemberProfilePageClient({
   const HeroLayout = () => (
     <div className="space-y-6">
       <div className={`relative overflow-hidden ${radiusClass} ${theme.card} border shadow-lg`}>
-        <div className={`h-44 sm:h-52 bg-gradient-to-br ${heroGradient}`} />
+        {coverUrl ? (
+          <div className="relative h-44 sm:h-52 w-full">
+            <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/90 via-background/25 to-transparent"
+              aria-hidden
+            />
+          </div>
+        ) : (
+          <div className={`h-44 sm:h-52 bg-gradient-to-br ${heroGradient}`} />
+        )}
         <div className="px-6 sm:px-10 pb-8 -mt-14 sm:-mt-16 relative flex flex-col sm:flex-row gap-6 items-start sm:items-end">
           <Avatar className={`h-28 w-28 sm:h-32 sm:w-32 border-4 border-background shadow-xl ${radiusClass}`}>
             <AvatarImage src={profile.avatarUrl ?? undefined} alt="" />
@@ -356,6 +372,11 @@ export function MemberProfilePageClient({
   const BentoLayout = () => (
     <div className="space-y-6">
       <div className={`grid gap-4 md:grid-cols-12 ${radiusClass}`}>
+        {coverUrl ? (
+          <div className={`md:col-span-12 overflow-hidden border shadow-md ${radiusClass} ${theme.card}`}>
+            <img src={coverUrl} alt="" className="h-36 sm:h-44 w-full object-cover" />
+          </div>
+        ) : null}
         <SectionCard className={`md:col-span-7 p-6 sm:p-8 ${theme.card} md:row-span-2`}>
           <div className="flex items-start gap-4">
             <Avatar className={`h-16 w-16 shrink-0 border ${radiusClass}`}>
@@ -391,6 +412,11 @@ export function MemberProfilePageClient({
 
   const MinimalLayout = () => (
     <div className="space-y-8 max-w-2xl mx-auto">
+      {coverUrl ? (
+        <div className={`overflow-hidden border shadow-md ${radiusClass} ${theme.card}`}>
+          <img src={coverUrl} alt="" className="h-36 sm:h-44 w-full object-cover" />
+        </div>
+      ) : null}
       <div className="flex flex-col items-center text-center gap-4 py-4">
         <Avatar className={`h-20 w-20 border ${radiusClass}`}>
           <AvatarImage src={profile.avatarUrl ?? undefined} alt="" />

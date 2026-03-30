@@ -5,6 +5,27 @@ const LAYOUTS = new Set<PublicProfileLayout>(["editorial", "hero", "bento", "min
 const RADII = new Set<NonNullable<PublicProfileStyle["radius"]>>(["sm", "md", "lg", "xl"]);
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
+/**
+ * DB / RSC may expose `public_profile_style_json` as an object or a JSON string.
+ * Spreading a string in `mergePublicProfileStyle` produced wrong `layout` on SSR vs hydrated client.
+ */
+export function normalizePublicProfileStyleJson(raw: unknown): PublicProfileStyle | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    const t = raw.trim();
+    if (!t) return null;
+    try {
+      return normalizePublicProfileStyleJson(JSON.parse(t) as unknown);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as PublicProfileStyle;
+  }
+  return null;
+}
+
 function normalizeHex(v: unknown): string | null | undefined {
   if (v === undefined) return undefined;
   if (v === null) return null;
@@ -15,11 +36,9 @@ function normalizeHex(v: unknown): string | null | undefined {
 }
 
 /** Merge validated patch into existing style (partial updates). */
-export function mergePublicProfileStyle(
-  existing: PublicProfileStyle | null | undefined,
-  patch: unknown
-): PublicProfileStyle {
-  const base: PublicProfileStyle = { ...(existing ?? {}) };
+export function mergePublicProfileStyle(existing: unknown, patch: unknown): PublicProfileStyle {
+  const normalized = normalizePublicProfileStyleJson(existing);
+  const base: PublicProfileStyle = { ...(normalized ?? {}) };
   if (patch === null || patch === undefined) return base;
   if (typeof patch !== "object") return base;
   const p = patch as Record<string, unknown>;

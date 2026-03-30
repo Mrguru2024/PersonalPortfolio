@@ -33,6 +33,7 @@ import {
   ChevronDown,
   Calendar,
   CalendarClock,
+  Layers,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1284,6 +1285,18 @@ export default function AdminDashboardPage() {
           <AdminHelpTip
             content="Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site."
             ariaLabel="Help: Site offers"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/growth-platform">
+              <Layers className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Growth platform</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="DFY/DWY/DIY offer stack catalog and PPC model summaries; links to the public hub and related admin tools."
+            ariaLabel="Help: Growth platform"
           />
         </div>
         <div className="flex items-center gap-0.5">

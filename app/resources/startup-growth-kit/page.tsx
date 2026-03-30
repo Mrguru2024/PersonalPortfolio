@@ -19,6 +19,8 @@ import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_STARTUP_KIT } from "@/lib/landingPageOutcomeFramework";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -90,6 +92,8 @@ export default async function StartupGrowthKitPage() {
                 priority
               />
             </section>
+
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_STARTUP_KIT} className="py-6 sm:py-8" />
 
             {/* Why most startup websites fail */}
             <section>

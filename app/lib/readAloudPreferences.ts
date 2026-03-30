@@ -2,7 +2,9 @@
  * Client-only read-aloud settings (localStorage). Used by ReadAloudButton.
  */
 
-export type ReadAloudEngine = "browser" | "openai";
+import { GEMINI_TTS_PREBUILT_PAIRS } from "@shared/readAloudGeminiVoices";
+
+export type ReadAloudEngine = "browser" | "openai" | "gemini";
 
 export type ReadingStyleId = "natural" | "calm" | "clear" | "expressive";
 
@@ -13,6 +15,8 @@ export interface ReadAloudPreferences {
   readingStyle: ReadingStyleId;
   /** OpenAI TTS voice (tts-1 / tts-1-hd) */
   openaiVoice: string;
+  /** Gemini prebuilt voice name (e.g. Kore, Puck) */
+  geminiVoice: string;
 }
 
 const STORAGE_KEY = "ascendra_read_aloud_prefs_v1";
@@ -22,7 +26,12 @@ export const DEFAULT_READ_ALOUD_PREFS: ReadAloudPreferences = {
   browserVoiceUri: "",
   readingStyle: "natural",
   openaiVoice: "nova",
+  geminiVoice: "Kore",
 };
+
+/** Gemini TTS voice picker (shared list with server allowlist). */
+export const GEMINI_TTS_VOICES: { id: string; label: string; hint: string }[] =
+  GEMINI_TTS_PREBUILT_PAIRS.map(([id, hint]) => ({ id, label: id, hint }));
 
 export const READING_STYLE_META: Record<
   ReadingStyleId,
@@ -74,17 +83,23 @@ export function loadReadAloudPrefs(): ReadAloudPreferences {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_READ_ALOUD_PREFS };
     const p = JSON.parse(raw) as Partial<ReadAloudPreferences>;
+    const engine: ReadAloudEngine =
+      p.engine === "openai" ? "openai" : p.engine === "gemini" ? "gemini" : "browser";
     return {
       ...DEFAULT_READ_ALOUD_PREFS,
       ...p,
-      engine: p.engine === "openai" ? "openai" : "browser",
+      engine,
       browserVoiceUri: typeof p.browserVoiceUri === "string" ? p.browserVoiceUri : "",
       readingStyle:
         p.readingStyle && p.readingStyle in READING_STYLE_META ? p.readingStyle : "natural",
       openaiVoice:
-        typeof p.openaiVoice === "string" && OPENAI_TTS_VOICES.some((v) => v.id === p.openaiVoice)
+        typeof p.openaiVoice === "string" && OPENAI_TTS_VOICES.some((x) => x.id === p.openaiVoice)
           ? p.openaiVoice
           : DEFAULT_READ_ALOUD_PREFS.openaiVoice,
+      geminiVoice:
+        typeof p.geminiVoice === "string" && GEMINI_TTS_VOICES.some((x) => x.id === p.geminiVoice)
+          ? p.geminiVoice
+          : DEFAULT_READ_ALOUD_PREFS.geminiVoice,
     };
   } catch {
     return { ...DEFAULT_READ_ALOUD_PREFS };

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Handshake, Plus, Loader2, Mail } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface CollabPost {
 export default function CommunityCollabPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
@@ -56,10 +58,14 @@ export default function CommunityCollabPage() {
   const [statusFilter, setStatusFilter] = useState("open");
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
       router.replace("/auth?redirect=/Afn/collab");
     }
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const { data: posts = [], isLoading } = useQuery<CollabPost[]>({
     queryKey: ["/api/community/collab", statusFilter],
@@ -88,7 +94,7 @@ export default function CommunityCollabPage() {
     },
   });
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   const handleCreate = () => {
     if (!type.trim() || !title.trim() || !description.trim()) {

@@ -33,7 +33,12 @@ export function getAdminAgentFeatureGuideText(): string {
 - **AI agent:** whether the assistant may execute actions (navigate, reminders, etc.) vs chat-only; confirm-before-run toggle.
 - **Mentor companion (opt-in):** \`ai_mentor_observe_usage\` — coarse admin **path** aggregation only (no form/keystroke logging) via POST \`/api/admin/agent/observation\`; \`ai_mentor_proactive_checkpoints\` — rare checkpoint lines in the floating panel. Persists to \`admin_agent_mentor_state\` (v2 adds \`topRoutes\`, \`workflowSignals\`). Chat still merges habits from OpenAI when configured.
 
-**Paid growth (Google Ads / PPC)** ([/admin/paid-growth](/admin/paid-growth)): Campaigns and accounts; AMIE integration hints suggest keyword seeds and campaign types.
+**Growth Engine — paid traffic** ([/admin/paid-growth](/admin/paid-growth)): Readiness gates, campaigns, accounts, lead quality (CRM), rules-based optimization ([/admin/paid-growth/optimization](/admin/paid-growth/optimization)), campaign structure (ad groups/keywords/destinations/copy), internal fulfillment ([/admin/paid-growth/billing](/admin/paid-growth/billing)). Google Ads UI/API publish still separate; Meta publish when configured. AMIE hints can seed keywords.
+
+**Agency Operating System (internal delivery)** ([/admin/agency-os](/admin/agency-os)):
+- **HVD registry** ([/admin/agency-os/hvd](/admin/agency-os/hvd)): High-Value Delivery definitions; nine built-ins seed on first API load; custom slugs; duplicate-slug blocked; overlap/low-value warning on create.
+- **Tasks**: GET/POST \`/api/admin/agency-os/tasks\`; **acceptance** POST \`/api/admin/agency-os/tasks/[id]/acceptance\` with JSON \`action\`: \`accept\` (requires \`understandingConfirmed\` + \`responsibilityConfirmed\` true) | \`decline\` (\`declineReason\`) | \`clarify\` (\`clarificationMessage\`). Assignee or any approved admin may respond.
+- **Projects**: POST \`/api/admin/agency-os/projects\` — validated body must include \`primaryHvdSlug\` registered in HVD table, \`valueContributions\` (≥1), \`expectedOutcome\`, \`impactMetric\`, \`dataSource\`. Not the same as CRM tasks or client agreement milestones.
 
 ### Ascendra OS — growth + leads (one connected system)
 
@@ -50,9 +55,15 @@ Treat **market intelligence**, **funnels**, **experiments**, and **lead operatio
 
 **CRM** ([/admin/crm](/admin/crm)): Contacts, deals, sequences, proposal prep.
 
+**Behavior Intelligence** ([/admin/behavior-intelligence](/admin/behavior-intelligence)): Session replay (rrweb → \`behavior_replay_segments\`), heatmaps (\`GET /api/admin/behavior-intelligence/heatmap\`), surveys + user-test campaigns (\`/api/admin/behavior-intelligence/surveys\`, \`/user-tests\`), optional survey responses via POST \`/api/behavior/ingest\`; friction cron \`/api/cron/behavior-friction\`. Extends \`visitor_activity\` with optional event bridge when ingest includes \`visitorId\`. Env: optional \`BEHAVIOR_INGEST_SECRET\` and/or \`BEHAVIOR_INGEST_PUBLIC_TOKEN\` (browser: \`NEXT_PUBLIC_BEHAVIOR_INGEST_TOKEN\`, Bearer). Privacy: masked inputs, \`ascendra_behavior_opt_out\` localStorage.
+
+**Client Growth System** (\`/growth-system\` + \`/growth-system/diagnose\` | \`/build\` | \`/scale\`, eligible portal clients): Read-only **Diagnose → Build → Scale** snapshot; GET \`/api/client/growth-snapshot\` (session + \`getClientPortalEligibility\`, \`Cache-Control: private\`, short server cache in \`client_growth_snapshots\`, TTL \`CLIENT_GROWTH_SNAPSHOT_CACHE_TTL_SEC\`). When CRM rows link to AMIE (e.g. Market Score), Diagnose includes a **Market intelligence** client-safe digest. Not an admin surface.
+
 **Lead command center + Lead Control** ([/admin/leads](/admin/leads)): Same \`crm_contacts\` rows — priority (P1–P5), **hot-lead age** in the queue, **source quality** table (GET \`/api/admin/lead-control/source-quality\` — volume vs serious-intent rate by channel), batch recompute, routing rules [/admin/leads/settings](/admin/leads/settings) → GET/PUT \`/api/admin/lead-control/routing-rules\`. Quick follow-up: POST \`/api/admin/lead-control/contacts/[id]/follow-up-task\`. Touch logging: POST \`/api/admin/lead-control/contacts/[id]/actions\`. On the **CRM contact** page: **HotLeadClockBadge** + **LeadControlActionBar** includes a **fast workflow** strip after call/voicemail logs (schedule follow-up / email without leaving). Summary: GET \`/api/admin/lead-control/summary\`. Tuning: \`shared/leadControlPriority.ts\`, \`shared/leadControlRouting.ts\`.
 
 **Ascendra Intelligence (Offer + Persona IQ)** ([/admin/ascendra-intelligence](/admin/ascendra-intelligence)): Marketing personas, scripts, lead magnets — distinct from AMIE scoring.
+
+**Landing / lead magnet copy** — Outcome-led framework: perceived outcomes → pain → “what if they don’t” → real value → disclaimer. Presets and paste template: \`app/lib/landingPageOutcomeFramework.ts\` (\`LANDING_LEAD_MAGNET_WORKFLOW_TEMPLATE\`); workflow card under Content Studio → Workflow.
 
 **Content Studio** ([/admin/content-studio](/admin/content-studio)): Documents, editorial calendar, publishing.
 

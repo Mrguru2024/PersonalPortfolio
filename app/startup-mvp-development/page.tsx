@@ -27,6 +27,8 @@ import {
   STARTUP_GROWTH_KIT_PATH,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_STARTUP_MVP } from "@/lib/landingPageOutcomeFramework";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
 
@@ -105,6 +107,12 @@ export default function StartupMvpDevelopmentPage() {
                 Start with our free Startup Growth Kit
               </Link>
             </motion.p>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_STARTUP_MVP} />
           </div>
         </section>
 

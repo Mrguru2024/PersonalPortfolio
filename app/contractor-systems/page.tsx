@@ -29,6 +29,8 @@ import {
   BOOK_CALL_HREF,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_CONTRACTORS } from "@/lib/landingPageOutcomeFramework";
 
 const VIEW_WORK_CTA = "View Our Work";
 
@@ -120,6 +122,12 @@ export default function ContractorSystemsPage() {
             >
               Free audit · No obligation · Results in 24–48 hours
             </motion.p>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_CONTRACTORS} />
           </div>
         </section>
 

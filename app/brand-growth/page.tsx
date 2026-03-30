@@ -32,6 +32,8 @@ import {
 import { personalInfo } from "@/lib/data";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_BRAND_GROWTH } from "@/lib/landingPageOutcomeFramework";
 
 const MACON_LOGO_BADGE = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
 const STYLE_STUDIO_LOGO = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
@@ -211,6 +213,12 @@ export default function BrandGrowthPage() {
                 See how it works →
               </Link>
             </motion.div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-10 sm:py-14 bg-section">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_BRAND_GROWTH} />
           </div>
         </section>
 

@@ -73,6 +73,12 @@ import {
   ppcPerformanceSnapshots,
   ppcLeadQuality,
   ppcReadinessAssessments,
+  ppcAdGroups,
+  ppcKeywords,
+  ppcCampaignDestinations,
+  ppcAdCopyVariants,
+  ppcOptimizationRecommendations,
+  ppcBillingProfiles,
   type PpcAdAccount,
   type InsertPpcAdAccount,
   type PpcCampaign,
@@ -85,6 +91,18 @@ import {
   type InsertPpcPublishLog,
   type InsertPpcPerformanceSnapshot,
   type InsertPpcReadinessAssessment,
+  type PpcAdGroup,
+  type InsertPpcAdGroup,
+  type PpcKeyword,
+  type InsertPpcKeyword,
+  type PpcCampaignDestination,
+  type InsertPpcCampaignDestination,
+  type PpcAdCopyVariant,
+  type InsertPpcAdCopyVariant,
+  type PpcOptimizationRecommendation,
+  type InsertPpcOptimizationRecommendation,
+  type PpcBillingProfile,
+  type InsertPpcBillingProfile,
 } from "@shared/paidGrowthSchema";
 import {
   crmAccounts, type CrmAccount, type InsertCrmAccount,
@@ -129,6 +147,7 @@ import {
 import { db } from "./db";
 import {
   eq,
+  asc,
   desc,
   and,
   sql,
@@ -357,7 +376,38 @@ export interface IStorage {
   listPpcLeadQuality(limit?: number): Promise<(PpcLeadQuality & { contact?: CrmContact })[]>;
   upsertPpcLeadQuality(crmContactId: number, data: Partial<InsertPpcLeadQuality>): Promise<PpcLeadQuality>;
   createPpcReadinessAssessment(row: InsertPpcReadinessAssessment): Promise<PpcReadinessAssessment>;
-  
+  listPpcLeadQualityForCampaign(campaignId: number, limit?: number): Promise<(PpcLeadQuality & { contact?: CrmContact })[]>;
+
+  listPpcAdGroupsByCampaign(campaignId: number): Promise<PpcAdGroup[]>;
+  createPpcAdGroup(row: InsertPpcAdGroup): Promise<PpcAdGroup>;
+  updatePpcAdGroup(id: number, updates: Partial<PpcAdGroup>): Promise<PpcAdGroup>;
+  deletePpcAdGroup(id: number): Promise<void>;
+
+  listPpcKeywordsByAdGroup(adGroupId: number): Promise<PpcKeyword[]>;
+  createPpcKeyword(row: InsertPpcKeyword): Promise<PpcKeyword>;
+  updatePpcKeyword(id: number, updates: Partial<PpcKeyword>): Promise<PpcKeyword>;
+  deletePpcKeyword(id: number): Promise<void>;
+
+  listPpcCampaignDestinations(campaignId: number): Promise<PpcCampaignDestination[]>;
+  createPpcCampaignDestination(row: InsertPpcCampaignDestination): Promise<PpcCampaignDestination>;
+  updatePpcCampaignDestination(id: number, updates: Partial<PpcCampaignDestination>): Promise<PpcCampaignDestination>;
+  deletePpcCampaignDestination(id: number): Promise<void>;
+
+  listPpcAdCopyVariantsByCampaign(campaignId: number): Promise<PpcAdCopyVariant[]>;
+  createPpcAdCopyVariant(row: InsertPpcAdCopyVariant): Promise<PpcAdCopyVariant>;
+  updatePpcAdCopyVariant(id: number, updates: Partial<PpcAdCopyVariant>): Promise<PpcAdCopyVariant>;
+  deletePpcAdCopyVariant(id: number): Promise<void>;
+
+  listPpcOptimizationRecommendations(campaignId?: number, statuses?: string[]): Promise<PpcOptimizationRecommendation[]>;
+  upsertPpcOptimizationRecommendation(row: InsertPpcOptimizationRecommendation): Promise<PpcOptimizationRecommendation>;
+  updatePpcOptimizationRecommendation(id: number, updates: Partial<PpcOptimizationRecommendation>): Promise<PpcOptimizationRecommendation>;
+
+  listPpcBillingProfiles(): Promise<PpcBillingProfile[]>;
+  getPpcBillingProfileById(id: number): Promise<PpcBillingProfile | undefined>;
+  createPpcBillingProfile(row: InsertPpcBillingProfile): Promise<PpcBillingProfile>;
+  updatePpcBillingProfile(id: number, updates: Partial<PpcBillingProfile>): Promise<PpcBillingProfile>;
+  deletePpcBillingProfile(id: number): Promise<void>;
+
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
   getClientQuoteById(id: number, userId: number): Promise<ClientQuote | undefined>;
@@ -2251,7 +2301,240 @@ export class DatabaseStorage implements IStorage {
     const [inserted] = await db.insert(ppcReadinessAssessments).values(row).returning();
     return inserted!;
   }
-  
+
+  async listPpcLeadQualityForCampaign(campaignId: number, limit = 120): Promise<(PpcLeadQuality & { contact?: CrmContact })[]> {
+    const rows = await db
+      .select()
+      .from(ppcLeadQuality)
+      .where(eq(ppcLeadQuality.ppcCampaignId, campaignId))
+      .orderBy(desc(ppcLeadQuality.updatedAt))
+      .limit(limit);
+    const out: (PpcLeadQuality & { contact?: CrmContact })[] = [];
+    for (const r of rows) {
+      const contact = await this.getCrmContactById(r.crmContactId);
+      out.push({ ...r, contact });
+    }
+    return out;
+  }
+
+  async listPpcAdGroupsByCampaign(campaignId: number): Promise<PpcAdGroup[]> {
+    return db
+      .select()
+      .from(ppcAdGroups)
+      .where(eq(ppcAdGroups.campaignId, campaignId))
+      .orderBy(asc(ppcAdGroups.sortOrder), desc(ppcAdGroups.updatedAt));
+  }
+
+  async createPpcAdGroup(row: InsertPpcAdGroup): Promise<PpcAdGroup> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcAdGroups)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcAdGroup(id: number, updates: Partial<PpcAdGroup>): Promise<PpcAdGroup> {
+    const [updated] = await db
+      .update(ppcAdGroups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcAdGroups.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc ad group not found");
+    return updated;
+  }
+
+  async deletePpcAdGroup(id: number): Promise<void> {
+    await db.delete(ppcAdGroups).where(eq(ppcAdGroups.id, id));
+  }
+
+  async listPpcKeywordsByAdGroup(adGroupId: number): Promise<PpcKeyword[]> {
+    return db
+      .select()
+      .from(ppcKeywords)
+      .where(eq(ppcKeywords.adGroupId, adGroupId))
+      .orderBy(desc(ppcKeywords.isNegative), asc(ppcKeywords.keywordText));
+  }
+
+  async createPpcKeyword(row: InsertPpcKeyword): Promise<PpcKeyword> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcKeywords)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcKeyword(id: number, updates: Partial<PpcKeyword>): Promise<PpcKeyword> {
+    const [updated] = await db
+      .update(ppcKeywords)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcKeywords.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc keyword not found");
+    return updated;
+  }
+
+  async deletePpcKeyword(id: number): Promise<void> {
+    await db.delete(ppcKeywords).where(eq(ppcKeywords.id, id));
+  }
+
+  async listPpcCampaignDestinations(campaignId: number): Promise<PpcCampaignDestination[]> {
+    return db
+      .select()
+      .from(ppcCampaignDestinations)
+      .where(eq(ppcCampaignDestinations.campaignId, campaignId))
+      .orderBy(asc(ppcCampaignDestinations.kind), desc(ppcCampaignDestinations.weight));
+  }
+
+  async createPpcCampaignDestination(row: InsertPpcCampaignDestination): Promise<PpcCampaignDestination> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcCampaignDestinations)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcCampaignDestination(id: number, updates: Partial<PpcCampaignDestination>): Promise<PpcCampaignDestination> {
+    const [updated] = await db
+      .update(ppcCampaignDestinations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcCampaignDestinations.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc destination not found");
+    return updated;
+  }
+
+  async deletePpcCampaignDestination(id: number): Promise<void> {
+    await db.delete(ppcCampaignDestinations).where(eq(ppcCampaignDestinations.id, id));
+  }
+
+  async listPpcAdCopyVariantsByCampaign(campaignId: number): Promise<PpcAdCopyVariant[]> {
+    return db
+      .select()
+      .from(ppcAdCopyVariants)
+      .where(eq(ppcAdCopyVariants.campaignId, campaignId))
+      .orderBy(asc(ppcAdCopyVariants.sortOrder), desc(ppcAdCopyVariants.updatedAt));
+  }
+
+  async createPpcAdCopyVariant(row: InsertPpcAdCopyVariant): Promise<PpcAdCopyVariant> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcAdCopyVariants)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcAdCopyVariant(id: number, updates: Partial<PpcAdCopyVariant>): Promise<PpcAdCopyVariant> {
+    const [updated] = await db
+      .update(ppcAdCopyVariants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcAdCopyVariants.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc copy variant not found");
+    return updated;
+  }
+
+  async deletePpcAdCopyVariant(id: number): Promise<void> {
+    await db.delete(ppcAdCopyVariants).where(eq(ppcAdCopyVariants.id, id));
+  }
+
+  async listPpcOptimizationRecommendations(campaignId?: number, statuses?: string[]): Promise<PpcOptimizationRecommendation[]> {
+    const conds = [];
+    if (campaignId != null) conds.push(eq(ppcOptimizationRecommendations.campaignId, campaignId));
+    if (statuses?.length) {
+      conds.push(inArray(ppcOptimizationRecommendations.status, statuses));
+    }
+    const q = db.select().from(ppcOptimizationRecommendations);
+    const rows =
+      conds.length > 0 ?
+        await q.where(conds.length === 1 ? conds[0] : and(...conds)).orderBy(desc(ppcOptimizationRecommendations.updatedAt))
+      : await q.orderBy(desc(ppcOptimizationRecommendations.updatedAt));
+    return rows;
+  }
+
+  async upsertPpcOptimizationRecommendation(row: InsertPpcOptimizationRecommendation): Promise<PpcOptimizationRecommendation> {
+    const now = new Date();
+    const [existing] = await db
+      .select()
+      .from(ppcOptimizationRecommendations)
+      .where(and(eq(ppcOptimizationRecommendations.campaignId, row.campaignId), eq(ppcOptimizationRecommendations.ruleKey, row.ruleKey)))
+      .limit(1);
+    if (existing) {
+      if (existing.status === "dismissed" || existing.status === "applied") {
+        return existing;
+      }
+      const [updated] = await db
+        .update(ppcOptimizationRecommendations)
+        .set({
+          severity: row.severity ?? existing.severity,
+          title: row.title,
+          detail: row.detail,
+          evidenceJson: row.evidenceJson ?? existing.evidenceJson ?? {},
+          updatedAt: now,
+        })
+        .where(eq(ppcOptimizationRecommendations.id, existing.id))
+        .returning();
+      return updated!;
+    }
+    const [inserted] = await db
+      .insert(ppcOptimizationRecommendations)
+      .values({
+        ...row,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcOptimizationRecommendation(
+    id: number,
+    updates: Partial<PpcOptimizationRecommendation>,
+  ): Promise<PpcOptimizationRecommendation> {
+    const [updated] = await db
+      .update(ppcOptimizationRecommendations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcOptimizationRecommendations.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc optimization recommendation not found");
+    return updated;
+  }
+
+  async listPpcBillingProfiles(): Promise<PpcBillingProfile[]> {
+    return db.select().from(ppcBillingProfiles).orderBy(desc(ppcBillingProfiles.updatedAt));
+  }
+
+  async getPpcBillingProfileById(id: number): Promise<PpcBillingProfile | undefined> {
+    const [row] = await db.select().from(ppcBillingProfiles).where(eq(ppcBillingProfiles.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createPpcBillingProfile(row: InsertPpcBillingProfile): Promise<PpcBillingProfile> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcBillingProfiles)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcBillingProfile(id: number, updates: Partial<PpcBillingProfile>): Promise<PpcBillingProfile> {
+    const [updated] = await db
+      .update(ppcBillingProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcBillingProfiles.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc billing profile not found");
+    return updated;
+  }
+
+  async deletePpcBillingProfile(id: number): Promise<void> {
+    await db.delete(ppcBillingProfiles).where(eq(ppcBillingProfiles.id, id));
+  }
+
   // Client dashboard operations
   async getClientQuotes(userId: number): Promise<ClientQuote[]> {
     return db

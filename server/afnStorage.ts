@@ -178,6 +178,25 @@ export async function setAfnProfileAvatarUrl(userId: number, avatarUrl: string |
   return inserted ?? null;
 }
 
+/** Update public profile cover image URL only. */
+export async function setAfnProfileCoverImageUrl(userId: number, coverImageUrl: string | null) {
+  const now = new Date();
+  const existing = await getAfnProfileByUserId(userId);
+  if (existing) {
+    const [updated] = await db
+      .update(afnProfiles)
+      .set({ coverImageUrl, updatedAt: now })
+      .where(eq(afnProfiles.userId, userId))
+      .returning();
+    return updated ?? null;
+  }
+  const [inserted] = await db
+    .insert(afnProfiles)
+    .values({ userId, coverImageUrl, createdAt: now, updatedAt: now })
+    .returning();
+  return inserted ?? null;
+}
+
 export async function upsertAfnProfile(profile: InsertAfnProfile & { userId: number }) {
   const now = new Date();
   const existing = await getAfnProfileByUserId(profile.userId);

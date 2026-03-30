@@ -11,11 +11,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PPC_READINESS_MIN_SCORE } from "@shared/ppcBusinessRules";
+import {
+  PPC_GROWTH_ROUTE_RECOMMENDATIONS,
+  PPC_READINESS_MIN_SCORE,
+  growthRouteRecommendationLabel,
+  type PpcGrowthRouteRecommendation,
+} from "@shared/ppcBusinessRules";
+import {
+  PPC_CAMPAIGN_MODELS,
+  type CampaignModel,
+  getPpcEngineModuleConfig,
+  parseCampaignModel,
+} from "@shared/ppcCampaignModel";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 type CampaignRow = {
   id: number;
   name: string;
+  campaignModel: string | null;
   platform: string;
   status: string;
   objective: string;
@@ -48,7 +62,7 @@ export default function PaidGrowthCampaignDetailPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/admin/paid-growth/campaigns/${id}`);
       if (!res.ok) throw new Error("fail");
-      return res.json() as Promise<CampaignRow>;
+      return (await res.json()) as CampaignRow;
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved && !!id,
   });
@@ -68,6 +82,19 @@ export default function PaidGrowthCampaignDetailPage() {
       qc.invalidateQueries({ queryKey: ["/api/admin/paid-growth/campaigns", id] });
     },
     onError: () => toast({ title: "Readiness failed", variant: "destructive" }),
+  });
+
+  const modelMut = useMutation({
+    mutationFn: async (next: CampaignModel) => {
+      const res = await apiRequest("PATCH", `/api/admin/paid-growth/campaigns/${id}`, { campaignModel: next });
+      if (!res.ok) throw new Error("fail");
+      return (await res.json()) as CampaignRow;
+    },
+    onSuccess: () => {
+      toast({ title: "Campaign model updated" });
+      qc.invalidateQueries({ queryKey: ["/api/admin/paid-growth/campaigns", id] });
+    },
+    onError: () => toast({ title: "Update failed", variant: "destructive" }),
   });
 
   const publishMut = useMutation({
@@ -101,14 +128,25 @@ export default function PaidGrowthCampaignDetailPage() {
     );
   }
 
+  const resolvedModel = parseCampaignModel(c.campaignModel);
+  const engine = getPpcEngineModuleConfig(resolvedModel);
+
   const snap = c.readinessSnapshotJson as {
     blockers?: string[];
     scores?: Record<string, number>;
     gates?: Record<string, boolean>;
     remediationChecklist?: string[];
     package?: string;
+    growthRoute?: string;
     adReady?: boolean;
   } | null;
+
+  const growthRouteKey =
+    snap?.growthRoute &&
+    typeof snap.growthRoute === "string" &&
+    (PPC_GROWTH_ROUTE_RECOMMENDATIONS as readonly string[]).includes(snap.growthRoute) ?
+      (snap.growthRoute as PpcGrowthRouteRecommendation)
+    : null;
 
   const gateLabels: Record<string, string> = {
     adAccountConnected: "Ad account linked",
@@ -145,9 +183,17 @@ export default function PaidGrowthCampaignDetailPage() {
             <Badge>{c.status}</Badge>
             <Badge variant="outline">{c.platform}</Badge>
             <Badge variant="secondary">Readiness {c.readinessScore ?? "—"}</Badge>
+            {growthRouteKey ?
+              <Badge variant="outline" className="border-primary/40">
+                {growthRouteRecommendationLabel(growthRouteKey)}
+              </Badge>
+            : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/paid-growth/campaigns/${id}/structure`}>Structure</Link>
+          </Button>
           <Button variant="secondary" onClick={() => readinessMut.mutate()} disabled={readinessMut.isPending}>
             <ClipboardCheck className="h-4 w-4 mr-2" />
             Run readiness
@@ -162,6 +208,46 @@ export default function PaidGrowthCampaignDetailPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Modular PPC engine</CardTitle>
+          <CardDescription>{engine.adminSummary}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <div className="space-y-2 max-w-md">
+            <Label>Campaign model</Label>
+            <Select
+              value={resolvedModel}
+              onValueChange={(v) => modelMut.mutate(v as CampaignModel)}
+              disabled={modelMut.isPending}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PPC_CAMPAIGN_MODELS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {getPpcEngineModuleConfig(m).label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">Funnel: {engine.funnelType.replace(/-/g, " ")}</Badge>
+            <Badge variant="secondary">Attribution: {engine.attribution}</Badge>
+            <Badge variant={engine.enableCallTracking ? "default" : "outline"}>
+              Call tracking {engine.enableCallTracking ? "recommended" : "optional"}
+            </Badge>
+            <Badge variant="outline">Optimization lookback ~{engine.optimizationLookbackDays}d</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <code className="text-[11px]">{resolvedModel}</code> — Call tracking is a product flag for adapters (e.g. future
+            call provider); funnel and attribution guide readiness copy and rules engine windows.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

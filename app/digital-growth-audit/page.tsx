@@ -14,6 +14,8 @@ import { Info } from "lucide-react";
 import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_DIGITAL_AUDIT } from "@/lib/landingPageOutcomeFramework";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Find out why your website isn't generating customers",
@@ -73,6 +75,8 @@ export default function DigitalGrowthAuditPage() {
                 sizes="(max-width: 768px) 100vw, 672px"
               />
             </section>
+
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_DIGITAL_AUDIT} className="py-6 sm:py-8" />
 
             {/* What the audit reviews */}
             <section>

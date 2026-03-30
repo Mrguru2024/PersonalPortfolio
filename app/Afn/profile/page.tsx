@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,10 +63,11 @@ function completionPercent(values: Record<string, string | null | undefined>): n
 }
 
 export default function CommunityProfilePage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isAuthPlaceholder } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [mounted, setMounted] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["/api/community/profile"],
@@ -78,6 +80,7 @@ export default function CommunityProfilePage() {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const profile = data?.profile ?? null;
 
   const [founderTribe, setFounderTribe] = useState<string>("");
@@ -85,6 +88,10 @@ export default function CommunityProfilePage() {
   const [publicProfileStyle, setPublicProfileStyle] = useState<PublicProfileStyle>({});
   const fontFileRef = useRef<HTMLInputElement>(null);
   const [customFontLabel, setCustomFontLabel] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!profile) return;
@@ -184,9 +191,40 @@ export default function CommunityProfilePage() {
       toast({ title: "Upload failed", description: e.message, variant: "destructive" }),
   });
 
+  const coverUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/community/profile/cover", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        let msg = text || res.statusText;
+        try {
+          const j = JSON.parse(text) as { error?: string };
+          if (j.error) msg = j.error;
+        } catch {
+          /* use text */
+        }
+        throw new Error(msg);
+      }
+      return JSON.parse(text) as { url: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community/profile"] });
+      toast({ title: "Cover image updated" });
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    },
+    onError: (e: Error) =>
+      toast({ title: "Cover upload failed", description: e.message, variant: "destructive" }),
+  });
+
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/auth?redirect=/Afn/profile");
-  }, [user, authLoading, router]);
+    if (mounted && !authLoading && !user) router.replace("/auth?redirect=/Afn/profile");
+  }, [mounted, user, authLoading, router]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -233,7 +271,7 @@ export default function CommunityProfilePage() {
   const publicUsername = profile?.username ?? user?.username ?? "";
   const publicUrl = `/Afn/members/${encodeURIComponent(publicUsername)}`;
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || isAuthPlaceholder || !user) return <CommunityAuthLoading />;
 
   const displayAvatarUrl = profile?.avatarUrl ?? user.avatarUrl ?? undefined;
   const initials = (profile?.displayName ?? user.username ?? "?")
@@ -333,6 +371,48 @@ export default function CommunityProfilePage() {
                           Upload photo
                         </Button>
                       </div>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
+                      <Label className="text-base">Public profile cover</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Wide banner at the top of your public member page. Optional — uses a solid or gradient header if
+                        you skip this.
+                      </p>
+                      {profile?.coverImageUrl ? (
+                        <div className="relative h-28 w-full max-w-md overflow-hidden rounded-md border">
+                          <img
+                            src={profile.coverImageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+                        className="sr-only"
+                        aria-label="Choose cover image"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) coverUploadMutation.mutate(f);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={coverUploadMutation.isPending}
+                        onClick={() => coverInputRef.current?.click()}
+                      >
+                        {coverUploadMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Camera className="h-4 w-4 mr-2" />
+                        )}
+                        Upload cover image
+                      </Button>
                     </div>
 
                     <div>

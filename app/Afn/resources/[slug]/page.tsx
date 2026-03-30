@@ -2,10 +2,11 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ExternalLink } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,13 +28,19 @@ export default function CommunityResourceDetailPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
+  const [mounted, setMounted] = useState(false);
   const slug = params?.slug ? String(params.slug) : null;
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace(`/auth?redirect=/Afn/resources/${slug}`);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
+      const dest = slug ? `/Afn/resources/${encodeURIComponent(slug)}` : "/Afn/resources";
+      router.replace(`/auth?redirect=${encodeURIComponent(dest)}`);
     }
-  }, [user, authLoading, router, slug]);
+  }, [mounted, user, authLoading, router, slug]);
 
   const { data: resource, isLoading } = useQuery<Resource>({
     queryKey: ["/api/community/resources", slug],
@@ -59,7 +66,16 @@ export default function CommunityResourceDetailPage() {
     }
   }, [resource?.id, user?.id]);
 
-  if (authLoading || !user || !slug) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
+
+  if (!slug) {
+    return (
+      <CommunityShell>
+        <div className="mx-auto max-w-2xl py-12 text-center text-sm text-muted-foreground">Resource not found.</div>
+      </CommunityShell>
+    );
+  }
+
   if (isLoading || !resource) {
     return (
       <CommunityShell>

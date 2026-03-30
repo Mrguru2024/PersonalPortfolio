@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
+import { isGeminiConfigured } from "@server/services/googleGenaiClient";
 
 export const dynamic = "force-dynamic";
 
@@ -9,5 +10,6 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const openaiTts = Boolean(process.env.OPENAI_API_KEY?.trim());
-  return NextResponse.json({ openaiTts });
+  const geminiTts = isGeminiConfigured();
+  return NextResponse.json({ openaiTts, geminiTts });
 }

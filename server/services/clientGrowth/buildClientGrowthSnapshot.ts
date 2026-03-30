@@ -3,7 +3,7 @@
  */
 import { db } from "@server/db";
 import { storage } from "@server/storage";
-import { growthDiagnosisReports, growthFunnelLeads } from "@shared/schema";
+import { growthDiagnosisReports, growthFunnelLeads, type FunnelContent } from "@shared/schema";
 import type {
   ClientGrowthSnapshot,
   BandSummary,
@@ -11,6 +11,7 @@ import type {
   GrowthActivityItem,
   GrowthStepState,
 } from "@shared/clientGrowthSnapshot";
+import { loadAmieDigestForCrmContacts } from "@server/services/clientGrowth/loadAmieDigestForCrmContacts";
 import { desc, sql } from "drizzle-orm";
 
 function normEmail(e: string | null | undefined): string {
@@ -54,6 +55,36 @@ function extractAssessmentScore(data: unknown): number | null {
     }
   }
   return null;
+}
+
+/** Funnel JSON rows that power public Diagnose resources — summarized for Build, not copied verbatim. */
+const CLIENT_GROWTH_FUNNEL_SLUGS = ["growth-kit", "website-score", "action-plan", "offer", "qualify-funnel"] as const;
+
+const FUNNEL_SLUG_LABELS: Record<string, string> = {
+  "growth-kit": "Growth kit",
+  "website-score": "Website score",
+  "action-plan": "Action plan",
+  offer: "Offer funnel",
+  "qualify-funnel": "Qualify funnel",
+};
+
+function topAttributionFromContacts(contacts: { utmSource?: string | null; source?: string | null }[]): string | null {
+  const counts = new Map<string, number>();
+  for (const c of contacts) {
+    const raw = (c.utmSource?.trim() || c.source?.trim() || "").toLowerCase();
+    if (!raw) continue;
+    counts.set(raw, (counts.get(raw) ?? 0) + 1);
+  }
+  let bestKey: string | null = null;
+  let bestN = 0;
+  for (const [k, v] of counts) {
+    if (v > bestN) {
+      bestN = v;
+      bestKey = k;
+    }
+  }
+  if (!bestKey) return null;
+  return bestKey.length > 1 ? bestKey[0]!.toUpperCase() + bestKey.slice(1) : bestKey.toUpperCase();
 }
 
 export async function buildClientGrowthSnapshot(userId: number): Promise<ClientGrowthSnapshot> {
@@ -128,15 +159,22 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
     assessments.length > 0 || !!diagnosis || !!funnelLead || assessScore != null || diagScore != null;
 
   const hasReviewedAssessment = assessments.some((a) => a.status === "reviewed" || a.status === "contacted");
-  const hasActiveEngagement =
-    hasReviewedAssessment || !!primaryCrm?.bookedCallAt || !!primaryCrm?.lastContactedAt;
 
-  const [invoices, quotesByUser, quotesByEmail, announcements] = await Promise.all([
+  const funnelRowPromises = CLIENT_GROWTH_FUNNEL_SLUGS.map((slug) =>
+    storage.getFunnelContent(slug).catch((): undefined => undefined),
+  );
+  const [invoices, quotesByUser, quotesByEmail, announcements, ...funnelRowsAndAmie] = await Promise.all([
     storage.getClientInvoices(userId).catch(() => []),
     storage.getClientQuotes(userId).catch(() => []),
     emailRaw ? storage.getClientQuotesByEmail(emailRaw).catch(() => []) : Promise.resolve([]),
     storage.getClientAnnouncements(userId).catch(() => []),
+    ...funnelRowPromises,
+    loadAmieDigestForCrmContacts(crmRows.map((c) => c.id)),
   ]);
+  const funnelContentRows = funnelRowsAndAmie.slice(0, funnelRowPromises.length) as (FunnelContent | undefined)[];
+  const amieSlice = funnelRowsAndAmie[funnelRowPromises.length] as Awaited<
+    ReturnType<typeof loadAmieDigestForCrmContacts>
+  >;
   const quoteSeen = new Set<number>();
   const quotes = [...quotesByUser];
   for (const q of quotesByEmail) {
@@ -168,20 +206,22 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
     : currentStep === 2 ? "Stage 2 — Your system is taking shape."
     : "Stage 3 — Double down on what's working.";
 
-  /** Market band: use diagnosis businessType + score heuristics */
-  const market: BandSummary =
-    diagnosis?.reportPayload && typeof diagnosis.reportPayload === "object" ?
-      scoreToBand(healthScore0to100) // placeholder until AMIE slice linked
-    : scoreToBand(healthScore0to100);
+  const market: BandSummary = amieSlice.marketBand ?? scoreToBand(healthScore0to100);
 
   const website: BandSummary = scoreToBand(diagScore ?? funnelLead?.systemScore ?? assessScore);
   const offer: BandSummary = scoreToBand(funnelLead?.brandScore ?? assessScore ?? diagScore);
+
+  const loadedFunnelSlugs = CLIENT_GROWTH_FUNNEL_SLUGS.filter((_, i) => funnelContentRows[i] != null);
+  const funnelResourceHint =
+    loadedFunnelSlugs.length > 0 ?
+      `Live funnel content includes ${loadedFunnelSlugs.map((s) => FUNNEL_SLUG_LABELS[s] ?? s).join(", ")}.`
+    : undefined;
 
   const funnelItems: GrowthLineItem[] = [
     {
       label: "Growth roadmap content",
       status: diagnoseComplete ? "active" : "pending",
-      detail: "Guides and next steps aligned to your business.",
+      detail: [funnelResourceHint, "Guides and next steps aligned to your business."].filter(Boolean).join(" "),
     },
     {
       label: "Website & funnel health",
@@ -206,7 +246,10 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
     },
     {
       label: "Booking & scheduling",
-      status: primaryCrm?.bookedCallAt ? "done" : primaryCrm ? "in_progress" : "pending",
+      status:
+        crmRows.some((c) => c.bookedCallAt != null) ? "done"
+        : primaryCrm ? "in_progress"
+        : "pending",
       detail: undefined,
     },
   ];
@@ -266,6 +309,26 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
   }
   activity.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
+  const diagnosePayload: ClientGrowthSnapshot["diagnose"] = {
+    healthScore0to100,
+    statusSummary:
+      healthScore0to100 != null ?
+        `Your business health score is ${healthScore0to100}/100—a simple blend of what we've measured so far.`
+      : "We haven't scored your full picture yet. Start with a diagnostic or your project assessment.",
+    primaryIssue,
+    missedOpportunityHint,
+    market,
+    website,
+    offer,
+    nextCta:
+      diagnoseComplete ?
+        { label: "Continue to what's being built", href: "#build" }
+      : { label: "Run the growth diagnosis", href: "/growth-diagnosis" },
+  };
+  if (amieSlice.digest) {
+    diagnosePayload.amie = amieSlice.digest;
+  }
+
   const snapshot: ClientGrowthSnapshot = {
     businessLabel,
     growthStatusLine,
@@ -275,22 +338,7 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
       scale: scaleState,
       current: currentStep,
     },
-    diagnose: {
-      healthScore0to100,
-      statusSummary:
-        healthScore0to100 != null ?
-          `Your business health score is ${healthScore0to100}/100—a simple blend of what we've measured so far.`
-        : "We haven't scored your full picture yet. Start with a diagnostic or your project assessment.",
-      primaryIssue,
-      missedOpportunityHint,
-      market,
-      website,
-      offer,
-      nextCta:
-        diagnoseComplete ?
-          { label: "Continue to what's being built", href: "#build" }
-        : { label: "Run the growth diagnosis", href: "/growth-diagnosis" },
-    },
+    diagnose: diagnosePayload,
     build: {
       activationSummary:
         build === "active" ?
@@ -306,8 +354,8 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
         : { label: "Open your dashboard", href: "/dashboard" },
     },
     scale: {
-      leadsThisWeekApprox: leadsThisWeekApprox || null,
-      bookingsCount: bookingsCount || null,
+      leadsThisWeekApprox,
+      bookingsCount,
       topChannelLabel,
       trendHint:
         topChannelLabel ?

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, Plus, ThumbsUp, Bookmark, Loader2 } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ interface Post {
 export default function CommunityFeedPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -66,10 +68,14 @@ export default function CommunityFeedPage() {
   const [newCategoryId, setNewCategoryId] = useState<string>("");
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
       router.replace("/auth?redirect=/Afn/feed");
     }
-  }, [user, authLoading, router]);
+  }, [mounted, user, authLoading, router]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/community/categories"],
@@ -113,7 +119,7 @@ export default function CommunityFeedPage() {
   const posts = data?.posts ?? [];
   const savedPostIds = new Set(data?.savedPostIds ?? []);
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   const handleCreatePost = () => {
     const catId = newCategoryId ? parseInt(newCategoryId, 10) : categories[0]?.id;

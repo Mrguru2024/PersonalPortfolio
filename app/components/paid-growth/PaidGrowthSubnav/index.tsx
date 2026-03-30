@@ -4,21 +4,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Link2, ClipboardCheck, Megaphone, LineChart, HeartPulse } from "lucide-react";
+import {
+  LayoutDashboard,
+  Link2,
+  ClipboardCheck,
+  Megaphone,
+  LineChart,
+  HeartPulse,
+  Sparkles,
+  CircleDollarSign,
+} from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/paid-growth", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/paid-growth/accounts", label: "Accounts", icon: Link2 },
   { href: "/admin/paid-growth/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/admin/paid-growth/optimization", label: "Optimization", icon: Sparkles },
   { href: "/admin/paid-growth/lead-quality", label: "Lead quality", icon: HeartPulse },
   { href: "/admin/paid-growth/readiness", label: "Readiness guide", icon: ClipboardCheck },
   { href: "/admin/paid-growth/reports", label: "Reports", icon: LineChart },
+  { href: "/admin/paid-growth/billing", label: "Fulfillment", icon: CircleDollarSign },
 ];
 
 export function PaidGrowthSubnav() {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-border pb-3 mb-6" aria-label="Paid Growth">
+    <nav className="flex flex-wrap gap-2 border-b border-border pb-3 mb-6" aria-label="Growth Engine">
       {LINKS.map(({ href, label, icon: Icon }) => {
         const active =
           href === "/admin/paid-growth" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);

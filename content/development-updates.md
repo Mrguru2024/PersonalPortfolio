@@ -8,6 +8,18 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-29 23:11 — Agency OS, behavior intelligence, growth platform, paid-growth, AFN
+
+- feat: agency OS, behavior intelligence, growth platform, paid-growth depth, AFN fixes
+
+---
+
+## 2026-03-29 16:03 — Auto · fd4d6a2
+
+- `feat: admin audience preview, Lucky Orange, growth/lead UI updates` (`fd4d6a2`)
+
+---
+
 ## 2026-03-29 14:59 — Auto · b5a1c1c
 
 - `chore: append development-updates for 43706c4` (`b5a1c1c`)

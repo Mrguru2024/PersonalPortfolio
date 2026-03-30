@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, ThumbsUp, Bookmark, Loader2, Send } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,14 +32,20 @@ export default function CommunityPostDetailPage() {
   const params = useParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [mounted, setMounted] = useState(false);
   const postId = params?.id ? String(params.id) : null;
   const [commentBody, setCommentBody] = useState("");
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace(`/auth?redirect=/Afn/post/${postId}`);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !authLoading && !user) {
+      const dest = postId ? `/Afn/post/${encodeURIComponent(postId)}` : "/Afn/feed";
+      router.replace(`/auth?redirect=${encodeURIComponent(dest)}`);
     }
-  }, [user, authLoading, router, postId]);
+  }, [mounted, user, authLoading, router, postId]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["/api/community/posts", postId],
@@ -92,7 +99,16 @@ export default function CommunityPostDetailPage() {
     },
   });
 
-  if (authLoading || !user || !postId) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
+
+  if (!postId) {
+    return (
+      <CommunityShell>
+        <div className="mx-auto max-w-3xl py-12 text-center text-sm text-muted-foreground">Post not found.</div>
+      </CommunityShell>
+    );
+  }
+
   if (isLoading || !data?.post) {
     return (
       <CommunityShell>

@@ -17,6 +17,7 @@ import {
 import {
   DEFAULT_READ_ALOUD_PREFS,
   loadReadAloudPrefs,
+  GEMINI_TTS_VOICES,
   OPENAI_TTS_VOICES,
   READING_STYLE_META,
   type ReadAloudPreferences,
@@ -43,7 +44,7 @@ export interface ReadAloudButtonProps {
 }
 
 /**
- * Read aloud with optional **browser** Web Speech API or **OpenAI** neural TTS (admin-only API).
+ * Read aloud: **browser** Web Speech API, **OpenAI** TTS, or **Gemini** preview TTS (admin-only APIs).
  * Voice and reading style persist in `localStorage`.
  */
 export function ReadAloudButton({
@@ -53,18 +54,20 @@ export function ReadAloudButton({
   size = "sm",
   variant = "outline",
 }: ReadAloudButtonProps) {
-  const [supported, setSupported] = useState(false);
+  const [hasBrowserSpeech, setHasBrowserSpeech] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [prefs, setPrefs] = useState<ReadAloudPreferences>(DEFAULT_READ_ALOUD_PREFS);
   const [prefsReady, setPrefsReady] = useState(false);
   const [openaiTts, setOpenaiTts] = useState(false);
+  const [geminiTts, setGeminiTts] = useState(false);
+  const [neuralStatusLoaded, setNeuralStatusLoaded] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setSupported(typeof window !== "undefined" && "speechSynthesis" in window);
+    setHasBrowserSpeech(typeof window !== "undefined" && "speechSynthesis" in window);
   }, []);
 
   useEffect(() => {
@@ -73,7 +76,7 @@ export function ReadAloudButton({
   }, []);
 
   useEffect(() => {
-    if (!supported || typeof window === "undefined" || !window.speechSynthesis) return;
+    if (!hasBrowserSpeech || typeof window === "undefined" || !window.speechSynthesis) return;
     const syn = window.speechSynthesis;
     const refresh = () => setVoices(sortSpeechVoicesForAdmin(syn.getVoices()));
     refresh();
@@ -81,7 +84,7 @@ export function ReadAloudButton({
     return () => {
       syn.removeEventListener("voiceschanged", refresh);
     };
-  }, [supported]);
+  }, [hasBrowserSpeech]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,10 +92,15 @@ export function ReadAloudButton({
       try {
         const res = await fetch("/api/admin/read-aloud/status", { credentials: "include" });
         if (!res.ok) return;
-        const data = (await res.json()) as { openaiTts?: boolean };
-        if (!cancelled) setOpenaiTts(data.openaiTts === true);
+        const data = (await res.json()) as { openaiTts?: boolean; geminiTts?: boolean };
+        if (!cancelled) {
+          setOpenaiTts(data.openaiTts === true);
+          setGeminiTts(data.geminiTts === true);
+          setNeuralStatusLoaded(true);
+        }
       } catch {
         /* non-admin page or offline */
+        if (!cancelled) setNeuralStatusLoaded(true);
       }
     })();
     return () => {
@@ -155,6 +163,7 @@ export function ReadAloudButton({
         body: JSON.stringify({
           text: prepareSpeechText(text),
           voice: prefs.openaiVoice,
+          provider: "openai",
         }),
       });
       if (!res.ok) {
@@ -187,26 +196,92 @@ export function ReadAloudButton({
     }
   }, [openaiTts, prefs.openaiVoice, text, stop]);
 
+  const speakGemini = useCallback(async () => {
+    if (!geminiTts || !text.trim()) return;
+    stop();
+    setLastError(null);
+    setSpeaking(true);
+    try {
+      const res = await fetch("/api/admin/read-aloud/tts", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: prepareSpeechText(text),
+          voice: prefs.geminiVoice,
+          provider: "gemini",
+          readingStyle: prefs.readingStyle,
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setLastError(err.error ?? `Request failed (${res.status})`);
+        setSpeaking(false);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      objectUrlRef.current = url;
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        if (objectUrlRef.current) {
+          URL.revokeObjectURL(objectUrlRef.current);
+          objectUrlRef.current = null;
+        }
+        audioRef.current = null;
+        setSpeaking(false);
+      };
+      audio.onerror = () => {
+        setLastError("Could not play audio");
+        stop();
+      };
+      await audio.play();
+    } catch {
+      setLastError("Could not load Gemini voice");
+      setSpeaking(false);
+    }
+  }, [geminiTts, prefs.geminiVoice, prefs.readingStyle, text, stop]);
+
   const speak = useCallback(() => {
     if (prefs.engine === "openai" && openaiTts) {
       void speakOpenAI();
+    } else if (prefs.engine === "gemini" && geminiTts) {
+      void speakGemini();
     } else {
       speakBrowser();
     }
-  }, [openaiTts, prefs.engine, speakBrowser, speakOpenAI]);
+  }, [geminiTts, openaiTts, prefs.engine, speakBrowser, speakGemini, speakOpenAI]);
 
   useEffect(() => () => stop(), [stop]);
 
-  if (!supported) {
+  const utterlyUnavailable =
+    prefsReady &&
+    neuralStatusLoaded &&
+    !hasBrowserSpeech &&
+    !openaiTts &&
+    !geminiTts;
+
+  if (utterlyUnavailable) {
     return (
-      <Button type="button" size={size} variant={variant} className={className} disabled title="Read aloud is not supported in this browser">
+      <Button
+        type="button"
+        size={size}
+        variant={variant}
+        className={className}
+        disabled
+        title="No read-aloud backend: allow browser speech or set OPENAI_API_KEY / GEMINI_API_KEY on the server"
+      >
         <Volume2 className="h-4 w-4 mr-1.5 opacity-50" aria-hidden />
         {label}
       </Button>
     );
   }
 
-  const engineDisabled = prefs.engine === "openai" && !openaiTts;
+  const engineDisabled =
+    (prefs.engine === "openai" && !openaiTts) ||
+    (prefs.engine === "gemini" && !geminiTts) ||
+    (prefs.engine === "browser" && !hasBrowserSpeech);
 
   return (
     <div className={cn("inline-flex flex-wrap items-center gap-1", className)}>
@@ -336,7 +411,7 @@ export function ReadAloudButton({
                   </Select>
                 </div>
               </>
-            ) : (
+            ) : prefs.engine === "openai" ? (
               <div className="space-y-1.5">
                 <Label htmlFor="ra-oai-voice" className="text-xs">
                   OpenAI voice
@@ -354,6 +429,46 @@ export function ReadAloudButton({
                   </SelectContent>
                 </Select>
               </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ra-gem-style" className="text-xs">
+                    Reading style
+                  </Label>
+                  <Select
+                    value={prefs.readingStyle}
+                    onValueChange={(v) => updatePrefs({ readingStyle: v as ReadingStyleId })}
+                  >
+                    <SelectTrigger id="ra-gem-style" className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(READING_STYLE_META) as ReadingStyleId[]).map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {READING_STYLE_META[id].label} — {READING_STYLE_META[id].description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ra-gem-voice" className="text-xs">
+                    Gemini voice
+                  </Label>
+                  <Select value={prefs.geminiVoice} onValueChange={(v) => updatePrefs({ geminiVoice: v })}>
+                    <SelectTrigger id="ra-gem-voice" className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[min(280px,var(--radix-select-content-available-height))]">
+                      {GEMINI_TTS_VOICES.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.label} — {v.hint}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
 
             {lastError ? <p className="text-xs text-destructive">{lastError}</p> : null}

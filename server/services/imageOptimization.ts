@@ -79,3 +79,26 @@ export async function optimizeProfileAvatarBuffer(
     .toBuffer();
   return { buffer: out, ext: ".webp", contentType: "image/webp" };
 }
+
+const COVER_WIDTH = 1600;
+const COVER_HEIGHT = 500;
+
+/** Wide cover crop for public AFN profile headers (16∶10-ish). */
+export async function optimizeProfileCoverBuffer(
+  input: Buffer,
+  originalMime?: string
+): Promise<{ buffer: Buffer; ext: string; contentType: string }> {
+  const supported = /^image\/(jpeg|png|gif|webp|avif)$/i.test(originalMime ?? "");
+  if (!supported) {
+    throw new Error("Unsupported image type for cover image");
+  }
+  const out = await sharp(input)
+    .rotate()
+    .resize(COVER_WIDTH, COVER_HEIGHT, {
+      fit: "cover",
+      position: "attention",
+    })
+    .webp({ quality: 82, effort: 4 })
+    .toBuffer();
+  return { buffer: out, ext: ".webp", contentType: "image/webp" };
+}

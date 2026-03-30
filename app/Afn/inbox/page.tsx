@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mail, Loader2, Send } from "lucide-react";
+import { CommunityAuthLoading } from "@/components/community/CommunityAuthLoading";
 import { CommunityShell } from "@/components/community/CommunityShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface Message {
 export default function CommunityInboxPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -98,7 +100,7 @@ export default function CommunityInboxPage() {
     },
   });
 
-  if (authLoading || !user) return null;
+  if (!mounted || authLoading || !user) return <CommunityAuthLoading />;
 
   const selectedThread = threads.find((t) => t.id === selectedThreadId);
   const otherDisplayName = selectedThread?.otherProfile?.displayName || selectedThread?.otherProfile?.username || `User #${selectedThread?.otherUserId}`;

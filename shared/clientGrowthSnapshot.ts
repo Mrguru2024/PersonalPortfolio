@@ -41,6 +41,15 @@ export const growthActivityItemSchema = z.object({
 });
 export type GrowthActivityItem = z.infer<typeof growthActivityItemSchema>;
 
+/** Client-safe digest from AMIE when linked to the client’s CRM contact (Market Score / nurture path). */
+export const amieClientDigestSchema = z.object({
+  summaryLine: z.string(),
+  opportunityHeadline: z.string(),
+  insightBullets: z.array(z.string()).max(4),
+  demandVsCompetitionHint: z.string().optional(),
+});
+export type AmieClientDigest = z.infer<typeof amieClientDigestSchema>;
+
 export const clientGrowthSnapshotSchema = z.object({
   businessLabel: z.string(),
   growthStatusLine: z.string(),
@@ -59,6 +68,7 @@ export const clientGrowthSnapshotSchema = z.object({
     website: bandSummarySchema,
     offer: bandSummarySchema,
     nextCta: growthCtaSchema,
+    amie: amieClientDigestSchema.optional(),
   }),
   build: z.object({
     activationSummary: z.string(),

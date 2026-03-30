@@ -29,6 +29,8 @@ import {
   SectionConnector,
   StatsStrip,
 } from "@/components/motion";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_HOME } from "@/lib/landingPageOutcomeFramework";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 
 const AscendraPromoVideo = dynamic(
@@ -109,6 +111,11 @@ export default function Home() {
   return (
     <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-stack pb-12 sm:pb-16 md:pb-20">
       <HeroSection />
+      <section className="container mx-auto px-3 fold:px-4 sm:px-6 pb-6 sm:pb-10" aria-label="Outcomes and value">
+        <SectionReveal className="mx-auto max-w-5xl">
+          <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_HOME} id="outcome-framework" />
+        </SectionReveal>
+      </section>
       {/* Business Launch Promo — committed under public/Video Content_Ascendra_Files */}
       <section id="see-ascendra" className="container mx-auto px-3 fold:px-4 sm:px-6" aria-label="See Ascendra in action">
         <SectionReveal className="mx-auto max-w-5xl">
