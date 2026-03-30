@@ -896,6 +896,39 @@ async function seedBusinessGoalPresets() {
         priority: 5,
         active: true,
       },
+      {
+        key: "content_planning_day",
+        name: "Content planning day",
+        category: "marketing",
+        description:
+          "Weekly planning reminder for your selected planning days. Helps keep content calendar slots ahead of publish dates.",
+        criteria: { type: "content_planning_day" },
+        roleFilter: "all",
+        priority: 5,
+        active: true,
+      },
+      {
+        key: "editorial_holiday_window",
+        name: "Editorial holiday opportunity",
+        category: "marketing",
+        description:
+          "Holiday-aware editorial reminder based on your configured reminder horizon.",
+        criteria: { type: "editorial_holiday_window" },
+        roleFilter: "all",
+        priority: 6,
+        active: true,
+      },
+      {
+        key: "editorial_local_event_window",
+        name: "Editorial local-event opportunity",
+        category: "marketing",
+        description:
+          "City-focused local-event editorial reminder based on admin city targeting settings.",
+        criteria: { type: "editorial_local_event_window" },
+        roleFilter: "all",
+        priority: 6,
+        active: true,
+      },
     ];
     for (const p of presets) {
       await db

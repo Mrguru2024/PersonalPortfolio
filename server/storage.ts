@@ -4846,6 +4846,11 @@ export class DatabaseStorage implements IStorage {
       pushNotificationsEnabled: true,
       remindersEnabled: true,
       reminderFrequency: "realtime",
+      reminderPlanningDays: ["monday"],
+      reminderCityFocus: null,
+      reminderEditorialHolidaysEnabled: true,
+      reminderEditorialLocalEventsEnabled: true,
+      reminderEditorialHorizonDays: 21,
       notifyOnRoleChange: true,
       aiAgentCanPerformActions: false,
       aiAgentRequireActionConfirmation: true,
@@ -4859,6 +4864,24 @@ export class DatabaseStorage implements IStorage {
         settings.pushNotificationsEnabled ?? existing?.pushNotificationsEnabled ?? def.pushNotificationsEnabled,
       remindersEnabled: settings.remindersEnabled ?? existing?.remindersEnabled ?? def.remindersEnabled,
       reminderFrequency: settings.reminderFrequency ?? existing?.reminderFrequency ?? def.reminderFrequency,
+      reminderPlanningDays:
+        settings.reminderPlanningDays ?? existing?.reminderPlanningDays ?? def.reminderPlanningDays,
+      reminderCityFocus:
+        settings.reminderCityFocus !== undefined
+          ? settings.reminderCityFocus
+          : existing?.reminderCityFocus ?? def.reminderCityFocus,
+      reminderEditorialHolidaysEnabled:
+        settings.reminderEditorialHolidaysEnabled ??
+        existing?.reminderEditorialHolidaysEnabled ??
+        def.reminderEditorialHolidaysEnabled,
+      reminderEditorialLocalEventsEnabled:
+        settings.reminderEditorialLocalEventsEnabled ??
+        existing?.reminderEditorialLocalEventsEnabled ??
+        def.reminderEditorialLocalEventsEnabled,
+      reminderEditorialHorizonDays:
+        settings.reminderEditorialHorizonDays ??
+        existing?.reminderEditorialHorizonDays ??
+        def.reminderEditorialHorizonDays,
       notifyOnRoleChange: settings.notifyOnRoleChange ?? existing?.notifyOnRoleChange ?? def.notifyOnRoleChange,
       aiAgentCanPerformActions:
         settings.aiAgentCanPerformActions ?? existing?.aiAgentCanPerformActions ?? def.aiAgentCanPerformActions,

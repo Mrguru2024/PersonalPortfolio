@@ -45,6 +45,11 @@ export async function PATCH(req: NextRequest) {
       "pushNotificationsEnabled",
       "remindersEnabled",
       "reminderFrequency",
+      "reminderPlanningDays",
+      "reminderCityFocus",
+      "reminderEditorialHolidaysEnabled",
+      "reminderEditorialLocalEventsEnabled",
+      "reminderEditorialHorizonDays",
       "notifyOnRoleChange",
       "aiAgentCanPerformActions",
       "aiAgentRequireActionConfirmation",
@@ -58,6 +63,39 @@ export async function PATCH(req: NextRequest) {
           const v = body[key];
           if (["realtime", "hourly", "daily", "weekly"].includes(v)) {
             (notificationUpdates as Record<string, string>)[key] = v;
+          }
+        } else if (key === "reminderPlanningDays") {
+          const raw = body[key];
+          if (Array.isArray(raw)) {
+            const allowedDays = new Set([
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday",
+            ]);
+            const days = [...new Set(raw
+              .filter((v): v is string => typeof v === "string")
+              .map((v) => v.trim().toLowerCase())
+              .filter((v) => allowedDays.has(v)))];
+            if (days.length > 0) {
+              (notificationUpdates as Record<string, string[]>)[key] = days;
+            }
+          }
+        } else if (key === "reminderCityFocus") {
+          const raw = body[key];
+          if (raw == null || raw === "") {
+            (notificationUpdates as Record<string, string | null>)[key] = null;
+          } else if (typeof raw === "string") {
+            const trimmed = raw.trim().slice(0, 120);
+            (notificationUpdates as Record<string, string | null>)[key] = trimmed.length ? trimmed : null;
+          }
+        } else if (key === "reminderEditorialHorizonDays") {
+          const raw = Number(body[key]);
+          if (Number.isFinite(raw)) {
+            (notificationUpdates as Record<string, number>)[key] = Math.max(3, Math.min(90, Math.round(raw)));
           }
         } else {
           (notificationUpdates as Record<string, boolean>)[key] = Boolean(body[key]);

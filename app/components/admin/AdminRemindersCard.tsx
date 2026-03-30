@@ -53,6 +53,14 @@ interface AdminRemindersCardProps {
   showGenerate?: boolean;
 }
 
+interface ReminderConfig {
+  reminderPlanningDays: string[];
+  reminderCityFocus: string | null;
+  reminderEditorialHolidaysEnabled: boolean;
+  reminderEditorialLocalEventsEnabled: boolean;
+  reminderEditorialHorizonDays: number;
+}
+
 export function AdminRemindersCard({
   compact = true,
   maxItems = 5,
@@ -68,6 +76,15 @@ export function AdminRemindersCard({
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/reminders");
       if (!res.ok) throw new Error("Failed to load reminders");
+      return res.json();
+    },
+  });
+
+  const { data: reminderConfig } = useQuery<ReminderConfig>({
+    queryKey: ["/api/admin/reminders/config"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/reminders/config");
+      if (!res.ok) throw new Error("Failed to load reminder config");
       return res.json();
     },
   });
@@ -205,6 +222,11 @@ export function AdminRemindersCard({
                     <Badge variant={priorityColor(r.priority)} className="text-xs">
                       {r.priority}
                     </Badge>
+                    {r.relatedType === "editorial" ? (
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                        editorial
+                      </Badge>
+                    ) : null}
                   </div>
                   {r.body && (
                     <p className="text-xs text-muted-foreground mt-0.5">{r.body}</p>
@@ -301,6 +323,30 @@ export function AdminRemindersCard({
             </Button>
           </div>
         )}
+        {!compact && reminderConfig ? (
+          <div className="mt-4 rounded-lg border border-dashed border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">Editorial reminder targeting</p>
+            <p>
+              Planning days:{" "}
+              {(reminderConfig.reminderPlanningDays ?? []).length > 0
+                ? reminderConfig.reminderPlanningDays.map((d) => d[0].toUpperCase() + d.slice(1)).join(", ")
+                : "Monday"}
+            </p>
+            <p>City focus: {reminderConfig.reminderCityFocus || "not set"}</p>
+            <p>
+              Holiday reminders: {reminderConfig.reminderEditorialHolidaysEnabled ? "on" : "off"} · Local events:{" "}
+              {reminderConfig.reminderEditorialLocalEventsEnabled ? "on" : "off"} · Horizon:{" "}
+              {reminderConfig.reminderEditorialHorizonDays} days
+            </p>
+            <p>
+              Update from{" "}
+              <Link href="/admin/settings" className="underline text-foreground">
+                Admin settings
+              </Link>
+              .
+            </p>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
