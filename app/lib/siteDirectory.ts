@@ -464,8 +464,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     category: "Admin · Ops",
     audience: "admin",
     description:
-      "Create generated service agreement HTML, milestones, public sign links; issue Stripe invoices per milestone (webhook marks paid). Persona pricing on parent page.",
-    keywords: k("agreement", "esign", "stripe", "milestones", "sow"),
+      "Document signing engine: create contracts/agreements, manage reusable signature fields, capture admin signatures, and send DocuSign plus Stripe milestone invoices.",
+    keywords: k("agreement", "contract", "esign", "docusign", "signature fields", "admin sign", "stripe", "milestones", "sow"),
     relatedPaths: ["/admin/growth-platform", "/agreements/[token]", "/admin/behavior-intelligence/heatmaps"],
   },
   { path: "/admin/paid-growth/optimization", title: "PPC optimization (rules)", category: "Admin · Ops", audience: "admin", description: "Persisted recommendations from spend + lead-quality rules.", keywords: k("optimization", "ppc", "rules") },

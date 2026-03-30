@@ -11,12 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AgreementSignaturePad } from "@/components/legal/AgreementSignaturePad";
 import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
+import { DOCUMENT_TYPE_LABELS, type DocumentType } from "@shared/documentSigningEngine";
 
 type AgreementPayload = {
   publicToken: string;
   status: string;
+  documentType?: DocumentType;
   clientName: string;
   htmlBody: string;
+  signatureFields?: Array<{ key: string; label: string; required: boolean }>;
   milestones: Array<{ id: number; label: string; amountCents: number; status: string }>;
   signedAt: string | null;
   signerLegalName: string | null;
@@ -34,6 +37,10 @@ export default function AgreementSignPage() {
   const [sig, setSig] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [termsLabel, setTermsLabel] = useState("I have read and agree to the Terms of Service.");
+  const [engagementLabel, setEngagementLabel] = useState(
+    "I understand the service engagement expectations (no guaranteed results, cooperation, media spend, third-party risk).",
+  );
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -46,7 +53,13 @@ export default function AgreementSignPage() {
         setData(null);
         return;
       }
-      setData((await res.json()) as AgreementPayload);
+      const payload = (await res.json()) as AgreementPayload;
+      setData(payload);
+      const fields = payload?.signatureFields ?? [];
+      const termsField = fields.find((field) => field.key === "acceptTerms");
+      const engagementField = fields.find((field) => field.key === "acceptEngagement");
+      if (termsField?.label) setTermsLabel(termsField.label);
+      if (engagementField?.label) setEngagementLabel(engagementField.label);
     } catch {
       setError("Could not load agreement.");
     } finally {
@@ -120,7 +133,7 @@ export default function AgreementSignPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Agreement for {data.clientName}</CardTitle>
+                <CardTitle>{DOCUMENT_TYPE_LABELS[data.documentType ?? "agreement"]} for {data.clientName}</CardTitle>
                 <CardDescription>
                   Review the generated summary below. Electronic signature records your typed legal name, optional drawn
                   signature, consent checkboxes, and a server audit digest (not a third-party e-sign vendor).
@@ -195,11 +208,10 @@ export default function AgreementSignPage() {
                         onCheckedChange={(v) => setAcceptTerms(v === true)}
                       />
                       <Label htmlFor="terms" className="text-sm font-normal leading-snug cursor-pointer">
-                        I have read and agree to the{" "}
+                        {termsLabel}{" "}
                         <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
-                          Terms of Service
+                          (open terms)
                         </Link>
-                        .
                       </Label>
                     </div>
                     <div className="flex items-start gap-2">
@@ -209,15 +221,14 @@ export default function AgreementSignPage() {
                         onCheckedChange={(v) => setAcceptEngagement(v === true)}
                       />
                       <Label htmlFor="eng" className="text-sm font-normal leading-snug cursor-pointer">
-                        I understand the{" "}
+                        {engagementLabel}{" "}
                         <Link
                           href="/service-engagement"
                           className="text-primary underline-offset-4 hover:underline"
                           target="_blank"
                         >
-                          service engagement expectations
+                          (open engagement expectations)
                         </Link>{" "}
-                        (no guaranteed results, cooperation, media spend, third-party risk).
                       </Label>
                     </div>
                     {error ?

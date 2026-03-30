@@ -4,6 +4,7 @@ import {
   createClientServiceAgreement,
   listClientServiceAgreementsEnrichedForAdmin,
 } from "@server/services/serviceAgreementService";
+import { normalizeDocumentType } from "@shared/documentSigningEngine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
     }
     const scopeLines = String(body.scopeBullets ?? "").split("\n");
     const milestonesRaw = Array.isArray(body.milestones) ? body.milestones : [];
+    const documentType = normalizeDocumentType(body.documentType);
     const milestones = milestonesRaw.map((m: unknown) => {
       const o = m as Record<string, unknown>;
       const cents =
@@ -54,6 +56,7 @@ export async function POST(req: NextRequest) {
     const bundle = await createClientServiceAgreement({
       clientName,
       clientEmail,
+      documentType,
       companyLegalName: body.companyLegalName != null ? String(body.companyLegalName) : null,
       scopeBullets: scopeLines,
       pricingNarrative: String(body.pricingNarrative ?? ""),

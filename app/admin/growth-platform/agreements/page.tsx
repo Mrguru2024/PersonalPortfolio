@@ -5,13 +5,25 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, ExternalLink, FileDown, Loader2, Send } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileDown, Loader2, PenLine, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AgreementSignaturePad } from "@/components/legal/AgreementSignaturePad";
 import { useToast } from "@/hooks/use-toast";
+import { DOCUMENT_TYPE_LABELS, SIGNATURE_FIELDS_BY_ROLE, type DocumentType } from "@shared/documentSigningEngine";
 
 type MilestoneRow = {
   id: number;
@@ -28,6 +40,8 @@ type AgreementBundle = {
     status: string;
     clientName: string;
     clientEmail: string;
+    variablesJson?: Record<string, unknown> | null;
+    signatureAuditJson?: Record<string, unknown> | null;
     signedAt: Date | string | null;
     createdAt: Date | string;
     docusignEnvelopeId?: string | null;
@@ -36,6 +50,9 @@ type AgreementBundle = {
   };
   milestones: MilestoneRow[];
 };
+
+type AgreementSummaryRow = AgreementBundle["agreement"];
+type AgreementAuditEntry = { signedAt?: string; legalName?: string; auditDigest?: string };
 
 type RetainerRow = {
   id: number;
@@ -48,6 +65,24 @@ type RetainerRow = {
   amountCents: number;
   currentPeriodEnd: Date | string | null;
 };
+
+function getAgreementDocumentType(agreement: AgreementSummaryRow): DocumentType {
+  const raw = agreement.variablesJson?.documentType;
+  return raw === "contract" ? "contract" : "agreement";
+}
+
+function getAdminSignatureAudit(agreement: AgreementSummaryRow): AgreementAuditEntry | null {
+  const audit = agreement.signatureAuditJson;
+  if (!audit || typeof audit !== "object") return null;
+  const admin = (audit as Record<string, unknown>).admin;
+  if (!admin || typeof admin !== "object") return null;
+  const entry = admin as Record<string, unknown>;
+  return {
+    signedAt: typeof entry.signedAt === "string" ? entry.signedAt : undefined,
+    legalName: typeof entry.legalName === "string" ? entry.legalName : undefined,
+    auditDigest: typeof entry.auditDigest === "string" ? entry.auditDigest : undefined,
+  };
+}
 
 export default function AdminGrowthPlatformAgreementsPage() {
   const { toast } = useToast();
@@ -85,6 +120,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
 
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [documentType, setDocumentType] = useState<DocumentType>("agreement");
   const [companyLegal, setCompanyLegal] = useState("");
   const [tierHint, setTierHint] = useState("DFY");
   const [clauseSlugLine, setClauseSlugLine] = useState("");
@@ -105,6 +141,13 @@ export default function AdminGrowthPlatformAgreementsPage() {
   const [retainerName, setRetainerName] = useState("");
   const [retainerAgreementId, setRetainerAgreementId] = useState("");
   const [retainerPriceId, setRetainerPriceId] = useState("");
+  const [adminSignDialogOpen, setAdminSignDialogOpen] = useState(false);
+  const [adminSignAgreementId, setAdminSignAgreementId] = useState<number | null>(null);
+  const [adminSignLegalName, setAdminSignLegalName] = useState("");
+  const [adminSignAcceptTerms, setAdminSignAcceptTerms] = useState(false);
+  const [adminSignAcceptEngagement, setAdminSignAcceptEngagement] = useState(false);
+  const [adminSignImageBase64, setAdminSignImageBase64] = useState<string | null>(null);
+  const [adminSignSubmitting, setAdminSignSubmitting] = useState(false);
 
   const createMut = useMutation({
     mutationFn: async () => {
@@ -124,6 +167,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
         body: JSON.stringify({
           clientName,
           clientEmail,
+          documentType,
           companyLegalName: companyLegal.trim() || null,
           tierHint: tierHint.trim() || null,
           scopeBullets,
@@ -176,6 +220,52 @@ export default function AdminGrowthPlatformAgreementsPage() {
     },
     onError: (e: Error) => toast({ title: "Retainer error", description: e.message, variant: "destructive" }),
   });
+
+  function resetAdminSignDialog() {
+    setAdminSignAgreementId(null);
+    setAdminSignLegalName("");
+    setAdminSignAcceptTerms(false);
+    setAdminSignAcceptEngagement(false);
+    setAdminSignImageBase64(null);
+    setAdminSignSubmitting(false);
+  }
+
+  function openAdminSignDialog(agreementId: number) {
+    setAdminSignAgreementId(agreementId);
+    setAdminSignDialogOpen(true);
+  }
+
+  async function submitAdminSignature() {
+    if (!adminSignAgreementId) return;
+    setAdminSignSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/service-agreements/${adminSignAgreementId}/admin-sign`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          legalName: adminSignLegalName,
+          acceptTerms: adminSignAcceptTerms,
+          acceptEngagement: adminSignAcceptEngagement,
+          signatureImageBase64: adminSignImageBase64,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((j as { error?: string }).error ?? "Admin signature failed");
+      toast({ title: "Admin signature recorded" });
+      await qc.invalidateQueries({ queryKey: ["/api/admin/service-agreements"] });
+      setAdminSignDialogOpen(false);
+      resetAdminSignDialog();
+    } catch (e) {
+      toast({
+        title: "Admin signature error",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setAdminSignSubmitting(false);
+    }
+  }
 
   function retainerAgreementIdNum(): number | null {
     const n = Number(retainerAgreementId.trim());
@@ -264,14 +354,14 @@ export default function AdminGrowthPlatformAgreementsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Service agreements</h1>
         <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-          HTML + clause library, in-app e-sign, PDF export, optional DocuSign envelopes, milestone Stripe invoices, and
-          recurring retainer subscriptions (separate Stripe Subscription billing).
+          Document signing engine for contracts and agreements with client DocuSign delivery, reusable signature fields, and
+          admin-side signing controls.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">New agreement</CardTitle>
+          <CardTitle className="text-base">New document</CardTitle>
           <CardDescription>
             Milestone amounts are in dollars. Leave clause slugs empty to use the default stack from the clause library.
           </CardDescription>
@@ -292,6 +382,18 @@ export default function AdminGrowthPlatformAgreementsPage() {
           <div className="space-y-2">
             <Label htmlFor="tier">Tier hint</Label>
             <Input id="tier" value={tierHint} onChange={(e) => setTierHint(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Document type</Label>
+            <Select value={documentType} onValueChange={(value) => setDocumentType(value as DocumentType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="agreement">{DOCUMENT_TYPE_LABELS.agreement}</SelectItem>
+                <SelectItem value="contract">{DOCUMENT_TYPE_LABELS.contract}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="clauses">Clause slugs (optional, comma- or space-separated)</Label>
@@ -431,20 +533,31 @@ export default function AdminGrowthPlatformAgreementsPage() {
             <ul className="space-y-4 text-sm">
               {listQuery.data.map((b) => {
                 const a = b.agreement;
+                const documentTypeLabel = DOCUMENT_TYPE_LABELS[getAgreementDocumentType(a)];
+                const adminAudit = getAdminSignatureAudit(a);
                 return (
                   <li key={a.id} className="rounded-lg border p-3 space-y-3">
                     <div className="flex flex-wrap justify-between gap-2">
                       <span className="font-medium">
-                        #{a.id} — {a.clientName} · {a.clientEmail}
+                        #{a.id} — {documentTypeLabel} · {a.clientName} · {a.clientEmail}
                       </span>
                       <BadgeInline status={a.status} />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Signing fields: {SIGNATURE_FIELDS_BY_ROLE.client.map((f) => f.label).join(", ")}
+                    </p>
                     {(a.docusignEnvelopeId || a.pdfGeneratedAt || a.docusignStatus) ?
                       <p className="text-xs text-muted-foreground">
                         {a.docusignEnvelopeId ? `DocuSign: ${a.docusignEnvelopeId} (${a.docusignStatus ?? "—"})` : null}
                         {a.pdfGeneratedAt ?
                           `${a.docusignEnvelopeId ? " · " : ""}PDF at ${String(a.pdfGeneratedAt).slice(0, 19)}`
                         : null}
+                      </p>
+                    : null}
+                    {adminAudit ?
+                      <p className="text-xs text-muted-foreground">
+                        Admin signed by {adminAudit.legalName ?? "unknown"}
+                        {adminAudit.signedAt ? ` · ${new Date(adminAudit.signedAt).toLocaleString()}` : ""}
                       </p>
                     : null}
                     <div className="flex flex-wrap gap-2">
@@ -465,6 +578,10 @@ export default function AdminGrowthPlatformAgreementsPage() {
                       <Button variant="outline" size="sm" type="button" onClick={() => downloadAgreementPdf(a.id)}>
                         <FileDown className="h-3 w-3 mr-1" />
                         PDF
+                      </Button>
+                      <Button variant="outline" size="sm" type="button" onClick={() => openAdminSignDialog(a.id)}>
+                        <PenLine className="h-3 w-3 mr-1" />
+                        Admin sign
                       </Button>
                       <Button
                         variant="outline"
@@ -508,6 +625,79 @@ export default function AdminGrowthPlatformAgreementsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={adminSignDialogOpen}
+        onOpenChange={(open) => {
+          setAdminSignDialogOpen(open);
+          if (!open) resetAdminSignDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Admin signature fields</DialogTitle>
+            <DialogDescription>
+              Complete required admin signature fields for agreement #{adminSignAgreementId ?? "—"} before sending or archiving.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin-sign-legal-name">Admin legal name</Label>
+              <Input
+                id="admin-sign-legal-name"
+                value={adminSignLegalName}
+                onChange={(e) => setAdminSignLegalName(e.target.value)}
+                placeholder="Full legal name"
+              />
+            </div>
+            <AgreementSignaturePad onChange={setAdminSignImageBase64} />
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="admin-sign-terms"
+                checked={adminSignAcceptTerms}
+                onCheckedChange={(checked) => setAdminSignAcceptTerms(checked === true)}
+              />
+              <Label htmlFor="admin-sign-terms" className="text-sm font-normal cursor-pointer">
+                {SIGNATURE_FIELDS_BY_ROLE.admin.find((field) => field.key === "acceptTerms")?.label}
+              </Label>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="admin-sign-engagement"
+                checked={adminSignAcceptEngagement}
+                onCheckedChange={(checked) => setAdminSignAcceptEngagement(checked === true)}
+              />
+              <Label htmlFor="admin-sign-engagement" className="text-sm font-normal cursor-pointer">
+                {SIGNATURE_FIELDS_BY_ROLE.admin.find((field) => field.key === "acceptEngagement")?.label}
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAdminSignDialogOpen(false);
+                resetAdminSignDialog();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submitAdminSignature()}
+              disabled={adminSignSubmitting}
+            >
+              {adminSignSubmitting ?
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              : "Save admin signature"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

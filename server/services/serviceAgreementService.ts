@@ -10,6 +10,13 @@ import {
 } from "./legalClauseService";
 import { createAndSendEnvelopeWithPdf, isDocuSignConfigured } from "./docusignEnvelopeService";
 import {
+  documentDisplayTitle,
+  normalizeDocumentType,
+  SIGNATURE_FIELDS_BY_ROLE,
+  type DocumentType,
+  type SignerRole,
+} from "@shared/documentSigningEngine";
+import {
   createDraftInvoice,
   finalizeAndSendInvoice,
   isStripeConfigured,
@@ -36,6 +43,7 @@ export function newAgreementPublicToken(): string {
 export async function createClientServiceAgreement(input: {
   clientName: string;
   clientEmail: string;
+  documentType?: DocumentType;
   companyLegalName?: string | null;
   scopeBullets: string[];
   pricingNarrative: string;
@@ -47,6 +55,7 @@ export async function createClientServiceAgreement(input: {
   markSent?: boolean;
 }) {
   const effectiveDateIso = new Date().toISOString().slice(0, 10);
+  const documentType = normalizeDocumentType(input.documentType);
   const clauseSlugs =
     input.clauseSlugs?.filter((s) => s.trim()).length ?
       input.clauseSlugs!.map((s) => s.trim().toLowerCase())
@@ -55,6 +64,7 @@ export async function createClientServiceAgreement(input: {
   const libraryClauses = clauseRows.map((r) => ({ title: r.title, bodyHtml: r.bodyHtml }));
 
   const template: ServiceAgreementTemplateInput = {
+    documentTypeLabel: documentDisplayTitle(documentType),
     providerLegalName: providerLegalName(),
     clientLegalName: input.companyLegalName?.trim() || input.clientName.trim(),
     clientContactName: input.clientName.trim(),
@@ -83,6 +93,7 @@ export async function createClientServiceAgreement(input: {
       htmlBody,
       clauseSlugsJson: clauseSlugs,
       variablesJson: {
+        documentType,
         providerLegalName: template.providerLegalName,
         effectiveDateIso,
       },
@@ -154,6 +165,7 @@ export async function listClientServiceAgreementsEnrichedForAdmin(limit = 80) {
 export async function signClientServiceAgreement(
   publicToken: string,
   input: {
+    signerRole?: SignerRole;
     legalName: string;
     acceptTerms: boolean;
     acceptEngagement: boolean;
@@ -165,36 +177,89 @@ export async function signClientServiceAgreement(
   const row = await getClientServiceAgreementByToken(publicToken);
   if (!row) return { ok: false as const, error: "not_found" };
   const { agreement } = row;
-  if (agreement.status === "signed") return { ok: false as const, error: "already_signed" };
+  const signerRole = input.signerRole === "admin" ? "admin" : "client";
+  if (agreement.status === "signed" && signerRole === "client") return { ok: false as const, error: "already_signed" };
   if (agreement.status === "cancelled") return { ok: false as const, error: "cancelled" };
   const name = input.legalName.trim();
   if (name.length < 3) return { ok: false as const, error: "invalid_name" };
-  if (!input.acceptTerms || !input.acceptEngagement) return { ok: false as const, error: "consent_required" };
+  const requiredFields = SIGNATURE_FIELDS_BY_ROLE[signerRole].filter((field) => field.required);
+  if (
+    requiredFields.some((field) => {
+      if (field.key === "legalName") return !name;
+      if (field.key === "acceptTerms") return !input.acceptTerms;
+      if (field.key === "acceptEngagement") return !input.acceptEngagement;
+      return false;
+    })
+  ) {
+    return { ok: false as const, error: "consent_required" };
+  }
 
   const signedAt = new Date();
   const auditDigest = signAuditToken(agreement.id, name, signedAt.toISOString());
-  const audit = {
+  const auditEntry = {
+    signerRole,
     signedAt: signedAt.toISOString(),
+    legalName: name,
     ip: input.requestIp ?? null,
     userAgent: input.userAgent ?? null,
     termsPath: "/terms",
     engagementPath: "/service-engagement",
     auditDigest,
+    signatureImageProvided: Boolean(input.signatureImageBase64?.trim()),
   };
+  const priorAudit = agreement.signatureAuditJson ?? {};
+  const mergedAudit =
+    priorAudit && typeof priorAudit === "object" ?
+      {
+        ...(priorAudit as Record<string, unknown>),
+        [signerRole]: auditEntry,
+      }
+    : { [signerRole]: auditEntry };
 
   await db
     .update(clientServiceAgreements)
     .set({
-      status: "signed",
-      signedAt,
-      signerLegalName: name,
+      status: signerRole === "client" ? "signed" : agreement.status,
+      signedAt: signerRole === "client" ? signedAt : agreement.signedAt,
+      signerLegalName: signerRole === "client" ? name : agreement.signerLegalName,
       signatureImageBase64: input.signatureImageBase64?.trim().slice(0, 500_000) || null,
-      signatureAuditJson: audit,
+      signatureAuditJson: mergedAudit,
       updatedAt: new Date(),
     })
     .where(eq(clientServiceAgreements.id, agreement.id));
 
   return { ok: true as const, auditDigest };
+}
+
+export function getAgreementDocumentType(agreement: {
+  variablesJson: Record<string, unknown> | null;
+}): DocumentType {
+  const raw = agreement.variablesJson?.documentType;
+  return normalizeDocumentType(raw);
+}
+
+export async function adminSignAgreementById(
+  agreementId: number,
+  input: {
+    legalName: string;
+    acceptTerms: boolean;
+    acceptEngagement: boolean;
+    signatureImageBase64?: string | null;
+    requestIp?: string | null;
+    userAgent?: string | null;
+  },
+) {
+  const bundle = await getClientServiceAgreementById(agreementId);
+  if (!bundle) return { ok: false as const, error: "agreement_not_found" };
+  return signClientServiceAgreement(bundle.agreement.publicToken, {
+    signerRole: "admin",
+    legalName: input.legalName,
+    acceptTerms: input.acceptTerms,
+    acceptEngagement: input.acceptEngagement,
+    signatureImageBase64: input.signatureImageBase64,
+    requestIp: input.requestIp,
+    userAgent: input.userAgent,
+  });
 }
 
 export async function createStripeInvoiceForMilestone(agreementId: number, milestoneId: number) {
