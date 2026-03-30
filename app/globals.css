@@ -466,6 +466,39 @@ header .container {
   }
 }
 
+/* Global content hardening for narrow/foldable viewports.
+   Prevents common overflow from rich content blocks across many pages without per-page patches. */
+@layer base {
+  main {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  main :where(h1, h2, h3, h4, h5, h6, p, li, label, span, a, small, strong, em, code) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  main :where(pre, code, kbd, samp) {
+    max-width: 100%;
+  }
+
+  main pre {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    white-space: pre;
+  }
+
+  main :where(table) {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Composable card surfaces (use with Card or plain divs).
    Full-width marketing bands: prefer `bg-section` (and alternate with `bg-background`) instead of `bg-muted`. */
 @layer components {

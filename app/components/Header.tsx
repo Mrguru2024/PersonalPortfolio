@@ -367,9 +367,9 @@ export default function Header(_props: HeaderProps) {
         style={{ background: "transparent", border: "none", boxShadow: "none" }}
       >
         {/* Left spacer (logo was here) */}
-        <div className="hidden md:block flex-1 min-w-0" aria-hidden />
+        <div className="hidden lg:block flex-1 min-w-0" aria-hidden />
         {/* Center: primary links + Services (with Who we serve) + More dropdowns + CTAs */}
-        <nav className="hidden md:flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4" aria-label={shellMainNavAria(locale)}>
+        <nav className="hidden lg:flex flex-shrink-0 items-center gap-1 sm:gap-2 lg:gap-4" aria-label={shellMainNavAria(locale)}>
           {primaryNav.map((item) =>
             isScrollLink(item) ? (
               <button
@@ -450,7 +450,7 @@ export default function Header(_props: HeaderProps) {
           </DropdownMenu>
         </nav>
         {/* Right: CTAs (single group) + auth + theme */}
-        <div className="hidden md:flex flex-shrink-0 items-center gap-2 ml-2">
+        <div className="hidden lg:flex flex-shrink-0 items-center gap-2 ml-2">
           <div className="flex items-center gap-2 shrink-0">
             {ctaButtons.map((cta) =>
               cta.isScroll ? (
@@ -595,7 +595,7 @@ export default function Header(_props: HeaderProps) {
         </div>
 
         {/* Mobile: menu button + theme (opens sheet from right for app-like UX) */}
-        <div className="flex items-center gap-3 md:hidden shrink-0">
+        <div className="flex items-center gap-3 lg:hidden shrink-0">
           <ThemeToggle />
           <Button
             ref={menuButtonRef}
@@ -620,12 +620,12 @@ export default function Header(_props: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile navigation sheet: slides in from right; same menu openable from header or bottom nav */}
+      {/* Mobile/tablet navigation sheet: slides in from right; same menu openable from header or bottom nav */}
       <Sheet open={mobileMenuOpen} onOpenChange={(open) => { if (!open) closeMobileMenu(); }}>
         <SheetContent
           side="right"
           id="mobile-nav-panel"
-          className="md:hidden w-[85vw] max-w-sm p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
+          className="lg:hidden w-[min(100vw-0.75rem,26rem)] p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
