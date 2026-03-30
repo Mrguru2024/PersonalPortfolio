@@ -15,7 +15,6 @@ import { PurchaseLegalAcknowledgment } from "@/components/growth-platform/Purcha
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 
 function RecommendationInner() {
   const searchParams = useSearchParams();
@@ -68,7 +67,6 @@ function RecommendationInner() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-teal-500/[0.04]">
-      <AscendraBehaviorMount />
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-3xl space-y-8">
         <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
           <Link href="/growth-platform">

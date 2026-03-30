@@ -6,7 +6,7 @@ import {
   behaviorHeatmapEvents,
   behaviorSurveyResponses,
 } from "@shared/schema";
-import { and, count, desc, eq, gte, like } from "drizzle-orm";
+import { and, count, desc, eq, gte, like, sql } from "drizzle-orm";
 
 export type BehaviorIngestInput = {
   sessionId: string;
@@ -147,6 +147,64 @@ export async function ingestBehaviorPayload(input: BehaviorIngestInput): Promise
 
 export async function listBehaviorSessionsForAdmin(limit: number): Promise<(typeof behaviorSessions.$inferSelect)[]> {
   return db.select().from(behaviorSessions).orderBy(desc(behaviorSessions.startTime)).limit(Math.min(200, limit));
+}
+
+export async function listBehaviorSessionsWithReplayForAdmin(
+  limit: number,
+): Promise<
+  Array<
+    (typeof behaviorSessions.$inferSelect) & {
+      replaySegmentCount: number;
+      replayEventCount: number;
+      lastReplayAt: Date | null;
+    }
+  >
+> {
+  const rows = await db
+    .select({
+      id: behaviorSessions.id,
+      sessionId: behaviorSessions.sessionId,
+      businessId: behaviorSessions.businessId,
+      userId: behaviorSessions.userId,
+      crmContactId: behaviorSessions.crmContactId,
+      startTime: behaviorSessions.startTime,
+      endTime: behaviorSessions.endTime,
+      device: behaviorSessions.device,
+      sourceJson: behaviorSessions.sourceJson,
+      converted: behaviorSessions.converted,
+      optOut: behaviorSessions.optOut,
+      createdAt: behaviorSessions.createdAt,
+      replaySegmentCount: count(behaviorReplaySegments.id),
+      replayEventCount: sql<number>`coalesce(sum(json_array_length(${behaviorReplaySegments.payloadJson})), 0)`,
+      lastReplayAt: sql<Date | null>`max(${behaviorReplaySegments.createdAt})`,
+    })
+    .from(behaviorSessions)
+    .leftJoin(behaviorReplaySegments, eq(behaviorReplaySegments.sessionId, behaviorSessions.sessionId))
+    .groupBy(behaviorSessions.id)
+    .orderBy(desc(behaviorSessions.startTime))
+    .limit(Math.min(200, limit));
+
+  const out = rows
+    .map((r) => ({
+      id: r.id,
+      sessionId: r.sessionId,
+      businessId: r.businessId,
+      userId: r.userId,
+      crmContactId: r.crmContactId,
+      startTime: r.startTime,
+      endTime: r.endTime,
+      device: r.device,
+      sourceJson: r.sourceJson,
+      converted: r.converted,
+      optOut: r.optOut,
+      createdAt: r.createdAt,
+      replaySegmentCount: Number(r.replaySegmentCount ?? 0),
+      replayEventCount: Number(r.replayEventCount ?? 0),
+      lastReplayAt: r.lastReplayAt ?? null,
+    }))
+    .filter((r) => r.replaySegmentCount > 0);
+
+  return out;
 }
 
 export async function getReplayEventsForSession(sessionId: string): Promise<unknown[]> {

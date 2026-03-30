@@ -10,7 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AgreementSignaturePad } from "@/components/legal/AgreementSignaturePad";
-import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 
 type AgreementPayload = {
   publicToken: string;
@@ -90,7 +89,6 @@ export default function AgreementSignPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <AscendraBehaviorMount />
       <div className="container max-w-3xl mx-auto px-4 py-10 space-y-6">
         <div className="flex flex-wrap gap-3 text-sm">
           <Button variant="ghost" size="sm" asChild>

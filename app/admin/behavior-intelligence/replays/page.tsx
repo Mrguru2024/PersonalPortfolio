@@ -15,8 +15,12 @@ type SessionRow = {
   id: number;
   sessionId: string;
   startTime: string;
+  endTime: string | null;
   device: string | null;
   converted: boolean;
+  replaySegmentsCount: number;
+  eventCount: number;
+  lastReplayAt: string | null;
 };
 
 export default function BehaviorReplaysPage() {
@@ -32,6 +36,10 @@ export default function BehaviorReplaysPage() {
   });
 
   const sessionId = pick ?? (manual.trim() || null);
+  const filteredSessions = useMemo(
+    () => (sessions ?? []).filter((s) => s.replaySegmentsCount > 0),
+    [sessions],
+  );
 
   const { data: replay, isFetching } = useQuery({
     queryKey: ["/api/admin/behavior-intelligence/replays", sessionId],
@@ -60,21 +68,31 @@ export default function BehaviorReplaysPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Recent sessions</CardTitle>
-          <CardDescription>Select a row to load replay events.</CardDescription>
+          <CardDescription>Select a row with replay data to load events.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ?
             <Loader2 className="h-6 w-6 animate-spin" />
-          : <ul className="divide-y rounded-md border max-h-56 overflow-auto text-sm">
-              {(sessions ?? []).map((s) => (
+          : filteredSessions.length === 0 ?
+            <p className="text-sm text-muted-foreground">
+              No replay-ready sessions yet. Tracking is active on public pages now; browse the site and refresh this page.
+            </p>
+          : <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">
+              {filteredSessions.map((s) => (
                 <li key={s.id}>
                   <button
                     type="button"
                     className={`w-full text-left px-3 py-2 hover:bg-muted/50 ${pick === s.sessionId ? "bg-muted" : ""}`}
                     onClick={() => setPick(s.sessionId)}
                   >
-                    <span className="font-mono text-xs">{s.sessionId}</span>
-                    <span className="text-muted-foreground ml-2">{s.device ?? "—"}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs">{s.sessionId}</span>
+                      <span className="text-muted-foreground">{s.device ?? "—"}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      segments: {s.replaySegmentsCount} · events: {s.eventCount}
+                      {s.lastReplayAt ? ` · last replay: ${new Date(s.lastReplayAt).toLocaleString()}` : ""}
+                    </div>
                   </button>
                 </li>
               ))}

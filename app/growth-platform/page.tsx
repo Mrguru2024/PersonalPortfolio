@@ -9,7 +9,6 @@ import { ThreeStepSystemPreview } from "@/components/growth-platform/ThreeStepSy
 import { ASCENDRA_OFFER_STACK } from "@shared/ascendraOfferStack";
 import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@shared/ascendraCoreGuarantee";
 import { Button } from "@/components/ui/button";
-import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 import { ArrowRight } from "lucide-react";
 import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
 import { CTA_REASSURANCE_GROWTH_PLATFORM } from "@/lib/embeddedAssuranceCopy";
@@ -28,7 +27,6 @@ export default function GrowthPlatformPage() {
   const dfy = ASCENDRA_OFFER_STACK.DFY;
   return (
     <>
-      <AscendraBehaviorMount />
       <WebPageJsonLd
         title="Ascendra Growth System"
         description={String(growthPlatformPageMeta.description ?? "")}
