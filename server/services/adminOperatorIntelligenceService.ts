@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
 import {
   ADMIN_OPERATOR_ROLE_LABELS,

@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 let client: OpenAI | null = null;
 

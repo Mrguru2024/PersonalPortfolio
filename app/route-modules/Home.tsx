@@ -460,6 +460,10 @@ export default function Home() {
                 <SpotlightCard className="h-full">
                   <CardContent className="p-6 sm:p-7">
                     <h3 className="text-lg font-semibold text-foreground">{offer.name}</h3>
+                    <p className="mt-2 text-xs text-muted-foreground leading-snug">
+                      <span className="font-medium text-foreground">Typical investment:</span>{" "}
+                      {offer.typicalInvestment}
+                    </p>
                     <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{offer.outcome}</p>
                     <p className="mt-4 text-sm font-medium text-foreground">Best for</p>
                     <p className="text-sm text-muted-foreground">{offer.audience}</p>

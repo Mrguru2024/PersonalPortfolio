@@ -3,7 +3,7 @@
  * Optional: requires OPENAI_API_KEY.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 let openai: OpenAI | null = null;
 

@@ -43,8 +43,8 @@ export const ASCENDRA_OFFER_STACK: Record<AscendraOfferTier, AscendraOfferTierDe
     deliverablesSummary:
       "Funnel alignment, creative direction, campaign structure, tracking checklist, and ongoing optimization cadence.",
     pricing: {
-      setup: { minCents: 200_000, maxCents: 750_000 },
-      monthly: { minCents: 30_000, maxCents: 100_000 },
+      setup: { minCents: 350_000, maxCents: 1_200_000 },
+      monthly: { minCents: 85_000, maxCents: 240_000 },
       note: "Setup plus monthly optimization. Ad spend is billed directly by platforms unless a separate media agreement says otherwise.",
     },
     riskReversalSummary:
@@ -64,7 +64,7 @@ export const ASCENDRA_OFFER_STACK: Record<AscendraOfferTier, AscendraOfferTierDe
     timelineSummary: "Program windows are scoped per engagement (often 4–12 weeks).",
     deliverablesSummary: "Offer positioning, funnel map, creative briefs, campaign structure templates, and weekly working sessions.",
     pricing: {
-      program: { minCents: 50_000, maxCents: 200_000 },
+      program: { minCents: 250_000, maxCents: 850_000 },
       note: "Single-program investment range. Add-ons billed separately when scoped.",
     },
     riskReversalSummary:

@@ -70,7 +70,7 @@ const FUNNEL_ITEMS = [
   {
     id: "offer",
     title: "Startup growth system offer",
-    description: "Offer page: $249–$399, deliverables, CTA to strategy call. Edit text and graphics from Site offers.",
+    description: "Offer page: startup audit price band, deliverables, CTA to strategy call. Edit text and graphics from Site offers.",
     publicPath: STARTUP_GROWTH_SYSTEM_OFFER_PATH,
     editPath: "/admin/offers/startup-growth-system/edit",
     icon: Tag,

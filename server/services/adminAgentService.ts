@@ -4,8 +4,7 @@
  * Actions only when admin has aiAgentCanPerformActions.
  */
 
-import "openai/shims/node";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { stripConversationalSearchNoise } from "@/lib/advancedSearchQuery";
 import { searchSiteDirectory, SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getCachedAdminAgentContext } from "@server/services/adminAgentContextBuilder";

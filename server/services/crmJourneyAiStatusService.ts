@@ -2,7 +2,7 @@
  * Optional OpenAI refinement for journey status (env-gated). Never downgrades; never sets won/lost from here.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import type { CrmContact } from "@shared/crmSchema";
 import { normalizeLeadContactStatus, CRM_LEAD_CONTACT_STATUS_ORDER } from "@server/lib/crmContactLifecycleStatus";
 import type { WorkflowPayload } from "@server/services/workflows/types";

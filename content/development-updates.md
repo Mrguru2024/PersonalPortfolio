@@ -8,6 +8,18 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-30 01:58 — Auto · 82074c9
+
+- `fix: restore production build (OpenAI nodeClient wrapper, PremiumOffer data)` (`82074c9`)
+
+---
+
+## 2026-03-30 01:57 — Auto · bccc54a
+
+- `fix: restore production build (OpenAI nodeClient wrapper, PremiumOffer data)` (`bccc54a`)
+
+---
+
 ## 2026-03-30 00:24 — Trust assurance, offer engine, agency OS, PPC depth
 
 - Trust assurance on ICP landers and startup growth offer page; EmbeddedAssurance + copy module.

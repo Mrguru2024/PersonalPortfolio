@@ -553,7 +553,7 @@ export default function EditOfferPage() {
             </div>
             <div>
               <Label>Amount</Label>
-              <Input value={sections.price?.amount ?? ""} onChange={(e) => setPrice({ amount: e.target.value })} placeholder="e.g. $249 – $399" />
+              <Input value={sections.price?.amount ?? ""} onChange={(e) => setPrice({ amount: e.target.value })} placeholder="e.g. $497 – $899" />
             </div>
             <div>
               <Label>Note</Label>

@@ -9,6 +9,7 @@ import { storage } from "@server/storage";
 import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
 import { getLeadCustomFields } from "@shared/leadCustomFields";
 import { aeeFieldsForFormAttribution } from "@/lib/aeeFormAttributionZod";
+import { CHALLENGE_PRICE_CENTS } from "@/lib/challenge/config";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
         businessType: businessType || null,
         source: source || null,
         orderBumpPurchased: orderBump,
-        amountCents: 2700,
+        amountCents: CHALLENGE_PRICE_CENTS,
         status: "active",
       });
     }

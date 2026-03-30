@@ -67,6 +67,10 @@ export default function ServicesPage() {
                   <h2 className="text-xl font-semibold text-foreground">
                     {offer.name}
                   </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Typical investment:</span>{" "}
+                    {offer.typicalInvestment}
+                  </p>
                   <p className="mt-3 text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">Best for:</span>{" "}
                     {offer.audience}

@@ -3,7 +3,7 @@
  * funnel/diagnosis quiz leads, and project assessments. Optional OpenAI classification.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { desc, eq, isNull } from "drizzle-orm";
 import { db } from "@server/db";
 import { storage } from "@server/storage";

@@ -933,14 +933,16 @@ async function seedSiteOffers() {
   console.log("Seeding site offers...");
   try {
     const { DEFAULT_OFFER_SECTIONS } = await import("../app/lib/offerSections");
+    const { STARTUP_GROWTH_AUDIT_PRICE_META } = await import("../app/lib/servicePricing");
+    const startupGrowthMetaDescription =
+      `A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. ${STARTUP_GROWTH_AUDIT_PRICE_META}.`;
     await db
       .insert(siteOffers)
       .values({
         slug: "startup-growth-system",
         name: "Startup growth system",
         metaTitle: "Startup growth system | Affordable audit for founders",
-        metaDescription:
-          "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.",
+        metaDescription: startupGrowthMetaDescription,
         sections: DEFAULT_OFFER_SECTIONS as unknown as Record<string, unknown>,
         updatedAt: new Date(),
       })
@@ -949,8 +951,7 @@ async function seedSiteOffers() {
         set: {
           name: "Startup growth system",
           metaTitle: "Startup growth system | Affordable audit for founders",
-          metaDescription:
-            "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.",
+          metaDescription: startupGrowthMetaDescription,
           sections: DEFAULT_OFFER_SECTIONS as unknown as Record<string, unknown>,
           updatedAt: new Date(),
         },

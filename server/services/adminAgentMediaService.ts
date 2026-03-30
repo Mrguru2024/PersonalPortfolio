@@ -2,8 +2,7 @@
  * Vision interpretation for the admin assistant: images + optional text → structured understanding.
  */
 
-import "openai/shims/node";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { getAdminAgentOpenAiModel } from "@server/services/growthIntelligence/growthIntelligenceConfig";
 
 let client: OpenAI | null = null;

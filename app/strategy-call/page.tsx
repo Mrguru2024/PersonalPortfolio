@@ -74,9 +74,9 @@ const MAIN_NEED_OPTIONS = [
 ];
 
 const BUDGET_OPTIONS = [
-  { value: "1k-3k", label: "$1k – $3k" },
-  { value: "3k-7k", label: "$3k – $7k" },
-  { value: "7k-plus", label: "$7k+" },
+  { value: "under-10k", label: "Under $10k" },
+  { value: "10k-35k", label: "$10k – $35k" },
+  { value: "35k-plus", label: "$35k+" },
 ];
 
 const TIMELINE_OPTIONS = [

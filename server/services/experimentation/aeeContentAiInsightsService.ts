@@ -2,7 +2,7 @@
  * AI layer for content/campaign experimentation — interprets AEE rollups + admin-stated goals.
  * Grounds suggestions in provided numbers only; flags uncertainty when samples are thin.
  */
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
 import type { AeeRecommendation, VariantMetricRollup } from "./aeeInsightEngine";
 

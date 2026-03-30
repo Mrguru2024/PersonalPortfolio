@@ -133,7 +133,7 @@ const DEFAULT_CONTENT: Record<string, Record<string, unknown>> = {
     heroSubtitle:
       "A practical startup growth audit designed for founders who cannot yet afford a full agency build. Get clarity, a roadmap, and an actionable plan—without the big-ticket price.",
     priceLabel: "Price range",
-    priceAmount: "$249 – $399",
+    priceAmount: "$497 – $899",
     priceNote: "One-time audit and deliverable set. No ongoing retainer. You get the plan; you choose how to execute it.",
     deliverablesTitle: "What you get",
     del1Title: "Website audit",

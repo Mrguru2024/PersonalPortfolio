@@ -4,8 +4,7 @@
  * v2 adds coarse navigation stats when the admin opts in to usage observation (paths only).
  */
 
-import "openai/shims/node";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import type {
   AdminAgentMentorStateV1,
   AdminAgentMentorStateV2,
