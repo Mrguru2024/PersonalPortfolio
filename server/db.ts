@@ -95,7 +95,7 @@ function getDb() {
 export const pool = new Proxy({} as NeonPool | PgPool, {
   get(_target, prop) {
     const poolInstance = getPool();
-    const value = poolInstance[prop as keyof Pool];
+    const value = (poolInstance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(poolInstance);
     }
@@ -106,7 +106,7 @@ export const pool = new Proxy({} as NeonPool | PgPool, {
 export const db = new Proxy({} as ReturnType<typeof drizzlePg> | ReturnType<typeof drizzleNeon>, {
   get(_target, prop) {
     const dbInstance = getDb();
-    const value = dbInstance[prop as keyof ReturnType<typeof drizzle>];
+    const value = (dbInstance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(dbInstance);
     }
