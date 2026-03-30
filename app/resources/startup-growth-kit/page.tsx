@@ -52,7 +52,13 @@ const FOUR_LAYERS = [
 ];
 
 export default async function StartupGrowthKitPage() {
-  const stored = await getFunnelContent("growth-kit");
+  let stored: Awaited<ReturnType<typeof getFunnelContent>> = null;
+  try {
+    stored = await getFunnelContent("growth-kit");
+  } catch (error) {
+    // Build-safe fallback: this page should still render defaults if DB-backed funnel content is unavailable.
+    console.error("[startup-growth-kit] failed to load funnel content, using defaults", error);
+  }
   const storedObj =
     stored && typeof stored === "object" && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};
   const { accessModel } = parseFunnelConversionSettings(storedObj);
