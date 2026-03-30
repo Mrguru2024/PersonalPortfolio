@@ -4840,7 +4840,23 @@ export class DatabaseStorage implements IStorage {
   ): Promise<AdminSettings> {
     const now = new Date();
     const existing = await this.getAdminSettings(userId);
-    const def = {
+    const def: {
+      emailNotifications: boolean;
+      inAppNotifications: boolean;
+      pushNotificationsEnabled: boolean;
+      remindersEnabled: boolean;
+      reminderFrequency: string;
+      reminderPlanningDays: string[];
+      reminderCityFocus: string | null;
+      reminderEditorialHolidaysEnabled: boolean;
+      reminderEditorialLocalEventsEnabled: boolean;
+      reminderEditorialHorizonDays: number;
+      notifyOnRoleChange: boolean;
+      aiAgentCanPerformActions: boolean;
+      aiAgentRequireActionConfirmation: boolean;
+      aiMentorObserveUsage: boolean;
+      aiMentorProactiveCheckpoints: boolean;
+    } = {
       emailNotifications: true,
       inAppNotifications: true,
       pushNotificationsEnabled: true,
@@ -4856,7 +4872,7 @@ export class DatabaseStorage implements IStorage {
       aiAgentRequireActionConfirmation: true,
       aiMentorObserveUsage: false,
       aiMentorProactiveCheckpoints: true,
-    } as const;
+    };
     const payload = {
       emailNotifications: settings.emailNotifications ?? existing?.emailNotifications ?? def.emailNotifications,
       inAppNotifications: settings.inAppNotifications ?? existing?.inAppNotifications ?? def.inAppNotifications,

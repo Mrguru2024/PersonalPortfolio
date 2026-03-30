@@ -214,9 +214,9 @@ export function AdminRemindersCard({
             {displayList.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-start gap-2 rounded-lg border p-3 bg-muted/30"
+                className="flex flex-col gap-2 rounded-lg border p-3 bg-muted/30 min-w-0"
               >
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 w-full">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-sm">{r.title}</span>
                     <Badge variant={priorityColor(r.priority)} className="text-xs">
@@ -232,7 +232,7 @@ export function AdminRemindersCard({
                     <p className="text-xs text-muted-foreground mt-0.5">{r.body}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto sm:shrink-0">
                   {r.actionUrl && (
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={r.actionUrl}>

@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAdminAudienceView, type AdminAudienceViewMode } from "@/contexts/AdminAudienceViewContext";
+import { Checkbox } from "@/components/ui/checkbox";
 import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
 import { resolveReadAloudTts, type AdminTtsConfigStored, type ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
 

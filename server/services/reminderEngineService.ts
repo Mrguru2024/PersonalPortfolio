@@ -240,6 +240,7 @@ export function buildReminderItems(
   editorial: EditorialOpportunity[],
 ): ReminderItem[] {
   const items: ReminderItem[] = [];
+  let sawEditorialPreset = false;
 
   for (const preset of presets) {
     if (!presetAppliesToRole(preset, userRole)) continue;
@@ -354,6 +355,7 @@ export function buildReminderItems(
         break;
       }
       case "content_planning_day": {
+        sawEditorialPreset = true;
         for (const e of editorial.filter((row) => row.reminderKey.startsWith("content_planning_"))) {
           items.push({
             reminderKey: e.reminderKey,
@@ -369,6 +371,7 @@ export function buildReminderItems(
         break;
       }
       case "editorial_holiday_window": {
+        sawEditorialPreset = true;
         for (const e of editorial.filter((row) => row.reminderKey.startsWith("editorial_holiday_"))) {
           items.push({
             reminderKey: e.reminderKey,
@@ -384,6 +387,7 @@ export function buildReminderItems(
         break;
       }
       case "editorial_local_event_window": {
+        sawEditorialPreset = true;
         for (const e of editorial.filter((row) => row.reminderKey.startsWith("editorial_local_"))) {
           items.push({
             reminderKey: e.reminderKey,
@@ -400,6 +404,23 @@ export function buildReminderItems(
       }
       default:
         break;
+    }
+  }
+
+  // Backward-compatibility: older databases may not have editorial presets seeded yet.
+  // In that case, still emit editorial reminders directly from admin targeting settings.
+  if (!sawEditorialPreset) {
+    for (const e of editorial) {
+      items.push({
+        reminderKey: e.reminderKey,
+        title: e.title,
+        body: e.body,
+        priority: "medium",
+        actionUrl: e.actionUrl,
+        relatedType: "editorial",
+        relatedId: null,
+        sourcePresetKey: "editorial_calendar",
+      });
     }
   }
 
