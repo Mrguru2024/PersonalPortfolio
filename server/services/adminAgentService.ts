@@ -159,8 +159,27 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
     action: { type: "open_behavior_intelligence", url: "/admin/behavior-intelligence" },
   },
   {
-    keywords: ["growth platform admin", "service agreements admin"],
+    keywords: [
+      "growth platform admin",
+      "service agreements admin",
+    ],
     action: { type: "open_growth_platform", url: "/admin/growth-platform" },
+  },
+  {
+    keywords: [
+      "service agreements",
+      "document signing workflow",
+      "document signing",
+      "agreement signing workflow",
+      "esign workflow",
+      "e-sign workflow",
+      "docusign workflow",
+      "agreement signing",
+      "docu sign",
+      "docusign",
+      "sign agreements",
+    ],
+    action: { type: "navigate", url: "/admin/growth-platform/agreements" },
   },
   { keywords: ["brand vault"], action: { type: "open_brand_vault", url: "/admin/brand-vault" } },
   { keywords: ["experiments admin"], action: { type: "open_experiments", url: "/admin/experiments" } },

@@ -1301,6 +1301,18 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex items-center gap-0.5">
           <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+            <Link href="/admin/growth-platform/agreements">
+              <FileCheck className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">Document signing</span>
+            </Link>
+          </Button>
+          <AdminHelpTip
+            content="Service agreement workflow: generate agreement pages, send DocuSign envelopes, export PDFs, and manage e-sign milestones."
+            ariaLabel="Help: Document signing workflow"
+          />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
             <Link href="/admin/challenge/leads">
               <span className="truncate">Challenge leads</span>
             </Link>
