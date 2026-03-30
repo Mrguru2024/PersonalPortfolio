@@ -340,6 +340,37 @@ export default function CrmPage() {
     reader.readAsDataURL(file);
   };
 
+  const filteredContacts = useMemo(() => {
+    let list = [...contacts];
+    if (searchQuery.trim()) {
+      list = list.filter((c) =>
+        matchesLiveSearch(searchQuery, [
+          c.name,
+          c.email,
+          c.company,
+          c.phone,
+          c.jobTitle,
+          c.industry,
+          c.source,
+          c.status,
+          ...(c.tags ?? []),
+        ]),
+      );
+    }
+    if (statusFilter) list = list.filter((c) => (c.status ?? "new") === statusFilter);
+    if (intentFilter) list = list.filter((c) => (c.intentLevel ?? "") === intentFilter);
+    if (sortBy === "newest")
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    else if (sortBy === "score")
+      list.sort((a, b) => (b.leadScore ?? 0) - (a.leadScore ?? 0));
+    else if (sortBy === "value")
+      list.sort((a, b) => (b.estimatedValue ?? 0) - (a.estimatedValue ?? 0));
+    else if (sortBy === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortBy === "status")
+      list.sort((a, b) => (a.status ?? "").localeCompare(b.status ?? ""));
+    return list;
+  }, [contacts, searchQuery, statusFilter, intentFilter, sortBy]);
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -411,37 +442,6 @@ export default function CrmPage() {
     stage,
     deals: deals.filter((d) => d.stage === stage),
   }));
-
-  const filteredContacts = useMemo(() => {
-    let list = [...contacts];
-    if (searchQuery.trim()) {
-      list = list.filter((c) =>
-        matchesLiveSearch(searchQuery, [
-          c.name,
-          c.email,
-          c.company,
-          c.phone,
-          c.jobTitle,
-          c.industry,
-          c.source,
-          c.status,
-          ...(c.tags ?? []),
-        ]),
-      );
-    }
-    if (statusFilter) list = list.filter((c) => (c.status ?? "new") === statusFilter);
-    if (intentFilter) list = list.filter((c) => (c.intentLevel ?? "") === intentFilter);
-    if (sortBy === "newest")
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    else if (sortBy === "score")
-      list.sort((a, b) => (b.leadScore ?? 0) - (a.leadScore ?? 0));
-    else if (sortBy === "value")
-      list.sort((a, b) => (b.estimatedValue ?? 0) - (a.estimatedValue ?? 0));
-    else if (sortBy === "name") list.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sortBy === "status")
-      list.sort((a, b) => (a.status ?? "").localeCompare(b.status ?? ""));
-    return list;
-  }, [contacts, searchQuery, statusFilter, intentFilter, sortBy]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
