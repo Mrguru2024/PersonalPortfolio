@@ -339,7 +339,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6 pb-16">
+    <div className="mx-auto max-w-4xl space-y-6 px-3 pb-16 pt-4 fold:px-4 sm:space-y-8 sm:p-6 sm:pb-16">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/admin/growth-platform">
@@ -352,7 +352,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
         </Button>
       </div>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Service agreements</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Service agreements</h1>
         <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
           Document signing engine for contracts and agreements with client DocuSign delivery, reusable signature fields, and
           admin-side signing controls.
@@ -451,7 +451,12 @@ export default function AdminGrowthPlatformAgreementsPage() {
             </div>
           </div>
           <div className="sm:col-span-2">
-            <Button type="button" onClick={() => createMut.mutate()} disabled={createMut.isPending || !clientName || !clientEmail}>
+            <Button
+              type="button"
+              className="w-full fold:w-auto"
+              onClick={() => createMut.mutate()}
+              disabled={createMut.isPending || !clientName || !clientEmail}
+            >
               {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create & mark sent"}
             </Button>
           </div>
@@ -491,6 +496,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
           </div>
           <Button
             type="button"
+            className="w-full fold:w-auto"
             disabled={retainerMut.isPending || !retainerEmail.trim()}
             onClick={() => retainerMut.mutate()}
           >
@@ -512,7 +518,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
                     {r.agreementId ? ` · agreement #${r.agreementId}` : ""} · {r.status} · ${(r.amountCents / 100).toFixed(2)}/
                     {r.interval}
                   </span>
-                  <span className="text-muted-foreground font-mono">{r.stripeSubscriptionId}</span>
+                  <span className="text-muted-foreground font-mono break-all">{r.stripeSubscriptionId}</span>
                 </li>
               ))}
             </ul>
@@ -536,18 +542,18 @@ export default function AdminGrowthPlatformAgreementsPage() {
                 const documentTypeLabel = DOCUMENT_TYPE_LABELS[getAgreementDocumentType(a)];
                 const adminAudit = getAdminSignatureAudit(a);
                 return (
-                  <li key={a.id} className="rounded-lg border p-3 space-y-3">
+                  <li key={a.id} className="min-w-0 rounded-lg border p-3 space-y-3">
                     <div className="flex flex-wrap justify-between gap-2">
-                      <span className="font-medium">
+                      <span className="font-medium break-words">
                         #{a.id} — {documentTypeLabel} · {a.clientName} · {a.clientEmail}
                       </span>
                       <BadgeInline status={a.status} />
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground break-words">
                       Signing fields: {SIGNATURE_FIELDS_BY_ROLE.client.map((f) => f.label).join(", ")}
                     </p>
                     {(a.docusignEnvelopeId || a.pdfGeneratedAt || a.docusignStatus) ?
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground break-all">
                         {a.docusignEnvelopeId ? `DocuSign: ${a.docusignEnvelopeId} (${a.docusignStatus ?? "—"})` : null}
                         {a.pdfGeneratedAt ?
                           `${a.docusignEnvelopeId ? " · " : ""}PDF at ${String(a.pdfGeneratedAt).slice(0, 19)}`
@@ -555,13 +561,13 @@ export default function AdminGrowthPlatformAgreementsPage() {
                       </p>
                     : null}
                     {adminAudit ?
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground break-words">
                         Admin signed by {adminAudit.legalName ?? "unknown"}
                         {adminAudit.signedAt ? ` · ${new Date(adminAudit.signedAt).toLocaleString()}` : ""}
                       </p>
                     : null}
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" className="w-full fold:w-auto justify-center" asChild>
                         <Link href={`/agreements/${a.publicToken}`} target="_blank" rel="noreferrer">
                           Open sign page
                           <ExternalLink className="h-3 w-3 ml-1" />
@@ -570,22 +576,36 @@ export default function AdminGrowthPlatformAgreementsPage() {
                       <Button
                         variant="secondary"
                         size="sm"
+                        className="w-full fold:w-auto justify-center"
                         type="button"
                         onClick={() => navigator.clipboard.writeText(`${window.location.origin}/agreements/${a.publicToken}`)}
                       >
                         Copy link
                       </Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => downloadAgreementPdf(a.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full fold:w-auto justify-center"
+                        type="button"
+                        onClick={() => downloadAgreementPdf(a.id)}
+                      >
                         <FileDown className="h-3 w-3 mr-1" />
                         PDF
                       </Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => openAdminSignDialog(a.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full fold:w-auto justify-center"
+                        type="button"
+                        onClick={() => openAdminSignDialog(a.id)}
+                      >
                         <PenLine className="h-3 w-3 mr-1" />
                         Admin sign
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="w-full fold:w-auto justify-center"
                         type="button"
                         onClick={() => sendDocuSign(a.id)}
                         disabled={!!a.docusignEnvelopeId}
@@ -597,8 +617,8 @@ export default function AdminGrowthPlatformAgreementsPage() {
                     {b.milestones.length > 0 ?
                       <ul className="space-y-1 border-t pt-2 text-xs">
                         {b.milestones.map((m) => (
-                          <li key={m.id} className="flex flex-wrap items-center justify-between gap-2">
-                            <span>
+                          <li key={m.id} className="flex flex-col gap-2 fold:flex-row fold:items-center fold:justify-between">
+                            <span className="break-words">
                               #{m.id} — {m.label} · ${(m.amountCents / 100).toFixed(2)} · {m.status}
                               {m.stripeInvoiceId ? ` · ${m.stripeInvoiceId}` : ""}
                             </span>
@@ -607,7 +627,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-7"
+                                className="h-7 w-full fold:w-auto"
                                 onClick={() => issueStripe(a.id, m.id)}
                                 disabled={!!m.stripeInvoiceId}
                               >
@@ -633,7 +653,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
           if (!open) resetAdminSignDialog();
         }}
       >
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1rem)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Admin signature fields</DialogTitle>
             <DialogDescription>
@@ -657,7 +677,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
                 checked={adminSignAcceptTerms}
                 onCheckedChange={(checked) => setAdminSignAcceptTerms(checked === true)}
               />
-              <Label htmlFor="admin-sign-terms" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="admin-sign-terms" className="text-sm font-normal cursor-pointer break-words">
                 {SIGNATURE_FIELDS_BY_ROLE.admin.find((field) => field.key === "acceptTerms")?.label}
               </Label>
             </div>
@@ -667,7 +687,7 @@ export default function AdminGrowthPlatformAgreementsPage() {
                 checked={adminSignAcceptEngagement}
                 onCheckedChange={(checked) => setAdminSignAcceptEngagement(checked === true)}
               />
-              <Label htmlFor="admin-sign-engagement" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="admin-sign-engagement" className="text-sm font-normal cursor-pointer break-words">
                 {SIGNATURE_FIELDS_BY_ROLE.admin.find((field) => field.key === "acceptEngagement")?.label}
               </Label>
             </div>

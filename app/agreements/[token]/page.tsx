@@ -104,7 +104,7 @@ export default function AgreementSignPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <AscendraBehaviorMount />
-      <div className="container max-w-3xl mx-auto px-4 py-10 space-y-6">
+      <div className="container max-w-3xl mx-auto px-3 py-6 space-y-5 fold:px-4 fold:py-8 sm:py-10 sm:space-y-6">
         <div className="flex flex-wrap gap-3 text-sm">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/">Home</Link>
@@ -133,7 +133,9 @@ export default function AgreementSignPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>{DOCUMENT_TYPE_LABELS[data.documentType ?? "agreement"]} for {data.clientName}</CardTitle>
+                <CardTitle className="break-words text-lg sm:text-xl">
+                  {DOCUMENT_TYPE_LABELS[data.documentType ?? "agreement"]} for {data.clientName}
+                </CardTitle>
                 <CardDescription>
                   Review the generated summary below. Electronic signature records your typed legal name, optional drawn
                   signature, consent checkboxes, and a server audit digest (not a third-party e-sign vendor).
@@ -141,7 +143,7 @@ export default function AgreementSignPage() {
               </CardHeader>
               <CardContent>
                 <div
-                  className="rounded-lg border bg-card p-4 max-h-[60vh] overflow-y-auto"
+                  className="rounded-lg border bg-card p-3 fold:p-4 max-h-[60vh] overflow-y-auto"
                   dangerouslySetInnerHTML={{ __html: data.htmlBody }}
                 />
               </CardContent>
@@ -156,8 +158,8 @@ export default function AgreementSignPage() {
                 <CardContent>
                   <ul className="text-sm space-y-2">
                     {data.milestones.map((m) => (
-                      <li key={m.id} className="flex justify-between gap-2 border-b border-border/60 pb-2">
-                        <span>{m.label}</span>
+                      <li key={m.id} className="flex flex-col gap-1 border-b border-border/60 pb-2 fold:flex-row fold:justify-between fold:gap-2">
+                        <span className="break-words">{m.label}</span>
                         <span className="tabular-nums">
                           ${(m.amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })} — {m.status}
                         </span>
@@ -207,7 +209,7 @@ export default function AgreementSignPage() {
                         checked={acceptTerms}
                         onCheckedChange={(v) => setAcceptTerms(v === true)}
                       />
-                      <Label htmlFor="terms" className="text-sm font-normal leading-snug cursor-pointer">
+                      <Label htmlFor="terms" className="text-sm font-normal leading-snug cursor-pointer break-words">
                         {termsLabel}{" "}
                         <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
                           (open terms)
@@ -220,7 +222,7 @@ export default function AgreementSignPage() {
                         checked={acceptEngagement}
                         onCheckedChange={(v) => setAcceptEngagement(v === true)}
                       />
-                      <Label htmlFor="eng" className="text-sm font-normal leading-snug cursor-pointer">
+                      <Label htmlFor="eng" className="text-sm font-normal leading-snug cursor-pointer break-words">
                         {engagementLabel}{" "}
                         <Link
                           href="/service-engagement"
@@ -234,7 +236,7 @@ export default function AgreementSignPage() {
                     {error ?
                       <p className="text-sm text-destructive">{error}</p>
                     : null}
-                    <Button type="submit" disabled={submitting}>
+                    <Button type="submit" className="w-full fold:w-auto" disabled={submitting}>
                       {submitting ?
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
