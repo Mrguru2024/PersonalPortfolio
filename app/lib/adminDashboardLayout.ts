@@ -5,6 +5,7 @@
 
 export const ADMIN_DASHBOARD_SECTION_IDS = [
   "suggested",
+  "missions",
   "reminders",
   "summary",
   "inbox",
@@ -18,6 +19,7 @@ export type AdminDashboardSectionId = (typeof ADMIN_DASHBOARD_SECTION_IDS)[numbe
 
 export const ADMIN_DASHBOARD_SECTION_LABELS: Record<AdminDashboardSectionId, string> = {
   suggested: "Suggested for you",
+  missions: "Ascendra OS missions",
   reminders: "Reminders",
   summary: "Summary cards (counts)",
   inbox: "Inbox (assessments & contacts)",

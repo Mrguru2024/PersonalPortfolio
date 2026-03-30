@@ -83,6 +83,7 @@ import { AdminGuideTour } from "@/components/admin/AdminGuideTour";
 import { AdminDailyNudge, buildNudgeItems } from "@/components/admin/AdminDailyNudge";
 import { AdminOperatorIntelligenceCard } from "@/components/admin/AdminOperatorIntelligenceCard";
 import { AdminRemindersCard } from "@/components/admin/AdminRemindersCard";
+import { AdminGamificationPanel } from "@/components/admin/AdminGamificationPanel";
 import {
   getTourCompleted,
   setTourCompleted,
@@ -912,8 +913,16 @@ export default function AdminDashboardPage() {
             </div>
           ),
         )}
+      {sectionShell(
+        "missions",
+        () => (
+          <div className="mb-4">
+            <AdminGamificationPanel userId={Number(user.id) || 0} items={nudgeItems} />
+          </div>
+        ),
+      )}
         {sectionShell(
-          "reminders",
+        "reminders",
           () => (
             <div className="mb-4">
               <AdminRemindersCard compact maxItems={5} showGenerate />
