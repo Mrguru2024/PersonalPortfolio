@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { ADMIN_SETTINGS_DEFAULTS, toAdminSettingsApiPayload } from "@/lib/adminSettingsResponse";
+import { sanitizeAdminTtsConfigPatch } from "@shared/readAloudTtsConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,19 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    if (Object.keys(notificationUpdates).length === 0 && mergedLayouts === undefined) {
+    let ttsPatch: ReturnType<typeof sanitizeAdminTtsConfigPatch> = undefined;
+    if (body.ttsConfig !== undefined) {
+      ttsPatch = sanitizeAdminTtsConfigPatch(body.ttsConfig);
+      if (ttsPatch === undefined) {
+        return NextResponse.json({ error: "Invalid ttsConfig" }, { status: 400 });
+      }
+    }
+
+    if (
+      Object.keys(notificationUpdates).length === 0 &&
+      mergedLayouts === undefined &&
+      ttsPatch === undefined
+    ) {
       const current = await storage.getAdminSettings(userId);
       return NextResponse.json(toAdminSettingsApiPayload(current));
     }
@@ -96,6 +109,7 @@ export async function PATCH(req: NextRequest) {
     const updated = await storage.upsertAdminSettings(userId, {
       ...(notificationUpdates as Record<string, unknown>),
       ...(mergedLayouts !== undefined ? { adminUiLayouts: mergedLayouts } : {}),
+      ...(ttsPatch !== undefined ? { ttsConfig: ttsPatch } : {}),
     } as Parameters<typeof storage.upsertAdminSettings>[1]);
 
     return NextResponse.json(toAdminSettingsApiPayload(updated));

@@ -3,6 +3,7 @@
  */
 
 import { GEMINI_TTS_PREBUILT_PAIRS } from "@shared/readAloudGeminiVoices";
+import { OPENAI_TTS_VOICE_META } from "@shared/readAloudTtsBuiltins";
 
 export type ReadAloudEngine = "browser" | "openai" | "gemini";
 
@@ -63,19 +64,8 @@ export const READING_STYLE_META: Record<
   },
 };
 
-/** OpenAI speech voices (https://platform.openai.com/docs/guides/text-to-speech) */
-export const OPENAI_TTS_VOICES: { id: string; label: string; hint: string }[] = [
-  { id: "nova", label: "Nova", hint: "Warm, conversational" },
-  { id: "shimmer", label: "Shimmer", hint: "Clear, upbeat" },
-  { id: "alloy", label: "Alloy", hint: "Neutral" },
-  { id: "ash", label: "Ash", hint: "Soft" },
-  { id: "coral", label: "Coral", hint: "Friendly" },
-  { id: "echo", label: "Echo", hint: "Male, warm" },
-  { id: "fable", label: "Fable", hint: "British, expressive" },
-  { id: "onyx", label: "Onyx", hint: "Deep, firm" },
-  { id: "sage", label: "Sage", hint: "Measured" },
-  { id: "ballad", label: "Ballad", hint: "Warm narrative" },
-];
+/** OpenAI speech voices (https://platform.openai.com/docs/guides/text-to-speech) — built-ins; UI may append server extras. */
+export const OPENAI_TTS_VOICES: { id: string; label: string; hint: string }[] = [...OPENAI_TTS_VOICE_META];
 
 export function loadReadAloudPrefs(): ReadAloudPreferences {
   if (typeof window === "undefined") return { ...DEFAULT_READ_ALOUD_PREFS };

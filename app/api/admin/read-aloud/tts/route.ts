@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth-helpers";
+import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
+import {
+  isAllowedGeminiVoice,
+  isAllowedOpenAiVoice,
+  resolveReadAloudTts,
+} from "@shared/readAloudTtsConfig";
 import { synthesizeGeminiReadAloud } from "@server/services/geminiReadAloudTts";
+import { getReadAloudTtsEnvDefaults } from "@server/services/readAloudTtsEnvDefaults";
+import { storage } from "@server/storage";
 
 export const dynamic = "force-dynamic";
 
 const MAX_CHARS = 4096;
-
-const OPENAI_VOICES = new Set([
-  "alloy",
-  "ash",
-  "ballad",
-  "coral",
-  "echo",
-  "fable",
-  "nova",
-  "onyx",
-  "sage",
-  "shimmer",
-]);
 
 const READING_STYLES = new Set(["natural", "calm", "clear", "expressive"]);
 
@@ -57,12 +51,21 @@ export async function POST(req: NextRequest) {
   const readingStyleRaw = typeof body.readingStyle === "string" ? body.readingStyle.trim() : "natural";
   const readingStyle = READING_STYLES.has(readingStyleRaw) ? readingStyleRaw : "natural";
 
+  const user = await getSessionUser(req);
+  const userId = user?.id != null ? Number(user.id) : null;
+  const adminRow = userId != null ? await storage.getAdminSettings(userId) : undefined;
+  const storedTts = adminRow?.ttsConfig ?? null;
+  const resolved = resolveReadAloudTts(storedTts, getReadAloudTtsEnvDefaults());
+
   if (provider === "gemini") {
-    const voiceName = typeof body.voice === "string" ? body.voice.trim() : "Kore";
+    const rawVoice = typeof body.voice === "string" ? body.voice.trim() : "Kore";
+    const voiceName = isAllowedGeminiVoice(rawVoice, storedTts) ? rawVoice : "Kore";
     const result = await synthesizeGeminiReadAloud({
       text: clipped,
       voiceName,
       readingStyle,
+      model: resolved.gemini.model,
+      allowedGeminiVoices: new Set(resolved.gemini.voices.map((v) => v.id)),
     });
     if (!result.ok) {
       return NextResponse.json(
@@ -85,8 +88,8 @@ export async function POST(req: NextRequest) {
   }
 
   const voiceRaw = typeof body.voice === "string" ? body.voice.toLowerCase().trim() : "nova";
-  const voice = OPENAI_VOICES.has(voiceRaw) ? voiceRaw : "nova";
-  const model = process.env.OPENAI_READ_ALOUD_MODEL?.trim() || "tts-1";
+  const voice = isAllowedOpenAiVoice(voiceRaw, storedTts) ? voiceRaw : "nova";
+  const model = resolved.openai.model;
 
   try {
     const res = await fetch("https://api.openai.com/v1/audio/speech", {

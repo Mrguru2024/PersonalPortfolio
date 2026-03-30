@@ -4873,6 +4873,7 @@ export class DatabaseStorage implements IStorage {
         def.aiMentorProactiveCheckpoints,
       adminUiLayouts:
         settings.adminUiLayouts !== undefined ? settings.adminUiLayouts : existing?.adminUiLayouts ?? null,
+      ttsConfig: settings.ttsConfig !== undefined ? settings.ttsConfig : existing?.ttsConfig ?? null,
       updatedAt: now,
     };
     if (existing) {

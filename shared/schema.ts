@@ -1,3 +1,4 @@
+import type { AdminTtsConfigStored } from "./readAloudTtsConfig";
 import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -665,6 +666,11 @@ export const adminSettings = pgTable("admin_settings", {
    * Keys: `main` (/admin/dashboard), `crm` (/admin/crm/dashboard). Shape: { [surface]: { order: string[], hidden: string[] } }
    */
   adminUiLayouts: json("admin_ui_layouts").$type<Record<string, { order: string[]; hidden: string[] }> | null>(),
+  /**
+   * Optional neural read-aloud (TTS) overrides: models + extra voice ids for OpenAI / Gemini.
+   * Null = use environment defaults and built-in voice lists only.
+   */
+  ttsConfig: json("tts_config").$type<AdminTtsConfigStored | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

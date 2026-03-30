@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
 import {
   DEFAULT_READ_ALOUD_PREFS,
   loadReadAloudPrefs,
@@ -61,6 +62,7 @@ export function ReadAloudButton({
   const [prefsReady, setPrefsReady] = useState(false);
   const [openaiTts, setOpenaiTts] = useState(false);
   const [geminiTts, setGeminiTts] = useState(false);
+  const [ttsResolved, setTtsResolved] = useState<ResolvedReadAloudTts | null>(null);
   const [neuralStatusLoaded, setNeuralStatusLoaded] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -92,10 +94,15 @@ export function ReadAloudButton({
       try {
         const res = await fetch("/api/admin/read-aloud/status", { credentials: "include" });
         if (!res.ok) return;
-        const data = (await res.json()) as { openaiTts?: boolean; geminiTts?: boolean };
+        const data = (await res.json()) as {
+          openaiTts?: boolean;
+          geminiTts?: boolean;
+          resolved?: ResolvedReadAloudTts;
+        };
         if (!cancelled) {
           setOpenaiTts(data.openaiTts === true);
           setGeminiTts(data.geminiTts === true);
+          if (data.resolved) setTtsResolved(data.resolved);
           setNeuralStatusLoaded(true);
         }
       } catch {
@@ -107,6 +114,29 @@ export function ReadAloudButton({
       cancelled = true;
     };
   }, []);
+
+  const openAiVoicesForPicker = ttsResolved?.openai.voices ?? OPENAI_TTS_VOICES;
+  const geminiVoicesForPicker = ttsResolved?.gemini.voices ?? GEMINI_TTS_VOICES;
+
+  useEffect(() => {
+    if (!ttsResolved) return;
+    const oa = ttsResolved.openai.voices;
+    const gm = ttsResolved.gemini.voices;
+    setPrefs((prev) => {
+      let next = { ...prev };
+      let changed = false;
+      if (!oa.some((v) => v.id === prev.openaiVoice)) {
+        next.openaiVoice = oa[0]?.id ?? DEFAULT_READ_ALOUD_PREFS.openaiVoice;
+        changed = true;
+      }
+      if (!gm.some((v) => v.id === prev.geminiVoice)) {
+        next.geminiVoice = gm[0]?.id ?? DEFAULT_READ_ALOUD_PREFS.geminiVoice;
+        changed = true;
+      }
+      if (changed) saveReadAloudPrefs(next);
+      return changed ? next : prev;
+    });
+  }, [ttsResolved]);
 
   const updatePrefs = useCallback((patch: Partial<ReadAloudPreferences>) => {
     setPrefs((prev) => {
@@ -300,7 +330,9 @@ export function ReadAloudButton({
               ? "Stop reading"
               : prefs.engine === "openai"
                 ? "Play natural-voice read-aloud (OpenAI)"
-                : "Read this text aloud"
+                : prefs.engine === "gemini"
+                  ? "Play natural-voice read-aloud (Gemini)"
+                  : "Read this text aloud"
         }
       >
         {speaking ? <Square className="h-3.5 w-3.5 fill-current" aria-hidden /> : <Volume2 className="h-4 w-4" aria-hidden />}
@@ -353,6 +385,22 @@ export function ReadAloudButton({
                       {openaiTts
                         ? "Human-like neural audio via your server (uses API quota)."
                         : "Requires OPENAI_API_KEY on the server."}
+                    </p>
+                  </div>
+                </label>
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2 rounded-md border border-border/80 p-2.5 text-sm hover:bg-muted/40",
+                    !geminiTts && "opacity-60",
+                  )}
+                >
+                  <RadioGroupItem value="gemini" id="ra-gemini" disabled={!geminiTts} className="mt-0.5" />
+                  <div>
+                    <span className="font-medium">Natural voice (Gemini)</span>
+                    <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+                      {geminiTts
+                        ? "Preview TTS via your server (WAV). Voices follow Admin settings → Read-aloud."
+                        : "Requires GEMINI_API_KEY on the server."}
                     </p>
                   </div>
                 </label>
@@ -420,8 +468,8 @@ export function ReadAloudButton({
                   <SelectTrigger id="ra-oai-voice" className="h-9">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {OPENAI_TTS_VOICES.map((v) => (
+                  <SelectContent className="max-h-[min(280px,var(--radix-select-content-available-height))]">
+                    {openAiVoicesForPicker.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.label} — {v.hint}
                       </SelectItem>
@@ -429,7 +477,7 @@ export function ReadAloudButton({
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
+            ) : prefs.engine === "gemini" ? (
               <>
                 <div className="space-y-1.5">
                   <Label htmlFor="ra-gem-style" className="text-xs">
@@ -460,7 +508,7 @@ export function ReadAloudButton({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-[min(280px,var(--radix-select-content-available-height))]">
-                      {GEMINI_TTS_VOICES.map((v) => (
+                      {geminiVoicesForPicker.map((v) => (
                         <SelectItem key={v.id} value={v.id}>
                           {v.label} — {v.hint}
                         </SelectItem>
@@ -469,7 +517,7 @@ export function ReadAloudButton({
                   </Select>
                 </div>
               </>
-            )}
+            ) : null}
 
             {lastError ? <p className="text-xs text-destructive">{lastError}</p> : null}
             {!prefsReady ? <p className="text-xs text-muted-foreground">Loading preferences…</p> : null}

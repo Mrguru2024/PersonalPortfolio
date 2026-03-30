@@ -2,10 +2,23 @@
 
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Smartphone, Clock, Shield, Bot, Loader2, Mail, Globe2, Eye } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  Smartphone,
+  Clock,
+  Shield,
+  Bot,
+  Loader2,
+  Mail,
+  Globe2,
+  Eye,
+  Volume2,
+  ChevronDown,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,11 +31,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FieldHint } from "@/lib/field-hint";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAdminAudienceView, type AdminAudienceViewMode } from "@/contexts/AdminAudienceViewContext";
+import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
+import { resolveReadAloudTts, type AdminTtsConfigStored, type ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
 
 interface AscendraOsPlatformPayload {
   publicAccessEnabled: boolean;
@@ -44,7 +64,62 @@ interface AdminSettingsPayload {
   aiMentorProactiveCheckpoints: boolean;
   /** Optional — layout prefs for admin dashboards (main, CRM). */
   adminUiLayouts?: Record<string, { order: string[]; hidden: string[] }> | null;
+  /** Neural read-aloud overrides; null = env defaults + built-in voice lists only. */
+  ttsConfig?: AdminTtsConfigStored | null;
 }
+
+type TtsFormDraft = {
+  openaiModel: string;
+  geminiModel: string;
+  openaiVoicesExtra: string;
+  geminiVoicesExtra: string;
+};
+
+const EMPTY_TTS_DRAFT: TtsFormDraft = {
+  openaiModel: "",
+  geminiModel: "",
+  openaiVoicesExtra: "",
+  geminiVoicesExtra: "",
+};
+
+function splitVoiceList(s: string): string[] {
+  return [...new Set(s.split(/[,;\n]+/).map((x) => x.trim()).filter(Boolean))];
+}
+
+function ttsConfigFromDraft(d: TtsFormDraft): AdminTtsConfigStored {
+  return {
+    openaiModel: d.openaiModel.trim() || null,
+    geminiModel: d.geminiModel.trim() || null,
+    openaiVoicesExtra: splitVoiceList(d.openaiVoicesExtra),
+    geminiVoicesExtra: splitVoiceList(d.geminiVoicesExtra),
+  };
+}
+
+function normalizedTtsSnapshot(c: AdminTtsConfigStored | null | undefined): AdminTtsConfigStored {
+  if (!c) {
+    return { openaiModel: null, geminiModel: null, openaiVoicesExtra: [], geminiVoicesExtra: [] };
+  }
+  return {
+    openaiModel: c.openaiModel,
+    geminiModel: c.geminiModel,
+    openaiVoicesExtra: [...c.openaiVoicesExtra].sort(),
+    geminiVoicesExtra: [...c.geminiVoicesExtra].sort(),
+  };
+}
+
+function isTtsDraftDirty(draft: TtsFormDraft, saved: AdminTtsConfigStored | null | undefined): boolean {
+  return (
+    JSON.stringify(normalizedTtsSnapshot(saved ?? null)) !==
+    JSON.stringify(normalizedTtsSnapshot(ttsConfigFromDraft(draft)))
+  );
+}
+
+type ReadAloudStatusPayload = {
+  openaiTts?: boolean;
+  geminiTts?: boolean;
+  envDefaults?: { openaiModel: string; geminiModel: string };
+  resolved?: ResolvedReadAloudTts;
+};
 
 const DEFAULT_SETTINGS: AdminSettingsPayload = {
   emailNotifications: true,
@@ -66,6 +141,7 @@ export default function AdminSettingsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [local, setLocal] = useState<AdminSettingsPayload>(DEFAULT_SETTINGS);
+  const [ttsDraft, setTtsDraft] = useState<TtsFormDraft>(EMPTY_TTS_DRAFT);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -80,6 +156,16 @@ export default function AdminSettingsPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/settings");
       if (!res.ok) throw new Error("Failed to load settings");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const { data: ttsStatus, isLoading: ttsStatusLoading } = useQuery<ReadAloudStatusPayload>({
+    queryKey: ["/api/admin/read-aloud/status"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/read-aloud/status");
+      if (!res.ok) throw new Error("Failed to load read-aloud status");
       return res.json();
     },
     enabled: !!user?.isAdmin && !!user?.adminApproved,
@@ -114,8 +200,22 @@ export default function AdminSettingsPage() {
     if (settings) setLocal(settings);
   }, [settings]);
 
+  useEffect(() => {
+    const c = settings?.ttsConfig;
+    if (!c) {
+      setTtsDraft(EMPTY_TTS_DRAFT);
+      return;
+    }
+    setTtsDraft({
+      openaiModel: c.openaiModel ?? "",
+      geminiModel: c.geminiModel ?? "",
+      openaiVoicesExtra: (c.openaiVoicesExtra ?? []).join(", "),
+      geminiVoicesExtra: (c.geminiVoicesExtra ?? []).join(", "),
+    });
+  }, [settings?.ttsConfig]);
+
   const patchMutation = useMutation({
-    mutationFn: async (updates: Partial<AdminSettingsPayload>) => {
+    mutationFn: async (updates: Partial<AdminSettingsPayload> & { ttsConfig?: AdminTtsConfigStored | null }) => {
       const res = await apiRequest("PATCH", "/api/admin/settings", updates);
       if (!res.ok) throw new Error("Failed to update");
       return res.json() as Promise<AdminSettingsPayload>;
@@ -123,6 +223,7 @@ export default function AdminSettingsPage() {
     onSuccess: (data) => {
       setLocal(data);
       queryClient.setQueryData(["/api/admin/settings"], data);
+      void queryClient.invalidateQueries({ queryKey: ["/api/admin/read-aloud/status"] });
       toast({ title: "Settings saved" });
     },
     onError: () => {
@@ -135,6 +236,78 @@ export default function AdminSettingsPage() {
     setLocal(next);
     patchMutation.mutate({ [key]: value });
   };
+
+  const ttsDirty = useMemo(
+    () => isTtsDraftDirty(ttsDraft, settings?.ttsConfig),
+    [ttsDraft, settings?.ttsConfig],
+  );
+
+  const effectivePreview = useMemo(() => {
+    const env = ttsStatus?.envDefaults;
+    if (!env) return null;
+    if (ttsDirty) {
+      return resolveReadAloudTts(ttsConfigFromDraft(ttsDraft), env);
+    }
+    return ttsStatus?.resolved ?? null;
+  }, [ttsStatus, ttsDirty, ttsDraft]);
+
+  const openAiPresetValue = useMemo(() => {
+    const m = ttsDraft.openaiModel.trim();
+    if (!m) return "__env__";
+    if (m === "tts-1") return "tts-1";
+    if (m === "tts-1-hd") return "tts-1-hd";
+    return "__custom__";
+  }, [ttsDraft.openaiModel]);
+
+  const geminiPresetValue = useMemo(() => {
+    const m = ttsDraft.geminiModel.trim();
+    if (!m) return "__env__";
+    if (m === GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT) return "__default_flash__";
+    return "__custom__";
+  }, [ttsDraft.geminiModel]);
+
+  const setOpenAiPreset = (v: string) => {
+    if (v === "__env__") setTtsDraft((d) => ({ ...d, openaiModel: "" }));
+    else if (v === "tts-1") setTtsDraft((d) => ({ ...d, openaiModel: "tts-1" }));
+    else if (v === "tts-1-hd") setTtsDraft((d) => ({ ...d, openaiModel: "tts-1-hd" }));
+    else
+      setTtsDraft((d) => {
+        const cur = d.openaiModel.trim();
+        const wasPreset = !cur || cur === "tts-1" || cur === "tts-1-hd";
+        return { ...d, openaiModel: wasPreset ? "" : d.openaiModel };
+      });
+  };
+
+  const setGeminiPreset = (v: string) => {
+    if (v === "__env__") setTtsDraft((d) => ({ ...d, geminiModel: "" }));
+    else if (v === "__default_flash__")
+      setTtsDraft((d) => ({ ...d, geminiModel: GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT }));
+    else
+      setTtsDraft((d) => {
+        const cur = d.geminiModel.trim();
+        const wasPreset = !cur || cur === GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT;
+        return { ...d, geminiModel: wasPreset ? "" : d.geminiModel };
+      });
+  };
+
+  const discardTtsDraft = () => {
+    const c = settings?.ttsConfig;
+    if (!c) setTtsDraft(EMPTY_TTS_DRAFT);
+    else
+      setTtsDraft({
+        openaiModel: c.openaiModel ?? "",
+        geminiModel: c.geminiModel ?? "",
+        openaiVoicesExtra: (c.openaiVoicesExtra ?? []).join(", "),
+        geminiVoicesExtra: (c.geminiVoicesExtra ?? []).join(", "),
+      });
+  };
+
+  const saveTtsDraft = () => {
+    patchMutation.mutate({ ttsConfig: ttsConfigFromDraft(ttsDraft) });
+  };
+
+  const openAiExtrasParsed = useMemo(() => splitVoiceList(ttsDraft.openaiVoicesExtra), [ttsDraft.openaiVoicesExtra]);
+  const geminiExtrasParsed = useMemo(() => splitVoiceList(ttsDraft.geminiVoicesExtra), [ttsDraft.geminiVoicesExtra]);
 
   if (authLoading || !user?.isAdmin || !user?.adminApproved) {
     return null;
@@ -293,6 +466,270 @@ export default function AdminSettingsPage() {
                 )}
               </>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6 border-muted">
+          <CardHeader className="py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Volume2 className="h-5 w-5" />
+              Read-aloud (neural TTS)
+            </CardTitle>
+            <CardDescription>
+              Controls the <strong>Listen</strong> button on admin pages (OpenAI and Gemini neural voices). Pick a
+              preset below or open <strong>More options</strong> to add new voice names when the providers ship updates.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 pb-4 space-y-5 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Server:</span>
+              {ttsStatusLoading ? (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Checking…
+                </span>
+              ) : (
+                <>
+                  <Badge variant={ttsStatus?.openaiTts ? "default" : "secondary"} className="font-normal">
+                    OpenAI {ttsStatus?.openaiTts ? "ready" : "not configured"}
+                  </Badge>
+                  <Badge variant={ttsStatus?.geminiTts ? "default" : "secondary"} className="font-normal">
+                    Gemini {ttsStatus?.geminiTts ? "ready" : "not configured"}
+                  </Badge>
+                </>
+              )}
+            </div>
+
+            {effectivePreview ? (
+              <div
+                className={cn(
+                  "rounded-lg border p-3 text-xs space-y-1.5",
+                  ttsDirty
+                    ? "border-amber-500/40 bg-amber-500/5 text-foreground"
+                    : "border-border/80 bg-muted/40 text-muted-foreground",
+                )}
+              >
+                {ttsDirty ? (
+                  <p className="font-medium text-amber-950 dark:text-amber-100">Preview (save to apply)</p>
+                ) : (
+                  <p className="font-medium text-foreground">Effective for your account</p>
+                )}
+                <p>
+                  <span className="text-muted-foreground">OpenAI model:</span>{" "}
+                  <code className="text-[11px] bg-background/80 px-1 rounded">{effectivePreview.openai.model}</code>
+                  {" · "}
+                  <span className="text-muted-foreground">
+                    {effectivePreview.openai.voices.length} voices in picker
+                    {openAiExtrasParsed.length > 0
+                      ? ` (${openAiExtrasParsed.length} custom id${openAiExtrasParsed.length === 1 ? "" : "s"} below)`
+                      : ""}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Gemini model:</span>{" "}
+                  <code className="text-[11px] bg-background/80 px-1 rounded">{effectivePreview.gemini.model}</code>
+                  {" · "}
+                  <span className="text-muted-foreground">
+                    {effectivePreview.gemini.voices.length} voices in picker
+                    {geminiExtrasParsed.length > 0
+                      ? ` (${geminiExtrasParsed.length} custom name${geminiExtrasParsed.length === 1 ? "" : "s"} below)`
+                      : ""}
+                  </span>
+                </p>
+              </div>
+            ) : null}
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-3 rounded-lg border border-border/70 bg-background/50 p-3 dark:bg-background/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">OpenAI</p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tts-oai-preset">Speech model</Label>
+                  <Select value={openAiPresetValue} onValueChange={setOpenAiPreset} disabled={saving}>
+                    <SelectTrigger id="tts-oai-preset" className="h-9">
+                      <SelectValue placeholder="Choose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__env__">Same as server env (or tts-1)</SelectItem>
+                      <SelectItem value="tts-1">Standard — tts-1</SelectItem>
+                      <SelectItem value="tts-1-hd">Higher quality — tts-1-hd</SelectItem>
+                      <SelectItem value="__custom__">Custom model id…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldHint>Uses OPENAI_READ_ALOUD_MODEL on the server when you pick “Same as server env”.</FieldHint>
+                </div>
+                {openAiPresetValue === "__custom__" ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tts-oai-custom">Custom OpenAI model id</Label>
+                    <Input
+                      id="tts-oai-custom"
+                      className="h-9 font-mono text-xs"
+                      placeholder="e.g. gpt-4o-mini-tts"
+                      value={ttsDraft.openaiModel}
+                      onChange={(e) => setTtsDraft((d) => ({ ...d, openaiModel: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border/70 bg-background/50 p-3 dark:bg-background/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gemini</p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tts-gem-preset">TTS model</Label>
+                  <Select value={geminiPresetValue} onValueChange={setGeminiPreset} disabled={saving}>
+                    <SelectTrigger id="tts-gem-preset" className="h-9">
+                      <SelectValue placeholder="Choose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__env__">Same as server env</SelectItem>
+                      <SelectItem value="__default_flash__">
+                        Recommended — {GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT}
+                      </SelectItem>
+                      <SelectItem value="__custom__">Custom model id…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldHint>Uses GEMINI_READ_ALOUD_TTS_MODEL when you pick “Same as server env”.</FieldHint>
+                </div>
+                {geminiPresetValue === "__custom__" ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tts-gem-custom">Custom Gemini model id</Label>
+                    <Input
+                      id="tts-gem-custom"
+                      className="h-9 font-mono text-xs"
+                      placeholder="e.g. gemini-2.5-flash-preview-tts"
+                      value={ttsDraft.geminiModel}
+                      onChange={(e) => setTtsDraft((d) => ({ ...d, geminiModel: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <Collapsible className="rounded-lg border border-dashed border-border/80">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="group w-full justify-between px-3 py-2 h-auto font-normal text-muted-foreground hover:text-foreground"
+                  disabled={saving}
+                >
+                  <span className="text-left pr-2">
+                    More options — extra voice ids (only if you need names not in the default lists)
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-60 transition-transform group-data-[state=open]:rotate-180" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-3 pb-3 space-y-4 data-[state=closed]:animate-none">
+                <Separator className="my-1" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tts-oai-voices">OpenAI — extra voices</Label>
+                    <Input
+                      id="tts-oai-voices"
+                      className="h-9 font-mono text-xs"
+                      placeholder="Lowercase, comma-separated (e.g. verse)"
+                      value={ttsDraft.openaiVoicesExtra}
+                      onChange={(e) => setTtsDraft((d) => ({ ...d, openaiVoicesExtra: e.target.value }))}
+                      disabled={saving}
+                    />
+                    {openAiExtrasParsed.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {openAiExtrasParsed.slice(0, 12).map((id) => (
+                          <Badge key={id} variant="secondary" className="text-[10px] font-mono font-normal">
+                            {id}
+                          </Badge>
+                        ))}
+                        {openAiExtrasParsed.length > 12 ? (
+                          <span className="text-[10px] text-muted-foreground self-center">
+                            +{openAiExtrasParsed.length - 12} more
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">No extra ids — built-in list only.</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tts-gem-voices">Gemini — extra voices</Label>
+                    <Input
+                      id="tts-gem-voices"
+                      className="h-9 font-mono text-xs"
+                      placeholder="PascalCase, comma-separated (e.g. Kore)"
+                      value={ttsDraft.geminiVoicesExtra}
+                      onChange={(e) => setTtsDraft((d) => ({ ...d, geminiVoicesExtra: e.target.value }))}
+                      disabled={saving}
+                    />
+                    {geminiExtrasParsed.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {geminiExtrasParsed.slice(0, 12).map((id) => (
+                          <Badge key={id} variant="secondary" className="text-[10px] font-mono font-normal">
+                            {id}
+                          </Badge>
+                        ))}
+                        {geminiExtrasParsed.length > 12 ? (
+                          <span className="text-[10px] text-muted-foreground self-center">
+                            +{geminiExtrasParsed.length - 12} more
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">No extra names — built-in list only.</p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Invalid tokens are removed when you save. See{" "}
+                  <a
+                    href="https://platform.openai.com/docs/guides/text-to-speech"
+                    className="text-primary underline font-medium"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    OpenAI TTS
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="https://ai.google.dev/gemini-api/docs/speech-generation"
+                    className="text-primary underline font-medium"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Gemini speech
+                  </a>
+                  .
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" disabled={saving || !ttsDirty} onClick={saveTtsDraft}>
+                Save read-aloud
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saving || !ttsDirty}
+                onClick={discardTtsDraft}
+              >
+                Discard changes
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                disabled={saving || !settings?.ttsConfig}
+                onClick={() => patchMutation.mutate({ ttsConfig: null })}
+              >
+                Clear saved overrides
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              After saving, open any admin page and use the <strong>Listen</strong> control to try voices.
+            </p>
           </CardContent>
         </Card>
 

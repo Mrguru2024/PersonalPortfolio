@@ -1,3 +1,4 @@
+import type { AdminTtsConfigStored } from "@shared/readAloudTtsConfig";
 import type { AdminSettings } from "@shared/schema";
 
 /** Shared shape for GET/PATCH /api/admin/settings (client + server). */
@@ -15,9 +16,11 @@ export interface AdminSettingsApiPayload {
   /** When observation is on, rare checkpoint prompts may appear in the assistant panel. */
   aiMentorProactiveCheckpoints: boolean;
   adminUiLayouts: Record<string, { order: string[]; hidden: string[] }> | null;
+  /** Null = defaults only (env + built-in voices). */
+  ttsConfig: AdminTtsConfigStored | null;
 }
 
-export const ADMIN_SETTINGS_DEFAULTS: Omit<AdminSettingsApiPayload, "adminUiLayouts"> = {
+export const ADMIN_SETTINGS_DEFAULTS: Omit<AdminSettingsApiPayload, "adminUiLayouts" | "ttsConfig"> = {
   emailNotifications: true,
   inAppNotifications: true,
   pushNotificationsEnabled: true,
@@ -34,7 +37,7 @@ export function toAdminSettingsApiPayload(
   row: AdminSettings | null | undefined,
 ): AdminSettingsApiPayload {
   if (!row) {
-    return { ...ADMIN_SETTINGS_DEFAULTS, adminUiLayouts: null };
+    return { ...ADMIN_SETTINGS_DEFAULTS, adminUiLayouts: null, ttsConfig: null };
   }
   return {
     emailNotifications: row.emailNotifications,
@@ -48,6 +51,7 @@ export function toAdminSettingsApiPayload(
     aiMentorObserveUsage: row.aiMentorObserveUsage,
     aiMentorProactiveCheckpoints: row.aiMentorProactiveCheckpoints,
     adminUiLayouts: row.adminUiLayouts ?? null,
+    ttsConfig: row.ttsConfig ?? null,
   };
 }
 

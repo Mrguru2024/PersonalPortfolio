@@ -38,14 +38,20 @@ export async function synthesizeGeminiReadAloud(options: {
   text: string;
   voiceName: string;
   readingStyle?: string;
+  /** When set (e.g. from admin settings), overrides env default. */
+  model?: string;
+  /** Effective allowlist (built-ins + admin extras); defaults to Google prebuilt ids. */
+  allowedGeminiVoices?: Set<string>;
 }): Promise<{ ok: true; wav: Buffer } | { ok: false; error: string }> {
   const ai = getGoogleGenAI();
   if (!ai) {
     return { ok: false, error: "GEMINI_API_KEY is not set" };
   }
 
+  const allow = options.allowedGeminiVoices ?? GEMINI_TTS_PREBUILT_VOICE_IDS;
   const rawVoice = options.voiceName.trim();
-  const voiceName = rawVoice && GEMINI_TTS_PREBUILT_VOICE_IDS.has(rawVoice) ? rawVoice : "Kore";
+  const pickDefault = () => (allow.has("Kore") ? "Kore" : [...allow][0] ?? "Kore");
+  const voiceName = rawVoice && allow.has(rawVoice) ? rawVoice : pickDefault();
 
   const styleKey =
     options.readingStyle && options.readingStyle in STYLE_PREFIX ? options.readingStyle : "natural";
@@ -53,7 +59,9 @@ export async function synthesizeGeminiReadAloud(options: {
   const prompt = `${prefix}\n\n${options.text}`;
 
   const model =
-    process.env.GEMINI_READ_ALOUD_TTS_MODEL?.trim() || GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT;
+    (options.model && options.model.trim()) ||
+    process.env.GEMINI_READ_ALOUD_TTS_MODEL?.trim() ||
+    GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT;
 
   try {
     const response = await ai.models.generateContent({

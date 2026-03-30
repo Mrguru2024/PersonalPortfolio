@@ -1,7 +1,19 @@
 /** @jest-environment jsdom */
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
+import { resolveReadAloudTts } from "@shared/readAloudTtsConfig";
 import { ReadAloudButton } from "./ReadAloudButton";
+
+const MOCK_TTS_STATUS = {
+  openaiTts: false,
+  geminiTts: false,
+  envDefaults: { openaiModel: "tts-1", geminiModel: GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT },
+  resolved: resolveReadAloudTts(null, {
+    openaiModel: "tts-1",
+    geminiModel: GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT,
+  }),
+};
 
 describe("ReadAloudButton", () => {
   const originalSpeech = window.speechSynthesis;
@@ -11,7 +23,7 @@ describe("ReadAloudButton", () => {
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ openaiTts: false, geminiTts: false }),
+      json: async () => MOCK_TTS_STATUS,
     }) as unknown as typeof fetch;
 
     globalThis.SpeechSynthesisUtterance = jest.fn().mockImplementation(() => ({
