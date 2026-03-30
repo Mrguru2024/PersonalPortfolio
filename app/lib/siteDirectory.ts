@@ -485,6 +485,16 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     relatedPaths: ["/admin/agency-os", "/admin/agent-knowledge"],
   },
   {
+    path: "/api/admin/agent/refresh-context",
+    title: "Admin — invalidate assistant site digest cache",
+    category: "Admin · Ops",
+    audience: "admin",
+    description:
+      "POST clears the in-memory admin agent CONTEXT so the next chat rebuild loads site directory digest + admin page metadata crawl from disk (no HTTP crawl).",
+    keywords: k("assistant", "ai", "cache", "context", "rescan", "site map"),
+    relatedPaths: ["/admin/settings", "/admin/site-directory"],
+  },
+  {
     path: "/admin/agency-os",
     title: "Agency Operating System",
     category: "Admin · Ops",

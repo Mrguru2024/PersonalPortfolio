@@ -9,6 +9,10 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Site directory** ([/admin/site-directory](/admin/site-directory)): Search every admin and public route; copy JSON for external agents; use clusters to see related pages.
 
+**Assistant “site crawl” (automatic):** The floating assistant’s CONTEXT includes (1) a **full text digest** of every site-directory entry (description + keywords + related routes) and (2) a filesystem pass over \`app/admin/**/page.tsx\` that extracts string \`title\` / \`description\` from \`metadata\` when present. This is not a live HTTP crawl; it reflects the deployed repo. Cache TTL is a few minutes; **POST** \`/api/admin/agent/refresh-context\` (or slash \`/rescan\` in chat) clears it immediately for admins.
+
+**How-to hub** ([/admin/how-to](/admin/how-to)): Longer human-written walkthroughs; point “how do I…” questions here when digest + FEATURE GUIDE are not enough.
+
 **AMIE — Ascendra Market Intelligence Engine** ([/admin/market-intelligence](/admin/market-intelligence)):
 - Internal scored market analysis: demand, competition, purchase power, pain, targeting difficulty, trend, opportunity tier.
 - Fill industry, service type, location, persona (Marcus/Tasha/Devon/Andre presets map to strategy).

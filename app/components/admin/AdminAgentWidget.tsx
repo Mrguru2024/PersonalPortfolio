@@ -63,8 +63,8 @@ const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 /** Runs a server-confirmed action and returns markdown for the chat transcript. */
-/** Local slash commands (no API round-trip) — scheduler / wayfinding shortcuts. */
-function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?: string } | null {
+/** Local slash commands — scheduler shortcuts, quick navigation, optional context refresh. */
+function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?: string; runRefresh?: boolean } | null {
   const t = text.trim();
   if (!t.startsWith("/") || t.includes("\n")) return null;
   const cmd = t.slice(1).trim().split(/\s+/)[0]?.toLowerCase() ?? "";
@@ -77,9 +77,18 @@ function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?:
         "- `/calendar` — Master scheduler calendar\n" +
         "- `/scheduler` — Meetings & calendar hub\n" +
         "- `/workflows` — Booking automations\n" +
+        "- `/howto` — How-to & guides\n" +
+        "- `/directory` — Pages & tools directory\n" +
+        "- `/rescan` — Rebuild assistant site digest cache (admin; immediate)\n" +
         "- `/help` — This list\n\n" +
-        "Natural language still works (e.g. “open scheduler workflows”).",
+        "Natural language still works (e.g. “open Offer Engine”, “refresh assistant context”).",
     };
+  }
+  if (cmd === "howto" || cmd === "guides") {
+    return { reply: "Opening **How-to & guides**.", navigateTo: "/admin/how-to" };
+  }
+  if (cmd === "directory" || cmd === "sitemap") {
+    return { reply: "Opening the **site directory**.", navigateTo: "/admin/site-directory" };
   }
   if (cmd === "calendar" || cmd === "meetings") {
     return { reply: "Opening the **master calendar**.", navigateTo: "/admin/scheduler/calendar" };
@@ -90,6 +99,12 @@ function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?:
   if (cmd === "workflows" || cmd === "automations") {
     return { reply: "Opening **booking automations**.", navigateTo: "/admin/scheduler/workflows" };
   }
+  if (cmd === "rescan" || cmd === "refresh-context") {
+    return {
+      reply: "Rebuilding the assistant’s **site digest** from disk…",
+      runRefresh: true,
+    };
+  }
   return null;
 }
 
@@ -98,6 +113,22 @@ async function runAgentAction(
   router: ReturnType<typeof useRouter>,
   queryClient: ReturnType<typeof useQueryClient>,
 ): Promise<{ ok: boolean; markdown: string }> {
+  if (action.type === "refresh_agent_context" && action.api === "POST /api/admin/agent/refresh-context") {
+    try {
+      await apiRequest("POST", "/api/admin/agent/refresh-context", {});
+      return {
+        ok: true,
+        markdown:
+          "## Action result\n\n- Assistant **site digest** invalidated — the next assistant reply loads a fresh map from disk.",
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Request failed";
+      return {
+        ok: false,
+        markdown: `## Action result\n\n- Context refresh **failed**: ${msg}`,
+      };
+    }
+  }
   if (action.type === "generate_reminders" && action.api === "POST /api/admin/reminders") {
     try {
       await apiRequest("POST", "/api/admin/reminders", {});
@@ -261,6 +292,27 @@ export function AdminAgentWidget() {
         { role: "assistant", content: slash.reply },
       ]);
       if (slash.navigateTo) router.push(slash.navigateTo);
+      if (slash.runRefresh) {
+        void (async () => {
+          try {
+            await apiRequest("POST", "/api/admin/agent/refresh-context", {});
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content:
+                  "## Result\n\n- Site digest cache **cleared**. Your next assistant question uses an up-to-date route map.",
+              },
+            ]);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "Request failed";
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: `## Result\n\n- Refresh failed: ${msg}` },
+            ]);
+          }
+        })();
+      }
       return;
     }
 
@@ -324,11 +376,11 @@ export function AdminAgentWidget() {
                   </>
                 )}
                 <p className="text-sm leading-relaxed">
-                  Ask where something lives, say “open …” for CRM or Content Studio, or attach screenshots (PNG, JPEG, WebP, GIF). Describe what you want done in text alongside images. With{" "}
-                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can run navigation and reminders; with{" "}
-                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step and see an Action result line after it runs. Under{" "}
-                  <span className="text-foreground/90">Mentor companion</span>, you can opt in to coarse navigation learning (admin paths only) and occasional checkpoints — never blocking. Build optional notes in{" "}
-                  <span className="text-foreground/90">Assistant knowledge</span> for facts, research context, and message flows.
+                  Ask <strong className="font-medium text-foreground/90">how do I…</strong> or <strong className="font-medium text-foreground/90">where is…</strong> — answers use a live digest of routes plus a source scan of admin pages. Type <code className="text-xs bg-muted px-1 rounded">/help</code> for slash shortcuts (<code className="text-xs bg-muted px-1 rounded">/rescan</code> rebuilds that digest). Attach screenshots (PNG, JPEG, WebP, GIF) when useful. With{" "}
+                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can navigate, run reminders, and refresh the digest; with{" "}
+                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step. Under{" "}
+                  <span className="text-foreground/90">Mentor companion</span>, optional coarse path learning and checkpoints. Add notes in{" "}
+                  <span className="text-foreground/90">Assistant knowledge</span> when you want extra grounding.
                 </p>
                 <p className="text-[11px] leading-snug text-muted-foreground/90 border-t border-border/60 pt-2">
                   {bootstrapQuery.data?.policyNotice ??

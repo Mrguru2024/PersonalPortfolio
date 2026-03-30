@@ -10,6 +10,10 @@ import { SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getAdminAgentFeatureGuideText } from "@server/services/adminAgentFeatureGuide";
 import { getAscendraSopWorkflowAgentSection } from "@server/services/ascendraSopWorkflowLoader";
 import { getContentStrategyWorkflowAgentSection } from "@server/services/contentStrategyWorkflowLoader";
+import {
+  crawlAdminAppRouterMetadata,
+  formatSiteDirectoryRichDigest,
+} from "@server/services/adminAgentSiteCrawl";
 
 const TTL_MS = 5 * 60 * 1000; // 5 minutes — “periodic” refresh
 
@@ -20,6 +24,7 @@ let cache: CacheEntry | null = null;
 const MAX_AGENTS_MD = 10_000;
 const MAX_API_LINES = 250;
 const MAX_SITE_LINES = 350;
+const MAX_CRAWL_HINT_LINES = 200;
 
 async function walkAdminApiRoutes(absDir: string, apiRoot: string): Promise<string[]> {
   const urls: string[] = [];
@@ -70,6 +75,8 @@ export async function buildAdminAgentContextText(): Promise<{
     (e) => `${e.path}\t${e.title}\t${e.audience}\t${e.category}`,
   );
   const siteEntryCount = SITE_DIRECTORY_ENTRIES_UNIQUE.length;
+  const siteRichDigest = formatSiteDirectoryRichDigest(SITE_DIRECTORY_ENTRIES_UNIQUE);
+  const routeCrawlLines = (await crawlAdminAppRouterMetadata(repoRoot)).slice(0, MAX_CRAWL_HINT_LINES);
 
   let agentsMd = "";
   try {
@@ -98,8 +105,16 @@ export async function buildAdminAgentContextText(): Promise<{
     "### npm scripts (subset)",
     scripts || "(none)",
     "",
-    `### Site & admin routes (${siteEntryCount} entries; showing ${siteLines.length}) — tab-separated: path, title, audience, category`,
+    `### Site & admin routes (${siteEntryCount} entries; compact ${siteLines.length}) — tab-separated: path, title, audience, category`,
     siteLines.join("\n"),
+    "",
+    "### Site directory digest (full) — path | title | audience | category | description | keywords | related | cluster",
+    "Use this for how-to, wayfinding, and explaining what each area does. Prefer these descriptions over guessing.",
+    siteRichDigest,
+    "",
+    `### Admin App Router metadata crawl (${routeCrawlLines.length} page files) — route tab metadata hints from source`,
+    "Supplements the digest when a page exports string title/description in metadata.",
+    routeCrawlLines.join("\n"),
     "",
     featureGuide,
     "",
