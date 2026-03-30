@@ -339,7 +339,7 @@ export function AdminAgentWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+    <div className="fixed z-50 flex flex-col items-end gap-2 right-4 sm:right-6 bottom-[calc(56px+1rem+env(safe-area-inset-bottom,0px))] lg:bottom-6">
       {open && (
         <div className="flex flex-col w-[min(400px,calc(100vw-2rem))] h-[min(420px,calc(100vh-8rem))] max-h-[520px] rounded-xl border bg-card text-card-foreground shadow-lg overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50">
