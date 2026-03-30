@@ -1184,218 +1184,163 @@ export default function AdminDashboardPage() {
       {sectionShell(
         "shortcuts",
         () => (
-        <>
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-foreground">Workspace shortcuts</span>
-        <AdminHelpTip
-          content="Open deeper tools (billing, intel, content, directory) after inbox triage. On each destination page, use ? next to headings and fields—that’s where controls are explained, not the top nav."
-          ariaLabel="Help: Workspace shortcuts row"
-        />
-      </div>
-      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/scheduler">
-              <Calendar className="h-4 w-4 mr-2 shrink-0" aria-hidden />
-              <span className="truncate">Meetings &amp; calendar</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Calendar, appointment inbox, and branded booking links. Start here for day-to-day booking work."
-            ariaLabel="Help: Meetings and calendar"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/scheduling">
-              <CalendarClock className="h-4 w-4 mr-2 shrink-0" aria-hidden />
-              <span className="truncate">Booking &amp; reminders setup</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Time zone, meeting types, availability, emails, and whether public booking is on."
-            ariaLabel="Help: Booking setup"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/site-directory">
-              <MapIcon className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Pages directory</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="On the directory screen: search and filter every route, open a page, or copy full JSON for tools. Tip: narrow by audience when you only want admin tools."
-            ariaLabel="Help: Pages directory shortcut"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/how-to">
-              <BookOpen className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">How-to & guides</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Curated step-by-step articles (LTV, discovery, intelligence, knowledge base). Read a section, then work in the target tool using its own ? tips on each field."
-            ariaLabel="Help: How-to and guides"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/invoices">
-              <Receipt className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Invoices</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Build invoices, line items, and tax; send for payment when Stripe is connected. Check statuses as clients pay."
-            ariaLabel="Help: Invoices"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/announcements">
-              <span className="truncate">Project updates</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Write admin-facing project news that shows in digest and related surfaces. Use for shipped work and operating notes."
-            ariaLabel="Help: Project updates"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/feedback">
-              <span className="truncate">Feedback</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Review submissions from site feedback flows; triage and archive so nothing important sits unread."
-            ariaLabel="Help: Feedback inbox"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/offers">
-              <Tag className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Site offers</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site."
-            ariaLabel="Help: Site offers"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/growth-platform">
-              <Layers className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Growth platform</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="DFY/DWY/DIY offer stack catalog and PPC model summaries; links to the public hub and related admin tools."
-            ariaLabel="Help: Growth platform"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/challenge/leads">
-              <span className="truncate">Challenge leads</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Leads captured from challenge funnels; use filters and exports there to move people into CRM follow-up."
-            ariaLabel="Help: Challenge leads"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/growth-os">
-              <Radar className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Growth OS</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Configure the Growth OS product: security, client shares, revenue settings. Explore sub-pages from there; each has its own forms and ? help."
-            ariaLabel="Help: Growth OS"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/growth-os/intelligence">
-              <Search className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Market research</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Run keyword/topic batches, read performance rollups, and wire automations—creative ops research, not the scored AMIE economics model."
-            ariaLabel="Help: Growth OS market research"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/market-intelligence">
-              <Radar className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">AMIE intelligence</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Fill market inputs, run analysis, read scores and opportunity tier, then copy JSON or save a research row. ? icons on that page decode each card and field."
-            ariaLabel="Help: AMIE intelligence"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/internal-audit">
-              <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Funnel audit</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Internal checklist and scoring for funnel assets before launch. Work the items on that screen to clear readiness gaps."
-            ariaLabel="Help: Funnel audit"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/offer-valuation">
-              <LineChart className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Offer valuation</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Monitor the public offer-valuation funnel: submissions, status, and follow-up from the admin side of that flow."
-            ariaLabel="Help: Offer valuation"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/content-studio">
-              <PenLine className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Content studio</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Draft documents, manage the editorial calendar, and schedule social posts from one hub. Each sub-view explains approvals and publishing on that page."
-            ariaLabel="Help: Content studio"
-          />
-        </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-            <Link href="/admin/agent-knowledge">
-              <BookOpen className="h-4 w-4 mr-2 shrink-0" />
-              <span className="truncate">Assistant knowledge</span>
-            </Link>
-          </Button>
-          <AdminHelpTip
-            content="Create entries and toggle where they’re allowed (assistant, research, messages). The floating mentor reads enabled text as trusted context—edit titles and bodies on that screen."
-            ariaLabel="Help: Assistant knowledge"
-          />
-        </div>
-      </div>
-        </>
+          <>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-foreground">Workspace shortcuts</span>
+              <AdminHelpTip
+                content="Open deeper tools (billing, intel, content, directory) after inbox triage. On each destination page, use ? next to headings and fields—that’s where controls are explained, not the top nav."
+                ariaLabel="Help: Workspace shortcuts row"
+              />
+            </div>
+            <div
+              data-tour="quick-links"
+              className="mb-6 grid grid-cols-1 gap-2.5 fold:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              {[
+                {
+                  href: "/admin/scheduler",
+                  label: "Meetings & calendar",
+                  icon: Calendar,
+                  help: "Calendar, appointment inbox, and branded booking links. Start here for day-to-day booking work.",
+                  helpAria: "Help: Meetings and calendar",
+                },
+                {
+                  href: "/admin/scheduling",
+                  label: "Booking & reminders setup",
+                  icon: CalendarClock,
+                  help: "Time zone, meeting types, availability, emails, and whether public booking is on.",
+                  helpAria: "Help: Booking setup",
+                },
+                {
+                  href: "/admin/site-directory",
+                  label: "Pages directory",
+                  icon: MapIcon,
+                  help: "On the directory screen: search and filter every route, open a page, or copy full JSON for tools. Tip: narrow by audience when you only want admin tools.",
+                  helpAria: "Help: Pages directory shortcut",
+                },
+                {
+                  href: "/admin/how-to",
+                  label: "How-to & guides",
+                  icon: BookOpen,
+                  help: "Curated step-by-step articles (LTV, discovery, intelligence, knowledge base). Read a section, then work in the target tool using its own ? tips on each field.",
+                  helpAria: "Help: How-to and guides",
+                },
+                {
+                  href: "/admin/invoices",
+                  label: "Invoices",
+                  icon: Receipt,
+                  help: "Build invoices, line items, and tax; send for payment when Stripe is connected. Check statuses as clients pay.",
+                  helpAria: "Help: Invoices",
+                },
+                {
+                  href: "/admin/announcements",
+                  label: "Project updates",
+                  icon: Sparkles,
+                  help: "Write admin-facing project news that shows in digest and related surfaces. Use for shipped work and operating notes.",
+                  helpAria: "Help: Project updates",
+                },
+                {
+                  href: "/admin/feedback",
+                  label: "Feedback",
+                  icon: MessageSquare,
+                  help: "Review submissions from site feedback flows; triage and archive so nothing important sits unread.",
+                  helpAria: "Help: Feedback inbox",
+                },
+                {
+                  href: "/admin/offers",
+                  label: "Site offers",
+                  icon: Tag,
+                  help: "Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site.",
+                  helpAria: "Help: Site offers",
+                },
+                {
+                  href: "/admin/growth-platform",
+                  label: "Growth platform",
+                  icon: Layers,
+                  help: "DFY/DWY/DIY offer stack catalog and PPC model summaries; links to the public hub and related admin tools.",
+                  helpAria: "Help: Growth platform",
+                },
+                {
+                  href: "/admin/challenge/leads",
+                  label: "Challenge leads",
+                  icon: Inbox,
+                  help: "Leads captured from challenge funnels; use filters and exports there to move people into CRM follow-up.",
+                  helpAria: "Help: Challenge leads",
+                },
+                {
+                  href: "/admin/growth-os",
+                  label: "Growth OS",
+                  icon: Radar,
+                  help: "Configure the Growth OS product: security, client shares, revenue settings. Explore sub-pages from there; each has its own forms and ? help.",
+                  helpAria: "Help: Growth OS",
+                },
+                {
+                  href: "/admin/growth-os/intelligence",
+                  label: "Market research",
+                  icon: Search,
+                  help: "Run keyword/topic batches, read performance rollups, and wire automations—creative ops research, not the scored AMIE economics model.",
+                  helpAria: "Help: Growth OS market research",
+                },
+                {
+                  href: "/admin/market-intelligence",
+                  label: "AMIE intelligence",
+                  icon: Radar,
+                  help: "Fill market inputs, run analysis, read scores and opportunity tier, then copy JSON or save a research row. ? icons on that page decode each card and field.",
+                  helpAria: "Help: AMIE intelligence",
+                },
+                {
+                  href: "/admin/internal-audit",
+                  label: "Funnel audit",
+                  icon: ClipboardList,
+                  help: "Internal checklist and scoring for funnel assets before launch. Work the items on that screen to clear readiness gaps.",
+                  helpAria: "Help: Funnel audit",
+                },
+                {
+                  href: "/offer-valuation",
+                  label: "Offer valuation",
+                  icon: LineChart,
+                  help: "Monitor the public offer-valuation funnel: submissions, status, and follow-up from the admin side of that flow.",
+                  helpAria: "Help: Offer valuation",
+                },
+                {
+                  href: "/admin/content-studio",
+                  label: "Content studio",
+                  icon: PenLine,
+                  help: "Draft documents, manage the editorial calendar, and schedule social posts from one hub. Each sub-view explains approvals and publishing on that page.",
+                  helpAria: "Help: Content studio",
+                },
+                {
+                  href: "/admin/agent-knowledge",
+                  label: "Assistant knowledge",
+                  icon: BookOpen,
+                  help: "Create entries and toggle where they’re allowed (assistant, research, messages). The floating mentor reads enabled text as trusted context—edit titles and bodies on that screen.",
+                  helpAria: "Help: Assistant knowledge",
+                },
+              ].map((shortcut) => (
+                <div
+                  key={shortcut.href}
+                  className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/70 bg-card/70 p-2.5 shadow-sm"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-h-[44px] w-full justify-start px-2 py-2 text-left"
+                    asChild
+                  >
+                    <Link href={shortcut.href} className="min-w-0">
+                      <span className="mr-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <shortcut.icon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 break-words text-sm font-medium leading-snug">
+                        {shortcut.label}
+                      </span>
+                    </Link>
+                  </Button>
+                  <AdminHelpTip content={shortcut.help} ariaLabel={shortcut.helpAria} />
+                </div>
+              ))}
+            </div>
+          </>
         ),
       )}
 
