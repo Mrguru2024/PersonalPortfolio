@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Target, ClipboardList, FolderKanban } from "lucide-react";
+import { Loader2, Target, ClipboardList, FolderKanban, BookOpen, Shield } from "lucide-react";
 
 export default function AgencyOsOverviewPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -70,15 +70,43 @@ export default function AgencyOsOverviewPage() {
         <Card>
           <CardHeader>
             <FolderKanban className="h-5 w-5 text-primary mb-1" />
-            <CardTitle className="text-base">Projects API</CardTitle>
-            <CardDescription>
-              Create delivery projects via <code className="text-xs">POST /api/admin/agency-os/projects</code> with
-              HVD + impact fields validated server-side.
-            </CardDescription>
+            <CardTitle className="text-base">Projects & milestones</CardTitle>
+            <CardDescription>List delivery engagements, phases, milestones, and task rollups.</CardDescription>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">
-            Full project UI (kanban, milestones) comes next; data model and APIs are live after{" "}
-            <code className="text-xs">db:push</code>.
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/agency-os/projects">Open projects</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <BookOpen className="h-5 w-5 text-primary mb-1" />
+            <CardTitle className="text-base">SOPs, playbooks & training</CardTitle>
+            <CardDescription>Operational library linked from tasks (IDs in API).</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/agency-os/sops">SOPs</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/agency-os/playbooks">Playbooks</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/agency-os/training">Training</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Shield className="h-5 w-5 text-primary mb-1" />
+            <CardTitle className="text-base">Execution roles</CardTitle>
+            <CardDescription>Built-in strategist/developer/… plus custom; map approved admins.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/agency-os/roles">Open roles</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

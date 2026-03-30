@@ -31,6 +31,13 @@ import {
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_CONTRACTORS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_CONTRACTOR_CTA_REASSURANCE,
+  ICP_CONTRACTOR_FINAL_REASSURANCE,
+  ICP_CONTRACTOR_WHAT_TO_EXPECT_ITEMS,
+  ICP_CONTRACTOR_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const VIEW_WORK_CTA = "View Our Work";
 
@@ -296,7 +303,6 @@ export default function ContractorSystemsPage() {
 
         <FaqSection items={CONTRACTOR_FAQ} />
 
-        {/* 8. Final CTA */}        {/* 8. Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -323,7 +329,9 @@ export default function ContractorSystemsPage() {
                 <Link href={BOOK_CALL_HREF}>{BOOK_CALL_CTA}</Link>
               </Button>
             </div>
-            <p className="mt-4 text-xs text-primary-foreground/80">Free · No obligation · Response within 24–48 hours</p>
+            <CTAReassuranceLine dense className="mt-4 text-primary-foreground/85 max-w-lg mx-auto">
+              {ICP_CONTRACTOR_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
           </div>
         </section>
       </div>

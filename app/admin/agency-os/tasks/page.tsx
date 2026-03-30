@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X, HelpCircle } from "lucide-react";
@@ -31,6 +31,8 @@ export default function AgencyOsTasksPage() {
   const qc = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectIdFilter = searchParams.get("projectId");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [understanding, setUnderstanding] = useState(false);
   const [responsibility, setResponsibility] = useState(false);
@@ -66,10 +68,22 @@ export default function AgencyOsTasksPage() {
     }
   }, [user?.id]);
 
-  const { data: tasksData, isLoading } = useQuery({
-    queryKey: ["/api/admin/agency-os/tasks"],
+  const { data: configData } = useQuery({
+    queryKey: ["/api/admin/agency-os/config"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/agency-os/tasks", { credentials: "include" });
+      const res = await fetch("/api/admin/agency-os/config", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load config");
+      return res.json() as Promise<{ adminTaskAcceptanceAllowed: boolean }>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
+  const { data: tasksData, isLoading } = useQuery({
+    queryKey: ["/api/admin/agency-os/tasks", projectIdFilter ?? ""],
+    queryFn: async () => {
+      const u = new URL("/api/admin/agency-os/tasks", window.location.origin);
+      if (projectIdFilter) u.searchParams.set("projectId", projectIdFilter);
+      const res = await fetch(u.toString(), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load tasks");
       return res.json() as Promise<{ tasks: AosAgencyTask[] }>;
     },
@@ -82,6 +96,7 @@ export default function AgencyOsTasksPage() {
       if (vc.length === 0) throw new Error("Select at least one value contribution.");
       const aid = Number.parseInt(assigneeId, 10);
       if (!Number.isFinite(aid)) throw new Error("Assignee user ID must be a number.");
+      const proj = projectIdFilter ? Number.parseInt(projectIdFilter, 10) : NaN;
       const res = await fetch("/api/admin/agency-os/tasks", {
         method: "POST",
         credentials: "include",
@@ -96,6 +111,7 @@ export default function AgencyOsTasksPage() {
           expectedOutput: expectedOutput.trim() || null,
           description: description.trim() || null,
           assigneeUserId: aid,
+          projectId: Number.isFinite(proj) ? proj : null,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as { error?: string; details?: unknown };
@@ -168,18 +184,31 @@ export default function AgencyOsTasksPage() {
   }
 
   const tasks = tasksData?.tasks ?? [];
+  const myId = typeof user?.id === "number" ? user.id : Number(user?.id);
+  const adminAccept = !!configData?.adminTaskAcceptanceAllowed;
+  const canRespondToAcceptance = (assigneeUserId: number | null) =>
+    (assigneeUserId != null && Number.isFinite(myId) && assigneeUserId === myId) || adminAccept;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Tasks & acceptance</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Assignees (or any approved admin) can accept, decline, or request clarification. API:{" "}
+          By default only the <strong className="text-foreground">assignee</strong> may accept, decline, or clarify. Enable{" "}
+          <code className="text-xs">AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1</code> so any approved admin can override. API:{" "}
           <code className="text-xs">POST /api/admin/agency-os/tasks/[id]/acceptance</code>.{" "}
           <Link href="/admin/agency-os/hvd" className="text-primary underline">
             HVD registry
           </Link>
         </p>
+        {projectIdFilter && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Filtered to project #{projectIdFilter}.{" "}
+            <Link href="/admin/agency-os/tasks" className="text-primary underline">
+              Show all tasks
+            </Link>
+          </p>
+        )}
       </div>
 
       <Card>
@@ -283,54 +312,64 @@ export default function AgencyOsTasksPage() {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm">
-                      <Checkbox checked={understanding} onCheckedChange={(c) => setUnderstanding(c === true)} />
-                      I understand the purpose and scope
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <Checkbox checked={responsibility} onCheckedChange={(c) => setResponsibility(c === true)} />
-                      I take responsibility for delivery
-                    </label>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      className="gap-1"
-                      onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "accept" })}
-                      disabled={acceptanceMut.isPending}
-                    >
-                      <Check className="h-3.5 w-3.5" /> Accept
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="gap-1"
-                      onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "decline" })}
-                      disabled={acceptanceMut.isPending}
-                    >
-                      <X className="h-3.5 w-3.5" /> Decline
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="gap-1"
-                      onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "clarify" })}
-                      disabled={acceptanceMut.isPending}
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" /> Clarify
-                    </Button>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Decline reason</Label>
-                      <Input value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Clarification message</Label>
-                      <Input value={clarifyMsg} onChange={(e) => setClarifyMsg(e.target.value)} />
-                    </div>
-                  </div>
+                  {canRespondToAcceptance(t.assigneeUserId ?? null) ? (
+                    <>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox checked={understanding} onCheckedChange={(c) => setUnderstanding(c === true)} />
+                          I understand the purpose and scope
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox checked={responsibility} onCheckedChange={(c) => setResponsibility(c === true)} />
+                          I take responsibility for delivery
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "accept" })}
+                          disabled={acceptanceMut.isPending}
+                        >
+                          <Check className="h-3.5 w-3.5" /> Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="gap-1"
+                          onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "decline" })}
+                          disabled={acceptanceMut.isPending}
+                        >
+                          <X className="h-3.5 w-3.5" /> Decline
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1"
+                          onClick={() => acceptanceMut.mutate({ taskId: t.id, action: "clarify" })}
+                          disabled={acceptanceMut.isPending}
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" /> Clarify
+                        </Button>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Decline reason</Label>
+                          <Input value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Clarification message</Label>
+                          <Input value={clarifyMsg} onChange={(e) => setClarifyMsg(e.target.value)} />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground rounded-md border border-border/80 bg-muted/30 px-3 py-2">
+                      Only assignee user #{t.assigneeUserId} can respond while strict mode is on. Set{" "}
+                      <code className="text-xs">AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1</code> in the environment so any
+                      approved admin can accept on their behalf.
+                    </p>
+                  )}
                 </div>
               )}
               {expandedId === t.id && t.status !== "pending_acceptance" && (

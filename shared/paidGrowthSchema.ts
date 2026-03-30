@@ -149,17 +149,71 @@ export const ppcPerformanceSnapshots = pgTable("ppc_performance_snapshots", {
 export type PpcPerformanceSnapshot = typeof ppcPerformanceSnapshots.$inferSelect;
 export type InsertPpcPerformanceSnapshot = typeof ppcPerformanceSnapshots.$inferInsert;
 
+/**
+ * First-party attribution session (browser visitorId + sessionId).
+ * Complements `visitor_activity` rows with first/last touch snapshots and optional PPC campaign resolution.
+ */
+export const ppcAttributionSessions = pgTable(
+  "ppc_attribution_sessions",
+  {
+    id: serial("id").primaryKey(),
+    /** Client-safe token returned from `/api/track/visitor` for forms and booking payloads */
+    publicId: text("public_id").notNull().unique(),
+    visitorId: text("visitor_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    firstTouchJson: json("first_touch_json").$type<Record<string, unknown>>().default({}),
+    lastTouchJson: json("last_touch_json").$type<Record<string, unknown>>().default({}),
+    firstLandingPath: text("first_landing_path"),
+    lastLandingPath: text("last_landing_path"),
+    ppcCampaignId: integer("ppc_campaign_id").references(() => ppcCampaigns.id, { onDelete: "set null" }),
+    crmContactId: integer("crm_contact_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("ppc_attr_sess_visitor_session_uidx").on(t.visitorId, t.sessionId)],
+);
+
+export type PpcAttributionSession = typeof ppcAttributionSessions.$inferSelect;
+export type InsertPpcAttributionSession = typeof ppcAttributionSessions.$inferInsert;
+
+/** Lead verification queue — extends legacy booleans on `ppc_lead_quality` */
+export const PPC_LEAD_VERIFICATION_STATUSES = [
+  "pending_verification",
+  "verified_qualified",
+  "verified_unqualified",
+  "spam",
+  "duplicate",
+  "outside_service_area",
+  "wrong_service",
+  "no_intent",
+  "unanswered",
+] as const;
+export type PpcLeadVerificationStatus = (typeof PPC_LEAD_VERIFICATION_STATUSES)[number];
+
+export const PPC_LEAD_BILLABLE_STATUSES = ["pending", "eligible", "not_eligible", "billed", "disputed"] as const;
+export type PpcLeadBillableStatus = (typeof PPC_LEAD_BILLABLE_STATUSES)[number];
+
 export const ppcLeadQuality = pgTable(
   "ppc_lead_quality",
   {
     id: serial("id").primaryKey(),
     crmContactId: integer("crm_contact_id").notNull(),
     ppcCampaignId: integer("ppc_campaign_id"),
+    attributionSessionId: integer("attribution_session_id").references(() => ppcAttributionSessions.id, {
+      onDelete: "set null",
+    }),
     leadValid: boolean("lead_valid").default(true),
     fitScore: integer("fit_score"),
     spamFlag: boolean("spam_flag").default(false),
     bookedCall: boolean("booked_call").default(false),
     sold: boolean("sold").default(false),
+    /** When set, lead appears in verification queues (PPC / paid paths) */
+    verificationStatus: text("verification_status"),
+    billableStatus: text("billable_status").default("pending"),
+    verificationNotes: text("verification_notes"),
+    verifiedAt: timestamp("verified_at"),
+    verifiedByUserId: integer("verified_by_user_id"),
+    qualityDimensionsJson: json("quality_dimensions_json").$type<Record<string, unknown>>().default({}),
     notes: text("notes"),
     createdBy: integer("created_by"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -328,3 +382,63 @@ export const ppcBillingProfiles = pgTable("ppc_billing_profiles", {
 
 export type PpcBillingProfile = typeof ppcBillingProfiles.$inferSelect;
 export type InsertPpcBillingProfile = typeof ppcBillingProfiles.$inferInsert;
+
+/** Performance / hybrid billing line items (invoice hooks later). */
+export const PPC_BILLABLE_EVENT_KINDS = [
+  "verified_lead",
+  "qualified_lead",
+  "booking",
+  "won_sale",
+] as const;
+export type PpcBillableEventKind = (typeof PPC_BILLABLE_EVENT_KINDS)[number];
+
+export const PPC_BILLABLE_EVENT_ROW_STATUSES = ["pending", "approved", "disputed", "rejected", "invoiced"] as const;
+export type PpcBillableEventRowStatus = (typeof PPC_BILLABLE_EVENT_ROW_STATUSES)[number];
+
+export const ppcBillableEvents = pgTable("ppc_billable_events", {
+  id: serial("id").primaryKey(),
+  workspaceKey: text("workspace_key").notNull().default("ascendra_main"),
+  crmContactId: integer("crm_contact_id").notNull(),
+  ppcCampaignId: integer("ppc_campaign_id").references(() => ppcCampaigns.id, { onDelete: "set null" }),
+  attributionSessionId: integer("attribution_session_id").references(() => ppcAttributionSessions.id, {
+    onDelete: "set null",
+  }),
+  eventKind: text("event_kind").notNull(),
+  amountCents: integer("amount_cents"),
+  status: text("status").notNull().default("pending"),
+  disputeNotes: text("dispute_notes"),
+  metadataJson: json("metadata_json").$type<Record<string, unknown>>().default({}),
+  createdByUserId: integer("created_by_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type PpcBillableEvent = typeof ppcBillableEvents.$inferSelect;
+export type InsertPpcBillableEvent = typeof ppcBillableEvents.$inferInsert;
+
+/** Call tracking + verification (telephony webhooks attach later via adapter). */
+export const ppcTrackedCalls = pgTable("ppc_tracked_calls", {
+  id: serial("id").primaryKey(),
+  workspaceKey: text("workspace_key").notNull().default("ascendra_main"),
+  crmContactId: integer("crm_contact_id"),
+  attributionSessionId: integer("attribution_session_id").references(() => ppcAttributionSessions.id, {
+    onDelete: "set null",
+  }),
+  ppcCampaignId: integer("ppc_campaign_id").references(() => ppcCampaigns.id, { onDelete: "set null" }),
+  direction: text("direction").notNull().default("inbound"),
+  callerNumber: text("caller_number"),
+  trackingNumber: text("tracking_number"),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  durationSeconds: integer("duration_seconds"),
+  answeredByClient: boolean("answered_by_client"),
+  disposition: text("disposition"),
+  verificationStatus: text("verification_status").default("pending"),
+  billableStatus: text("billable_status").default("pending"),
+  metadataJson: json("metadata_json").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type PpcTrackedCall = typeof ppcTrackedCalls.$inferSelect;
+export type InsertPpcTrackedCall = typeof ppcTrackedCalls.$inferInsert;

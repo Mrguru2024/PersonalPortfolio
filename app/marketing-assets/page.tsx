@@ -21,6 +21,13 @@ import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaSe
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_MARKETING_ASSETS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_MARKETING_ASSETS_CTA_REASSURANCE,
+  ICP_MARKETING_ASSETS_FINAL_REASSURANCE,
+  ICP_MARKETING_ASSETS_WHAT_TO_EXPECT_ITEMS,
+  ICP_MARKETING_ASSETS_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const SERVICES = [
   { icon: Megaphone, title: "Ad creatives", desc: "Paid social and display ads that stop the scroll and convert." },
@@ -88,6 +95,9 @@ export default function MarketingAssetsPage() {
                     </div>
                     <span className="text-left">Marketing & production by Style Studio Branding</span>
                   </Link>
+                  <CTAReassuranceLine dense className="max-w-xl mx-auto md:mx-0">
+                    {ICP_MARKETING_ASSETS_CTA_REASSURANCE}
+                  </CTAReassuranceLine>
                 </motion.div>
               </div>
 
@@ -241,6 +251,9 @@ export default function MarketingAssetsPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8">
               Start your marketing upgrade. Book a strategy call and we’ll align on goals and next steps.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_MARKETING_ASSETS_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-full">
               <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={STRATEGY_CALL_PATH}>

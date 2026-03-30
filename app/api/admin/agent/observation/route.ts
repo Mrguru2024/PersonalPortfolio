@@ -1,3 +1,4 @@
+import "openai/shims/node";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";

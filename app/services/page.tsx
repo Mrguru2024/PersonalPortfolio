@@ -6,6 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PREMIUM_OFFERS } from "@/lib/funnel-content";
 import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  CTA_REASSURANCE_SERVICE,
+  WHAT_TO_EXPECT_SERVICE_ITEMS,
+  WHAT_TO_EXPECT_SERVICE_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Services | Ascendra Technologies",
@@ -51,6 +57,7 @@ export default function ServicesPage() {
             <p className="text-base sm:text-lg text-muted-foreground">
               Three ways we help: improve an existing website, build a stronger brand and site, or align strategy, design, and technology for conversion-ready growth.
             </p>
+            <CTAReassuranceLine className="max-w-2xl">{CTA_REASSURANCE_SERVICE}</CTAReassuranceLine>
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
@@ -85,6 +92,12 @@ export default function ServicesPage() {
               </Card>
             ))}
           </section>
+
+          <WhatToExpectList
+            title={WHAT_TO_EXPECT_SERVICE_TITLE}
+            items={WHAT_TO_EXPECT_SERVICE_ITEMS}
+            className="max-w-3xl mx-auto"
+          />
 
           <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
             <h2 className="text-2xl font-semibold text-foreground mb-3 sm:mb-4">

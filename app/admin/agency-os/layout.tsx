@@ -1,11 +1,25 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Target, ClipboardList } from "lucide-react";
+import {
+  LayoutDashboard,
+  Target,
+  ClipboardList,
+  FolderKanban,
+  BookOpen,
+  Library,
+  GraduationCap,
+  Shield,
+} from "lucide-react";
 
 const NAV = [
   { href: "/admin/agency-os", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/agency-os/projects", label: "Projects", icon: FolderKanban },
   { href: "/admin/agency-os/hvd", label: "Value (HVD)", icon: Target },
-  { href: "/admin/agency-os/tasks", label: "Tasks & acceptance", icon: ClipboardList },
+  { href: "/admin/agency-os/tasks", label: "Tasks", icon: ClipboardList },
+  { href: "/admin/agency-os/sops", label: "SOPs", icon: BookOpen },
+  { href: "/admin/agency-os/playbooks", label: "Playbooks", icon: Library },
+  { href: "/admin/agency-os/training", label: "Training", icon: GraduationCap },
+  { href: "/admin/agency-os/roles", label: "Roles", icon: Shield },
 ] as const;
 
 export default function AgencyOsLayout({

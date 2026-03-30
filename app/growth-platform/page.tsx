@@ -11,6 +11,8 @@ import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@sh
 import { Button } from "@/components/ui/button";
 import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 import { ArrowRight } from "lucide-react";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_GROWTH_PLATFORM } from "@/lib/embeddedAssuranceCopy";
 
 const growthPlatformPageMeta = buildMarketingMetadata({
   title: "Ascendra Growth System | Diagnose, build, scale",
@@ -57,6 +59,7 @@ export default function GrowthPlatformPage() {
                 <Link href="/strategy-call">Book strategy call</Link>
               </Button>
             </div>
+            <CTAReassuranceLine className="max-w-2xl mx-auto">{CTA_REASSURANCE_GROWTH_PLATFORM}</CTAReassuranceLine>
           </header>
 
           <section id="value-first" className="scroll-mt-24 space-y-4">
@@ -83,10 +86,9 @@ export default function GrowthPlatformPage() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold">3-step growth system (preview)</h2>
             <p className="text-muted-foreground max-w-3xl">
-              Each step is written in <strong className="text-foreground">outcome language</strong>—what we&apos;re
-              working toward (more booked work, less tire-kickers, systems that don&apos;t depend on daily posting)—not a
-              legal guarantee. Below, links show what you can run today; paying clients get deeper workspaces when your
-              project is active.
+              Each step is framed in <strong className="text-foreground">outcomes</strong>—more booked work, fewer
+              wrong-fit leads, systems that don&apos;t depend on daily heroics. Below, links show what you can run today;
+              active clients get deeper workspaces as scope opens.
             </p>
             <ThreeStepSystemPreview />
           </section>

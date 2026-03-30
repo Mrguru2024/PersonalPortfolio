@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     const task = await applyAgencyTaskAcceptance({
       taskId,
       actorUserId: uid,
-      actorIsApprovedAdmin: true,
+      actorIsApprovedAdmin: !!user.adminApproved,
       action: parsed.data.action,
       understandingConfirmed: parsed.data.action === "accept" ? parsed.data.understandingConfirmed : undefined,
       responsibilityConfirmed: parsed.data.action === "accept" ? parsed.data.responsibilityConfirmed : undefined,

@@ -11,14 +11,19 @@ import {
   recordAeeCrmAttributionEvent,
   resolveAeeExperimentVariantForAttribution,
 } from "@server/services/experimentation/aeeCrmAttributionService";
+import { syncPpcRevenueLayerAfterFormLead } from "@server/services/paid-growth/ppcRevenueFormSync";
 
 export interface FormAttribution {
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
+  utm_content?: string | null;
+  utm_term?: string | null;
   referrer?: string | null;
   landing_page?: string | null;
   visitorId?: string | null;
+  /** First-party session key (localStorage); pairs with visitorId for `ppc_attribution_sessions`. */
+  sessionId?: string | null;
   /** AEE: stable experiment key or numeric ids from forms / tracking. */
   experimentKey?: string | null;
   variantKey?: string | null;
@@ -140,6 +145,9 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
       if (tags.length > 0) await storage.updateCrmContact(lead.id, { tags });
     }
     if (vid) await storage.attachVisitorToLead(vid, lead.id);
+    await syncPpcRevenueLayerAfterFormLead(storage, lead.id, attribution, isPaidSearchAttribution(attribution)).catch(
+      () => {},
+    );
     return storage.getCrmContactById(lead.id);
   }
 
@@ -189,6 +197,9 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
         metadataJson: { source: "ensureCrmLeadFromFormSubmission" },
       }).catch(() => {});
     }
+    await syncPpcRevenueLayerAfterFormLead(storage, created.id, attribution, isPaidSearchAttribution(attribution)).catch(
+      () => {},
+    );
   }
   return created;
 }

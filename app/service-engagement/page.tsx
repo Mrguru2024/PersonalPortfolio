@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
+import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@shared/ascendraCoreGuarantee";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Service engagement expectations | Ascendra",
@@ -66,6 +67,19 @@ export default function ServiceEngagementPage() {
             DocuSign—together with any statement of work referenced there.
           </p>
         </div>
+        <section
+          className="rounded-xl border border-teal-500/25 bg-teal-500/[0.06] dark:bg-teal-950/25 p-5 sm:p-6 space-y-2"
+          aria-labelledby="ascendra-core-guarantee-service-heading"
+        >
+          <h2 id="ascendra-core-guarantee-service-heading" className="text-lg font-semibold">
+            {ASCENDRA_CORE_GUARANTEE_TITLE}
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">{ASCENDRA_CORE_GUARANTEE_BODY}</p>
+          <p className="text-xs text-muted-foreground pt-1">
+            This is positioning language, not a standalone legal promise. Your executed agreement and SOW still control.
+          </p>
+        </section>
+
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Legal hygiene</p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Service engagement expectations</h1>

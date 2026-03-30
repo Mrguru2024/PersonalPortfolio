@@ -39,6 +39,12 @@ import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { WhatToExpectList, CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import {
+  CTA_REASSURANCE_STRATEGY_CALL,
+  WHAT_TO_EXPECT_STRATEGY_FORM_ITEMS,
+  WHAT_TO_EXPECT_STRATEGY_FORM_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -175,7 +181,8 @@ export default function StrategyCallPage() {
                 <CardTitle className="text-base sm:text-lg">What This Call Is For</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 text-sm text-muted-foreground break-words min-w-0">
-                A short conversation to understand your goals, where you are now, and whether our brand, web, or marketing path is a fit. No pitch—just clarity and next steps if it makes sense.
+                A working conversation: what you&apos;re trying to move, what&apos;s already in place, and whether a
+                brand/web path here is the right lever. Direct feedback—no scripted pitch.
               </CardContent>
             </Card>
             <Card className="border-border bg-card/80 shadow-sm overflow-hidden min-w-0">
@@ -183,10 +190,18 @@ export default function StrategyCallPage() {
                 <CardTitle className="text-base sm:text-lg">Who This Is Best For</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 text-sm text-muted-foreground break-words min-w-0">
-                Entrepreneurs and small businesses ready to invest in brand, website, or marketing—launch, rebrand, or ongoing assets. One coordinated team, no handoff chaos.
+                Founders and operators ready to invest in brand, site, or marketing systems—launch, rebrand, or ongoing
+                assets—with one coordinated team instead of a string of handoffs.
               </CardContent>
             </Card>
           </div>
+
+          <WhatToExpectList
+            title={WHAT_TO_EXPECT_STRATEGY_FORM_TITLE}
+            items={WHAT_TO_EXPECT_STRATEGY_FORM_ITEMS}
+            compact
+            className="max-w-xl mx-auto mb-6 sm:mb-8"
+          />
 
           <Card className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full">
             <CardHeader className="px-4 sm:px-6 md:px-8">
@@ -386,9 +401,9 @@ export default function StrategyCallPage() {
                       <Link href={BRAND_GROWTH_PATH}>Back to Brand Growth</Link>
                     </Button>
                   </div>
-                  <p className="text-muted-foreground text-xs sm:text-sm pt-1">
-                    We'll respond within 24–48 hours to schedule your call.
-                  </p>
+                  <CTAReassuranceLine dense className="text-left max-w-none pt-1">
+                    {CTA_REASSURANCE_STRATEGY_CALL}
+                  </CTAReassuranceLine>
                 </form>
               </Form>
             </CardContent>

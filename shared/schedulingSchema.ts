@@ -10,6 +10,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { crmContacts } from "./crmSchema";
+import { ppcAttributionSessions, ppcCampaigns } from "./paidGrowthSchema";
 
 /**
  * Ascendra-native scheduling: availability, public booking, confirmations & reminder queue.
@@ -155,6 +156,11 @@ export const schedulingAppointments = pgTable(
     confirmationSentAt: timestamp("confirmation_sent_at"),
     cancelledAt: timestamp("cancelled_at"),
     completedAt: timestamp("completed_at"),
+    /** Optional PPC Revenue Engine links — populated when booking payload includes attribution */
+    ppcCampaignId: integer("ppc_campaign_id").references(() => ppcCampaigns.id, { onDelete: "set null" }),
+    ppcAttributionSessionId: integer("ppc_attribution_session_id").references(() => ppcAttributionSessions.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

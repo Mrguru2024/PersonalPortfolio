@@ -31,6 +31,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_AUDIT_FORM } from "@/lib/embeddedAssuranceCopy";
 import {
   AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS,
@@ -495,6 +497,10 @@ export function AuditRequestForm() {
                 />
               </div>
             </div>
+
+            <CTAReassuranceLine dense className="text-left max-w-none">
+              {CTA_REASSURANCE_AUDIT_FORM}
+            </CTAReassuranceLine>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
               {isPending ? "Submitting..." : "Submit Audit Request"}

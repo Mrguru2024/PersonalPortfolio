@@ -21,6 +21,13 @@ import {
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_LAUNCH } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_LAUNCH_CTA_REASSURANCE,
+  ICP_LAUNCH_FINAL_REASSURANCE,
+  ICP_LAUNCH_WHAT_TO_EXPECT_ITEMS,
+  ICP_LAUNCH_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const LAUNCH_FAQ = [
   { q: "How long does a typical launch project take?", a: "Timeline depends on scope—brand only, brand + site, or full launch kit. Most launch projects run a few weeks to a few months. Book a call and we'll outline a timeline for your situation." },
@@ -86,13 +93,21 @@ export default function LaunchYourBrandPage() {
                 </div>
                 <span>Brand identity by Macon Designs</span>
               </Link>
+              <CTAReassuranceLine dense className="max-w-xl">
+                {ICP_LAUNCH_CTA_REASSURANCE}
+              </CTAReassuranceLine>
             </motion.div>
           </div>
         </section>
 
         <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl space-y-8">
             <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_LAUNCH} />
+            <WhatToExpectList
+              title={ICP_LAUNCH_WHAT_TO_EXPECT_TITLE}
+              items={ICP_LAUNCH_WHAT_TO_EXPECT_ITEMS}
+              compact
+            />
           </div>
         </section>
 
@@ -213,6 +228,9 @@ export default function LaunchYourBrandPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8">
               Book a brand launch call. We’ll discuss your vision and outline the right path.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_LAUNCH_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-full">
               <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={STRATEGY_CALL_PATH}>

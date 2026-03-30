@@ -35,10 +35,15 @@ export function getAdminAgentFeatureGuideText(): string {
 
 **Growth Engine — paid traffic** ([/admin/paid-growth](/admin/paid-growth)): Readiness gates, campaigns, accounts, lead quality (CRM), rules-based optimization ([/admin/paid-growth/optimization](/admin/paid-growth/optimization)), campaign structure (ad groups/keywords/destinations/copy), internal fulfillment ([/admin/paid-growth/billing](/admin/paid-growth/billing)). Google Ads UI/API publish still separate; Meta publish when configured. AMIE hints can seed keywords.
 
+**Ascendra company SOP (delivery workflow for the assistant)** — Human reference: [\`Ascendra Technologies SOP.pdf\`](/Ascendra%20Technologies%20SOP.pdf) in \`public/\`. The assistant also receives a structured block (**ASCENDRA DELIVERY SOP WORKFLOW**) built from \`shared/ascendraSopWorkflowConfig.ts\`, mergeable via env \`ASCENDRA_SOP_WORKFLOW_JSON\` (path to JSON). Admins can inspect the merged object: GET \`/api/admin/agent/sop-workflow\`.
+
 **Agency Operating System (internal delivery)** ([/admin/agency-os](/admin/agency-os)):
 - **HVD registry** ([/admin/agency-os/hvd](/admin/agency-os/hvd)): High-Value Delivery definitions; nine built-ins seed on first API load; custom slugs; duplicate-slug blocked; overlap/low-value warning on create.
-- **Tasks**: GET/POST \`/api/admin/agency-os/tasks\`; **acceptance** POST \`/api/admin/agency-os/tasks/[id]/acceptance\` with JSON \`action\`: \`accept\` (requires \`understandingConfirmed\` + \`responsibilityConfirmed\` true) | \`decline\` (\`declineReason\`) | \`clarify\` (\`clarificationMessage\`). Assignee or any approved admin may respond.
-- **Projects**: POST \`/api/admin/agency-os/projects\` — validated body must include \`primaryHvdSlug\` registered in HVD table, \`valueContributions\` (≥1), \`expectedOutcome\`, \`impactMetric\`, \`dataSource\`. Not the same as CRM tasks or client agreement milestones.
+- **Projects**: GET/POST \`/api/admin/agency-os/projects\`; GET/PATCH \`/api/admin/agency-os/projects/[id]\`; POST phases \`/projects/[id]/phases\`, milestones \`/projects/[id]/milestones\`; PATCH milestone \`/api/admin/agency-os/milestones/[id]\`.
+- **Tasks**: GET/POST \`/api/admin/agency-os/tasks\` (optional \`?projectId=\`); **acceptance** POST \`/api/admin/agency-os/tasks/[id]/acceptance\` — \`action\`: \`accept\` | \`decline\` | \`clarify\`. **Default:** only the **assignee** may respond. Set env \`AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1\` so any **approved admin** may override.
+- **Config**: GET \`/api/admin/agency-os/config\` exposes \`adminTaskAcceptanceAllowed\` for UI.
+- **Execution roles**: GET/POST \`/api/admin/agency-os/execution-roles\`, PATCH/DELETE \`/execution-roles/[id]\`; user mapping GET/POST \`/execution-roles/users\` (\`?userId=\`, body \`{ userId, roleIds }\`). Built-ins seed on first load.
+- **SOPs / playbooks / training**: CRUD under \`/api/admin/agency-os/sops\`, \`/playbooks\`, \`/training-modules\` (with \`[id]\` routes).
 
 ### Ascendra OS — growth + leads (one connected system)
 
@@ -65,7 +70,7 @@ Treat **market intelligence**, **funnels**, **experiments**, and **lead operatio
 
 **Landing / lead magnet copy** — Outcome-led framework: perceived outcomes → pain → “what if they don’t” → real value → disclaimer. Presets and paste template: \`app/lib/landingPageOutcomeFramework.ts\` (\`LANDING_LEAD_MAGNET_WORKFLOW_TEMPLATE\`); workflow card under Content Studio → Workflow.
 
-**Content Studio** ([/admin/content-studio](/admin/content-studio)): Documents, editorial calendar, publishing.
+**Content Studio** ([/admin/content-studio](/admin/content-studio)): Documents, editorial calendar, publishing. **Content strategy** ([/admin/content-studio/strategy](/admin/content-studio/strategy)): pillars, repurposing checklists, interactive brief builder; calendar rows store optional \`strategy_meta\` (see \`shared/editorialStrategyMeta.ts\`) alongside funnel stage, personas, and CTA. Merged defaults + optional \`ASCENDRA_CONTENT_STRATEGY_JSON\`; admin API GET \`/api/admin/content-studio/strategy-workflow\`.
 
 **Funnel admin** ([/admin/funnel](/admin/funnel)): Funnel pages and assets.
 

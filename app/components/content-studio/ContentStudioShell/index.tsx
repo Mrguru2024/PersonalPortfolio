@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 const NAV = [
   { href: "/admin/content-studio/documents", label: "Library" },
   { href: "/admin/content-studio/calendar", label: "Calendar" },
+  { href: "/admin/content-studio/strategy", label: "Strategy" },
   { href: "/admin/content-studio/campaigns", label: "Campaigns" },
   { href: "/admin/content-studio/import-export", label: "Import / export" },
   { href: "/admin/content-studio/workflow", label: "Post history" },

@@ -24,6 +24,20 @@ export async function POST(req: NextRequest) {
         ? (body.formAnswers as Record<string, unknown>)
         : undefined;
     const bookingSource = body.bookingSource != null ? String(body.bookingSource).trim() : undefined;
+    const attributionSessionPublicId =
+      body.attributionSessionPublicId != null && String(body.attributionSessionPublicId).trim() !== ""
+        ? String(body.attributionSessionPublicId).trim()
+        : undefined;
+    const bookingVisitorId =
+      body.visitorId != null && String(body.visitorId).trim() !== "" ? String(body.visitorId).trim() : undefined;
+    const bookingSessionId =
+      body.sessionId != null && String(body.sessionId).trim() !== "" ? String(body.sessionId).trim() : undefined;
+    let ppcCampaignId: number | undefined;
+    const ppcRaw = body.ppcCampaignId;
+    if (ppcRaw != null && ppcRaw !== "") {
+      const n = typeof ppcRaw === "number" ? ppcRaw : parseInt(String(ppcRaw), 10);
+      if (Number.isFinite(n)) ppcCampaignId = Math.trunc(n);
+    }
     let hostUserId: number | undefined;
     const hostUserIdRaw = body.hostUserId;
     if (hostUserIdRaw != null && hostUserIdRaw !== "") {
@@ -50,6 +64,10 @@ export async function POST(req: NextRequest) {
       bookingPageSlug: bookingPageSlug || null,
       formAnswers: formAnswers ?? null,
       bookingSource: bookingSource || null,
+      attributionSessionPublicId: attributionSessionPublicId || null,
+      visitorId: bookingVisitorId || null,
+      sessionId: bookingSessionId || null,
+      ppcCampaignId: ppcCampaignId ?? null,
     });
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });

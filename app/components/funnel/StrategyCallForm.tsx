@@ -39,6 +39,8 @@ import {
   OCCUPATION_OPTIONS,
   TIMELINE_OPTIONS,
 } from "@/lib/funnel-content";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_CONTACT_FORM } from "@/lib/embeddedAssuranceCopy";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -432,6 +434,9 @@ export function StrategyCallForm({
               {isPending ? "Submitting..." : "Book my free call"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
+            <CTAReassuranceLine dense className="text-left max-w-none">
+              {CTA_REASSURANCE_CONTACT_FORM}
+            </CTAReassuranceLine>
           </form>
         </Form>
       </CardContent>

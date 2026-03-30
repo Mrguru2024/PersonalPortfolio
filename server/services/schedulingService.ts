@@ -19,6 +19,8 @@ import {
 } from "@shared/schedulingSchema";
 import { users } from "@shared/schema";
 import { crmContacts, type CrmContact } from "@shared/crmSchema";
+import { ppcAttributionSessions } from "@shared/paidGrowthSchema";
+import { storage } from "@server/storage";
 import { deriveSchedulerQualification } from "@server/lib/schedulerQualification";
 import {
   deleteGoogleCalendarEventForAppointment,
@@ -582,6 +584,43 @@ export async function computeAvailableSlots(
   return slots.sort((a, b) => a.startAt.localeCompare(b.startAt));
 }
 
+async function resolveBookingPpcAttribution(input: {
+  attributionSessionPublicId?: string | null;
+  visitorId?: string | null;
+  sessionId?: string | null;
+  ppcCampaignId?: number | null;
+}): Promise<{ ppcAttributionSessionId: number | null; ppcCampaignId: number | null }> {
+  let ppcCampaignId = input.ppcCampaignId ?? null;
+  let ppcAttributionSessionId: number | null = null;
+  const pub = input.attributionSessionPublicId?.trim();
+  if (pub) {
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(eq(ppcAttributionSessions.publicId, pub))
+      .limit(1);
+    if (row) {
+      ppcAttributionSessionId = row.id;
+      ppcCampaignId = ppcCampaignId ?? row.ppcCampaignId ?? null;
+    }
+    return { ppcAttributionSessionId, ppcCampaignId };
+  }
+  const vid = input.visitorId?.trim();
+  if (vid) {
+    const sid = (input.sessionId ?? "").trim() || "default";
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(and(eq(ppcAttributionSessions.visitorId, vid), eq(ppcAttributionSessions.sessionId, sid)))
+      .limit(1);
+    if (row) {
+      ppcAttributionSessionId = row.id;
+      ppcCampaignId = ppcCampaignId ?? row.ppcCampaignId ?? null;
+    }
+  }
+  return { ppcAttributionSessionId, ppcCampaignId };
+}
+
 export async function findContactIdByEmail(email: string): Promise<number | null> {
   const normalized = email.trim().toLowerCase();
   if (!normalized) return null;
@@ -605,6 +644,11 @@ export async function createBookingFromPublic(input: {
   bookingPageSlug?: string | null;
   formAnswers?: Record<string, unknown> | null;
   bookingSource?: string | null;
+  /** PPC Revenue Engine — optional attribution passthrough from client */
+  attributionSessionPublicId?: string | null;
+  visitorId?: string | null;
+  sessionId?: string | null;
+  ppcCampaignId?: number | null;
 }): Promise<{ ok: true; appointment: SchedulingAppointment } | { ok: false; error: string }> {
   const settings = await getSchedulingSettings();
   if (!settings.publicBookingEnabled) return { ok: false, error: "Public booking is disabled." };
@@ -681,6 +725,13 @@ export async function createBookingFromPublic(input: {
 
   const bookingSource = input.bookingSource?.trim() || (pageRow ? `page:${pageRow.slug}` : "native_booking");
 
+  const { ppcAttributionSessionId, ppcCampaignId: resolvedPpcCampaignId } = await resolveBookingPpcAttribution({
+    attributionSessionPublicId: input.attributionSessionPublicId ?? null,
+    visitorId: input.visitorId ?? null,
+    sessionId: input.sessionId ?? null,
+    ppcCampaignId: input.ppcCampaignId ?? null,
+  });
+
   const [appt] = await db
     .insert(schedulingAppointments)
     .values({
@@ -704,10 +755,17 @@ export async function createBookingFromPublic(input: {
       guestToken,
       contactId,
       guestNotes: input.guestNotes?.trim() || null,
+      ppcCampaignId: resolvedPpcCampaignId,
+      ppcAttributionSessionId,
     })
     .returning();
 
   if (!appt) return { ok: false, error: "Could not create booking." };
+
+  if (appt.contactId && (appt.ppcCampaignId != null || appt.ppcAttributionSessionId != null)) {
+    const pq = await storage.getPpcLeadQualityByContact(appt.contactId);
+    if (pq) await storage.upsertPpcLeadQuality(appt.contactId, { bookedCall: true }).catch(() => {});
+  }
 
   void syncAppointmentToGoogleCalendar(appt, bt.name).catch((err) =>
     console.warn("[scheduling] Google Calendar sync:", err),

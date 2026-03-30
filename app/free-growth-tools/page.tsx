@@ -17,6 +17,8 @@ import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_FREE_TOOLS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_LEAD_MAGNET } from "@/lib/embeddedAssuranceCopy";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth tools | Ascendra Technologies",
@@ -43,9 +45,11 @@ export default function FreeGrowthToolsPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Free growth tools
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
-                Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-4">
+                Practical resources to see where you stand and what to do next—strategy, design, and web in one Brand
+                Growth ecosystem, not a pile of disconnected downloads.
               </p>
+              <CTAReassuranceLine className="max-w-2xl mb-6 sm:mb-8">{CTA_REASSURANCE_LEAD_MAGNET}</CTAReassuranceLine>
               <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_FREE_TOOLS} className="pb-8 text-left" />
               <Card className="max-w-2xl mx-auto mb-8 border-primary/20 bg-primary/5 dark:bg-primary/10">
                 <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-col sm:flex-row sm:items-center gap-4">

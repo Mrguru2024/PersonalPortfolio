@@ -53,7 +53,7 @@ import {
   format,
   isSameDay,
 } from "date-fns";
-import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil } from "lucide-react";
+import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,10 @@ import { ContentStudioFunnelStageSelect } from "@/components/content-studio/Cont
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatFunnelStage } from "@/lib/growth-os/friendlyCopy";
+import type { EditorialStrategyMeta } from "@shared/editorialStrategyMeta";
+import type { ContentStrategyWorkflowConfig } from "@shared/contentStrategyWorkflowConfig";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContentStrategyBriefPanel } from "@/components/content-studio/ContentStrategyBriefPanel";
 
 const WEEK_START_LS_KEY = "content-studio-calendar-week-starts-on";
 const MONTH_DENSITY_LS_KEY = "content-studio-calendar-month-density";
@@ -80,6 +84,7 @@ interface CalEntry {
   personaTags: string[];
   ctaObjective: string | null;
   funnelStage?: string | null;
+  strategyMeta?: EditorialStrategyMeta | null;
   warningsJson: string[] | null;
   documentId: number | null;
   sortOrder?: number;
@@ -116,6 +121,34 @@ const DOC_APPROVAL_LABEL: Record<string, string> = {
 
 function formatDocApproval(status: string): string {
   return DOC_APPROVAL_LABEL[status] ?? status;
+}
+
+const CALENDAR_WARNING_LABEL: Record<string, string> = {
+  missing_cta: "Missing CTA note",
+  missing_persona: "Missing audience tags",
+  weak_headline: "Title is very short",
+  strategy_evergreen_missing_keyword: "Evergreen slot: add a primary keyword",
+  strategy_intent_without_keyword: "Search intent set without a keyword",
+  strategy_repurpose_without_hook: "Repurpose targets listed — add a hook angle",
+};
+
+function formatEntryWarnings(warnings: string[]): string {
+  return warnings
+    .map((w) => {
+      if (w.startsWith("scheduling_conflict:")) {
+        const id = w.slice("scheduling_conflict:".length);
+        return `Scheduling overlap (entry ${id})`;
+      }
+      return CALENDAR_WARNING_LABEL[w] ?? w;
+    })
+    .join(", ");
+}
+
+function hasStrategyBrief(m?: EditorialStrategyMeta | null): boolean {
+  if (!m || typeof m !== "object") return false;
+  return Object.entries(m).some(([, v]) =>
+    Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim().length > 0 : Boolean(v),
+  );
 }
 
 function dayDropId(d: Date) {
@@ -235,7 +268,7 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
         {warnings.length > 0 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
             <AlertTriangle className="h-3 w-3 shrink-0" />
-            {warnings.join(", ")}
+            {formatEntryWarnings(warnings)}
           </div>
         )}
       </div>
@@ -248,23 +281,29 @@ function SortableRow({
   adapters,
   calendarQueryKey,
   qc,
+  strategyWorkflow,
 }: {
   entry: CalEntry;
   adapters: PlatformAdapterRow[];
   calendarQueryKey: readonly unknown[];
   qc: ReturnType<typeof useQueryClient>;
+  strategyWorkflow: ContentStrategyWorkflowConfig | null;
 }) {
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
   const [editStatus, setEditStatus] = useState(entry.calendarStatus);
   const [editPlatforms, setEditPlatforms] = useState<string[]>([...(entry.platformTargets ?? [])]);
   const [editFunnelStage, setEditFunnelStage] = useState(entry.funnelStage ?? "");
+  const [editStrategyMeta, setEditStrategyMeta] = useState<EditorialStrategyMeta>({});
+  const [strategyOpen, setStrategyOpen] = useState(false);
 
   useEffect(() => {
     if (editOpen) {
       setEditStatus(entry.calendarStatus);
       setEditPlatforms([...(entry.platformTargets ?? [])]);
       setEditFunnelStage(entry.funnelStage ?? "");
+      setEditStrategyMeta({ ...(entry.strategyMeta ?? {}) });
+      setStrategyOpen(hasStrategyBrief(entry.strategyMeta));
     }
   }, [editOpen, entry]);
 
@@ -290,6 +329,7 @@ function SortableRow({
         calendarStatus: editStatus,
         platformTargets: editPlatforms,
         funnelStage: editFunnelStage.trim() || null,
+        strategyMeta: hasStrategyBrief(editStrategyMeta) ? editStrategyMeta : null,
       }),
     });
     if (!res.ok) {
@@ -346,7 +386,7 @@ function SortableRow({
         {warnings.length > 0 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
             <AlertTriangle className="h-3 w-3 shrink-0" />
-            {warnings.join(", ")}
+            {formatEntryWarnings(warnings)}
           </div>
         )}
         {entry.documentId && (
@@ -417,6 +457,33 @@ function SortableRow({
                   ))}
                 </div>
               </div>
+              <Collapsible open={strategyOpen} onOpenChange={setStrategyOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-between font-normal text-muted-foreground"
+                  >
+                    <span>Content strategy brief (pillar, SEO, repurposing)</span>
+                    <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", strategyOpen && "rotate-180")} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <ContentStrategyBriefPanel
+                    value={editStrategyMeta}
+                    onChange={setEditStrategyMeta}
+                    workflow={strategyWorkflow}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    Opens the same fields as{" "}
+                    <Link href="/admin/content-studio/strategy" className="underline text-foreground">
+                      Strategy
+                    </Link>{" "}
+                    — stored as strategy metadata on this row, not a duplicate of funnel stage or CTA.
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
@@ -535,6 +602,15 @@ export default function ContentStudioCalendarPage() {
       const r = await fetch("/api/admin/content-studio/adapters", { credentials: "include" });
       if (!r.ok) throw new Error("Failed adapters");
       return r.json() as Promise<{ adapters: PlatformAdapterRow[] }>;
+    },
+  });
+
+  const { data: strategyWorkflowRes } = useQuery({
+    queryKey: ["/api/admin/content-studio/strategy-workflow"],
+    queryFn: async () => {
+      const r = await fetch("/api/admin/content-studio/strategy-workflow", { credentials: "include" });
+      if (!r.ok) throw new Error("Failed strategy workflow");
+      return r.json() as Promise<{ config: ContentStrategyWorkflowConfig }>;
     },
   });
 
@@ -692,6 +768,7 @@ export default function ContentStudioCalendarPage() {
             .map((s) => s.trim())
             .filter(Boolean),
           platformTargets: qSelectedPlatforms,
+          funnelStage: qFunnelStage.trim() || null,
           calendarStatus: "draft",
         }),
       });
@@ -763,7 +840,12 @@ export default function ContentStudioCalendarPage() {
               <Link href="/admin/integrations" className="underline font-medium text-foreground">
                 Connections &amp; email
               </Link>
-              . Recent activity is under{" "}
+              . Plan editorial pillars, SEO intent, and repurposing on each row via the pencil →{" "}
+              <strong className="text-foreground">Content strategy brief</strong>, or use the{" "}
+              <Link href="/admin/content-studio/strategy" className="underline font-medium text-foreground">
+                Strategy
+              </Link>{" "}
+              hub. Recent activity is under{" "}
               <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
                 Post history
               </Link>
@@ -1095,6 +1177,7 @@ export default function ContentStudioCalendarPage() {
                       adapters={adaptersRes?.adapters ?? []}
                       calendarQueryKey={calendarQueryKey}
                       qc={qc}
+                      strategyWorkflow={strategyWorkflowRes?.config ?? null}
                     />
                   ))
                 )}

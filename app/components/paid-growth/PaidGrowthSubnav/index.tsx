@@ -13,6 +13,9 @@ import {
   HeartPulse,
   Sparkles,
   CircleDollarSign,
+  ShieldCheck,
+  Receipt,
+  Phone,
 } from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
@@ -20,6 +23,9 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/paid-growth/accounts", label: "Accounts", icon: Link2 },
   { href: "/admin/paid-growth/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/paid-growth/optimization", label: "Optimization", icon: Sparkles },
+  { href: "/admin/paid-growth/verification", label: "Verification", icon: ShieldCheck },
+  { href: "/admin/paid-growth/billable-events", label: "Billable", icon: Receipt },
+  { href: "/admin/paid-growth/calls", label: "Calls", icon: Phone },
   { href: "/admin/paid-growth/lead-quality", label: "Lead quality", icon: HeartPulse },
   { href: "/admin/paid-growth/readiness", label: "Readiness guide", icon: ClipboardCheck },
   { href: "/admin/paid-growth/reports", label: "Reports", icon: LineChart },

@@ -119,8 +119,8 @@ export const OUTCOME_FRAMEWORK_COPY_HOME: OutcomeLandingFrameworkCopy = {
       "One coordinated path across strategy, design, and technology—so you’re not stitching freelancers and guesswork together.",
     bullets: [
       "Diagnose where the real bottleneck is (message, presentation, or conversion system)",
-      "Build the site, funnel, and automation pieces that match that diagnosis",
-      "Scale only what’s already working—without burning budget on broken foundations",
+      "Build and connect the pieces so you can see leads, sources, and funnel steps clearly",
+      "Refine what’s already working—without betting the next quarter on an untested rebuild",
     ],
   },
   disclaimer: DEFAULT_OUTCOME_LANDING_DISCLAIMER,
@@ -246,7 +246,7 @@ export const OUTCOME_FRAMEWORK_COPY_FREE_TOOLS: OutcomeLandingFrameworkCopy = {
   perceivedOutcomes: {
     heading: "What you’re trying to get from these tools",
     bullets: [
-      "A honest read on where you stand before you spend big",
+      "An honest read on where you stand before you spend big",
       "Next steps you can act on—not another PDF you never open",
       "A path to deeper help only if it actually fits",
     ],

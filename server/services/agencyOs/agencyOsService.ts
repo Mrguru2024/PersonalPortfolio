@@ -4,10 +4,33 @@ import {
   aosHvdRegistry,
   aosTaskEvents,
   aosAgencyTasks,
+  aosExecutionRoles,
+  aosUserExecutionRoles,
+  aosSops,
+  aosPlaybooks,
+  aosTrainingModules,
+  aosProjectPhases,
+  aosDeliveryMilestones,
+  users,
   AOS_HVD_CATEGORY_SLUGS,
 } from "@shared/schema";
-import { and, asc, eq } from "drizzle-orm";
-import type { AgencyOsProjectCreateInput, AgencyOsTaskCreateInput } from "@shared/agencyOsValidation";
+import { and, asc, desc, eq } from "drizzle-orm";
+import type {
+  AgencyOsExecutionRoleCreateInput,
+  AgencyOsExecutionRoleUpdateInput,
+  AgencyOsMilestoneCreateInput,
+  AgencyOsMilestonePatchInput,
+  AgencyOsPhaseCreateInput,
+  AgencyOsPlaybookCreateInput,
+  AgencyOsPlaybookUpdateInput,
+  AgencyOsProjectCreateInput,
+  AgencyOsProjectPatchInput,
+  AgencyOsSopCreateInput,
+  AgencyOsSopUpdateInput,
+  AgencyOsTaskCreateInput,
+  AgencyOsTrainingCreateInput,
+  AgencyOsTrainingUpdateInput,
+} from "@shared/agencyOsValidation";
 import { isKnownCanonicalHvdSlug } from "@shared/agencyOsValidation";
 
 const BUILT_IN_HVD_ROWS: Array<{
@@ -81,6 +104,111 @@ const BUILT_IN_HVD_ROWS: Array<{
     sortOrder: 90,
   },
 ];
+
+const BUILT_IN_EXECUTION_ROLES: Array<{
+  key: string;
+  label: string;
+  description: string;
+  responsibilities: string[];
+  taskTypes: string[];
+  systemsUsed: string[];
+  aiFocus: string;
+  sortOrder: number;
+}> = [
+  {
+    key: "strategist",
+    label: "Strategist",
+    description: "Positioning, offer, funnel design, and prioritization.",
+    responsibilities: ["Shape outcomes", "Sequence work", "Align to HVD"],
+    taskTypes: ["strategy", "scoping", "review"],
+    systemsUsed: ["CRM notes", "Analytics"],
+    aiFocus: "Research synthesis, hypothesis framing, briefing drafts.",
+    sortOrder: 10,
+  },
+  {
+    key: "developer",
+    label: "Developer",
+    description: "Implementation, integrations, and technical reliability.",
+    responsibilities: ["Build", "Test", "Ship safely"],
+    taskTypes: ["implementation", "bugfix", "integration"],
+    systemsUsed: ["Repo", "CI", "Hosting"],
+    aiFocus: "Code assist, test ideas, log analysis.",
+    sortOrder: 20,
+  },
+  {
+    key: "designer",
+    label: "Designer",
+    description: "UX/UI, brand cohesion, and conversion-oriented layouts.",
+    responsibilities: ["Layouts", "Components", "Visual QA"],
+    taskTypes: ["design", "prototype"],
+    systemsUsed: ["Figma", "Design tokens"],
+    aiFocus: "Copy layout pairing, accessibility checks.",
+    sortOrder: 30,
+  },
+  {
+    key: "copywriter",
+    label: "Copywriter",
+    description: "Messaging, ads, landing copy, and narrative consistency.",
+    responsibilities: ["Draft", "Iterate", "Align to offer"],
+    taskTypes: ["copy", "script"],
+    systemsUsed: ["Docs", "CMS"],
+    aiFocus: "Variant generation, headline testing ideas.",
+    sortOrder: 40,
+  },
+  {
+    key: "media_buyer",
+    label: "Media buyer",
+    description: "Paid channel structure, budgets, and creative iteration.",
+    responsibilities: ["Campaign setup", "Optimization", "Reporting hooks"],
+    taskTypes: ["ppc", "paid_social"],
+    systemsUsed: ["Ads platforms", "Pixels"],
+    aiFocus: "Query mining, RSA ideas, audience hypotheses.",
+    sortOrder: 50,
+  },
+  {
+    key: "analyst",
+    label: "Analyst",
+    description: "Measurement, dashboards, and experiment readouts.",
+    responsibilities: ["Define metrics", "Validate tracking", "Insight delivery"],
+    taskTypes: ["reporting", "experiment_analysis"],
+    systemsUsed: ["Analytics", "Sheets", "BI"],
+    aiFocus: "Anomaly summaries, SQL/helper queries.",
+    sortOrder: 60,
+  },
+  {
+    key: "account_lead",
+    label: "Account lead",
+    description: "Client rhythm, approvals, and delivery coordination.",
+    responsibilities: ["Comms", "Cadence", "Risk surfacing"],
+    taskTypes: ["client_sync", "approval"],
+    systemsUsed: ["Email", "Calls", "CRM"],
+    aiFocus: "Summaries, follow-up drafts.",
+    sortOrder: 70,
+  },
+];
+
+export async function ensureAosExecutionRolesBuiltIns(): Promise<void> {
+  for (const row of BUILT_IN_EXECUTION_ROLES) {
+    const existing = await db
+      .select({ id: aosExecutionRoles.id })
+      .from(aosExecutionRoles)
+      .where(eq(aosExecutionRoles.key, row.key))
+      .limit(1);
+    if (existing[0]) continue;
+    await db.insert(aosExecutionRoles).values({
+      key: row.key,
+      label: row.label,
+      description: row.description,
+      responsibilities: row.responsibilities,
+      taskTypes: row.taskTypes,
+      systemsUsed: row.systemsUsed,
+      aiFocus: row.aiFocus,
+      sortOrder: row.sortOrder,
+      isBuiltIn: true,
+      updatedAt: new Date(),
+    });
+  }
+}
 
 export async function ensureAosHvdBuiltIns(): Promise<void> {
   for (const row of BUILT_IN_HVD_ROWS) {
@@ -230,6 +358,399 @@ export async function createAgencyProjectFromValidated(
   return row;
 }
 
+export async function listAgencyProjects() {
+  return db.select().from(aosAgencyProjects).orderBy(desc(aosAgencyProjects.updatedAt));
+}
+
+export async function getAgencyProjectById(id: number) {
+  const rows = await db.select().from(aosAgencyProjects).where(eq(aosAgencyProjects.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getAgencyProjectDetail(id: number) {
+  const project = await getAgencyProjectById(id);
+  if (!project) return null;
+  const phases = await db
+    .select()
+    .from(aosProjectPhases)
+    .where(eq(aosProjectPhases.projectId, id))
+    .orderBy(asc(aosProjectPhases.orderIndex), asc(aosProjectPhases.id));
+  const milestones = await db
+    .select()
+    .from(aosDeliveryMilestones)
+    .where(eq(aosDeliveryMilestones.projectId, id))
+    .orderBy(asc(aosDeliveryMilestones.sortOrder), asc(aosDeliveryMilestones.id));
+  const tasks = await listAgencyTasks({ projectId: id });
+  return { project, phases, milestones, tasks };
+}
+
+export async function updateAgencyProjectFromValidated(id: number, patch: AgencyOsProjectPatchInput) {
+  const existing = await getAgencyProjectById(id);
+  if (!existing) throw new Error("Project not found.");
+  const [row] = await db
+    .update(aosAgencyProjects)
+    .set({
+      ...patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(aosAgencyProjects.id, id))
+    .returning();
+  return row;
+}
+
+export async function createProjectPhase(projectId: number, input: AgencyOsPhaseCreateInput) {
+  const p = await getAgencyProjectById(projectId);
+  if (!p) throw new Error("Project not found.");
+  const [row] = await db
+    .insert(aosProjectPhases)
+    .values({
+      projectId,
+      name: input.name,
+      description: input.description ?? null,
+      orderIndex: input.orderIndex ?? 0,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+function parseOptionalDate(raw: string | null | undefined): Date | null {
+  if (raw == null || !String(raw).trim()) return null;
+  const d = new Date(String(raw).trim());
+  if (Number.isNaN(d.getTime())) throw new Error("Invalid date.");
+  return d;
+}
+
+export async function createDeliveryMilestone(projectId: number, input: AgencyOsMilestoneCreateInput) {
+  const p = await getAgencyProjectById(projectId);
+  if (!p) throw new Error("Project not found.");
+  const dueAt = parseOptionalDate(input.dueAt);
+  const [row] = await db
+    .insert(aosDeliveryMilestones)
+    .values({
+      projectId,
+      phaseId: input.phaseId ?? null,
+      name: input.name,
+      description: input.description ?? null,
+      dueAt,
+      sortOrder: input.sortOrder ?? 0,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+export async function updateDeliveryMilestone(milestoneId: number, patch: AgencyOsMilestonePatchInput) {
+  const rows = await db
+    .select()
+    .from(aosDeliveryMilestones)
+    .where(eq(aosDeliveryMilestones.id, milestoneId))
+    .limit(1);
+  const existing = rows[0];
+  if (!existing) throw new Error("Milestone not found.");
+  const dueAt =
+    patch.dueAt !== undefined
+      ? patch.dueAt === null || patch.dueAt === ""
+        ? null
+        : parseOptionalDate(patch.dueAt)
+      : undefined;
+  const [row] = await db
+    .update(aosDeliveryMilestones)
+    .set({
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(dueAt !== undefined ? { dueAt } : {}),
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.approvalState !== undefined ? { approvalState: patch.approvalState } : {}),
+      ...(patch.isBlocked !== undefined ? { isBlocked: patch.isBlocked } : {}),
+      ...(patch.phaseId !== undefined ? { phaseId: patch.phaseId } : {}),
+      ...(patch.sortOrder !== undefined ? { sortOrder: patch.sortOrder } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(aosDeliveryMilestones.id, milestoneId))
+    .returning();
+  return row;
+}
+
+export async function listExecutionRoles() {
+  await ensureAosExecutionRolesBuiltIns();
+  return db.select().from(aosExecutionRoles).orderBy(asc(aosExecutionRoles.sortOrder), asc(aosExecutionRoles.key));
+}
+
+export async function getExecutionRoleById(id: number) {
+  const rows = await db.select().from(aosExecutionRoles).where(eq(aosExecutionRoles.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function createExecutionRoleCustom(input: AgencyOsExecutionRoleCreateInput) {
+  await ensureAosExecutionRolesBuiltIns();
+  const dup = await db
+    .select({ id: aosExecutionRoles.id })
+    .from(aosExecutionRoles)
+    .where(eq(aosExecutionRoles.key, input.key))
+    .limit(1);
+  if (dup[0]) throw new Error(`Execution role key "${input.key}" already exists.`);
+  const [row] = await db
+    .insert(aosExecutionRoles)
+    .values({
+      key: input.key,
+      label: input.label,
+      description: input.description ?? null,
+      responsibilities: input.responsibilities ?? [],
+      taskTypes: input.taskTypes ?? [],
+      systemsUsed: input.systemsUsed ?? [],
+      aiFocus: input.aiFocus ?? null,
+      sortOrder: input.sortOrder ?? 100,
+      isBuiltIn: false,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+export async function updateExecutionRole(id: number, patch: AgencyOsExecutionRoleUpdateInput) {
+  const existing = await getExecutionRoleById(id);
+  if (!existing) throw new Error("Execution role not found.");
+  const [row] = await db
+    .update(aosExecutionRoles)
+    .set({
+      ...patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(aosExecutionRoles.id, id))
+    .returning();
+  return row;
+}
+
+export async function deleteExecutionRole(id: number) {
+  const existing = await getExecutionRoleById(id);
+  if (!existing) throw new Error("Execution role not found.");
+  if (existing.isBuiltIn) throw new Error("Built-in execution roles cannot be deleted.");
+  await db.delete(aosExecutionRoles).where(eq(aosExecutionRoles.id, id));
+}
+
+export async function listUserExecutionRoleRows(userId: number) {
+  return db
+    .select({
+      id: aosUserExecutionRoles.id,
+      userId: aosUserExecutionRoles.userId,
+      roleId: aosUserExecutionRoles.roleId,
+      createdAt: aosUserExecutionRoles.createdAt,
+    })
+    .from(aosUserExecutionRoles)
+    .where(eq(aosUserExecutionRoles.userId, userId));
+}
+
+export async function setUserExecutionRoles(userId: number, roleIds: number[]) {
+  await ensureAosExecutionRolesBuiltIns();
+  const uniqueRoleIds = [...new Set(roleIds)];
+  for (const rid of uniqueRoleIds) {
+    const r = await getExecutionRoleById(rid);
+    if (!r) throw new Error(`Unknown execution role id ${rid}.`);
+  }
+  await db.delete(aosUserExecutionRoles).where(eq(aosUserExecutionRoles.userId, userId));
+  if (uniqueRoleIds.length === 0) return [];
+  const now = new Date();
+  await db.insert(aosUserExecutionRoles).values(
+    uniqueRoleIds.map((roleId) => ({
+      userId,
+      roleId,
+      createdAt: now,
+    })),
+  );
+  return listUserExecutionRoleRows(userId);
+}
+
+export async function listApprovedAdminUsersMinimal() {
+  return db
+    .select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+    })
+    .from(users)
+    .where(and(eq(users.isAdmin, true), eq(users.adminApproved, true)))
+    .orderBy(asc(users.username));
+}
+
+export async function listSops() {
+  return db.select().from(aosSops).orderBy(desc(aosSops.updatedAt));
+}
+
+export async function getSopById(id: number) {
+  const rows = await db.select().from(aosSops).where(eq(aosSops.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function createSop(input: AgencyOsSopCreateInput, createdByUserId: number | null) {
+  if (input.primaryHvdSlug) await assertHvdSlugRegistered(input.primaryHvdSlug);
+  if (input.executionRoleId) {
+    const r = await getExecutionRoleById(input.executionRoleId);
+    if (!r) throw new Error("Execution role not found for SOP.");
+  }
+  const [row] = await db
+    .insert(aosSops)
+    .values({
+      title: input.title,
+      purpose: input.purpose,
+      executionRoleId: input.executionRoleId ?? null,
+      primaryHvdSlug: input.primaryHvdSlug ?? null,
+      tools: input.tools ?? [],
+      steps: input.steps ?? [],
+      mistakes: input.mistakes ?? [],
+      qaChecklist: input.qaChecklist ?? [],
+      successCriteria: input.successCriteria ?? null,
+      status: input.status ?? "draft",
+      createdByUserId,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+export async function updateSop(id: number, patch: AgencyOsSopUpdateInput) {
+  const existing = await getSopById(id);
+  if (!existing) throw new Error("SOP not found.");
+  if (patch.primaryHvdSlug) await assertHvdSlugRegistered(patch.primaryHvdSlug);
+  if (patch.executionRoleId) {
+    const r = await getExecutionRoleById(patch.executionRoleId);
+    if (!r) throw new Error("Execution role not found for SOP.");
+  }
+  const [row] = await db
+    .update(aosSops)
+    .set({
+      ...patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(aosSops.id, id))
+    .returning();
+  return row;
+}
+
+export async function deleteSop(id: number) {
+  const existing = await getSopById(id);
+  if (!existing) throw new Error("SOP not found.");
+  await db.delete(aosSops).where(eq(aosSops.id, id));
+}
+
+export async function listPlaybooks() {
+  await ensureAosHvdBuiltIns();
+  return db.select().from(aosPlaybooks).orderBy(asc(aosPlaybooks.slug));
+}
+
+export async function getPlaybookById(id: number) {
+  const rows = await db.select().from(aosPlaybooks).where(eq(aosPlaybooks.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getPlaybookBySlug(slug: string) {
+  const rows = await db.select().from(aosPlaybooks).where(eq(aosPlaybooks.slug, slug)).limit(1);
+  return rows[0];
+}
+
+export async function createPlaybookCustom(input: AgencyOsPlaybookCreateInput) {
+  await ensureAosHvdBuiltIns();
+  if (input.primaryHvdSlug) await assertHvdSlugRegistered(input.primaryHvdSlug);
+  const dup = await getPlaybookBySlug(input.slug);
+  if (dup) throw new Error(`Playbook slug "${input.slug}" already exists.`);
+  const [row] = await db
+    .insert(aosPlaybooks)
+    .values({
+      slug: input.slug,
+      title: input.title,
+      purpose: input.purpose ?? null,
+      primaryHvdSlug: input.primaryHvdSlug ?? null,
+      steps: input.steps ?? [],
+      isBuiltIn: false,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+export async function updatePlaybook(id: number, patch: AgencyOsPlaybookUpdateInput) {
+  const existing = await getPlaybookById(id);
+  if (!existing) throw new Error("Playbook not found.");
+  if (patch.primaryHvdSlug) await assertHvdSlugRegistered(patch.primaryHvdSlug);
+  const [row] = await db
+    .update(aosPlaybooks)
+    .set({
+      ...patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(aosPlaybooks.id, id))
+    .returning();
+  return row;
+}
+
+export async function deletePlaybook(id: number) {
+  const existing = await getPlaybookById(id);
+  if (!existing) throw new Error("Playbook not found.");
+  if (existing.isBuiltIn) throw new Error("Built-in playbooks cannot be deleted.");
+  await db.delete(aosPlaybooks).where(eq(aosPlaybooks.id, id));
+}
+
+export async function listTrainingModules() {
+  return db.select().from(aosTrainingModules).orderBy(asc(aosTrainingModules.sortOrder), asc(aosTrainingModules.slug));
+}
+
+export async function getTrainingModuleById(id: number) {
+  const rows = await db.select().from(aosTrainingModules).where(eq(aosTrainingModules.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function createTrainingModule(input: AgencyOsTrainingCreateInput) {
+  if (input.filterHvdSlug) await assertHvdSlugRegistered(input.filterHvdSlug);
+  const dup = await db
+    .select({ id: aosTrainingModules.id })
+    .from(aosTrainingModules)
+    .where(eq(aosTrainingModules.slug, input.slug))
+    .limit(1);
+  if (dup[0]) throw new Error(`Training slug "${input.slug}" already exists.`);
+  const [row] = await db
+    .insert(aosTrainingModules)
+    .values({
+      slug: input.slug,
+      title: input.title,
+      summary: input.summary ?? null,
+      contentJson: input.contentJson,
+      filterRoleKey: input.filterRoleKey ?? null,
+      filterHvdSlug: input.filterHvdSlug ?? null,
+      sortOrder: input.sortOrder ?? 0,
+      isPublished: input.isPublished ?? true,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+export async function updateTrainingModule(id: number, patch: AgencyOsTrainingUpdateInput) {
+  const existing = await getTrainingModuleById(id);
+  if (!existing) throw new Error("Training module not found.");
+  if (patch.filterHvdSlug) await assertHvdSlugRegistered(patch.filterHvdSlug);
+  const [row] = await db
+    .update(aosTrainingModules)
+    .set({
+      ...patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(aosTrainingModules.id, id))
+    .returning();
+  return row;
+}
+
+export async function deleteTrainingModule(id: number) {
+  const existing = await getTrainingModuleById(id);
+  if (!existing) throw new Error("Training module not found.");
+  await db.delete(aosTrainingModules).where(eq(aosTrainingModules.id, id));
+}
+
+/** When false (default), only the assignee may accept/decline/clarify. Set AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1 for admin override. */
+export function agencyOsAdminTaskAcceptanceAllowed(): boolean {
+  const v = process.env.AGENCY_OS_ADMIN_TASK_ACCEPTANCE?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 export async function getAgencyTaskById(id: number) {
   const rows = await db.select().from(aosAgencyTasks).where(eq(aosAgencyTasks.id, id)).limit(1);
   return rows[0];
@@ -297,15 +818,20 @@ export async function applyAgencyTaskAcceptance(input: {
   responsibilityConfirmed?: boolean;
   declineReason?: string;
   clarificationMessage?: string;
-  /** Approved admin may act when not the assignee (small-team operations). */
+  /** With AGENCY_OS_ADMIN_TASK_ACCEPTANCE, approved admins may act when not the assignee. */
   actorIsApprovedAdmin: boolean;
 }) {
   const task = await getAgencyTaskById(input.taskId);
   if (!task) throw new Error("Task not found.");
 
   const isAssignee = task.assigneeUserId != null && task.assigneeUserId === input.actorUserId;
-  if (!isAssignee && !input.actorIsApprovedAdmin) {
-    throw new Error("Only the assignee or an approved admin can respond to this task acceptance request.");
+  const adminMayOverride = input.actorIsApprovedAdmin && agencyOsAdminTaskAcceptanceAllowed();
+  if (!isAssignee && !adminMayOverride) {
+    throw new Error(
+      agencyOsAdminTaskAcceptanceAllowed()
+        ? "Only the assignee or an approved admin can respond to this task acceptance request."
+        : "Only the task assignee can accept, decline, or request clarification. Set AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1 to allow any approved admin to act for others.",
+    );
   }
 
   if (task.status !== "pending_acceptance") {

@@ -219,7 +219,7 @@ export default function Home() {
             Built by specialists in brand, design, and systems
           </h2>
           <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-            Branding work by Macon Designs®, strategy and positioning by Style Studio Branding, and web systems and automation by Ascendra Technologies.
+            Branding work by Macon Designs®, strategy and positioning by Style Studio Branding, and web systems and automation by Ascendra Technologies. One rhythm: diagnose honestly, build what the diagnosis supports, then optimize from what you can measure.
           </p>
           <SectionRevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {ECOSYSTEM_PILLARS.map((pillar) => (
@@ -255,8 +255,10 @@ export default function Home() {
                 <div className="rounded-full bg-primary/10 p-4 mb-3">
                   <ClipboardCheck className="h-8 w-8 text-primary" />
                 </div>
-                <p className="font-semibold text-foreground">Step 1: Answer questions</p>
-                <p className="text-sm text-muted-foreground mt-1">Quick questions across brand clarity, visual identity, website, leads, and automation.</p>
+                <p className="font-semibold text-foreground">Step 1 — Diagnose</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Short questions across brand clarity, presentation, site structure, leads, and follow-up—a clear read on where effort should go first.
+                </p>
               </div>
             </SectionRevealItem>
             <SectionRevealItem>
@@ -264,8 +266,10 @@ export default function Home() {
                 <div className="rounded-full bg-primary/10 p-4 mb-4">
                   <BarChart3 className="h-8 w-8 text-primary" />
                 </div>
-                <p className="font-semibold text-foreground">Step 2: Get your growth score</p>
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">See where you stand (0–100) and your primary bottleneck.</p>
+                <p className="font-semibold text-foreground">Step 2 — Prioritize</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  See your score and primary bottleneck so you don&apos;t rebuild the wrong layer first.
+                </p>
               </div>
             </SectionRevealItem>
             <SectionRevealItem>
@@ -273,8 +277,10 @@ export default function Home() {
                 <div className="rounded-full bg-primary/10 p-4 mb-4">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
-                <p className="font-semibold text-foreground">Step 3: Get your solution</p>
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">We recommend the right next step—Style Studio, Macon Designs, or Ascendra.</p>
+                <p className="font-semibold text-foreground">Step 3 — Build &amp; refine</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  A concrete next step and the right partner lane—strategy, design, or web systems—with room to optimize once the foundation holds.
+                </p>
               </div>
             </SectionRevealItem>
           </SectionRevealStagger>
@@ -321,20 +327,6 @@ export default function Home() {
         </SectionReveal>
       </section>
       <SectionConnector />
-
-      <section id="about" className="container mx-auto px-3 fold:px-4 sm:px-6">
-        <SectionReveal className="mx-auto max-w-2xl text-center space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
-            A coordinated approach to improving your digital presence
-          </h2>
-          <p className="text-muted-foreground">
-            Brand strategy, visual experience, and technology work together so your business improves how it looks, how it communicates, and how it converts visitors into customers.
-          </p>
-          <Button asChild variant="outline" className="min-h-[44px]">
-            <Link href="/about">How the ecosystem works</Link>
-          </Button>
-        </SectionReveal>
-      </section>
 
       <StickyStorySection
         headline="From traffic to customer"

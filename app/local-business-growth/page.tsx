@@ -28,6 +28,13 @@ import {
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_LOCAL_BUSINESS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_LOCAL_CTA_REASSURANCE,
+  ICP_LOCAL_FINAL_REASSURANCE,
+  ICP_LOCAL_WHAT_TO_EXPECT_ITEMS,
+  ICP_LOCAL_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
 
@@ -97,15 +104,20 @@ export default function LocalBusinessGrowthPage() {
                 <Link href={VIEW_WORK_HREF}>View Our Work</Link>
               </Button>
             </motion.div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 sm:mt-5 text-xs sm:text-sm text-muted-foreground">
-              Free audit · No obligation · Results in 24–48 hours
-            </motion.p>
+            <CTAReassuranceLine dense className="mt-4 sm:mt-5 max-w-xl mx-auto">
+              {ICP_LOCAL_CTA_REASSURANCE}
+            </CTAReassuranceLine>
           </div>
         </section>
 
         <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
-          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl space-y-8">
             <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_LOCAL_BUSINESS} />
+            <WhatToExpectList
+              title={ICP_LOCAL_WHAT_TO_EXPECT_TITLE}
+              items={ICP_LOCAL_WHAT_TO_EXPECT_ITEMS}
+              compact
+            />
           </div>
         </section>
 
@@ -247,7 +259,6 @@ export default function LocalBusinessGrowthPage() {
 
         <FaqSection items={LOCAL_BUSINESS_FAQ} />
 
-        {/* Final CTA */}        {/* Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -268,7 +279,9 @@ export default function LocalBusinessGrowthPage() {
                 <Link href={BOOK_CALL_HREF}>{SECONDARY_CTA}</Link>
               </Button>
             </div>
-            <p className="mt-4 text-xs text-primary-foreground/80">Free · No obligation · Response within 24–48 hours</p>
+            <CTAReassuranceLine dense className="mt-4 text-primary-foreground/85 max-w-lg mx-auto">
+              {ICP_LOCAL_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
           </div>
         </section>
       </div>

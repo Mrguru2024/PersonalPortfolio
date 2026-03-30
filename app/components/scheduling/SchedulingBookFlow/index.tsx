@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar, Clock, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { funnelThankYouUrl, THANK_YOU_SESSION } from "@/lib/funnelThankYou";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { cn } from "@/lib/utils";
 import type { BookingPageTheme } from "@/lib/bookingPageTheme";
 import {
@@ -24,6 +25,12 @@ import {
   bookingPageThemeFromSettingsJson,
   heroGradientClass,
 } from "@/lib/bookingPageTheme";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  CTA_REASSURANCE_BOOKING_FLOW,
+  WHAT_TO_EXPECT_BOOKING_ITEMS,
+  WHAT_TO_EXPECT_BOOKING_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 type MeetingType = {
   id: number;
@@ -71,6 +78,7 @@ export interface SchedulingBookFlowProps {
 
 export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps) {
   const router = useRouter();
+  const { getAttributionSnapshot, track } = useVisitorTracking();
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [timezone, setTimezone] = useState("America/New_York");
@@ -159,6 +167,11 @@ export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps)
     };
   }, [bookingPageSlug]);
 
+  useEffect(() => {
+    if (!enabled || loading) return;
+    track("page_view");
+  }, [enabled, loading, track]);
+
   /** Keep selected meeting type valid when the types list changes (fixes empty / mismatched selector). */
   useEffect(() => {
     if (types.length === 0) return;
@@ -215,6 +228,7 @@ export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps)
     setError(null);
     try {
       const formAnswers: Record<string, unknown> = { ...extraFieldValues };
+      const attr = getAttributionSnapshot();
       const res = await fetch("/api/public/scheduling/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,6 +242,11 @@ export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps)
           guestNotes: notes.trim() || undefined,
           ...(hostUserId != null ? { hostUserId } : {}),
           ...(bookingPageSlug ? { bookingPageSlug, formAnswers, bookingSource: `page:${bookingPageSlug}` } : {}),
+          ...(attr.visitorId ? { visitorId: attr.visitorId } : {}),
+          ...(attr.sessionId ? { sessionId: attr.sessionId } : {}),
+          ...("attributionSessionPublicId" in attr && attr.attributionSessionPublicId
+            ? { attributionSessionPublicId: attr.attributionSessionPublicId }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -358,6 +377,15 @@ export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps)
             ) : null}
           </div>
         </section>
+      ) : null}
+
+      {bookingPageSlug ? (
+        <WhatToExpectList
+          title={WHAT_TO_EXPECT_BOOKING_TITLE}
+          items={WHAT_TO_EXPECT_BOOKING_ITEMS}
+          compact
+          className="max-w-3xl mx-auto"
+        />
       ) : null}
 
       <div className={cn("grid gap-8", aiOn ? "lg:grid-cols-3" : "max-w-3xl")}>
@@ -584,6 +612,9 @@ export function SchedulingBookFlow({ bookingPageSlug }: SchedulingBookFlowProps)
                   />
                 </div>
                 {error ? <p className="text-sm text-destructive font-medium">{error}</p> : null}
+                <CTAReassuranceLine dense className="text-left max-w-none sm:text-center">
+                  {CTA_REASSURANCE_BOOKING_FLOW}
+                </CTAReassuranceLine>
                 <Button
                   type="submit"
                   disabled={

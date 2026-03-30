@@ -47,6 +47,9 @@ import {
   ascendraOsSettings,
 } from "@shared/schema";
 import { DEFAULT_MARKETING_PERSONAS } from "@shared/ascendraPersonaSeed";
+import { OFFER_ENGINE_LOCKED_PERSONA_IDS } from "@shared/offerEngineConstants";
+import { OFFER_ENGINE_PERSONA_STRATEGY_BY_ID } from "@shared/offerEnginePersonaStrategySeed";
+import { seedOfferEngineStarters } from "./seedOfferEngine";
 import {
   projects as staticProjects,
   frontendSkills,
@@ -970,6 +973,8 @@ async function seedMarketingPersonas() {
         .insert(marketingPersonas)
         .values({
           ...p,
+          offerEngineLocked: (OFFER_ENGINE_LOCKED_PERSONA_IDS as readonly string[]).includes(p.id),
+          offerEngineStrategyJson: OFFER_ENGINE_PERSONA_STRATEGY_BY_ID[p.id] ?? null,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
@@ -984,6 +989,8 @@ async function seedMarketingPersonas() {
             goalsJson: p.goalsJson,
             objectionsJson: p.objectionsJson,
             dynamicSignalsJson: p.dynamicSignalsJson,
+            offerEngineLocked: (OFFER_ENGINE_LOCKED_PERSONA_IDS as readonly string[]).includes(p.id),
+            offerEngineStrategyJson: OFFER_ENGINE_PERSONA_STRATEGY_BY_ID[p.id] ?? null,
             updatedAt: new Date(),
           },
         });
@@ -1160,6 +1167,16 @@ async function seedDatabase() {
     await seedCrmPlaybooks();
     await seedSiteOffers();
     await seedMarketingPersonas();
+    try {
+      await seedOfferEngineStarters();
+      console.log("Offer Engine starter templates upserted");
+    } catch (error: unknown) {
+      if ((error as { code?: string })?.code === "42P01") {
+        console.log("Offer Engine tables missing. Run: npm run db:push");
+      } else {
+        console.warn("Offer Engine seed skipped:", error);
+      }
+    }
     await seedBusinessGoalPresets();
     await seedAfnDiscussionCategories();
     await seedAfnNormalizedTagVocabulary();

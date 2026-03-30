@@ -28,6 +28,12 @@ import {
 } from "@/lib/offerSections";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_OFFER_STARTUP_SYSTEM_CTA_REASSURANCE,
+  ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_ITEMS,
+  ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileText,
@@ -156,6 +162,12 @@ export default function StartupGrowthSystemOfferPage() {
                   </li>
                 ))}
               </ul>
+              <WhatToExpectList
+                title={ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_TITLE}
+                items={ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_ITEMS}
+                compact
+                className="mb-6 text-left"
+              />
               <Button asChild size="lg" className="w-full sm:w-auto gap-2 min-h-[48px]">
                 <Link href={cta.buttonHref}>
                   {cta.buttonText}

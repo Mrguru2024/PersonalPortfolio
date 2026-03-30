@@ -71,7 +71,10 @@ import {
   ppcCampaigns,
   ppcPublishLogs,
   ppcPerformanceSnapshots,
+  ppcAttributionSessions,
   ppcLeadQuality,
+  ppcBillableEvents,
+  ppcTrackedCalls,
   ppcReadinessAssessments,
   ppcAdGroups,
   ppcKeywords,
@@ -85,8 +88,13 @@ import {
   type InsertPpcCampaign,
   type PpcPublishLog,
   type PpcPerformanceSnapshot,
+  type PpcAttributionSession,
   type PpcLeadQuality,
   type InsertPpcLeadQuality,
+  type PpcBillableEvent,
+  type InsertPpcBillableEvent,
+  type PpcTrackedCall,
+  type InsertPpcTrackedCall,
   type PpcReadinessAssessment,
   type InsertPpcPublishLog,
   type InsertPpcPerformanceSnapshot,
@@ -150,6 +158,7 @@ import {
   asc,
   desc,
   and,
+  type SQL,
   sql,
   inArray,
   isNull,
@@ -407,6 +416,30 @@ export interface IStorage {
   createPpcBillingProfile(row: InsertPpcBillingProfile): Promise<PpcBillingProfile>;
   updatePpcBillingProfile(id: number, updates: Partial<PpcBillingProfile>): Promise<PpcBillingProfile>;
   deletePpcBillingProfile(id: number): Promise<void>;
+
+  getPpcAttributionSessionByPublicId(publicPreview: string): Promise<PpcAttributionSession | undefined>;
+  getPpcAttributionSessionByVisitorSession(visitorId: string, sessionId: string): Promise<PpcAttributionSession | undefined>;
+  listPpcLeadQualityByVerificationStatus(verificationStatus: string, limit?: number): Promise<
+    (PpcLeadQuality & { contact?: CrmContact })[]
+  >;
+  createPpcBillableEvent(row: InsertPpcBillableEvent): Promise<PpcBillableEvent>;
+  findPendingPpcBillableEvent(crmContactId: number, eventKind: string): Promise<PpcBillableEvent | undefined>;
+  listPpcBillableEventsForContact(crmContactId: number, limit?: number): Promise<PpcBillableEvent[]>;
+  listPpcBillableEventsAdmin(filters: {
+    status?: string;
+    crmContactId?: number;
+    ppcCampaignId?: number;
+    limit?: number;
+  }): Promise<PpcBillableEvent[]>;
+  updatePpcBillableEvent(id: number, updates: Partial<PpcBillableEvent>): Promise<PpcBillableEvent>;
+
+  listPpcTrackedCallsAdmin(filters: {
+    verificationStatus?: string;
+    limit?: number;
+  }): Promise<PpcTrackedCall[]>;
+  getPpcTrackedCallById(id: number): Promise<PpcTrackedCall | undefined>;
+  createPpcTrackedCall(row: InsertPpcTrackedCall): Promise<PpcTrackedCall>;
+  updatePpcTrackedCall(id: number, updates: Partial<PpcTrackedCall>): Promise<PpcTrackedCall>;
 
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
@@ -2261,11 +2294,18 @@ export class DatabaseStorage implements IStorage {
       const patch: Record<string, unknown> = { crmContactId, updatedAt: now };
       for (const key of [
         "ppcCampaignId",
+        "attributionSessionId",
         "leadValid",
         "fitScore",
         "spamFlag",
         "bookedCall",
         "sold",
+        "verificationStatus",
+        "billableStatus",
+        "verificationNotes",
+        "verifiedAt",
+        "verifiedByUserId",
+        "qualityDimensionsJson",
         "notes",
         "createdBy",
       ] as const) {
@@ -2283,11 +2323,18 @@ export class DatabaseStorage implements IStorage {
       .values({
         crmContactId,
         ppcCampaignId: data.ppcCampaignId ?? null,
+        attributionSessionId: data.attributionSessionId ?? null,
         leadValid: data.leadValid ?? true,
         fitScore: data.fitScore ?? null,
         spamFlag: data.spamFlag ?? false,
         bookedCall: data.bookedCall ?? false,
         sold: data.sold ?? false,
+        verificationStatus: data.verificationStatus ?? null,
+        billableStatus: data.billableStatus ?? "pending",
+        verificationNotes: data.verificationNotes ?? null,
+        verifiedAt: data.verifiedAt ?? null,
+        verifiedByUserId: data.verifiedByUserId ?? null,
+        qualityDimensionsJson: data.qualityDimensionsJson ?? {},
         notes: data.notes ?? null,
         createdBy: data.createdBy ?? null,
         createdAt: now,
@@ -2533,6 +2580,160 @@ export class DatabaseStorage implements IStorage {
 
   async deletePpcBillingProfile(id: number): Promise<void> {
     await db.delete(ppcBillingProfiles).where(eq(ppcBillingProfiles.id, id));
+  }
+
+  async getPpcAttributionSessionByPublicId(publicId: string): Promise<PpcAttributionSession | undefined> {
+    const key = publicId.trim();
+    if (!key) return undefined;
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(eq(ppcAttributionSessions.publicId, key))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async getPpcAttributionSessionByVisitorSession(
+    visitorId: string,
+    sessionId: string,
+  ): Promise<PpcAttributionSession | undefined> {
+    const vid = visitorId.trim();
+    const sid = (sessionId.trim() || "default");
+    if (!vid) return undefined;
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(and(eq(ppcAttributionSessions.visitorId, vid), eq(ppcAttributionSessions.sessionId, sid)))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async listPpcLeadQualityByVerificationStatus(
+    verificationStatus: string,
+    limit = 80,
+  ): Promise<(PpcLeadQuality & { contact?: CrmContact })[]> {
+    const rows = await db
+      .select()
+      .from(ppcLeadQuality)
+      .where(eq(ppcLeadQuality.verificationStatus, verificationStatus))
+      .orderBy(desc(ppcLeadQuality.updatedAt))
+      .limit(Math.min(200, Math.max(10, limit)));
+    const out: (PpcLeadQuality & { contact?: CrmContact })[] = [];
+    for (const r of rows) {
+      const contact = await this.getCrmContactById(r.crmContactId);
+      out.push({ ...r, contact });
+    }
+    return out;
+  }
+
+  async createPpcBillableEvent(row: InsertPpcBillableEvent): Promise<PpcBillableEvent> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcBillableEvents)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async findPendingPpcBillableEvent(crmContactId: number, eventKind: string): Promise<PpcBillableEvent | undefined> {
+    const [row] = await db
+      .select()
+      .from(ppcBillableEvents)
+      .where(
+        and(
+          eq(ppcBillableEvents.crmContactId, crmContactId),
+          eq(ppcBillableEvents.eventKind, eventKind),
+          eq(ppcBillableEvents.status, "pending"),
+        ),
+      )
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async listPpcBillableEventsForContact(crmContactId: number, limit = 40): Promise<PpcBillableEvent[]> {
+    return db
+      .select()
+      .from(ppcBillableEvents)
+      .where(eq(ppcBillableEvents.crmContactId, crmContactId))
+      .orderBy(desc(ppcBillableEvents.createdAt))
+      .limit(limit);
+  }
+
+  async listPpcBillableEventsAdmin(filters: {
+    status?: string;
+    crmContactId?: number;
+    ppcCampaignId?: number;
+    limit?: number;
+  }): Promise<PpcBillableEvent[]> {
+    const limit = Math.min(200, Math.max(10, filters.limit ?? 60));
+    const conds: SQL[] = [];
+    if (filters.status?.trim()) conds.push(eq(ppcBillableEvents.status, filters.status.trim()));
+    if (filters.crmContactId != null && Number.isFinite(filters.crmContactId)) {
+      conds.push(eq(ppcBillableEvents.crmContactId, filters.crmContactId));
+    }
+    if (filters.ppcCampaignId != null && Number.isFinite(filters.ppcCampaignId)) {
+      conds.push(eq(ppcBillableEvents.ppcCampaignId, filters.ppcCampaignId));
+    }
+    const q = db.select().from(ppcBillableEvents);
+    const rows =
+      conds.length === 0 ?
+        await q.orderBy(desc(ppcBillableEvents.createdAt)).limit(limit)
+      : conds.length === 1 ?
+        await q.where(conds[0]).orderBy(desc(ppcBillableEvents.createdAt)).limit(limit)
+      : await q.where(and(...conds)).orderBy(desc(ppcBillableEvents.createdAt)).limit(limit);
+    return rows;
+  }
+
+  async updatePpcBillableEvent(id: number, updates: Partial<PpcBillableEvent>): Promise<PpcBillableEvent> {
+    const [updated] = await db
+      .update(ppcBillableEvents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcBillableEvents.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc billable event not found");
+    return updated;
+  }
+
+  async listPpcTrackedCallsAdmin(filters: { verificationStatus?: string; limit?: number }): Promise<PpcTrackedCall[]> {
+    const limit = Math.min(200, Math.max(10, filters.limit ?? 80));
+    const vs = filters.verificationStatus?.trim();
+    if (vs) {
+      return db
+        .select()
+        .from(ppcTrackedCalls)
+        .where(eq(ppcTrackedCalls.verificationStatus, vs))
+        .orderBy(desc(ppcTrackedCalls.createdAt))
+        .limit(limit);
+    }
+    return db
+      .select()
+      .from(ppcTrackedCalls)
+      .orderBy(desc(ppcTrackedCalls.createdAt))
+      .limit(limit);
+  }
+
+  async getPpcTrackedCallById(id: number): Promise<PpcTrackedCall | undefined> {
+    const [row] = await db.select().from(ppcTrackedCalls).where(eq(ppcTrackedCalls.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createPpcTrackedCall(row: InsertPpcTrackedCall): Promise<PpcTrackedCall> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcTrackedCalls)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcTrackedCall(id: number, updates: Partial<PpcTrackedCall>): Promise<PpcTrackedCall> {
+    const [updated] = await db
+      .update(ppcTrackedCalls)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcTrackedCalls.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc tracked call not found");
+    return updated;
   }
 
   // Client dashboard operations

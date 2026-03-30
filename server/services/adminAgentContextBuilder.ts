@@ -8,6 +8,8 @@ import { readdir, readFile } from "fs/promises";
 import path from "path";
 import { SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getAdminAgentFeatureGuideText } from "@server/services/adminAgentFeatureGuide";
+import { getAscendraSopWorkflowAgentSection } from "@server/services/ascendraSopWorkflowLoader";
+import { getContentStrategyWorkflowAgentSection } from "@server/services/contentStrategyWorkflowLoader";
 
 const TTL_MS = 5 * 60 * 1000; // 5 minutes — “periodic” refresh
 
@@ -85,6 +87,8 @@ export async function buildAdminAgentContextText(): Promise<{
   const scripts = await readPackageScriptsSnippet(repoRoot);
 
   const featureGuide = getAdminAgentFeatureGuideText();
+  const sopWorkflow = await getAscendraSopWorkflowAgentSection();
+  const contentStrategyWorkflow = await getContentStrategyWorkflowAgentSection();
 
   const parts: string[] = [
     "You are assisting an approved admin of the Ascendra portfolio app (Next.js, Drizzle, PostgreSQL).",
@@ -98,6 +102,10 @@ export async function buildAdminAgentContextText(): Promise<{
     siteLines.join("\n"),
     "",
     featureGuide,
+    "",
+    sopWorkflow,
+    "",
+    contentStrategyWorkflow,
     "",
     `### Admin API base paths (${apiRouteCount} from filesystem; showing ${apiSlice.length})`,
     apiSlice.join("\n"),

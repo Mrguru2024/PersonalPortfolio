@@ -1005,3 +1005,4 @@ export * from "./experimentationEngineSchema";
 export * from "./serviceAgreementSchema";
 export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
+export * from "./offerEngineSchema";

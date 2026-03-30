@@ -8,6 +8,14 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-30 00:24 — Trust assurance, offer engine, agency OS, PPC depth
+
+- Trust assurance on ICP landers and startup growth offer page; EmbeddedAssurance + copy module.
+- Build fixes: offer-engine funnel Badge links, persona query `await res.json()`, OpenAI shim on agent observation route.
+- Large batch: Agency OS surfaces, offer engine admin/API, paid-growth billable/verification, content studio strategy hooks, public PDFs.
+
+---
+
 ## 2026-03-29 23:11 — Agency OS, behavior intelligence, growth platform, paid-growth, AFN
 
 - feat: agency OS, behavior intelligence, growth platform, paid-growth depth, AFN fixes

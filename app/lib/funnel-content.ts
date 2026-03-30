@@ -58,10 +58,10 @@ export const PREMIUM_OFFERS: PremiumOffer[] = [
     outcome:
       "Improved clarity, stronger CTAs, better mobile experience, and conversion issues fixed so your site turns more visitors into opportunities.",
     includes: [
-      "Clarity and structure improvements",
-      "Stronger CTAs and conversion path",
-      "Mobile experience optimization",
-      "Lead capture and conversion fixes",
+      "See where visitors drop off before you pay for a full redesign",
+      "Stronger CTAs and a single obvious next step per page",
+      "Mobile experience that matches how people actually buy from you",
+      "Capture and follow-up hooks that don’t depend on someone remembering",
     ],
   },
   {
@@ -72,10 +72,10 @@ export const PREMIUM_OFFERS: PremiumOffer[] = [
     outcome:
       "Visual refresh, improved presentation, website redesign, and clearer messaging so your business looks and communicates more effectively.",
     includes: [
-      "Visual refresh and presentation quality",
-      "Website redesign or strategic refresh",
-      "Clearer messaging and alignment",
-      "Lead path and conversion planning",
+      "Presentation that matches the quality of your offer and reviews",
+      "Site redesign or strategic refresh with conversion in mind—not just a new look",
+      "Messaging aligned to how buyers decide in your category",
+      "Lead paths planned so design and sales don’t fight each other",
     ],
   },
   {
@@ -86,10 +86,10 @@ export const PREMIUM_OFFERS: PremiumOffer[] = [
     outcome:
       "Positioning clarity, improved presentation, and conversion-ready website systems so you grow with one coordinated team.",
     includes: [
-      "Brand positioning and messaging clarity",
-      "Visual direction and execution",
-      "Website and funnel implementation",
-      "Conversion and growth support",
+      "Positioning and messaging you can execute without re-explaining every week",
+      "Visual direction tied to trust and conversion—not decoration",
+      "Website and funnel implementation you can read leads from",
+      "Ongoing refinement based on what the data shows, not opinions alone",
     ],
   },
 ];
