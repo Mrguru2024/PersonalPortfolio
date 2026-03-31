@@ -24,6 +24,16 @@ const ALLOWED_CATEGORIES = new Set<PublicUpdateCategory>([
   "market_update",
 ]);
 
+const COMMIT_STYLE_PATTERNS: RegExp[] = [
+  /^(?:feat|fix|chore|docs?|refactor|style|test|build|ci|perf)(?:\([^)]+\))?:/i,
+  /\bmerge\s+(?:branch|pull request)\b/i,
+  /\bdev(?:elopment)?\s*log\b/i,
+  /\bdevelopment-updates\b/i,
+  /\bauto\s*[·-]\s*[0-9a-f]{7,40}\b/i,
+  /`[0-9a-f]{7,40}`/,
+  /\b(?:[0-9a-f]*\d[0-9a-f]*){7,40}\b/i,
+];
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -32,6 +42,12 @@ function parseDate(value: string): string | null {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
+}
+
+function isCommitStyleText(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  return COMMIT_STYLE_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
 function readPublicUpdates(limit: number): PublicUpdateEntry[] {
@@ -51,6 +67,7 @@ function readPublicUpdates(limit: number): PublicUpdateEntry[] {
     const factChecked = item.factChecked === true;
     if (!date || !title || !description || !factChecked) continue;
     if (!ALLOWED_CATEGORIES.has(category as PublicUpdateCategory)) continue;
+    if (isCommitStyleText(title) || isCommitStyleText(description)) continue;
     entries.push({
       date,
       title,
@@ -69,12 +86,16 @@ function readPublicUpdates(limit: number): PublicUpdateEntry[] {
 export async function GET() {
   try {
     const entries = readPublicUpdates(25);
-    return NextResponse.json({ entries });
+    const response = NextResponse.json({ entries });
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    return response;
   } catch (error: any) {
     console.error("Changelog API error:", error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Failed to load updates", entries: [] },
       { status: 200 }
     );
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    return response;
   }
 }
