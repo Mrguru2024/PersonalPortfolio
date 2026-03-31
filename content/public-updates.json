@@ -1,0 +1,58 @@
+[
+  {
+    "date": "2026-03-30T15:30:00Z",
+    "title": "Client project dashboard rollout",
+    "description": "New client dashboard release with quote tracking, invoice visibility, proposal access, and direct feedback workflows.",
+    "category": "client_project",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-29T18:00:00Z",
+    "title": "Ascendra innovation: Growth Intelligence refinements",
+    "description": "Ascendra Growth Intelligence now includes improved behavior watch controls and clearer decision support for growth actions.",
+    "category": "ascendra_innovation",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-28T20:15:00Z",
+    "title": "Site update: faster diagnostics flow",
+    "description": "Public diagnostics pages were streamlined to reduce friction and improve completion rates across mobile and desktop.",
+    "category": "site_update",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-27T14:45:00Z",
+    "title": "Market update: lead quality benchmarks refreshed",
+    "description": "Lead-quality benchmark guidance was refreshed using the latest verified campaign and conversion datasets.",
+    "category": "market_update",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-26T13:10:00Z",
+    "title": "Client project CRM workflow expansion",
+    "description": "CRM quick actions and workflow automation enhancements were delivered for active client pipeline operations.",
+    "category": "client_project",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-25T17:25:00Z",
+    "title": "Ascendra innovation: content studio publishing adapters",
+    "description": "Content Studio publishing now supports more channel adapters with improved reliability and audit-friendly publish logs.",
+    "category": "ascendra_innovation",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-24T16:05:00Z",
+    "title": "Site update: accessibility and navigation polish",
+    "description": "Navigation clarity and accessibility affordances were improved across key public pages for faster route discovery.",
+    "category": "site_update",
+    "factChecked": true
+  },
+  {
+    "date": "2026-03-23T19:40:00Z",
+    "title": "Market update: conversion scoring guidance clarified",
+    "description": "Market-facing scoring guidance now reflects validated thresholds to keep recommendations accurate and practical.",
+    "category": "market_update",
+    "factChecked": true
+  }
+]

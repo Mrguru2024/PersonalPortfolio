@@ -1,33 +1,76 @@
 /**
  * @jest-environment node
  */
-const mockEntries = [
-  { id: '1', date: '2024-01-01', title: 'Update', description: 'Changes' },
-];
-
-jest.mock('@server/services/githubService', () => ({
-  githubService: {
-    getChangelogEntries: jest.fn(() => Promise.resolve(mockEntries)),
-  },
-}));
-
 describe('GET /api/changelog', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  it("returns 200 and only fact-checked allowed-category entries sorted newest first", async () => {
+    jest.resetModules();
+    jest.doMock("fs", () => ({
+      existsSync: jest.fn(() => true),
+      readFileSync: jest.fn(() =>
+        JSON.stringify([
+          {
+            date: "2026-03-31T10:00:00Z",
+            title: "Relevant",
+            description: "Allowed and fact checked",
+            category: "client_project",
+            factChecked: true,
+          },
+          {
+            date: "2026-03-30T10:00:00Z",
+            title: "Unverified",
+            description: "Should not show",
+            category: "site_update",
+            factChecked: false,
+          },
+          {
+            date: "2026-03-29T10:00:00Z",
+            title: "Wrong category",
+            description: "Should not show",
+            category: "internal",
+            factChecked: true,
+          },
+          {
+            date: "2026-03-28T10:00:00Z",
+            title: "Older relevant",
+            description: "Allowed and fact checked",
+            category: "market_update",
+            factChecked: true,
+          },
+        ]),
+      ),
+    }));
 
-  it('returns 200 and entries array', async () => {
-    const { GET } = await import('../route');
+    const { GET } = await import("../route");
     const res = await GET();
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.entries).toEqual(mockEntries);
+    expect(data.entries).toEqual([
+      {
+        date: "2026-03-31T10:00:00.000Z",
+        title: "Relevant",
+        description: "Allowed and fact checked",
+        category: "client_project",
+        factChecked: true,
+      },
+      {
+        date: "2026-03-28T10:00:00.000Z",
+        title: "Older relevant",
+        description: "Allowed and fact checked",
+        category: "market_update",
+        factChecked: true,
+      },
+    ]);
   });
 
-  it('returns entries array even when getChangelogEntries throws', async () => {
-    const { githubService } = await import('@server/services/githubService');
-    (githubService.getChangelogEntries as jest.Mock).mockRejectedValueOnce(new Error('API error'));
-    const { GET } = await import('../route');
+  it("returns entries array even when source read throws", async () => {
+    jest.resetModules();
+    jest.doMock("fs", () => ({
+      existsSync: jest.fn(() => {
+        throw new Error("boom");
+      }),
+      readFileSync: jest.fn(),
+    }));
+    const { GET } = await import("../route");
     const res = await GET();
     expect(res.status).toBe(200);
     const data = await res.json();
