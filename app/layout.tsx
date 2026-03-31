@@ -13,6 +13,8 @@ import { SiteAnalyticsScripts } from "./components/SiteAnalyticsScripts";
 import { getGtmNoscriptId, siteUsesAnalytics } from "./lib/siteAnalyticsConfig";
 import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
+import { isAscendraPublicBehaviorTrackingEnabled } from "./lib/behaviorTrackingConfig";
+import { AscendraBehaviorRootGate } from "./components/tracking/AscendraBehaviorRootGate";
 
 /** Numeric Meta App ID only — enables FB.init client SDK (Login / xfbml / AppEvents). */
 const FACEBOOK_APP_ID_FOR_SDK =
@@ -125,7 +127,7 @@ export default function RootLayout({
             <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           </>
         ) : null}
-        {/** Session replay / heatmaps: first-party Ascendra Growth Intelligence only (`AscendraBehaviorMount` + `/api/behavior/ingest`). No Hotjar / Lucky Orange / third-party UX analytics scripts. */}
+        {/** Session replay / heatmaps: `AscendraBehaviorRootGate` + `/api/behavior/ingest` (see `behaviorTrackingConfig`). */}
       </head>
       {/* suppressHydrationWarning: only affects this node; extension attrs on descendants are handled via suppressHydrationWarning on ui/Button and Header <button>s (fdprocessedid, etc.). */}
       <body
@@ -169,6 +171,7 @@ export default function RootLayout({
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             <MobileNavProvider>
+              <AscendraBehaviorRootGate enabled={isAscendraPublicBehaviorTrackingEnabled()} />
               {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
               <ScrollProgress />
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}

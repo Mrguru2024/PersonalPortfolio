@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ascendraPricingPackageSchema } from "./ascendraPricingPackageTypes";
 import {
   BUYER_AWARENESS_STAGES,
   CTA_GOALS,
@@ -240,6 +241,7 @@ export const offerTemplateWriteSchema = z.object({
   perceivedOutcomeReview: perceivedOutcomeReviewSchema.optional(),
   funnelAlignment: funnelAlignmentSchema.optional(),
   copyBlocks: offerCopyBlocksSchema.optional(),
+  pricingPackage: ascendraPricingPackageSchema.nullable().optional(),
 });
 
 export const leadMagnetTemplateWriteSchema = z.object({

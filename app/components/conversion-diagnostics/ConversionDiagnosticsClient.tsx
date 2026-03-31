@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { ClientConversionDiagnostics } from "@shared/conversionDiagnosticsTypes";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,8 @@ import {
   Target,
   TrendingUp,
   Users,
+  DollarSign,
+  Gauge,
 } from "lucide-react";
 
 function pageStatusStyle(status: string): string {
@@ -122,6 +125,78 @@ export function ConversionDiagnosticsClient({ data }: ConversionDiagnosticsClien
           ))}
         </div>
       </section>
+
+      {data.phase2 ?
+        <section className="space-y-4" aria-labelledby="phase2-revenue">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-emerald-600" />
+            <h2 id="phase2-revenue" className="text-lg font-semibold tracking-tight">
+              Revenue &amp; growth health
+            </h2>
+          </div>
+          <Card className="border-emerald-500/20 bg-emerald-500/[0.04]">
+            <CardContent className="pt-6 space-y-3 text-sm">
+              <p className="text-2xl font-semibold tabular-nums">{data.phase2.revenueSummary.totalAttributedDisplay}</p>
+              <p className="text-muted-foreground">{data.phase2.revenueSummary.periodNote}</p>
+              {data.phase2.revenueSummary.stripeLinkedNote ?
+                <p className="text-xs text-muted-foreground">{data.phase2.revenueSummary.stripeLinkedNote}</p>
+              : null}
+              {data.phase2.roiHint ?
+                <p className="text-sm text-foreground/90 border-t border-border/60 pt-3">{data.phase2.roiHint}</p>
+              : null}
+            </CardContent>
+          </Card>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {[
+              { label: "Conversion health", v: data.phase2.growthScores.conversionHealth, icon: Gauge },
+              { label: "Traffic quality", v: data.phase2.growthScores.trafficQuality, icon: BarChart3 },
+              { label: "Funnel efficiency", v: data.phase2.growthScores.funnelEfficiency, icon: LineChart },
+            ].map(({ label, v, icon: Icon }) => (
+              <Card key={label}>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Icon className="h-3 w-3" aria-hidden />
+                    {label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <p className="text-2xl font-semibold tabular-nums">{v}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Score 0–100 (heuristic)</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardContent className="pt-6 space-y-2 text-sm text-muted-foreground">
+              {data.phase2.growthScores.hints.map((h) => (
+                <p key={h}>• {h}</p>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Forward-looking nudges</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              {data.phase2.predictiveNudges.map((n) => (
+                <p key={n}>• {n}</p>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed">
+              <p className="font-medium text-foreground mb-2">Benchmark snapshot</p>
+              <p>{data.phase2.benchmarkSnapshot}</p>
+              {data.phase2.personaInsight ?
+                <p className="mt-3 border-t border-border/60 pt-3">{data.phase2.personaInsight}</p>
+              : null}
+              {data.phase2.offerInsight ?
+                <p className="mt-2">{data.phase2.offerInsight}</p>
+              : null}
+            </CardContent>
+          </Card>
+        </section>
+      : null}
 
       {/* K4 Snapshot */}
       <section className="space-y-3">
@@ -369,6 +444,31 @@ export function ConversionDiagnosticsClient({ data }: ConversionDiagnosticsClien
       {/* K10 Heatmap */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold tracking-tight">Heatmap highlights</h2>
+        {data.heatmapPageSummaries.length > 0 ?
+          <div className="grid sm:grid-cols-2 gap-3">
+            {data.heatmapPageSummaries.map((h) => (
+              <Card key={h.path} className="border-border/80 shadow-sm">
+                <CardContent className="pt-4 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-medium font-mono truncate" title={h.path}>
+                      {h.path}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {h.heatmapClicks.toLocaleString()} click points in your linked traffic (this window)
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" className="shrink-0" asChild>
+                    <Link
+                      href={`/growth-system/page-behavior?path=${encodeURIComponent(h.path)}&days=${data.periodDays}`}
+                    >
+                      Page detail
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        : null}
         <Card>
           <CardContent className="pt-6 space-y-3 text-sm text-muted-foreground leading-relaxed">
             {data.heatmapHighlights.map((s) => (

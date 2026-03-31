@@ -1,5 +1,17 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart, Target, Radar } from "lucide-react";
+import {
+  Search,
+  Calculator,
+  Gauge,
+  BarChart3,
+  Layout,
+  BookOpen,
+  Sparkles,
+  LineChart,
+  Target,
+  Radar,
+  Image,
+} from "lucide-react";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
@@ -131,6 +143,16 @@ export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
     cta: "Get my score",
     href: STARTUP_WEBSITE_SCORE_PATH,
     icon: Sparkles,
+  },
+  {
+    id: "generate-images",
+    title: "AI image studio",
+    who: "Teams that need quick, on-brand visuals for landing pages, social, or concepts.",
+    problem: "Stock assets feel generic and design cycles are too slow for every idea.",
+    get: "Generate images from prompts in a simple studio workflow—useful for drafts, concepts, and iteration.",
+    cta: "Open image studio",
+    href: "/generate-images",
+    icon: Image,
   },
 ];
 

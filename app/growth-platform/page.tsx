@@ -5,14 +5,15 @@ import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 import { JobRevenueImpactCalculator } from "@/components/growth-platform/JobRevenueImpactCalculator";
 import { OfferStackTierCards } from "@/components/growth-platform/OfferStackTierCards";
+import { loadGrowthPlatformEnginePricing } from "@server/services/growthPlatformOfferPricing";
 import { ThreeStepSystemPreview } from "@/components/growth-platform/ThreeStepSystemPreview";
-import { ASCENDRA_OFFER_STACK } from "@shared/ascendraOfferStack";
+import { ASCENDRA_OFFER_STACK, type AscendraOfferTierDefinition } from "@shared/ascendraOfferStack";
 import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@shared/ascendraCoreGuarantee";
 import { Button } from "@/components/ui/button";
-import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 import { ArrowRight } from "lucide-react";
 import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
 import { CTA_REASSURANCE_GROWTH_PLATFORM } from "@/lib/embeddedAssuranceCopy";
+import type { PublicOfferPricingSnapshot } from "@shared/publicOfferPricingSnapshot";
 
 const growthPlatformPageMeta = buildMarketingMetadata({
   title: "Ascendra Growth System | Diagnose, build, scale",
@@ -24,11 +25,16 @@ const growthPlatformPageMeta = buildMarketingMetadata({
 
 export const metadata: Metadata = growthPlatformPageMeta;
 
-export default function GrowthPlatformPage() {
-  const dfy = ASCENDRA_OFFER_STACK.DFY;
+/** Sync shell keeps pricing + DFY in scope for JSX (avoids broken async→sync codegen referencing missing vars). */
+function GrowthPlatformBody({
+  enginePricing,
+  dfy,
+}: {
+  enginePricing: PublicOfferPricingSnapshot | null;
+  dfy: AscendraOfferTierDefinition;
+}) {
   return (
     <>
-      <AscendraBehaviorMount />
       <WebPageJsonLd
         title="Ascendra Growth System"
         description={String(growthPlatformPageMeta.description ?? "")}
@@ -70,7 +76,16 @@ export default function GrowthPlatformPage() {
               <strong className="text-foreground">not enough calls</strong>, or{" "}
               <strong className="text-foreground">wasted ad spend</strong>, quantify the gap in plain numbers first.
             </p>
-            <JobRevenueImpactCalculator />
+            <JobRevenueImpactCalculator
+              calculatorDefaults={
+                enginePricing ?
+                  {
+                    averageJobValue: enginePricing.modelAverageJobValue,
+                    jobsPerMonthGoal: enginePricing.modelJobsPerMonth,
+                  }
+                : undefined
+              }
+            />
           </section>
 
           <section className="space-y-4">
@@ -80,7 +95,7 @@ export default function GrowthPlatformPage() {
               <strong className="text-foreground">ranges</strong>; exact quotes depend on scope after diagnosis.{" "}
               {dfy.roiFramingExample}
             </p>
-            <OfferStackTierCards />
+            <OfferStackTierCards enginePricing={enginePricing} />
           </section>
 
           <section className="space-y-4">
@@ -124,4 +139,10 @@ export default function GrowthPlatformPage() {
       </div>
     </>
   );
+}
+
+export default async function GrowthPlatformPage() {
+  const enginePricing = await loadGrowthPlatformEnginePricing();
+  const dfy = ASCENDRA_OFFER_STACK.DFY;
+  return <GrowthPlatformBody enginePricing={enginePricing} dfy={dfy} />;
 }

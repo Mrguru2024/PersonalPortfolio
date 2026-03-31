@@ -58,6 +58,9 @@ export const ECOSYSTEM_CTA_LAUNCH = "Book a brand launch call";
 export const ECOSYSTEM_CTA_REBRAND = "Book a rebrand call";
 export const ECOSYSTEM_CTA_MARKETING = "Upgrade your marketing";
 
+/** DFY / DWY / DIY Growth System Platform hub + recommendation flow. */
+export const GROWTH_PLATFORM_PATH = "/growth-platform";
+
 /** Lead magnet hub and tools */
 export const FREE_GROWTH_TOOLS_PATH = "/free-growth-tools";
 export const COMPETITOR_SNAPSHOT_PATH = "/competitor-position-snapshot";

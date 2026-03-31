@@ -726,7 +726,7 @@ export default function AdminAnalyticsPage() {
           </Card>
 
           <Tabs defaultValue="traffic" className="space-y-4">
-            <TabsList className="flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
+            <TabsList className="flex w-full flex-wrap h-auto min-h-[44px] gap-1 p-1.5 rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
               <TabsTrigger value="traffic">Traffic</TabsTrigger>
               <TabsTrigger value="location" className="flex items-center gap-1.5">
                 <Globe className="h-4 w-4 shrink-0" />

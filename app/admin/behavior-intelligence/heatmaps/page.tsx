@@ -76,10 +76,29 @@ export default function BehaviorHeatmapsPage() {
           {summaryQuery.isLoading ?
             <Loader2 className="h-6 w-6 animate-spin" />
           : !(summaryQuery.data?.length) ?
-            <p className="text-sm text-muted-foreground">
-              No heatmap points yet. Enable <code className="text-xs bg-muted px-1 rounded">startAscendraBehaviorTracking</code> on a page
-              to ingest clicks.
-            </p>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>No click points ingested yet. Tracking is controlled globally:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  Set <code className="text-xs bg-muted px-1 rounded">NEXT_PUBLIC_ASCENDRA_BEHAVIOR_TRACKING=1</code> for
+                  production (dev enables it by default unless set to <code className="text-xs bg-muted px-1 rounded">0</code>
+                  ). See <code className="text-xs bg-muted px-1 rounded">app/lib/behaviorTrackingConfig.ts</code>.
+                </li>
+                <li>
+                  If ingest uses a Bearer token, set <code className="text-xs bg-muted px-1 rounded">NEXT_PUBLIC_BEHAVIOR_INGEST_TOKEN</code>{" "}
+                  to match <code className="text-xs bg-muted px-1 rounded">BEHAVIOR_INGEST_PUBLIC_TOKEN</code> (see{" "}
+                  <code className="text-xs bg-muted px-1 rounded">.env.example</code>).
+                </li>
+                <li>
+                  With{" "}
+                  <Link className="underline text-foreground" href="/admin/behavior-intelligence/watch">
+                    watch targets
+                  </Link>{" "}
+                  enabled, only matching paths record heatmaps—add a target for your URL or clear targets to record site-wide (
+                  <code className="text-xs bg-muted px-1 rounded">legacy_all</code> mode).
+                </li>
+              </ul>
+            </div>
           : <ul className="space-y-1 text-sm">
               {summaryQuery.data.map((p) => (
                 <li key={p.page}>

@@ -231,6 +231,10 @@ export const growthInsightTasks = pgTable(
     body: text("body"),
     status: text("status").notNull().default("open"),
     priority: text("priority").notNull().default("medium"),
+    /** When true, task appears in the client portal for valid `clientCrmAccountId` (never without account scope). */
+    visibleToClient: boolean("visible_to_client").notNull().default(false),
+    /** CRM account whose portal users may see this task when `visibleToClient` is true. */
+    clientCrmAccountId: integer("client_crm_account_id"),
     assigneeUserId: integer("assignee_user_id"),
     createdByUserId: integer("created_by_user_id"),
     evidenceJson: json("evidence_json").$type<Record<string, unknown>>().notNull().default({}),

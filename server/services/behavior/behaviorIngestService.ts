@@ -1,4 +1,5 @@
 import { visitorAliasFromSessionId, visitorSubtitleFromDevice } from "@/lib/behaviorVisitorAlias";
+import { evaluateLeadSignalsAfterIngest } from "@server/services/growthEngine/leadSignalEngine";
 import { db } from "@server/db";
 import {
   behaviorSessions,
@@ -7,7 +8,7 @@ import {
   behaviorHeatmapEvents,
   behaviorSurveyResponses,
 } from "@shared/schema";
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, exists, gte, ilike, inArray, isNotNull, isNull, like, lte, or, sql } from "drizzle-orm";
 
 export type BehaviorIngestInput = {
   sessionId: string;
@@ -143,6 +144,21 @@ export async function ingestBehaviorPayload(input: BehaviorIngestInput): Promise
     }
   }
 
+  const resolvedCrmId = input.crmContactId ?? existing?.crmContactId ?? null;
+
+  if (!input.optOut && input.events.length > 0) {
+    void evaluateLeadSignalsAfterIngest({
+      behaviorSessionId,
+      sessionKey: sid,
+      crmContactId: resolvedCrmId,
+      url: input.url,
+      events: input.events.map((e) => ({
+        eventType: e.eventType,
+        eventData: e.eventData as Record<string, unknown> | undefined,
+      })),
+    }).catch((err) => console.error("[behavior] lead signals", err));
+  }
+
   return { behaviorSessionId };
 }
 
@@ -150,11 +166,23 @@ export async function listBehaviorSessionsForAdmin(limit: number): Promise<(type
   return db.select().from(behaviorSessions).orderBy(desc(behaviorSessions.startTime)).limit(Math.min(200, limit));
 }
 
+/** Distinct non-null business/workspace ids seen on sessions (for admin filters). */
+export async function listDistinctBehaviorSessionBusinessIds(): Promise<string[]> {
+  const rows = await db
+    .select({ businessId: behaviorSessions.businessId })
+    .from(behaviorSessions)
+    .where(and(isNull(behaviorSessions.softDeletedAt), isNotNull(behaviorSessions.businessId)))
+    .groupBy(behaviorSessions.businessId)
+    .orderBy(behaviorSessions.businessId);
+  return rows.map((r) => r.businessId!).filter(Boolean);
+}
+
 const VISITOR_ONLINE_MS = 3 * 60 * 1000;
 
 export type BehaviorVisitorHubRow = {
   id: number;
   sessionId: string;
+  businessId: string | null;
   startTime: string /** ISO */;
   endTime: string | null;
   device: string | null;
@@ -204,6 +232,7 @@ export async function listBehaviorSessionsVisitorHub(input: {
   until?: Date | null;
   search?: string | null;
   onlineOnly?: boolean;
+  businessId?: string | null;
   limit: number;
   offset: number;
 }): Promise<BehaviorVisitorHubResponse> {
@@ -219,7 +248,44 @@ export async function listBehaviorSessionsVisitorHub(input: {
     gte(behaviorSessions.startTime, since),
   ];
   if (until) conditions.push(lte(behaviorSessions.startTime, until));
-  if (q.length > 0) conditions.push(like(behaviorSessions.sessionId, `%${q}%`));
+
+  const biz = input.businessId?.trim();
+  if (biz === "__none__") {
+    conditions.push(isNull(behaviorSessions.businessId));
+  } else if (biz && biz.length > 0) {
+    conditions.push(eq(behaviorSessions.businessId, biz));
+  }
+
+  if (q.length > 0) {
+    const pattern = `%${q}%`;
+    conditions.push(
+      or(
+        like(behaviorSessions.sessionId, pattern),
+        exists(
+          db
+            .select({ x: sql`1` })
+            .from(behaviorEvents)
+            .where(
+              and(
+                eq(behaviorEvents.sessionId, behaviorSessions.sessionId),
+                sql`coalesce(${behaviorEvents.metadata}->>'url','') ilike ${pattern}`,
+              ),
+            ),
+        ),
+        exists(
+          db
+            .select({ x: sql`1` })
+            .from(behaviorHeatmapEvents)
+            .where(
+              and(
+                eq(behaviorHeatmapEvents.sessionId, behaviorSessions.sessionId),
+                ilike(behaviorHeatmapEvents.page, pattern),
+              ),
+            ),
+        ),
+      )!,
+    );
+  }
   if (input.onlineOnly) {
     conditions.push(isNotNull(behaviorSessions.endTime));
     conditions.push(gte(behaviorSessions.endTime, onlineCutoff));
@@ -325,6 +391,7 @@ export async function listBehaviorSessionsVisitorHub(input: {
     return {
       id: r.id,
       sessionId: r.sessionId,
+      businessId: r.businessId ?? null,
       startTime: r.startTime.toISOString(),
       endTime: end?.toISOString() ?? null,
       device: r.device,

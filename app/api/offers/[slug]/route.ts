@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { stripOfferSectionsForPublic } from "@/lib/offerSections";
+import { getPublicPricingSnapshotForEngineTemplateSlug } from "@server/services/offerEnginePublicPricing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,15 @@ export async function GET(
     const offer = await storage.getSiteOffer(slug);
     if (!offer) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const sectionsRaw = offer.sections as Record<string, unknown>;
+    const linked = offer.offerEngineTemplateSlug?.trim();
+    const pricingSnapshot = linked ? await getPublicPricingSnapshotForEngineTemplateSlug(linked) : null;
     return NextResponse.json({
       slug: offer.slug,
       name: offer.name,
       metaTitle: offer.metaTitle,
       metaDescription: offer.metaDescription,
+      offerEngineTemplateSlug: offer.offerEngineTemplateSlug ?? null,
+      pricingSnapshot,
       sections: stripOfferSectionsForPublic(sectionsRaw),
       updatedAt: offer.updatedAt,
     });

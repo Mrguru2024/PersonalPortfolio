@@ -2,7 +2,10 @@
 
 import { AscendraBehaviorPageTracker } from "./AscendraBehaviorPageTracker";
 
-/** Import from server routes via this wrapper so the client boundary resolves the tracker reliably during prerender. */
+/**
+ * Client-only tracker mount. Prefer **`AscendraBehaviorRootGate`** in root layout (see `behaviorTrackingConfig`);
+ * keep this for rare layouts that must opt in outside the root gate.
+ */
 export function AscendraBehaviorMount() {
   return <AscendraBehaviorPageTracker />;
 }

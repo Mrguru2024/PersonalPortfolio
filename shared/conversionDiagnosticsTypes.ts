@@ -3,6 +3,8 @@
  * @see Docs/GROWTH-INTELLIGENCE-MODULE.md
  */
 
+import type { ClientPhase2Overlay } from "./growthPhase2Types";
+
 export type IntentBand = "low" | "warm" | "high" | "ready";
 
 export interface IntentDistributionSlice {
@@ -140,6 +142,8 @@ export interface ClientConversionDiagnostics {
   frictionPoints: ClientFrictionPoint[];
   /** K10 — plain-language only; no raw heatmap binary */
   heatmapHighlights: string[];
+  /** K10 — paths with click density in linked scope (for client drill-down). */
+  heatmapPageSummaries: { path: string; heatmapClicks: number }[];
   /** K11 — curated stories, not raw replay */
   sessionHighlights: ClientSessionHighlight[];
   /** K12 */
@@ -152,4 +156,6 @@ export interface ClientConversionDiagnostics {
   trafficSources: { label: string; sessions: number; note?: string }[];
   /** K8 — form/cta event rollups when instrumented */
   formFunnelHints: { label: string; detail: string }[];
+  /** Phase 2 — revenue scores, predictive nudges (optional; omitted in early preview). */
+  phase2?: ClientPhase2Overlay;
 }

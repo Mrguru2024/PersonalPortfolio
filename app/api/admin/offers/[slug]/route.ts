@@ -41,7 +41,19 @@ export async function PATCH(
     const metaTitle = body.metaTitle !== undefined ? (body.metaTitle === null || body.metaTitle === "" ? null : String(body.metaTitle)) : existing?.metaTitle ?? null;
     const metaDescription = body.metaDescription !== undefined ? (body.metaDescription === null || body.metaDescription === "" ? null : String(body.metaDescription)) : existing?.metaDescription ?? null;
     const sections = body.sections != null && typeof body.sections === "object" ? body.sections as Record<string, unknown> : (existing?.sections ?? {});
-    const updated = await storage.setSiteOffer(slug, { name, metaTitle, metaDescription, sections });
+    const offerEngineTemplateSlug =
+      body.offerEngineTemplateSlug !== undefined ?
+        body.offerEngineTemplateSlug === null || body.offerEngineTemplateSlug === "" ?
+          null
+        : String(body.offerEngineTemplateSlug).trim().toLowerCase()
+      : undefined;
+    const updated = await storage.setSiteOffer(slug, {
+      name,
+      metaTitle,
+      metaDescription,
+      ...(offerEngineTemplateSlug !== undefined ? { offerEngineTemplateSlug } : {}),
+      sections,
+    });
     return NextResponse.json(updated);
   } catch (error: unknown) {
     console.error("Offer PATCH error:", error);

@@ -14,6 +14,8 @@ This document describes the in-app behavior analytics layer that powers **Ascend
 
 Nothing above was removed; this module extends naming, navigation, diagnostics aggregation, insight tasks, and client summaries.
 
+**Phase 2 (Growth engine — revenue & automation)** builds on the same ingest and diagnostics: see [GROWTH-PHASE2.md](./GROWTH-PHASE2.md) (`/admin/growth-engine`).
+
 ## What was added
 
 | Area | Location |
@@ -23,6 +25,9 @@ Nothing above was removed; this module extends naming, navigation, diagnostics a
 | Insight tasks + experiment link tables | `growth_insight_tasks`, `growth_insight_experiment_links` in `behaviorIntelligenceSchema.ts` |
 | Task API | `GET/POST /api/admin/growth-intelligence/insight-tasks`, `PATCH .../insight-tasks/[id]` |
 | Client diagnostics | `/growth-system/conversion-diagnostics`, `GET /api/client/conversion-diagnostics?days=7` (7–90) |
+| Client capabilities (permissions map) | `GET /api/client/growth-capabilities` — modules + CRM scope; optional `users.permissions` keys `growth.conversion_diagnostics`, `growth.shared_improvements`, `growth.page_behavior` (default allow; set `false` to deny) |
+| Shared insight tasks (client) | `/growth-system/improvements`, `GET /api/client/growth-insight-tasks` — tasks with `visible_to_client` + matching `client_crm_account_id` |
+| Page behavior drill-down | `/growth-system/page-behavior?path=/foo&days=30`, `GET /api/client/page-behavior` |
 | Client UI | `app/components/conversion-diagnostics/ConversionDiagnosticsClient.tsx` (sectioned “Conversion Diagnostics” dashboard) |
 | Aggregations | `server/services/growthIntelligence/growthDiagnosticsService.ts` (`buildClientConversionDiagnostics` + `buildAdminGrowthDiagnostics`) |
 | Types | `shared/conversionDiagnosticsTypes.ts` (`ClientConversionDiagnostics`: executive metrics, conversion snapshot narratives, page/friction/heatmap/session highlights, feedback themes, recommendations, trends) |

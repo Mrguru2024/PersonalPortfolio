@@ -66,6 +66,9 @@ export function GrowthSystemClient({
           <Button variant="outline" size="sm" className="w-fit shrink-0 border-emerald-500/40" asChild>
             <Link href="/growth-system/conversion-diagnostics">Conversion Diagnostics</Link>
           </Button>
+          <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
+            <Link href="/growth-system/improvements">Improvements</Link>
+          </Button>
           {focusSection ?
             <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
               <Link href="/growth-system">View full growth system</Link>

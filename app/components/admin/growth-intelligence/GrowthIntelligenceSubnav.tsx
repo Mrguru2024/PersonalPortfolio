@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS: { href: string; label: string }[] = [
   { href: "/admin/behavior-intelligence", label: "Overview" },
+  { href: "/admin/growth-engine", label: "Growth engine" },
   { href: "/admin/behavior-intelligence/conversion-diagnostics", label: "Conversion Diagnostics" },
   { href: "/admin/behavior-intelligence/visitors", label: "Visitor activity" },
   { href: "/admin/behavior-intelligence/watch", label: "Watch & reports" },
@@ -25,7 +26,7 @@ export function GrowthIntelligenceSubnav() {
       className="border-b border-border/80 bg-muted/20 -mx-4 px-4 mb-8"
       aria-label="Ascendra Growth Intelligence"
     >
-      <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto py-2">
+      <div className="max-w-6xl mx-auto flex flex-wrap gap-1 py-2">
         {LINKS.map(({ href, label }) => {
           const active =
             href === "/admin/behavior-intelligence" ?

@@ -29,6 +29,8 @@ import { scoreOfferTemplate, scoreLeadMagnetTemplate } from "./offerEngineScorin
 import { evaluateOfferWarnings, evaluateLeadMagnetWarnings } from "./offerEngineWarnings";
 import { generateOfferCopyBlocks, generateLeadMagnetCopyBlocks } from "./offerEngineCopy";
 import type { CtaGoal } from "@shared/offerEngineConstants";
+import type { AscendraPricingPackage } from "@shared/ascendraPricingPackageTypes";
+import { ensurePricingPackage, refreshPricingPackageComputed } from "@shared/ascendraPricingEngine";
 
 type OfferWrite = z.infer<typeof offerTemplateWriteSchema>;
 type LeadMagnetWrite = z.infer<typeof leadMagnetTemplateWriteSchema>;
@@ -129,6 +131,7 @@ function offerWriteToRowValues(
     copyBlocksJson: data.copyBlocks ?? {},
     scoreCacheJson: null,
     warningsJson: null,
+    pricingPackageJson: (data.pricingPackage ?? null) as AscendraPricingPackage | null,
     updatedAt: new Date(),
   };
 }
@@ -145,13 +148,26 @@ export async function createOfferTemplate(data: OfferWrite): Promise<OfferEngine
   });
 
   const [inserted] = await db.insert(offerEngineOfferTemplates).values(base).returning();
-  const patch = recomputeOfferPatch(inserted);
+  let row = inserted;
+  if (inserted.pricingPackageJson) {
+    const refreshed = refreshPricingPackageComputed(
+      inserted,
+      ensurePricingPackage(inserted.pricingPackageJson as AscendraPricingPackage),
+    );
+    const [withPkg] = await db
+      .update(offerEngineOfferTemplates)
+      .set({ pricingPackageJson: refreshed, updatedAt: new Date() })
+      .where(eq(offerEngineOfferTemplates.id, inserted.id))
+      .returning();
+    if (withPkg) row = withPkg;
+  }
+  const patch = recomputeOfferPatch(row);
   const [final] = await db
     .update(offerEngineOfferTemplates)
     .set(patch)
-    .where(eq(offerEngineOfferTemplates.id, inserted.id))
+    .where(eq(offerEngineOfferTemplates.id, row.id))
     .returning();
-  return final ?? inserted;
+  return final ?? row;
 }
 
 export async function updateOfferTemplate(
@@ -199,16 +215,27 @@ export async function updateOfferTemplate(
     ...(patch.copyBlocks !== undefined ? { copyBlocksJson: patch.copyBlocks as typeof existing.copyBlocksJson } : {}),
   };
 
+  let pricingPackageJson: AscendraPricingPackage | null = next.pricingPackageJson ?? null;
+  if (patch.pricingPackage !== undefined) {
+    pricingPackageJson =
+      patch.pricingPackage === null ? null : (patch.pricingPackage as AscendraPricingPackage);
+  }
+  let merged: OfferEngineOfferTemplateRow = { ...next, pricingPackageJson };
+  if (merged.pricingPackageJson) {
+    const refreshed = refreshPricingPackageComputed(merged, ensurePricingPackage(merged.pricingPackageJson));
+    merged = { ...merged, pricingPackageJson: refreshed };
+  }
+
   if (patch.personaId) {
-    const p = await getMarketingPersona(next.personaId);
+    const p = await getMarketingPersona(merged.personaId);
     if (!p) return null;
   }
 
-  const re = recomputeOfferPatch(next);
+  const re = recomputeOfferPatch(merged);
   await db
     .update(offerEngineOfferTemplates)
     .set({
-      ...next,
+      ...merged,
       scoreCacheJson: re.scoreCacheJson,
       warningsJson: re.warningsJson,
       updatedAt: new Date(),
@@ -253,16 +280,32 @@ export async function duplicateOfferTemplate(id: number): Promise<OfferEngineOff
     copyBlocksJson: { ...src.copyBlocksJson },
     scoreCacheJson: null,
     warningsJson: null,
+    pricingPackageJson: src.pricingPackageJson
+      ? (JSON.parse(JSON.stringify(src.pricingPackageJson)) as AscendraPricingPackage)
+      : null,
     updatedAt: new Date(),
   };
   const [inserted] = await db.insert(offerEngineOfferTemplates).values(insertPayload).returning();
-  const patch = recomputeOfferPatch(inserted);
+  let row = inserted;
+  if (inserted.pricingPackageJson) {
+    const refreshed = refreshPricingPackageComputed(
+      inserted,
+      ensurePricingPackage(inserted.pricingPackageJson as AscendraPricingPackage),
+    );
+    const [withPkg] = await db
+      .update(offerEngineOfferTemplates)
+      .set({ pricingPackageJson: refreshed, updatedAt: new Date() })
+      .where(eq(offerEngineOfferTemplates.id, inserted.id))
+      .returning();
+    if (withPkg) row = withPkg;
+  }
+  const patch = recomputeOfferPatch(row);
   const [out] = await db
     .update(offerEngineOfferTemplates)
     .set(patch)
-    .where(eq(offerEngineOfferTemplates.id, inserted.id))
+    .where(eq(offerEngineOfferTemplates.id, row.id))
     .returning();
-  return out ?? inserted;
+  return out ?? row;
 }
 
 export async function deleteOfferTemplate(id: number): Promise<boolean> {

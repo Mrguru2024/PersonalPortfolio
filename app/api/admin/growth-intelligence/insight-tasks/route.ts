@@ -10,6 +10,8 @@ const postSchema = z.object({
   title: z.string().min(1).max(500),
   body: z.string().max(24_000).optional().nullable(),
   businessId: z.string().max(120).optional().nullable(),
+  visibleToClient: z.boolean().optional(),
+  clientCrmAccountId: z.number().int().positive().nullable().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   pagePath: z.string().max(2048).optional().nullable(),
   behaviorSessionKey: z.string().max(200).optional().nullable(),
@@ -42,6 +44,12 @@ export async function POST(req: NextRequest) {
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ message: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
+  }
+  if (parsed.data.visibleToClient && (parsed.data.clientCrmAccountId == null || parsed.data.clientCrmAccountId < 1)) {
+    return NextResponse.json(
+      { message: "visibleToClient requires clientCrmAccountId (positive CRM account id)." },
+      { status: 400 },
+    );
   }
   const row = await createGrowthInsightTask({
     ...parsed.data,

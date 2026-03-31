@@ -172,6 +172,8 @@ export const siteOffers = pgTable("site_offers", {
   name: text("name").notNull(),
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
+  /** Optional `offer_engine_offer_templates.slug` — merges public pricing snapshot into GET /api/offers/[slug]. */
+  offerEngineTemplateSlug: text("offer_engine_template_slug"),
   sections: json("sections").$type<Record<string, unknown>>().notNull(),
   /** Optional content grading (SEO, design, copy). Set by admin "Grade content" action. */
   grading: json("grading").$type<OfferContentGrading | null>(),
@@ -1013,6 +1015,7 @@ export * from "./ascendraIntelligenceSchema";
 export * from "./amieSchema";
 export * from "./experimentationEngineSchema";
 export * from "./serviceAgreementSchema";
+export * from "./growthEngineSchema";
 export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
 export * from "./offerEngineSchema";

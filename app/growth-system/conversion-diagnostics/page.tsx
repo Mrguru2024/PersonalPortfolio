@@ -80,9 +80,14 @@ export default function ClientConversionDiagnosticsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-emerald-500/[0.03]">
       <div className="max-w-5xl mx-auto px-4 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <Button variant="ghost" size="sm" className="w-fit -ml-2 text-muted-foreground" asChild>
-          <Link href="/growth-system">← Growth system</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="sm" className="w-fit -ml-2 text-muted-foreground" asChild>
+            <Link href="/growth-system">← Growth system</Link>
+          </Button>
+          <Button variant="outline" size="sm" className="h-9 border-emerald-500/30" asChild>
+            <Link href="/growth-system/improvements">Improvements</Link>
+          </Button>
+        </div>
         <div className="flex flex-wrap items-center gap-3 justify-end">
           <div className="flex items-center gap-2">
             <Label htmlFor="cd-period" className="text-xs text-muted-foreground whitespace-nowrap">

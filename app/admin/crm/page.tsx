@@ -656,7 +656,7 @@ export default function CrmPage() {
       )}
 
       <Tabs defaultValue="contacts" className="mt-2">
-        <TabsList className="inline-flex flex-nowrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
+        <TabsList className="flex w-full flex-wrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
           <TabsTrigger value="contacts" className="rounded-lg data-[state=active]:shadow-sm">Contacts</TabsTrigger>
           <TabsTrigger value="deals" className="rounded-lg data-[state=active]:shadow-sm">Deals</TabsTrigger>
         </TabsList>

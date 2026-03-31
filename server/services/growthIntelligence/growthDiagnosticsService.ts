@@ -22,6 +22,7 @@ import type {
   ClientSessionHighlight,
   IntentBand,
 } from "@shared/conversionDiagnosticsTypes";
+import { buildClientPhase2Overlay } from "@server/services/growthEngine/clientPhase2Overlay";
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 const INTENT_PAGE_HINTS = ["/pricing", "/book", "/schedule", "/contact", "/qualify", "/offer", "/strategy"];
@@ -320,6 +321,7 @@ function premiumEmptyPayload(periodDays: number, sinceIso: string, contactCount:
     heatmapHighlights: [
       "Heatmap highlights summarize where people click and what they ignore — your operator can open full overlays in Ascendra Growth Intelligence.",
     ],
+    heatmapPageSummaries: [],
     sessionHighlights: [],
     feedbackInsights: [
       "Survey and on-page feedback themes will appear when micro-prompts are enabled on your properties.",
@@ -843,6 +845,17 @@ export async function buildClientConversionDiagnostics(
         "No survey themes in this window yet — Ascendra can activate micro-prompts after key actions.",
       ];
 
+  const phase2 = await buildClientPhase2Overlay({
+    contactIds,
+    since,
+    periodDays,
+    sessions,
+    convertedSessions,
+    pageViewsApprox,
+    highFrictionPages,
+    topSourceLabel: topSource?.label,
+  });
+
   return {
     mode: "live",
     businessLabel,
@@ -886,10 +899,14 @@ export async function buildClientConversionDiagnostics(
     pagePerformance,
     frictionPoints,
     heatmapHighlights,
+    heatmapPageSummaries: heatAgg
+      .filter((h) => h.page && String(h.page).trim().length > 0)
+      .map((h) => ({ path: String(h.page), heatmapClicks: Number(h.c) })),
     sessionHighlights,
     feedbackInsights,
     recommendedActions,
     trends,
     trafficSources,
+    phase2,
   };
 }
