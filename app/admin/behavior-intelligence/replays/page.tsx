@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -19,9 +19,24 @@ type SessionRow = {
   converted: boolean;
 };
 
+type ReplayPlayback = {
+  maxSeq: number;
+  segmentCount: number;
+  sessionEndTime: string | null;
+  recordingActive: boolean;
+  unavailableReason?: string;
+};
+
+type ReplayResponse = {
+  sessionId: string;
+  events: unknown[];
+  playback: ReplayPlayback;
+};
+
 export default function BehaviorReplaysPage() {
   const [pick, setPick] = useState<string | null>(null);
   const [manual, setManual] = useState("");
+  const [replayLive, setReplayLive] = useState(false);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["/api/admin/behavior-intelligence/sessions"],
@@ -34,27 +49,52 @@ export default function BehaviorReplaysPage() {
   const sessionId = pick ?? (manual.trim() || null);
 
   const { data: replay, isFetching } = useQuery({
-    queryKey: ["/api/admin/behavior-intelligence/replays", sessionId],
+    queryKey: ["/api/admin/behavior-intelligence/replays", sessionId, replayLive],
     queryFn: async () => {
-      if (!sessionId) return { sessionId: "", events: [] as unknown[] };
+      if (!sessionId) {
+        return { sessionId: "", events: [] as unknown[], playback: null as ReplayPlayback | null };
+      }
       const res = await apiRequest("GET", `/api/admin/behavior-intelligence/replays/${encodeURIComponent(sessionId)}`);
-      return res.json() as Promise<{ sessionId: string; events: unknown[] }>;
+      return res.json() as Promise<ReplayResponse>;
     },
     enabled: !!sessionId && sessionId.length >= 8,
+    refetchInterval: (q) => {
+      const d = q.state.data as ReplayResponse | undefined;
+      if (!sessionId || !replayLive) return false;
+      return d?.playback?.recordingActive ? 2500 : false;
+    },
   });
 
   const events = useMemo(() => replay?.events ?? [], [replay?.events]);
+
+  useEffect(() => {
+    setReplayLive(true);
+  }, [sessionId]);
+
+  const liveTail =
+    !!sessionId && replayLive && !!replay?.playback?.recordingActive;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold">Session replays</h1>
-          <p className="text-sm text-muted-foreground">rrweb payloads stored per session (admin only).</p>
+          <p className="text-sm text-muted-foreground">
+            Video-style rrweb playback; live tail when the visitor is still active (same 3-minute window as Visitors).
+          </p>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/admin/behavior-intelligence">← Overview</Link>
-        </Button>
+
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/storage-retention">Storage</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/behavior-intelligence/visitors">Visitors hub</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/behavior-intelligence">← Overview</Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -96,10 +136,29 @@ export default function BehaviorReplaysPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Replay</CardTitle>
-          {isFetching ? <CardDescription>Loading…</CardDescription> : null}
+          {isFetching && !liveTail ? <CardDescription>Loading…</CardDescription> : null}
         </CardHeader>
-        <CardContent>
-          <BehaviorRrwebPlayer events={events} />
+        <CardContent className="space-y-4">
+          {replay?.playback?.recordingActive ?
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant={replayLive ? "default" : "outline"} onClick={() => setReplayLive(true)}>
+                Live
+              </Button>
+              <Button type="button" size="sm" variant={!replayLive ? "default" : "outline"} onClick={() => setReplayLive(false)}>
+                Recorded
+              </Button>
+            </div>
+          : null}
+          {replay?.playback?.unavailableReason === "soft_deleted" ?
+            <p className="text-sm text-destructive">
+              Session is in retention trash. Restore from{" "}
+              <Link href="/admin/storage-retention" className="underline">
+                Storage &amp; retention
+              </Link>
+              .
+            </p>
+          : null}
+          <BehaviorRrwebPlayer events={events} live={liveTail} />
         </CardContent>
       </Card>
     </div>

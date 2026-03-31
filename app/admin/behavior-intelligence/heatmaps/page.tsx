@@ -10,7 +10,8 @@ import {
   BehaviorHeatmapViewer,
   type HeatmapPointRow,
 } from "@/components/admin/behavior-intelligence/BehaviorHeatmapViewer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -105,10 +106,10 @@ export default function BehaviorHeatmapsPage() {
           <CardContent className="space-y-2">
             {pointsQuery.isLoading ?
               <Loader2 className="h-6 w-6 animate-spin" />
-            : <BehaviorHeatmapViewer points={pointsQuery.data?.points ?? []} />}
+            : <BehaviorHeatmapViewer interactive points={pointsQuery.data?.points ?? []} />}
             <p className="text-xs text-muted-foreground">
-              Each marker is one click, positioned with <code className="bg-muted px-0.5 rounded">clientX/Y</code> relative to the recorded
-              viewport. Compare across breakpoints by segmenting pages or adding device flags in a later iteration.
+              Interactive view: adjust heat intensity and inspect clusters. Points use{" "}
+              <code className="bg-muted px-0.5 rounded">clientX/Y</code> relative to the recorded viewport.
             </p>
           </CardContent>
         </Card>

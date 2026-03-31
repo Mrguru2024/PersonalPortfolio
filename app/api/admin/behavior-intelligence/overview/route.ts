@@ -9,7 +9,7 @@ import {
   behaviorFrictionReports,
   behaviorSurveys,
 } from "@shared/schema";
-import { count, desc, gte } from "drizzle-orm";
+import { and, count, desc, gte, isNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const [sessionCount] = await db
     .select({ c: count() })
     .from(behaviorSessions)
-    .where(gte(behaviorSessions.startTime, since));
+    .where(and(gte(behaviorSessions.startTime, since), isNull(behaviorSessions.softDeletedAt)));
 
   const [eventCount] = await db
     .select({ c: count() })

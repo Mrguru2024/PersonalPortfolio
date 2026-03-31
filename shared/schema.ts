@@ -203,6 +203,10 @@ export const funnelContentAssets = pgTable("funnel_content_assets", {
   leadMagnetSlug: text("lead_magnet_slug"),
   /** Where to show: [{ pagePath, sectionId }, ...]. pagePath e.g. /digital-growth-audit; sectionId e.g. hero, lead_magnet_download */
   placements: json("placements").$type<Array<{ pagePath: string; sectionId: string }>>().default([]),
+  /** Exempt from automatic funnel asset retention (Ascendra OS storage policy). */
+  retentionImportant: boolean("retention_important").default(false).notNull(),
+  retentionArchived: boolean("retention_archived").default(false).notNull(),
+  softDeletedAt: timestamp("soft_deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

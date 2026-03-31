@@ -125,12 +125,7 @@ export default function RootLayout({
             <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           </>
         ) : null}
-        <link rel="dns-prefetch" href="https://tools.luckyorange.com" />
-        <script
-          async
-          defer
-          src="https://tools.luckyorange.com/core/lo.js?site-id=d5055c22"
-        />
+        {/** Session replay / heatmaps: first-party Ascendra Growth Intelligence only (`AscendraBehaviorMount` + `/api/behavior/ingest`). No Hotjar / Lucky Orange / third-party UX analytics scripts. */}
       </head>
       {/* suppressHydrationWarning: only affects this node; extension attrs on descendants are handled via suppressHydrationWarning on ui/Button and Header <button>s (fdprocessedid, etc.). */}
       <body

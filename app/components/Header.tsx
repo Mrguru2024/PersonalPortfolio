@@ -35,6 +35,7 @@ import {
   FolderOpen,
   Mails,
   ScanSearch,
+  ScanEye,
   PenLine,
   Gauge,
   Video,
@@ -302,6 +303,12 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Growth OS", href: "/admin/growth-os", icon: Gauge, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Analytics", name: "Website Analytics", href: "/admin/analytics", icon: TrendingUp },
+    {
+      section: "Analytics",
+      name: "Ascendra Growth Intelligence",
+      href: "/admin/behavior-intelligence",
+      icon: ScanEye,
+    },
     {
       section: "Analytics",
       name: "Experiments (AEE)",

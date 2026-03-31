@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ReadAloudButton } from "@/components/admin/ReadAloudButton";
+import { HowToGuideIllustration } from "@/components/admin/HowToGuideIllustration";
 import {
   ADMIN_HOW_TO_GUIDES,
   adminGuidePlainTextForSpeech,
@@ -88,9 +89,13 @@ export default function AdminHowToPage() {
             How-to & guides
           </h1>
           <p className="text-muted-foreground max-w-2xl text-sm sm:text-base leading-relaxed">
-            Practical workflows for this workspace—paths match the live <strong className="text-foreground font-medium">Pages &amp; tools directory</strong>. Skim the short &ldquo;when to use&rdquo; line first, then steps. Use{" "}
-            <strong className="text-foreground font-medium">Listen</strong> for read-aloud—the{" "}
-            <span className="whitespace-nowrap">settings (gear)</span> icon next to it opens voice output (this device or OpenAI natural voice), reading style, and browser voice choice.
+            Short guides for everyday work in Ascendra. Skim <strong className="text-foreground font-medium">when to use</strong> first, then
+            follow the steps. Tap <strong className="text-foreground font-medium">Listen</strong> to hear a guide read aloud—the{" "}
+            <span className="whitespace-nowrap">gear icon</span> next to it lets you choose this device, cloud (OpenAI), or cloud (Gemini) voices. After you change voice options in{" "}
+            <Link href="/admin/settings" className="text-primary underline font-medium">
+              Settings
+            </Link>
+            , the next Listen refreshes automatically.
           </p>
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center">
             <div className="flex flex-wrap gap-2">
@@ -129,18 +134,21 @@ export default function AdminHowToPage() {
             return (
               <Card key={g.id} className="border-border/80 shadow-sm overflow-hidden">
                 <CardHeader className="pb-2 space-y-1">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className="rounded-lg bg-primary/10 p-2 text-primary shrink-0">
-                        <Icon className="h-5 w-5" aria-hidden />
-                      </div>
-                      <div className="min-w-0 space-y-1">
-                        <CardTitle className="text-lg sm:text-xl leading-snug">{g.title}</CardTitle>
-                        <CardDescription className="text-sm leading-relaxed">{g.description}</CardDescription>
-                        <p className="text-xs text-muted-foreground pt-1 border-l-2 border-primary/30 pl-2 mt-2">
-                          <span className="font-medium text-foreground/80">When to use: </span>
-                          {g.whenToUse}
-                        </p>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col sm:flex-row gap-4 min-w-0 flex-1">
+                      <HowToGuideIllustration guideId={g.id} className="sm:order-last sm:mt-0.5" />
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="rounded-lg bg-primary/10 p-2 text-primary shrink-0">
+                          <Icon className="h-5 w-5" aria-hidden />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <CardTitle className="text-lg sm:text-xl leading-snug">{g.title}</CardTitle>
+                          <CardDescription className="text-sm leading-relaxed">{g.description}</CardDescription>
+                          <p className="text-xs text-muted-foreground pt-1 border-l-2 border-primary/30 pl-2 mt-2">
+                            <span className="font-medium text-foreground/80">When to use this: </span>
+                            {g.whenToUse}
+                          </p>
+                        </div>
                       </div>
                     </div>
                     <ReadAloudButton text={cardSpeech} label="Listen to this guide" className="shrink-0 self-start" />
@@ -158,7 +166,7 @@ export default function AdminHowToPage() {
                   </ol>
                   {g.tips && g.tips.length > 0 && (
                     <div className="rounded-lg bg-muted/40 border border-border/60 px-3 py-2.5 text-xs text-muted-foreground leading-relaxed">
-                      <p className="font-medium text-foreground/90 mb-1">Quick tip</p>
+                      <p className="font-medium text-foreground/90 mb-1">Tips from the team</p>
                       <ul className="list-disc list-inside space-y-1">
                         {g.tips.map((t, i) => (
                           <li key={i}>
