@@ -51,11 +51,18 @@ export async function listSurveysForAdmin() {
   return db.select().from(behaviorSurveys).orderBy(desc(behaviorSurveys.createdAt));
 }
 
+function sanitizeTriggerConfig(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null;
+  if (typeof raw !== "object" || Array.isArray(raw)) return null;
+  return raw as Record<string, unknown>;
+}
+
 export async function createSurvey(input: {
   question: string;
   triggerType: string;
   businessId?: string | null;
   active?: boolean;
+  triggerConfigJson?: Record<string, unknown> | null;
 }) {
   const [row] = await db
     .insert(behaviorSurveys)
@@ -64,9 +71,38 @@ export async function createSurvey(input: {
       triggerType: normalizeSurveyTrigger(input.triggerType),
       businessId: input.businessId?.trim() || null,
       active: input.active !== false,
+      triggerConfigJson:
+        input.triggerConfigJson == null ? null : sanitizeTriggerConfig(input.triggerConfigJson),
+      updatedAt: new Date(),
     })
     .returning();
   return row;
+}
+
+export async function updateSurvey(
+  id: number,
+  patch: {
+    question?: string;
+    triggerType?: string;
+    triggerConfigJson?: Record<string, unknown> | null;
+    active?: boolean;
+    businessId?: string | null;
+  },
+) {
+  const updates: Partial<typeof behaviorSurveys.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (patch.question !== undefined) updates.question = patch.question.slice(0, 4000);
+  if (patch.triggerType !== undefined) updates.triggerType = normalizeSurveyTrigger(patch.triggerType);
+  if (patch.triggerConfigJson !== undefined) {
+    updates.triggerConfigJson =
+      patch.triggerConfigJson == null ? null : sanitizeTriggerConfig(patch.triggerConfigJson);
+  }
+  if (patch.active !== undefined) updates.active = patch.active;
+  if (patch.businessId !== undefined) updates.businessId = patch.businessId?.trim() || null;
+
+  const [row] = await db.update(behaviorSurveys).set(updates).where(eq(behaviorSurveys.id, id)).returning();
+  return row ?? null;
 }
 
 export async function listSurveyResponses(surveyId: number, limit: number) {
@@ -98,6 +134,32 @@ export async function createUserTestCampaign(input: {
     })
     .returning();
   return row;
+}
+
+export async function updateUserTestCampaign(
+  id: number,
+  patch: {
+    name?: string;
+    hypothesis?: string | null;
+    active?: boolean;
+    businessId?: string | null;
+  },
+) {
+  const updates: Partial<typeof behaviorUserTestCampaigns.$inferInsert> = {};
+  if (patch.name !== undefined) updates.name = patch.name.slice(0, 500);
+  if (patch.hypothesis !== undefined) {
+    const h = patch.hypothesis?.trim() ?? "";
+    updates.hypothesis = h ? h.slice(0, 8000) : null;
+  }
+  if (patch.active !== undefined) updates.active = patch.active;
+  if (patch.businessId !== undefined) updates.businessId = patch.businessId?.trim() || null;
+
+  const [row] = await db
+    .update(behaviorUserTestCampaigns)
+    .set(updates)
+    .where(eq(behaviorUserTestCampaigns.id, id))
+    .returning();
+  return row ?? null;
 }
 
 export async function listObservationsForCampaign(campaignId: number, limit: number) {

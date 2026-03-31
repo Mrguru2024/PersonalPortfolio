@@ -58,8 +58,7 @@ export default function FunnelOverviewPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">Phase 2</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <GitBranch className="h-7 w-7 text-emerald-600 shrink-0" />
             Funnel overview
           </h1>

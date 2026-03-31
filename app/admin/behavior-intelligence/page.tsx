@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ClipboardList, Crosshair, Database, Flame, LineChart, Loader2, MapPin, MousePointer2, Users, Video } from "lucide-react";
+import {
+  Activity,
+  ClipboardList,
+  Crosshair,
+  Database,
+  Flame,
+  LineChart,
+  Loader2,
+  MapPin,
+  MousePointer2,
+  Phone,
+  Users,
+  Video,
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +28,8 @@ type Overview = {
   replaySegments7d: number;
   heatmapPoints7d: number;
   surveysTotal: number;
+  trackedPhoneLines?: number;
+  phoneCallLogs7d?: number;
   latestFriction: Array<{
     id: number;
     page: string;
@@ -100,6 +115,21 @@ export default function BehaviorIntelligenceOverviewPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Heatmap points (7d)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{data.heatmapPoints7d}</CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tracked phone lines (active)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data.trackedPhoneLines ?? 0}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Phone call logs (7d)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data.phoneCallLogs7d}</CardContent>
         </Card>
       </div>
 

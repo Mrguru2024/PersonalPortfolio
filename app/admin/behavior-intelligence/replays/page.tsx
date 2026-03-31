@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { BehaviorVisitorHubResponse } from "@server/services/behavior/behaviorIngestService";
+import { trackedSiteLabel, visitorAliasFromSessionId } from "@/lib/behaviorVisitorAlias";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BehaviorRrwebPlayer } from "@/components/admin/behavior-intelligence/BehaviorRrwebPlayer";
+import { AdminDevOnly } from "@/components/admin/AdminDevOnly";
 import { cn } from "@/lib/utils";
 
 type ReplayPlayback = {
@@ -58,6 +60,10 @@ function truncatePath(path: string, max = 52): string {
   return `${p.slice(0, Math.floor(max / 2) - 1)}…${p.slice(-Math.floor(max / 2) + 1)}`;
 }
 
+function shortDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+}
+
 export default function BehaviorReplaysPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -66,7 +72,7 @@ export default function BehaviorReplaysPage() {
   const [pick, setPick] = useState<string | null>(null);
   const [manual, setManual] = useState("");
   const [replayLive, setReplayLive] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const [days, setDays] = useState(14);
   const [searchInput, setSearchInput] = useState("");
@@ -99,9 +105,9 @@ export default function BehaviorReplaysPage() {
   const sessions = hubData?.sessions ?? [];
 
   const syncSessionUrl = useCallback(
-    (sessionId: string | null) => {
+    (internalSessionKey: string | null) => {
       const p = new URLSearchParams(searchParams.toString());
-      if (sessionId && sessionId.length >= 8) p.set("session", sessionId);
+      if (internalSessionKey && internalSessionKey.length >= 8) p.set("session", internalSessionKey);
       else p.delete("session");
       const qs = p.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
@@ -145,8 +151,24 @@ export default function BehaviorReplaysPage() {
   const liveTail =
     !!sessionId && replayLive && !!replay?.playback?.recordingActive;
 
-  const selectedDisplayId =
-    pick ?? (manual.trim().length >= 8 ? manual.trim() : null);
+  const selectedFromList = useMemo(
+    () => (pick ? sessions.find((s) => s.sessionId === pick) : undefined),
+    [pick, sessions],
+  );
+
+  const selectedHeading = useMemo(() => {
+    if (selectedFromList) {
+      return `${selectedFromList.alias} · ${shortDateTime(selectedFromList.startTime)}`;
+    }
+    const key = (pick ?? manual.trim()) || "";
+    if (key.length >= 8) {
+      const row = sessions.find((s) => s.sessionId === key);
+      return row
+        ? `${visitorAliasFromSessionId(key)} · ${shortDateTime(row.startTime)}`
+        : `${visitorAliasFromSessionId(key)} · opened from link`;
+    }
+    return null;
+  }, [selectedFromList, pick, manual, sessions]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -154,7 +176,8 @@ export default function BehaviorReplaysPage() {
         <div>
           <h1 className="text-xl font-bold">Session replays</h1>
           <p className="text-sm text-muted-foreground">
-            Pick a session by workspace, search page URL or path, then play rrweb. Live tail when the visitor is still active (same 3-minute window as Visitors).
+            Choose a visit from the list, search by page or link, then watch the recording. If someone is still on your
+            site, you can follow along live (same short window as the Visitors hub).
           </p>
         </div>
 
@@ -173,34 +196,35 @@ export default function BehaviorReplaysPage() {
 
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-base">Find a session</CardTitle>
+          <CardTitle className="text-base">Find a visit</CardTitle>
           <CardDescription>
-            Search matches session id, event URLs, and heatmap page paths. Filter by workspace (tracking <code className="text-xs">businessId</code>).
+            Search by page path, full URL, or the friendly visitor name. Narrow by site if you track more than one
+            property.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="space-y-2 min-w-[200px] flex-1">
-              <Label htmlFor="replay-search">Search URL / path / session</Label>
+              <Label htmlFor="replay-search">Search</Label>
               <Input
                 id="replay-search"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="e.g. /pricing or localhost:3000/services"
+                placeholder="e.g. /pricing, yoursite.com/contact, or Swift Finch"
               />
             </div>
-            <div className="space-y-2 w-full sm:w-48">
-              <Label>Workspace</Label>
+            <div className="space-y-2 w-full sm:w-52">
+              <Label>Site / property</Label>
               <Select value={workspaceFilter} onValueChange={setWorkspaceFilter}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All workspaces" />
+                  <SelectValue placeholder="All sites" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All workspaces</SelectItem>
-                  <SelectItem value={NONE_WORKSPACE}>Unassigned (no workspace)</SelectItem>
+                  <SelectItem value="all">All sites</SelectItem>
+                  <SelectItem value={NONE_WORKSPACE}>Not assigned to a site</SelectItem>
                   {(filterOptions?.businessIds ?? []).map((id) => (
                     <SelectItem key={id} value={id}>
-                      {id}
+                      {trackedSiteLabel(id) ?? id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -227,7 +251,7 @@ export default function BehaviorReplaysPage() {
           : <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">
               {sessions.length === 0 ?
                 <li className="px-3 py-6 text-center text-muted-foreground">
-                  No sessions in this range. Try another workspace, widen the date range, or shorten your search.
+                  No visits match. Try another site filter, widen the dates, or shorten the search.
                 </li>
               : sessions.map((s) => (
                   <li key={s.id}>
@@ -247,26 +271,26 @@ export default function BehaviorReplaysPage() {
                         <span className="font-medium">{s.alias}</span>
                         {s.hasReplay ?
                           <Badge variant="secondary" className="text-[10px]">
-                            replay
+                            Recording
                           </Badge>
                         : <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                            no replay yet
+                            No recording yet
                           </Badge>
                         }
                         {s.isOnline ?
-                          <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-600">live</Badge>
+                          <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-600">Live now</Badge>
                         : null}
                       </div>
                       {s.samplePage ?
-                        <div className="text-xs text-muted-foreground font-mono truncate" title={s.samplePage}>
+                        <div className="text-xs text-muted-foreground truncate" title={s.samplePage}>
                           {truncatePath(s.samplePage)}
                         </div>
                       : null}
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        <span>{new Date(s.startTime).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}</span>
+                        <span>{shortDateTime(s.startTime)}</span>
                         <span>{s.locationLabel}</span>
                         {s.businessId ?
-                          <span className="font-mono text-[10px]">{s.businessId}</span>
+                          <span className="text-[11px]">{trackedSiteLabel(s.businessId) ?? s.businessId}</span>
                         : null}
                       </div>
                     </button>
@@ -275,13 +299,13 @@ export default function BehaviorReplaysPage() {
               }
             </ul>
           }
-          {selectedDisplayId ?
-            <p className="text-xs text-muted-foreground">
-              Selected: <span className="font-mono">{selectedDisplayId}</span>
+          {sessionId && selectedHeading ?
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Playing:</span> {selectedHeading}
               {" · "}
               <button
                 type="button"
-                className="underline hover:text-foreground"
+                className="text-muted-foreground underline hover:text-foreground text-xs"
                 onClick={() => {
                   setPick(null);
                   setManual("");
@@ -295,47 +319,51 @@ export default function BehaviorReplaysPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 text-left px-6 py-4 hover:bg-muted/30 rounded-t-lg border-b"
-          onClick={() => setAdvancedOpen((o) => !o)}
-          aria-expanded={advancedOpen}
-        >
-          {advancedOpen ?
-            <ChevronDown className="h-4 w-4 shrink-0" />
-          : <ChevronRight className="h-4 w-4 shrink-0" />}
-          <span className="font-medium text-sm">Advanced — paste session id</span>
-        </button>
-        {advancedOpen ?
-          <CardContent className="pt-4 space-y-2">
-            <Label htmlFor="sid">sessionId</Label>
-            <Input
-              id="sid"
-              value={manual}
-              onChange={(e) => {
-                setPick(null);
-                setManual(e.target.value);
-              }}
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (v.length >= 8) {
-                  setPick(v);
-                  syncSessionUrl(v);
-                }
-              }}
-              placeholder="Paste raw session id if you have it"
-            />
-            <p className="text-xs text-muted-foreground">
-              Pasting a full id selects it and updates the URL <span className="font-mono">?session=…</span> for sharing.
-            </p>
-          </CardContent>
-        : null}
-      </Card>
+      <AdminDevOnly>
+        <Card>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 text-left px-6 py-4 hover:bg-muted/30 rounded-t-lg border-b"
+            onClick={() => setSupportOpen((o) => !o)}
+            aria-expanded={supportOpen}
+          >
+            {supportOpen ?
+              <ChevronDown className="h-4 w-4 shrink-0" />
+            : <ChevronRight className="h-4 w-4 shrink-0" />}
+            <span className="font-medium text-sm">Support &amp; engineering</span>
+            <span className="text-xs text-muted-foreground font-normal">— optional internal reference or shared admin link</span>
+          </button>
+          {supportOpen ?
+            <CardContent className="pt-4 space-y-2">
+              <Label htmlFor="sid">Internal session reference</Label>
+              <Input
+                id="sid"
+                value={manual}
+                onChange={(e) => {
+                  setPick(null);
+                  setManual(e.target.value);
+                }}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v.length >= 8) {
+                    setPick(v);
+                    syncSessionUrl(v);
+                  }
+                }}
+                placeholder="Only if support sent you a reference string"
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Bookmarked admin links may include this automatically. You normally do not need this field.
+              </p>
+            </CardContent>
+          : null}
+        </Card>
+      </AdminDevOnly>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Replay</CardTitle>
+          <CardTitle className="text-base">Player</CardTitle>
           {isFetching && !liveTail ? <CardDescription>Loading…</CardDescription> : null}
         </CardHeader>
         <CardContent className="space-y-4">
@@ -351,7 +379,7 @@ export default function BehaviorReplaysPage() {
           : null}
           {replay?.playback?.unavailableReason === "soft_deleted" ?
             <p className="text-sm text-destructive">
-              Session is in retention trash. Restore from{" "}
+              This visit is in the retention trash. Restore it from{" "}
               <Link href="/admin/storage-retention" className="underline">
                 Storage &amp; retention
               </Link>
@@ -359,7 +387,7 @@ export default function BehaviorReplaysPage() {
             </p>
           : null}
           {!sessionId ?
-            <p className="text-sm text-muted-foreground">Select a session above or paste an id to load the player.</p>
+            <p className="text-sm text-muted-foreground">Select a visit from the list to load the player.</p>
           : null}
           <BehaviorRrwebPlayer events={events} live={liveTail} />
         </CardContent>

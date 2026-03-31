@@ -44,9 +44,6 @@ export function OfferStackTierCards({
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={tier === "DFY" ? "default" : "secondary"}>{o.tier}</Badge>
-                {tier === "DFY" ?
-                  <span className="text-xs text-muted-foreground">Primary revenue</span>
-                : null}
               </div>
               <CardTitle className="text-lg">{o.title}</CardTitle>
               <CardDescription>{o.headlineOutcome}</CardDescription>
@@ -119,12 +116,12 @@ export function OfferStackTierCards({
             </CardContent>
             <CardFooter className="flex flex-col gap-2 sm:flex-row">
               {primary ?
-                <Button asChild className="w-full sm:flex-1" size="sm">
+                <Button asChild className="w-full sm:flex-1">
                   <Link href={primary.href}>{primary.label}</Link>
                 </Button>
               : null}
               {secondary ?
-                <Button asChild variant="outline" className="w-full sm:flex-1" size="sm">
+                <Button asChild variant="outline" className="w-full sm:flex-1">
                   <Link href={secondary.href}>{secondary.label}</Link>
                 </Button>
               : null}

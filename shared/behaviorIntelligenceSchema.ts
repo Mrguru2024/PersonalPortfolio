@@ -219,6 +219,68 @@ export type BehaviorWatchTarget = typeof behaviorWatchTargets.$inferSelect;
 export type BehaviorWatchReport = typeof behaviorWatchReports.$inferSelect;
 
 /**
+ * Tracked business phone numbers (e.g. Twilio) for call logging and optional recording playback in admin.
+ * Only calls touching these numbers are ingested from voice webhooks.
+ */
+export const behaviorPhoneTrackedNumbers = pgTable(
+  "behavior_phone_tracked_numbers",
+  {
+    id: serial("id").primaryKey(),
+    businessId: text("business_id"),
+    /** E.164 preferred, e.g. +15551234567 */
+    phoneE164: text("phone_e164").notNull(),
+    label: text("label").notNull().default("Tracked line"),
+    /** twilio | other — informs webhook field mapping */
+    provider: text("provider").notNull().default("twilio"),
+    /** Default policy: store recording URL when provider sends it (Twilio RecordingUrl on status callback). */
+    recordingEnabled: boolean("recording_enabled").notNull().default(true),
+    /** When false, skip writing call log rows for this number. */
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("behavior_phone_tracked_e164_uidx").on(t.phoneE164),
+    index("behavior_phone_tracked_active_idx").on(t.active),
+  ],
+);
+
+/**
+ * Call log for tracked numbers (populated from Twilio voice status callbacks when the To/From matches a tracked line).
+ */
+export const behaviorPhoneCallLogs = pgTable(
+  "behavior_phone_call_logs",
+  {
+    id: serial("id").primaryKey(),
+    trackedNumberId: integer("tracked_number_id").references(() => behaviorPhoneTrackedNumbers.id, {
+      onDelete: "set null",
+    }),
+    direction: text("direction").notNull(),
+    fromE164: text("from_e164").notNull(),
+    toE164: text("to_e164").notNull(),
+    callStatus: text("call_status"),
+    /** Seconds from carrier when available */
+    durationSeconds: integer("duration_seconds"),
+    recordingUrl: text("recording_url"),
+    recordingDurationSeconds: integer("recording_duration_seconds"),
+    /** Twilio CallSid — idempotent upsert */
+    externalCallSid: text("external_call_sid").notNull(),
+    crmContactId: integer("crm_contact_id").references(() => crmContacts.id, { onDelete: "set null" }),
+    metadataJson: json("metadata_json").$type<Record<string, unknown>>().notNull().default({}),
+    loggedAt: timestamp("logged_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("behavior_phone_call_sid_uidx").on(t.externalCallSid),
+    index("behavior_phone_call_tracked_idx").on(t.trackedNumberId),
+    index("behavior_phone_call_logged_idx").on(t.loggedAt),
+  ],
+);
+
+export type BehaviorPhoneTrackedNumber = typeof behaviorPhoneTrackedNumbers.$inferSelect;
+export type BehaviorPhoneCallLog = typeof behaviorPhoneCallLogs.$inferSelect;
+
+/**
  * Ascendra Growth Intelligence — operational tasks created from diagnostics / replay / friction.
  * Internal admin workflow; not shown on client Conversion Diagnostics unless explicitly shared.
  */

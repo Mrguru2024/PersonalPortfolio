@@ -41,8 +41,7 @@ export default function GrowthEngineHubPage() {
   return (
     <div className="space-y-10">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">Phase 2</p>
-        <h1 className="text-2xl font-bold tracking-tight mt-1">Growth engine</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Growth engine</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
           Revenue attribution, live lead signals, automations, ROI inputs, and funnel canvas — built on Growth Intelligence
           behavior data without duplicating analytics.

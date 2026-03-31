@@ -5,6 +5,7 @@ import { Check, HelpCircle, Minus } from "lucide-react";
 import { GROWTH_SYSTEM_STEP_OUTCOMES } from "@/lib/growthSystemOutcomeCopy";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type StepRow = {
   title: string;
@@ -159,9 +160,13 @@ export function ThreeStepSystemPreview() {
                         Often missing
                         <HelpCircle className="h-3.5 w-3.5" aria-hidden />
                       </p>
-                      <Link href={row.missHref} className="text-sm text-foreground font-medium hover:underline">
-                        {row.missLabel}
-                      </Link>
+                      <Button
+                        variant="link"
+                        asChild
+                        className="h-auto min-h-0 p-0 justify-start text-sm font-medium text-foreground"
+                      >
+                        <Link href={row.missHref}>{row.missLabel}</Link>
+                      </Button>
                       <p className="text-xs text-muted-foreground mt-1">{row.missHint}</p>
                     </div>
                   </div>

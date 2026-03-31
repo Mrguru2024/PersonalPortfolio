@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -18,6 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+const OUTCOME_LABEL: Record<string, string> = {
+  qualified: "Qualified",
+  not_qualified: "Not qualified",
+  missed: "Missed",
+  spam: "Spam",
+};
 
 export default function GrowthEngineCallsPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -66,7 +74,13 @@ export default function GrowthEngineCallsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Call tracking</h1>
-        <p className="text-muted-foreground mt-1">Log calls and verification tags; swap numbers + recording in a later phase.</p>
+        <p className="text-muted-foreground mt-1">
+          Log outbound or inbound sales calls. For Twilio recordings and playback, use{" "}
+          <Link href="/admin/behavior-intelligence/phone-tracking" className="text-primary underline-offset-2 hover:underline">
+            Phone tracking
+          </Link>{" "}
+          under Growth Intelligence.
+        </p>
       </div>
 
       <Card className="max-w-lg">
@@ -83,16 +97,16 @@ export default function GrowthEngineCallsPage() {
             <Input value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Tag</Label>
+            <Label>Outcome</Label>
             <Select value={tag} onValueChange={(v) => setTag(v as typeof tag)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="qualified">qualified</SelectItem>
-                <SelectItem value="not_qualified">not_qualified</SelectItem>
-                <SelectItem value="missed">missed</SelectItem>
-                <SelectItem value="spam">spam</SelectItem>
+                <SelectItem value="qualified">Qualified</SelectItem>
+                <SelectItem value="not_qualified">Not qualified</SelectItem>
+                <SelectItem value="missed">Missed</SelectItem>
+                <SelectItem value="spam">Spam</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -113,7 +127,8 @@ export default function GrowthEngineCallsPage() {
           <CardContent className="text-sm space-y-2">
             {(data?.calls ?? []).map((c) => (
               <div key={c.id} className="border-b border-border/60 py-2">
-                {c.source} · {c.verificationTag ?? "—"} · {c.durationSeconds ?? "—"}s
+                {c.source} · {c.verificationTag ? (OUTCOME_LABEL[c.verificationTag] ?? c.verificationTag) : "—"} ·{" "}
+                {c.durationSeconds ?? "—"}s
               </div>
             ))}
           </CardContent>

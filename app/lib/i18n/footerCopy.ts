@@ -72,7 +72,7 @@ export function footerPrimaryCta(locale: AppLocale): string {
 
 export function footerSecondaryCta(locale: AppLocale): string {
   if (locale === "es") {
-    return "Reserva una llamada gratuita";
+    return "Reserva una llamada de estrategia";
   }
   return SECONDARY_CTA;
 }
@@ -118,6 +118,18 @@ export function footerCopyrightLine(locale: AppLocale, year: number): string {
     return `© ${year} Ascendra Technologies. Todos los derechos reservados.`;
   }
   return `© ${year} Ascendra Technologies. All rights reserved.`;
+}
+
+/** Short positioning line under the site name in the footer. */
+export function footerTagline(locale: AppLocale): string {
+  if (locale === "es") {
+    return "Sistemas de crecimiento, marca y web—diagnóstico, instalación y escalado con un equipo coordinado.";
+  }
+  return "Growth systems, brand, and web—diagnose, install, and scale with one coordinated team.";
+}
+
+export function footerContactFormLink(locale: AppLocale): string {
+  return locale === "es" ? "Formulario de contacto" : "Contact form";
 }
 
 export function footerAriaLabel(locale: AppLocale): string {

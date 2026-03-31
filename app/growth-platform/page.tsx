@@ -8,6 +8,7 @@ import { OfferStackTierCards } from "@/components/growth-platform/OfferStackTier
 import { loadGrowthPlatformEnginePricing } from "@server/services/growthPlatformOfferPricing";
 import { ThreeStepSystemPreview } from "@/components/growth-platform/ThreeStepSystemPreview";
 import { ASCENDRA_OFFER_STACK, type AscendraOfferTierDefinition } from "@shared/ascendraOfferStack";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@shared/ascendraCoreGuarantee";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -62,7 +63,7 @@ function GrowthPlatformBody({
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/strategy-call">Book strategy call</Link>
+                <Link href="/strategy-call">{MARKETING_CTA_BOOK_STRATEGY_CALL}</Link>
               </Button>
             </div>
             <CTAReassuranceLine className="max-w-2xl mx-auto">{CTA_REASSURANCE_GROWTH_PLATFORM}</CTAReassuranceLine>

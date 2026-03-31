@@ -7,6 +7,7 @@ import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { MARKETING_CTA_CONTACT_US } from "@shared/marketingCtaCopy";
 
 export const metadata: Metadata = {
   title: "Homepage conversion blueprint | Free growth tool",
@@ -170,7 +171,7 @@ export default function HomepageConversionBlueprintPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="min-h-[48px]">
-                  <Link href="/contact">Book a free call</Link>
+                  <Link href="/contact">{MARKETING_CTA_CONTACT_US}</Link>
                 </Button>
               </div>
             </section>

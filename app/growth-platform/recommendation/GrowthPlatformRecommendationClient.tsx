@@ -141,12 +141,11 @@ function RecommendationInner({ enginePricing }: { enginePricing: PublicOfferPric
             <CardContent className="space-y-3 text-sm">
               <p>{recommended.riskReversalSummary}</p>
               <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link href="/strategy-call">Book strategy call</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/contact">Start system setup</Link>
-                </Button>
+                {recommended.ctas.map((c) => (
+                  <Button key={`${c.variant}-${c.href}`} asChild variant={c.variant === "secondary" ? "outline" : "default"}>
+                    <Link href={c.href}>{c.label}</Link>
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>

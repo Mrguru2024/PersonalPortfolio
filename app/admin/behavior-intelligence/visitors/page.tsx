@@ -14,7 +14,7 @@ import {
   Play,
   Search,
   Star,
-  User,
+  Copy,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { BehaviorVisitorHubResponse } from "@server/services/behavior/behaviorIngestService";
@@ -40,6 +40,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { BehaviorRrwebPlayer } from "@/components/admin/behavior-intelligence/BehaviorRrwebPlayer";
+import { AdminDevOnly, useIsAdminSuperUser } from "@/components/admin/AdminDevOnly";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -137,6 +138,7 @@ type ReplayApiResponse = {
 
 type ReplaySheetContext = {
   sessionId: string;
+  alias: string;
   isOnline: boolean;
   retentionImportant: boolean;
   retentionArchived: boolean;
@@ -145,6 +147,7 @@ type ReplaySheetContext = {
 export default function BehaviorVisitorsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const superAdmin = useIsAdminSuperUser();
   const [days, setDays] = useState(7);
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -223,6 +226,7 @@ export default function BehaviorVisitorsPage() {
   const openReplay = useCallback((s: BehaviorVisitorHubResponse["sessions"][number]) => {
     setReplayContext({
       sessionId: s.sessionId,
+      alias: s.alias,
       isOnline: s.isOnline,
       retentionImportant: s.retentionImportant,
       retentionArchived: s.retentionArchived,
@@ -233,7 +237,10 @@ export default function BehaviorVisitorsPage() {
   const onCopySession = useCallback(
     (sessionId: string) => {
       void navigator.clipboard.writeText(sessionId);
-      toast({ title: "Session id copied" });
+      toast({
+        title: "Reference copied",
+        description: "Share with support only if they ask for the internal session reference.",
+      });
     },
     [toast],
   );
@@ -343,7 +350,7 @@ export default function BehaviorVisitorsPage() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9 w-[220px] sm:w-64"
-                  placeholder="Search session id…"
+                  placeholder={superAdmin ? "Search session id…" : "Search visitors…"}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   aria-label="Search visitors"
@@ -463,16 +470,18 @@ export default function BehaviorVisitorsPage() {
                       <TableCell className="text-right tabular-nums">{s.durationLabel}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-primary"
-                            title="Copy session id"
-                            onClick={() => onCopySession(s.sessionId)}
-                          >
-                            <User className="h-4 w-4" />
-                          </Button>
+                          <AdminDevOnly>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-primary"
+                              title="Copy internal reference (support)"
+                              onClick={() => onCopySession(s.sessionId)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </AdminDevOnly>
                           <Button
                             type="button"
                             size="icon"
@@ -542,9 +551,9 @@ export default function BehaviorVisitorsPage() {
       >
         <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Session replay</SheetTitle>
-            <SheetDescription className="font-mono text-xs break-all">
-              {replayContext?.sessionId}
+            <SheetTitle>Replay · {replayContext?.alias ?? "Visit"}</SheetTitle>
+            <SheetDescription className="text-sm text-muted-foreground">
+              Recording for this visitor session. Use Live only while they are still active on the site.
             </SheetDescription>
           </SheetHeader>
           {replayContext?.isOnline && replay.data?.playback?.recordingActive ?

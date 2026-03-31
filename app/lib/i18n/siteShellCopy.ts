@@ -1,5 +1,6 @@
 import type { AppLocale } from "./constants";
 import { footerLinkLabel } from "./footerCopy";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 
 const SECTION_LABEL_ES: Record<string, string> = {
   "Service offerings": "Ofertas de servicio",
@@ -32,7 +33,7 @@ export function shellHomeLogoAria(locale: AppLocale): string {
 
 /** Header / mobile CTA — scroll or link to strategy call. */
 export function shellHeaderBookCall(locale: AppLocale): string {
-  return locale === "es" ? "Reservar una llamada" : "Book a call";
+  return locale === "es" ? "Reservar una llamada de estrategia" : MARKETING_CTA_BOOK_STRATEGY_CALL;
 }
 
 export function shellLogin(locale: AppLocale): string {

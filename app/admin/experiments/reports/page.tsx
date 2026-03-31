@@ -67,9 +67,8 @@ export default function AdminExperimentsReportsPage() {
             for heuristic winners / needs-data signals.
           </p>
           <p>
-            Cross-experiment leaderboard and CSV export land in Phase 3 when nightly rollups write{" "}
-            <code className="text-xs">dimensionKey=&quot;total&quot;</code> rows from{" "}
-            <code className="text-xs">visitor_activity</code> and CRM.
+            A cross-experiment leaderboard and CSV export will appear here after scheduled rollups aggregate{" "}
+            <code className="text-xs">visitor_activity</code> and CRM metrics.
           </p>
         </CardContent>
       </Card>

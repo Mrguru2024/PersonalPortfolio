@@ -11,7 +11,7 @@ import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { TrackPageView } from "@/components/TrackPageView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
+import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH, SECONDARY_CTA } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
@@ -181,7 +181,7 @@ export default function DigitalGrowthAuditPage() {
                 offerSlug="business-growth"
                 ctaText="See growth systems"
                 ctaHref="/services"
-                secondaryCtaText="Book a call"
+                secondaryCtaText={SECONDARY_CTA}
                 secondaryCtaHref="/strategy-call"
               />
             </section>

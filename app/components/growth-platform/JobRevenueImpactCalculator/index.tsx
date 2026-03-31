@@ -202,7 +202,7 @@ export function JobRevenueImpactCalculator({
             {!hideRecommendationCta && tier && (
               <Button asChild className="w-full sm:w-auto">
                 <Link href={recommendationHref}>
-                  See system recommendation ({tier})
+                  View your recommendation
                   <ArrowRight className="h-4 w-4 ml-2" aria-hidden />
                 </Link>
               </Button>

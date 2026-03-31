@@ -14,6 +14,7 @@ import {
 } from "@/lib/funnel-content";
 import { projects } from "@/lib/data";
 import { FREE_TRIAL_PATH, PERSONA_JOURNEY_PATH } from "@/lib/funnelCtas";
+import { MARKETING_CTA_CONTACT_US } from "@shared/marketingCtaCopy";
 import { PersonaJourneySelector } from "@/components/persona-journey/PersonaJourneySelector";
 import type { PersonaJourneyId } from "@shared/personaJourneys";
 import { getLatestBlogPostsForBusiness } from "@/lib/blogSeedData";
@@ -529,7 +530,7 @@ export default function Home() {
                 </Button>
               </MagneticButton>
               <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/contact">Book a free call</Link>
+                <Link href="/contact">{MARKETING_CTA_CONTACT_US}</Link>
               </Button>
             </div>
           </SpotlightCard>

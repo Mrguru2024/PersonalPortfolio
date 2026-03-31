@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { visitorAliasFromSessionId } from "@/lib/behaviorVisitorAlias";
+import { AdminDevOnly, useIsAdminSuperUser } from "@/components/admin/AdminDevOnly";
 
 type TrashApi = {
   policy: { retentionDays: number; purgeGraceDays: number };
@@ -32,6 +35,9 @@ type TrashApi = {
 export default function StorageRetentionAdminPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const superAdmin = useIsAdminSuperUser();
+  const superAdminRef = useRef(superAdmin);
+  superAdminRef.current = superAdmin;
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["/api/admin/storage-retention"],
@@ -60,7 +66,10 @@ export default function StorageRetentionAdminPage() {
     onSuccess: (payload) => {
       toast({
         title: "Sweep complete",
-        description: payload.sweep ? JSON.stringify(payload.sweep) : undefined,
+        description:
+          superAdminRef.current && payload.sweep ?
+            JSON.stringify(payload.sweep)
+          : "Retention rules were applied.",
       });
       void qc.invalidateQueries({ queryKey: ["/api/admin/storage-retention"] });
     },
@@ -89,9 +98,12 @@ export default function StorageRetentionAdminPage() {
             <span className="font-medium text-foreground">{data.policy.retentionDays} days</span> before soft-delete.
             Rows marked important or archived are skipped. After{" "}
             <span className="font-medium text-foreground">{data.policy.purgeGraceDays} days</span> in trash, data is
-            permanently removed (funnel files deleted from disk). Configure with{" "}
-            <code className="text-xs bg-muted px-1 rounded">ASCENDRA_RETENTION_DAYS</code> and{" "}
-            <code className="text-xs bg-muted px-1 rounded">ASCENDRA_RETENTION_PURGE_GRACE_DAYS</code>.
+            permanently removed (funnel files deleted from disk).
+            <AdminDevOnly>
+              <> Configure with{" "}
+                <code className="text-xs bg-muted px-1 rounded">ASCENDRA_RETENTION_DAYS</code> and{" "}
+                <code className="text-xs bg-muted px-1 rounded">ASCENDRA_RETENTION_PURGE_GRACE_DAYS</code>.</>
+            </AdminDevOnly>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -133,7 +145,17 @@ export default function StorageRetentionAdminPage() {
               <TableBody>
                 {data.behaviorTrash.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs max-w-[200px] truncate">{r.sessionId}</TableCell>
+                    <TableCell className="max-w-[220px]">
+                      <span className="font-medium text-sm">{visitorAliasFromSessionId(r.sessionId)}</span>
+                      <AdminDevOnly>
+                        <p
+                          className="text-[10px] text-muted-foreground font-mono truncate"
+                          title={`Internal reference: ${r.sessionId}`}
+                        >
+                          {r.sessionId.length > 14 ? `Ref · ${r.sessionId.slice(0, 10)}…` : `Ref · ${r.sessionId}`}
+                        </p>
+                      </AdminDevOnly>
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{r.startTime}</TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{r.softDeletedAt}</TableCell>
                     <TableCell className="text-right">

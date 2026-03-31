@@ -13,6 +13,7 @@ const LINKS: { href: string; label: string }[] = [
   { href: "/admin/behavior-intelligence/replays", label: "Session replays" },
   { href: "/admin/behavior-intelligence/heatmaps", label: "Heatmaps" },
   { href: "/admin/behavior-intelligence/surveys", label: "Surveys" },
+  { href: "/admin/behavior-intelligence/phone-tracking", label: "Phone tracking" },
   { href: "/admin/behavior-intelligence/friction-reports", label: "Friction" },
   { href: "/admin/behavior-intelligence/insight-tasks", label: "Insight tasks" },
   { href: "/admin/experiments", label: "Experiments" },

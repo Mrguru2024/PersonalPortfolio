@@ -77,6 +77,18 @@ export function visitorSubtitleFromDevice(device: string | null | undefined): st
   return "Web visitor";
 }
 
+/** Known `businessId` values → short labels for admin UI (avoid raw keys when possible). */
+const KNOWN_TRACKED_SITES: Record<string, string> = {
+  ascendra_main: "Main marketing site",
+};
+
+/** Human-readable label for the tracked property / workspace key. */
+export function trackedSiteLabel(businessId: string | null | undefined): string | null {
+  if (!businessId?.trim()) return null;
+  const k = businessId.trim();
+  return KNOWN_TRACKED_SITES[k] ?? k.replace(/_/g, " ");
+}
+
 export function formatSessionDuration(start: Date, end: Date | null): string {
   const e = end ?? start;
   const sec = Math.max(0, Math.floor((e.getTime() - start.getTime()) / 1000));

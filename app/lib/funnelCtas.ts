@@ -3,6 +3,8 @@
  * Keeps primary/secondary CTAs consistent site-wide.
  */
 
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
+
 /** Free trial: value-first (call + audit); self-serve tools are secondary—not the paid challenge. */
 export const FREE_TRIAL_PATH = "/free-trial";
 
@@ -11,7 +13,7 @@ export const CHALLENGE_LANDING_PATH = "/challenge";
 
 export const PRIMARY_CTA = "Request your Digital Growth Audit";
 export const PRIMARY_CTA_SHORT = "Request audit";
-export const SECONDARY_CTA = "Book a free call";
+export const SECONDARY_CTA = MARKETING_CTA_BOOK_STRATEGY_CALL;
 export const SEE_GROWTH_SYSTEMS = "See growth systems";
 /** Growth diagnosis funnel: multi-step diagnosis → results → apply. */
 export const GROWTH_DIAGNOSIS_PATH = "/growth";
@@ -53,7 +55,7 @@ export const REBRAND_YOUR_BUSINESS_PATH = "/rebrand-your-business";
 export const MARKETING_ASSETS_PATH = "/marketing-assets";
 
 export const ECOSYSTEM_CTA_HUB = "See growth systems";
-export const ECOSYSTEM_CTA_STRATEGY_CALL = "Book a free call";
+export const ECOSYSTEM_CTA_STRATEGY_CALL = MARKETING_CTA_BOOK_STRATEGY_CALL;
 export const ECOSYSTEM_CTA_LAUNCH = "Book a brand launch call";
 export const ECOSYSTEM_CTA_REBRAND = "Book a rebrand call";
 export const ECOSYSTEM_CTA_MARKETING = "Upgrade your marketing";

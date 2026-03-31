@@ -1,6 +1,9 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { isAuthSuperUser } from "@/lib/super-admin";
+import { AdminDevOnly } from "@/components/admin/AdminDevOnly";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -264,6 +267,7 @@ function renderAnalyticsHostWidget(id: string): ReactNode {
 
 export default function AdminAnalyticsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const superAdmin = isAuthSuperUser(user);
   const unifiedLayout = useUnifiedAdminLayouts();
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
@@ -686,44 +690,60 @@ export default function AdminAnalyticsPage() {
           )}
 
           {/* How to improve: tracking and events */}
-          <Card className="mb-6 border-muted">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                How to improve tracking & wire more events
-              </CardTitle>
-              <CardDescription>
-                Traffic and lead-magnet analytics use <code className="text-xs bg-muted px-1 rounded">POST /api/track/visitor</code>. Wire events sitewide for accurate data.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div>
-                <p className="font-medium mb-1">1. Use the hook</p>
-                <p className="text-muted-foreground mb-2">
-                  In any client component: <code className="bg-muted px-1 rounded text-xs">useVisitorTracking()</code> from <code className="bg-muted px-1 rounded text-xs">@/lib/useVisitorTracking</code>. Call <code className="bg-muted px-1 rounded text-xs">track(eventType, &#123; pageVisited?, metadata? &#125;)</code>.
-                </p>
-                <p className="text-muted-foreground">
-                  Event types: <strong>page_view</strong>, <strong>form_started</strong>, <strong>form_completed</strong>, <strong>cta_click</strong>, <strong>tool_used</strong>.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">2. Where to wire events</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-                  <li><strong>page_view</strong> on mount: /audit, /strategy-call, /contact, /assessment, /assessment/results, /digital-growth-audit, /competitor-position-snapshot, /free-growth-tools, funnel pages</li>
-                  <li><strong>form_started</strong>: when user focuses first field of audit, strategy-call, contact, or assessment form</li>
-                  <li><strong>form_completed</strong>: on successful submit (audit, strategy-call, contact, assessment)</li>
-                  <li><strong>cta_click</strong>: primary CTAs (e.g. &quot;Book a call&quot;, &quot;Get AI feedback&quot;, &quot;Start audit&quot;, &quot;Request snapshot&quot;)</li>
-                  <li><strong>tool_used</strong>: calculator, snapshot tool, or other interactive tools</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-medium mb-1">3. Keep data accurate</p>
-                <p className="text-muted-foreground">
-                  Lead counts come from the <strong>contacts</strong> table (subject/projectType). Ensure forms submit to /api/audit, /api/contact, or /api/strategy-call with the correct subject so lead magnet breakdown stays accurate. Assessment grades use <strong>assessment.assessmentData</strong> only; the grade API returns 0–100 and structured feedback for results pages.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <AdminDevOnly
+            fallback={
+              <Card className="mb-6 border-muted">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    How to improve tracking
+                  </CardTitle>
+                  <CardDescription>
+                    If numbers look off, ask your technical or hosting contact to confirm visitor tracking and form submissions are wired on key pages.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            }
+          >
+            <Card className="mb-6 border-muted">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  How to improve tracking & wire more events
+                </CardTitle>
+                <CardDescription>
+                  Traffic and lead-magnet analytics use <code className="text-xs bg-muted px-1 rounded">POST /api/track/visitor</code>. Wire events sitewide for accurate data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div>
+                  <p className="font-medium mb-1">1. Use the hook</p>
+                  <p className="text-muted-foreground mb-2">
+                    In any client component: <code className="bg-muted px-1 rounded text-xs">useVisitorTracking()</code> from <code className="bg-muted px-1 rounded text-xs">@/lib/useVisitorTracking</code>. Call <code className="bg-muted px-1 rounded text-xs">track(eventType, &#123; pageVisited?, metadata? &#125;)</code>.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Event types: <strong>page_view</strong>, <strong>form_started</strong>, <strong>form_completed</strong>, <strong>cta_click</strong>, <strong>tool_used</strong>.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium mb-1">2. Where to wire events</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                    <li><strong>page_view</strong> on mount: /audit, /strategy-call, /contact, /assessment, /assessment/results, /digital-growth-audit, /competitor-position-snapshot, /free-growth-tools, funnel pages</li>
+                    <li><strong>form_started</strong>: when user focuses first field of audit, strategy-call, contact, or assessment form</li>
+                    <li><strong>form_completed</strong>: on successful submit (audit, strategy-call, contact, assessment)</li>
+                    <li><strong>cta_click</strong>: primary CTAs (e.g. &quot;Book a call&quot;, &quot;Get AI feedback&quot;, &quot;Start audit&quot;, &quot;Request snapshot&quot;)</li>
+                    <li><strong>tool_used</strong>: calculator, snapshot tool, or other interactive tools</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium mb-1">3. Keep data accurate</p>
+                  <p className="text-muted-foreground">
+                    Lead counts come from the <strong>contacts</strong> table (subject/projectType). Ensure forms submit to /api/audit, /api/contact, or /api/strategy-call with the correct subject so lead magnet breakdown stays accurate. Assessment grades use <strong>assessment.assessmentData</strong> only; the grade API returns 0–100 and structured feedback for results pages.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </AdminDevOnly>
 
           <Tabs defaultValue="traffic" className="space-y-4">
             <TabsList className="flex w-full flex-wrap h-auto min-h-[44px] gap-1 p-1.5 rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
@@ -763,7 +783,13 @@ export default function AdminAnalyticsPage() {
                         <tbody>
                           {displayData.traffic.byPage.slice(0, 15).map((row, i) => (
                             <tr key={i} className="border-b border-border/50">
-                              <td className="py-2 font-mono text-xs truncate max-w-[200px]" title={row.page}>
+                              <td
+                                className={cn(
+                                  "py-2 text-xs truncate max-w-[200px]",
+                                  superAdmin && "font-mono",
+                                )}
+                                title={row.page}
+                              >
                                 {row.page}
                               </td>
                               <td className="text-right py-2">{row.count}</td>
@@ -999,7 +1025,7 @@ export default function AdminAnalyticsPage() {
                               <tbody>
                                 {displayData.traffic.byTimezone.slice(0, 20).map((row, i) => (
                                   <tr key={i} className="border-b border-border/50">
-                                    <td className="py-2 px-2 font-mono text-xs">{row.timezone}</td>
+                                    <td className={cn("py-2 px-2 text-xs", superAdmin && "font-mono")}>{row.timezone}</td>
                                     <td className="text-right py-2 px-2">{row.count.toLocaleString()}</td>
                                   </tr>
                                 ))}
@@ -1036,9 +1062,13 @@ export default function AdminAnalyticsPage() {
                     <h3 className="font-semibold text-foreground">Data sources and accuracy</h3>
                     <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
                       <li>
-                        <span className="text-foreground font-medium">CRM and forms (this tab)</span> — Values come from optional form fields and are stored on{" "}
-                        <code className="text-xs bg-muted px-1 rounded">crm_contacts</code> (and legacy contact rows). This is first-party, lead-level data: best for
-                        segments and messaging, but only where you collect it.
+                        <span className="text-foreground font-medium">CRM and forms (this tab)</span> — Values come from optional form fields and are stored{" "}
+                        {superAdmin ?
+                          <>
+                            on <code className="text-xs bg-muted px-1 rounded">crm_contacts</code> (and legacy contact rows).
+                          </>
+                        : "with your CRM contact records."} This is first-party, lead-level data: best for segments and
+                        messaging, but only where you collect it.
                       </li>
                       <li>
                         <span className="text-foreground font-medium">Visitor tracking (Location / Device)</span> — Country, region, city, device, and timezone are inferred
@@ -1051,8 +1081,13 @@ export default function AdminAnalyticsPage() {
                         admin view for identifiable leads when forms include those fields.
                         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
                           <span className="block mt-1 text-xs">
-                            Measurement ID is set (<code className="bg-muted px-1 rounded">{process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}</code>); enable Google signals in GA
-                            if you want modeled age/gender in the GA UI. When the GA Data API is configured server-side, aggregate age/gender/country may also appear in the
+                            {superAdmin ?
+                              <>
+                                Measurement ID is set (<code className="bg-muted px-1 rounded">{process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}</code>); enable Google signals in
+                                GA if you want modeled age/gender in the GA UI.
+                              </>
+                            : "Google Analytics is connected; enable Google signals in GA if you want modeled age/gender in the GA UI."}{" "}
+                            When the GA Data API is configured server-side, aggregate age/gender/country may also appear in the
                             &quot;External demographics&quot; card below.
                           </span>
                         ) : (
@@ -1503,7 +1538,7 @@ export default function AdminAnalyticsPage() {
                               <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">
                                 {formatLocaleDateTime(e.createdAt, "monthDayTimeWithSeconds")}
                               </td>
-                              <td className="py-1 px-2 font-mono text-xs" title={e.visitorId}>
+                              <td className={cn("py-1 px-2 text-xs", superAdmin && "font-mono")} title={e.visitorId}>
                                 {e.visitorId.slice(0, 12)}…
                               </td>
                               <td className="py-1 px-2">
@@ -1613,7 +1648,10 @@ export default function AdminAnalyticsPage() {
                     Purpose &amp; insights
                   </CardTitle>
                   <CardDescription>
-                    <strong>Purpose:</strong> Crunch data fast with full advanced filtering to understand which segments convert, where traffic comes from, and how device/location/UTM affect outcomes. <strong>Advantages:</strong> Single source of truth (internal tracking + optional GA4/Facebook demographics), export to CSV/JSON for deeper analysis, filter by date, event, page (partial match), device, country, region, city, timezone, and UTM. <strong>Disadvantages:</strong> Internal data depends on POST /api/track/visitor being called on key pages; external demographics require GA4 and Facebook credentials.
+                    <strong>Purpose:</strong> Crunch data fast with full advanced filtering to understand which segments convert, where traffic comes from, and how device/location/UTM affect outcomes. <strong>Advantages:</strong> Single source of truth (internal tracking + optional GA4/Facebook demographics), export to CSV/JSON for deeper analysis, filter by date, event, page (partial match), device, country, region, city, timezone, and UTM. <strong>Disadvantages:</strong>{" "}
+                    {superAdmin ?
+                      "Internal data depends on POST /api/track/visitor being called on key pages; external demographics require GA4 and Facebook credentials."
+                    : "Internal data depends on visitor tracking on key pages; external demographics require GA4 and Facebook when configured."}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -1718,7 +1756,12 @@ export default function AdminAnalyticsPage() {
                               {reportData.events.slice(0, 200).map((e) => (
                                 <tr key={e.id} className="border-b border-border/50">
                                   <td className="py-1 px-2 whitespace-nowrap text-muted-foreground">{formatLocaleDateTime(e.createdAt, "monthDayTime")}</td>
-                                  <td className="py-1 px-2 font-mono text-xs truncate max-w-[100px]" title={e.visitorId}>{e.visitorId.slice(0, 10)}…</td>
+                                  <td
+                                    className={cn("py-1 px-2 text-xs truncate max-w-[100px]", superAdmin && "font-mono")}
+                                    title={e.visitorId}
+                                  >
+                                    {e.visitorId.slice(0, 10)}…
+                                  </td>
                                   <td className="py-1 px-2">{e.eventType}</td>
                                   <td className="py-1 px-2 truncate max-w-[140px]" title={e.pageVisited ?? ""}>{e.pageVisited ?? "—"}</td>
                                   <td className="py-1 px-2">{e.deviceType ?? "—"}</td>
