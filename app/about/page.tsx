@@ -5,19 +5,22 @@ import { Suspense } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { AboutFoundersQueryScroll } from "@/components/about/AboutFoundersQueryScroll";
 import { EcosystemTeamSection } from "@/components/about/EcosystemTeamSection";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { ECOSYSTEM_PILLARS, POSITIONING_STATEMENT } from "@/lib/funnel-content";
 import { AUDIT_PATH } from "@/lib/funnelCtas";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "About Ascendra & the ecosystem team | Ascendra Technologies",
   description:
     "One coordinated growth ecosystem: Ascendra Technologies, Macon Designs®, and Style Studio Branding. How we work together, plus the founders behind strategy, design, and technology.",
-};
+  path: "/about",
+  keywords: ["about Ascendra", "ecosystem", "Macon Designs", "Style Studio", "founders"],
+});
 
 const collaborationSteps = [
   "We align on business goals and current bottlenecks.",
@@ -36,10 +39,11 @@ const anchorLinks = [
 export default function AboutPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="About Ascendra & the ecosystem team | Ascendra Technologies"
         description="One coordinated growth ecosystem—strategy, design, and technology. Meet the founders and see how Ascendra, Macon Designs®, and Style Studio Branding work together."
-        canonicalPath="/about"
+        path="/about"
+        schemaType="AboutPage"
       />
       <Suspense fallback={null}>
         <AboutFoundersQueryScroll />

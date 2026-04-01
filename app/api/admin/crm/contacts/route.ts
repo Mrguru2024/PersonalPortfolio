@@ -13,13 +13,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
     const { searchParams } = new URL(req.url);
+    const idsRaw = searchParams.get("ids");
+    if (idsRaw != null && idsRaw.trim() !== "") {
+      const ids = idsRaw
+        .split(",")
+        .map((x) => Number(x.trim()))
+        .filter((n) => Number.isFinite(n) && n > 0);
+      if (ids.length > 0) {
+        const contacts = await storage.getCrmContactsByIds(ids);
+        return NextResponse.json(contacts);
+      }
+    }
+    const search = searchParams.get("search")?.trim();
+    if (search && search.length >= 2) {
+      const contacts = await storage.searchCrmContacts(search);
+      return NextResponse.json(contacts);
+    }
     const type = searchParams.get("type") as "lead" | "client" | null;
     const accountId = searchParams.get("accountId");
     if (accountId != null && accountId !== "") {
       const contacts = await storage.getCrmContactsByAccountId(Number(accountId));
       return NextResponse.json(contacts);
     }
-    const contacts = await storage.getCrmContacts(type ?? undefined);
+    const limitRaw = searchParams.get("limit");
+    const limit =
+      limitRaw != null && limitRaw !== "" && Number.isFinite(Number(limitRaw)) ?
+        Math.min(Math.max(Number(limitRaw), 1), 200)
+      : undefined;
+    const contacts = await storage.getCrmContacts(type ?? undefined, limit);
     return NextResponse.json(contacts);
   } catch (error: any) {
     const msg = error?.message ?? String(error);

@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import {
   DEFAULT_OFFER_SECTIONS,
   type OfferSections,
@@ -29,6 +28,12 @@ import {
 } from "@/lib/offerSections";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_OFFER_STARTUP_SYSTEM_CTA_REASSURANCE,
+  ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_ITEMS,
+  ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileText,
@@ -64,11 +69,6 @@ export default function StartupGrowthSystemOfferPage() {
     ? (offer.sections as OfferSections)
     : DEFAULT_OFFER_SECTIONS;
 
-  const metaTitle = offer?.metaTitle ?? "Startup growth system | Affordable audit for founders";
-  const metaDescription =
-    offer?.metaDescription ??
-    "A practical startup growth audit for founders who can't yet afford a full agency build. Website audit, messaging clarity, conversion roadmap, and actionable plan. $249–$399.";
-
   const hero = sections.hero ?? DEFAULT_OFFER_SECTIONS.hero!;
   const price = sections.price ?? DEFAULT_OFFER_SECTIONS.price!;
   const deliverables = sections.deliverables ?? DEFAULT_OFFER_SECTIONS.deliverables!;
@@ -80,11 +80,6 @@ export default function StartupGrowthSystemOfferPage() {
 
   return (
     <>
-      <PageSEO
-        title={metaTitle}
-        description={metaDescription}
-        canonicalPath="/offers/startup-growth-system"
-      />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-4xl marketing-stack">
@@ -137,7 +132,7 @@ export default function StartupGrowthSystemOfferPage() {
                   const Icon = getIcon(d.icon);
                   return (
                     <Card key={i} className="border-border bg-card">
-                      <CardContent className="p-4 sm:p-5 flex gap-3 sm:gap-4">
+                      <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex gap-3 sm:gap-4">
                         {d.imageUrl ? (
                           <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-primary/10">
                             <Image src={d.imageUrl} alt="" fill className="object-cover" sizes="40px" />
@@ -167,6 +162,12 @@ export default function StartupGrowthSystemOfferPage() {
                   </li>
                 ))}
               </ul>
+              <WhatToExpectList
+                title={ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_TITLE}
+                items={ICP_OFFER_STARTUP_SYSTEM_WHAT_TO_EXPECT_ITEMS}
+                compact
+                className="mb-6 text-left"
+              />
               <Button asChild size="lg" className="w-full sm:w-auto gap-2 min-h-[48px]">
                 <Link href={cta.buttonHref}>
                   {cta.buttonText}

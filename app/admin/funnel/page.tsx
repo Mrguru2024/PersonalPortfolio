@@ -70,7 +70,7 @@ const FUNNEL_ITEMS = [
   {
     id: "offer",
     title: "Startup growth system offer",
-    description: "Offer page: $249–$399, deliverables, CTA to strategy call. Edit text and graphics from Site offers.",
+    description: "Offer page: startup audit price band, deliverables, CTA to strategy call. Edit text and graphics from Site offers.",
     publicPath: STARTUP_GROWTH_SYSTEM_OFFER_PATH,
     editPath: "/admin/offers/startup-growth-system/edit",
     icon: Tag,
@@ -126,7 +126,7 @@ export default function AdminFunnelPage() {
               <div className="min-w-0">
                 <CardTitle className="text-lg">Content Library</CardTitle>
                 <CardDescription className="text-sm mt-0.5">
-                  Upload PDFs, video, images, decks. Approve with Publish; set Members only for signed-in downloads on Free growth tools.
+                  Upload files, publish when ready, choose “Members only” for the signed-in download list on Free growth tools.
                 </CardDescription>
               </div>
             </div>

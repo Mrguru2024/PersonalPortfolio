@@ -10,6 +10,12 @@ import { AUDIT_PATH, FREE_TRIAL_PATH, PRIMARY_FREE_LEAD_CTA, SEE_GROWTH_SYSTEMS 
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { HeroMotion, MagneticButton } from "@/components/motion";
 import { heroChoreography, motionTokens } from "@/lib/motion";
+import {
+  CTA_REASSURANCE_HOME,
+  HERO_HEADLINE,
+  HERO_SUBLINE,
+} from "@/lib/embeddedAssuranceCopy";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
 
 export default function HeroSection() {
   const reducedMotion = useReducedMotion();
@@ -81,8 +87,8 @@ export default function HeroSection() {
             eyebrow={
               <p className="text-sm font-medium text-primary">Ascendra Technologies</p>
             }
-            headline="A stronger brand, better presentation, and a website that actually helps your business grow."
-            subline="Ascendra Technologies works with design and branding partners to help businesses improve how they show up online and turn more visitors into real opportunities."
+            headline={HERO_HEADLINE}
+            subline={HERO_SUBLINE}
             actions={
               <>
                 <MagneticButton className="w-full lg:w-auto shrink-0 min-w-0 max-w-full">
@@ -133,6 +139,7 @@ export default function HeroSection() {
               </>
             }
           />
+          <CTAReassuranceLine dense>{CTA_REASSURANCE_HOME}</CTAReassuranceLine>
         </motion.div>
       </div>
     </section>

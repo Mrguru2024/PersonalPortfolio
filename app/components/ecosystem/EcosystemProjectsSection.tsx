@@ -44,7 +44,7 @@ export function EcosystemProjectsSection({ ascendraProjects }: EcosystemProjects
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 min-w-0">
           {MACON_PROJECTS.map((project) => (
             <Card key={project.id} className="border-border bg-card h-full">
-              <CardContent className="p-5 sm:p-6 flex flex-col h-full">
+              <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col h-full">
                 <div className="flex items-start gap-2 mb-2">
                   <Palette className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs uppercase tracking-wide text-primary font-semibold">
@@ -104,7 +104,7 @@ export function EcosystemProjectsSection({ ascendraProjects }: EcosystemProjects
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 min-w-0">
           {STYLE_STUDIO_PROJECTS.map((project) => (
             <Card key={project.id} className="border-border bg-card h-full">
-              <CardContent className="p-5 sm:p-6 flex flex-col h-full">
+              <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col h-full">
                 <div className="flex items-start gap-2 mb-2">
                   <Megaphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs uppercase tracking-wide text-primary font-semibold">
@@ -159,7 +159,7 @@ export function EcosystemProjectsSection({ ascendraProjects }: EcosystemProjects
             const caseStudy = project.synopsis?.caseStudy;
             return (
               <Card key={project.id} className="border-border bg-card h-full">
-                <CardContent className="p-5 sm:p-6 space-y-4">
+                <CardContent className="px-6 py-5 sm:px-8 sm:py-6 space-y-4">
                   <div className="flex items-start gap-2 mb-1">
                     <Code2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <p className="text-xs uppercase tracking-wide text-primary font-semibold">

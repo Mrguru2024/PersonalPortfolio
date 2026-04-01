@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LineChart, Target, Database, Megaphone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { PpcLeadMagnetForm } from "@/components/funnel/PpcLeadMagnetForm";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { TrackPageView } from "@/components/TrackPageView";
-import { DIGITAL_GROWTH_AUDIT_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
+import { DIGITAL_GROWTH_AUDIT_PATH, FREE_GROWTH_TOOLS_PATH, SECONDARY_CTA } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
@@ -42,10 +42,10 @@ const PILLARS = [
 export default function PpcLeadSystemPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="PPC, CRM & Lead Conversion | Consultation for ads, prospecting, and pipeline"
         description="Lead magnet: prospecting, custom CRM, conversion, and ad management. Share your context—we’ll respond with a clear next step."
-        canonicalPath="/ppc-lead-system"
+        path="/ppc-lead-system"
       />
       <TrackPageView path="/ppc-lead-system" />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
@@ -146,7 +146,7 @@ export default function PpcLeadSystemPage() {
                 offerSlug="business-growth"
                 ctaText="See growth systems"
                 ctaHref="/services"
-                secondaryCtaText="Book a call"
+                secondaryCtaText={SECONDARY_CTA}
                 secondaryCtaHref="/strategy-call"
               />
             </section>

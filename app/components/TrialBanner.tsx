@@ -3,8 +3,15 @@
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { Sparkles } from "lucide-react";
 import type { TrialClientSummary } from "@shared/userTrial";
+import { useLocale } from "@/contexts/LocaleContext";
+import {
+  shellTrialBookStrategyCall,
+  shellTrialDaysWord,
+  shellTrialOpenDashboard,
+} from "@/lib/i18n/siteShellCopy";
 
 function isTrialSummary(x: unknown): x is TrialClientSummary {
   if (!x || typeof x !== "object") return false;
@@ -17,17 +24,21 @@ function isTrialSummary(x: unknown): x is TrialClientSummary {
  */
 export function TrialBanner() {
   const { user, isLoading } = useAuth();
+  const { locale } = useLocale();
   if (isLoading || !user) return null;
 
   const trial = user.trial;
   if (!isTrialSummary(trial) || !trial.showBanner || !trial.active || !trial.endsAt) return null;
 
-  const endLabel = format(new Date(trial.endsAt), "MMM d, yyyy");
+  const endLabel = format(new Date(trial.endsAt), locale === "es" ? "d MMM yyyy" : "MMM d, yyyy", {
+    locale: locale === "es" ? es : undefined,
+  });
   const days = trial.daysRemaining ?? 0;
-  const dayWord = days === 1 ? "day" : "days";
+  const daysWord = shellTrialDaysWord(days, locale);
 
   return (
     <div
+      data-site-trial-banner
       className="fixed left-0 right-0 z-[55] border-b border-emerald-700/40 bg-emerald-950/92 text-emerald-50 shadow-md backdrop-blur-sm dark:border-emerald-600/40 dark:bg-emerald-950/95 top-[calc(env(safe-area-inset-top,0px)+6.75rem)] fold:top-[calc(env(safe-area-inset-top,0px)+7.25rem)] sm:top-[calc(env(safe-area-inset-top,0px)+7.5rem)] md:top-[calc(env(safe-area-inset-top,0px)+8.5rem)] lg:top-[calc(env(safe-area-inset-top,0px)+9.75rem)]"
       role="status"
       aria-live="polite"
@@ -36,8 +47,17 @@ export function TrialBanner() {
         <span className="inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 break-words font-medium leading-snug">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden />
           <span>
-            You&apos;re on a free trial — <strong className="font-semibold">{days}</strong> {dayWord}{" "}
-            left (ends {endLabel}).
+            {locale === "es" ? (
+              <>
+                Estás en una prueba gratis — <strong className="font-semibold">{days}</strong> {daysWord}{" "}
+                restantes (finaliza el {endLabel}).
+              </>
+            ) : (
+              <>
+                You&apos;re on a free trial — <strong className="font-semibold">{days}</strong> {daysWord}{" "}
+                left (ends {endLabel}).
+              </>
+            )}
           </span>
         </span>
         <span className="flex w-full min-w-0 flex-col items-center gap-1 text-emerald-200/90 fold-open:flex-row fold-open:flex-wrap fold-open:justify-center fold-open:gap-x-2 sm:inline sm:w-auto">
@@ -45,7 +65,7 @@ export function TrialBanner() {
             href="/dashboard"
             className="inline-flex min-h-[44px] items-center justify-center font-medium text-white underline-offset-2 hover:underline sm:min-h-0"
           >
-            Open your dashboard
+            {shellTrialOpenDashboard(locale)}
           </Link>
           <span className="hidden text-emerald-400/80 fold-open:inline" aria-hidden>
             ·
@@ -54,7 +74,7 @@ export function TrialBanner() {
             href="/strategy-call"
             className="inline-flex min-h-[44px] items-center justify-center font-medium text-white underline-offset-2 hover:underline sm:min-h-0"
           >
-            Book a strategy call
+            {shellTrialBookStrategyCall(locale)}
           </Link>
         </span>
       </div>

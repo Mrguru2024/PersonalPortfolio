@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Palette, Target, Layers, ChevronDown, ExternalLink } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 
@@ -45,13 +44,6 @@ export default function MaconDesignsPartnerPage() {
 
   return (
     <>
-      <PageSEO
-        title="Macon Designs | Brand Identity & Visual Systems"
-        description="Denishia leads Macon Designs—brand identity, visual systems, and strategic design. Part of the coordinated Brand Growth ecosystem with Ascendra and Style Studio."
-        keywords={["Macon Designs", "brand identity", "visual identity", "brand systems", "Denishia"]}
-        canonicalPath="/partners/macon-designs"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-brand="macon">
         {/* Hero — logo-led, premium (brand accent: warm/identity) */}
         <section className="w-full min-w-0 max-w-full relative py-12 fold:py-14 xs:py-16 sm:py-24 md:py-28 overflow-hidden border-t-4 border-amber-500/40 dark:border-amber-400/30">

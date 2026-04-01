@@ -1,5 +1,6 @@
 import { db } from "@server/db";
 import { internalEditorialCalendarEntries, internalCmsDocuments } from "@shared/schema";
+import type { EditorialStrategyMeta } from "@shared/editorialStrategyMeta";
 import { eq, and, gte, lte, asc, ne, isNotNull, inArray } from "drizzle-orm";
 
 export function computeEntryWarnings(entry: {
@@ -8,11 +9,24 @@ export function computeEntryWarnings(entry: {
   personaTags: string[] | null;
   platformTargets: string[] | null;
   scheduledAt: Date;
+  strategyMeta?: EditorialStrategyMeta | null;
 }): string[] {
   const w: string[] = [];
   if (!entry.ctaObjective?.trim()) w.push("missing_cta");
   if (!entry.personaTags?.length) w.push("missing_persona");
   if (entry.title.trim().length < 8) w.push("weak_headline");
+  const sm = entry.strategyMeta;
+  if (sm && Object.keys(sm).length > 0) {
+    if (sm.lifecycle === "evergreen" && !sm.primaryKeyword?.trim()) {
+      w.push("strategy_evergreen_missing_keyword");
+    }
+    if (Boolean(sm.searchIntent?.trim()) && !sm.primaryKeyword?.trim()) {
+      w.push("strategy_intent_without_keyword");
+    }
+    if ((sm.repurposeTargets?.length ?? 0) > 0 && !sm.hookAngle?.trim()) {
+      w.push("strategy_repurpose_without_hook");
+    }
+  }
   return w;
 }
 
@@ -87,6 +101,7 @@ export async function createCalendarEntry(data: typeof internalEditorialCalendar
     personaTags: (data.personaTags as string[]) ?? [],
     platformTargets: (data.platformTargets as string[]) ?? [],
     scheduledAt: data.scheduledAt instanceof Date ? data.scheduledAt : new Date(String(data.scheduledAt)),
+    strategyMeta: data.strategyMeta ?? null,
   });
   const conflict = await findSchedulingConflicts(
     data.scheduledAt instanceof Date ? data.scheduledAt : new Date(String(data.scheduledAt)),
@@ -108,7 +123,14 @@ export async function updateCalendarEntry(
   patch: Partial<typeof internalEditorialCalendarEntries.$inferInsert>,
 ) {
   const merged = { ...patch } as typeof patch;
-  if (patch.scheduledAt || patch.title || patch.ctaObjective || patch.personaTags || patch.platformTargets) {
+  if (
+    patch.scheduledAt ||
+    patch.title ||
+    patch.ctaObjective ||
+    patch.personaTags ||
+    patch.platformTargets ||
+    patch.strategyMeta !== undefined
+  ) {
     const current = await getCalendarEntry(id);
     if (current) {
       const title = (patch.title ?? current.title) as string;
@@ -121,12 +143,17 @@ export async function updateCalendarEntry(
             ? patch.scheduledAt
             : new Date(String(patch.scheduledAt))
           : new Date(current.scheduledAt!);
+      const strategyMeta =
+        patch.strategyMeta !== undefined
+          ? (patch.strategyMeta as EditorialStrategyMeta | null)
+          : (current.strategyMeta as EditorialStrategyMeta | null) ?? null;
       const warnings = computeEntryWarnings({
         title,
         ctaObjective: cta,
         personaTags: personas,
         platformTargets: platforms,
         scheduledAt: at,
+        strategyMeta,
       });
       const conflict = await findSchedulingConflicts(at, id, platforms ?? []);
       merged.warningsJson = [...warnings, ...conflict];
@@ -156,6 +183,7 @@ export async function duplicateCalendarEntry(id: number) {
     personaTags: cur.personaTags ?? [],
     ctaObjective: cur.ctaObjective,
     funnelStage: cur.funnelStage,
+    strategyMeta: (cur.strategyMeta as EditorialStrategyMeta | null) ?? null,
     campaignId: cur.campaignId,
     projectKey: cur.projectKey,
     sortOrder: 0,

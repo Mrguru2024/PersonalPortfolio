@@ -4,23 +4,26 @@ import { storage } from "@server/storage";
 import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
 import { emailService } from "@server/services/emailService";
 import type { InsertContact } from "@shared/schema";
+import { aeeFieldsForFormAttribution, zOptionalAeeAttribution } from "@/lib/aeeFormAttributionZod";
 
-const bodySchema = z.object({
-  name: z.string().trim().min(1, "Name is required"),
-  email: z.string().trim().email("Valid email is required"),
-  company: z.string().trim().optional(),
-  websiteUrl: z.string().trim().optional(),
-  businessType: z.string().trim().optional(),
-  primaryGoal: z.string().trim().min(1, "Select a primary goal"),
-  timeline: z.string().trim().min(1, "Select a timeline"),
-  toolsFocus: z.string().trim().max(2000).optional(),
-  visitorId: z.string().trim().optional().nullable(),
-  utm_source: z.string().trim().optional().nullable(),
-  utm_medium: z.string().trim().optional().nullable(),
-  utm_campaign: z.string().trim().optional().nullable(),
-  referrer: z.string().trim().optional().nullable(),
-  landing_page: z.string().trim().optional().nullable(),
-});
+const bodySchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required"),
+    email: z.string().trim().email("Valid email is required"),
+    company: z.string().trim().optional(),
+    websiteUrl: z.string().trim().optional(),
+    businessType: z.string().trim().optional(),
+    primaryGoal: z.string().trim().min(1, "Select a primary goal"),
+    timeline: z.string().trim().min(1, "Select a timeline"),
+    toolsFocus: z.string().trim().max(2000).optional(),
+    visitorId: z.string().trim().optional().nullable(),
+    utm_source: z.string().trim().optional().nullable(),
+    utm_medium: z.string().trim().optional().nullable(),
+    utm_campaign: z.string().trim().optional().nullable(),
+    referrer: z.string().trim().optional().nullable(),
+    landing_page: z.string().trim().optional().nullable(),
+  })
+  .merge(zOptionalAeeAttribution);
 
 const SUBJECT = "Free growth tools — qualified lead";
 
@@ -94,6 +97,7 @@ export async function POST(req: NextRequest) {
           referrer: b.referrer ?? null,
           landing_page: b.landing_page ?? "/free-growth-tools",
           visitorId: b.visitorId ?? null,
+          ...aeeFieldsForFormAttribution(b),
         },
         customFields,
         demographics: {

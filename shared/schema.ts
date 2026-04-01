@@ -1,3 +1,4 @@
+import type { AdminTtsConfigStored } from "./readAloudTtsConfig";
 import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -171,6 +172,8 @@ export const siteOffers = pgTable("site_offers", {
   name: text("name").notNull(),
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
+  /** Optional `offer_engine_offer_templates.slug` — merges public pricing snapshot into GET /api/offers/[slug]. */
+  offerEngineTemplateSlug: text("offer_engine_template_slug"),
   sections: json("sections").$type<Record<string, unknown>>().notNull(),
   /** Optional content grading (SEO, design, copy). Set by admin "Grade content" action. */
   grading: json("grading").$type<OfferContentGrading | null>(),
@@ -202,6 +205,10 @@ export const funnelContentAssets = pgTable("funnel_content_assets", {
   leadMagnetSlug: text("lead_magnet_slug"),
   /** Where to show: [{ pagePath, sectionId }, ...]. pagePath e.g. /digital-growth-audit; sectionId e.g. hero, lead_magnet_download */
   placements: json("placements").$type<Array<{ pagePath: string; sectionId: string }>>().default([]),
+  /** Exempt from automatic funnel asset retention (Ascendra OS storage policy). */
+  retentionImportant: boolean("retention_important").default(false).notNull(),
+  retentionArchived: boolean("retention_archived").default(false).notNull(),
+  softDeletedAt: timestamp("soft_deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -646,10 +653,43 @@ export const adminSettings = pgTable("admin_settings", {
   pushNotificationsEnabled: boolean("push_notifications_enabled").default(true).notNull(),
   remindersEnabled: boolean("reminders_enabled").default(true).notNull(),
   reminderFrequency: text("reminder_frequency").default("realtime").notNull(), // realtime | hourly | daily | weekly
+  /** Weekly planning slots (lowercase weekday keys) for editorial reminders. */
+  reminderPlanningDays: json("reminder_planning_days").$type<string[]>().default(["monday"]).notNull(),
+  /**
+   * Geo targeting focus for editorial reminders (e.g. "Austin, TX").
+   * Used by local-event reminder generation.
+   */
+  reminderCityFocus: text("reminder_city_focus"),
+  /** Include holiday-aware editorial reminders in reminder generation. */
+  reminderEditorialHolidaysEnabled: boolean("reminder_editorial_holidays_enabled").default(true).notNull(),
+  /** Include city-focused local-event editorial reminders in reminder generation. */
+  reminderEditorialLocalEventsEnabled: boolean("reminder_editorial_local_events_enabled").default(true).notNull(),
+  /** Look-ahead window for editorial opportunities (days). */
+  reminderEditorialHorizonDays: integer("reminder_editorial_horizon_days").default(21).notNull(),
   notifyOnRoleChange: boolean("notify_on_role_change").default(true).notNull(),
   aiAgentCanPerformActions: boolean("ai_agent_can_perform_actions").default(false).notNull(),
   /** When true, the admin assistant shows a confirm step before navigation or reminder runs. */
   aiAgentRequireActionConfirmation: boolean("ai_agent_require_action_confirmation").default(true).notNull(),
+  /**
+   * When true, the app may record coarse admin navigation (paths, dwell hints) to personalize the floating mentor.
+   * Does not log form fields or keystrokes. Separate from action execution.
+   */
+  aiMentorObserveUsage: boolean("ai_mentor_observe_usage").default(false).notNull(),
+  /**
+   * When true (and mentor observation is enabled), the mentor may occasionally surface a short checkpoint question
+   * in the assistant panel based on usage patterns — never blocking the UI.
+   */
+  aiMentorProactiveCheckpoints: boolean("ai_mentor_proactive_checkpoints").default(true).notNull(),
+  /**
+   * Per-surface module order + visibility for admin dashboards (syncs across devices).
+   * Keys: `main` (/admin/dashboard), `crm` (/admin/crm/dashboard). Shape: { [surface]: { order: string[], hidden: string[] } }
+   */
+  adminUiLayouts: json("admin_ui_layouts").$type<Record<string, { order: string[]; hidden: string[] }> | null>(),
+  /**
+   * Optional neural read-aloud (TTS) overrides: models + extra voice ids for OpenAI / Gemini.
+   * Null = use environment defaults and built-in voice lists only.
+   */
+  ttsConfig: json("tts_config").$type<AdminTtsConfigStored | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -671,10 +711,34 @@ export type AdminAgentMentorStateV1 = {
   pendingMentorNudges: string[];
 };
 
+/** Aggregate route visits for mentor personalization (observation opt-in only). */
+export type MentorRouteStat = {
+  path: string;
+  visits: number;
+  lastVisitAt: string;
+};
+
+export type AdminAgentMentorStateV2 = {
+  v: 2;
+  habits: string[];
+  painPoints: string[];
+  goals: string[];
+  strengths: string[];
+  topicsOftenAsked: string[];
+  pendingMentorNudges: string[];
+  topRoutes?: MentorRouteStat[];
+  /** ISO timestamp — throttles auto checkpoint prompts */
+  lastCheckpointAt?: string;
+  /** Short inferred signals, e.g. rapid revisits */
+  workflowSignals?: string[];
+};
+
+export type AdminAgentMentorStateStored = AdminAgentMentorStateV1 | AdminAgentMentorStateV2;
+
 export const adminAgentMentorState = pgTable("admin_agent_mentor_state", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
-  state: json("state").$type<AdminAgentMentorStateV1>().notNull(),
+  state: json("state").$type<AdminAgentMentorStateStored>().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -743,6 +807,21 @@ export const offerValuationSettings = pgTable("offer_valuation_settings", {
 
 export type OfferValuationSettings = typeof offerValuationSettings.$inferSelect;
 export type InsertOfferValuationSettings = typeof offerValuationSettings.$inferInsert;
+
+/**
+ * Ascendra OS — global access toggles (singleton id=1).
+ * When public access is off, gated public /api/market/* and client lead-magnet flows stay internal-only;
+ * subscription checks layer on top when you ship client auth.
+ */
+export const ascendraOsSettings = pgTable("ascendra_os_settings", {
+  id: integer("id").primaryKey().default(1),
+  /** Master switch for public/guest market tools and future client-facing OS surfaces (AMIE-related APIs, etc.). */
+  publicAccessEnabled: boolean("public_access_enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AscendraOsSettings = typeof ascendraOsSettings.$inferSelect;
+export type InsertAscendraOsSettings = typeof ascendraOsSettings.$inferInsert;
 
 /** Offer Valuation Engine submissions and scored outputs. */
 export const offerValuations = pgTable("offer_valuations", {
@@ -905,6 +984,17 @@ export type ClientAnnouncement = typeof clientAnnouncements.$inferSelect;
 export type InsertClientFeedback = z.infer<typeof insertClientFeedbackSchema>;
 export type ClientFeedback = typeof clientFeedback.$inferSelect;
 
+/** Server-side cache row for GET /api/client/growth-snapshot (short TTL; JSON validated on read). */
+export const clientGrowthSnapshots = pgTable("client_growth_snapshots", {
+  userId: integer("user_id")
+    .primaryKey()
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  snapshotJson: json("snapshot_json").$type<Record<string, unknown>>().notNull(),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+});
+export type ClientGrowthSnapshotRow = typeof clientGrowthSnapshots.$inferSelect;
+
 /** Growth Diagnosis Engine: persisted audit reports (for admin and email/export). */
 export const growthDiagnosisReports = pgTable("growth_diagnosis_reports", {
   id: serial("id").primaryKey(),
@@ -930,7 +1020,15 @@ export * from "./crmSchema";
 export * from "./newsletterSchema";
 export * from "./brandVaultSchema";
 export * from "./communicationsSchema";
+export * from "./emailHubSchema";
 export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
+export * from "./amieSchema";
+export * from "./experimentationEngineSchema";
+export * from "./serviceAgreementSchema";
+export * from "./growthEngineSchema";
+export * from "./behaviorIntelligenceSchema";
+export * from "./agencyOsSchema";
+export * from "./offerEngineSchema";

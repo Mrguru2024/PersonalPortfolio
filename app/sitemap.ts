@@ -21,9 +21,9 @@ const EXCLUDE_PREFIXES = [
   "/book/manage",
   "/api",
   "/admin",
-  "/community/inbox",
-  "/community/profile",
-  "/community/settings",
+  "/Afn/inbox",
+  "/Afn/profile",
+  "/Afn/settings",
   "/challenge/checkout",
   "/challenge/dashboard",
 ];
@@ -36,15 +36,20 @@ const EXCLUDE_EXACT_PATHS = new Set<string>([
 ]);
 
 function absolutePath(path: string): string {
-  const p = path.startsWith("/") ? path : `/${path}`;
+  const trimmed = path.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  const p = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${base}${p}`;
 }
 
-function toAbsoluteAsset(url: string | null | undefined): string | undefined {
-  if (!url?.trim()) return undefined;
-  const u = url.trim();
-  if (/^https?:\/\//i.test(u)) return u;
-  return absolutePath(u.startsWith("/") ? u : `/${u}`);
+function isValidHttpUrlForSitemap(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function isExcludedPath(path: string): boolean {
@@ -55,7 +60,7 @@ function isExcludedPath(path: string): boolean {
 function changeFrequency(path: string): MetadataRoute.Sitemap[0]["changeFrequency"] {
   if (path === "/") return "daily";
   if (path.startsWith("/blog")) return "weekly";
-  if (path.startsWith("/community")) return "daily";
+  if (path.startsWith("/Afn")) return "daily";
   if (path.includes("tools") || path.startsWith("/free-") || path.startsWith("/diagn")) {
     return "monthly";
   }
@@ -96,8 +101,6 @@ async function publishedBlogEntries(): Promise<MetadataRoute.Sitemap> {
         slug: blogPosts.slug,
         publishedAt: blogPosts.publishedAt,
         updatedAt: blogPosts.updatedAt,
-        coverImage: blogPosts.coverImage,
-        ogImage: blogPosts.ogImage,
       })
       .from(blogPosts)
       .where(and(eq(blogPosts.isPublished, true), lte(blogPosts.publishedAt, now)))
@@ -105,13 +108,15 @@ async function publishedBlogEntries(): Promise<MetadataRoute.Sitemap> {
 
     return rows.map((r) => {
       const path = `/blog/${r.slug}`;
-      const img = toAbsoluteAsset(r.ogImage) ?? toAbsoluteAsset(r.coverImage);
+      const lastRaw = r.updatedAt ?? r.publishedAt ?? now;
+      const lastModified =
+        lastRaw instanceof Date ? lastRaw : new Date(lastRaw as string | number);
+      const safeLastModified = Number.isNaN(lastModified.getTime()) ? now : lastModified;
       return {
         url: absolutePath(path),
-        lastModified: r.updatedAt ?? r.publishedAt ?? now,
+        lastModified: safeLastModified,
         changeFrequency: "weekly" as const,
         priority: 0.85,
-        ...(img ? { images: [img] } : {}),
       };
     });
   } catch {
@@ -124,26 +129,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     (e) => e.audience === "public" && !e.path.includes("[") && !isExcludedPath(e.path),
   );
 
-  const fromDirectory: MetadataRoute.Sitemap = staticPublic.map((e) => ({
-    url: absolutePath(e.path),
-    lastModified: new Date(),
-    changeFrequency: changeFrequency(e.path),
-    priority: priority(e.path),
-  }));
+  const fromDirectory: MetadataRoute.Sitemap = staticPublic
+    .map((e) => ({
+      url: absolutePath(e.path),
+      lastModified: new Date(),
+      changeFrequency: changeFrequency(e.path),
+      priority: priority(e.path),
+    }))
+    .filter((e) => isValidHttpUrlForSitemap(e.url));
 
-  const breakdowns: MetadataRoute.Sitemap = WEBSITE_BREAKDOWNS.map((b) => ({
-    url: absolutePath(`/website-breakdowns/${b.slug}`),
-    lastModified: new Date(b.publishedAt),
-    changeFrequency: "monthly" as const,
-    priority: 0.82,
-  }));
+  const breakdowns: MetadataRoute.Sitemap = WEBSITE_BREAKDOWNS.map((b) => {
+    const lm = new Date(b.publishedAt);
+    return {
+      url: absolutePath(`/website-breakdowns/${b.slug}`),
+      lastModified: Number.isNaN(lm.getTime()) ? new Date() : lm,
+      changeFrequency: "monthly" as const,
+      priority: 0.82,
+    };
+  }).filter((e) => isValidHttpUrlForSitemap(e.url));
 
-  const blogPostsEntries = await publishedBlogEntries();
+  const blogPostsEntries = (await publishedBlogEntries()).filter((e) =>
+    isValidHttpUrlForSitemap(e.url),
+  );
 
   const urlSeen = new Set<string>();
   const merged: MetadataRoute.Sitemap = [];
   for (const entry of [...fromDirectory, ...breakdowns, ...blogPostsEntries]) {
-    if (urlSeen.has(entry.url)) continue;
+    if (!isValidHttpUrlForSitemap(entry.url) || urlSeen.has(entry.url)) continue;
     urlSeen.add(entry.url);
     merged.push(entry);
   }

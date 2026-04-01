@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 interface IntelligencePayload {
   dailyTasks: Array<{ id: string; title: string; rationale?: string; href?: string | null }>;
@@ -23,19 +24,11 @@ interface Profile {
 }
 
 interface AdminOperatorIntelligenceCardProps {
-  /** Dashboard passes live counts so refresh stays accurate without extra API reads. */
-  dashboardStats: {
-    pendingAssessments: number;
-    totalContacts: number;
-    unaccessedResume: number;
-  };
   compact?: boolean;
 }
 
-export function AdminOperatorIntelligenceCard({
-  dashboardStats,
-  compact = true,
-}: AdminOperatorIntelligenceCardProps) {
+/** Loads profile for the logged-in admin; refresh uses server-side inbox + CRM counts unless you POST overrides. */
+export function AdminOperatorIntelligenceCard({ compact = true }: AdminOperatorIntelligenceCardProps) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -50,7 +43,7 @@ export function AdminOperatorIntelligenceCard({
 
   const refresh = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/operator-profile/refresh", dashboardStats);
+      const res = await apiRequest("POST", "/api/admin/operator-profile/refresh", {});
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error || "Refresh failed");
@@ -105,7 +98,7 @@ export function AdminOperatorIntelligenceCard({
               {intel.source === "openai" ? "AI generated" : "Smart fallback"}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              Updated {new Date(intel.generatedAt).toLocaleString()}
+              Updated {formatLocaleMediumDateTime(intel.generatedAt)}
             </span>
           </div>
         ) : (

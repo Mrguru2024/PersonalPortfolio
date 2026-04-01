@@ -1,20 +1,31 @@
 {
+  "id": "/",
   "name": "Brand Growth – Ascendra Technologies",
   "short_name": "Ascendra",
-  "description": "Brand strategy, websites, and marketing. Admin dashboard and CRM – use as an app on your phone.",
+  "description": "Brand strategy, websites, and marketing. Install for quick access and limited offline use of pages you’ve opened.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "background_color": "#F5F5F5",
   "theme_color": "#8237BE",
   "categories": ["business", "productivity"],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

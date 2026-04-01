@@ -4,6 +4,8 @@ import {
   getAfnProfileByUserId,
   getAfnCandidateProfilesForSuggestions,
   getAfnProfileSettings,
+  getAfnProfileNormalizedTags,
+  getAfnNormalizedTagSlugsByProfileIds,
 } from "@server/afnStorage";
 import {
   recommendConnections,
@@ -53,8 +55,35 @@ export async function GET(req: NextRequest) {
       openToCollaborateByUserId.set(uid, settingsRows[i]?.openToCollaborate ?? false);
     });
 
-    const myShape = profileToScoringShape(myProfile);
-    const candidateShapes = candidates.map((c) => profileToScoringShape(c));
+    const myTags = await getAfnProfileNormalizedTags(myProfile.id);
+    const myShape = profileToScoringShape(myProfile, {
+      skills: myTags.skills,
+      industries: myTags.industries,
+      interests: myTags.interests,
+      goals: myTags.goals,
+      challenges: myTags.challenges,
+      collabPreferences: myTags.collabPreferences,
+    });
+    const candidateProfileIds = candidates.map((c) => c.id);
+    const tagsByProfileId = await getAfnNormalizedTagSlugsByProfileIds(candidateProfileIds);
+    const candidateShapes = candidates.map((c) => {
+      const t = tagsByProfileId.get(c.id) ?? {
+        skills: [],
+        industries: [],
+        interests: [],
+        goals: [],
+        challenges: [],
+        collabPreferences: [],
+      };
+      return profileToScoringShape(c, {
+        skills: t.skills,
+        industries: t.industries,
+        interests: t.interests,
+        goals: t.goals,
+        challenges: t.challenges,
+        collabPreferences: t.collabPreferences,
+      });
+    });
     const suggestions = recommendConnections(myShape, candidateShapes, {
       openToCollaborateByUserId,
       maxSuggestions: limit,
@@ -73,6 +102,7 @@ export async function GET(req: NextRequest) {
         headline: s.profile.headline,
         businessStage: s.profile.businessStage,
         industry: s.profile.industry,
+        founderTribe: row?.founderTribe ?? null,
         score: s.score,
         reasons: s.reasons,
       };
@@ -94,6 +124,7 @@ interface SuggestionPayload {
   headline: string | null;
   businessStage: string | null;
   industry: string | null;
+  founderTribe: string | null;
   score: number;
   reasons: string[];
 }

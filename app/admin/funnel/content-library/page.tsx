@@ -207,7 +207,7 @@ export default function AdminFunnelContentLibraryPage() {
             Content Library
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload PDFs, decks, video, or images. Set <strong className="text-foreground">Members only</strong> for the signed-in downloads list; use <strong className="text-foreground">Publish</strong> to approve. Placements control where public funnel sections show files.
+            Upload files, choose who can see them, tap <strong className="text-foreground">Publish</strong> when they should go live. <strong className="text-foreground">Placements</strong> pick which page sections show each file.
           </p>
         </div>
 
@@ -218,7 +218,7 @@ export default function AdminFunnelContentLibraryPage() {
               Upload content
             </CardTitle>
             <CardDescription>
-              New uploads start as <strong className="text-foreground">Draft</strong> (pending approval). Publish when ready. Registered-only assets appear on Free growth tools for signed-in users after publish.
+              New files start as <strong className="text-foreground">Draft</strong>. Publish when you want them visible. “Members only” files show on Free growth tools after you publish, for people who are signed in.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -328,8 +328,8 @@ export default function AdminFunnelContentLibraryPage() {
                         className="text-xs"
                         title={
                           asset.status === "published"
-                            ? "Approved — visible where configured (e.g. member downloads if Members only)"
-                            : "Draft — not on member downloads until you Publish"
+                            ? "Live where you placed it (and on member downloads if Members only)"
+                            : "Draft — tap Publish when ready"
                         }
                       >
                         {asset.status === "published" ? "Published" : "Draft"}
@@ -435,7 +435,11 @@ export default function AdminFunnelContentLibraryPage() {
         <Card className="mt-8 border-muted bg-muted/30">
           <CardContent className="p-4 sm:p-5">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">How it works:</strong> Upload → optional description and <em>Members only</em> → <strong className="text-foreground">Publish</strong> to approve. Registered-only published assets appear on <Link href="/free-growth-tools#member-downloads" className="text-primary hover:underline">Free growth tools</Link> for signed-in users. For embedded funnel sections, add placements; public API: <code className="text-xs bg-muted px-1 rounded">GET /api/funnel/content-assets?pagePath=...&sectionId=...</code>.
+              <strong className="text-foreground">Short version:</strong> upload → optional details → <strong className="text-foreground">Publish</strong> → add <strong className="text-foreground">Placements</strong> if the file should appear inside a funnel section. Member-only downloads (after publish) live on{" "}
+              <Link href="/free-growth-tools#member-downloads" className="text-primary hover:underline">
+                Free growth tools
+              </Link>
+              .
             </p>
           </CardContent>
         </Card>

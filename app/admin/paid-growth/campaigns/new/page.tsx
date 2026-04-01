@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  PPC_CAMPAIGN_MODELS,
+  type CampaignModel,
+  getPpcEngineModuleConfig,
+} from "@shared/ppcCampaignModel";
+import { Badge } from "@/components/ui/badge";
 
 export default function NewPaidGrowthCampaignPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -34,6 +40,9 @@ export default function NewPaidGrowthCampaignPage() {
   const [primaryText, setPrimaryText] = useState("");
   const [ppcAccountId, setPpcAccountId] = useState<string>("");
   const [commCampaignId, setCommCampaignId] = useState<string>("");
+  const [campaignModel, setCampaignModel] = useState<CampaignModel>("LEAD_GEN_FUNNEL");
+
+  const engine = useMemo(() => getPpcEngineModuleConfig(campaignModel), [campaignModel]);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -123,6 +132,36 @@ export default function NewPaidGrowthCampaignPage() {
           <CardDescription>Links to site offers, funnel paths, personas, and optional Communications campaign.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <div className="space-y-2">
+              <Label>Campaign model (PPC engine)</Label>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Pick the business type—Ascendra applies defaults for call tracking posture, funnel shape, and how aggressively
+                we interpret lag between clicks and outcomes.
+              </p>
+              <Select value={campaignModel} onValueChange={(v) => setCampaignModel(v as CampaignModel)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PPC_CAMPAIGN_MODELS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {getPpcEngineModuleConfig(m).label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="secondary">Funnel: {engine.funnelType.replace(/-/g, " ")}</Badge>
+              <Badge variant="secondary">Attribution: {engine.attribution}</Badge>
+              <Badge variant={engine.enableCallTracking ? "default" : "outline"}>
+                Call tracking {engine.enableCallTracking ? "on" : "off"}
+              </Badge>
+              <Badge variant="outline">Rules lookback ~{engine.optimizationLookbackDays}d</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{engine.adminSummary}</p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Name</Label>

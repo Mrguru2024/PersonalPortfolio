@@ -1,0 +1,13 @@
+{
+  "pillars": [
+    {
+      "id": "custom_vertical",
+      "label": "Vertical-specific education",
+      "objective": "Teach buyers in your niche with concrete examples.",
+      "exampleAngles": ["Playbooks", "Compliance notes", "ROI benchmarks"]
+    }
+  ],
+  "assistantDirectives": [
+    "When the admin names a regulated industry, remind them to use the governance checklist before scheduling."
+  ]
+}

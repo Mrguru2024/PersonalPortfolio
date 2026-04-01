@@ -31,7 +31,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const CATEGORIES = ["qualification", "discovery", "proposal", "follow_up"];
-const SERVICE_TYPES = ["web_design", "funnel_optimization", "branding", "content_seo", "general"];
+const SERVICE_TYPES = [
+  "web_design",
+  "funnel_optimization",
+  "branding",
+  "brand_production",
+  "brand_identity",
+  "content_seo",
+  "general",
+] as const;
 
 function slugify(s: string): string {
   return s

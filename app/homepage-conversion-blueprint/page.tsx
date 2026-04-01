@@ -3,10 +3,11 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Layout, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { MARKETING_CTA_CONTACT_US } from "@shared/marketingCtaCopy";
 
 export const metadata: Metadata = {
   title: "Homepage conversion blueprint | Free growth tool",
@@ -43,10 +44,10 @@ const SELF_CHECK = [
 export default function HomepageConversionBlueprintPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Homepage conversion blueprint | Free growth tool"
         description="What your homepage needs to turn more visitors into leads. A practical blueprint: sections, messaging, and conversion elements most business homepages are missing."
-        canonicalPath="/homepage-conversion-blueprint"
+        path="/homepage-conversion-blueprint"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
@@ -170,7 +171,7 @@ export default function HomepageConversionBlueprintPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="min-h-[48px]">
-                  <Link href="/contact">Book a free call</Link>
+                  <Link href="/contact">{MARKETING_CTA_CONTACT_US}</Link>
                 </Button>
               </div>
             </section>

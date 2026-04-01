@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
 import {
   ADMIN_OPERATOR_ROLE_LABELS,
@@ -36,7 +36,8 @@ export interface OperatorIntelligenceContext {
   dashboardStats: {
     pendingAssessments: number;
     totalContacts: number;
-    unaccessedResume: number;
+    /** CRM leads + clients in unified CRM (complements legacy form `contacts` table). */
+    crmContactsCount: number;
   };
 }
 
@@ -86,7 +87,7 @@ function normalizeIntelligence(
 }
 
 function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOperatorIntelligencePayload {
-  const { pendingAssessments, totalContacts, unaccessedResume } = ctx.dashboardStats;
+  const { pendingAssessments, totalContacts, crmContactsCount } = ctx.dashboardStats;
   const role = ctx.roleSelection;
   const daily: AdminOperatorIntelligencePayload["dailyTasks"] = [];
   const weekly: AdminOperatorIntelligencePayload["weeklyTasks"] = [];
@@ -108,14 +109,14 @@ function buildFallbackIntelligence(ctx: OperatorIntelligenceContext): AdminOpera
       rationale: "Speed to lead improves conversion.",
     });
   }
-  if (unaccessedResume > 0) {
+  if (crmContactsCount > 0) {
     daily.push({
-      id: "resume",
-      title: `Follow up on ${unaccessedResume} resume request(s)`,
-      href: "/admin/dashboard",
+      id: "crm-pipeline",
+      title: `Triage CRM (${crmContactsCount} records) — follow up on hottest leads`,
+      href: "/admin/crm",
+      rationale: "Unified CRM is the source of truth for ongoing relationships.",
     });
   }
-
   if (role === "content") {
     daily.push({
       id: "blog",
@@ -252,7 +253,7 @@ export async function generateOperatorIntelligence(
     return buildFallbackIntelligence(ctx);
   }
 
-  const statsLine = `Dashboard signals: ${ctx.dashboardStats.pendingAssessments} pending assessments, ${ctx.dashboardStats.totalContacts} contact submissions, ${ctx.dashboardStats.unaccessedResume} unaccessed resume requests.`;
+  const statsLine = `Dashboard signals: ${ctx.dashboardStats.pendingAssessments} pending assessments, ${ctx.dashboardStats.totalContacts} contact submissions.`;
 
   const profileBlock = [
     `Operator focus role: ${roleLabel(ctx.roleSelection)} (${ctx.roleSelection}).`,
@@ -279,7 +280,7 @@ Output ONLY valid JSON (no markdown) with this exact shape:
 Rules:
 - dailyTasks: 3–5 concrete actions doable today; weeklyTasks: 3–6 for this week.
 - href must be an internal admin path starting with /admin when you suggest a destination (e.g. /admin/crm, /admin/blog, /admin/invoices). Use null if none.
-- Align tasks with the operator's stated role, mission, vision, goals, and dashboard stats. Prioritize clearing pending work when counts are high.
+- Align tasks with the operator's stated role, mission, vision, goals, and dashboard stats. Prioritize clearing pending assessments and CRM follow-ups when counts are high. Mention CRM (/admin/crm) when crmContactsCount is non-trivial.
 - tips: 3–5 concise coaching tips (one sentence each).
 - Be practical; no generic fluff.`,
         },

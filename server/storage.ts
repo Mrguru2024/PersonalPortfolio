@@ -27,13 +27,16 @@ import { users, type User, type InsertUser,
   adminSettings, type AdminSettings, type InsertAdminSettings,
   adminAgentMentorState,
   type AdminAgentMentorStateRow,
-  type AdminAgentMentorStateV1,
+  type AdminAgentMentorStateStored,
   adminAgentKnowledgeEntries,
   type AdminAgentKnowledgeEntryRow,
   type InsertAdminAgentKnowledgeEntryRow,
   offerValuationSettings,
   type OfferValuationSettings,
   type InsertOfferValuationSettings,
+  ascendraOsSettings,
+  type AscendraOsSettings,
+  type InsertAscendraOsSettings,
   offerValuations,
   type OfferValuation,
   type InsertOfferValuation,
@@ -68,20 +71,46 @@ import {
   ppcCampaigns,
   ppcPublishLogs,
   ppcPerformanceSnapshots,
+  ppcAttributionSessions,
   ppcLeadQuality,
+  ppcBillableEvents,
+  ppcTrackedCalls,
   ppcReadinessAssessments,
+  ppcAdGroups,
+  ppcKeywords,
+  ppcCampaignDestinations,
+  ppcAdCopyVariants,
+  ppcOptimizationRecommendations,
+  ppcBillingProfiles,
   type PpcAdAccount,
   type InsertPpcAdAccount,
   type PpcCampaign,
   type InsertPpcCampaign,
   type PpcPublishLog,
   type PpcPerformanceSnapshot,
+  type PpcAttributionSession,
   type PpcLeadQuality,
   type InsertPpcLeadQuality,
+  type PpcBillableEvent,
+  type InsertPpcBillableEvent,
+  type PpcTrackedCall,
+  type InsertPpcTrackedCall,
   type PpcReadinessAssessment,
   type InsertPpcPublishLog,
   type InsertPpcPerformanceSnapshot,
   type InsertPpcReadinessAssessment,
+  type PpcAdGroup,
+  type InsertPpcAdGroup,
+  type PpcKeyword,
+  type InsertPpcKeyword,
+  type PpcCampaignDestination,
+  type InsertPpcCampaignDestination,
+  type PpcAdCopyVariant,
+  type InsertPpcAdCopyVariant,
+  type PpcOptimizationRecommendation,
+  type InsertPpcOptimizationRecommendation,
+  type PpcBillingProfile,
+  type InsertPpcBillingProfile,
 } from "@shared/paidGrowthSchema";
 import {
   crmAccounts, type CrmAccount, type InsertCrmAccount,
@@ -108,14 +137,41 @@ import {
   type CrmContactSocialSuggestion,
   type InsertCrmContactSocialSuggestion,
   revenueOpsSettings,
+  leadControlOrgSettings,
   type RevenueOpsSettingsRow,
   type RevenueOpsSettingsConfig,
+  type LeadControlOrgSettingsRow,
+  type LeadControlOrgConfig,
   growthExperiments, type GrowthExperiment, type InsertGrowthExperiment,
   growthVariants, type GrowthVariant, type InsertGrowthVariant,
   growthAssignments, type GrowthAssignment, type InsertGrowthAssignment,
 } from "@shared/crmSchema";
+import {
+  DEFAULT_CRM_LTV_REPORT_PARAMS,
+  type CrmLtvReport,
+  type CrmLtvReportParams,
+  type CrmLtvScenarioAdjustment,
+} from "@shared/crmLtvSnapshot";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray, isNull, isNotNull, lt, or, gte, lte, ne, count, countDistinct } from "drizzle-orm";
+import {
+  eq,
+  asc,
+  desc,
+  and,
+  type SQL,
+  sql,
+  inArray,
+  isNull,
+  isNotNull,
+  lt,
+  or,
+  gte,
+  lte,
+  ne,
+  count,
+  countDistinct,
+  ilike,
+} from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -152,7 +208,16 @@ export interface IStorage {
 
   getSiteOffer(slug: string): Promise<SiteOffer | undefined>;
   listSiteOffers(): Promise<SiteOffer[]>;
-  setSiteOffer(slug: string, data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }): Promise<SiteOffer>;
+  setSiteOffer(
+    slug: string,
+    data: {
+      name: string;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      offerEngineTemplateSlug?: string | null;
+      sections: Record<string, unknown>;
+    },
+  ): Promise<SiteOffer>;
   updateSiteOfferGrading(slug: string, grading: import("@shared/schema").OfferContentGrading): Promise<SiteOffer>;
 
   listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]>;
@@ -174,6 +239,10 @@ export interface IStorage {
   upsertOfferValuationSettings(
     updates: Partial<Omit<InsertOfferValuationSettings, "id" | "updatedAt">>,
   ): Promise<OfferValuationSettings>;
+  getAscendraOsSettings(): Promise<AscendraOsSettings>;
+  upsertAscendraOsSettings(
+    updates: Partial<Omit<InsertAscendraOsSettings, "id" | "updatedAt">>,
+  ): Promise<AscendraOsSettings>;
   createOfferValuation(data: InsertOfferValuation): Promise<OfferValuation>;
   listOfferValuations(filters?: {
     userId?: number;
@@ -325,7 +394,62 @@ export interface IStorage {
   listPpcLeadQuality(limit?: number): Promise<(PpcLeadQuality & { contact?: CrmContact })[]>;
   upsertPpcLeadQuality(crmContactId: number, data: Partial<InsertPpcLeadQuality>): Promise<PpcLeadQuality>;
   createPpcReadinessAssessment(row: InsertPpcReadinessAssessment): Promise<PpcReadinessAssessment>;
-  
+  listPpcLeadQualityForCampaign(campaignId: number, limit?: number): Promise<(PpcLeadQuality & { contact?: CrmContact })[]>;
+
+  listPpcAdGroupsByCampaign(campaignId: number): Promise<PpcAdGroup[]>;
+  createPpcAdGroup(row: InsertPpcAdGroup): Promise<PpcAdGroup>;
+  updatePpcAdGroup(id: number, updates: Partial<PpcAdGroup>): Promise<PpcAdGroup>;
+  deletePpcAdGroup(id: number): Promise<void>;
+
+  listPpcKeywordsByAdGroup(adGroupId: number): Promise<PpcKeyword[]>;
+  createPpcKeyword(row: InsertPpcKeyword): Promise<PpcKeyword>;
+  updatePpcKeyword(id: number, updates: Partial<PpcKeyword>): Promise<PpcKeyword>;
+  deletePpcKeyword(id: number): Promise<void>;
+
+  listPpcCampaignDestinations(campaignId: number): Promise<PpcCampaignDestination[]>;
+  createPpcCampaignDestination(row: InsertPpcCampaignDestination): Promise<PpcCampaignDestination>;
+  updatePpcCampaignDestination(id: number, updates: Partial<PpcCampaignDestination>): Promise<PpcCampaignDestination>;
+  deletePpcCampaignDestination(id: number): Promise<void>;
+
+  listPpcAdCopyVariantsByCampaign(campaignId: number): Promise<PpcAdCopyVariant[]>;
+  createPpcAdCopyVariant(row: InsertPpcAdCopyVariant): Promise<PpcAdCopyVariant>;
+  updatePpcAdCopyVariant(id: number, updates: Partial<PpcAdCopyVariant>): Promise<PpcAdCopyVariant>;
+  deletePpcAdCopyVariant(id: number): Promise<void>;
+
+  listPpcOptimizationRecommendations(campaignId?: number, statuses?: string[]): Promise<PpcOptimizationRecommendation[]>;
+  upsertPpcOptimizationRecommendation(row: InsertPpcOptimizationRecommendation): Promise<PpcOptimizationRecommendation>;
+  updatePpcOptimizationRecommendation(id: number, updates: Partial<PpcOptimizationRecommendation>): Promise<PpcOptimizationRecommendation>;
+
+  listPpcBillingProfiles(): Promise<PpcBillingProfile[]>;
+  getPpcBillingProfileById(id: number): Promise<PpcBillingProfile | undefined>;
+  createPpcBillingProfile(row: InsertPpcBillingProfile): Promise<PpcBillingProfile>;
+  updatePpcBillingProfile(id: number, updates: Partial<PpcBillingProfile>): Promise<PpcBillingProfile>;
+  deletePpcBillingProfile(id: number): Promise<void>;
+
+  getPpcAttributionSessionByPublicId(publicPreview: string): Promise<PpcAttributionSession | undefined>;
+  getPpcAttributionSessionByVisitorSession(visitorId: string, sessionId: string): Promise<PpcAttributionSession | undefined>;
+  listPpcLeadQualityByVerificationStatus(verificationStatus: string, limit?: number): Promise<
+    (PpcLeadQuality & { contact?: CrmContact })[]
+  >;
+  createPpcBillableEvent(row: InsertPpcBillableEvent): Promise<PpcBillableEvent>;
+  findPendingPpcBillableEvent(crmContactId: number, eventKind: string): Promise<PpcBillableEvent | undefined>;
+  listPpcBillableEventsForContact(crmContactId: number, limit?: number): Promise<PpcBillableEvent[]>;
+  listPpcBillableEventsAdmin(filters: {
+    status?: string;
+    crmContactId?: number;
+    ppcCampaignId?: number;
+    limit?: number;
+  }): Promise<PpcBillableEvent[]>;
+  updatePpcBillableEvent(id: number, updates: Partial<PpcBillableEvent>): Promise<PpcBillableEvent>;
+
+  listPpcTrackedCallsAdmin(filters: {
+    verificationStatus?: string;
+    limit?: number;
+  }): Promise<PpcTrackedCall[]>;
+  getPpcTrackedCallById(id: number): Promise<PpcTrackedCall | undefined>;
+  createPpcTrackedCall(row: InsertPpcTrackedCall): Promise<PpcTrackedCall>;
+  updatePpcTrackedCall(id: number, updates: Partial<PpcTrackedCall>): Promise<PpcTrackedCall>;
+
   // Client dashboard operations
   getClientQuotes(userId: number): Promise<ClientQuote[]>;
   getClientQuoteById(id: number, userId: number): Promise<ClientQuote | undefined>;
@@ -359,8 +483,11 @@ export interface IStorage {
   deleteAnnouncement(id: number): Promise<void>;
 
   // CRM operations
-  getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]>;
+  getCrmContacts(type?: "lead" | "client", limit?: number): Promise<CrmContact[]>;
   getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]>;
+  getCrmContactsByIds(ids: number[]): Promise<CrmContact[]>;
+  /** Case-insensitive contains match on name, email, company, first/last name. */
+  searchCrmContacts(query: string, limit?: number): Promise<CrmContact[]>;
   getCrmContactById(id: number): Promise<CrmContact | undefined>;
   createCrmContact(contact: InsertCrmContact): Promise<CrmContact>;
   updateCrmContact(id: number, updates: Partial<InsertCrmContact>): Promise<CrmContact>;
@@ -373,6 +500,8 @@ export interface IStorage {
   getCrmActivities(contactId: number): Promise<CrmActivity[]>;
   createCrmActivity(activity: InsertCrmActivity): Promise<CrmActivity>;
   getCrmContactsByEmails(emails: string[]): Promise<CrmContact[]>;
+  /** Match CRM rows by lower(trim(email)) for newsletter / merge sends. */
+  getCrmContactsByNormalizedEmails(emails: string[]): Promise<CrmContact[]>;
   listCrmContactSocialSuggestions(contactId: number, limit?: number): Promise<CrmContactSocialSuggestion[]>;
   getCrmContactSocialSuggestionById(id: number): Promise<CrmContactSocialSuggestion | undefined>;
   supersedeSuggestedSocialSuggestions(contactId: number): Promise<void>;
@@ -398,6 +527,8 @@ export interface IStorage {
 
   getRevenueOpsSettings(): Promise<RevenueOpsSettingsRow>;
   upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow>;
+  getLeadControlOrgSettings(): Promise<LeadControlOrgSettingsRow>;
+  upsertLeadControlOrgSettings(config: LeadControlOrgConfig): Promise<LeadControlOrgSettingsRow>;
   getCrmContactByPhoneDigits(digits: string): Promise<CrmContact | undefined>;
   getCrmContactByStripeCustomerId(stripeCustomerId: string): Promise<CrmContact | undefined>;
   getRevenueOpsDashboardMetrics(): Promise<{
@@ -426,12 +557,16 @@ export interface IStorage {
   // CRM workflow executions (Stage 4)
   createCrmWorkflowExecution(entry: InsertCrmWorkflowExecution): Promise<CrmWorkflowExecution>;
   getCrmWorkflowExecutionsByEntity(entityType: string, entityId: number, limit?: number): Promise<CrmWorkflowExecution[]>;
+  getRecentCrmWorkflowExecutionsByTriggers(triggerTypes: string[], limit?: number): Promise<CrmWorkflowExecution[]>;
 
   // CRM Stage 3.5: Discovery workspace, proposal prep, playbook
   createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace>;
   getCrmDiscoveryWorkspaceById(id: number): Promise<CrmDiscoveryWorkspace | undefined>;
   getCrmDiscoveryWorkspacesByContactId(contactId: number): Promise<CrmDiscoveryWorkspace[]>;
   getCrmDiscoveryWorkspacesByDealId(dealId: number): Promise<CrmDiscoveryWorkspace[]>;
+  getCrmDiscoveryWorkspacesRecentWithContact(
+    limit: number,
+  ): Promise<Array<CrmDiscoveryWorkspace & { contactName: string; contactCompany: string | null }>>;
   updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace>;
   createCrmProposalPrepWorkspace(entry: InsertCrmProposalPrepWorkspace): Promise<CrmProposalPrepWorkspace>;
   getCrmProposalPrepWorkspaceById(id: number): Promise<CrmProposalPrepWorkspace | undefined>;
@@ -462,6 +597,14 @@ export interface IStorage {
     discoveryWorkspacesIncomplete?: number;
     proposalPrepNeedingAttention?: number;
   }>;
+
+  /** Deal + contact value rollups for admin LTV workspace */
+  getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot>;
+
+  /** Parameterized LTV report (filters + optional scenario overlays). */
+  getCrmLtvReport(
+    params: import("@shared/crmLtvSnapshot").CrmLtvReportParams,
+  ): Promise<import("@shared/crmLtvSnapshot").CrmLtvReport>;
 
   // Lead intelligence: communication events
   createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent>;
@@ -613,7 +756,7 @@ export interface IStorage {
   upsertAdminSettings(userId: number, settings: Partial<Omit<InsertAdminSettings, "id" | "userId" | "createdAt">>): Promise<AdminSettings>;
 
   getAdminAgentMentorState(userId: number): Promise<AdminAgentMentorStateRow | undefined>;
-  upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateV1): Promise<AdminAgentMentorStateRow>;
+  upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateStored): Promise<AdminAgentMentorStateRow>;
 
   listAdminAgentKnowledgeEntries(userId: number): Promise<AdminAgentKnowledgeEntryRow[]>;
   getAdminAgentKnowledgeEntry(userId: number, id: number): Promise<AdminAgentKnowledgeEntryRow | undefined>;
@@ -814,8 +957,20 @@ export class DatabaseStorage implements IStorage {
 
   async setSiteOffer(
     slug: string,
-    data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }
+    data: {
+      name: string;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      offerEngineTemplateSlug?: string | null;
+      sections: Record<string, unknown>;
+    },
   ): Promise<SiteOffer> {
+    const templateSlug =
+      data.offerEngineTemplateSlug === undefined
+        ? undefined
+        : data.offerEngineTemplateSlug === null || String(data.offerEngineTemplateSlug).trim() === ""
+          ? null
+          : String(data.offerEngineTemplateSlug).trim().toLowerCase();
     const [row] = await db
       .insert(siteOffers)
       .values({
@@ -823,6 +978,7 @@ export class DatabaseStorage implements IStorage {
         name: data.name,
         metaTitle: data.metaTitle ?? null,
         metaDescription: data.metaDescription ?? null,
+        offerEngineTemplateSlug: templateSlug ?? null,
         sections: data.sections,
         updatedAt: new Date(),
       })
@@ -832,6 +988,7 @@ export class DatabaseStorage implements IStorage {
           name: data.name,
           metaTitle: data.metaTitle ?? null,
           metaDescription: data.metaDescription ?? null,
+          ...(templateSlug !== undefined ? { offerEngineTemplateSlug: templateSlug } : {}),
           sections: data.sections,
           updatedAt: new Date(),
         },
@@ -851,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]> {
-    const conditions: ReturnType<typeof eq>[] = [];
+    const conditions: SQL[] = [isNull(funnelContentAssets.softDeletedAt)];
     if (filters?.status) conditions.push(eq(funnelContentAssets.status, filters.status));
     if (filters?.leadMagnetSlug) conditions.push(eq(funnelContentAssets.leadMagnetSlug, filters.leadMagnetSlug));
     const whereClause = conditions.length ? and(...conditions) : undefined;
@@ -892,7 +1049,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]> {
-    const rows = await db.select().from(funnelContentAssets).where(eq(funnelContentAssets.status, "published"));
+    const rows = await db
+      .select()
+      .from(funnelContentAssets)
+      .where(and(eq(funnelContentAssets.status, "published"), isNull(funnelContentAssets.softDeletedAt)));
     return rows.filter((r) => {
       if (r.accessLevel === "registered") return false;
       const placements = (r.placements ?? []) as Array<{ pagePath: string; sectionId: string }>;
@@ -905,7 +1065,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(funnelContentAssets)
       .where(
-        and(eq(funnelContentAssets.status, "published"), eq(funnelContentAssets.accessLevel, "registered")),
+        and(
+          eq(funnelContentAssets.status, "published"),
+          eq(funnelContentAssets.accessLevel, "registered"),
+          isNull(funnelContentAssets.softDeletedAt),
+        ),
       )
       .orderBy(desc(funnelContentAssets.updatedAt));
   }
@@ -1013,6 +1177,33 @@ export class DatabaseStorage implements IStorage {
       .update(offerValuationSettings)
       .set(nextValues)
       .where(eq(offerValuationSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
+  async getAscendraOsSettings(): Promise<AscendraOsSettings> {
+    const [row] = await db
+      .select()
+      .from(ascendraOsSettings)
+      .where(eq(ascendraOsSettings.id, 1))
+      .limit(1);
+    if (row) return row;
+    const [inserted] = await db.insert(ascendraOsSettings).values({ id: 1 }).returning();
+    return inserted!;
+  }
+
+  async upsertAscendraOsSettings(
+    updates: Partial<Omit<InsertAscendraOsSettings, "id" | "updatedAt">>,
+  ): Promise<AscendraOsSettings> {
+    const current = await this.getAscendraOsSettings();
+    const nextValues = {
+      publicAccessEnabled: updates.publicAccessEnabled ?? current.publicAccessEnabled,
+      updatedAt: new Date(),
+    };
+    const [updated] = await db
+      .update(ascendraOsSettings)
+      .set(nextValues)
+      .where(eq(ascendraOsSettings.id, 1))
       .returning();
     return updated!;
   }
@@ -2133,11 +2324,18 @@ export class DatabaseStorage implements IStorage {
       const patch: Record<string, unknown> = { crmContactId, updatedAt: now };
       for (const key of [
         "ppcCampaignId",
+        "attributionSessionId",
         "leadValid",
         "fitScore",
         "spamFlag",
         "bookedCall",
         "sold",
+        "verificationStatus",
+        "billableStatus",
+        "verificationNotes",
+        "verifiedAt",
+        "verifiedByUserId",
+        "qualityDimensionsJson",
         "notes",
         "createdBy",
       ] as const) {
@@ -2155,11 +2353,18 @@ export class DatabaseStorage implements IStorage {
       .values({
         crmContactId,
         ppcCampaignId: data.ppcCampaignId ?? null,
+        attributionSessionId: data.attributionSessionId ?? null,
         leadValid: data.leadValid ?? true,
         fitScore: data.fitScore ?? null,
         spamFlag: data.spamFlag ?? false,
         bookedCall: data.bookedCall ?? false,
         sold: data.sold ?? false,
+        verificationStatus: data.verificationStatus ?? null,
+        billableStatus: data.billableStatus ?? "pending",
+        verificationNotes: data.verificationNotes ?? null,
+        verifiedAt: data.verifiedAt ?? null,
+        verifiedByUserId: data.verifiedByUserId ?? null,
+        qualityDimensionsJson: data.qualityDimensionsJson ?? {},
         notes: data.notes ?? null,
         createdBy: data.createdBy ?? null,
         createdAt: now,
@@ -2173,7 +2378,394 @@ export class DatabaseStorage implements IStorage {
     const [inserted] = await db.insert(ppcReadinessAssessments).values(row).returning();
     return inserted!;
   }
-  
+
+  async listPpcLeadQualityForCampaign(campaignId: number, limit = 120): Promise<(PpcLeadQuality & { contact?: CrmContact })[]> {
+    const rows = await db
+      .select()
+      .from(ppcLeadQuality)
+      .where(eq(ppcLeadQuality.ppcCampaignId, campaignId))
+      .orderBy(desc(ppcLeadQuality.updatedAt))
+      .limit(limit);
+    const out: (PpcLeadQuality & { contact?: CrmContact })[] = [];
+    for (const r of rows) {
+      const contact = await this.getCrmContactById(r.crmContactId);
+      out.push({ ...r, contact });
+    }
+    return out;
+  }
+
+  async listPpcAdGroupsByCampaign(campaignId: number): Promise<PpcAdGroup[]> {
+    return db
+      .select()
+      .from(ppcAdGroups)
+      .where(eq(ppcAdGroups.campaignId, campaignId))
+      .orderBy(asc(ppcAdGroups.sortOrder), desc(ppcAdGroups.updatedAt));
+  }
+
+  async createPpcAdGroup(row: InsertPpcAdGroup): Promise<PpcAdGroup> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcAdGroups)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcAdGroup(id: number, updates: Partial<PpcAdGroup>): Promise<PpcAdGroup> {
+    const [updated] = await db
+      .update(ppcAdGroups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcAdGroups.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc ad group not found");
+    return updated;
+  }
+
+  async deletePpcAdGroup(id: number): Promise<void> {
+    await db.delete(ppcAdGroups).where(eq(ppcAdGroups.id, id));
+  }
+
+  async listPpcKeywordsByAdGroup(adGroupId: number): Promise<PpcKeyword[]> {
+    return db
+      .select()
+      .from(ppcKeywords)
+      .where(eq(ppcKeywords.adGroupId, adGroupId))
+      .orderBy(desc(ppcKeywords.isNegative), asc(ppcKeywords.keywordText));
+  }
+
+  async createPpcKeyword(row: InsertPpcKeyword): Promise<PpcKeyword> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcKeywords)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcKeyword(id: number, updates: Partial<PpcKeyword>): Promise<PpcKeyword> {
+    const [updated] = await db
+      .update(ppcKeywords)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcKeywords.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc keyword not found");
+    return updated;
+  }
+
+  async deletePpcKeyword(id: number): Promise<void> {
+    await db.delete(ppcKeywords).where(eq(ppcKeywords.id, id));
+  }
+
+  async listPpcCampaignDestinations(campaignId: number): Promise<PpcCampaignDestination[]> {
+    return db
+      .select()
+      .from(ppcCampaignDestinations)
+      .where(eq(ppcCampaignDestinations.campaignId, campaignId))
+      .orderBy(asc(ppcCampaignDestinations.kind), desc(ppcCampaignDestinations.weight));
+  }
+
+  async createPpcCampaignDestination(row: InsertPpcCampaignDestination): Promise<PpcCampaignDestination> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcCampaignDestinations)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcCampaignDestination(id: number, updates: Partial<PpcCampaignDestination>): Promise<PpcCampaignDestination> {
+    const [updated] = await db
+      .update(ppcCampaignDestinations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcCampaignDestinations.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc destination not found");
+    return updated;
+  }
+
+  async deletePpcCampaignDestination(id: number): Promise<void> {
+    await db.delete(ppcCampaignDestinations).where(eq(ppcCampaignDestinations.id, id));
+  }
+
+  async listPpcAdCopyVariantsByCampaign(campaignId: number): Promise<PpcAdCopyVariant[]> {
+    return db
+      .select()
+      .from(ppcAdCopyVariants)
+      .where(eq(ppcAdCopyVariants.campaignId, campaignId))
+      .orderBy(asc(ppcAdCopyVariants.sortOrder), desc(ppcAdCopyVariants.updatedAt));
+  }
+
+  async createPpcAdCopyVariant(row: InsertPpcAdCopyVariant): Promise<PpcAdCopyVariant> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcAdCopyVariants)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcAdCopyVariant(id: number, updates: Partial<PpcAdCopyVariant>): Promise<PpcAdCopyVariant> {
+    const [updated] = await db
+      .update(ppcAdCopyVariants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcAdCopyVariants.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc copy variant not found");
+    return updated;
+  }
+
+  async deletePpcAdCopyVariant(id: number): Promise<void> {
+    await db.delete(ppcAdCopyVariants).where(eq(ppcAdCopyVariants.id, id));
+  }
+
+  async listPpcOptimizationRecommendations(campaignId?: number, statuses?: string[]): Promise<PpcOptimizationRecommendation[]> {
+    const conds = [];
+    if (campaignId != null) conds.push(eq(ppcOptimizationRecommendations.campaignId, campaignId));
+    if (statuses?.length) {
+      conds.push(inArray(ppcOptimizationRecommendations.status, statuses));
+    }
+    const q = db.select().from(ppcOptimizationRecommendations);
+    const rows =
+      conds.length > 0 ?
+        await q.where(conds.length === 1 ? conds[0] : and(...conds)).orderBy(desc(ppcOptimizationRecommendations.updatedAt))
+      : await q.orderBy(desc(ppcOptimizationRecommendations.updatedAt));
+    return rows;
+  }
+
+  async upsertPpcOptimizationRecommendation(row: InsertPpcOptimizationRecommendation): Promise<PpcOptimizationRecommendation> {
+    const now = new Date();
+    const [existing] = await db
+      .select()
+      .from(ppcOptimizationRecommendations)
+      .where(and(eq(ppcOptimizationRecommendations.campaignId, row.campaignId), eq(ppcOptimizationRecommendations.ruleKey, row.ruleKey)))
+      .limit(1);
+    if (existing) {
+      if (existing.status === "dismissed" || existing.status === "applied") {
+        return existing;
+      }
+      const [updated] = await db
+        .update(ppcOptimizationRecommendations)
+        .set({
+          severity: row.severity ?? existing.severity,
+          title: row.title,
+          detail: row.detail,
+          evidenceJson: row.evidenceJson ?? existing.evidenceJson ?? {},
+          updatedAt: now,
+        })
+        .where(eq(ppcOptimizationRecommendations.id, existing.id))
+        .returning();
+      return updated!;
+    }
+    const [inserted] = await db
+      .insert(ppcOptimizationRecommendations)
+      .values({
+        ...row,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcOptimizationRecommendation(
+    id: number,
+    updates: Partial<PpcOptimizationRecommendation>,
+  ): Promise<PpcOptimizationRecommendation> {
+    const [updated] = await db
+      .update(ppcOptimizationRecommendations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcOptimizationRecommendations.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc optimization recommendation not found");
+    return updated;
+  }
+
+  async listPpcBillingProfiles(): Promise<PpcBillingProfile[]> {
+    return db.select().from(ppcBillingProfiles).orderBy(desc(ppcBillingProfiles.updatedAt));
+  }
+
+  async getPpcBillingProfileById(id: number): Promise<PpcBillingProfile | undefined> {
+    const [row] = await db.select().from(ppcBillingProfiles).where(eq(ppcBillingProfiles.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createPpcBillingProfile(row: InsertPpcBillingProfile): Promise<PpcBillingProfile> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcBillingProfiles)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcBillingProfile(id: number, updates: Partial<PpcBillingProfile>): Promise<PpcBillingProfile> {
+    const [updated] = await db
+      .update(ppcBillingProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcBillingProfiles.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc billing profile not found");
+    return updated;
+  }
+
+  async deletePpcBillingProfile(id: number): Promise<void> {
+    await db.delete(ppcBillingProfiles).where(eq(ppcBillingProfiles.id, id));
+  }
+
+  async getPpcAttributionSessionByPublicId(publicId: string): Promise<PpcAttributionSession | undefined> {
+    const key = publicId.trim();
+    if (!key) return undefined;
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(eq(ppcAttributionSessions.publicId, key))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async getPpcAttributionSessionByVisitorSession(
+    visitorId: string,
+    sessionId: string,
+  ): Promise<PpcAttributionSession | undefined> {
+    const vid = visitorId.trim();
+    const sid = (sessionId.trim() || "default");
+    if (!vid) return undefined;
+    const [row] = await db
+      .select()
+      .from(ppcAttributionSessions)
+      .where(and(eq(ppcAttributionSessions.visitorId, vid), eq(ppcAttributionSessions.sessionId, sid)))
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async listPpcLeadQualityByVerificationStatus(
+    verificationStatus: string,
+    limit = 80,
+  ): Promise<(PpcLeadQuality & { contact?: CrmContact })[]> {
+    const rows = await db
+      .select()
+      .from(ppcLeadQuality)
+      .where(eq(ppcLeadQuality.verificationStatus, verificationStatus))
+      .orderBy(desc(ppcLeadQuality.updatedAt))
+      .limit(Math.min(200, Math.max(10, limit)));
+    const out: (PpcLeadQuality & { contact?: CrmContact })[] = [];
+    for (const r of rows) {
+      const contact = await this.getCrmContactById(r.crmContactId);
+      out.push({ ...r, contact });
+    }
+    return out;
+  }
+
+  async createPpcBillableEvent(row: InsertPpcBillableEvent): Promise<PpcBillableEvent> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcBillableEvents)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async findPendingPpcBillableEvent(crmContactId: number, eventKind: string): Promise<PpcBillableEvent | undefined> {
+    const [row] = await db
+      .select()
+      .from(ppcBillableEvents)
+      .where(
+        and(
+          eq(ppcBillableEvents.crmContactId, crmContactId),
+          eq(ppcBillableEvents.eventKind, eventKind),
+          eq(ppcBillableEvents.status, "pending"),
+        ),
+      )
+      .limit(1);
+    return row ?? undefined;
+  }
+
+  async listPpcBillableEventsForContact(crmContactId: number, limit = 40): Promise<PpcBillableEvent[]> {
+    return db
+      .select()
+      .from(ppcBillableEvents)
+      .where(eq(ppcBillableEvents.crmContactId, crmContactId))
+      .orderBy(desc(ppcBillableEvents.createdAt))
+      .limit(limit);
+  }
+
+  async listPpcBillableEventsAdmin(filters: {
+    status?: string;
+    crmContactId?: number;
+    ppcCampaignId?: number;
+    limit?: number;
+  }): Promise<PpcBillableEvent[]> {
+    const limit = Math.min(200, Math.max(10, filters.limit ?? 60));
+    const conds: SQL[] = [];
+    if (filters.status?.trim()) conds.push(eq(ppcBillableEvents.status, filters.status.trim()));
+    if (filters.crmContactId != null && Number.isFinite(filters.crmContactId)) {
+      conds.push(eq(ppcBillableEvents.crmContactId, filters.crmContactId));
+    }
+    if (filters.ppcCampaignId != null && Number.isFinite(filters.ppcCampaignId)) {
+      conds.push(eq(ppcBillableEvents.ppcCampaignId, filters.ppcCampaignId));
+    }
+    const q = db.select().from(ppcBillableEvents);
+    const rows =
+      conds.length === 0 ?
+        await q.orderBy(desc(ppcBillableEvents.createdAt)).limit(limit)
+      : conds.length === 1 ?
+        await q.where(conds[0]).orderBy(desc(ppcBillableEvents.createdAt)).limit(limit)
+      : await q.where(and(...conds)).orderBy(desc(ppcBillableEvents.createdAt)).limit(limit);
+    return rows;
+  }
+
+  async updatePpcBillableEvent(id: number, updates: Partial<PpcBillableEvent>): Promise<PpcBillableEvent> {
+    const [updated] = await db
+      .update(ppcBillableEvents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcBillableEvents.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc billable event not found");
+    return updated;
+  }
+
+  async listPpcTrackedCallsAdmin(filters: { verificationStatus?: string; limit?: number }): Promise<PpcTrackedCall[]> {
+    const limit = Math.min(200, Math.max(10, filters.limit ?? 80));
+    const vs = filters.verificationStatus?.trim();
+    if (vs) {
+      return db
+        .select()
+        .from(ppcTrackedCalls)
+        .where(eq(ppcTrackedCalls.verificationStatus, vs))
+        .orderBy(desc(ppcTrackedCalls.createdAt))
+        .limit(limit);
+    }
+    return db
+      .select()
+      .from(ppcTrackedCalls)
+      .orderBy(desc(ppcTrackedCalls.createdAt))
+      .limit(limit);
+  }
+
+  async getPpcTrackedCallById(id: number): Promise<PpcTrackedCall | undefined> {
+    const [row] = await db.select().from(ppcTrackedCalls).where(eq(ppcTrackedCalls.id, id)).limit(1);
+    return row ?? undefined;
+  }
+
+  async createPpcTrackedCall(row: InsertPpcTrackedCall): Promise<PpcTrackedCall> {
+    const now = new Date();
+    const [inserted] = await db
+      .insert(ppcTrackedCalls)
+      .values({ ...row, createdAt: now, updatedAt: now })
+      .returning();
+    return inserted!;
+  }
+
+  async updatePpcTrackedCall(id: number, updates: Partial<PpcTrackedCall>): Promise<PpcTrackedCall> {
+    const [updated] = await db
+      .update(ppcTrackedCalls)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ppcTrackedCalls.id, id))
+      .returning();
+    if (!updated) throw new Error("ppc tracked call not found");
+    return updated;
+  }
+
   // Client dashboard operations
   async getClientQuotes(userId: number): Promise<ClientQuote[]> {
     return db
@@ -2497,15 +3089,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // CRM implementation
-  async getCrmContacts(type?: "lead" | "client"): Promise<CrmContact[]> {
-    if (type) {
-      return db
-        .select()
-        .from(crmContacts)
-        .where(eq(crmContacts.type, type))
-        .orderBy(desc(crmContacts.updatedAt));
+  async getCrmContacts(type?: "lead" | "client", limit?: number): Promise<CrmContact[]> {
+    const lim =
+      limit != null && Number.isFinite(limit) ? Math.min(Math.max(Number(limit), 1), 200) : undefined;
+    const base =
+      type ?
+        db.select().from(crmContacts).where(eq(crmContacts.type, type))
+      : db.select().from(crmContacts);
+    const ordered = base.orderBy(desc(crmContacts.updatedAt));
+    if (lim != null) {
+      return ordered.limit(lim);
     }
-    return db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt));
+    return ordered;
   }
 
   async getCrmContactsByAccountId(accountId: number): Promise<CrmContact[]> {
@@ -2514,6 +3109,34 @@ export class DatabaseStorage implements IStorage {
       .from(crmContacts)
       .where(eq(crmContacts.accountId, accountId))
       .orderBy(desc(crmContacts.updatedAt));
+  }
+
+  async getCrmContactsByIds(ids: number[]): Promise<CrmContact[]> {
+    const uniq = [...new Set(ids.filter((n) => Number.isFinite(n) && n > 0))] as number[];
+    if (uniq.length === 0) return [];
+    return db.select().from(crmContacts).where(inArray(crmContacts.id, uniq));
+  }
+
+  async searchCrmContacts(search: string, limit = 25): Promise<CrmContact[]> {
+    const q = search.trim();
+    if (q.length < 2) return [];
+    const lim = Math.min(Math.max(limit, 1), 50);
+    const escaped = q.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    const pattern = `%${escaped}%`;
+    return db
+      .select()
+      .from(crmContacts)
+      .where(
+        or(
+          ilike(crmContacts.name, pattern),
+          ilike(crmContacts.email, pattern),
+          ilike(crmContacts.firstName, pattern),
+          ilike(crmContacts.lastName, pattern),
+          ilike(crmContacts.company, pattern),
+        )!,
+      )
+      .orderBy(desc(crmContacts.updatedAt))
+      .limit(lim);
   }
 
   async getCrmContactById(id: number): Promise<CrmContact | undefined> {
@@ -2686,11 +3309,44 @@ export class DatabaseStorage implements IStorage {
 
   async upsertRevenueOpsSettings(config: RevenueOpsSettingsConfig): Promise<RevenueOpsSettingsRow> {
     const existing = await this.getRevenueOpsSettings();
-    const merged = { ...existing.config, ...config };
+    const prev = existing.config ?? {};
+    const merged: RevenueOpsSettingsConfig = { ...prev, ...config };
+    if (config.finance) {
+      merged.finance = {
+        ...prev.finance,
+        ...config.finance,
+        operatingCostLines:
+          config.finance.operatingCostLines !== undefined
+            ? config.finance.operatingCostLines
+            : prev.finance?.operatingCostLines,
+        ledgerEntries:
+          config.finance.ledgerEntries !== undefined ? config.finance.ledgerEntries : prev.finance?.ledgerEntries,
+      };
+    }
     const [updated] = await db
       .update(revenueOpsSettings)
       .set({ config: merged, updatedAt: new Date() })
       .where(eq(revenueOpsSettings.id, 1))
+      .returning();
+    return updated!;
+  }
+
+  async getLeadControlOrgSettings(): Promise<LeadControlOrgSettingsRow> {
+    const [row] = await db.select().from(leadControlOrgSettings).where(eq(leadControlOrgSettings.id, 1)).limit(1);
+    if (row) return row;
+    const [inserted] = await db
+      .insert(leadControlOrgSettings)
+      .values({ id: 1, config: { routingRules: [] } })
+      .returning();
+    return inserted!;
+  }
+
+  async upsertLeadControlOrgSettings(config: LeadControlOrgConfig): Promise<LeadControlOrgSettingsRow> {
+    await this.getLeadControlOrgSettings();
+    const [updated] = await db
+      .update(leadControlOrgSettings)
+      .set({ config, updatedAt: new Date() })
+      .where(eq(leadControlOrgSettings.id, 1))
       .returning();
     return updated!;
   }
@@ -2730,64 +3386,8 @@ export class DatabaseStorage implements IStorage {
     bookingClicks30d: number;
     topSources: { source: string; count: number }[];
   }> {
-    const now = Date.now();
-    const sevenDaysAgo = new Date(now - 7 * 86400000);
-    const thirtyDaysAgo = new Date(now - 30 * 86400000);
-
-    const [totalLeadsRow] = await db.select({ n: count() }).from(crmContacts).where(eq(crmContacts.type, "lead"));
-    const [withPhoneRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.phone), sql`length(trim(${crmContacts.phone})) > 5`));
-    const [bookedRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(and(eq(crmContacts.type, "lead"), isNotNull(crmContacts.bookedCallAt)));
-    const [contactedRow] = await db
-      .select({ n: count() })
-      .from(crmContacts)
-      .where(
-        and(eq(crmContacts.type, "lead"), or(isNotNull(crmContacts.lastContactedAt), ne(crmContacts.status, "new")))
-      );
-    const [paymentsRow] = await db
-      .select({ n: countDistinct(crmActivityLog.contactId) })
-      .from(crmActivityLog)
-      .where(
-        and(eq(crmActivityLog.type, "revenue_ops_payment_completed"), gte(crmActivityLog.createdAt, thirtyDaysAgo))
-      );
-    const [missedRow] = await db
-      .select({ n: count() })
-      .from(crmActivityLog)
-      .where(and(eq(crmActivityLog.type, "revenue_ops_missed_call"), gte(crmActivityLog.createdAt, sevenDaysAgo)));
-    const [clicksRow] = await db
-      .select({ n: count() })
-      .from(crmActivityLog)
-      .where(and(eq(crmActivityLog.type, "revenue_ops_booking_link_click"), gte(crmActivityLog.createdAt, thirtyDaysAgo)));
-
-    const leadSources = await db
-      .select({ utm: crmContacts.utmSource, src: crmContacts.source })
-      .from(crmContacts)
-      .where(eq(crmContacts.type, "lead"));
-    const sourceMap = new Map<string, number>();
-    for (const row of leadSources) {
-      const label = (row.utm?.trim() || row.src?.trim() || "(none)") as string;
-      sourceMap.set(label, (sourceMap.get(label) ?? 0) + 1);
-    }
-    const topSources = [...sourceMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([source, n]) => ({ source, count: n }));
-
-    return {
-      totalLeads: Number(totalLeadsRow?.n ?? 0),
-      leadsWithPhone: Number(withPhoneRow?.n ?? 0),
-      bookedLeads: Number(bookedRow?.n ?? 0),
-      contactedLeads: Number(contactedRow?.n ?? 0),
-      paymentsLogged: Number(paymentsRow?.n ?? 0),
-      missedCalls7d: Number(missedRow?.n ?? 0),
-      bookingClicks30d: Number(clicksRow?.n ?? 0),
-      topSources,
-    };
+    const { getRevenueOpsFunnelMetrics } = await import("@server/services/revenueOpsMetricsService");
+    return getRevenueOpsFunnelMetrics();
   }
 
   async getCrmResearchProfileByAccountId(accountId: number): Promise<CrmResearchProfile | undefined> {
@@ -2865,6 +3465,17 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
+  async getRecentCrmWorkflowExecutionsByTriggers(triggerTypes: string[], limit = 20): Promise<CrmWorkflowExecution[]> {
+    if (triggerTypes.length === 0) return [];
+    const cap = Math.min(Math.max(limit, 1), 50);
+    return db
+      .select()
+      .from(crmWorkflowExecutions)
+      .where(inArray(crmWorkflowExecutions.triggerType, triggerTypes))
+      .orderBy(desc(crmWorkflowExecutions.startedAt))
+      .limit(cap);
+  }
+
   async createCrmDiscoveryWorkspace(entry: InsertCrmDiscoveryWorkspace): Promise<CrmDiscoveryWorkspace> {
     const [inserted] = await db.insert(crmDiscoveryWorkspaces).values(entry).returning();
     return inserted;
@@ -2889,6 +3500,27 @@ export class DatabaseStorage implements IStorage {
       .from(crmDiscoveryWorkspaces)
       .where(eq(crmDiscoveryWorkspaces.dealId, dealId))
       .orderBy(desc(crmDiscoveryWorkspaces.updatedAt));
+  }
+
+  async getCrmDiscoveryWorkspacesRecentWithContact(
+    limit: number,
+  ): Promise<Array<CrmDiscoveryWorkspace & { contactName: string; contactCompany: string | null }>> {
+    const lim = Math.max(1, Math.min(200, Math.floor(limit)));
+    const rows = await db
+      .select({
+        workspace: crmDiscoveryWorkspaces,
+        contactName: crmContacts.name,
+        contactCompany: crmContacts.company,
+      })
+      .from(crmDiscoveryWorkspaces)
+      .innerJoin(crmContacts, eq(crmDiscoveryWorkspaces.contactId, crmContacts.id))
+      .orderBy(desc(crmDiscoveryWorkspaces.updatedAt))
+      .limit(lim);
+    return rows.map((r) => ({
+      ...r.workspace,
+      contactName: r.contactName,
+      contactCompany: r.contactCompany ?? null,
+    }));
   }
 
   async updateCrmDiscoveryWorkspace(id: number, updates: Partial<InsertCrmDiscoveryWorkspace>): Promise<CrmDiscoveryWorkspace> {
@@ -3074,6 +3706,138 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getCrmLtvSnapshot(): Promise<import("@shared/crmLtvSnapshot").CrmLtvSnapshot> {
+    const full = await this.getCrmLtvReport(DEFAULT_CRM_LTV_REPORT_PARAMS);
+    const { reportMeta, scenarioAdjustments, combinedScenarioClientLtvCents, ...snap } = full;
+    void reportMeta;
+    void scenarioAdjustments;
+    void combinedScenarioClientLtvCents;
+    return snap;
+  }
+
+  async getCrmLtvReport(params: CrmLtvReportParams): Promise<CrmLtvReport> {
+    const [contacts, deals] = await Promise.all([this.getCrmContacts(), this.getCrmDeals()]);
+    const effectiveDealStage = (d: (typeof deals)[number]) =>
+      (d.pipelineStage && String(d.pipelineStage).trim()) || d.stage || "new_lead";
+
+    let wonDealValueCents = 0;
+    let openPipelineValueCents = 0;
+    for (const d of deals) {
+      const st = effectiveDealStage(d);
+      const v = Number(d.value) || 0;
+      if (params.dealView === "won_only") {
+        if (st === "won") wonDealValueCents += v;
+      } else if (params.dealView === "open_only") {
+        if (st !== "lost" && st !== "won") openPipelineValueCents += v;
+      } else {
+        if (st === "won") wonDealValueCents += v;
+        else if (st !== "lost") openPipelineValueCents += v;
+      }
+    }
+
+    const inContactScope = (c: CrmContact) => {
+      if (params.contactTypeFilter === "all") return c.type === "lead" || c.type === "client";
+      return c.type === params.contactTypeFilter;
+    };
+    const scoped = contacts.filter(inContactScope);
+    const minc = params.minEstimatedValueCents;
+    const meetsMin = (c: CrmContact) =>
+      c.estimatedValue != null && c.estimatedValue >= minc && c.estimatedValue > 0;
+
+    const clients = scoped.filter((c) => c.type === "client");
+    const leads = scoped.filter((c) => c.type === "lead");
+    const clientWithEst = clients.filter(meetsMin);
+    const leadWithEst = leads.filter(meetsMin);
+    const totalClientEstimatedLtvCents = clientWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
+    const totalLeadEstimatedValueCents = leadWithEst.reduce((s, c) => s + (c.estimatedValue ?? 0), 0);
+    const avgClientEstimatedLtvCents =
+      clientWithEst.length > 0 ? Math.round(totalClientEstimatedLtvCents / clientWithEst.length) : null;
+
+    const contactsMissingEstimateCount = scoped.filter(
+      (c) => (c.type === "lead" || c.type === "client") && (c.estimatedValue == null || c.estimatedValue <= 0),
+    ).length;
+
+    const bySource: Record<string, { totalCents: number; contactCount: number }> = {};
+    for (const c of scoped) {
+      if (!meetsMin(c)) continue;
+      const src = (c.source?.trim() || c.utmSource?.trim() || "Unknown") || "Unknown";
+      if (!bySource[src]) bySource[src] = { totalCents: 0, contactCount: 0 };
+      bySource[src].totalCents += c.estimatedValue!;
+      bySource[src].contactCount += 1;
+    }
+    const topSourcesByValue = Object.entries(bySource)
+      .map(([source, agg]) => ({
+        source,
+        totalCents: agg.totalCents,
+        contactCount: agg.contactCount,
+      }))
+      .sort((a, b) => b.totalCents - a.totalCents)
+      .slice(0, params.topSourcesLimit);
+
+    const topContactsByEstimate = [...scoped]
+      .filter(meetsMin)
+      .sort((a, b) => (b.estimatedValue ?? 0) - (a.estimatedValue ?? 0))
+      .slice(0, params.topContactsLimit)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        company: c.company ?? null,
+        type: c.type,
+        estimatedValueCents: c.estimatedValue!,
+      }));
+
+    const scenarioAdjustments: CrmLtvScenarioAdjustment[] = [];
+    let afterUplift = totalClientEstimatedLtvCents;
+    if (params.clientLtvUpliftPercent !== 0) {
+      afterUplift = Math.round(totalClientEstimatedLtvCents * (1 + params.clientLtvUpliftPercent / 100));
+      scenarioAdjustments.push({
+        label: `Client estimate total after ${params.clientLtvUpliftPercent > 0 ? "+" : ""}${params.clientLtvUpliftPercent}% adjustment`,
+        valueCents: afterUplift,
+      });
+    }
+
+    let combinedScenarioClientLtvCents: number | null = null;
+    const missingLeadCount = leads.filter(
+      (c) => c.estimatedValue == null || c.estimatedValue <= 0,
+    ).length;
+    let imputedTotal = 0;
+    if (
+      params.imputedMissingLeadEstimateCents != null &&
+      params.imputedMissingLeadEstimateCents > 0 &&
+      missingLeadCount > 0
+    ) {
+      imputedTotal = missingLeadCount * params.imputedMissingLeadEstimateCents;
+      scenarioAdjustments.push({
+        label: `Imputed value for ${missingLeadCount} lead(s) without an estimate ($${(params.imputedMissingLeadEstimateCents / 100).toFixed(0)} each)`,
+        valueCents: imputedTotal,
+      });
+    }
+
+    if (params.clientLtvUpliftPercent !== 0 || imputedTotal > 0) {
+      combinedScenarioClientLtvCents = afterUplift + imputedTotal;
+    }
+
+    return {
+      wonDealValueCents,
+      openPipelineValueCents,
+      clientCount: clients.length,
+      clientsWithEstimateCount: clientWithEst.length,
+      totalClientEstimatedLtvCents,
+      avgClientEstimatedLtvCents,
+      leadsWithEstimateCount: leadWithEst.length,
+      totalLeadEstimatedValueCents,
+      contactsMissingEstimateCount,
+      topSourcesByValue,
+      topContactsByEstimate,
+      reportMeta: {
+        params,
+        generatedAt: new Date().toISOString(),
+      },
+      scenarioAdjustments,
+      combinedScenarioClientLtvCents,
+    };
+  }
+
   async createCrmDeal(deal: InsertCrmDeal): Promise<CrmDeal> {
     const now = new Date();
     const [inserted] = await db
@@ -3115,6 +3879,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(crmContacts)
       .where(inArray(crmContacts.email, emails));
+  }
+
+  async getCrmContactsByNormalizedEmails(emails: string[]): Promise<CrmContact[]> {
+    const normalized = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+    if (normalized.length === 0) return [];
+    const matchOne = (e: string) => sql`lower(trim(coalesce(${crmContacts.email}, ''))) = ${e}`;
+    const condition =
+      normalized.length === 1 ? matchOne(normalized[0]!) : or(...normalized.map(matchOne));
+    return db.select().from(crmContacts).where(condition);
   }
 
   async createCommunicationEvent(event: InsertCommunicationEvent): Promise<CommunicationEvent> {
@@ -3819,8 +4592,19 @@ export class DatabaseStorage implements IStorage {
       const variant = exp.variants.find((v) => v.id === existing[0]!.variantId);
       return variant ? { variantKey: variant.key, config: (variant.config ?? null) as Record<string, unknown> | null } : null;
     }
-    const idx = Math.floor(Math.random() * exp.variants.length);
-    const chosen = exp.variants[idx]!;
+    const weights = exp.variants.map((v) =>
+      typeof v.allocationWeight === "number" && v.allocationWeight > 0 ? v.allocationWeight : 1,
+    );
+    const totalW = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * totalW;
+    let chosen = exp.variants[0]!;
+    for (let i = 0; i < exp.variants.length; i++) {
+      roll -= weights[i]!;
+      if (roll <= 0) {
+        chosen = exp.variants[i]!;
+        break;
+      }
+    }
     try {
       await db.insert(growthAssignments).values({
         experimentId: exp.id,
@@ -4086,15 +4870,79 @@ export class DatabaseStorage implements IStorage {
   ): Promise<AdminSettings> {
     const now = new Date();
     const existing = await this.getAdminSettings(userId);
+    const def: {
+      emailNotifications: boolean;
+      inAppNotifications: boolean;
+      pushNotificationsEnabled: boolean;
+      remindersEnabled: boolean;
+      reminderFrequency: string;
+      reminderPlanningDays: string[];
+      reminderCityFocus: string | null;
+      reminderEditorialHolidaysEnabled: boolean;
+      reminderEditorialLocalEventsEnabled: boolean;
+      reminderEditorialHorizonDays: number;
+      notifyOnRoleChange: boolean;
+      aiAgentCanPerformActions: boolean;
+      aiAgentRequireActionConfirmation: boolean;
+      aiMentorObserveUsage: boolean;
+      aiMentorProactiveCheckpoints: boolean;
+    } = {
+      emailNotifications: true,
+      inAppNotifications: true,
+      pushNotificationsEnabled: true,
+      remindersEnabled: true,
+      reminderFrequency: "realtime",
+      reminderPlanningDays: ["monday"],
+      reminderCityFocus: null,
+      reminderEditorialHolidaysEnabled: true,
+      reminderEditorialLocalEventsEnabled: true,
+      reminderEditorialHorizonDays: 21,
+      notifyOnRoleChange: true,
+      aiAgentCanPerformActions: false,
+      aiAgentRequireActionConfirmation: true,
+      aiMentorObserveUsage: false,
+      aiMentorProactiveCheckpoints: true,
+    };
     const payload = {
-      emailNotifications: settings.emailNotifications,
-      inAppNotifications: settings.inAppNotifications,
-      pushNotificationsEnabled: settings.pushNotificationsEnabled,
-      remindersEnabled: settings.remindersEnabled,
-      reminderFrequency: settings.reminderFrequency,
-      notifyOnRoleChange: settings.notifyOnRoleChange,
-      aiAgentCanPerformActions: settings.aiAgentCanPerformActions,
-      aiAgentRequireActionConfirmation: settings.aiAgentRequireActionConfirmation,
+      emailNotifications: settings.emailNotifications ?? existing?.emailNotifications ?? def.emailNotifications,
+      inAppNotifications: settings.inAppNotifications ?? existing?.inAppNotifications ?? def.inAppNotifications,
+      pushNotificationsEnabled:
+        settings.pushNotificationsEnabled ?? existing?.pushNotificationsEnabled ?? def.pushNotificationsEnabled,
+      remindersEnabled: settings.remindersEnabled ?? existing?.remindersEnabled ?? def.remindersEnabled,
+      reminderFrequency: settings.reminderFrequency ?? existing?.reminderFrequency ?? def.reminderFrequency,
+      reminderPlanningDays:
+        settings.reminderPlanningDays ?? existing?.reminderPlanningDays ?? def.reminderPlanningDays,
+      reminderCityFocus:
+        settings.reminderCityFocus !== undefined
+          ? settings.reminderCityFocus
+          : existing?.reminderCityFocus ?? def.reminderCityFocus,
+      reminderEditorialHolidaysEnabled:
+        settings.reminderEditorialHolidaysEnabled ??
+        existing?.reminderEditorialHolidaysEnabled ??
+        def.reminderEditorialHolidaysEnabled,
+      reminderEditorialLocalEventsEnabled:
+        settings.reminderEditorialLocalEventsEnabled ??
+        existing?.reminderEditorialLocalEventsEnabled ??
+        def.reminderEditorialLocalEventsEnabled,
+      reminderEditorialHorizonDays:
+        settings.reminderEditorialHorizonDays ??
+        existing?.reminderEditorialHorizonDays ??
+        def.reminderEditorialHorizonDays,
+      notifyOnRoleChange: settings.notifyOnRoleChange ?? existing?.notifyOnRoleChange ?? def.notifyOnRoleChange,
+      aiAgentCanPerformActions:
+        settings.aiAgentCanPerformActions ?? existing?.aiAgentCanPerformActions ?? def.aiAgentCanPerformActions,
+      aiAgentRequireActionConfirmation:
+        settings.aiAgentRequireActionConfirmation ??
+        existing?.aiAgentRequireActionConfirmation ??
+        def.aiAgentRequireActionConfirmation,
+      aiMentorObserveUsage: settings.aiMentorObserveUsage ?? existing?.aiMentorObserveUsage ?? def.aiMentorObserveUsage,
+      aiMentorProactiveCheckpoints:
+        settings.aiMentorProactiveCheckpoints ??
+        existing?.aiMentorProactiveCheckpoints ??
+        def.aiMentorProactiveCheckpoints,
+      adminUiLayouts:
+        settings.adminUiLayouts !== undefined ? settings.adminUiLayouts : existing?.adminUiLayouts ?? null,
+      ttsConfig: settings.ttsConfig !== undefined ? settings.ttsConfig : existing?.ttsConfig ?? null,
       updatedAt: now,
     };
     if (existing) {
@@ -4121,10 +4969,7 @@ export class DatabaseStorage implements IStorage {
     return row ?? undefined;
   }
 
-  async upsertAdminAgentMentorState(
-    userId: number,
-    state: AdminAgentMentorStateV1,
-  ): Promise<AdminAgentMentorStateRow> {
+  async upsertAdminAgentMentorState(userId: number, state: AdminAgentMentorStateStored): Promise<AdminAgentMentorStateRow> {
     const now = new Date();
     const [row] = await db
       .insert(adminAgentMentorState)

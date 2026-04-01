@@ -4,12 +4,22 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PREMIUM_OFFERS } from "@/lib/funnel-content";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  CTA_REASSURANCE_SERVICE,
+  WHAT_TO_EXPECT_SERVICE_ITEMS,
+  WHAT_TO_EXPECT_SERVICE_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Services | Ascendra Technologies",
   description:
     "See how we can help—website optimization, brand and website execution, and full business growth. Pick the path that fits where you are.",
-};
+  path: "/services",
+  keywords: ["services", "website", "brand growth", "MVP", "contractor"],
+});
 
 const pathways = [
   {
@@ -31,6 +41,12 @@ const pathways = [
 
 export default function ServicesPage() {
   return (
+    <>
+      <WebPageJsonLd
+        title="Services | Ascendra Technologies"
+        description="See how we can help—website optimization, brand and website execution, and full business growth. Pick the path that fits where you are."
+        path="/services"
+      />
     <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-6xl marketing-stack">
@@ -41,6 +57,7 @@ export default function ServicesPage() {
             <p className="text-base sm:text-lg text-muted-foreground">
               Three ways we help: improve an existing website, build a stronger brand and site, or align strategy, design, and technology for conversion-ready growth.
             </p>
+            <CTAReassuranceLine className="max-w-2xl">{CTA_REASSURANCE_SERVICE}</CTAReassuranceLine>
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
@@ -50,6 +67,10 @@ export default function ServicesPage() {
                   <h2 className="text-xl font-semibold text-foreground">
                     {offer.name}
                   </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Typical investment:</span>{" "}
+                    {offer.typicalInvestment}
+                  </p>
                   <p className="mt-3 text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">Best for:</span>{" "}
                     {offer.audience}
@@ -75,6 +96,12 @@ export default function ServicesPage() {
               </Card>
             ))}
           </section>
+
+          <WhatToExpectList
+            title={WHAT_TO_EXPECT_SERVICE_TITLE}
+            items={WHAT_TO_EXPECT_SERVICE_ITEMS}
+            className="max-w-3xl mx-auto"
+          />
 
           <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
             <h2 className="text-2xl font-semibold text-foreground mb-3 sm:mb-4">
@@ -123,5 +150,6 @@ export default function ServicesPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

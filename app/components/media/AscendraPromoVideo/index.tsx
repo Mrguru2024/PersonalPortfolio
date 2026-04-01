@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const VIEWPORT_PRELOAD_MARGIN = "140px 0px";
+
 export interface AscendraPromoVideoProps {
   src: string;
   /** Accessibility label for the video element */
@@ -34,9 +36,11 @@ export function AscendraPromoVideo({
   frameClassName,
   playback = "autoplayMuted",
 }: AscendraPromoVideoProps) {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isAutoplay = playback === "autoplayMuted";
   const [muted, setMuted] = useState(isAutoplay);
+  const [inView, setInView] = useState(false);
 
   const syncMuted = useCallback(() => {
     const v = videoRef.current;
@@ -57,6 +61,46 @@ export function AscendraPromoVideo({
     return () => v.removeEventListener("volumechange", onVolumeChange);
   }, []);
 
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: VIEWPORT_PRELOAD_MARGIN, threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      v.load();
+    } catch {
+      /* jsdom / non-media environments */
+    }
+    if (isAutoplay) {
+      try {
+        const p = v.play();
+        if (p !== undefined && typeof (p as Promise<void>).then === "function") {
+          void (p as Promise<void>).catch(() => {});
+        }
+      } catch {
+        /* autoplay blocked */
+      }
+    }
+  }, [inView, isAutoplay]);
+
   const toggleSound = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -67,7 +111,7 @@ export function AscendraPromoVideo({
   }, []);
 
   return (
-    <div className={cn("relative w-full mx-auto", maxWidthClassName, className)}>
+    <div ref={wrapRef} className={cn("relative w-full mx-auto", maxWidthClassName, className)}>
       <div
         className={cn(
           "relative w-full overflow-hidden rounded-2xl border border-border/60 bg-muted shadow-xl ring-1 ring-black/5 dark:ring-white/10",
@@ -77,13 +121,13 @@ export function AscendraPromoVideo({
       >
         <video
           ref={videoRef}
-          autoPlay={isAutoplay}
+          autoPlay={isAutoplay && inView}
           muted={isAutoplay ? muted : false}
           loop={isAutoplay}
           playsInline
           controls
           controlsList="nodownload"
-          preload={isAutoplay ? "auto" : "metadata"}
+          preload={inView ? (isAutoplay ? "auto" : "metadata") : "none"}
           className={cn(
             "absolute inset-0 h-full w-full",
             objectFit === "cover" ? "object-cover" : "object-contain",

@@ -6,6 +6,9 @@
 
 This is a Next.js 16 full-stack portfolio/CMS application ("Ascendra Technologies") with React 19, Tailwind CSS, Drizzle ORM, and PostgreSQL (via `@neondatabase/serverless`). **Next.js 16 defaults `next dev` to Turbopack**; this repo runs **`next dev --webpack`** via **`npm run dev`** to avoid Turbopack HMR bugs (e.g. “module factory is not available”). Use **`npm run dev:turbo`** for Turbopack.
 
+- **Large route UIs** live in **`app/route-modules/`** (imported from real `app/**/page.tsx` files). This is not the Pages Router `pages/` directory.
+- **Knip** (`npm run knip`) checks unused files/deps; it exits non-zero while issues remain. See **`knip.config.ts`** ignores and `DATABASE_URL` in the script.
+
 ### Local database setup
 
 The app uses `@neondatabase/serverless` which connects to PostgreSQL via WebSocket. For local development, three components are needed:
@@ -51,6 +54,13 @@ The `NODE_TLS_REJECT_UNAUTHORIZED=0` is needed to accept the self-signed cert us
 - **Source of truth:** `app/lib/siteDirectory.ts` — paths, titles, categories, keywords, **cluster** (IA / consolidation hints), related routes.
 - **Admin UI:** `/admin/site-directory` — search, audience filter, consolidation clusters, **Copy JSON for AI**.
 - **API:** `GET /api/admin/site-directory` (approved admin session). Optional query `?q=crm` returns filtered `entries` plus `clusters`. Use for agents that can call authenticated APIs.
+
+### Admin AI assistant — context and knowledge
+
+- **Automatic context:** `server/services/adminAgentContextBuilder.ts` rebuilds every few minutes: npm scripts, **site directory** listings, **`server/services/adminAgentFeatureGuide.ts`** (how-tos: AMIE, Growth OS intelligence, assistant knowledge, CRM, PPC, etc.), scanned `/api/admin/*` routes, and this **AGENTS.md** file.
+- **Operator knowledge:** `/admin/agent-knowledge` — per-admin entries; toggles control injection into the **assistant** prompt, **research** grounding block, and (where supported) **messages** AI.
+- **AMIE (market scoring):** `/admin/market-intelligence` — Ascendra Market Intelligence Engine; **not** a duplicate of Growth OS topic research (`/admin/growth-os/intelligence`). AMIE persists scored reports and exports JSON with `integrationHints` for CRM/funnel/PPC.
+- **Floating widget:** Admins enable **action execution** under `/admin/settings` (AI admin agent); otherwise the assistant is chat/navigation-help only.
 
 ### Development updates (admin dashboard digest)
 

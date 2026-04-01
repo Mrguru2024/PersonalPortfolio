@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -45,6 +45,7 @@ const AUDIENCE_LABEL: Record<SiteDirectoryAudience, string> = {
   admin: "Admin / staff only",
   client: "Client portal",
   token: "Shared link (no login)",
+  super: "Super admin only",
 };
 
 function isStaticPath(path: string): boolean {
@@ -60,6 +61,7 @@ function humanizeCluster(id: string): string {
 
 export default function AdminSiteDirectoryPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuper = isAuthSuperUser(user);
   const router = useRouter();
   const { toast } = useToast();
   const [clientReady, setClientReady] = useState(false);
@@ -200,6 +202,7 @@ export default function AdminSiteDirectoryPage() {
                 <SelectItem value="admin">Admin / staff only</SelectItem>
                 <SelectItem value="client">Client portal</SelectItem>
                 <SelectItem value="token">Shared links (magic links)</SelectItem>
+                <SelectItem value="super">Super admin only</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -262,17 +265,20 @@ export default function AdminSiteDirectoryPage() {
                 className="flex w-full items-center gap-2 p-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${technicalOpen ? "rotate-180" : ""}`} />
-                Technical export (developers &amp; AI tools)
+                {isSuper ? "Technical export (developers & AI tools)" : "Export full page list"}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="pt-0 pb-4 px-4 space-y-3 text-sm text-muted-foreground border-t border-border/60">
                 <p>
-                  Copy a machine-readable list of every route for documentation or AI assistants. API access:{" "}
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded break-all">GET /api/admin/site-directory</code>
-                  {", "}
-                  optional search:{" "}
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">?q=crm</code>.
+                  {isSuper ?
+                    <>
+                      Copy a machine-readable list of every route for documentation or AI assistants. API access:{" "}
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded break-all">GET /api/admin/site-directory</code>
+                      {", "}
+                      optional search: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">?q=crm</code>.
+                    </>
+                  : "Copy a structured list of all routes for planning, documentation, or sharing with your team."}
                 </p>
                 <Button type="button" variant="secondary" size="sm" className="gap-2" onClick={copyJsonForAgents}>
                   <Copy className="h-4 w-4" />

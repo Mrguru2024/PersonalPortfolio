@@ -1,45 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureAbsoluteUrl } from "@/lib/siteUrl";
+import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
+import { getOAuthBaseUrlFromRequest, expireOAuthStateCookie } from "@/lib/siteUrl";
 import {
   getGoogleCalendarRedirectUri,
+  GOOGLE_CALENDAR_OAUTH_STATE_COOKIE,
   saveGoogleCalendarTokensFromCode,
 } from "@server/services/googleCalendarSchedulingService";
+import { verifyGoogleCalendarOAuthState } from "@server/lib/oauthSignedState";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const STATE_COOKIE = "gcal_oauth_state";
 
-function redirectWithCookieClear(baseUrl: string, query: string): NextResponse {
+function redirectWithCookieClear(req: NextRequest, baseUrl: string, query: string): NextResponse {
   const res = NextResponse.redirect(`${baseUrl}/admin/integrations${query}`);
-  res.cookies.delete(STATE_COOKIE);
+  expireOAuthStateCookie(res, req, STATE_COOKIE);
   return res;
 }
 
 export async function GET(req: NextRequest) {
-  const rawBase =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    req.headers.get("origin")?.replace(/\/$/, "") ||
-    (process.env.NODE_ENV === "production" ? "" : "http://localhost:3000");
-  const baseUrl = ensureAbsoluteUrl(rawBase || "http://localhost:3000");
+  const baseUrl = getOAuthBaseUrlFromRequest(req);
   const redirectUri = getGoogleCalendarRedirectUri(baseUrl);
 
   const { searchParams } = new URL(req.url);
   const err = searchParams.get("error");
   if (err) {
-    return redirectWithCookieClear(baseUrl, `?gcal_error=${encodeURIComponent(err)}`);
+    const desc = searchParams.get("error_description")?.trim() ?? "";
+    const qs = new URLSearchParams();
+    qs.set("gcal_error", err);
+    if (desc) qs.set("gcal_error_detail", desc.slice(0, 600));
+    return redirectWithCookieClear(req, baseUrl, `?${qs.toString()}`);
   }
   const code = searchParams.get("code");
-  const state = searchParams.get("state");
-  const cookieState = req.cookies.get(STATE_COOKIE)?.value;
+  const stateQ = searchParams.get("state")?.trim() ?? null;
+  const stateCookie = req.cookies.get(GOOGLE_CALENDAR_OAUTH_STATE_COOKIE)?.value ?? null;
 
-  if (!code || !state || !cookieState || state !== cookieState) {
-    return redirectWithCookieClear(baseUrl, "?gcal_error=invalid_state");
+  const verified = verifyGoogleCalendarOAuthState(stateQ, stateCookie);
+  if (!code || !verified.ok) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=invalid_state");
   }
 
-  const saved = await saveGoogleCalendarTokensFromCode(code, redirectUri);
+  const userId = Number(verified.subject);
+  if (!Number.isFinite(userId) || userId <= 0) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=invalid_state");
+  }
+
+  if (!(await isAdmin(req))) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=admin_required");
+  }
+  const sessionUser = await getSessionUser(req);
+  const sessionId = sessionUser?.id != null ? Number(sessionUser.id) : NaN;
+  if (!Number.isFinite(sessionId) || sessionId !== userId) {
+    return redirectWithCookieClear(req, baseUrl, "?gcal_error=session_mismatch");
+  }
+
+  const saved = await saveGoogleCalendarTokensFromCode(code, redirectUri, userId);
   if (!saved.ok) {
-    return redirectWithCookieClear(baseUrl, `?gcal_error=${encodeURIComponent(saved.error)}`);
+    return redirectWithCookieClear(req, baseUrl, `?gcal_error=${encodeURIComponent(saved.error)}`);
   }
-  return redirectWithCookieClear(baseUrl, "?gcal=connected");
+  return redirectWithCookieClear(req, baseUrl, "?gcal=connected");
 }

@@ -480,7 +480,7 @@ export default function OfferValuationTool({ surface }: OfferValuationToolProps)
   return (
     <div className="space-y-6">
       <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+        <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <LineChart className="h-5 w-5 text-primary" />
             <p className="font-medium">Offer Valuation Engine</p>

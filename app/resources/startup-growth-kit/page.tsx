@@ -11,17 +11,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
-import {
-  STARTUP_WEBSITE_SCORE_PATH,
-  REVENUE_CALCULATOR_PATH,
-  STARTUP_ACTION_PLAN_PATH,
-} from "@/lib/funnelCtas";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { getFunnelContent } from "@/lib/funnelContent.server";
+import { parseFunnelConversionSettings } from "@shared/funnelConversionSettings";
+import { growthKitNextStepCtas } from "@/lib/funnelConversionCtas";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
 import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_STARTUP_KIT } from "@/lib/landingPageOutcomeFramework";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -54,6 +53,10 @@ const FOUR_LAYERS = [
 
 export default async function StartupGrowthKitPage() {
   const stored = await getFunnelContent("growth-kit");
+  const storedObj =
+    stored && typeof stored === "object" && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};
+  const { accessModel } = parseFunnelConversionSettings(storedObj);
+  const nextStepCtas = growthKitNextStepCtas(accessModel);
   const heroTitle: string =
     (stored && typeof stored === "object" && typeof (stored as Record<string, unknown>).heroTitle === "string")
       ? (stored as Record<string, unknown>).heroTitle as string
@@ -65,10 +68,10 @@ export default async function StartupGrowthKitPage() {
 
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Startup growth kit | Where to begin building your business online"
         description="Educational guide for founders: why startup sites fail, assets vs systems, the 4 layers of online growth, and a simple roadmap."
-        canonicalPath="/resources/startup-growth-kit"
+        path="/resources/startup-growth-kit"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
@@ -89,6 +92,8 @@ export default async function StartupGrowthKitPage() {
                 priority
               />
             </section>
+
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_STARTUP_KIT} className="py-6 sm:py-8" />
 
             {/* Why most startup websites fail */}
             <section>
@@ -146,7 +151,7 @@ export default async function StartupGrowthKitPage() {
               <div className="space-y-3">
                 {FOUR_LAYERS.map(({ icon: Icon, title, desc }) => (
                   <Card key={title} className="border-border bg-card">
-                    <CardContent className="p-4 sm:p-5 flex gap-3 sm:gap-4">
+                    <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex gap-3 sm:gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-5 w-5" />
                       </div>
@@ -203,23 +208,20 @@ export default async function StartupGrowthKitPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     See how your current site stacks up, then get a practical action plan—without spending a fortune.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button asChild className="gap-2 min-h-[44px]">
-                      <Link href={STARTUP_WEBSITE_SCORE_PATH}>
-                        Get your startup website score
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="gap-2 min-h-[44px]">
-                      <Link href={REVENUE_CALCULATOR_PATH}>
-                        Estimate revenue opportunity
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="gap-2 min-h-[44px]">
-                      <Link href={STARTUP_ACTION_PLAN_PATH}>
-                        View startup action plan
-                      </Link>
-                    </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+                    {nextStepCtas.map((cta) => (
+                      <Button
+                        key={cta.href + cta.label}
+                        asChild
+                        variant={cta.variant}
+                        className="gap-2 min-h-[44px]"
+                      >
+                        <Link href={cta.href}>
+                          {cta.label}
+                          {cta.variant === "default" ? <ArrowRight className="h-4 w-4" /> : null}
+                        </Link>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

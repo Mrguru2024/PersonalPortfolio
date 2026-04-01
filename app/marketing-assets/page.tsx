@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Image as ImageIcon, Package, Share2, Megaphone } from "lucide-react";
 import {
   BRAND_GROWTH_PATH,
@@ -20,6 +19,15 @@ import {
 } from "@/lib/funnelCtas";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_MARKETING_ASSETS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_MARKETING_ASSETS_CTA_REASSURANCE,
+  ICP_MARKETING_ASSETS_FINAL_REASSURANCE,
+  ICP_MARKETING_ASSETS_WHAT_TO_EXPECT_ITEMS,
+  ICP_MARKETING_ASSETS_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const SERVICES = [
   { icon: Megaphone, title: "Ad creatives", desc: "Paid social and display ads that stop the scroll and convert." },
@@ -31,13 +39,6 @@ const SERVICES = [
 export default function MarketingAssetsPage() {
   return (
     <>
-      <PageSEO
-        title="Professional Marketing Assets That Actually Convert | Style Studio"
-        description="Ad creatives, social graphics, packaging, and promotional design for businesses that already have a brand and website. Led by Style Studio Branding. Start your marketing upgrade."
-        keywords={["marketing design", "ad creatives", "packaging design", "social media graphics", "marketing assets"]}
-        canonicalPath="/marketing-assets"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="marketing-assets">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-red-500/30 dark:border-red-400/25">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
@@ -94,6 +95,9 @@ export default function MarketingAssetsPage() {
                     </div>
                     <span className="text-left">Marketing & production by Style Studio Branding</span>
                   </Link>
+                  <CTAReassuranceLine dense className="max-w-xl mx-auto md:mx-0">
+                    {ICP_MARKETING_ASSETS_CTA_REASSURANCE}
+                  </CTAReassuranceLine>
                 </motion.div>
               </div>
 
@@ -114,6 +118,12 @@ export default function MarketingAssetsPage() {
                 />
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_MARKETING_ASSETS} />
           </div>
         </section>
 
@@ -241,6 +251,9 @@ export default function MarketingAssetsPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8">
               Start your marketing upgrade. Book a strategy call and we’ll align on goals and next steps.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_MARKETING_ASSETS_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-full">
               <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={STRATEGY_CALL_PATH}>

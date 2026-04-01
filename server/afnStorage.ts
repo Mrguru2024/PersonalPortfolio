@@ -4,10 +4,29 @@
  */
 import { db } from "./db";
 import {
+  users,
   afnProfiles,
   afnProfileSettings,
   afnMemberTags,
   afnProfileMemberTags,
+  afnSkillTags,
+  afnProfileSkillTags,
+  afnIndustryTags,
+  afnProfileIndustryTags,
+  afnInterestTags,
+  afnProfileInterestTags,
+  afnGoalTags,
+  afnProfileGoalTags,
+  afnChallengeTags,
+  afnProfileChallengeTags,
+  afnCollabPreferenceTags,
+  afnProfileCollabPreferenceTags,
+  afnProfileIntelligence,
+  afnInvites,
+  afnScoringConfig,
+  afnLiveSessions,
+  afnLiveProviderLogs,
+  afnTimelineLiveOverrides,
   afnDiscussionCategories,
   afnDiscussionPosts,
   afnDiscussionPostTags,
@@ -38,8 +57,11 @@ import {
   type InsertAfnNotification,
   type InsertAfnModerationReport,
   type InsertAfnConnection,
+  type InsertAfnInvite,
+  type AfnProfileIntelligenceRow,
 } from "@shared/schema";
-import { eq, and, desc, sql, inArray, ne, notInArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, ne, notInArray, count, or, isNull, gt } from "drizzle-orm";
+import { FOUNDER_TYPE_LABELS, isFounderType } from "@/lib/community/constants";
 
 // —— Profiles ——
 export async function getAfnProfileByUserId(userId: number) {
@@ -52,24 +74,69 @@ export async function getAfnProfileByUsername(username: string) {
   return row ?? null;
 }
 
+export type AfnCommunitySnapshotForCrm = {
+  userId: number;
+  username: string;
+  founderTribe: string | null;
+  founderTribeLabel: string | null;
+  headline: string | null;
+  profileVisibility: string | null;
+  publicProfilePath: string | null;
+  isOnboardingComplete: boolean | null;
+};
+
+/** Resolve AFN profile context for a CRM contact email (admin-only use). Ignores profile visibility for tribe/headline. */
+export async function getAfnCommunitySnapshotByEmail(
+  email: string | null | undefined
+): Promise<AfnCommunitySnapshotForCrm | null> {
+  const normalized = email?.trim();
+  if (!normalized) return null;
+  const [userRow] = await db
+    .select({ id: users.id, username: users.username })
+    .from(users)
+    .where(eq(users.email, normalized))
+    .limit(1);
+  if (!userRow) return null;
+  const profile = await getAfnProfileByUserId(userRow.id);
+  if (!profile) return null;
+  const settings = await getAfnProfileSettings(userRow.id);
+  const tribe = profile.founderTribe ?? null;
+  let founderTribeLabel: string | null = null;
+  if (tribe) {
+    founderTribeLabel = isFounderType(tribe) ? FOUNDER_TYPE_LABELS[tribe] : tribe.replace(/_/g, " ");
+  }
+  const isPublic = settings?.profileVisibility !== "private";
+  const slug = profile.username ?? userRow.username;
+  return {
+    userId: userRow.id,
+    username: userRow.username,
+    founderTribe: tribe,
+    founderTribeLabel,
+    headline: profile.headline ?? null,
+    profileVisibility: settings?.profileVisibility ?? null,
+    publicProfilePath: isPublic && slug ? `/Afn/members/${encodeURIComponent(slug)}` : null,
+    isOnboardingComplete: profile.isOnboardingComplete ?? null,
+  };
+}
+
 export async function getAfnProfileById(id: number) {
   const [row] = await db.select().from(afnProfiles).where(eq(afnProfiles.id, id)).limit(1);
   return row ?? null;
 }
 
 /** List profiles for member directory. If currentUserId provided, include that user's profile; otherwise only public. */
-export async function getAfnProfilesForDirectory(options: { currentUserId?: number; limit?: number; industry?: string; businessStage?: string }) {
+export async function getAfnProfilesForDirectory(options: {
+  currentUserId?: number;
+  limit?: number;
+  industry?: string;
+  businessStage?: string;
+  founderTribe?: string;
+}) {
   const limit = Math.min(options.limit ?? 50, 100);
-  const settingsJoin = db
-    .select({
-      userId: afnProfileSettings.userId,
-      profileVisibility: afnProfileSettings.profileVisibility,
-    })
-    .from(afnProfileSettings)
-    .as("s");
   const dirConditions = [eq(afnProfiles.isOnboardingComplete, true)];
   if (options.industry) dirConditions.push(eq(afnProfiles.industry, options.industry));
   if (options.businessStage) dirConditions.push(eq(afnProfiles.businessStage, options.businessStage));
+  if (options.founderTribe) dirConditions.push(eq(afnProfiles.founderTribe, options.founderTribe));
   const rows = await db
     .select()
     .from(afnProfiles)
@@ -107,6 +174,25 @@ export async function setAfnProfileAvatarUrl(userId: number, avatarUrl: string |
   const [inserted] = await db
     .insert(afnProfiles)
     .values({ userId, avatarUrl, createdAt: now, updatedAt: now })
+    .returning();
+  return inserted ?? null;
+}
+
+/** Update public profile cover image URL only. */
+export async function setAfnProfileCoverImageUrl(userId: number, coverImageUrl: string | null) {
+  const now = new Date();
+  const existing = await getAfnProfileByUserId(userId);
+  if (existing) {
+    const [updated] = await db
+      .update(afnProfiles)
+      .set({ coverImageUrl, updatedAt: now })
+      .where(eq(afnProfiles.userId, userId))
+      .returning();
+    return updated ?? null;
+  }
+  const [inserted] = await db
+    .insert(afnProfiles)
+    .values({ userId, coverImageUrl, createdAt: now, updatedAt: now })
     .returning();
   return inserted ?? null;
 }
@@ -534,4 +620,417 @@ export async function createAfnNotification(notification: InsertAfnNotification)
 export async function createAfnModerationReport(report: InsertAfnModerationReport) {
   const [inserted] = await db.insert(afnModerationReports).values(report).returning();
   return inserted!;
+}
+
+// —— Normalized profile tags (Phase 1) ——
+
+export type AfnNormalizedTagSlugs = {
+  skills: string[];
+  industries: string[];
+  interests: string[];
+  goals: string[];
+  challenges: string[];
+  collabPreferences: string[];
+};
+
+export type AfnNormalizedTagInput = Partial<{
+  skillSlugs: string[];
+  industrySlugs: string[];
+  interestSlugs: string[];
+  goalSlugs: string[];
+  challengeSlugs: string[];
+  collabPreferenceSlugs: string[];
+}>;
+
+function emptyTagSlugs(): AfnNormalizedTagSlugs {
+  return { skills: [], industries: [], interests: [], goals: [], challenges: [], collabPreferences: [] };
+}
+
+/** Replace junction rows for dimensions present in `input`. Omitted dimensions are left unchanged (backward compatible). */
+export async function syncAfnProfileNormalizedTags(profileId: number, input: AfnNormalizedTagInput): Promise<void> {
+  const norm = (slugs: string[] | undefined) =>
+    (slugs ?? []).map((s) => String(s).trim().toLowerCase()).filter(Boolean);
+
+  await db.transaction(async (tx) => {
+    if (input.skillSlugs !== undefined) {
+      await tx.delete(afnProfileSkillTags).where(eq(afnProfileSkillTags.profileId, profileId));
+      const slugs = norm(input.skillSlugs);
+      if (slugs.length) {
+        const rows = await tx.select({ id: afnSkillTags.id }).from(afnSkillTags).where(inArray(afnSkillTags.slug, slugs));
+        if (rows.length)
+          await tx.insert(afnProfileSkillTags).values(rows.map((r) => ({ profileId, skillTagId: r.id })));
+      }
+    }
+    if (input.industrySlugs !== undefined) {
+      await tx.delete(afnProfileIndustryTags).where(eq(afnProfileIndustryTags.profileId, profileId));
+      const slugs = norm(input.industrySlugs);
+      if (slugs.length) {
+        const rows = await tx.select({ id: afnIndustryTags.id }).from(afnIndustryTags).where(inArray(afnIndustryTags.slug, slugs));
+        if (rows.length)
+          await tx
+            .insert(afnProfileIndustryTags)
+            .values(rows.map((r) => ({ profileId, industryTagId: r.id })));
+      }
+    }
+    if (input.interestSlugs !== undefined) {
+      await tx.delete(afnProfileInterestTags).where(eq(afnProfileInterestTags.profileId, profileId));
+      const slugs = norm(input.interestSlugs);
+      if (slugs.length) {
+        const rows = await tx.select({ id: afnInterestTags.id }).from(afnInterestTags).where(inArray(afnInterestTags.slug, slugs));
+        if (rows.length)
+          await tx
+            .insert(afnProfileInterestTags)
+            .values(rows.map((r) => ({ profileId, interestTagId: r.id })));
+      }
+    }
+    if (input.goalSlugs !== undefined) {
+      await tx.delete(afnProfileGoalTags).where(eq(afnProfileGoalTags.profileId, profileId));
+      const slugs = norm(input.goalSlugs);
+      if (slugs.length) {
+        const rows = await tx.select({ id: afnGoalTags.id }).from(afnGoalTags).where(inArray(afnGoalTags.slug, slugs));
+        if (rows.length)
+          await tx.insert(afnProfileGoalTags).values(rows.map((r) => ({ profileId, goalTagId: r.id })));
+      }
+    }
+    if (input.challengeSlugs !== undefined) {
+      await tx.delete(afnProfileChallengeTags).where(eq(afnProfileChallengeTags.profileId, profileId));
+      const slugs = norm(input.challengeSlugs);
+      if (slugs.length) {
+        const rows = await tx
+          .select({ id: afnChallengeTags.id })
+          .from(afnChallengeTags)
+          .where(inArray(afnChallengeTags.slug, slugs));
+        if (rows.length)
+          await tx
+            .insert(afnProfileChallengeTags)
+            .values(rows.map((r) => ({ profileId, challengeTagId: r.id })));
+      }
+    }
+    if (input.collabPreferenceSlugs !== undefined) {
+      await tx.delete(afnProfileCollabPreferenceTags).where(eq(afnProfileCollabPreferenceTags.profileId, profileId));
+      const slugs = norm(input.collabPreferenceSlugs);
+      if (slugs.length) {
+        const rows = await tx
+          .select({ id: afnCollabPreferenceTags.id })
+          .from(afnCollabPreferenceTags)
+          .where(inArray(afnCollabPreferenceTags.slug, slugs));
+        if (rows.length)
+          await tx.insert(afnProfileCollabPreferenceTags).values(
+            rows.map((r) => ({ profileId, collabPreferenceTagId: r.id }))
+          );
+      }
+    }
+  });
+}
+
+export async function getAfnProfileNormalizedTags(profileId: number): Promise<AfnNormalizedTagSlugs> {
+  const out = emptyTagSlugs();
+  const [skills, industries, interests, goals, challenges, collabPrefs] = await Promise.all([
+    db
+      .select({ slug: afnSkillTags.slug })
+      .from(afnProfileSkillTags)
+      .innerJoin(afnSkillTags, eq(afnSkillTags.id, afnProfileSkillTags.skillTagId))
+      .where(eq(afnProfileSkillTags.profileId, profileId)),
+    db
+      .select({ slug: afnIndustryTags.slug })
+      .from(afnProfileIndustryTags)
+      .innerJoin(afnIndustryTags, eq(afnIndustryTags.id, afnProfileIndustryTags.industryTagId))
+      .where(eq(afnProfileIndustryTags.profileId, profileId)),
+    db
+      .select({ slug: afnInterestTags.slug })
+      .from(afnProfileInterestTags)
+      .innerJoin(afnInterestTags, eq(afnInterestTags.id, afnProfileInterestTags.interestTagId))
+      .where(eq(afnProfileInterestTags.profileId, profileId)),
+    db
+      .select({ slug: afnGoalTags.slug })
+      .from(afnProfileGoalTags)
+      .innerJoin(afnGoalTags, eq(afnGoalTags.id, afnProfileGoalTags.goalTagId))
+      .where(eq(afnProfileGoalTags.profileId, profileId)),
+    db
+      .select({ slug: afnChallengeTags.slug })
+      .from(afnProfileChallengeTags)
+      .innerJoin(afnChallengeTags, eq(afnChallengeTags.id, afnProfileChallengeTags.challengeTagId))
+      .where(eq(afnProfileChallengeTags.profileId, profileId)),
+    db
+      .select({ slug: afnCollabPreferenceTags.slug })
+      .from(afnProfileCollabPreferenceTags)
+      .innerJoin(
+        afnCollabPreferenceTags,
+        eq(afnCollabPreferenceTags.id, afnProfileCollabPreferenceTags.collabPreferenceTagId)
+      )
+      .where(eq(afnProfileCollabPreferenceTags.profileId, profileId)),
+  ]);
+  out.skills = skills.map((r) => r.slug);
+  out.industries = industries.map((r) => r.slug);
+  out.interests = interests.map((r) => r.slug);
+  out.goals = goals.map((r) => r.slug);
+  out.challenges = challenges.map((r) => r.slug);
+  out.collabPreferences = collabPrefs.map((r) => r.slug);
+  return out;
+}
+
+/** Batch tag slugs for connection scoring (Phase 3). */
+export async function getAfnNormalizedTagSlugsByProfileIds(
+  profileIds: number[]
+): Promise<Map<number, AfnNormalizedTagSlugs>> {
+  const map = new Map<number, AfnNormalizedTagSlugs>();
+  for (const id of profileIds) map.set(id, emptyTagSlugs());
+  if (profileIds.length === 0) return map;
+
+  const merge = (pid: number, key: keyof AfnNormalizedTagSlugs, slug: string) => {
+    map.get(pid)![key].push(slug);
+  };
+
+  const skillRows = await db
+    .select({ profileId: afnProfileSkillTags.profileId, slug: afnSkillTags.slug })
+    .from(afnProfileSkillTags)
+    .innerJoin(afnSkillTags, eq(afnSkillTags.id, afnProfileSkillTags.skillTagId))
+    .where(inArray(afnProfileSkillTags.profileId, profileIds));
+  for (const r of skillRows) merge(r.profileId, "skills", r.slug);
+
+  const indRows = await db
+    .select({ profileId: afnProfileIndustryTags.profileId, slug: afnIndustryTags.slug })
+    .from(afnProfileIndustryTags)
+    .innerJoin(afnIndustryTags, eq(afnIndustryTags.id, afnProfileIndustryTags.industryTagId))
+    .where(inArray(afnProfileIndustryTags.profileId, profileIds));
+  for (const r of indRows) merge(r.profileId, "industries", r.slug);
+
+  const intRows = await db
+    .select({ profileId: afnProfileInterestTags.profileId, slug: afnInterestTags.slug })
+    .from(afnProfileInterestTags)
+    .innerJoin(afnInterestTags, eq(afnInterestTags.id, afnProfileInterestTags.interestTagId))
+    .where(inArray(afnProfileInterestTags.profileId, profileIds));
+  for (const r of intRows) merge(r.profileId, "interests", r.slug);
+
+  const goalRows = await db
+    .select({ profileId: afnProfileGoalTags.profileId, slug: afnGoalTags.slug })
+    .from(afnProfileGoalTags)
+    .innerJoin(afnGoalTags, eq(afnGoalTags.id, afnProfileGoalTags.goalTagId))
+    .where(inArray(afnProfileGoalTags.profileId, profileIds));
+  for (const r of goalRows) merge(r.profileId, "goals", r.slug);
+
+  const chRows = await db
+    .select({ profileId: afnProfileChallengeTags.profileId, slug: afnChallengeTags.slug })
+    .from(afnProfileChallengeTags)
+    .innerJoin(afnChallengeTags, eq(afnChallengeTags.id, afnProfileChallengeTags.challengeTagId))
+    .where(inArray(afnProfileChallengeTags.profileId, profileIds));
+  for (const r of chRows) merge(r.profileId, "challenges", r.slug);
+
+  const cpRows = await db
+    .select({ profileId: afnProfileCollabPreferenceTags.profileId, slug: afnCollabPreferenceTags.slug })
+    .from(afnProfileCollabPreferenceTags)
+    .innerJoin(
+      afnCollabPreferenceTags,
+      eq(afnCollabPreferenceTags.id, afnProfileCollabPreferenceTags.collabPreferenceTagId)
+    )
+    .where(inArray(afnProfileCollabPreferenceTags.profileId, profileIds));
+  for (const r of cpRows) merge(r.profileId, "collabPreferences", r.slug);
+
+  return map;
+}
+
+export async function listAfnTagVocabulary() {
+  const [skills, industries, interests, goals, challenges, collabPreferences] = await Promise.all([
+    db.select().from(afnSkillTags).orderBy(afnSkillTags.label),
+    db.select().from(afnIndustryTags).orderBy(afnIndustryTags.label),
+    db.select().from(afnInterestTags).orderBy(afnInterestTags.label),
+    db.select().from(afnGoalTags).orderBy(afnGoalTags.label),
+    db.select().from(afnChallengeTags).orderBy(afnChallengeTags.label),
+    db.select().from(afnCollabPreferenceTags).orderBy(afnCollabPreferenceTags.label),
+  ]);
+  return { skills, industries, interests, goals, challenges, collabPreferences };
+}
+
+// —— Profile intelligence (Phase 2) ——
+
+export async function getAfnProfileIntelligenceByUserId(userId: number): Promise<AfnProfileIntelligenceRow | null> {
+  const [row] = await db
+    .select()
+    .from(afnProfileIntelligence)
+    .where(eq(afnProfileIntelligence.userId, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+// —— Invites (Phase 7) ——
+
+export async function createAfnInviteRow(row: InsertAfnInvite) {
+  const [inserted] = await db.insert(afnInvites).values(row).returning();
+  return inserted!;
+}
+
+// —— Scoring config (Phase 12) ——
+
+const DEFAULT_SCORING_WEIGHTS: Record<string, number> = {
+  industryMatch: 1,
+  tagOverlap: 1,
+  textOverlap: 1,
+  collaboration: 1,
+};
+
+export async function getAfnScoringConfigRow(): Promise<{ id: number; weightsJson: Record<string, number>; updatedAt: Date } | null> {
+  const [row] = await db.select().from(afnScoringConfig).orderBy(afnScoringConfig.id).limit(1);
+  return row ?? null;
+}
+
+export async function ensureAfnScoringConfig(): Promise<{ id: number; weightsJson: Record<string, number> }> {
+  const existing = await getAfnScoringConfigRow();
+  if (existing) return existing;
+  const [inserted] = await db
+    .insert(afnScoringConfig)
+    .values({ weightsJson: DEFAULT_SCORING_WEIGHTS, updatedAt: new Date() })
+    .returning();
+  return inserted!;
+}
+
+export async function updateAfnScoringWeights(weightsJson: Record<string, number>) {
+  const row = await ensureAfnScoringConfig();
+  const now = new Date();
+  await db
+    .update(afnScoringConfig)
+    .set({ weightsJson, updatedAt: now })
+    .where(eq(afnScoringConfig.id, row.id));
+}
+
+/** Connection counts (undirected). */
+export async function countAfnConnectionsForUser(userId: number): Promise<number> {
+  const [a] = await db
+    .select({ n: count() })
+    .from(afnConnections)
+    .where(eq(afnConnections.userId, userId));
+  const [b] = await db
+    .select({ n: count() })
+    .from(afnConnections)
+    .where(eq(afnConnections.connectedUserId, userId));
+  return Number(a?.n ?? 0) + Number(b?.n ?? 0);
+}
+
+export async function countAfnDiscussionPostsByAuthor(userId: number): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(afnDiscussionPosts)
+    .where(eq(afnDiscussionPosts.authorId, userId));
+  return Number(row?.n ?? 0);
+}
+
+export async function countAfnCollabPostsByAuthor(userId: number): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(afnCollaborationPosts)
+    .where(eq(afnCollaborationPosts.authorId, userId));
+  return Number(row?.n ?? 0);
+}
+
+export async function countAfnMessagesBySender(userId: number): Promise<number> {
+  const [row] = await db.select({ n: count() }).from(afnMessages).where(eq(afnMessages.senderId, userId));
+  return Number(row?.n ?? 0);
+}
+
+/** Pending moderation reports referencing this member's profile, posts, comments, or collab posts. */
+export async function countPendingModerationReportsAgainstUser(userId: number): Promise<number> {
+  const profile = await getAfnProfileByUserId(userId);
+  if (!profile) return 0;
+  const postRows = await db
+    .select({ id: afnDiscussionPosts.id })
+    .from(afnDiscussionPosts)
+    .where(eq(afnDiscussionPosts.authorId, userId));
+  const commentRows = await db
+    .select({ id: afnDiscussionComments.id })
+    .from(afnDiscussionComments)
+    .where(eq(afnDiscussionComments.authorId, userId));
+  const collabRows = await db
+    .select({ id: afnCollaborationPosts.id })
+    .from(afnCollaborationPosts)
+    .where(eq(afnCollaborationPosts.authorId, userId));
+  const pending = eq(afnModerationReports.status, "pending");
+  const parts = [
+    and(pending, eq(afnModerationReports.targetType, "profile"), eq(afnModerationReports.targetId, profile.id)),
+  ];
+  const postIds = postRows.map((r) => r.id);
+  if (postIds.length) {
+    parts.push(and(pending, eq(afnModerationReports.targetType, "post"), inArray(afnModerationReports.targetId, postIds)));
+  }
+  const commentIds = commentRows.map((r) => r.id);
+  if (commentIds.length) {
+    parts.push(and(pending, eq(afnModerationReports.targetType, "comment"), inArray(afnModerationReports.targetId, commentIds)));
+  }
+  const collabIds = collabRows.map((r) => r.id);
+  if (collabIds.length) {
+    parts.push(
+      and(pending, eq(afnModerationReports.targetType, "collab_post"), inArray(afnModerationReports.targetId, collabIds))
+    );
+  }
+  const whereClause = parts.length === 1 ? parts[0]! : or(...parts);
+  const [row] = await db.select({ n: count() }).from(afnModerationReports).where(whereClause);
+  return Number(row?.n ?? 0);
+}
+
+// —— Timeline Live sessions / overrides (Phases 9–10) ——
+
+export async function insertAfnLiveSession(row: typeof afnLiveSessions.$inferInsert) {
+  const [inserted] = await db.insert(afnLiveSessions).values(row).returning();
+  return inserted!;
+}
+
+export async function insertAfnLiveProviderLog(row: typeof afnLiveProviderLogs.$inferInsert) {
+  await db.insert(afnLiveProviderLogs).values(row);
+}
+
+export async function getAfnLiveSessionById(id: number) {
+  const [row] = await db.select().from(afnLiveSessions).where(eq(afnLiveSessions.id, id)).limit(1);
+  return row ?? null;
+}
+
+export async function getActiveTimelineLiveOverride(userId: number) {
+  const now = new Date();
+  const [row] = await db
+    .select()
+    .from(afnTimelineLiveOverrides)
+    .where(
+      and(
+        eq(afnTimelineLiveOverrides.userId, userId),
+        or(isNull(afnTimelineLiveOverrides.expiresAt), gt(afnTimelineLiveOverrides.expiresAt, now))
+      )
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+export async function upsertTimelineLiveOverride(payload: {
+  userId: number;
+  accessLevel: string;
+  reason: string | null;
+  setByAdminUserId: number;
+  expiresAt: Date | null;
+}) {
+  const now = new Date();
+  await db
+    .insert(afnTimelineLiveOverrides)
+    .values({
+      userId: payload.userId,
+      accessLevel: payload.accessLevel,
+      reason: payload.reason,
+      setByAdminUserId: payload.setByAdminUserId,
+      expiresAt: payload.expiresAt,
+      createdAt: now,
+    })
+    .onConflictDoUpdate({
+      target: afnTimelineLiveOverrides.userId,
+      set: {
+        accessLevel: payload.accessLevel,
+        reason: payload.reason,
+        setByAdminUserId: payload.setByAdminUserId,
+        expiresAt: payload.expiresAt,
+        createdAt: now,
+      },
+    });
+}
+
+export async function deleteTimelineLiveOverride(userId: number) {
+  await db.delete(afnTimelineLiveOverrides).where(eq(afnTimelineLiveOverrides.userId, userId));
+}
+
+export async function hasActiveTimelineLiveOverride(userId: number): Promise<boolean> {
+  const row = await getActiveTimelineLiveOverride(userId);
+  return !!row;
 }

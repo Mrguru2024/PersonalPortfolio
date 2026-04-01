@@ -4,7 +4,7 @@ import { ArrowRight, Signpost } from "lucide-react";
 import { TrackPageView } from "@/components/TrackPageView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { DIAGNOSTICS_HUB_PATH } from "@/lib/funnelCtas";
 import { FreeLeadPrioritySection } from "@/components/conversion/FreeLeadPrioritySection";
 import { FreeToolsQualifiedLeadCard } from "@/components/conversion/FreeToolsQualifiedLeadCard";
@@ -14,21 +14,30 @@ import { AscendraPromoVideo } from "@/components/media/AscendraPromoVideo";
 import { MemberFreeDownloads } from "@/components/MemberFreeDownloads";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_FREE_TOOLS } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_LEAD_MAGNET } from "@/lib/embeddedAssuranceCopy";
+import { MARKETING_CTA_CONTACT_US } from "@shared/marketingCtaCopy";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth tools | Ascendra Technologies",
   description:
     "Free tools with CRM-qualified follow-up: share your goal and timeline, then use diagnosis, calculators, blueprints, and more. Brand, web, and marketing in one ecosystem.",
-};
+  path: "/free-growth-tools",
+  keywords: ["free tools", "growth tools", "website calculator", "audit"],
+});
 
 export default function FreeGrowthToolsPage() {
   return (
     <>
       <TrackPageView path="/free-growth-tools" />
-      <PageSEO
+      <WebPageJsonLd
         title="Free growth tools | Ascendra Technologies"
         description="Free tools with a short qualification for qualified CRM follow-up—then diagnosis, calculators, blueprints, and more."
-        canonicalPath="/free-growth-tools"
+        path="/free-growth-tools"
+        schemaType="CollectionPage"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
@@ -37,11 +46,14 @@ export default function FreeGrowthToolsPage() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Free growth tools
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
-                Practical resources to help you see where your business stands and what to do next. From the Brand Growth ecosystem—strategy, design, and technology in one place.
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-4">
+                Practical resources to see where you stand and what to do next—strategy, design, and web in one Brand
+                Growth ecosystem, not a pile of disconnected downloads.
               </p>
+              <CTAReassuranceLine className="max-w-2xl mb-6 sm:mb-8">{CTA_REASSURANCE_LEAD_MAGNET}</CTAReassuranceLine>
+              <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_FREE_TOOLS} className="pb-8 text-left" />
               <Card className="max-w-2xl mx-auto mb-8 border-primary/20 bg-primary/5 dark:bg-primary/10">
-                <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <CardContent className="px-5 py-5 sm:px-7 sm:py-6 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                     <Signpost className="h-5 w-5" aria-hidden />
                   </div>
@@ -109,7 +121,7 @@ export default function FreeGrowthToolsPage() {
                 .
               </p>
               <Button asChild variant="outline" className="mt-4 min-h-[44px]">
-                <Link href="/contact">Book a free call</Link>
+                <Link href="/contact">{MARKETING_CTA_CONTACT_US}</Link>
               </Button>
             </section>
           </div>

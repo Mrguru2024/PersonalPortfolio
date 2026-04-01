@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
+import {
+  applyEmailMergeTags,
+  mergeFieldsFromCrmContact,
+  mergeFieldsFromEmailOnly,
+} from "@/lib/emailMergeTags";
+import { resolveRelativeUrlsForEmail } from "@/lib/resolveEmailAssetUrls";
+import { appendNewsletterSiteVisitFooter, appendNewsletterSiteVisitFooterPlain } from "@shared/newsletterFooter";
 import { storage } from "@server/storage";
+import type { CrmContact } from "@shared/schema";
+import { fireWorkflows, buildPayloadFromContactId } from "@server/services/workflows/engine";
+
+function emailPublicBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "http://localhost:3000"
+  );
+}
 
 // Send newsletter to subscribers
 export async function POST(
@@ -46,7 +63,26 @@ export async function POST(
       ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
     } else {
       const filter = newsletter.recipientFilter || {};
-      if (filter.crmLeads === true) {
+      const pickedIds = Array.isArray(filter.crmContactIds)
+        ? [...new Set(filter.crmContactIds.map((n) => Number(n)).filter((id) => Number.isFinite(id) && id > 0))]
+        : [];
+      if (pickedIds.length > 0) {
+        const contacts = await storage.getCrmContactsByIds(pickedIds);
+        const emails = [
+          ...new Set(contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else if (filter.crmAll === true) {
+        const contacts = await storage.getCrmContacts();
+        const emails = [
+          ...new Set(contacts.map((c) => c.email?.trim().toLowerCase()).filter(Boolean) as string[]),
+        ];
+        subscribers = await Promise.all(
+          emails.map((email) => storage.getOrCreateSubscriberForEmail(email, "crm"))
+        ).then((list) => list.map((s) => ({ id: s.id, email: s.email })));
+      } else if (filter.crmLeads === true) {
         const contacts = await storage.getCrmContacts("lead");
         const emails = [
           ...new Set(
@@ -78,6 +114,23 @@ export async function POST(
       }
     }
 
+    if (subscribers.length === 0) {
+      return NextResponse.json(
+        { error: "No recipients match the current audience. Choose subscribers, CRM leads/clients, or save a recipient list." },
+        { status: 400 }
+      );
+    }
+
+    const base = emailPublicBaseUrl();
+    const crmMatches = await storage.getCrmContactsByNormalizedEmails(
+      subscribers.map((s) => s.email.trim().toLowerCase())
+    );
+    const byEmail = new Map<string, CrmContact>();
+    for (const c of crmMatches) {
+      const k = c.email?.trim().toLowerCase();
+      if (k) byEmail.set(k, c);
+    }
+
     // Update newsletter status
     await storage.updateNewsletter(newsletterId, {
       status: "sending",
@@ -102,11 +155,29 @@ export async function POST(
         apiKey.apiKey = process.env.BREVO_API_KEY;
         const apiInstance = new brevoModule.TransactionalEmailsApi();
 
+        const em = subscriber.email.trim().toLowerCase();
+        const crm = byEmail.get(em);
+        const fields = crm ? mergeFieldsFromCrmContact(em, crm) : mergeFieldsFromEmailOnly(em);
+        const subjectPersonalized = applyEmailMergeTags(newsletter.subject, fields, { htmlEscape: false });
+        const htmlPersonalized = applyEmailMergeTags(newsletter.content, fields, { htmlEscape: true });
+        let htmlContent = resolveRelativeUrlsForEmail(htmlPersonalized, base);
+        htmlContent = appendNewsletterSiteVisitFooter(htmlContent, base);
+        const plainPersonalized = newsletter.plainText?.trim()
+          ? applyEmailMergeTags(newsletter.plainText, fields, { htmlEscape: false })
+          : applyEmailMergeTags(
+              newsletter.content.replaceAll(/<[^>]*>/g, " "),
+              fields,
+              { htmlEscape: false }
+            );
+        const textContent = appendNewsletterSiteVisitFooterPlain(
+          plainPersonalized.replace(/\s+/g, " ").trim(),
+          base
+        );
+
         const sendSmtpEmail = new brevoModule.SendSmtpEmail();
-        sendSmtpEmail.subject = newsletter.subject;
-        sendSmtpEmail.htmlContent = newsletter.content;
-        sendSmtpEmail.textContent =
-          newsletter.plainText || newsletter.content.replaceAll(/<[^>]*>/g, "");
+        sendSmtpEmail.subject = subjectPersonalized;
+        sendSmtpEmail.htmlContent = htmlContent;
+        sendSmtpEmail.textContent = textContent;
         sendSmtpEmail.sender = {
           name: process.env.FROM_NAME || "Ascendra Technologies",
           email: process.env.FROM_EMAIL || "noreply@mrguru.dev",
@@ -125,6 +196,22 @@ export async function POST(
           sentAt: new Date(),
           brevoMessageId: result.messageId?.toString(),
         });
+
+        if (crm?.id) {
+          const wfBase = await buildPayloadFromContactId(storage, crm.id).catch(() => ({
+            contactId: crm.id,
+            contact: crm,
+          }));
+          const wfPayload = {
+            ...wfBase,
+            journeyEvent: {
+              channel: "email" as const,
+              emailSource: "newsletter" as const,
+              newsletterSubject: newsletter.subject,
+            },
+          };
+          fireWorkflows(storage, "contact_email_sent", wfPayload).catch(() => {});
+        }
 
         return { success: true, email: subscriber.email };
       } catch (error: any) {

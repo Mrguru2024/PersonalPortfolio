@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ECOSYSTEM_PILLARS } from "@/lib/funnel-content";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_GROWTH_LANDING } from "@/lib/landingPageOutcomeFramework";
 
 export default function GrowthLandingPage() {
   return (
@@ -39,6 +41,10 @@ export default function GrowthLandingPage() {
             .
           </p>
         </section>
+
+        <div className="mb-14 sm:mb-16">
+          <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_GROWTH_LANDING} />
+        </div>
 
         {/* Problem */}
         <section className="mb-20 sm:mb-24 md:mb-28">

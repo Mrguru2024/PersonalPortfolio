@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, PenLine, Megaphone, BarChart3 } from "lucide-react";
+import { LayoutDashboard, PenLine, Megaphone, BarChart3, Mail } from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/communications", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/email-hub", label: "Email Hub", icon: Mail },
   { href: "/admin/communications/designs", label: "Email builder & templates", icon: PenLine },
   { href: "/admin/communications/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/communications/analytics", label: "Analytics", icon: BarChart3 },

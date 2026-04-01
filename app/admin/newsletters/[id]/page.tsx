@@ -1,10 +1,10 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, Send, Edit, Mail, Users, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Edit, Mail, Users, Plus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import {
   Dialog,
@@ -22,6 +22,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { NewsletterPreviewDialog } from "@/components/newsletter/NewsletterPreviewDialog";
+import { Input } from "@/components/ui/input";
 
 interface Newsletter {
   id: number;
@@ -40,11 +43,14 @@ interface Newsletter {
     subscribed?: boolean;
     crmLeads?: boolean;
     crmClients?: boolean;
+    crmAll?: boolean;
+    crmContactIds?: number[];
   } | null;
 }
 
 export default function NewsletterViewPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
@@ -91,16 +97,91 @@ export default function NewsletterViewPage() {
   });
 
   const [recipientMode, setRecipientMode] = useState<
-    "subscribers" | "list" | "crm_leads" | "crm_clients"
+    "subscribers" | "list" | "crm_leads" | "crm_clients" | "crm_all" | "crm_picked"
   >("subscribers");
   const [recipientList, setRecipientList] = useState<string>("");
   const [crmModalOpen, setCrmModalOpen] = useState(false);
   const [crmFilter, setCrmFilter] = useState<"all" | "lead" | "client">("all");
   const [selectedCrmEmails, setSelectedCrmEmails] = useState<Set<string>>(new Set());
+  const [pickedContactIds, setPickedContactIds] = useState<number[]>([]);
+  const [pickedHydrated, setPickedHydrated] = useState<{ id: number; name: string; email: string }[]>([]);
+  const [crmPickSearch, setCrmPickSearch] = useState("");
+  const [crmPickDebounced, setCrmPickDebounced] = useState("");
+  const [crmPickResults, setCrmPickResults] = useState<{ id: number; name: string; email: string }[]>([]);
+  const [crmPickLoading, setCrmPickLoading] = useState(false);
 
   const recipientEmailsJson = JSON.stringify(newsletter?.recipientEmails ?? null);
   const crmLeadsSelected = newsletter?.recipientFilter?.crmLeads === true;
   const crmClientsSelected = newsletter?.recipientFilter?.crmClients === true;
+  const crmAllSelected = newsletter?.recipientFilter?.crmAll === true;
+  const crmPickedIdsJson = JSON.stringify(newsletter?.recipientFilter?.crmContactIds ?? []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setCrmPickDebounced(crmPickSearch.trim()), 300);
+    return () => clearTimeout(t);
+  }, [crmPickSearch]);
+
+  useEffect(() => {
+    if (crmPickDebounced.length < 2) {
+      setCrmPickResults([]);
+      return;
+    }
+    let cancelled = false;
+    setCrmPickLoading(true);
+    void fetch(`/api/admin/crm/contacts?search=${encodeURIComponent(crmPickDebounced)}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: unknown) => {
+        if (cancelled || !Array.isArray(rows)) {
+          setCrmPickResults([]);
+          return;
+        }
+        setCrmPickResults(
+          rows.map((r) => {
+            const row = r as { id: number; name: string; email: string };
+            return { id: row.id, name: row.name, email: row.email };
+          }),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCrmPickResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCrmPickLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [crmPickDebounced]);
+
+  const pickedKey = useMemo(() => [...pickedContactIds].sort((a, b) => a - b).join(","), [pickedContactIds]);
+
+  useEffect(() => {
+    if (pickedContactIds.length === 0) {
+      setPickedHydrated([]);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/admin/crm/contacts?ids=${pickedContactIds.join(",")}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: unknown) => {
+        if (cancelled || !Array.isArray(rows)) return;
+        const map = new Map(
+          rows.map((r) => {
+            const row = r as { id: number; name: string; email: string };
+            return [row.id, row] as const;
+          }),
+        );
+        setPickedHydrated(
+          pickedContactIds.map((id) => map.get(id)).filter(Boolean) as { id: number; name: string; email: string }[],
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPickedHydrated([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pickedKey]);
 
   useEffect(() => {
     if (!newsletter) return;
@@ -111,19 +192,37 @@ export default function NewsletterViewPage() {
       return;
     }
     const f = newsletter.recipientFilter;
+    const rawIds = f?.crmContactIds;
+    if (Array.isArray(rawIds) && rawIds.length > 0) {
+      setRecipientMode("crm_picked");
+      setPickedContactIds(
+        [...new Set(rawIds.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0))],
+      );
+      setRecipientList("");
+      return;
+    }
+    if (f?.crmAll === true) {
+      setRecipientMode("crm_all");
+      setPickedContactIds([]);
+      setRecipientList("");
+      return;
+    }
     if (f?.crmLeads === true) {
       setRecipientMode("crm_leads");
+      setPickedContactIds([]);
       setRecipientList("");
       return;
     }
     if (f?.crmClients === true) {
       setRecipientMode("crm_clients");
+      setPickedContactIds([]);
       setRecipientList("");
       return;
     }
     setRecipientMode("subscribers");
+    setPickedContactIds([]);
     setRecipientList("");
-  }, [newsletter, newsletterId, recipientEmailsJson, crmLeadsSelected, crmClientsSelected]);
+  }, [newsletter, newsletterId, recipientEmailsJson, crmLeadsSelected, crmClientsSelected, crmAllSelected, crmPickedIdsJson]);
 
   const { data: crmContacts = [] } = useQuery<{ id: number; email: string; name: string; type?: string }[]>({
     queryKey: ["/api/admin/crm/contacts", crmFilter],
@@ -135,15 +234,21 @@ export default function NewsletterViewPage() {
     enabled: crmModalOpen,
   });
 
+  const recipientFilterBase = () => {
+    const f = newsletter?.recipientFilter ?? {};
+    return { tags: f.tags, subscribed: f.subscribed };
+  };
+
   const saveRecipientsMutation = useMutation({
     mutationFn: async (emails: string[]) => {
-      const baseFilter = newsletter?.recipientFilter ?? {};
       const res = await apiRequest("PATCH", `/api/admin/newsletters/${newsletterId}`, {
         recipientEmails: emails.length > 0 ? emails : null,
         recipientFilter: {
-          ...baseFilter,
+          ...recipientFilterBase(),
           crmLeads: false,
           crmClients: false,
+          crmAll: false,
+          crmContactIds: [],
         },
       });
       return res.json();
@@ -188,26 +293,72 @@ export default function NewsletterViewPage() {
   };
 
   const applySubscribersAudience = () => {
-    const baseFilter = newsletter?.recipientFilter ?? {};
     saveAudienceMutation.mutate({
       recipientEmails: null,
-      recipientFilter: { ...baseFilter, crmLeads: false, crmClients: false },
+      recipientFilter: {
+        ...recipientFilterBase(),
+        crmLeads: false,
+        crmClients: false,
+        crmAll: false,
+        crmContactIds: [],
+      },
     });
   };
 
   const applyCrmLeadsAudience = () => {
-    const baseFilter = newsletter?.recipientFilter ?? {};
     saveAudienceMutation.mutate({
       recipientEmails: null,
-      recipientFilter: { ...baseFilter, crmLeads: true, crmClients: false },
+      recipientFilter: {
+        ...recipientFilterBase(),
+        crmLeads: true,
+        crmClients: false,
+        crmAll: false,
+        crmContactIds: [],
+      },
     });
   };
 
   const applyCrmClientsAudience = () => {
-    const baseFilter = newsletter?.recipientFilter ?? {};
     saveAudienceMutation.mutate({
       recipientEmails: null,
-      recipientFilter: { ...baseFilter, crmLeads: false, crmClients: true },
+      recipientFilter: {
+        ...recipientFilterBase(),
+        crmLeads: false,
+        crmClients: true,
+        crmAll: false,
+        crmContactIds: [],
+      },
+    });
+  };
+
+  const applyCrmAllAudience = () => {
+    saveAudienceMutation.mutate({
+      recipientEmails: null,
+      recipientFilter: {
+        ...recipientFilterBase(),
+        crmLeads: false,
+        crmClients: false,
+        crmAll: true,
+        crmContactIds: [],
+      },
+    });
+  };
+
+  const savePickedCrmAudience = () => {
+    const ids = [...new Set(pickedContactIds.filter((n) => Number.isFinite(n) && n > 0))];
+    if (ids.length === 0) {
+      toast({ title: "Pick at least one contact", variant: "destructive" });
+      return;
+    }
+    saveAudienceMutation.mutate({
+      recipientEmails: null,
+      recipientFilter: {
+        ...recipientFilterBase(),
+        crmLeads: false,
+        crmClients: false,
+        crmAll: false,
+        crmContactIds: ids,
+      },
     });
   };
 
@@ -262,9 +413,9 @@ export default function NewsletterViewPage() {
               {getStatusBadge(newsletter.status)}
             </div>
             <p className="text-muted-foreground">
-              Created {format(new Date(newsletter.createdAt), "PPp")}
+              Created {formatLocaleMediumDateTime(newsletter.createdAt)}
               {newsletter.sentAt && (
-                <> • Sent {format(new Date(newsletter.sentAt), "PPp")}</>
+                <> • Sent {formatLocaleMediumDateTime(newsletter.sentAt)}</>
               )}
             </p>
           </div>
@@ -301,12 +452,63 @@ export default function NewsletterViewPage() {
 
       <div className="space-y-6">
         {newsletter.status === "draft" && (
+          <Alert>
+            <AlertTitle>How to send</AlertTitle>
+            <AlertDescription className="space-y-2 text-sm">
+              <p>
+                1. Choose who gets this email below: all subscribers, everyone in CRM, leads only, clients only,
+                selected CRM rows, or a pasted list. For picked CRM rows, use <strong>Save audience</strong>; for a
+                pasted list, <strong>Save recipients</strong>.
+              </p>
+              <p>
+                2. Use <strong>Send Now</strong> in the header when you are ready.{" "}
+                {isSuperUser ? (
+                  <>
+                    Merge tags in subject or body:{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{firstName}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{Name}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{company}}"}</code>,{" "}
+                    <code className="text-xs bg-muted px-1 rounded">{"{{email}}"}</code> — filled from CRM when the address
+                    matches a contact.
+                  </>
+                ) : (
+                  <>
+                    You can personalize the subject and body with names and company when the email matches someone in
+                    your CRM.
+                  </>
+                )}
+              </p>
+              <p>
+                {isSuperUser ? (
+                  <>
+                    If Brevo blocks the send (e.g. unrecognized IP), open{" "}
+                    <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
+                      Admin → Settings → Brevo
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  <>
+                    If something prevents delivery, an administrator can check email settings under{" "}
+                    <Link href="/admin/settings/brevo" className="underline font-medium text-foreground">
+                      Admin → Settings → Brevo
+                    </Link>
+                    .
+                  </>
+                )}
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {newsletter.status === "draft" && (
           <Card>
             <CardHeader>
               <CardTitle>Recipients</CardTitle>
               <CardDescription>
-                Send to newsletter subscribers, every CRM lead or client with an email, or a pasted list. CRM segment
-                choices apply as soon as you select them.
+                Send to all subscribers, everyone in the CRM (any type with an email), only leads or only clients,
+                hand-picked CRM rows, or a pasted list. Pasted addresses need not be in the CRM. Merge tags use CRM data
+                when the email matches a contact. Sent messages include a site link at the bottom automatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -357,13 +559,106 @@ export default function NewsletterViewPage() {
                   <input
                     type="radio"
                     name="recipientMode"
+                    checked={recipientMode === "crm_all"}
+                    onChange={() => {
+                      setRecipientMode("crm_all");
+                      applyCrmAllAudience();
+                    }}
+                    disabled={saveAudienceMutation.isPending}
+                    className="rounded-full"
+                  />
+                  <span>Everyone in CRM (all leads and clients with email)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="recipientMode"
+                    checked={recipientMode === "crm_picked"}
+                    onChange={() => setRecipientMode("crm_picked")}
+                    className="rounded-full"
+                  />
+                  <span>Selected CRM contacts only</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="recipientMode"
                     checked={recipientMode === "list"}
                     onChange={() => setRecipientMode("list")}
                     className="rounded-full"
                   />
-                  <span>Specific list (bulk paste or pick from CRM)</span>
+                  <span>Specific list (paste one-off or existing emails, or pick from CRM)</span>
                 </label>
               </div>
+              {recipientMode === "crm_picked" && (
+                <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+                  <div>
+                    <Label htmlFor="news-pick-search">Search CRM</Label>
+                    <Input
+                      id="news-pick-search"
+                      value={crmPickSearch}
+                      onChange={(e) => setCrmPickSearch(e.target.value)}
+                      placeholder="Name or email (2+ characters)"
+                      className="mt-1"
+                    />
+                    {crmPickLoading ? (
+                      <p className="text-xs text-muted-foreground mt-1">Searching…</p>
+                    ) : null}
+                  </div>
+                  {crmPickResults.length > 0 ? (
+                    <ul className="text-sm space-y-1 max-h-40 overflow-y-auto border rounded-md p-2 bg-background">
+                      {crmPickResults.map((row) => (
+                        <li key={row.id} className="flex items-center justify-between gap-2">
+                          <span className="truncate">
+                            {row.name}{" "}
+                            <span className="text-muted-foreground">{row.email}</span>
+                          </span>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            disabled={!row.email?.trim() || pickedContactIds.includes(row.id)}
+                            onClick={() =>
+                              setPickedContactIds((p) => (p.includes(row.id) ? p : [...p, row.id]))
+                            }
+                          >
+                            Add
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {pickedHydrated.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {pickedHydrated.map((row) => (
+                        <Badge key={row.id} variant="secondary" className="gap-1 pr-1 font-normal">
+                          <span className="max-w-[140px] truncate">{row.name || row.email}</span>
+                          <button
+                            type="button"
+                            className="rounded p-0.5 hover:bg-muted"
+                            aria-label={`Remove ${row.email}`}
+                            onClick={() => setPickedContactIds((p) => p.filter((id) => id !== row.id))}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : pickedContactIds.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">Loading selection…</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Search and add contacts, then save.</p>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={savePickedCrmAudience}
+                    disabled={saveAudienceMutation.isPending || pickedContactIds.length === 0}
+                  >
+                    {saveAudienceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save audience"}
+                  </Button>
+                </div>
+              )}
               {recipientMode === "list" && (
                 <>
                   <div>
@@ -372,7 +667,7 @@ export default function NewsletterViewPage() {
                       value={recipientList}
                       onChange={(e) => setRecipientList(e.target.value)}
                       placeholder="one@example.com&#10;two@example.com"
-                      className="mt-1 min-h-[120px] font-mono text-sm"
+                      className="mt-1 min-h-[120px] text-sm"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -402,8 +697,15 @@ export default function NewsletterViewPage() {
         )}
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
             <CardTitle>Content</CardTitle>
+            {newsletter.status === "draft" && (
+              <NewsletterPreviewDialog
+                subject={newsletter.subject}
+                previewText={newsletter.previewText ?? ""}
+                contentHtml={newsletter.content}
+              />
+            )}
           </CardHeader>
           <CardContent>
             <div

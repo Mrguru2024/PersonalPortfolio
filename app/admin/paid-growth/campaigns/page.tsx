@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Loader2, Plus, ChevronRight } from "lucide-react";
@@ -14,6 +14,11 @@ import { apiRequest } from "@/lib/queryClient";
 export default function PaidGrowthCampaignsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -32,7 +37,12 @@ export default function PaidGrowthCampaignsPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved,
   });
 
-  if (authLoading || !user?.isAdmin || !user?.adminApproved) {
+  if (
+    !hasMounted ||
+    authLoading ||
+    !user?.isAdmin ||
+    !user?.adminApproved
+  ) {
     return (
       <div className="flex justify-center py-24">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

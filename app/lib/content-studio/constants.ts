@@ -27,3 +27,19 @@ export const WORKFLOW_STATUSES = [
 export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
 
 export const CALENDAR_STATUSES = ["draft", "scheduled", "published", "skipped"] as const;
+
+/**
+ * Preset funnel stages for Content Studio (documents + editorial calendar).
+ * Aligns with Growth OS experiments / intelligence mix reports.
+ */
+export const CONTENT_STUDIO_FUNNEL_STAGES = [
+  "awareness",
+  "consideration",
+  "conversion",
+  "nurture",
+] as const;
+
+export type ContentStudioFunnelStage = (typeof CONTENT_STUDIO_FUNNEL_STAGES)[number];
+
+/** Select sentinel — not persisted */
+export const CONTENT_STUDIO_FUNNEL_STAGE_UNSET = "__funnel_unset__" as const;

@@ -2,6 +2,8 @@ import type { IStorage } from "@server/storage";
 import type { PpcCampaign } from "@shared/paidGrowthSchema";
 import {
   PPC_READINESS_MIN_SCORE,
+  growthRouteRecommendationFromReadiness,
+  type PpcGrowthRouteRecommendation,
   type PpcPublishGates,
   isConversionTrackingConfiguredForPublish,
 } from "@shared/ppcBusinessRules";
@@ -16,6 +18,7 @@ export type PpcReadinessResult = {
   /** All publish gates satisfied (hard preconditions + readiness score). */
   adReady: boolean;
   packageRecommendation: "Foundation" | "Launch" | "Revenue Engine";
+  growthRouteRecommendation: PpcGrowthRouteRecommendation;
 };
 
 const CATEGORIES = [
@@ -204,6 +207,11 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
     packageRecommendation = "Foundation";
   }
 
+  const growthRouteRecommendation = growthRouteRecommendationFromReadiness({
+    adReady,
+    overallScore,
+  });
+
   return {
     overallScore,
     scores,
@@ -212,5 +220,6 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
     gates,
     adReady,
     packageRecommendation,
+    growthRouteRecommendation,
   };
 }

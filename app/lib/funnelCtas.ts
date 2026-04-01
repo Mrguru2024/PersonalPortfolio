@@ -3,6 +3,8 @@
  * Keeps primary/secondary CTAs consistent site-wide.
  */
 
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
+
 /** Free trial: value-first (call + audit); self-serve tools are secondary—not the paid challenge. */
 export const FREE_TRIAL_PATH = "/free-trial";
 
@@ -11,7 +13,7 @@ export const CHALLENGE_LANDING_PATH = "/challenge";
 
 export const PRIMARY_CTA = "Request your Digital Growth Audit";
 export const PRIMARY_CTA_SHORT = "Request audit";
-export const SECONDARY_CTA = "Book a free call";
+export const SECONDARY_CTA = MARKETING_CTA_BOOK_STRATEGY_CALL;
 export const SEE_GROWTH_SYSTEMS = "See growth systems";
 /** Growth diagnosis funnel: multi-step diagnosis → results → apply. */
 export const GROWTH_DIAGNOSIS_PATH = "/growth";
@@ -22,6 +24,12 @@ export const PROJECT_GROWTH_ASSESSMENT_PATH = "/assessment";
 
 /** Persona-based journey selector + tailored paths (`?journey=`). */
 export const PERSONA_JOURNEY_PATH = "/journey";
+
+/**
+ * Public nav entry for the AFN hub. Root `proxy.ts` rewrites `/community` and `/afn` (case variants) to `/Afn`.
+ * Use this in header/footer so SSR and client always share the same `href` (avoids Link + redirect hydration drift).
+ */
+export const COMMUNITY_HUB_PUBLIC_PATH = "/community";
 
 /** Single landing: pick automated scan vs questionnaire vs full paid assessment. */
 export const DIAGNOSTICS_HUB_PATH = "/diagnostics";
@@ -34,6 +42,8 @@ export const PPC_LEAD_MAGNET_PATH = "/ppc-lead-system";
 export const REVENUE_CALCULATOR_PATH = "/website-revenue-calculator";
 export const OFFER_AUDIT_PATH = "/offer-audit";
 export const WEBSITE_SCORE_PATH = "/website-performance-score";
+/** Public AMIE-powered Market Score funnel (CRM + nurture). */
+export const MARKET_SCORE_PATH = "/market-score";
 export const BOOK_CALL_HREF = "/strategy-call";
 
 /** Ecosystem funnel (Brand Growth hub + paths) — Ascendra + Macon Designs + Style Studio */
@@ -45,10 +55,13 @@ export const REBRAND_YOUR_BUSINESS_PATH = "/rebrand-your-business";
 export const MARKETING_ASSETS_PATH = "/marketing-assets";
 
 export const ECOSYSTEM_CTA_HUB = "See growth systems";
-export const ECOSYSTEM_CTA_STRATEGY_CALL = "Book a free call";
+export const ECOSYSTEM_CTA_STRATEGY_CALL = MARKETING_CTA_BOOK_STRATEGY_CALL;
 export const ECOSYSTEM_CTA_LAUNCH = "Book a brand launch call";
 export const ECOSYSTEM_CTA_REBRAND = "Book a rebrand call";
 export const ECOSYSTEM_CTA_MARKETING = "Upgrade your marketing";
+
+/** DFY / DWY / DIY Growth System Platform hub + recommendation flow. */
+export const GROWTH_PLATFORM_PATH = "/growth-platform";
 
 /** Lead magnet hub and tools */
 export const FREE_GROWTH_TOOLS_PATH = "/free-growth-tools";

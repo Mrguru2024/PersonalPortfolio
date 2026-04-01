@@ -3,6 +3,7 @@ import { storage } from "@server/storage";
 import { getGeoFromRequest } from "@/lib/geo-from-request";
 import { isLeadTrackingEventType, DEFAULT_TRACKING_EVENT_TYPE } from "@/lib/lead-tracking-types";
 import { addScoreFromEvent } from "@server/services/leadScoringService";
+import { touchAttributionSessionFromTrackEvent } from "@server/services/paid-growth/attributionSessionService";
 
 export const dynamic = "force-dynamic";
 const METADATA_MAX_STRING = 1024;
@@ -73,6 +74,20 @@ export async function POST(req: NextRequest) {
       metadata: Object.keys(metadata).length ? metadata : undefined,
     });
 
+    let attributionSessionPublicId: string | undefined;
+    try {
+      const touch = await touchAttributionSessionFromTrackEvent(storage, {
+        visitorId,
+        sessionId: sessionId ?? null,
+        pageVisited: pageVisited ?? undefined,
+        metadata,
+        crmContactId: leadId ?? null,
+      });
+      if (touch) attributionSessionPublicId = touch.publicId;
+    } catch (err) {
+      console.warn("[track/visitor] attribution session touch:", err);
+    }
+
     if (leadId != null && eventType !== "page_view") {
       addScoreFromEvent(storage, leadId, eventType, {
         page: pageVisited ?? undefined,
@@ -82,7 +97,11 @@ export async function POST(req: NextRequest) {
       addScoreFromEvent(storage, leadId, "page_view", { page: pageVisited }).catch(() => {});
     }
 
-    return NextResponse.json({ ok: true, id: activity.id });
+    return NextResponse.json({
+      ok: true,
+      id: activity.id,
+      ...(attributionSessionPublicId ? { attributionSessionPublicId } : {}),
+    });
   } catch (e) {
     console.error("Visitor track error:", e);
     return NextResponse.json({ error: "Failed to record activity" }, { status: 500 });

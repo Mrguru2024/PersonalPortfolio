@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ChevronLeft, ArrowRight } from "lucide-react";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import {
   getBreakdownBySlug,
   WEBSITE_BREAKDOWNS,
@@ -12,6 +12,7 @@ import { BreakdownSection, InsightsFromEcosystem } from "@/components/authority"
 import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { Button } from "@/components/ui/button";
 import { AUDIT_PATH } from "@/lib/funnelCtas";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 import { Card, CardContent } from "@/components/ui/card";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -23,11 +24,20 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const breakdown = getBreakdownBySlug(slug);
-  if (!breakdown) return { title: "Website breakdown | Ascendra Technologies" };
-  return {
-    title: `${breakdown.title} | Website breakdown | Ascendra Technologies`,
+  if (!breakdown) {
+    return buildMarketingMetadata({
+      title: "Website breakdown | Ascendra Technologies",
+      description: "Website breakdowns and conversion analysis from Ascendra Technologies.",
+      path: "/website-breakdowns",
+    });
+  }
+  return buildMarketingMetadata({
+    title: `${breakdown.title} | Website breakdown`,
     description: breakdown.businessContext,
-  };
+    path: `/website-breakdowns/${breakdown.slug}`,
+    keywords: ["website breakdown", "conversion", breakdown.slug],
+    ogType: "article",
+  });
 }
 
 export default async function WebsiteBreakdownPage({ params }: Props) {
@@ -37,10 +47,11 @@ export default async function WebsiteBreakdownPage({ params }: Props) {
 
   return (
     <>
-      <PageSEO
-        title={`${breakdown.title} | Ascendra Technologies`}
+      <WebPageJsonLd
+        title={`${breakdown.title} | Website breakdown`}
         description={breakdown.businessContext}
-        canonicalPath={`/website-breakdowns/${breakdown.slug}`}
+        path={`/website-breakdowns/${breakdown.slug}`}
+        schemaType="Article"
       />
       <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">

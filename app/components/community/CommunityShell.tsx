@@ -8,6 +8,7 @@ import {
   BookOpen,
   Handshake,
   LayoutDashboard,
+  Home,
   User,
   Settings,
   Mail,
@@ -18,16 +19,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/community/feed", label: "Feed", icon: MessageSquare },
-  { href: "/community/collab", label: "Collaboration", icon: Handshake },
-  { href: "/community/members", label: "Members", icon: Users },
-  { href: "/community/resources", label: "Resources", icon: BookOpen },
-  { href: "/community/inbox", label: "Inbox", icon: Mail },
+  { href: "/Afn/home", label: "Home", icon: Home },
+  { href: "/Afn/feed", label: "Feed", icon: MessageSquare },
+  { href: "/Afn/collab", label: "Collaboration", icon: Handshake },
+  { href: "/Afn/members", label: "Members", icon: Users },
+  { href: "/Afn/resources", label: "Resources", icon: BookOpen },
+  { href: "/Afn/inbox", label: "Inbox", icon: Mail },
 ];
 
 const USER_ITEMS = [
-  { href: "/community/profile", label: "Profile", icon: User },
-  { href: "/community/settings", label: "Settings", icon: Settings },
+  { href: "/Afn/profile", label: "Profile", icon: User },
+  { href: "/Afn/settings", label: "Settings", icon: Settings },
 ];
 
 export function CommunityShell({ children }: { children: React.ReactNode }) {
@@ -82,7 +84,7 @@ export function CommunityShell({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex flex-col gap-1 pt-6 px-3">
                   <Link
-                    href="/community"
+                    href="/Afn"
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
                   >
                     <LayoutDashboard className="h-4 w-4" />
@@ -93,7 +95,7 @@ export function CommunityShell({ children }: { children: React.ReactNode }) {
               </SheetContent>
             </Sheet>
             <Link
-              href="/community"
+              href="/Afn"
               className="flex items-center gap-2 text-lg font-semibold"
             >
               <LayoutDashboard className="h-5 w-5 text-primary" />

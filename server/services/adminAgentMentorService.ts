@@ -1,11 +1,15 @@
 /**
  * Per-admin mentor memory + optional web grounding for the admin AI assistant.
  * State is stored only on this deployment to improve the agent — not for external sharing.
+ * v2 adds coarse navigation stats when the admin opts in to usage observation (paths only).
  */
 
-import "openai/shims/node";
-import OpenAI from "openai";
-import type { AdminAgentMentorStateV1 } from "@shared/schema";
+import OpenAI from "@server/openai/nodeClient";
+import type {
+  AdminAgentMentorStateV1,
+  AdminAgentMentorStateV2,
+  MentorRouteStat,
+} from "@shared/schema";
 import {
   braveWebSearch,
   type WebSearchHit,
@@ -14,9 +18,12 @@ import {
 export const ADMIN_AGENT_MENTOR_POLICY =
   "Conversation-derived insights are stored only on this site to personalize your assistant; they are not sold or shared with third parties.";
 
-export function emptyMentorState(): AdminAgentMentorStateV1 {
+/** Working mentor shape for prompts and merges (always v2 on disk after first save). */
+export type AdminMentorWorkingState = AdminAgentMentorStateV2;
+
+export function emptyMentorState(): AdminAgentMentorStateV2 {
   return {
-    v: 1,
+    v: 2,
     habits: [],
     painPoints: [],
     goals: [],
@@ -26,23 +33,73 @@ export function emptyMentorState(): AdminAgentMentorStateV1 {
   };
 }
 
-export function parseStoredMentorState(raw: unknown): AdminAgentMentorStateV1 | null {
+function strings(x: unknown): string[] {
+  return Array.isArray(x)
+    ? x.filter((i): i is string => typeof i === "string").map((s) => s.trim()).filter(Boolean)
+    : [];
+}
+
+function parseRouteStats(raw: unknown): MentorRouteStat[] {
+  if (!Array.isArray(raw)) return [];
+  const out: MentorRouteStat[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== "object") continue;
+    const o = r as Record<string, unknown>;
+    const path = typeof o.path === "string" ? o.path : "";
+    const visits = typeof o.visits === "number" && o.visits >= 0 ? Math.floor(o.visits) : 0;
+    const lastVisitAt = typeof o.lastVisitAt === "string" ? o.lastVisitAt : "";
+    if (!path.startsWith("/admin") || visits < 1) continue;
+    out.push({ path: path.slice(0, 512), visits, lastVisitAt: lastVisitAt.slice(0, 64) });
+  }
+  return out.slice(0, 20);
+}
+
+function migrateV1ToV2(v: AdminAgentMentorStateV1): AdminAgentMentorStateV2 {
+  return {
+    v: 2,
+    habits: v.habits,
+    painPoints: v.painPoints,
+    goals: v.goals,
+    strengths: v.strengths,
+    topicsOftenAsked: v.topicsOftenAsked,
+    pendingMentorNudges: v.pendingMentorNudges,
+  };
+}
+
+/**
+ * Normalize DB JSON to v2 for prompts and persistence. Returns null only if completely invalid.
+ */
+export function parseStoredMentorState(raw: unknown): AdminAgentMentorStateV2 | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  if (o.v !== 1) return null;
-  const strings = (x: unknown): string[] =>
-    Array.isArray(x)
-      ? x.filter((i): i is string => typeof i === "string").map((s) => s.trim()).filter(Boolean)
-      : [];
-  return {
-    v: 1,
-    habits: strings(o.habits),
-    painPoints: strings(o.painPoints),
-    goals: strings(o.goals),
-    strengths: strings(o.strengths),
-    topicsOftenAsked: strings(o.topicsOftenAsked),
-    pendingMentorNudges: strings(o.pendingMentorNudges),
-  };
+  const ver = o.v;
+  if (ver === 2) {
+    return {
+      v: 2,
+      habits: strings(o.habits),
+      painPoints: strings(o.painPoints),
+      goals: strings(o.goals),
+      strengths: strings(o.strengths),
+      topicsOftenAsked: strings(o.topicsOftenAsked),
+      pendingMentorNudges: strings(o.pendingMentorNudges),
+      topRoutes: parseRouteStats(o.topRoutes),
+      lastCheckpointAt: typeof o.lastCheckpointAt === "string" ? o.lastCheckpointAt : undefined,
+      workflowSignals: strings(o.workflowSignals),
+    };
+  }
+  if (ver === 1) {
+    const v1: AdminAgentMentorStateV1 = {
+      v: 1,
+      habits: strings(o.habits),
+      painPoints: strings(o.painPoints),
+      goals: strings(o.goals),
+      strengths: strings(o.strengths),
+      topicsOftenAsked: strings(o.topicsOftenAsked),
+      pendingMentorNudges: strings(o.pendingMentorNudges),
+    };
+    return migrateV1ToV2(v1);
+  }
+  return null;
 }
 
 function capDedupe(items: string[], max: number): string[] {
@@ -58,7 +115,7 @@ function capDedupe(items: string[], max: number): string[] {
   return out;
 }
 
-export function mentorStateToPromptBlock(state: AdminAgentMentorStateV1 | null): string {
+export function mentorStateToPromptBlock(state: AdminAgentMentorStateV2 | null): string {
   if (!state) {
     return "No saved mentor profile yet — infer needs gently over time; do not invent personal facts.";
   }
@@ -73,6 +130,19 @@ export function mentorStateToPromptBlock(state: AdminAgentMentorStateV1 | null):
   add("Strengths", state.strengths);
   add("Topics they often ask about", state.topicsOftenAsked);
   add("Gentle nudges to consider", state.pendingMentorNudges);
+  add("Workflow signals (coarse)", state.workflowSignals ?? []);
+
+  const routes = state.topRoutes ?? [];
+  if (routes.length > 0) {
+    const summary = routes
+      .slice(0, 8)
+      .map((r) => `${r.path} (~${r.visits} visits, last ${r.lastVisitAt?.slice(0, 10) ?? "?"})`)
+      .join("; ");
+    lines.push(
+      `Recent admin navigation (opt-in aggregate — paths only, no form data): ${summary}. Use this to infer workflows; do not state you are "watching" them unless they enabled observation in settings.`,
+    );
+  }
+
   return lines.length > 0 ? lines.join("\n") : "Profile is still sparse — invite them to share what they want to improve.";
 }
 
@@ -102,7 +172,7 @@ export function formatWebHitsForPrompt(hits: WebSearchHit[]): string {
       (h, i) =>
         `${i + 1}. ${h.title}\n   URL: ${h.url}\n   ${h.description.slice(0, 320)}`,
     )
-    .join("\n\n");
+      .join("\n\n");
 }
 
 export async function fetchWebContextForTeaching(message: string): Promise<string> {
@@ -122,14 +192,12 @@ type MentorDelta = {
   replaceNudges?: string[] | null;
 };
 
-function applyMentorDelta(
-  current: AdminAgentMentorStateV1,
-  d: MentorDelta,
-): AdminAgentMentorStateV1 {
+function applyMentorDelta(current: AdminAgentMentorStateV2, d: MentorDelta): AdminAgentMentorStateV2 {
   const merge = (base: string[], extra: string[] | undefined, max: number) =>
     capDedupe([...base, ...(extra ?? [])], max);
   return {
-    v: 1,
+    ...current,
+    v: 2,
     habits: merge(current.habits, d.addHabits, 8),
     painPoints: merge(current.painPoints, d.addPainPoints, 8),
     goals: merge(current.goals, d.addGoals, 8),
@@ -159,10 +227,10 @@ function stripJsonFence(raw: string): string {
 }
 
 export async function mergeMentorStateAfterExchange(
-  current: AdminAgentMentorStateV1,
+  current: AdminAgentMentorStateV2,
   userMessage: string,
   assistantReply: string,
-): Promise<AdminAgentMentorStateV1> {
+): Promise<AdminAgentMentorStateV2> {
   const client = getMergeClient();
   if (!client) return current;
 
@@ -184,7 +252,9 @@ Output ONLY valid JSON with optional keys:
 Rules:
 - Each add* array: 0-3 short factual phrases inferred from the USER message (not from generic assistant boilerplate).
 - replaceNudges: optional 0-2 short friendly reminders for their next session (habits, follow-ups), or null to leave unchanged, or [] to clear.
-- If nothing new, return {}.`,
+- If nothing new, return {}.
+
+The CURRENT_STATE may include read-only keys topRoutes, workflowSignals, lastCheckpointAt — ignore those; do not output them.`,
         },
         {
           role: "user",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -24,6 +24,7 @@ import { COMM_DESIGN_CATEGORIES } from "@shared/communicationsSchema";
 
 export default function NewCommDesignPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const { toast } = useToast();
   const [name, setName] = useState("");
@@ -86,7 +87,18 @@ export default function NewCommDesignPage() {
       <Card>
         <CardHeader>
           <CardTitle>New email design</CardTitle>
-          <CardDescription>Uses the same TipTap editor as newsletters. Use {"{{firstName}}"} and {"{{company}}"} for merge tags.</CardDescription>
+          <CardDescription>
+            {isSuperUser ? (
+              <>
+                Same TipTap rich-text stack as newsletters. Merge tags: {"{{firstName}}"}, {"{{company}}"}.
+              </>
+            ) : (
+              <>
+                Same editor as newsletters. Personalize with {"{{firstName}}"} and {"{{company}}"} where you want those
+                filled in automatically.
+              </>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">

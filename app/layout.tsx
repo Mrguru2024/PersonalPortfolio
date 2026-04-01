@@ -6,36 +6,22 @@ import { TrialBanner } from "./components/TrialBanner";
 import ScrollProgress from "./components/ScrollProgress";
 import SiteFooter from "./components/SiteFooter";
 import MobileBottomNav from "./components/MobileBottomNav";
+import { SiteMain } from "./components/SiteMain";
 import { MobileNavProvider } from "./contexts/MobileNavContext";
+import { FacebookJsSdk } from "./components/FacebookJsSdk";
+import { SiteAnalyticsScripts } from "./components/SiteAnalyticsScripts";
+import { getGtmNoscriptId, siteUsesAnalytics } from "./lib/siteAnalyticsConfig";
 import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
+import { isAscendraPublicBehaviorTrackingEnabled } from "./lib/behaviorTrackingConfig";
+import { AscendraBehaviorRootGate } from "./components/tracking/AscendraBehaviorRootGate";
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-5FTCQF2JH4";
-const gaEnabled = GA_MEASUREMENT_ID.length > 0;
-
-/** Google Ads / conversion tag (gtag destination). Set empty to disable. */
-const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() ?? "AW-11419169823";
-const googleAdsEnabled = /^AW-\d+$/i.test(GOOGLE_ADS_ID);
-
-/** Google Tag Manager container (public id). Must look like GTM-XXXXXXX. */
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID?.trim() ?? "";
-const gtmEnabled = /^GTM-[A-Z0-9]+$/i.test(GTM_ID);
-
-/** One shared gtag.js loader + inline init (GA4 and/or Google Ads — never duplicate the snippet). */
-const gtagSnippetEnabled = gaEnabled || googleAdsEnabled;
-const gtagJsQueryId = gaEnabled ? GA_MEASUREMENT_ID : GOOGLE_ADS_ID;
-
-function gtagInitScriptContent(): string {
-  let s =
-    "window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());";
-  if (gaEnabled) {
-    s += `gtag('config','${GA_MEASUREMENT_ID}');`;
-  }
-  if (googleAdsEnabled) {
-    s += `gtag('config','${GOOGLE_ADS_ID}');`;
-  }
-  return s;
-}
+/** Numeric Meta App ID only — enables FB.init client SDK (Login / xfbml / AppEvents). */
+const FACEBOOK_APP_ID_FOR_SDK =
+  process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() || process.env.FACEBOOK_APP_ID?.trim() || "";
+const FACEBOOK_GRAPH_API_VERSION =
+  process.env.NEXT_PUBLIC_FACEBOOK_GRAPH_VERSION?.trim() || "v21.0";
+const facebookSdkEnabled = /^\d+$/.test(FACEBOOK_APP_ID_FOR_SDK);
 
 /** Absolute base URL (with https://) so manifest, OG, metadataBase, and schema resolve correctly. */
 const baseUrl = getSiteOriginForMetadata();
@@ -60,6 +46,20 @@ const organizationSchema = {
 const defaultTitle = "Ascendra Technologies | Brand Growth, Strategy & Marketing";
 const defaultDescription =
   "Ascendra Technologies helps you build a brand that converts—strategy, websites, and marketing from one coordinated team. Launch, rebrand, or scale with clarity.";
+
+/** Site-level entity for Google (pairs with Organization). */
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: COMPANY_NAME,
+  url: baseUrl,
+  description: defaultDescription,
+  publisher: {
+    "@type": "Organization",
+    name: COMPANY_NAME,
+    url: baseUrl,
+  },
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${baseUrl}/`),
@@ -117,55 +117,42 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gtmNoscriptId = getGtmNoscriptId();
   return (
     <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
       <head>
-        {/* Google Tag Manager — high in <head> per Google */}
-        {gtmEnabled && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`,
-            }}
-          />
-        )}
-        {/* Google tag (gtag.js) — GA4 + Google Ads in one loader; disable either via env */}
-        {gtagSnippetEnabled && (
+        {siteUsesAnalytics() ? (
           <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gtagJsQueryId)}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: gtagInitScriptContent(),
-              }}
-            />
+            <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           </>
-        )}
+        ) : null}
+        {/** Session replay / heatmaps: `AscendraBehaviorRootGate` + `/api/behavior/ingest` (see `behaviorTrackingConfig`). */}
       </head>
       {/* suppressHydrationWarning: only affects this node; extension attrs on descendants are handled via suppressHydrationWarning on ui/Button and Header <button>s (fdprocessedid, etc.). */}
       <body
         className="relative min-h-[100dvh] min-h-screen bg-background font-sans antialiased w-full max-w-full overflow-x-hidden"
         suppressHydrationWarning
       >
-        {gtmEnabled && (
+        <SiteAnalyticsScripts />
+        {gtmNoscriptId ? (
           <noscript>
             <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(GTM_ID)}`}
+              src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(gtmNoscriptId)}`}
               height={0}
               width={0}
               style={{ display: "none", visibility: "hidden" }}
               title="Google Tag Manager"
             />
           </noscript>
-        )}
+        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         {/* Full-page backdrop: vertical hero wash + corner/edge ambient glow (theme-aware) */}
         <div
@@ -175,17 +162,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <div className="hero-page-gradient absolute inset-0" />
           <div className="page-edge-ambient absolute inset-0" />
         </div>
+        {facebookSdkEnabled && (
+          <>
+            <div id="fb-root" className="sr-only" aria-hidden />
+            <FacebookJsSdk appId={FACEBOOK_APP_ID_FOR_SDK} graphVersion={FACEBOOK_GRAPH_API_VERSION} />
+          </>
+        )}
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             <MobileNavProvider>
+              <AscendraBehaviorRootGate enabled={isAscendraPublicBehaviorTrackingEnabled()} />
               {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
               <ScrollProgress />
               {/* Logo + nav: fixed at top; hides when scrolling down, shows when scrolling up or at top */}
               <FixedHeaderWrapper />
               <TrialBanner />
-              <main className="relative w-full min-w-0 max-w-full flex-1 overflow-x-hidden pt-[158px] fold:pt-[178px] sm:pt-[200px] md:pt-[220px] lg:pt-[240px] pb-[calc(56px+env(safe-area-inset-bottom,0px)+32px)] lg:pb-[max(1rem,env(safe-area-inset-bottom))]">
-                {children}
-              </main>
+              <SiteMain>{children}</SiteMain>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}
               <MobileBottomNav />
               <SiteFooter />

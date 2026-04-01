@@ -1,17 +1,27 @@
-// PWA service worker: push notifications + offline caching for admin/CRM app use
-const CACHE_VERSION = 'v2';
+// PWA service worker: push notifications + offline caching for installed app use
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const PAGES_CACHE = `pages-${CACHE_VERSION}`;
 
+const OFFLINE_PATH = '/offline.html';
+
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        const cache = await caches.open(STATIC_CACHE);
+        await cache.add(new Request(OFFLINE_PATH, { cache: 'reload' }));
+      } catch (_) {
+        /* offline page may fail in dev; continue */
+      }
+    })()
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // We do not consume event.preloadResponse in fetch; disable preload so the browser
-      // does not start a parallel navigation request that gets cancelled (console error).
       try {
         if (self.registration.navigationPreload) {
           await self.registration.navigationPreload.disable();
@@ -30,7 +40,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Push notifications (admin direct message)
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   let data = { title: 'Notification', body: '' };
@@ -66,7 +75,6 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Offline: cache admin/CRM pages and static assets; API stays network-only
 function isSameOrigin(url) {
   try {
     return new URL(url).origin === self.location.origin;
@@ -75,10 +83,23 @@ function isSameOrigin(url) {
   }
 }
 
-function isAdminPage(url) {
+/**
+ * HTML navigations we cache for offline replay (network-first).
+ * Includes marketing start URL + common app hubs so “Add to Home Screen” stays useful offline.
+ */
+function usesOfflineDocumentCache(url) {
   try {
     const path = new URL(url).pathname;
-    return path.startsWith('/admin') || path === '/' || path === '/auth' || path === '/login';
+    if (path.startsWith('/admin')) return true;
+    if (path === '/auth' || path === '/login' || path.startsWith('/auth/')) return true;
+    if (path === '/') return true;
+    if (path.startsWith('/dashboard')) return true;
+    if (path.startsWith('/portal')) return true;
+    if (path.startsWith('/blog')) return true;
+    if (path === '/free-growth-tools' || path.startsWith('/free-growth-tools/')) return true;
+    if (path === '/contact' || path.startsWith('/contact/')) return true;
+    if (path === '/strategy-call' || path.startsWith('/strategy-call/')) return true;
+    return false;
   } catch {
     return false;
   }
@@ -87,17 +108,32 @@ function isAdminPage(url) {
 function isStaticAsset(url) {
   try {
     const path = new URL(url).pathname;
-    return path.startsWith('/_next/static/') || path.startsWith('/favicon') || path === '/manifest.json' || path.endsWith('.svg') || path.endsWith('.ico');
+    return (
+      path.startsWith('/_next/static/') ||
+      path.startsWith('/favicon') ||
+      path === '/manifest.json' ||
+      path === OFFLINE_PATH ||
+      path.endsWith('.svg') ||
+      path.endsWith('.ico')
+    );
   } catch {
     return false;
   }
+}
+
+async function offlineFallbackResponse() {
+  const cached = await caches.match(OFFLINE_PATH);
+  if (cached) return cached;
+  return new Response(
+    '<!DOCTYPE html><html><body><p>Offline</p><script>location.reload()</script></body></html>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
 }
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || !isSameOrigin(request.url)) return;
 
-  // Static assets: cache-first for fast repeat loads
   if (isStaticAsset(request.url)) {
     event.respondWith(
       caches.open(STATIC_CACHE).then((cache) =>
@@ -110,13 +146,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Admin/app pages: network-first, fallback to cache for offline
-  if (isAdminPage(request.url)) {
+  if (usesOfflineDocumentCache(request.url)) {
     event.respondWith(
       (async () => {
         let res;
-        // If navigation preload is ever on, we must await preloadResponse inside respondWith
-        // or the preload request is cancelled (uncaught / console error).
         if (request.mode === 'navigate') {
           try {
             const preloaded = await event.preloadResponse;
@@ -124,7 +157,7 @@ self.addEventListener('fetch', (event) => {
               res = preloaded;
             }
           } catch (_) {
-            /* ignore: use fetch below */
+            /* ignore */
           }
         }
         try {
@@ -138,7 +171,11 @@ self.addEventListener('fetch', (event) => {
           return res;
         } catch (_) {
           const cached = await caches.open(PAGES_CACHE).then((cache) => cache.match(request));
-          return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+          if (cached) return cached;
+          if (request.mode === 'navigate') {
+            return offlineFallbackResponse();
+          }
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
         }
       })()
     );

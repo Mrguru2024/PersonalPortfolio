@@ -22,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         gates: result.gates,
         remediationChecklist: result.remediationChecklist,
         package: result.packageRecommendation,
+        growthRoute: result.growthRouteRecommendation,
         adReady: result.adReady,
       },
     });
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       scoresJson: result.scores,
       blockersJson: result.blockers,
       packageRecommendation: result.packageRecommendation,
+      growthRouteRecommendation: result.growthRouteRecommendation,
       overallScore: result.overallScore,
       gatesJson: result.gates,
       remediationChecklistJson: result.remediationChecklist,
