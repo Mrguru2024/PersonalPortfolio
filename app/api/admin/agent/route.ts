@@ -22,6 +22,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
+async function safeDbRead<T>(label: string, run: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    console.warn(`[admin agent] ${label} read failed; using fallback`, error);
+    return fallback;
+  }
+}
+
 function parseAgentHistory(raw: unknown): AgentChatTurn[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const out: AgentChatTurn[] = [];
@@ -63,8 +72,16 @@ export async function GET(req: NextRequest) {
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
     }
-    const settings = await storage.getAdminSettings(userId);
-    const row = await storage.getAdminAgentMentorState(userId);
+    const settings = await safeDbRead(
+      "admin_settings",
+      () => storage.getAdminSettings(userId),
+      undefined as Awaited<ReturnType<typeof storage.getAdminSettings>> | undefined,
+    );
+    const row = await safeDbRead(
+      "admin_agent_mentor_state",
+      () => storage.getAdminAgentMentorState(userId),
+      undefined as Awaited<ReturnType<typeof storage.getAdminAgentMentorState>> | undefined,
+    );
     const state = row ? parseStoredMentorState(row.state) : null;
     const mentorNudge = state?.pendingMentorNudges?.[0] ?? null;
     return NextResponse.json({
@@ -113,7 +130,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const settings = await storage.getAdminSettings(userId);
+    const settings = await safeDbRead(
+      "admin_settings",
+      () => storage.getAdminSettings(userId),
+      undefined as Awaited<ReturnType<typeof storage.getAdminSettings>> | undefined,
+    );
     const canPerformActions = settings?.aiAgentCanPerformActions === true;
     const requireActionConfirmation = settings?.aiAgentRequireActionConfirmation !== false;
     const mentorObserveUsage = settings?.aiMentorObserveUsage === true;
@@ -133,12 +154,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const knowledgeRows = await storage.getAdminAgentKnowledgeForAgent(userId);
-    const researchRows = await storage.getAdminAgentKnowledgeForResearch(userId);
+    const [knowledgeRows, researchRows] = await Promise.all([
+      safeDbRead("admin_agent_knowledge_entries(useInAgent)", () => storage.getAdminAgentKnowledgeForAgent(userId), []),
+      safeDbRead(
+        "admin_agent_knowledge_entries(useInResearch)",
+        () => storage.getAdminAgentKnowledgeForResearch(userId),
+        [],
+      ),
+    ]);
     const operatorKnowledgeBlock = formatKnowledgeForAgentPrompt(knowledgeRows);
     const operatorResearchBlock = formatResearchBlockForAgentPrompt(researchRows);
 
-    const mentorRow = await storage.getAdminAgentMentorState(userId);
+    const mentorRow = await safeDbRead(
+      "admin_agent_mentor_state",
+      () => storage.getAdminAgentMentorState(userId),
+      undefined as Awaited<ReturnType<typeof storage.getAdminAgentMentorState>> | undefined,
+    );
     const mentorParsed = mentorRow ? parseStoredMentorState(mentorRow.state) : null;
     const mentorState = mentorParsed ?? emptyMentorState();
 

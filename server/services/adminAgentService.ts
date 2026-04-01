@@ -508,7 +508,15 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
     ? input.history.filter((t) => (t.role === "user" || t.role === "assistant") && typeof t.content === "string")
     : [];
 
-  const cached = await getCachedAdminAgentContext();
+  let contextText = "";
+  try {
+    const cached = await getCachedAdminAgentContext();
+    contextText = cached.text;
+  } catch (error) {
+    console.error("[admin agent] context cache load failed; continuing with reduced context", error);
+    contextText =
+      "Context cache unavailable for this request. Provide concise, cautious guidance and prioritize known admin links.";
+  }
 
   // Deterministic: reminder job always wins on keyword match
   const reminderIntent = NAV_INTENTS.find((n) => n.action.type === "generate_reminders");
@@ -530,7 +538,7 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
     const ai = await processWithOpenAI({
       message,
       history,
-      contextText: cached.text,
+      contextText,
       canPerformActions,
       currentPath,
       operatorDisplayName,
