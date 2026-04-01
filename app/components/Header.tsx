@@ -394,6 +394,12 @@ export default function Header(_props: HeaderProps) {
     { section: "Operations", name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
     { section: "Operations", name: "Project announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
     { section: "Operations", name: "Internal updates", href: "/admin/updates", icon: Sparkles, permission: "dashboard" as const },
+    {
+      section: "Operations",
+      name: "Document signing workflow",
+      href: "/admin/growth-platform/agreements",
+      icon: FileText,
+    },
     { section: "Operations", name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
     { section: "Settings", name: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard" as const },
     { section: "Site tools", name: "Connections & email", href: "/admin/integrations", icon: Link2 },
