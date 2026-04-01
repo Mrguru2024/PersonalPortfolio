@@ -286,6 +286,7 @@ export default function Header(_props: HeaderProps) {
 
   const adminPages = [
     { section: "Overview", name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" as const },
+    { section: "Overview", name: "Operations dashboard", href: "/admin/operations", icon: Target, permission: "dashboard" as const },
     { section: "Overview", name: "Pages directory", href: "/admin/site-directory", icon: MapIcon, permission: "dashboard" as const },
     { section: "Overview", name: "How-to & guides", href: "/admin/how-to", icon: BookOpen, permission: "dashboard" as const },
     { section: "Overview", name: "Assistant knowledge", href: "/admin/agent-knowledge", icon: Bot, permission: "dashboard" as const },

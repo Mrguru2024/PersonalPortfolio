@@ -779,6 +779,78 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
+        <Card className="border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+            <CardTitle className="text-sm font-medium">Resume Requests</CardTitle>
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-xl sm:text-2xl font-bold">{resumeRequests.length}</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {resumeRequests.filter((r) => !r.accessed).length} unaccessed
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/site-directory">
+            <Map className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Pages directory</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/operations">
+            <Radar className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Operations dashboard</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/invoices">
+            <Receipt className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Invoices</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/announcements">
+            <span className="truncate">Project updates</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/feedback">
+            <span className="truncate">Feedback</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/offers">
+            <Tag className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Site offers</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/challenge/leads">
+            <span className="truncate">Challenge leads</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/growth-os">
+            <Radar className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Growth OS</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/internal-audit">
+            <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Funnel audit</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/content-studio">
+            <PenLine className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Content studio</span>
+          </Link>
+        </Button>
       </div>
         ),
       )}
