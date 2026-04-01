@@ -54,6 +54,7 @@ const LEGACY_LINKS = [
   { label: "Lead intake hub", href: "/admin/lead-intake" },
   { label: "CRM workspace", href: "/admin/crm" },
   { label: "CRM tasks", href: "/admin/crm/tasks" },
+  { label: "Document management", href: "/admin/growth-platform/agreements" },
   { label: "Content Studio", href: "/admin/content-studio" },
   { label: "Funnel & offers", href: "/admin/funnel" },
   { label: "Growth OS", href: "/admin/growth-os" },

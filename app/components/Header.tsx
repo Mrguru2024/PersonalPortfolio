@@ -348,7 +348,6 @@ export default function Header(_props: HeaderProps) {
       name: "Document management",
       href: "/admin/growth-platform/agreements",
       icon: FileText,
-      permission: "dashboard" as const,
     },
     {
       section: "Delivery & platform",
