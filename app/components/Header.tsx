@@ -411,8 +411,8 @@ export default function Header(_props: HeaderProps) {
 
   const isApprovedAdmin = isAuthApprovedAdmin(user);
   const { mode: audienceViewMode } = useAdminAudienceView();
-  /** Hide Ascendra OS chrome on the public site when admin previews as customer or community member. */
-  const showAdminChrome = isApprovedAdmin && audienceViewMode === "admin";
+  /** Approved admins always see admin navigation links. */
+  const showAdminChrome = isApprovedAdmin;
 
   const isSuperUser = isAuthSuperUser(user);
   const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
