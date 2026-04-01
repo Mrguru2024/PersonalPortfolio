@@ -13,6 +13,7 @@ describe('GET /api/changelog', () => {
             title: "Relevant",
             description: "Allowed and fact checked",
             category: "new_project_intake",
+            visibility: "public",
             factChecked: true,
           },
           {
@@ -20,6 +21,7 @@ describe('GET /api/changelog', () => {
             title: "Unverified",
             description: "Should not show",
             category: "marketing_industry_update",
+            visibility: "public",
             factChecked: false,
           },
           {
@@ -27,6 +29,7 @@ describe('GET /api/changelog', () => {
             title: "Wrong category",
             description: "Should not show",
             category: "internal",
+            visibility: "public",
             factChecked: true,
           },
           {
@@ -34,6 +37,7 @@ describe('GET /api/changelog', () => {
             title: "Older relevant",
             description: "Allowed and fact checked",
             category: "persona_interest",
+            visibility: "public",
             factChecked: true,
           },
           {
@@ -41,6 +45,7 @@ describe('GET /api/changelog', () => {
             title: "feat: internal rollout wiring",
             description: "Should be blocked as commit style",
             category: "marketing_industry_update",
+            visibility: "public",
             factChecked: true,
           },
           {
@@ -48,6 +53,7 @@ describe('GET /api/changelog', () => {
             title: "Status update",
             description: "Auto · c5fc760",
             category: "new_project_intake",
+            visibility: "public",
             factChecked: true,
           },
           {
@@ -55,6 +61,22 @@ describe('GET /api/changelog', () => {
             title: "Client project note",
             description: "Includes commit 46a601a from dev log",
             category: "new_project_intake",
+            visibility: "public",
+            factChecked: true,
+          },
+          {
+            date: "2026-03-24T10:00:00Z",
+            title: "Development updates digest published",
+            description: "Should never appear publicly",
+            category: "marketing_industry_update",
+            visibility: "public",
+            factChecked: true,
+          },
+          {
+            date: "2026-03-23T10:00:00Z",
+            title: "Missing visibility field",
+            description: "Should be filtered out",
+            category: "persona_interest",
             factChecked: true,
           },
         ]),
@@ -71,6 +93,7 @@ describe('GET /api/changelog', () => {
         title: "Relevant",
         description: "Allowed and fact checked",
         category: "new_project_intake",
+        visibility: "public",
         factChecked: true,
       },
       {
@@ -78,6 +101,7 @@ describe('GET /api/changelog', () => {
         title: "Older relevant",
         description: "Allowed and fact checked",
         category: "persona_interest",
+        visibility: "public",
         factChecked: true,
       },
     ]);

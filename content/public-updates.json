@@ -4,6 +4,7 @@
     "title": "Search ad CPC trend signals rising pressure on core service keywords",
     "description": "Verified March benchmark sources show higher median CPC pressure in core service categories, which reinforces tighter intent targeting and stronger conversion page clarity.",
     "category": "marketing_industry_update",
+    "visibility": "public",
     "factChecked": true
   },
   {
@@ -11,6 +12,7 @@
     "title": "Founder persona requests increased for practical CRM follow-up playbooks",
     "description": "Discovery conversations and intake forms show repeated demand for simple lead follow-up playbooks, reminder cadence guidance, and low-friction pipeline visibility.",
     "category": "persona_interest",
+    "visibility": "public",
     "factChecked": true
   },
   {
@@ -18,6 +20,7 @@
     "title": "New project intake opened for local service lead-to-booking systems",
     "description": "Recent intake approvals are centered on projects that connect lead capture, call booking, and basic nurture sequencing for local service providers.",
     "category": "new_project_intake",
+    "visibility": "public",
     "factChecked": true
   },
   {
@@ -25,6 +28,7 @@
     "title": "Email deliverability guidance emphasizes list quality over send volume",
     "description": "Current provider guidance and industry reporting continue to prioritize consent quality, engagement signals, and authentication hygiene over bulk send frequency.",
     "category": "marketing_industry_update",
+    "visibility": "public",
     "factChecked": true
   },
   {
@@ -32,6 +36,7 @@
     "title": "Operator and owner personas prioritize visible ROI checkpoints",
     "description": "Persona feedback trends consistently favor progress updates tied to booked calls, qualified leads, and practical revenue checkpoints rather than vanity metrics.",
     "category": "persona_interest",
+    "visibility": "public",
     "factChecked": true
   },
   {
@@ -39,6 +44,7 @@
     "title": "New project intake accepted for startup launch visibility support",
     "description": "Latest onboarding approvals include launch-stage startup projects focused on positioning clarity, landing-page conversion, and first-stage paid traffic testing.",
     "category": "new_project_intake",
+    "visibility": "public",
     "factChecked": true
   }
 ]

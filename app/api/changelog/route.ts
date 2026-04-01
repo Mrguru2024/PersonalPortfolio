@@ -15,6 +15,7 @@ interface PublicUpdateEntry {
   title: string;
   description: string;
   category: PublicUpdateCategory;
+  visibility: "public";
   factChecked: boolean;
 }
 
@@ -25,6 +26,7 @@ const ALLOWED_CATEGORIES = new Set<PublicUpdateCategory>([
   "persona_interest",
   "new_project_intake",
 ]);
+const ALLOWED_VISIBILITY = new Set<PublicUpdateEntry["visibility"]>(["public"]);
 
 const COMMIT_STYLE_PATTERNS: RegExp[] = [
   /^(?:feat|fix|chore|docs?|refactor|style|test|build|ci|perf)(?:\([^)]+\))?:/i,
@@ -34,6 +36,13 @@ const COMMIT_STYLE_PATTERNS: RegExp[] = [
   /\bauto\s*[·-]\s*[0-9a-f]{7,40}\b/i,
   /`[0-9a-f]{7,40}`/,
   /\b(?:[0-9a-f]*\d[0-9a-f]*){7,40}\b/i,
+];
+
+const INTERNAL_ONLY_PATTERNS: RegExp[] = [
+  /\bdevelopment\s+updates?\b/i,
+  /\binternal\s+updates?\b/i,
+  /\badmin(?:-only)?\b/i,
+  /\bascendra\s+innovation\b/i,
 ];
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -52,6 +61,12 @@ function isCommitStyleText(value: string): boolean {
   return COMMIT_STYLE_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
+function hasInternalOnlySignal(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  return INTERNAL_ONLY_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 function readPublicUpdates(limit: number): PublicUpdateEntry[] {
   if (!existsSync(PUBLIC_UPDATES_PATH)) return [];
   const raw = readFileSync(PUBLIC_UPDATES_PATH, "utf-8");
@@ -66,15 +81,19 @@ function readPublicUpdates(limit: number): PublicUpdateEntry[] {
     const title = typeof item.title === "string" ? item.title.trim() : "";
     const description = typeof item.description === "string" ? item.description.trim() : "";
     const category = typeof item.category === "string" ? item.category.trim() : "";
+    const visibility = typeof item.visibility === "string" ? item.visibility.trim() : "";
     const factChecked = item.factChecked === true;
     if (!date || !title || !description || !factChecked) continue;
     if (!ALLOWED_CATEGORIES.has(category as PublicUpdateCategory)) continue;
+    if (!ALLOWED_VISIBILITY.has(visibility as PublicUpdateEntry["visibility"])) continue;
     if (isCommitStyleText(title) || isCommitStyleText(description)) continue;
+    if (hasInternalOnlySignal(title) || hasInternalOnlySignal(description)) continue;
     entries.push({
       date,
       title,
       description,
       category: category as PublicUpdateCategory,
+      visibility: visibility as PublicUpdateEntry["visibility"],
       factChecked,
     });
   }
