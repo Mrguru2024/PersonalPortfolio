@@ -1349,6 +1349,13 @@ export default function AdminDashboardPage() {
                   helpAria: "Help: Site offers",
                 },
                 {
+                  href: "/admin/growth-platform/agreements",
+                  label: "Document management",
+                  icon: FileText,
+                  help: "Create and manage service agreements, signatures, PDFs, and signing handoff links.",
+                  helpAria: "Help: Document management",
+                },
+                {
                   href: "/admin/growth-platform",
                   label: "Growth platform",
                   icon: Layers,
