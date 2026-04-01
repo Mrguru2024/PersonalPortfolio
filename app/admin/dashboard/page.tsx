@@ -50,18 +50,6 @@ import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const LEGACY_LINKS = [
-  { label: "Lead intake hub", href: "/admin/lead-intake" },
-  { label: "CRM workspace", href: "/admin/crm" },
-  { label: "CRM tasks", href: "/admin/crm/tasks" },
-  { label: "Content Studio", href: "/admin/content-studio" },
-  { label: "Funnel & offers", href: "/admin/funnel" },
-  { label: "Growth OS", href: "/admin/growth-os" },
-  { label: "Users", href: "/admin/users" },
-  { label: "Settings", href: "/admin/settings" },
-  { label: "Site directory", href: "/admin/site-directory" },
-  { label: "Reminders", href: "/admin/reminders" },
-] as const;
 import {
   formatDevUpdateDateLabel,
   formatDevUpdateTimeInEastern,
@@ -656,33 +644,23 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       <AscendraOperationsDashboard />
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
-          <CardDescription>
-            Existing workflows remain available from their dedicated admin routes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {LEGACY_LINKS.map((item) => (
-            <Button key={item.href} variant="outline" size="sm" asChild>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
       <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
             Admin Dashboard
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
-            Tune what appears and in what order with Customize—defaults favor inbound work first, then tools and
-            notes.
+            Organize this page by choosing which modules are visible and in what order. Use Customize dashboard to
+            quickly match your workflow.
           </p>
         </div>
-        {dashboardLayout.ready ? <AdminUnifiedLayoutSheetTrigger initialSurface="main" /> : null}
+        {dashboardLayout.ready ? (
+          <AdminUnifiedLayoutSheetTrigger
+            initialSurface="main"
+            label="Customize dashboard"
+            mobileLabel="Customize"
+          />
+        ) : null}
       </div>
 
       {/* New admin: offer guided tour */}
@@ -740,7 +718,7 @@ export default function AdminDashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">No dashboard sections visible</CardTitle>
             <CardDescription>
-              Open <span className="font-medium text-foreground">Customize pages</span> above and turn on at least one
+              Open <span className="font-medium text-foreground">Customize dashboard</span> above and turn on at least one
               module, or reset to the default layout.
             </CardDescription>
           </CardHeader>
@@ -815,65 +793,6 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/site-directory">
-            <MapIcon className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Pages directory</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/operations">
-            <Radar className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Operations dashboard</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/invoices">
-            <Receipt className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Invoices</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/announcements">
-            <span className="truncate">Project updates</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/feedback">
-            <span className="truncate">Feedback</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/offers">
-            <Tag className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Site offers</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/challenge/leads">
-            <span className="truncate">Challenge leads</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/growth-os">
-            <Radar className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Growth OS</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/internal-audit">
-            <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Funnel audit</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/content-studio">
-            <PenLine className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Content studio</span>
-          </Link>
-        </Button>
-      </div>
           </>
         ),
       )}
