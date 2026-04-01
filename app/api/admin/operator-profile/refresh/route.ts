@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
-import { refreshOperatorIntelligence } from "@server/services/adminOperatorProfileService";
+import {
+  refreshOperatorIntelligence,
+  type OperatorDashboardSignals,
+} from "@server/services/adminOperatorProfileService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,7 +13,7 @@ const statsSchema = z
   .object({
     pendingAssessments: z.number().int().min(0).optional(),
     totalContacts: z.number().int().min(0).optional(),
-    unaccessedResume: z.number().int().min(0).optional(),
+    crmContactsCount: z.number().int().min(0).optional(),
   })
   .strict();
 
@@ -30,11 +33,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
     }
     const s = parsed.data;
-    const profile = await refreshOperatorIntelligence(sessionUser.id, {
-      pendingAssessments: s.pendingAssessments ?? 0,
-      totalContacts: s.totalContacts ?? 0,
-      unaccessedResume: s.unaccessedResume ?? 0,
-    });
+    const overrides: Partial<OperatorDashboardSignals> = {};
+    if (s.pendingAssessments !== undefined) overrides.pendingAssessments = s.pendingAssessments;
+    if (s.totalContacts !== undefined) overrides.totalContacts = s.totalContacts;
+    if (s.crmContactsCount !== undefined) overrides.crmContactsCount = s.crmContactsCount;
+    const profile = await refreshOperatorIntelligence(sessionUser.id, overrides);
     return NextResponse.json({ profile });
   } catch (e) {
     console.error("[POST admin/operator-profile/refresh]", e);

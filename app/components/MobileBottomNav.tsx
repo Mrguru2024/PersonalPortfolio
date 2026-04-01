@@ -1,18 +1,22 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Wrench, FileText, Phone, Menu } from "lucide-react";
 import { useMobileNav } from "@/contexts/MobileNavContext";
+import { useLocale } from "@/contexts/LocaleContext";
+import {
+  shellMobileBottomBlog,
+  shellMobileBottomBook,
+  shellMobileBottomHome,
+  shellMobileBottomMenu,
+  shellMobileBottomTools,
+  shellMobileNavAria,
+  shellOpenMenuAria,
+} from "@/lib/i18n/siteShellCopy";
 import { FREE_GROWTH_TOOLS_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: FREE_GROWTH_TOOLS_PATH, label: "Tools", icon: Wrench },
-  { href: "/blog", label: "Blog", icon: FileText },
-  { href: STRATEGY_CALL_PATH, label: "Book", icon: Phone },
-] as const;
 
 /**
  * Fixed bottom navigation for mobile and tablet. App-like UX; hidden on desktop (lg+).
@@ -21,15 +25,27 @@ const NAV_ITEMS = [
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { toggle } = useMobileNav();
+  const { locale } = useLocale();
+
+  const navItems = useMemo(
+    () =>
+      [
+        { href: "/", label: shellMobileBottomHome(locale), icon: Home },
+        { href: FREE_GROWTH_TOOLS_PATH, label: shellMobileBottomTools(locale), icon: Wrench },
+        { href: "/blog", label: shellMobileBottomBlog(locale), icon: FileText },
+        { href: STRATEGY_CALL_PATH, label: shellMobileBottomBook(locale), icon: Phone },
+      ] as const,
+    [locale],
+  );
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]"
+      className="mobile-app-tabbar lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
-      aria-label="Mobile navigation"
+      aria-label={shellMobileNavAria(locale)}
     >
       <div className="flex min-h-[56px] w-full min-w-0 items-stretch justify-around">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
@@ -59,10 +75,10 @@ export default function MobileBottomNav() {
           type="button"
           onClick={toggle}
           className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 min-h-[56px] touch-manipulation text-muted-foreground hover:text-foreground active:bg-muted/50 transition-colors"
-          aria-label="Open menu"
+          aria-label={shellOpenMenuAria(false, locale)}
         >
           <Menu className="h-6 w-6 shrink-0" aria-hidden />
-          <span className="text-[10px] sm:text-xs truncate max-w-full">Menu</span>
+          <span className="text-[10px] sm:text-xs truncate max-w-full">{shellMobileBottomMenu(locale)}</span>
         </button>
       </div>
     </nav>

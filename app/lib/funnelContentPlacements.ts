@@ -17,6 +17,7 @@ export const CONTENT_PLACEMENT_PAGES = [
   { path: "/competitor-position-snapshot", label: "Competitor Snapshot" },
   { path: "/homepage-conversion-blueprint", label: "Homepage Blueprint" },
   { path: "/website-performance-score", label: "Website Performance Score" },
+  { path: "/market-score", label: "Market Score (AMIE funnel)" },
   { path: "/brand-growth", label: "Brand Growth" },
   { path: "/strategy-call", label: "Strategy Call" },
   { path: "/", label: "Homepage" },
@@ -47,4 +48,5 @@ export const LEAD_MAGNET_SLUGS = [
   { slug: "homepage-blueprint", label: "Homepage Blueprint" },
   { slug: "website-performance-score", label: "Website Performance Score" },
   { slug: "growth-diagnosis", label: "Website Growth Diagnosis" },
+  { slug: "market-score", label: "Market Score" },
 ] as const;

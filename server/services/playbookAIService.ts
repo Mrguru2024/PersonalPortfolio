@@ -3,16 +3,17 @@
  * Optional: requires OPENAI_API_KEY.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 let openai: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) {
+    throw new Error("OPENAI_API_KEY is not set. AI playbook generation is disabled.");
+  }
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not set. AI playbook generation is disabled.");
-    }
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    openai = new OpenAI({ apiKey: key });
   }
   return openai;
 }
@@ -138,7 +139,7 @@ export async function getAdminPlatformTips(section?: string | null): Promise<{ t
   const key = section && section.trim() ? section.trim().toLowerCase() : "general";
   const staticTips = STATIC_PLATFORM_TIPS[key] ?? STATIC_PLATFORM_TIPS.general;
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.OPENAI_API_KEY?.trim()) {
     return { tips: staticTips, source: "static" };
   }
 

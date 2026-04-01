@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Target, Layout, Mail, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
@@ -52,14 +52,14 @@ const STEPS = [
 export default function StartupActionPlanPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Startup action plan | Practical steps to improve your online presence"
         description="Five steps for founders: clarify offer, structure homepage, capture leads, build trust, improve conversions."
-        canonicalPath="/resources/startup-action-plan"
+        path="/resources/startup-action-plan"
       />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-3xl marketing-stack">
             <section className="text-center">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
                 Startup action plan
@@ -92,7 +92,7 @@ export default function StartupActionPlanPage() {
             <section className="space-y-6">
               {STEPS.map(({ icon: Icon, title, body }, i) => (
                 <Card key={title} className="border-border bg-card">
-                  <CardContent className="p-5 sm:p-6 flex gap-4">
+                  <CardContent className="px-6 py-5 sm:px-8 sm:py-7 flex gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="h-6 w-6" />
                     </div>

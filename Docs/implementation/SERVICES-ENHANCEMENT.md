@@ -185,7 +185,7 @@ Enhanced the portfolio website to showcase all revenue-generating services that 
 - `app/sections/ServicesSection.tsx` - Comprehensive services section component
 
 ### Modified Files
-- `app/pages/Home.tsx` - Added ServicesSection import and rendering
+- `app/route-modules/Home.tsx` - Added ServicesSection import and rendering
 - `app/components/Header.tsx` - Added Services to navigation
 - `app/sections/HeroSection.tsx` - Updated title to showcase expertise
 

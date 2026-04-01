@@ -66,9 +66,10 @@ function formatTime(iso: string): string {
   try {
     const d = new Date(iso);
     return d.toLocaleTimeString(undefined, {
-      hour: "2-digit",
+      hour: "numeric",
       minute: "2-digit",
       second: "2-digit",
+      hour12: true,
     });
   } catch {
     return iso;

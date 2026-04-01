@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 const NOTE_SECTION_KEYS = [
   "business_overview",
@@ -220,7 +221,7 @@ export default function DiscoveryWorkspacePage() {
                     </Link>
                   )}
                   {workspace.callDate && (
-                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {format(new Date(workspace.callDate), "PPp")}</span>
+                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatLocaleMediumDateTime(workspace.callDate)}</span>
                   )}
                 </CardDescription>
               </div>

@@ -27,6 +27,7 @@ export const LEAD_MAGNET_RELATED_WORK_KEYS = [
   "startup-action-plan",
   "startup-website-score",
   "startup-growth-system",
+  "market-score",
 ] as const;
 
 export type LeadMagnetRelatedWorkKey = (typeof LEAD_MAGNET_RELATED_WORK_KEYS)[number];

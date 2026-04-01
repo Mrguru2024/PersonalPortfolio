@@ -10,7 +10,7 @@ export interface InsightHighlightProps {
 export function InsightHighlight({ children, label }: InsightHighlightProps) {
   return (
     <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="px-5 py-5 sm:px-7 sm:py-6">
         {label && (
           <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">
             {label}

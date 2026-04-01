@@ -1,32 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { format } from "date-fns";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { getAllBreakdowns } from "@/lib/authorityContent";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AUDIT_PATH } from "@/lib/funnelCtas";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 import { FileSearch, ArrowRight } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Website breakdowns | Ascendra Technologies",
   description:
     "Real business website breakdowns: what works, what could be improved, and conversion opportunities. Learn from real examples—then get a breakdown of your own site.",
-};
+  path: "/website-breakdowns",
+  keywords: ["website breakdown", "conversion", "case study", "homepage review"],
+});
 
 export default function WebsiteBreakdownsPage() {
   const breakdowns = getAllBreakdowns();
 
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Website breakdowns | Ascendra Technologies"
         description="Real business website breakdowns: what works, what could be improved, and conversion opportunities. Request a Digital Growth Audit for your own site."
-        canonicalPath="/website-breakdowns"
+        path="/website-breakdowns"
+        schemaType="CollectionPage"
       />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileSearch className="h-7 w-7" />

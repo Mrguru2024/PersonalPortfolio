@@ -2,7 +2,12 @@
 
 import { useEffect } from "react";
 import type { BlogPost } from "@/lib/data";
-import { getSiteBaseUrl } from "@/lib/siteUrl";
+import {
+  absoluteCanonicalUrl,
+  absoluteFromSiteBase,
+  getSiteBaseUrl,
+  resolveClientSiteBase,
+} from "@/lib/siteUrl";
 
 interface BlogPostSEOProps {
   post: BlogPost;
@@ -67,16 +72,15 @@ export function BlogPostSEO({
 }: BlogPostSEOProps) {
   // Ensure slug exists
   const slug = post.slug || "";
-  const postUrl = `${baseUrl}/blog/${slug}`;
 
   // Use SEO fields if available, otherwise fallback to defaults
   const metaTitle = (post as any).metaTitle || post.title || "Blog Post";
   const metaDescription = (post as any).metaDescription || post.summary || "";
   const ogTitle = (post as any).ogTitle || metaTitle;
   const ogDescription = (post as any).ogDescription || metaDescription;
-  const ogImage =
-    (post as any).ogImage || post.coverImage || `${baseUrl}/ascendra-logo.svg`;
-  const canonicalUrl = (post as any).canonicalUrl || postUrl;
+  const ogImageSource =
+    (post as any).ogImage || post.coverImage || "/og-ascendra.png";
+  const canonicalFromPost = (post as any).canonicalUrl as string | undefined;
   const twitterCard = (post as any).twitterCard || "summary_large_image";
 
   // Extract plain text from HTML content for description (first 160 chars) if meta description not set
@@ -123,6 +127,14 @@ export function BlogPostSEO({
   const safeTitle = `${title} | Ascendra Technologies Blog`;
 
   useEffect(() => {
+    const resolvedBase = resolveClientSiteBase(baseUrl);
+    const postUrl = absoluteCanonicalUrl(
+      resolvedBase,
+      canonicalFromPost || "",
+      `/blog/${slug}`,
+    );
+    const ogImageAbsolute = absoluteFromSiteBase(resolvedBase, ogImageSource);
+
     // Update document title
     document.title = safeTitle;
 
@@ -134,14 +146,20 @@ export function BlogPostSEO({
         ? `${keywords}, Ascendra Technologies, Anthony MrGuru Feaster, blog, web development`
         : "Ascendra Technologies, Anthony MrGuru Feaster, blog, web development"
     );
-    updateLinkTag("canonical", canonicalUrl);
+    updateLinkTag("canonical", postUrl);
 
     // Open Graph / Facebook
     updateMetaTag("og:type", "article", true);
     updateMetaTag("og:url", postUrl, true);
+    updateMetaTag("og:site_name", "Ascendra Technologies", true);
     updateMetaTag("og:title", ogTitle, true);
     updateMetaTag("og:description", ogDescription, true);
-    updateMetaTag("og:image", ogImage, true);
+    updateMetaTag("og:image", ogImageAbsolute, true);
+    updateMetaTag(
+      "og:image:alt",
+      ogTitle ? `${ogTitle} — Ascendra Technologies` : "Ascendra Technologies blog",
+      true,
+    );
     updateMetaTag("article:published_time", publishDate, true);
     updateMetaTag("article:modified_time", modifiedDate, true);
 
@@ -170,7 +188,11 @@ export function BlogPostSEO({
     updateMetaTag("twitter:url", postUrl);
     updateMetaTag("twitter:title", ogTitle);
     updateMetaTag("twitter:description", ogDescription);
-    updateMetaTag("twitter:image", ogImage);
+    updateMetaTag("twitter:image", ogImageAbsolute);
+    updateMetaTag(
+      "twitter:image:alt",
+      ogTitle ? `${ogTitle} — Ascendra Technologies` : "Ascendra Technologies blog",
+    );
 
     // Schema.org / JSON-LD
     updateJsonLdScript({
@@ -178,7 +200,7 @@ export function BlogPostSEO({
       "@type": "BlogPosting",
       headline: ogTitle,
       description: description,
-      image: ogImage,
+      image: ogImageAbsolute,
       url: postUrl,
       datePublished: publishDate,
       dateModified: modifiedDate,
@@ -188,16 +210,16 @@ export function BlogPostSEO({
       author: {
         "@type": "Person",
         name: "Anthony MrGuru Feaster",
-        url: baseUrl,
+        url: resolvedBase,
       },
       publisher: {
         "@type": "Organization",
         name: "Ascendra Technologies",
         logo: {
           "@type": "ImageObject",
-          url: `${baseUrl}/favicon.svg`,
-          width: 32,
-          height: 32,
+          url: `${resolvedBase}/ascendra-logo.svg`,
+          width: 512,
+          height: 512,
         },
       },
       mainEntityOfPage: {
@@ -208,20 +230,22 @@ export function BlogPostSEO({
 
     // Cleanup function to restore default title when component unmounts
     return () => {
-      document.title = "Ascendra Technologies | Blog";
+      document.title =
+        "Ascendra Technologies | Brand Growth, Strategy & Marketing";
     };
   }, [
     safeTitle,
     description,
     keywords,
-    postUrl,
+    slug,
     ogTitle,
-    ogImage,
+    ogDescription,
+    ogImageSource,
+    canonicalFromPost,
     publishDate,
     modifiedDate,
     seoKeywords,
     baseUrl,
-    canonicalUrl,
     twitterCard,
   ]);
 

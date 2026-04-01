@@ -7,26 +7,32 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/lib/view-mode-context";
+import { AdminAudienceViewProvider } from "@/contexts/AdminAudienceViewContext";
 import { SuperAdminErrorReporter } from "@/components/SuperAdminErrorReporter";
 import PwaRegistration from "@/components/PwaRegistration";
 import { FunnelProvider } from "@/lib/funnel-store";
+import { GlobalTooltipProvider } from "@/components/ui/GlobalTooltipProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="portfolio-theme">
-        <LocaleProvider>
-        <ViewModeProvider>
-          <AuthProvider>
-            <FunnelProvider>
-            <PwaRegistration />
-            {children}
-            <Toaster />
-            <SuperAdminErrorReporter />
-            </FunnelProvider>
-          </AuthProvider>
-        </ViewModeProvider>
-        </LocaleProvider>
+        <GlobalTooltipProvider>
+          <LocaleProvider>
+            <ViewModeProvider>
+              <AuthProvider>
+                <AdminAudienceViewProvider>
+                  <FunnelProvider>
+                    <PwaRegistration />
+                    {children}
+                    <Toaster />
+                    <SuperAdminErrorReporter />
+                  </FunnelProvider>
+                </AdminAudienceViewProvider>
+              </AuthProvider>
+            </ViewModeProvider>
+          </LocaleProvider>
+        </GlobalTooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

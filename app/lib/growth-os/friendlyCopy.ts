@@ -162,6 +162,69 @@ export function formatAutomationJobType(jobType: string): string {
   return AUTOMATION_JOB_LABELS[jobType] ?? humanizeSnakeCase(jobType);
 }
 
+const RESEARCH_DATA_MODE_LABELS: Record<string, string> = {
+  mixed_or_live: "Includes live AI discovery",
+  mock_or_cached: "Demo or cached items only (no live API rows this week)",
+};
+
+/** Weekly summary `dataMode` from the research API. */
+export function formatResearchDataMode(mode: string | undefined): string {
+  if (!mode) return "—";
+  return RESEARCH_DATA_MODE_LABELS[mode] ?? humanizeSnakeCase(mode);
+}
+
+const AUTOMATION_RUN_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  running: "Running",
+  completed: "Completed",
+  failed: "Failed",
+};
+
+export function formatAutomationRunStatus(status: string): string {
+  return AUTOMATION_RUN_STATUS_LABELS[status] ?? humanizeSnakeCase(status);
+}
+
+const CMS_CONTENT_TYPE_LABELS: Record<string, string> = {
+  headline: "Headline",
+  hook: "Hook",
+  cta: "CTA / button copy",
+  social_caption: "Social caption",
+  blog: "Blog draft",
+  script: "Script",
+  email: "Email",
+  announcement: "Announcement",
+  learning_lesson: "Lesson",
+};
+
+/** Content Studio `content_type` values shown on intelligence dashboards. */
+export function formatCmsContentType(contentType: string | null | undefined): string {
+  if (contentType == null || contentType === "") return "—";
+  return CMS_CONTENT_TYPE_LABELS[contentType] ?? humanizeSnakeCase(contentType);
+}
+
+const FUNNEL_STAGE_LABELS: Record<string, string> = {
+  unset: "Not set",
+  awareness: "Awareness",
+  consideration: "Consideration",
+  conversion: "Conversion",
+  nurture: "Nurture",
+  retention: "Retention",
+};
+
+export function formatFunnelStage(stage: string): string {
+  return FUNNEL_STAGE_LABELS[stage] ?? humanizeSnakeCase(stage);
+}
+
+const CONTENT_ATTRIBUTION_KIND_LABELS: Record<string, string> = {
+  internal_document: "Content Studio document",
+  blog_post: "Blog post",
+  calendar_entry: "Editorial calendar entry",
+};
+
+export function formatContentAttributionKind(kind: string): string {
+  return CONTENT_ATTRIBUTION_KIND_LABELS[kind] ?? humanizeSnakeCase(kind);
+}
+
 /** Stable order for automation job dropdown (values must match API). */
 export const AUTOMATION_JOB_VALUES = [
   "weekly_research_digest",

@@ -34,12 +34,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
 import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { WhatToExpectList, CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import {
+  CTA_REASSURANCE_STRATEGY_CALL,
+  WHAT_TO_EXPECT_STRATEGY_FORM_ITEMS,
+  WHAT_TO_EXPECT_STRATEGY_FORM_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -69,9 +75,9 @@ const MAIN_NEED_OPTIONS = [
 ];
 
 const BUDGET_OPTIONS = [
-  { value: "1k-3k", label: "$1k – $3k" },
-  { value: "3k-7k", label: "$3k – $7k" },
-  { value: "7k-plus", label: "$7k+" },
+  { value: "under-10k", label: "Under $10k" },
+  { value: "10k-35k", label: "$10k – $35k" },
+  { value: "35k-plus", label: "$35k+" },
 ];
 
 const TIMELINE_OPTIONS = [
@@ -149,13 +155,6 @@ export default function StrategyCallPage() {
 
   return (
     <>
-      <PageSEO
-        title="Book a free call | Brand Growth"
-        description="Book a free call to discuss your brand, website, or marketing goals. One coordinated team—brand, web, and marketing."
-        keywords={["strategy call", "brand strategy", "consultation", "brand growth"]}
-        canonicalPath="/strategy-call"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10 py-8 fold:py-10 xs:py-12 sm:py-16 md:py-20">
         <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl overflow-x-hidden">
           <FunnelHeroMedia
@@ -170,7 +169,7 @@ export default function StrategyCallPage() {
               <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h1 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Book a free call
+              {MARKETING_CTA_BOOK_STRATEGY_CALL}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Share a few details. We’ll reach out to schedule a call and align on your goals—no pressure, no obligation.
@@ -183,7 +182,8 @@ export default function StrategyCallPage() {
                 <CardTitle className="text-base sm:text-lg">What This Call Is For</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 text-sm text-muted-foreground break-words min-w-0">
-                A short conversation to understand your goals, where you are now, and whether our brand, web, or marketing path is a fit. No pitch—just clarity and next steps if it makes sense.
+                A working conversation: what you&apos;re trying to move, what&apos;s already in place, and whether a
+                brand/web path here is the right lever. Direct feedback—no scripted pitch.
               </CardContent>
             </Card>
             <Card className="border-border bg-card/80 shadow-sm overflow-hidden min-w-0">
@@ -191,14 +191,22 @@ export default function StrategyCallPage() {
                 <CardTitle className="text-base sm:text-lg">Who This Is Best For</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 text-sm text-muted-foreground break-words min-w-0">
-                Entrepreneurs and small businesses ready to invest in brand, website, or marketing—launch, rebrand, or ongoing assets. One coordinated team, no handoff chaos.
+                Founders and operators ready to invest in brand, site, or marketing systems—launch, rebrand, or ongoing
+                assets—with one coordinated team instead of a string of handoffs.
               </CardContent>
             </Card>
           </div>
 
+          <WhatToExpectList
+            title={WHAT_TO_EXPECT_STRATEGY_FORM_TITLE}
+            items={WHAT_TO_EXPECT_STRATEGY_FORM_ITEMS}
+            compact
+            className="max-w-xl mx-auto mb-6 sm:mb-8"
+          />
+
           <Card className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full">
             <CardHeader className="px-4 sm:px-6 md:px-8">
-              <CardTitle className="text-lg sm:text-xl">Book your free call</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Book your call</CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 All fields help us prepare for the conversation.
               </CardDescription>
@@ -394,9 +402,9 @@ export default function StrategyCallPage() {
                       <Link href={BRAND_GROWTH_PATH}>Back to Brand Growth</Link>
                     </Button>
                   </div>
-                  <p className="text-muted-foreground text-xs sm:text-sm pt-1">
-                    We'll respond within 24–48 hours to schedule your call.
-                  </p>
+                  <CTAReassuranceLine dense className="text-left max-w-none pt-1">
+                    {CTA_REASSURANCE_STRATEGY_CALL}
+                  </CTAReassuranceLine>
                 </form>
               </Form>
             </CardContent>

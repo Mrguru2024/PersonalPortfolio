@@ -9,7 +9,9 @@ import {
   integer,
   json,
   timestamp,
+  boolean,
 } from "drizzle-orm/pg-core";
+import type { PersonaStrategyLayer } from "./offerEngineTypes";
 
 export const marketingPersonas = pgTable("marketing_personas", {
   id: text("id").primaryKey(),
@@ -23,6 +25,17 @@ export const marketingPersonas = pgTable("marketing_personas", {
   goalsJson: json("goals_json").$type<string[]>().notNull().default([]),
   objectionsJson: json("objections_json").$type<string[]>().notNull().default([]),
   dynamicSignalsJson: json("dynamic_signals_json").$type<string[]>().notNull().default([]),
+  /**
+   * Core Ascendra target personas (Marcus, Kristopher, …) — protected from delete in Offer Engine APIs.
+   * Custom personas default false.
+   */
+  offerEngineLocked: boolean("offer_engine_locked").notNull().default(false),
+  /**
+   * Persona Strategy Layer fields for Offer Engine (trust triggers, CTA prefs, etc.).
+   */
+  offerEngineStrategyJson: json("offer_engine_strategy_json")
+    .$type<PersonaStrategyLayer | null>()
+    .default(null),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

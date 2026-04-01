@@ -110,11 +110,13 @@ export function BlogPostFormatter({
       codeBlocks.forEach((code) => {
         if (!code.parentElement?.classList.contains("hljs")) {
           code.parentElement?.classList.add(
-            "bg-gray-900",
-            "dark:bg-gray-950",
+            "bg-overlay",
+            "text-primary-foreground",
             "p-4",
             "rounded-lg",
-            "overflow-x-auto"
+            "overflow-x-auto",
+            "border",
+            "border-border"
           );
         }
       });
@@ -165,46 +167,49 @@ export function BlogPostFormatter({
     <div
       ref={contentRef}
       className={cn(
-        "prose prose-lg dark:prose-invert max-w-none",
+        // Neutral typography scale + invert in dark; overrides use semantic tokens below.
+        "prose prose-neutral prose-lg dark:prose-invert max-w-none",
         // Typography enhancements
-        "prose-headings:font-bold prose-headings:text-gray-900 dark:prose-headings:text-gray-100",
+        "prose-headings:font-bold prose-headings:text-foreground",
         "prose-h1:text-4xl prose-h1:mt-8 prose-h1:mb-4 prose-h1:scroll-mt-20",
         "prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:scroll-mt-20",
         "prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:scroll-mt-20",
         "prose-h4:text-xl prose-h4:mt-4 prose-h4:mb-2",
-        // Paragraph styling
-        "prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4 prose-p:text-base sm:prose-p:text-lg",
+        // Paragraph styling (long-form body: token secondary in light, full foreground in dark)
+        "prose-p:text-[hsl(var(--foreground-secondary))] dark:prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-4 prose-p:text-base sm:prose-p:text-lg",
         // Link styling
         "prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all",
         "prose-a:decoration-2 prose-a:underline-offset-2",
         // Text emphasis
-        "prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-strong:font-semibold",
-        "prose-em:text-gray-700 dark:prose-em:text-gray-300 prose-em:italic",
+        "prose-strong:text-foreground prose-strong:font-semibold",
+        "prose-em:text-muted-foreground prose-em:italic",
         // Lists
         "prose-ul:list-disc prose-ul:pl-6 prose-ul:my-4 prose-ul:space-y-2",
         "prose-ol:list-decimal prose-ol:pl-6 prose-ol:my-4 prose-ol:space-y-2",
-        "prose-li:text-gray-700 dark:prose-li:text-gray-300 prose-li:my-2 prose-li:leading-relaxed",
+        "prose-li:text-[hsl(var(--foreground-secondary))] dark:prose-li:text-foreground prose-li:my-2 prose-li:leading-relaxed",
         // Blockquotes
         "prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6",
-        "prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400 prose-blockquote:bg-gray-50 dark:prose-blockquote:bg-gray-900/50",
+        "prose-blockquote:text-muted-foreground prose-blockquote:bg-muted/60",
         "prose-blockquote:py-2 prose-blockquote:rounded-r",
-        // Code
-        "prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded",
-        "prose-code:text-red-600 dark:prose-code:text-red-400 prose-code:font-mono",
-        "prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:text-gray-100 prose-pre:p-4 prose-pre:rounded-lg",
-        "prose-pre:overflow-x-auto prose-pre:border prose-pre:border-gray-800",
+        // Code (inline: muted surface + destructive accent; blocks: overlay slab)
+        "prose-code:text-sm prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded",
+        "prose-code:text-destructive prose-code:font-mono",
+        "prose-pre:bg-overlay prose-pre:text-primary-foreground prose-pre:p-4 prose-pre:rounded-lg",
+        "prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border",
+        // Fenced `code` must not use inline-code (destructive/muted) styling
+        "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit [&_pre_code]:rounded-none",
         // Images
         "prose-img:rounded-lg prose-img:shadow-lg prose-img:my-6 prose-img:w-full prose-img:h-auto",
-        "prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-800",
+        "prose-img:border prose-img:border-border",
         // Horizontal rules
-        "prose-hr:border-gray-300 dark:prose-hr:border-gray-700 prose-hr:my-8",
+        "prose-hr:border-border prose-hr:my-8",
         // Tables
         "prose-table:w-full prose-table:my-6 prose-table:border-collapse",
-        "prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:font-semibold prose-th:p-3",
-        "prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-700",
-        "prose-td:p-3 prose-td:border prose-td:border-gray-200 dark:prose-td:border-gray-700",
+        "prose-th:bg-muted prose-th:font-semibold prose-th:p-3",
+        "prose-th:border prose-th:border-border",
+        "prose-td:p-3 prose-td:border prose-td:border-border",
         // Additional enhancements
-        "prose-figcaption:text-sm prose-figcaption:text-gray-500 prose-figcaption:mt-2 prose-figcaption:text-center",
+        "prose-figcaption:text-sm prose-figcaption:text-muted-foreground prose-figcaption:mt-2 prose-figcaption:text-center",
         className
       )}
       dangerouslySetInnerHTML={{ __html: content || "" }}

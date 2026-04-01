@@ -127,7 +127,7 @@ export default function DiagnosisResultsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 * (i + 1), duration: 0.25 }}
-                    className="rounded-lg border bg-muted/30 p-3"
+                    className="rounded-lg border bg-section/40 dark:bg-section/20 p-3"
                   >
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">{item.label}</p>
                     <p className="text-xl font-semibold text-foreground">{item.value}</p>

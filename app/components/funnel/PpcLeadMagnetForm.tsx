@@ -171,7 +171,7 @@ export function PpcLeadMagnetForm() {
 
   return (
     <Card className="border-border bg-card max-w-2xl mx-auto">
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="px-5 py-5 sm:px-8 sm:py-7">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((v) => mutate(v))}

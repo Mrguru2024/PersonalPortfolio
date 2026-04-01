@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import {
   AlertDialog,
@@ -294,9 +294,9 @@ export default function NewslettersPage() {
                       {getStatusBadge(newsletter.status)}
                     </div>
                     <CardDescription>
-                      Created {format(new Date(newsletter.createdAt), "PPp")}
+                      Created {formatLocaleMediumDateTime(newsletter.createdAt)}
                       {newsletter.sentAt && (
-                        <> • Sent {format(new Date(newsletter.sentAt), "PPp")}</>
+                        <> • Sent {formatLocaleMediumDateTime(newsletter.sentAt)}</>
                       )}
                     </CardDescription>
                   </div>

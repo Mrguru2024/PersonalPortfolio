@@ -11,12 +11,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const industry = searchParams.get("industry") ?? undefined;
     const businessStage = searchParams.get("businessStage") ?? undefined;
+    const founderTribe = searchParams.get("founderTribe") ?? undefined;
     const limit = parseInt(searchParams.get("limit") ?? "50", 10) || 50;
 
     const profiles = await getAfnProfilesForDirectory({
       currentUserId: user?.id ? Number(user.id) : undefined,
       industry,
       businessStage,
+      founderTribe,
       limit,
     });
     return NextResponse.json(profiles);

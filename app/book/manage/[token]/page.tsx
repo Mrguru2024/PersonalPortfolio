@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { PageSEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -63,8 +62,7 @@ export default function ManageBookingPage() {
 
   return (
     <>
-      <PageSEO title="Your booking | Ascendra" description="View or cancel your scheduled meeting." canonicalPath="/book/manage" />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y">
         <div className="container mx-auto px-3 sm:px-6 max-w-lg">
           {loading ? (
             <div className="flex justify-center py-16">

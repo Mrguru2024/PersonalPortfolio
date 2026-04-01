@@ -129,7 +129,7 @@ export function ImagePicker({
           )}
           <div className="flex-1 min-w-0">
             <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-full">
-              <TabsList className="h-9">
+              <TabsList className="h-9 min-h-9 w-fit flex-nowrap gap-0 p-0.5">
                 <TabsTrigger value="url" className="text-xs"><Link2 className="h-3 w-3 mr-1" />URL</TabsTrigger>
                 <TabsTrigger value="upload" className="text-xs"><Upload className="h-3 w-3 mr-1" />Upload</TabsTrigger>
                 <TabsTrigger value="generate" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />AI</TabsTrigger>

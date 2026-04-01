@@ -2,6 +2,22 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis/cloudflare";
 
+/**
+ * AFN (`app/Afn`) canonical URL is `/Afn`. Aliases `/community` and `/afn` (case variants) rewrite here
+ * so one page tree serves all (see matcher — merged with admin API proxy below).
+ */
+function rewriteToAfn(pathname: string): string | null {
+  if (pathname === "/Afn" || pathname.startsWith("/Afn/")) return null;
+
+  const community = pathname.match(/^\/community(\/.*)?$/i);
+  if (community) return `/Afn${community[1] ?? ""}`;
+
+  const afnAlias = pathname.match(/^\/afn(\/.*)?$/i);
+  if (afnAlias) return `/Afn${afnAlias[1] ?? ""}`;
+
+  return null;
+}
+
 /** Per-IP sliding window for /api/admin/* when Upstash is configured (slows brute force / session abuse). */
 const ADMIN_MAX_PER_MINUTE = 400;
 
@@ -40,6 +56,13 @@ function clientIp(req: NextRequest): string {
 }
 
 export async function proxy(req: NextRequest) {
+  const nextPath = rewriteToAfn(req.nextUrl.pathname);
+  if (nextPath) {
+    const url = req.nextUrl.clone();
+    url.pathname = nextPath;
+    return NextResponse.rewrite(url);
+  }
+
   const limiter = getAdminRatelimit();
   if (!limiter) return NextResponse.next();
 
@@ -58,5 +81,17 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/admin/:path*",
+  matcher: [
+    "/api/admin/:path*",
+    "/community",
+    "/Community",
+    "/COMMUNITY",
+    "/community/:path*",
+    "/Community/:path*",
+    "/COMMUNITY/:path*",
+    "/afn",
+    "/AFN",
+    "/afn/:path*",
+    "/AFN/:path*",
+  ],
 };

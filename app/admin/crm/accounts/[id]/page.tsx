@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { formatLocaleDateTime } from "@/lib/localeDateTime";
 
 interface CrmAccount {
   id: number;
@@ -316,7 +316,7 @@ export default function CrmAccountDetailPage() {
               {activity.slice(0, 10).map((a) => (
                 <li key={a.id} className="text-sm">
                   <span className="font-medium">{a.title}</span>
-                  <span className="text-muted-foreground ml-2">{format(new Date(a.createdAt), "MMM d, HH:mm")}</span>
+                  <span className="text-muted-foreground ml-2">{formatLocaleDateTime(a.createdAt, "monthDayTime")}</span>
                 </li>
               ))}
             </ul>

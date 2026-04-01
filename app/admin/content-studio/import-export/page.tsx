@@ -88,8 +88,7 @@ export default function ContentStudioImportExportPage() {
       <div>
         <h2 className="text-lg font-semibold">Import / export</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Pull from Google Calendar (iCal URL) or Google Sheets (published CSV export). Also supports pasted CSV,
-          JSON, or .ics text.
+          Bring in rows from a Google Calendar link or a published Google Sheet, or paste CSV / JSON / calendar text here.
         </p>
       </div>
 

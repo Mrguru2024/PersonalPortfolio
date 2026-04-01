@@ -39,6 +39,11 @@ export interface LeadCustomFields {
   recommendedBrandPath?: string;
   qualificationSubmitted?: boolean;
   readyForCall?: boolean;
+  /** Offer valuation lead magnet metadata */
+  valuationPersona?: string;
+  latestOfferValuationName?: string;
+  latestOfferValuationScore?: number;
+  latestOfferValuationAt?: string;
   /** Free growth tools hub — optional note on which tools they want */
   freeToolsInterest?: string;
   /** ISO timestamp when hub qualification was submitted */

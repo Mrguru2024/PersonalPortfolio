@@ -50,6 +50,8 @@ function setCachedUser(user: AuthUser | null): void {
 type AuthContextType = {
   user: AuthUser | null;
   isLoading: boolean;
+  /** True while data is from `placeholderData` (sessionStorage preview). Don’t gate SSR/client hydration on raw `user` alone. */
+  isAuthPlaceholder: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<AuthUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
@@ -68,11 +70,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<AuthUser | null, Error>({
+  const userQuery = useQuery<AuthUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
@@ -106,6 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     throwOnError: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const user = userQuery.data;
+  const error = userQuery.error;
+  const isLoading = userQuery.isLoading;
+  const isAuthPlaceholder = userQuery.isPlaceholderData;
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -240,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user: user ?? null,
         isLoading,
+        isAuthPlaceholder,
         error,
         loginMutation,
         logoutMutation,
@@ -259,4 +263,4 @@ export function useAuth() {
   return context;
 }
 
-export { isAuthSuperUser } from "@/lib/super-admin";
+export { isAuthSuperUser, isAuthApprovedAdmin } from "@/lib/super-admin";

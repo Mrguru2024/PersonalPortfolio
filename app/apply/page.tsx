@@ -140,7 +140,7 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+    <div className="min-h-screen bg-gradient-to-b from-section to-background">
       <div className="container mx-auto px-4 py-8 max-w-xl">
         <div className="mb-6">
           <Link href="/diagnosis/results" className="text-sm text-muted-foreground hover:text-foreground">

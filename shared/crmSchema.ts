@@ -9,6 +9,7 @@ import {
   real,
   unique,
 } from "drizzle-orm/pg-core";
+import type { LeadControlOrgConfig } from "./leadControlOrgSettingsTypes";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -108,6 +109,12 @@ export const crmContacts = pgTable("crm_contacts", {
   lostReason: text("lost_reason"),
   responseStatus: text("response_status"), // e.g. awaiting_reply | replied | no_response
   reactivationEligible: boolean("reactivation_eligible").default(false),
+  /** Lead Control System: P1 (urgent) … P5 (nurture/archive); computed + persisted for ops sorting */
+  leadControlPriority: text("lead_control_priority"), // P1 | P2 | P3 | P4 | P5
+  /** First outbound touch logged via Lead Control (speed-to-lead reporting) */
+  firstResponseAt: timestamp("first_response_at"),
+  /** Short routing hint: e.g. book_call | qualify_first | nurture (rules engine / manual) */
+  leadRoutingHint: text("lead_routing_hint"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -610,6 +617,43 @@ export const crmContactSocialSuggestions = pgTable("crm_contact_social_suggestio
 export type CrmContactSocialSuggestion = typeof crmContactSocialSuggestions.$inferSelect;
 export type InsertCrmContactSocialSuggestion = typeof crmContactSocialSuggestions.$inferInsert;
 
+/** Monthly internal operating line item (platform + agency reality). Amounts in USD cents unless noted. */
+export type RevenueOpsOperatingCostLine = {
+  key: string;
+  label: string;
+  /** Expected monthly cash cost in cents */
+  monthlyCents: number;
+  notes?: string;
+};
+
+/**
+ * Cash or accrual-style movements you record outside Stripe/invoices (bank CSV, manual true-up).
+ * `source` helps analytics filters; bank sync can be manual until a provider is wired.
+ */
+export type RevenueOpsLedgerEntry = {
+  id: string;
+  occurredAt: string;
+  kind: "revenue" | "cost";
+  source: "manual" | "bank_import" | "stripe_report";
+  amountCents: number;
+  label: string;
+  userId?: number;
+  quoteId?: number;
+  notes?: string;
+};
+
+export type RevenueOpsFinanceSettings = {
+  /** Default window for dashboard money math (days). */
+  reportingPeriodDays?: number;
+  /** Editable model of what it costs to run the shop each month (infra, tools, delivery, G&A). */
+  operatingCostLines?: RevenueOpsOperatingCostLine[];
+  ledgerEntries?: RevenueOpsLedgerEntry[];
+  /** Optional coaching target; not used in calculations. */
+  targetGrossMarginPercent?: number;
+  /** Operator note (e.g. how you import bank data). */
+  bankDataNote?: string;
+};
+
 /** Singleton row (id=1): internal Revenue Ops templates, toggles, default booking URL. */
 export type RevenueOpsSettingsConfig = {
   welcomeSmsEnabled?: boolean;
@@ -617,6 +661,7 @@ export type RevenueOpsSettingsConfig = {
   missedCallSmsEnabled?: boolean;
   missedCallSmsTemplate?: string;
   defaultBookingUrl?: string;
+  finance?: RevenueOpsFinanceSettings;
 };
 
 export const revenueOpsSettings = pgTable("revenue_ops_settings", {
@@ -628,6 +673,16 @@ export const revenueOpsSettings = pgTable("revenue_ops_settings", {
 export type RevenueOpsSettingsRow = typeof revenueOpsSettings.$inferSelect;
 export type InsertRevenueOpsSettingsRow = typeof revenueOpsSettings.$inferInsert;
 
+/** Singleton (id=1): org-wide Lead Control routing rules — still writes hints to crm_contacts only. */
+export const leadControlOrgSettings = pgTable("lead_control_org_settings", {
+  id: integer("id").primaryKey().default(1),
+  config: json("config").$type<LeadControlOrgConfig>().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LeadControlOrgSettingsRow = typeof leadControlOrgSettings.$inferSelect;
+export type { LeadControlOrgConfig } from "./leadControlOrgSettingsTypes";
+
 // ——— Growth Intelligence: experiments and variant assignment ———
 
 /** A/B or multivariate experiments (e.g. hero CTA, offer headline). */
@@ -635,6 +690,26 @@ export const growthExperiments = pgTable("growth_experiments", {
   id: serial("id").primaryKey(),
   key: text("key").notNull().unique(), // e.g. homepage_hero_cta
   name: text("name").notNull(),
+  /** Ascendra Experimentation Engine (AEE) — workspace scope for future multi-tenant reuse. */
+  workspaceKey: text("workspace_key").notNull().default("ascendra_main"),
+  description: text("description"),
+  /** Why we are running this test (decision memory). */
+  hypothesis: text("hypothesis"),
+  /** awareness | consideration | conversion | nurture */
+  funnelStage: text("funnel_stage"),
+  /** Persona / ICP key (journey engine, offer pages, or custom). */
+  primaryPersonaKey: text("primary_persona_key"),
+  /** lead_magnet | service | strategy_call | paid_offer | other */
+  offerType: text("offer_type"),
+  /** Channels under test: web, google_ads, meta, email, social_organic, etc. */
+  channelsJson: json("channels_json").$type<string[]>().default([]),
+  /** Admin-recorded rationale after decisions (extends hypothesis post-hoc). */
+  decisionRationale: text("decision_rationale"),
+  /** headline_test | cta_test | landing_page | google_ads_creative | email_subject | social_hook | multivariate */
+  experimentTemplateKey: text("experiment_template_key"),
+  /** Multivariate factor keys when template is multivariate (e.g. ["headline","cta"]). */
+  multivariateFactorsJson: json("multivariate_factors_json").$type<string[]>().default([]),
+  createdByUserId: integer("created_by_user_id"),
   status: text("status").notNull().default("draft"), // draft | running | paused | ended
   startAt: timestamp("start_at"),
   endAt: timestamp("end_at"),
@@ -652,6 +727,9 @@ export const growthVariants = pgTable("growth_variants", {
   key: text("key").notNull(), // e.g. control | variant_a
   name: text("name").notNull(),
   config: json("config").$type<Record<string, unknown>>(), // e.g. { label: "Get audit", href: "/audit" }
+  /** Relative allocation weight for getOrAssignVariant (default equal split). */
+  allocationWeight: real("allocation_weight").notNull().default(1),
+  isControl: boolean("is_control").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

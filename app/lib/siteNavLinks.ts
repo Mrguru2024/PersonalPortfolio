@@ -13,6 +13,10 @@ import {
   PPC_LEAD_MAGNET_PATH,
   DIAGNOSTICS_HUB_PATH,
   PROJECT_GROWTH_ASSESSMENT_PATH,
+  GROWTH_PLATFORM_PATH,
+  PERSONA_JOURNEY_PATH,
+  MARKET_SCORE_PATH,
+  COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
 
 export const MAIN_LINKS = [
@@ -22,18 +26,24 @@ export const MAIN_LINKS = [
   { label: "Choose your diagnosis", href: DIAGNOSTICS_HUB_PATH },
   { label: "Free trial", href: FREE_TRIAL_PATH },
   { label: "About", href: "/about" },
-  { label: "Your Growth Score", href: "/diagnosis/results" },
+  { label: "Community", href: COMMUNITY_HUB_PUBLIC_PATH },
   { label: "Blog", href: "/blog" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Updates", href: "/updates" },
+  { label: "Your Growth Score", href: "/diagnosis/results" },
   { label: "Contact", href: "/contact" },
 ] as const;
 
 export const GROWTH_LINKS = [
   { label: "Choose your diagnosis", href: DIAGNOSTICS_HUB_PATH },
-  { label: "Free trial", href: FREE_TRIAL_PATH },
+  { label: "Growth System Platform", href: GROWTH_PLATFORM_PATH },
+  { label: "Find your path", href: PERSONA_JOURNEY_PATH },
+  { label: "Market Score", href: MARKET_SCORE_PATH },
   { label: "Free diagnosis", href: GROWTH_DIAGNOSIS_ENGINE_PATH },
   { label: "Free audit", href: DIGITAL_GROWTH_AUDIT_PATH },
   { label: "PPC & lead systems", href: PPC_LEAD_MAGNET_PATH },
   { label: "Free toolkit", href: FREE_GROWTH_TOOLS_PATH },
+  { label: "AI image studio", href: "/generate-images" },
   { label: "5-day challenge (paid)", href: CHALLENGE_LANDING_PATH },
   { label: "Growth assessment (full)", href: PROJECT_GROWTH_ASSESSMENT_PATH },
   { label: "Brand Growth", href: BRAND_GROWTH_PATH },

@@ -4,9 +4,9 @@ import { isAdmin } from "@/lib/auth-helpers";
 import {
   getCalendarEntry,
   updateCalendarEntry,
-  duplicateCalendarEntry,
   syncDocumentWorkflowFromCalendar,
 } from "@server/services/internalStudio/calendarService";
+import { editorialStrategyMetaSchema, sanitizeEditorialStrategyMetaForDb } from "@shared/editorialStrategyMeta";
 import { shouldAutoRunContentInsightOnSchedule } from "@server/services/growthIntelligence/growthIntelligenceConfig";
 import { triggerContentInsightAsync } from "@server/services/growthIntelligence/automationService";
 
@@ -25,6 +25,7 @@ const patchSchema = z.object({
     funnelStage: z.string().nullable().optional(),
     campaignId: z.number().int().nullable().optional(),
     documentId: z.number().int().nullable().optional(),
+    strategyMeta: z.unknown().optional().nullable(),
   });
 
 export async function GET(
@@ -60,6 +61,20 @@ export async function PATCH(
       return NextResponse.json({ error: "Validation", details: parsed.error.flatten() }, { status: 400 });
     }
     const patch: Record<string, unknown> = { ...parsed.data };
+    if (parsed.data.strategyMeta !== undefined) {
+      if (parsed.data.strategyMeta === null) {
+        patch.strategyMeta = null;
+      } else {
+        const metaParsed = editorialStrategyMetaSchema.safeParse(parsed.data.strategyMeta);
+        if (!metaParsed.success) {
+          return NextResponse.json(
+            { error: "Validation", details: metaParsed.error.flatten() },
+            { status: 400 },
+          );
+        }
+        patch.strategyMeta = sanitizeEditorialStrategyMetaForDb(metaParsed.data);
+      }
+    }
     if (parsed.data.scheduledAt) {
       const d = new Date(parsed.data.scheduledAt);
       if (Number.isNaN(d.getTime())) return NextResponse.json({ error: "Invalid scheduledAt" }, { status: 400 });

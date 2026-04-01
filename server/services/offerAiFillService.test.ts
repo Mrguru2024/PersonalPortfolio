@@ -1,4 +1,4 @@
-import "openai/shims/node";
+import "@server/openai/nodeClient";
 import { normalizeOfferDeliverableIcon } from "./offerAiFillService";
 
 describe("normalizeOfferDeliverableIcon", () => {

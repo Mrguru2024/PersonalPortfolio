@@ -61,6 +61,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CrmContactQuickActions } from "@/components/admin/CrmContactQuickActions";
+import { CollapsibleLongList } from "@/components/admin/CollapsibleLongList";
+
+const CRM_CONTACT_LIST_PREVIEW = 12;
 
 interface CrmContact {
   id: number;
@@ -114,6 +117,14 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name A–Z" },
   { value: "status", label: "Status" },
 ] as const;
+
+function parseEstimatedValueCents(dollarsRaw: string): number | null {
+  const t = dollarsRaw.trim();
+  if (!t) return null;
+  const n = parseFloat(t);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
 
 export default function CrmPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -329,78 +340,6 @@ export default function CrmPage() {
     reader.readAsDataURL(file);
   };
 
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!user?.isAdmin || !user?.adminApproved) return null;
-
-  const submitAdd = () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      toast({ title: "Name and email required", variant: "destructive" });
-      return;
-    }
-    createMutation.mutate({
-      type: form.type,
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
-      company: form.company.trim() || null,
-      jobTitle: form.jobTitle.trim() || null,
-      industry: form.industry.trim() || null,
-      source: form.source.trim() || null,
-      status: form.status,
-      estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
-      notes: form.notes.trim() || null,
-    });
-  };
-
-  const submitEdit = () => {
-    if (!editingContact || !form.name.trim() || !form.email.trim()) return;
-    updateMutation.mutate({
-      id: editingContact.id,
-      body: {
-        type: form.type,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim() || null,
-        company: form.company.trim() || null,
-        jobTitle: form.jobTitle.trim() || null,
-        industry: form.industry.trim() || null,
-        source: form.source.trim() || null,
-        status: form.status,
-        estimatedValue: form.estimatedValue ? Math.round(parseFloat(form.estimatedValue) * 100) : null,
-        notes: form.notes.trim() || null,
-      },
-    });
-  };
-
-  const openEdit = (c: CrmContact) => {
-    setEditingContact(c);
-    setForm({
-      type: c.type,
-      name: c.name,
-      email: c.email,
-      phone: c.phone || "",
-      company: c.company || "",
-      jobTitle: c.jobTitle || "",
-      industry: c.industry || "",
-      source: c.source || "",
-      status: c.status || "new",
-      estimatedValue: c.estimatedValue != null ? String(c.estimatedValue / 100) : "",
-      notes: c.notes || "",
-    });
-  };
-
-  const dealsByStage = DEAL_STAGES.map((stage) => ({
-    stage,
-    deals: deals.filter((d) => d.stage === stage),
-  }));
-
   const filteredContacts = useMemo(() => {
     let list = [...contacts];
     if (searchQuery.trim()) {
@@ -431,6 +370,78 @@ export default function CrmPage() {
       list.sort((a, b) => (a.status ?? "").localeCompare(b.status ?? ""));
     return list;
   }, [contacts, searchQuery, statusFilter, intentFilter, sortBy]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!user?.isAdmin || !user?.adminApproved) return null;
+
+  const submitAdd = () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      toast({ title: "Name and email required", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate({
+      type: form.type,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      company: form.company.trim() || null,
+      jobTitle: form.jobTitle.trim() || null,
+      industry: form.industry.trim() || null,
+      source: form.source.trim() || null,
+      status: form.status,
+      estimatedValue: parseEstimatedValueCents(form.estimatedValue),
+      notes: form.notes.trim() || null,
+    });
+  };
+
+  const submitEdit = () => {
+    if (!editingContact || !form.name.trim() || !form.email.trim()) return;
+    updateMutation.mutate({
+      id: editingContact.id,
+      body: {
+        type: form.type,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        company: form.company.trim() || null,
+        jobTitle: form.jobTitle.trim() || null,
+        industry: form.industry.trim() || null,
+        source: form.source.trim() || null,
+        status: form.status,
+        estimatedValue: parseEstimatedValueCents(form.estimatedValue),
+        notes: form.notes.trim() || null,
+      },
+    });
+  };
+
+  const openEdit = (c: CrmContact) => {
+    setEditingContact(c);
+    setForm({
+      type: c.type,
+      name: c.name,
+      email: c.email,
+      phone: c.phone || "",
+      company: c.company || "",
+      jobTitle: c.jobTitle || "",
+      industry: c.industry || "",
+      source: c.source || "",
+      status: c.status || "new",
+      estimatedValue: c.estimatedValue != null ? String(c.estimatedValue / 100) : "",
+      notes: c.notes || "",
+    });
+  };
+
+  const dealsByStage = DEAL_STAGES.map((stage) => ({
+    stage,
+    deals: deals.filter((d) => d.stage === stage),
+  }));
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -475,6 +486,9 @@ export default function CrmPage() {
               <Link href="/admin/crm/dashboard">Overview</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
+              <Link href="/admin/crm/ltv">LTV</Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-lg" asChild>
               <Link href="/admin/crm/accounts">Accounts</Link>
             </Button>
             <Button variant="ghost" size="sm" className="rounded-lg" asChild>
@@ -500,6 +514,22 @@ export default function CrmPage() {
             </Button>
           </nav>
         </header>
+
+        <Card className="mb-6 border-dashed bg-muted/20">
+          <CardHeader className="py-3 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary shrink-0" aria-hidden />
+              Lifecycle automation
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm leading-relaxed">
+              Outbound email or SMS to a CRM contact (newsletters when the address matches a contact, Communications
+              campaigns, sequence steps, manual SMS) can advance their pipeline status one step when applicable (new →
+              contacted → qualified → …). Marking a deal <strong>won</strong> or <strong>lost</strong> sets the linked
+              contact to won or lost. Sequences and other sends let you target everyone in CRM, selected contacts, or a
+              new contact at enroll time.
+            </CardDescription>
+          </CardHeader>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
           <Card className="overflow-hidden border-0 shadow-sm bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
@@ -626,7 +656,7 @@ export default function CrmPage() {
       )}
 
       <Tabs defaultValue="contacts" className="mt-2">
-        <TabsList className="inline-flex flex-nowrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
+        <TabsList className="flex w-full flex-wrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
           <TabsTrigger value="contacts" className="rounded-lg data-[state=active]:shadow-sm">Contacts</TabsTrigger>
           <TabsTrigger value="deals" className="rounded-lg data-[state=active]:shadow-sm">Deals</TabsTrigger>
         </TabsList>
@@ -844,91 +874,106 @@ export default function CrmPage() {
             </div>
           ) : (
             <div className="grid gap-3">
-              <div className="flex items-center gap-2 py-2 px-1 text-sm text-muted-foreground">
-                <Checkbox
-                  checked={filteredContacts.length > 0 && selectedIds.size === filteredContacts.length}
-                  onCheckedChange={toggleSelectAll}
-                  aria-label="Select all"
-                />
-                <span>Select all</span>
+              <div className="flex flex-col gap-1 py-2 px-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={filteredContacts.length > 0 && selectedIds.size === filteredContacts.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                  />
+                  <span>Select all ({filteredContacts.length} in view)</span>
+                </div>
+                {filteredContacts.length > CRM_CONTACT_LIST_PREVIEW ? (
+                  <p className="text-xs pl-7 text-muted-foreground/90">
+                    Showing the first {CRM_CONTACT_LIST_PREVIEW} for quicker scanning — expand to access the rest without
+                    leaving this page.
+                  </p>
+                ) : null}
               </div>
-              {filteredContacts.map((c) => (
-                <Card key={c.id} className="overflow-hidden rounded-xl border shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200">
-                  <CardContent className="py-4 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Checkbox
-                        checked={selectedIds.has(c.id)}
-                        onCheckedChange={() => toggleSelect(c.id)}
-                        aria-label={`Select ${c.name}`}
-                        className="shrink-0"
-                      />
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                        {getInitials(c.name)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-medium flex items-center gap-2 flex-wrap">
-                          <Link href={`/admin/crm/${c.id}`} className="hover:underline hover:text-primary transition-colors">
-                            {c.name}
-                          </Link>
-                          <Badge variant={c.type === "client" ? "default" : "secondary"} className="rounded-md">{c.type}</Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-lg">
-                                {c.status ?? "new"} <ChevronDown className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {CONTACT_STATUSES.map((s) => (
-                                <DropdownMenuItem
-                                  key={s}
-                                  onClick={() => quickStatusMutation.mutate({ id: c.id, status: s })}
-                                  disabled={quickStatusMutation.isPending}
-                                >
-                                  {s}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          {c.leadScore != null && (
-                            <Badge variant="secondary" className="font-mono rounded-md">Score {c.leadScore}</Badge>
-                          )}
-                          {c.intentLevel && (
-                            <Badge variant="secondary" className="rounded-md">{intentLevelLabel(c.intentLevel)}</Badge>
-                          )}
+              <CollapsibleLongList
+                items={filteredContacts}
+                previewCount={CRM_CONTACT_LIST_PREVIEW}
+                nounPlural="contacts"
+                listClassName="grid gap-3"
+                getKey={(c) => c.id}
+                renderItem={(c) => (
+                  <Card className="overflow-hidden rounded-xl border shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                    <CardContent className="py-4 flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Checkbox
+                          checked={selectedIds.has(c.id)}
+                          onCheckedChange={() => toggleSelect(c.id)}
+                          aria-label={`Select ${c.name}`}
+                          className="shrink-0"
+                        />
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                          {getInitials(c.name)}
                         </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1 flex-wrap">
-                          <span className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /> {c.email}</span>
-                          {c.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /> {c.phone}</span>}
-                          {c.company && <span className="flex items-center gap-1"><Building2 className="h-3 w-3 shrink-0" /> {c.company}</span>}
-                        </div>
-                        {c.estimatedValue != null && (
-                          <div className="text-sm mt-1 flex items-center gap-1 text-primary font-medium">
-                            <DollarSign className="h-3 w-3" />
-                            ${(c.estimatedValue / 100).toLocaleString()}
+                        <div className="min-w-0">
+                          <div className="font-medium flex items-center gap-2 flex-wrap">
+                            <Link href={`/admin/crm/${c.id}`} className="hover:underline hover:text-primary transition-colors">
+                              {c.name}
+                            </Link>
+                            <Badge variant={c.type === "client" ? "default" : "secondary"} className="rounded-md">{c.type}</Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-lg">
+                                  {c.status ?? "new"} <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {CONTACT_STATUSES.map((s) => (
+                                  <DropdownMenuItem
+                                    key={s}
+                                    onClick={() => quickStatusMutation.mutate({ id: c.id, status: s })}
+                                    disabled={quickStatusMutation.isPending}
+                                  >
+                                    {s}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            {c.leadScore != null && (
+                              <Badge variant="secondary" className="font-mono rounded-md">Score {c.leadScore}</Badge>
+                            )}
+                            {c.intentLevel && (
+                              <Badge variant="secondary" className="rounded-md">{intentLevelLabel(c.intentLevel)}</Badge>
+                            )}
                           </div>
-                        )}
+                          <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1 flex-wrap">
+                            <span className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /> {c.email}</span>
+                            {c.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /> {c.phone}</span>}
+                            {c.company && <span className="flex items-center gap-1"><Building2 className="h-3 w-3 shrink-0" /> {c.company}</span>}
+                          </div>
+                          {c.estimatedValue != null && (
+                            <div className="text-sm mt-1 flex items-center gap-1 text-primary font-medium">
+                              <DollarSign className="h-3 w-3" />
+                              ${(c.estimatedValue / 100).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 shrink-0 items-center">
-                      <CrmContactQuickActions contact={c} />
-                      <Button variant="outline" size="sm" className="rounded-lg" asChild>
-                        <Link href={`/admin/crm/${c.id}`}>View</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" className="rounded-lg" onClick={() => openEdit(c)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg text-destructive hover:bg-destructive/10"
-                        onClick={() => deleteMutation.mutate(c.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="flex flex-wrap gap-2 shrink-0 items-center">
+                        <CrmContactQuickActions contact={c} />
+                        <Button variant="outline" size="sm" className="rounded-lg" asChild>
+                          <Link href={`/admin/crm/${c.id}`}>View</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" className="rounded-lg" onClick={() => openEdit(c)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteMutation.mutate(c.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              />
             </div>
           )}
         </TabsContent>
@@ -1056,7 +1101,7 @@ export default function CrmPage() {
       </Dialog>
 
       <Dialog open={!!editingContact} onOpenChange={() => setEditingContact(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit contact</DialogTitle>
           </DialogHeader>
@@ -1100,6 +1145,34 @@ export default function CrmPage() {
               <div>
                 <Label>Company</Label>
                 <Input value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Job title</Label>
+                  <Input value={form.jobTitle} onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Industry</Label>
+                  <Input value={form.industry} onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <Label>Source</Label>
+                <Input
+                  value={form.source}
+                  onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
+                  placeholder="e.g. website, referral"
+                />
+              </div>
+              <div>
+                <Label>Est. value ($)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.estimatedValue}
+                  onChange={(e) => setForm((f) => ({ ...f, estimatedValue: e.target.value }))}
+                  placeholder="e.g. 5000"
+                />
               </div>
               <div>
                 <Label>Notes</Label>

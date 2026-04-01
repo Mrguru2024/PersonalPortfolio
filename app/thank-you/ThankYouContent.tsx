@@ -152,7 +152,7 @@ export default function ThankYouContent() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-muted/30 to-background"
+      className="min-h-screen bg-gradient-to-b from-section to-background"
       data-conversion-thank-you
       data-conversion-form={formId}
     >
@@ -165,13 +165,13 @@ export default function ThankYouContent() {
             <h1 className="text-2xl font-bold text-foreground mb-2">{copy.title}</h1>
             <p className="text-muted-foreground mb-6">{copy.body}</p>
             {bookingEmailNote ? (
-              <p className="text-sm text-muted-foreground mb-6 text-left rounded-lg bg-muted/30 p-3">
+              <p className="text-sm text-muted-foreground mb-6 text-left rounded-lg bg-elevated border border-border/60 p-3">
                 {bookingEmailNote}
               </p>
             ) : null}
 
             {copy.bullets && copy.bullets.length > 0 ? (
-              <div className="text-left space-y-4 rounded-lg bg-muted/30 p-4 mb-6">
+              <div className="text-left space-y-4 rounded-lg bg-elevated border border-border/60 p-4 mb-6">
                 <p className="text-sm font-medium text-foreground">What happens next</p>
                 <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
                   {copy.bullets.map((line) => (
@@ -182,7 +182,7 @@ export default function ThankYouContent() {
             ) : null}
 
             {formId === "strategy_call_landing" ? (
-              <div className="text-left space-y-4 rounded-lg border border-border bg-card/50 p-4 mb-6">
+              <div className="text-left space-y-4 rounded-lg border border-border bg-section/50 dark:bg-section/20 p-4 mb-6">
                 <p className="text-sm font-medium text-foreground flex items-center gap-2">
                   <ClipboardCheck className="h-4 w-4 text-primary shrink-0" />
                   What to prepare for the call

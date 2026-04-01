@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Search, MessageSquare, Palette, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { AuditRequestForm } from "@/components/funnel/AuditRequestForm";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
@@ -11,9 +11,16 @@ import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { TrackPageView } from "@/components/TrackPageView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH } from "@/lib/funnelCtas";
+import { FREE_TRIAL_PATH, GROWTH_DIAGNOSIS_ENGINE_PATH, SECONDARY_CTA } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_DIGITAL_AUDIT } from "@/lib/landingPageOutcomeFramework";
+import { WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  WHAT_TO_EXPECT_AUDIT_ITEMS,
+  WHAT_TO_EXPECT_AUDIT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 export const metadata: Metadata = {
   title: "Digital Growth Audit | Find out why your website isn't generating customers",
@@ -48,15 +55,15 @@ const AUDIT_INCLUDES = [
 export default function DigitalGrowthAuditPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Digital Growth Audit | Find out why your website isn't generating customers"
         description="Get a Digital Growth Audit reviewing your brand, design, and website performance. One coordinated ecosystem—Style Studio, Macon Designs, Ascendra."
-        canonicalPath="/digital-growth-audit"
+        path="/digital-growth-audit"
       />
       <TrackPageView path="/digital-growth-audit" />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             {/* Hero */}
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -73,6 +80,8 @@ export default function DigitalGrowthAuditPage() {
                 sizes="(max-width: 768px) 100vw, 672px"
               />
             </section>
+
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_DIGITAL_AUDIT} className="py-6 sm:py-8" />
 
             {/* What the audit reviews */}
             <section>
@@ -115,9 +124,16 @@ export default function DigitalGrowthAuditPage() {
               <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
                 Request Your Digital Growth Audit
               </h2>
-              <p className="text-center text-sm text-muted-foreground max-w-xl mx-auto mb-6">
-                Share a few details. We'll review your brand, design, and website and send you clear next steps.
+              <p className="text-center text-sm text-muted-foreground max-w-xl mx-auto mb-6 leading-relaxed">
+                Share a few details so we can prioritize the review. You get a human-led read across brand clarity,
+                presentation, and conversion—not an auto-generated fluff report.
               </p>
+              <WhatToExpectList
+                title={WHAT_TO_EXPECT_AUDIT_TITLE}
+                items={WHAT_TO_EXPECT_AUDIT_ITEMS}
+                compact
+                className="max-w-xl mx-auto mb-6"
+              />
               <Alert className="max-w-2xl mx-auto mb-6 border-primary/25 bg-primary/5">
                 <Info className="h-4 w-4" />
                 <AlertTitle className="text-sm">Different from the instant website scan</AlertTitle>
@@ -133,13 +149,12 @@ export default function DigitalGrowthAuditPage() {
                   .
                 </AlertDescription>
               </Alert>
-              <p className="text-center text-sm text-muted-foreground max-w-xl mx-auto mb-6">
-                New to Ascendra? The{" "}
+              <p className="text-center text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mb-6">
+                New here? The{" "}
                 <Link href={FREE_TRIAL_PATH} className="font-medium text-primary underline-offset-4 hover:underline">
                   free trial
                 </Link>{" "}
-                page puts the strategy call and this audit ahead of self-serve tools so you feel the full value story
-                first.
+                path walks call + audit before digging into self-serve tools—same ecosystem, clearer sequence.
               </p>
               <AuditRequestForm />
             </section>
@@ -166,7 +181,7 @@ export default function DigitalGrowthAuditPage() {
                 offerSlug="business-growth"
                 ctaText="See growth systems"
                 ctaHref="/services"
-                secondaryCtaText="Book a call"
+                secondaryCtaText={SECONDARY_CTA}
                 secondaryCtaHref="/strategy-call"
               />
             </section>

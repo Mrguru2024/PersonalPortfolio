@@ -1,5 +1,16 @@
-import { pgTable, text, serial, integer, boolean, json, timestamp, uniqueIndex, unique } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  json,
+  timestamp,
+  uniqueIndex,
+  unique,
+} from "drizzle-orm/pg-core";
 import { crmContacts } from "./crmSchema";
+import { ppcAttributionSessions, ppcCampaigns } from "./paidGrowthSchema";
 
 /**
  * Ascendra-native scheduling: availability, public booking, confirmations & reminder queue.
@@ -35,6 +46,39 @@ export const schedulingBookingTypes = pgTable("scheduling_booking_types", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Conversion-focused public booking pages (Ascendra Scheduler). One page = one primary event type + funnel copy.
+ * Future: payment capture, routing rules, scoped branding (see settingsJson).
+ */
+export const schedulingBookingPages = pgTable("scheduling_booking_pages", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  shortDescription: text("short_description"),
+  bestForBullets: json("best_for_bullets").$type<string[]>().default([]),
+  bookingTypeId: integer("booking_type_id")
+    .notNull()
+    .references(() => schedulingBookingTypes.id, { onDelete: "restrict" }),
+  /** When host_mode is fixed, public flow uses this approved admin as host. */
+  fixedHostUserId: integer("fixed_host_user_id"),
+  /** inherit | fixed — round_robin/collective reserved for Phase 2 routing engine */
+  hostMode: text("host_mode").notNull().default("inherit"),
+  locationType: text("location_type").notNull().default("video"),
+  /** none | deposit | full — deposit/full collection wires to Stripe in Phase 2 */
+  paymentRequirement: text("payment_requirement").notNull().default("none"),
+  depositCents: integer("deposit_cents"),
+  confirmationMessage: text("confirmation_message"),
+  postBookingNextSteps: text("post_booking_next_steps"),
+  redirectUrl: text("redirect_url"),
+  formFieldsJson: json("form_fields_json")
+    .$type<Array<{ id: string; label: string; type: "text" | "textarea"; required?: boolean }>>()
+    .default([]),
+  settingsJson: json("settings_json").$type<Record<string, unknown>>().default({}),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const schedulingAvailabilityRules = pgTable("scheduling_availability_rules", {
   id: serial("id").primaryKey(),
   /** When null, rule applies to every booking type. */
@@ -49,6 +93,32 @@ export const schedulingAvailabilityRules = pgTable("scheduling_availability_rule
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Per–approved-admin weekly windows for /book. When a host has rows for a weekday, those
+ * windows are used instead of global availability for that host; empty → inherit global rules.
+ */
+export const schedulingHostWeeklyRules = pgTable("scheduling_host_weekly_rules", {
+  id: serial("id").primaryKey(),
+  /** Approved admin (`users.id`); no Drizzle FK to avoid schema circular imports. */
+  userId: integer("user_id").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTimeLocal: text("start_time_local").notNull(),
+  endTimeLocal: text("end_time_local").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Calendar dates (YYYY-MM-DD in business timezone) when a host is unavailable for booking. */
+export const schedulingHostBlockedDates = pgTable(
+  "scheduling_host_blocked_dates",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    dateLocal: text("date_local").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("scheduling_host_blocked_user_date_uq").on(t.userId, t.dateLocal)],
+);
+
 export const schedulingAppointments = pgTable(
   "scheduling_appointments",
   {
@@ -56,9 +126,24 @@ export const schedulingAppointments = pgTable(
     bookingTypeId: integer("booking_type_id")
       .notNull()
       .references(() => schedulingBookingTypes.id, { onDelete: "restrict" }),
+    /** Approved admin receiving the meeting; null = legacy rows before host tracking. */
+    hostUserId: integer("host_user_id"),
     guestName: text("guest_name").notNull(),
     guestEmail: text("guest_email").notNull(),
     guestPhone: text("guest_phone"),
+    guestCompany: text("guest_company"),
+    bookingPageId: integer("booking_page_id").references(() => schedulingBookingPages.id, {
+      onDelete: "set null",
+    }),
+    /** Ascendra Scheduler — operational tiers (Phase 1 heuristics; Phase 3 ML-ready). */
+    leadScoreTier: text("lead_score_tier"),
+    intentClassification: text("intent_classification"),
+    noShowRiskTier: text("no_show_risk_tier"),
+    paymentStatus: text("payment_status").notNull().default("none"),
+    estimatedValueCents: integer("estimated_value_cents"),
+    /** Page slug, UTM summary, or "native_booking" */
+    bookingSource: text("booking_source"),
+    formAnswersJson: json("form_answers_json").$type<Record<string, unknown>>().default({}),
     startAt: timestamp("start_at").notNull(),
     endAt: timestamp("end_at").notNull(),
     status: text("status").notNull().default("confirmed"),
@@ -71,6 +156,11 @@ export const schedulingAppointments = pgTable(
     confirmationSentAt: timestamp("confirmation_sent_at"),
     cancelledAt: timestamp("cancelled_at"),
     completedAt: timestamp("completed_at"),
+    /** Optional PPC Revenue Engine links — populated when booking payload includes attribution */
+    ppcCampaignId: integer("ppc_campaign_id").references(() => ppcCampaigns.id, { onDelete: "set null" }),
+    ppcAttributionSessionId: integer("ppc_attribution_session_id").references(() => ppcAttributionSessions.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -107,7 +197,26 @@ export const schedulingIntegrationConfigs = pgTable(
 
 export type SchedulingGlobalSettings = typeof schedulingGlobalSettings.$inferSelect;
 export type SchedulingBookingType = typeof schedulingBookingTypes.$inferSelect;
+export type SchedulingBookingPage = typeof schedulingBookingPages.$inferSelect;
 export type SchedulingAvailabilityRule = typeof schedulingAvailabilityRules.$inferSelect;
+export type SchedulingHostWeeklyRule = typeof schedulingHostWeeklyRules.$inferSelect;
+export type SchedulingHostBlockedDate = typeof schedulingHostBlockedDates.$inferSelect;
 export type SchedulingAppointment = typeof schedulingAppointments.$inferSelect;
 export type SchedulingReminderJob = typeof schedulingReminderJobs.$inferSelect;
+
+/** Per–approved-admin Google Calendar OAuth (native booking sync). */
+export const schedulingAdminGoogleCalendar = pgTable(
+  "scheduling_admin_google_calendar",
+  {
+    id: serial("id").primaryKey(),
+    /** `users.id` of the admin who connected this calendar */
+    userId: integer("user_id").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    configJson: json("config_json").$type<Record<string, unknown>>().notNull().default({}),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("scheduling_admin_google_calendar_user_uq").on(t.userId)],
+);
+
+export type SchedulingAdminGoogleCalendar = typeof schedulingAdminGoogleCalendar.$inferSelect;
 export type SchedulingIntegrationConfig = typeof schedulingIntegrationConfigs.$inferSelect;

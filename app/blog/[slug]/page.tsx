@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import BlogPost from "@/pages/BlogPost";
+import BlogPost from "@/route-modules/BlogPost";
 
 export default function BlogPostPage({
   params,

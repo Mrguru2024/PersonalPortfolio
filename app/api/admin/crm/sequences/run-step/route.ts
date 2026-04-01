@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { fireWorkflows, buildPayloadFromContactId } from "@server/services/workflows/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,19 @@ export async function POST(req: NextRequest) {
         subject: step.subject || `Sequence: ${sequence.name} step ${stepIndex + 1}`,
         body: step.body ?? null,
       });
+      const wfBase = await buildPayloadFromContactId(storage, enrollment.contactId).catch(() => ({
+        contactId: enrollment.contactId,
+      }));
+      const wfPayload = {
+        ...wfBase,
+        journeyEvent: {
+          channel: "email" as const,
+          emailSource: "sequence" as const,
+          sequenceName: sequence.name,
+          sequenceStepIndex: stepIndex,
+        },
+      };
+      fireWorkflows(storage, "contact_email_sent", wfPayload).catch(() => {});
     }
 
     const nextIndex = stepIndex + 1;

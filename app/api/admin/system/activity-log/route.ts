@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
       ipAddress: r.ipAddress ?? null,
       userAgent: r.userAgent ?? null,
       metadata: r.metadata ?? null,
-      createdAt: r.createdAt,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
     }));
 
     return NextResponse.json({ entries });

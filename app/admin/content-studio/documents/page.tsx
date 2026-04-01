@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { INTERNAL_CMS_CONTENT_TYPES, WORKFLOW_STATUSES } from "@/lib/content-studio/constants";
 import { useRouter } from "next/navigation";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -105,7 +106,7 @@ export default function ContentStudioDocumentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contentType: "blog_draft",
-          title: `New draft ${new Date().toLocaleString()}`,
+          title: `New draft ${formatLocaleMediumDateTime(Date.now())}`,
         }),
       });
       if (!res.ok) throw new Error("Create failed");

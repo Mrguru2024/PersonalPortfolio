@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { EditorialStrategyMeta } from "./editorialStrategyMeta";
 
 // ——— A. Lead alignment audit ($100M Leads style) ———
 
@@ -177,6 +178,11 @@ export const internalEditorialCalendarEntries = pgTable("internal_editorial_cale
   /** Sort within same scheduled day (drag order). */
   sortOrder: integer("sort_order").notNull().default(0),
   warningsJson: json("warnings_json").$type<string[]>().default([]),
+  /**
+   * Professional content-strategy brief (pillar, intent, SEO, repurposing) — orthogonal to
+   * funnelStage / personaTags / ctaObjective; see shared/editorialStrategyMeta.ts.
+   */
+  strategyMeta: json("strategy_meta").$type<EditorialStrategyMeta | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

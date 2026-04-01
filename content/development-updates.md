@@ -8,6 +8,218 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-31 04:14 — Auto · c5fc760
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`c5fc760`)
+
+---
+
+## 2026-03-31 04:14 — Auto · 080d11e
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`080d11e`)
+
+---
+
+## 2026-03-31 04:10 — Auto · 46a601a
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`46a601a`)
+
+---
+
+## 2026-03-30 01:58 — Auto · 82074c9
+
+- `fix: restore production build (OpenAI nodeClient wrapper, PremiumOffer data)` (`82074c9`)
+
+---
+
+## 2026-03-30 01:57 — Auto · bccc54a
+
+- `fix: restore production build (OpenAI nodeClient wrapper, PremiumOffer data)` (`bccc54a`)
+
+---
+
+## 2026-03-30 00:24 — Trust assurance, offer engine, agency OS, PPC depth
+
+- Trust assurance on ICP landers and startup growth offer page; EmbeddedAssurance + copy module.
+- Build fixes: offer-engine funnel Badge links, persona query `await res.json()`, OpenAI shim on agent observation route.
+- Large batch: Agency OS surfaces, offer engine admin/API, paid-growth billable/verification, content studio strategy hooks, public PDFs.
+
+---
+
+## 2026-03-29 23:11 — Agency OS, behavior intelligence, growth platform, paid-growth, AFN
+
+- feat: agency OS, behavior intelligence, growth platform, paid-growth depth, AFN fixes
+
+---
+
+## 2026-03-29 16:03 — Auto · fd4d6a2
+
+- `feat: admin audience preview, Lucky Orange, growth/lead UI updates` (`fd4d6a2`)
+
+---
+
+## 2026-03-29 14:59 — Auto · b5a1c1c
+
+- `chore: append development-updates for 43706c4` (`b5a1c1c`)
+
+---
+
+## 2026-03-29 14:58 — Auto · 43706c4
+
+- `feat: experiments tutorial, A/B tools, AI insights, lead control, admin and AMIE updates` (`43706c4`)
+
+---
+
+## 2026-03-29 12:04 — Auto · b72836c
+
+- `feat: AEE experiments engine, CRM attribution, admin UX, scheduler and revenue ops updates` (`b72836c`)
+
+---
+
+## 2026-03-28 22:16 — Auto · 0f0f9d7
+
+- `Dev log: record 760be9a.` (`0f0f9d7`)
+
+---
+
+## 2026-03-28 22:15 — Auto · 760be9a
+
+- `Move AFN to /Afn with redirects; scheduler admin and public booking.` (`760be9a`)
+
+---
+
+## 2026-03-28 — Admin workspace sync
+
+- Admin read-aloud: browser voices, reading styles, and optional OpenAI natural TTS; how-to guides page; email hub tracking, templates, inbox, and crons; market intelligence and community APIs; AMIE-related services and schema; paid-growth campaigns hydration guard; integrations and shared schema updates.
+
+## 2026-03-28 13:03 — Auto · dafc408
+
+- `chore: dev log for 745156c` (`dafc408`)
+
+---
+
+## 2026-03-28 12:43 — Auto · 6d289ff
+
+- `chore: dev log for 745156c` (`6d289ff`)
+
+---
+
+## 2026-03-28 12:41 — Auto · 745156c
+
+- `feat: admin inbound alerts, market research nav, LinkedIn company pages` (`745156c`)
+
+---
+
+## 2026-03-28 12:19 — Auto · 6518e52
+
+- `Threads OAuth state signing; Growth OS intel UI; research model 403 handling; GOS_OPENAI_MODEL helper` (`6518e52`)
+
+---
+
+## 2026-03-28 04:14 — Auto · efcfc0e
+
+- `Dev log: record commit 84b8b0d` (`efcfc0e`)
+
+---
+
+## 2026-03-28 04:14 — Auto · 84b8b0d
+
+- `Dev log: record commit 9878416` (`84b8b0d`)
+
+---
+
+## 2026-03-28 04:13 — Auto · 9878416
+
+- `PWA/offline, route-modules migration, Meta OAuth state signing, integrations and comms updates` (`9878416`)
+
+---
+
+## 2026-03-26 06:02 — Auto · ba53a21
+
+- `feat: Content Studio Facebook OAuth and admin batch updates` (`ba53a21`)
+
+---
+
+## 2026-03-26 06:02 — Auto · 374e809
+
+- `feat: Content Studio Facebook OAuth and admin batch updates` (`374e809`)
+
+---
+
+## 2026-03-25 19:17 — Auto · 8f48481
+
+- `chore: development log entry for SEO and comms changes` (`8f48481`)
+
+---
+
+## 2026-03-25 19:17 — Auto · 52563f5
+
+- `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`52563f5`)
+
+---
+
+## 2026-03-25 19:16 — Auto · fa6258b
+
+- `SEO: server metadata and JSON-LD; sitemap fixes; comms draft audience edit` (`fa6258b`)
+
+---
+
+## 2026-03-25 06:53 — Auto · 1ce01b9
+
+- `chore: append development-updates digest` (`1ce01b9`)
+
+---
+
+## 2026-03-25 06:34 — Auto · 5872031
+
+- `chore: append dev log for amend commit` (`5872031`)
+
+---
+
+## 2026-03-25 06:33 — Auto · 73c106a
+
+- `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`73c106a`)
+
+---
+
+## 2026-03-25 06:31 — Auto · 7d3396e
+
+- `feat(admin): email merge tags, Brevo setup page, rich text image upload` (`7d3396e`)
+
+---
+
+## 2026-03-24 — Offer audit Google Ads unification
+
+- One **`fireOfferValuationConversion`** path for submit and lead on the public funnel; optional **`NEXT_PUBLIC_GOOGLE_ADS_CV_*`** label envs with **`NEXT_PUBLIC_GOOGLE_ADS_ID`**; strategy-call **`send_to`** reads **`NEXT_PUBLIC_GOOGLE_ADS_SEND_TO_STRATEGY_CALL`** (or legacy **`_STRATEGY_CALL_CLICKED`**).
+
+---
+
+## 2026-03-23 22:15 — Offer audit UTM, conversions, canonical site metadata
+
+- Persist UTM on offer valuations; client attribution and Google Ads conversion hooks; canonical site URL for Open Graph, sitemap, and robots.
+
+---
+
+## 2026-03-23 — Newsletters for CRM leads & clients, brand file folders, and clearer reading
+
+- **Newsletters:** You can send a campaign to **all CRM leads** or **all CRM clients** (everyone with an email on file), or stick with your main subscriber list. When you build a custom list, the CRM picker can show only leads or only clients, add everyone in view at once, or pick individuals.
+- **Brand temp vault (admin):** A place to drop **documents or images** while brand work is in motion. We split folders by type so uploads stay organized. Files **expire after 90 days** on purpose—to keep hosting light and encourage moving finals to long-term storage. Copy the link if you need to keep something elsewhere.
+- **Blog reading:** Long-form posts now follow the **same brand colors** as the rest of the site (headings, quotes, code, tables) so articles feel like part of Ascendra—not a separate gray template.
+- **Links:** Hovering a link (or tapping on mobile) shows a **soft purple highlight** so it’s obvious what’s clickable, using our primary brand color.
+- **Operations:** A daily job cleans up expired temp files; newsletter sending was wired to respect the new CRM audience options.
+
+---
+
+## 2026-03-23 — Theme tokens, OG image, footer, admin chat bell
+
+- **Theme & UI:** Ascendra semantic tokens (`globals.css`, `tailwind.config.ts`) and shadcn-style primitives (button, card, badge, alert, dialog, sheet, input, textarea, select, form, theme-provider). Marketing pages use section/elevated background tokens.
+- **AnimatedButton:** Passes **`variant="gradient"`** through to **`Button`**.
+- **OG / SEO:** **`public/og-ascendra.png`**, **`scripts/generate-og-ascendra.mjs`**, **`PageSEO`**, **`BlogPostSEO`**, root **`layout`**, **`manifest.json`**.
+- **Footer:** **`SiteFooter`** is a client component; **`FooterLanguageControl`** default export (stable under Webpack + RSC).
+- **Admin:** Internal chat notification bell refetches and marks read when the dropdown opens.
+
+---
+
 ## 2026-03-23 — PPC, CRM & lead conversion lead magnet
 
 - **Public funnel:** **`/ppc-lead-system`** — landing page for teams focused on lead prospecting, CRM fit, conversion, and paid ads (Google, Meta, LinkedIn). Hero, pillars, contrast with Digital Growth Audit, **`PpcLeadMagnetForm`**, ecosystem insight strip, **`LeadMagnetRelatedWorkSection`**, recommended next step.

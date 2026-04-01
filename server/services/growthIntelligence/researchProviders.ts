@@ -1,6 +1,10 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
-import { getGrowthIntelligenceMode, type IntelligenceProviderMode } from "./growthIntelligenceConfig";
+import {
+  getGrowthIntelligenceMode,
+  getGosOpenAiModel,
+  type IntelligenceProviderMode,
+} from "./growthIntelligenceConfig";
 
 export type ResearchItemKind =
   | "keyword"
@@ -125,19 +129,31 @@ phrase, confidence 0-1, trendDirection (up|down|flat|unknown), relevanceScore 0-
 audienceFit, suggestedUsage, relatedHeadlines (string[]), relatedCtaOpportunities (string[]).
 Be specific to the seed; no placeholders like "TBD".`;
 
-    const res = await client.chat.completions.create({
-      model: process.env.GOS_OPENAI_MODEL?.trim() || "gpt-4o-mini",
-      temperature: 0.5,
-      max_tokens: 3500,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: "You are a content research analyst. JSON only.",
-        },
-        { role: "user", content: prompt },
-      ],
-    });
+    const model = getGosOpenAiModel();
+    let res: OpenAI.Chat.Completions.ChatCompletion;
+    try {
+      res = await client.chat.completions.create({
+        model,
+        temperature: 0.5,
+        max_tokens: 3500,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "You are a content research analyst. JSON only.",
+          },
+          { role: "user", content: prompt },
+        ],
+      });
+    } catch (e: unknown) {
+      if (e instanceof OpenAI.APIError && (e.status === 403 || e.code === "model_not_found")) {
+        throw new Error(
+          `OpenAI rejected model "${model}" for this API key/project (403 / model_not_found). ` +
+            `Fix: In platform.openai.com open your Project → check model access, or set GOS_OPENAI_MODEL to a model your project can use (for example gpt-4o).`,
+        );
+      }
+      throw e;
+    }
 
     const raw = res.choices[0]?.message?.content ?? '{"items":[]}';
     let parsed: unknown;

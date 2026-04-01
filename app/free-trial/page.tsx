@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Search, Sparkles, LayoutGrid, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { TrackPageView } from "@/components/TrackPageView";
 import {
   CHALLENGE_LANDING_PATH,
@@ -13,12 +13,15 @@ import {
   STRATEGY_CALL_PATH,
 } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth starter | Clarity call & snapshot audit | Ascendra Technologies",
   description:
     "Start free with a clarity call, a human-led Digital Growth Snapshot across brand and conversion, or both—know what to fix first before any paid build. Optional tools after.",
-};
+  path: "/free-trial",
+  keywords: ["free trial", "clarity call", "growth audit", "Ascendra"],
+});
 
 const VALUE_TRIAL_STEPS = [
   {
@@ -44,23 +47,23 @@ const VALUE_TRIAL_STEPS = [
 export default function FreeTrialPage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Free trial | Ascendra Technologies"
         description="Experience Ascendra’s approach through a call and audit first; self-serve scans and tools are optional follow-ons—not the front door."
-        canonicalPath="/free-trial"
+        path="/free-trial"
       />
       <TrackPageView path="/free-trial" />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             <section className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="mx-auto mb-5 sm:mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Target className="h-7 w-7" aria-hidden />
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-3 sm:mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 sm:mb-6 md:mb-7">
                 Your free growth starter: clarity, then a real read on your site
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Pick a <span className="text-foreground font-medium">free call</span>, a{" "}
                 <span className="text-foreground font-medium">human-led snapshot audit</span>, or both—so you know
                 what to fix first and whether we&apos;re the team to build it. No maze of downloads up front; optional
@@ -69,9 +72,9 @@ export default function FreeTrialPage() {
             </section>
 
             <Card className="border-destructive/20 bg-destructive/5 dark:bg-destructive/10">
-              <CardContent className="p-5 sm:p-6 text-left">
-                <h2 className="text-lg font-semibold text-foreground mb-3">Why this is the offer—not another tool list</h2>
-                <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5 mb-4">
+              <CardContent className="p-6 sm:p-8 text-left">
+                <h2 className="text-lg font-semibold text-foreground mb-4 sm:mb-5">Why this is the offer—not another tool list</h2>
+                <ul className="text-sm text-muted-foreground space-y-3 list-disc pl-5 mb-5 sm:mb-6 leading-relaxed">
                   <li>Traffic that never turns into qualified conversations.</li>
                   <li>Messaging that sounds fine to you but doesn&apos;t convert strangers.</li>
                   <li>Brand, design, and site pulling in different directions—with no single prioritized plan.</li>
@@ -130,7 +133,7 @@ export default function FreeTrialPage() {
             </section>
 
             <section
-              className="rounded-2xl border border-border bg-muted/20 dark:bg-muted/10 p-5 sm:p-8"
+              className="rounded-2xl border border-border bg-section/80 dark:bg-section/30 p-5 sm:p-8"
               aria-label="Optional self-serve tools after your trial"
             >
               <h2 className="text-lg font-semibold text-foreground mb-2 text-center sm:text-left">
@@ -146,7 +149,7 @@ export default function FreeTrialPage() {
                 <Card className="border-border/80 bg-card">
                   <CardContent className="p-5 flex flex-col h-full">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-elevated text-muted-foreground">
                         <Sparkles className="h-4 w-4" aria-hidden />
                       </div>
                       <h3 className="text-base font-semibold text-foreground">Website growth diagnosis</h3>
@@ -166,7 +169,7 @@ export default function FreeTrialPage() {
                 <Card className="border-border/80 bg-card">
                   <CardContent className="p-5 flex flex-col h-full">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-elevated text-muted-foreground">
                         <LayoutGrid className="h-4 w-4" aria-hidden />
                       </div>
                       <h3 className="text-base font-semibold text-foreground">Free growth toolkit</h3>
@@ -187,7 +190,7 @@ export default function FreeTrialPage() {
 
             <LeadMagnetRelatedWorkSection leadMagnetKey="free-trial" />
 
-            <Card className="border-border/80 bg-muted/30 dark:bg-muted/15">
+            <Card className="border-border/80 bg-elevated dark:bg-elevated/80">
               <CardContent className="p-5 sm:p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-2">Not the same as the 5-day challenge</h2>
                 <p className="text-sm text-muted-foreground mb-4">

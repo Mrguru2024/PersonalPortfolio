@@ -33,11 +33,14 @@
 ## 4. Data model (`npm run db:push`)
 
 - `ppc_ad_accounts` — platform account IDs + labels (tokens in env).
-- `ppc_campaigns` — builder + platform IDs + readiness snapshot.
+- `ppc_campaigns` — builder + platform IDs + readiness snapshot + `campaign_model` (modular engine archetype; see `shared/ppcCampaignModel.ts`).
 - `ppc_publish_logs` — request/response summaries.
 - `ppc_performance_snapshots` — for future Insights sync.
 - `ppc_lead_quality` — one row per CRM contact (unique index).
-- `ppc_readiness_assessments` — history when POST readiness.
+- `ppc_readiness_assessments` — history when POST readiness (+ stored growth route recommendation when present).
+- `ppc_ad_groups`, `ppc_keywords`, `ppc_campaign_destinations`, `ppc_ad_copy_variants` — operational campaign structure.
+- `ppc_optimization_recommendations` — persisted rules-based items (see §12).
+- `ppc_billing_profiles` — internal Ascendra fulfillment economics (see §12).
 
 ## 5. Publish behavior
 
@@ -97,3 +100,11 @@ scripts/seed-paid-growth.ts
 - Insights sync + CPL/CPQL from snapshots + CRM outcomes.
 - Webhooks (`META_WEBHOOK_VERIFY_TOKEN`) for disapprovals.
 - Creative library mapping to `funnel_content_assets` / uploads.
+
+## 12. Growth Engine extensions (see also)
+
+Full audit + plan: [`PPC-GROWTH-ENGINE-AUDIT-AND-PLAN.md`](./PPC-GROWTH-ENGINE-AUDIT-AND-PLAN.md).
+
+Additional tables (after `npm run db:push`): `ppc_ad_groups`, `ppc_keywords`, `ppc_campaign_destinations`, `ppc_ad_copy_variants`, `ppc_optimization_recommendations`, `ppc_billing_profiles`; optional `growth_route_recommendation` on `ppc_readiness_assessments`.
+
+Rules engine: `server/services/paid-growth/optimizationRulesEngine.ts`. Client summary: `GET /api/client/ppc-summary` + env vars in `.env.example`.
