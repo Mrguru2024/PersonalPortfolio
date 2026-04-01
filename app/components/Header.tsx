@@ -208,6 +208,7 @@ const ADMIN_NAV_SECTION_ORDER = [
   "CRM & leads",
   "Content & email",
   "Marketing & funnel",
+  "Delivery & platform",
   "Analytics",
   "Operations",
   "Settings",
@@ -341,6 +342,13 @@ export default function Header(_props: HeaderProps) {
       href: "/admin/growth-platform",
       icon: Layers,
       permission: "funnel" as const,
+    },
+    {
+      section: "Delivery & platform",
+      name: "Service agreements",
+      href: "/admin/growth-platform/agreements",
+      icon: FileText,
+      permission: "dashboard" as const,
     },
     {
       section: "Delivery & platform",

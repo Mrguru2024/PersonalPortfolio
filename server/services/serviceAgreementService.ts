@@ -36,6 +36,38 @@ function signAuditToken(agreementId: number, legalName: string, isoTime: string)
     .digest("hex");
 }
 
+type SignatureAuditMap = Record<string, unknown>;
+
+type SignatureAuditComputation = {
+  hasCurrentRoleSigned: boolean;
+  bothPartiesSigned: boolean;
+  nextAudit: SignatureAuditMap;
+  clientAudit: unknown;
+};
+
+export function computeSignatureAuditState(
+  existingAudit: unknown,
+  signerRole: SignerRole,
+  auditEntry: Record<string, unknown>,
+): SignatureAuditComputation {
+  const safeAudit =
+    existingAudit && typeof existingAudit === "object"
+      ? (existingAudit as SignatureAuditMap)
+      : {};
+  const hasCurrentRoleSigned = safeAudit[signerRole] != null;
+  const nextAudit: SignatureAuditMap = {
+    ...safeAudit,
+    [signerRole]: auditEntry,
+  };
+  const bothPartiesSigned = Boolean(nextAudit.client && nextAudit.admin);
+  return {
+    hasCurrentRoleSigned,
+    bothPartiesSigned,
+    nextAudit,
+    clientAudit: nextAudit.client,
+  };
+}
+
 export function newAgreementPublicToken(): string {
   return randomBytes(24).toString("base64url");
 }
@@ -207,23 +239,34 @@ export async function signClientServiceAgreement(
     auditDigest,
     signatureImageProvided: Boolean(input.signatureImageBase64?.trim()),
   };
-  const priorAudit = agreement.signatureAuditJson ?? {};
-  const mergedAudit =
-    priorAudit && typeof priorAudit === "object" ?
-      {
-        ...(priorAudit as Record<string, unknown>),
-        [signerRole]: auditEntry,
-      }
-    : { [signerRole]: auditEntry };
+  const signatureState = computeSignatureAuditState(
+    agreement.signatureAuditJson,
+    signerRole,
+    {
+      ...auditEntry,
+      signatureImageBase64:
+        input.signatureImageBase64?.trim().slice(0, 500_000) || null,
+    },
+  );
+
+  if (signatureState.hasCurrentRoleSigned) {
+    return { ok: false as const, error: "already_signed" };
+  }
 
   await db
     .update(clientServiceAgreements)
     .set({
-      status: signerRole === "client" ? "signed" : agreement.status,
+      status: signatureState.bothPartiesSigned ? "signed" : agreement.status,
       signedAt: signerRole === "client" ? signedAt : agreement.signedAt,
-      signerLegalName: signerRole === "client" ? name : agreement.signerLegalName,
-      signatureImageBase64: input.signatureImageBase64?.trim().slice(0, 500_000) || null,
-      signatureAuditJson: mergedAudit,
+      signerLegalName:
+        signerRole === "client"
+          ? name
+          : agreement.signerLegalName ?? (typeof signatureState.clientAudit === "object" && signatureState.clientAudit && typeof (signatureState.clientAudit as Record<string, unknown>).legalName === "string" ? (signatureState.clientAudit as Record<string, unknown>).legalName as string : null),
+      signatureImageBase64:
+        signerRole === "client"
+          ? input.signatureImageBase64?.trim().slice(0, 500_000) || null
+          : agreement.signatureImageBase64,
+      signatureAuditJson: signatureState.nextAudit,
       updatedAt: new Date(),
     })
     .where(eq(clientServiceAgreements.id, agreement.id));
