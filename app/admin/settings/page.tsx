@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAdminAudienceView, type AdminAudienceViewMode } from "@/contexts/AdminAudienceViewContext";
+import { Checkbox } from "@/components/ui/checkbox";
 import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
 import { resolveReadAloudTts, type AdminTtsConfigStored, type ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
 
@@ -58,6 +59,11 @@ interface AdminSettingsPayload {
   pushNotificationsEnabled: boolean;
   remindersEnabled: boolean;
   reminderFrequency: string;
+  reminderPlanningDays: string[];
+  reminderCityFocus: string | null;
+  reminderEditorialHolidaysEnabled: boolean;
+  reminderEditorialLocalEventsEnabled: boolean;
+  reminderEditorialHorizonDays: number;
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
   aiAgentRequireActionConfirmation: boolean;
@@ -128,12 +134,27 @@ const DEFAULT_SETTINGS: AdminSettingsPayload = {
   pushNotificationsEnabled: true,
   remindersEnabled: true,
   reminderFrequency: "realtime",
+  reminderPlanningDays: ["monday"],
+  reminderCityFocus: null,
+  reminderEditorialHolidaysEnabled: true,
+  reminderEditorialLocalEventsEnabled: true,
+  reminderEditorialHorizonDays: 21,
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
   aiAgentRequireActionConfirmation: true,
   aiMentorObserveUsage: false,
   aiMentorProactiveCheckpoints: true,
 };
+
+const PLANNING_DAY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "monday", label: "Mon" },
+  { value: "tuesday", label: "Tue" },
+  { value: "wednesday", label: "Wed" },
+  { value: "thursday", label: "Thu" },
+  { value: "friday", label: "Fri" },
+  { value: "saturday", label: "Sat" },
+  { value: "sunday", label: "Sun" },
+];
 
 export default function AdminSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -233,7 +254,7 @@ export default function AdminSettingsPage() {
     },
   });
 
-  const update = (key: keyof AdminSettingsPayload, value: boolean | string) => {
+  const update = (key: keyof AdminSettingsPayload, value: AdminSettingsPayload[keyof AdminSettingsPayload]) => {
     const next = { ...local, [key]: value };
     setLocal(next);
     patchMutation.mutate({ [key]: value });
@@ -318,6 +339,30 @@ export default function AdminSettingsPage() {
   const isSuper = isAuthSuperUser(user);
   const saving = patchMutation.isPending;
   const osSaving = osPlatformMutation.isPending;
+
+  const togglePlanningDay = (day: string, checked: boolean) => {
+    const next = new Set(local.reminderPlanningDays ?? []);
+    if (checked) next.add(day);
+    else next.delete(day);
+    if (next.size === 0) {
+      toast({ title: "Choose at least one planning day", variant: "destructive" });
+      return;
+    }
+    update("reminderPlanningDays", [...next] as AdminSettingsPayload["reminderPlanningDays"]);
+  };
+
+  const commitCityFocus = () => {
+    update("reminderCityFocus", (local.reminderCityFocus ?? "").trim() || null);
+  };
+
+  const commitEditorialHorizon = () => {
+    const n = Number(local.reminderEditorialHorizonDays);
+    if (!Number.isFinite(n)) {
+      update("reminderEditorialHorizonDays", 21);
+      return;
+    }
+    update("reminderEditorialHorizonDays", Math.max(3, Math.min(90, Math.round(n))));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -853,6 +898,104 @@ export default function AdminSettingsPage() {
                   <FieldHint>
                     Controls how often the app rechecks for overdue tasks and follow-ups — not how often emails
                     are sent (that depends on your workflow).
+                  </FieldHint>
+                </div>
+                <div className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium text-foreground">Editorial targeting reminders</p>
+                  <p>
+                    Adds reminders for content planning days, holiday windows, and local events based on your
+                    city-focus targeting settings.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Content planning days</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {PLANNING_DAY_OPTIONS.map((day) => (
+                      <label
+                        key={day.value}
+                        className="inline-flex items-center gap-2 rounded-md border border-border/70 px-2.5 py-1.5 text-xs cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={(local.reminderPlanningDays ?? []).includes(day.value)}
+                          onCheckedChange={(v) => togglePlanningDay(day.value, Boolean(v))}
+                          disabled={saving}
+                        />
+                        <span>{day.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <FieldHint>
+                    Generates weekly content-planning reminders on the selected days.
+                  </FieldHint>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reminder-city-focus">Targeting city focus</Label>
+                  <Input
+                    id="reminder-city-focus"
+                    value={local.reminderCityFocus ?? ""}
+                    onChange={(e) =>
+                      setLocal((prev) => ({ ...prev, reminderCityFocus: e.target.value.slice(0, 120) }))
+                    }
+                    onBlur={commitCityFocus}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitCityFocus();
+                    }}
+                    placeholder="e.g. Austin, TX"
+                    disabled={saving}
+                  />
+                  <FieldHint>
+                    Used for local-event editorial reminders in your content planning flow.
+                  </FieldHint>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="reminder-holidays" className="cursor-pointer">Holiday editorial reminders</Label>
+                      <p className="text-xs text-muted-foreground">Prompts for upcoming seasonal/holiday opportunities.</p>
+                    </div>
+                    <Switch
+                      id="reminder-holidays"
+                      checked={local.reminderEditorialHolidaysEnabled}
+                      onCheckedChange={(v) => update("reminderEditorialHolidaysEnabled", v)}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="reminder-local-events" className="cursor-pointer">Local-event editorial reminders</Label>
+                      <p className="text-xs text-muted-foreground">Uses your targeting city focus for local angles.</p>
+                    </div>
+                    <Switch
+                      id="reminder-local-events"
+                      checked={local.reminderEditorialLocalEventsEnabled}
+                      onCheckedChange={(v) => update("reminderEditorialLocalEventsEnabled", v)}
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editorial-horizon">Editorial reminder horizon (days)</Label>
+                  <Input
+                    id="editorial-horizon"
+                    type="number"
+                    min={3}
+                    max={90}
+                    step={1}
+                    value={local.reminderEditorialHorizonDays}
+                    onChange={(e) =>
+                      setLocal((prev) => ({
+                        ...prev,
+                        reminderEditorialHorizonDays: Number(e.target.value || prev.reminderEditorialHorizonDays),
+                      }))
+                    }
+                    onBlur={commitEditorialHorizon}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitEditorialHorizon();
+                    }}
+                    disabled={saving}
+                  />
+                  <FieldHint>
+                    How far ahead to look for content-planning, holiday, and local-event editorial reminders.
                   </FieldHint>
                 </div>
               </CardContent>

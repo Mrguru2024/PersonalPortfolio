@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClientServiceAgreementByToken } from "@server/services/serviceAgreementService";
+import {
+  getAgreementDocumentType,
+} from "@server/services/serviceAgreementService";
+import {
+  SIGNATURE_FIELDS_BY_ROLE,
+} from "@shared/documentSigningEngine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,8 +24,10 @@ export async function GET(
     return NextResponse.json({
       publicToken: agreement.publicToken,
       status: agreement.status,
+      documentType: getAgreementDocumentType(agreement),
       clientName: agreement.clientName,
       htmlBody: agreement.htmlBody,
+      signatureFields: SIGNATURE_FIELDS_BY_ROLE.client,
       milestones: milestones.map((m) => ({
         id: m.id,
         label: m.label,

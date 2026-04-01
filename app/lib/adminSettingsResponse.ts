@@ -8,6 +8,11 @@ export interface AdminSettingsApiPayload {
   pushNotificationsEnabled: boolean;
   remindersEnabled: boolean;
   reminderFrequency: string;
+  reminderPlanningDays: string[];
+  reminderCityFocus: string | null;
+  reminderEditorialHolidaysEnabled: boolean;
+  reminderEditorialLocalEventsEnabled: boolean;
+  reminderEditorialHorizonDays: number;
   notifyOnRoleChange: boolean;
   aiAgentCanPerformActions: boolean;
   aiAgentRequireActionConfirmation: boolean;
@@ -26,6 +31,11 @@ export const ADMIN_SETTINGS_DEFAULTS: Omit<AdminSettingsApiPayload, "adminUiLayo
   pushNotificationsEnabled: true,
   remindersEnabled: true,
   reminderFrequency: "realtime",
+  reminderPlanningDays: ["monday"],
+  reminderCityFocus: null,
+  reminderEditorialHolidaysEnabled: true,
+  reminderEditorialLocalEventsEnabled: true,
+  reminderEditorialHorizonDays: 21,
   notifyOnRoleChange: true,
   aiAgentCanPerformActions: false,
   aiAgentRequireActionConfirmation: true,
@@ -45,6 +55,14 @@ export function toAdminSettingsApiPayload(
     pushNotificationsEnabled: row.pushNotificationsEnabled,
     remindersEnabled: row.remindersEnabled,
     reminderFrequency: row.reminderFrequency,
+    reminderPlanningDays: row.reminderPlanningDays ?? ADMIN_SETTINGS_DEFAULTS.reminderPlanningDays,
+    reminderCityFocus: row.reminderCityFocus ?? ADMIN_SETTINGS_DEFAULTS.reminderCityFocus,
+    reminderEditorialHolidaysEnabled:
+      row.reminderEditorialHolidaysEnabled ?? ADMIN_SETTINGS_DEFAULTS.reminderEditorialHolidaysEnabled,
+    reminderEditorialLocalEventsEnabled:
+      row.reminderEditorialLocalEventsEnabled ?? ADMIN_SETTINGS_DEFAULTS.reminderEditorialLocalEventsEnabled,
+    reminderEditorialHorizonDays:
+      row.reminderEditorialHorizonDays ?? ADMIN_SETTINGS_DEFAULTS.reminderEditorialHorizonDays,
     notifyOnRoleChange: row.notifyOnRoleChange,
     aiAgentCanPerformActions: row.aiAgentCanPerformActions,
     aiAgentRequireActionConfirmation: row.aiAgentRequireActionConfirmation,

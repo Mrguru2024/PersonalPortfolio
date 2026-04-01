@@ -653,6 +653,19 @@ export const adminSettings = pgTable("admin_settings", {
   pushNotificationsEnabled: boolean("push_notifications_enabled").default(true).notNull(),
   remindersEnabled: boolean("reminders_enabled").default(true).notNull(),
   reminderFrequency: text("reminder_frequency").default("realtime").notNull(), // realtime | hourly | daily | weekly
+  /** Weekly planning slots (lowercase weekday keys) for editorial reminders. */
+  reminderPlanningDays: json("reminder_planning_days").$type<string[]>().default(["monday"]).notNull(),
+  /**
+   * Geo targeting focus for editorial reminders (e.g. "Austin, TX").
+   * Used by local-event reminder generation.
+   */
+  reminderCityFocus: text("reminder_city_focus"),
+  /** Include holiday-aware editorial reminders in reminder generation. */
+  reminderEditorialHolidaysEnabled: boolean("reminder_editorial_holidays_enabled").default(true).notNull(),
+  /** Include city-focused local-event editorial reminders in reminder generation. */
+  reminderEditorialLocalEventsEnabled: boolean("reminder_editorial_local_events_enabled").default(true).notNull(),
+  /** Look-ahead window for editorial opportunities (days). */
+  reminderEditorialHorizonDays: integer("reminder_editorial_horizon_days").default(21).notNull(),
   notifyOnRoleChange: boolean("notify_on_role_change").default(true).notNull(),
   aiAgentCanPerformActions: boolean("ai_agent_can_perform_actions").default(false).notNull(),
   /** When true, the admin assistant shows a confirm step before navigation or reminder runs. */

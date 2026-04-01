@@ -4870,18 +4870,39 @@ export class DatabaseStorage implements IStorage {
   ): Promise<AdminSettings> {
     const now = new Date();
     const existing = await this.getAdminSettings(userId);
-    const def = {
+    const def: {
+      emailNotifications: boolean;
+      inAppNotifications: boolean;
+      pushNotificationsEnabled: boolean;
+      remindersEnabled: boolean;
+      reminderFrequency: string;
+      reminderPlanningDays: string[];
+      reminderCityFocus: string | null;
+      reminderEditorialHolidaysEnabled: boolean;
+      reminderEditorialLocalEventsEnabled: boolean;
+      reminderEditorialHorizonDays: number;
+      notifyOnRoleChange: boolean;
+      aiAgentCanPerformActions: boolean;
+      aiAgentRequireActionConfirmation: boolean;
+      aiMentorObserveUsage: boolean;
+      aiMentorProactiveCheckpoints: boolean;
+    } = {
       emailNotifications: true,
       inAppNotifications: true,
       pushNotificationsEnabled: true,
       remindersEnabled: true,
       reminderFrequency: "realtime",
+      reminderPlanningDays: ["monday"],
+      reminderCityFocus: null,
+      reminderEditorialHolidaysEnabled: true,
+      reminderEditorialLocalEventsEnabled: true,
+      reminderEditorialHorizonDays: 21,
       notifyOnRoleChange: true,
       aiAgentCanPerformActions: false,
       aiAgentRequireActionConfirmation: true,
       aiMentorObserveUsage: false,
       aiMentorProactiveCheckpoints: true,
-    } as const;
+    };
     const payload = {
       emailNotifications: settings.emailNotifications ?? existing?.emailNotifications ?? def.emailNotifications,
       inAppNotifications: settings.inAppNotifications ?? existing?.inAppNotifications ?? def.inAppNotifications,
@@ -4889,6 +4910,24 @@ export class DatabaseStorage implements IStorage {
         settings.pushNotificationsEnabled ?? existing?.pushNotificationsEnabled ?? def.pushNotificationsEnabled,
       remindersEnabled: settings.remindersEnabled ?? existing?.remindersEnabled ?? def.remindersEnabled,
       reminderFrequency: settings.reminderFrequency ?? existing?.reminderFrequency ?? def.reminderFrequency,
+      reminderPlanningDays:
+        settings.reminderPlanningDays ?? existing?.reminderPlanningDays ?? def.reminderPlanningDays,
+      reminderCityFocus:
+        settings.reminderCityFocus !== undefined
+          ? settings.reminderCityFocus
+          : existing?.reminderCityFocus ?? def.reminderCityFocus,
+      reminderEditorialHolidaysEnabled:
+        settings.reminderEditorialHolidaysEnabled ??
+        existing?.reminderEditorialHolidaysEnabled ??
+        def.reminderEditorialHolidaysEnabled,
+      reminderEditorialLocalEventsEnabled:
+        settings.reminderEditorialLocalEventsEnabled ??
+        existing?.reminderEditorialLocalEventsEnabled ??
+        def.reminderEditorialLocalEventsEnabled,
+      reminderEditorialHorizonDays:
+        settings.reminderEditorialHorizonDays ??
+        existing?.reminderEditorialHorizonDays ??
+        def.reminderEditorialHorizonDays,
       notifyOnRoleChange: settings.notifyOnRoleChange ?? existing?.notifyOnRoleChange ?? def.notifyOnRoleChange,
       aiAgentCanPerformActions:
         settings.aiAgentCanPerformActions ?? existing?.aiAgentCanPerformActions ?? def.aiAgentCanPerformActions,

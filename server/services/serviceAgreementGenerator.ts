@@ -5,6 +5,7 @@
 export type LibraryClauseForAgreement = { title: string; bodyHtml: string };
 
 export type ServiceAgreementTemplateInput = {
+  documentTypeLabel?: string;
   providerLegalName: string;
   clientLegalName: string;
   clientContactName: string;
@@ -28,6 +29,8 @@ function escapeHtml(s: string): string {
 }
 
 export function buildServiceAgreementHtml(input: ServiceAgreementTemplateInput): string {
+  const documentTypeLabel = input.documentTypeLabel?.trim() || "Service agreement";
+  const summaryTitle = `${documentTypeLabel} summary`;
   const bullets = input.scopeBullets
     .map((b) => b.trim())
     .filter(Boolean)
@@ -60,7 +63,7 @@ ${input.libraryClauses
 .ascendra-service-agreement .ag-block { margin-bottom: 1rem; }
 .ascendra-service-agreement ul { margin: 0.5rem 0 0.75rem 1.25rem; list-style: disc; }
 </style>
-<h1>Service agreement summary</h1>
+<h1>${escapeHtml(summaryTitle)}</h1>
 <p>This document summarizes the commercial relationship between <strong>${escapeHtml(input.providerLegalName)}</strong> (“Provider”) and <strong>${escapeHtml(input.clientLegalName)}</strong> (“Client”), primary contact ${escapeHtml(input.clientContactName)} &lt;${escapeHtml(input.clientEmail)}&gt;, effective ${escapeHtml(input.effectiveDateIso)}.</p>
 ${tier}
 <section class="ag-block">
