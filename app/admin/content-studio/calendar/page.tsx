@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import {
   addDays,
   addMonths,
@@ -52,13 +53,20 @@ import {
   format,
   isSameDay,
 } from "date-fns";
-import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil } from "lucide-react";
+import { Loader2, Plus, GripVertical, Copy, AlertTriangle, Settings2, Pencil, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { calendarCollisionDetection, CALENDAR_SORTABLE_TRANSITION } from "@/components/content-studio/calendarDndConfig";
+import { ContentStudioFunnelStageSelect } from "@/components/content-studio/ContentStudioFunnelStageSelect";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFunnelStage } from "@/lib/growth-os/friendlyCopy";
+import type { EditorialStrategyMeta } from "@shared/editorialStrategyMeta";
+import type { ContentStrategyWorkflowConfig } from "@shared/contentStrategyWorkflowConfig";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContentStrategyBriefPanel } from "@/components/content-studio/ContentStrategyBriefPanel";
 
 const WEEK_START_LS_KEY = "content-studio-calendar-week-starts-on";
 const MONTH_DENSITY_LS_KEY = "content-studio-calendar-month-density";
@@ -75,6 +83,8 @@ interface CalEntry {
   platformTargets: string[];
   personaTags: string[];
   ctaObjective: string | null;
+  funnelStage?: string | null;
+  strategyMeta?: EditorialStrategyMeta | null;
   warningsJson: string[] | null;
   documentId: number | null;
   sortOrder?: number;
@@ -87,6 +97,58 @@ interface PlatformAdapterRow {
   key: string;
   displayName: string;
   active: boolean;
+}
+
+/** Shown in the UI; API still uses keys like `scheduled`. */
+const CALENDAR_STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  scheduled: "Ready to post",
+  published: "Posted",
+  skipped: "Skipped",
+  failed: "Needs fix",
+};
+
+function formatCalendarStatus(status: string): string {
+  return CALENDAR_STATUS_LABEL[status] ?? status;
+}
+
+const DOC_APPROVAL_LABEL: Record<string, string> = {
+  approved: "Approved to post",
+  rejected: "Not approved",
+  pending: "In review",
+  none: "Not reviewed",
+};
+
+function formatDocApproval(status: string): string {
+  return DOC_APPROVAL_LABEL[status] ?? status;
+}
+
+const CALENDAR_WARNING_LABEL: Record<string, string> = {
+  missing_cta: "Missing CTA note",
+  missing_persona: "Missing audience tags",
+  weak_headline: "Title is very short",
+  strategy_evergreen_missing_keyword: "Evergreen slot: add a primary keyword",
+  strategy_intent_without_keyword: "Search intent set without a keyword",
+  strategy_repurpose_without_hook: "Repurpose targets listed — add a hook angle",
+};
+
+function formatEntryWarnings(warnings: string[]): string {
+  return warnings
+    .map((w) => {
+      if (w.startsWith("scheduling_conflict:")) {
+        const id = w.slice("scheduling_conflict:".length);
+        return `Scheduling overlap (entry ${id})`;
+      }
+      return CALENDAR_WARNING_LABEL[w] ?? w;
+    })
+    .join(", ");
+}
+
+function hasStrategyBrief(m?: EditorialStrategyMeta | null): boolean {
+  if (!m || typeof m !== "object") return false;
+  return Object.entries(m).some(([, v]) =>
+    Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim().length > 0 : Boolean(v),
+  );
 }
 
 function dayDropId(d: Date) {
@@ -194,7 +256,7 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {entry.calendarStatus}
+          {formatLocaleMediumDateTime(entry.scheduledAt)} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -206,7 +268,7 @@ function CalendarEntryDragPreview({ entry }: { entry: CalEntry }) {
         {warnings.length > 0 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
             <AlertTriangle className="h-3 w-3 shrink-0" />
-            {warnings.join(", ")}
+            {formatEntryWarnings(warnings)}
           </div>
         )}
       </div>
@@ -219,21 +281,29 @@ function SortableRow({
   adapters,
   calendarQueryKey,
   qc,
+  strategyWorkflow,
 }: {
   entry: CalEntry;
   adapters: PlatformAdapterRow[];
   calendarQueryKey: readonly unknown[];
   qc: ReturnType<typeof useQueryClient>;
+  strategyWorkflow: ContentStrategyWorkflowConfig | null;
 }) {
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
   const [editStatus, setEditStatus] = useState(entry.calendarStatus);
   const [editPlatforms, setEditPlatforms] = useState<string[]>([...(entry.platformTargets ?? [])]);
+  const [editFunnelStage, setEditFunnelStage] = useState(entry.funnelStage ?? "");
+  const [editStrategyMeta, setEditStrategyMeta] = useState<EditorialStrategyMeta>({});
+  const [strategyOpen, setStrategyOpen] = useState(false);
 
   useEffect(() => {
     if (editOpen) {
       setEditStatus(entry.calendarStatus);
       setEditPlatforms([...(entry.platformTargets ?? [])]);
+      setEditFunnelStage(entry.funnelStage ?? "");
+      setEditStrategyMeta({ ...(entry.strategyMeta ?? {}) });
+      setStrategyOpen(hasStrategyBrief(entry.strategyMeta));
     }
   }, [editOpen, entry]);
 
@@ -255,7 +325,12 @@ function SortableRow({
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ calendarStatus: editStatus, platformTargets: editPlatforms }),
+      body: JSON.stringify({
+        calendarStatus: editStatus,
+        platformTargets: editPlatforms,
+        funnelStage: editFunnelStage.trim() || null,
+        strategyMeta: hasStrategyBrief(editStrategyMeta) ? editStrategyMeta : null,
+      }),
     });
     if (!res.ok) {
       toast({ title: "Save failed", variant: "destructive" });
@@ -263,7 +338,7 @@ function SortableRow({
     }
     void qc.invalidateQueries({ queryKey: calendarQueryKey });
     setEditOpen(false);
-    toast({ title: "Calendar entry updated" });
+      toast({ title: "Saved" });
   }
 
   return (
@@ -278,7 +353,7 @@ function SortableRow({
       <button
         type="button"
         className="mt-1 text-muted-foreground hover:text-foreground touch-none cursor-grab active:cursor-grabbing shrink-0 rounded-md p-1 hover:bg-muted/80"
-        aria-label="Drag to reorder or move to another day"
+        aria-label="Drag to reorder or move to another date"
         {...attributes}
         {...listeners}
       >
@@ -287,7 +362,7 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium">{entry.title}</div>
         <div className="text-xs text-muted-foreground">
-          {format(new Date(entry.scheduledAt), "PPp")} · {entry.calendarStatus}
+          {formatLocaleMediumDateTime(entry.scheduledAt)} · {formatCalendarStatus(entry.calendarStatus)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {(entry.platformTargets ?? []).map((p) => (
@@ -295,18 +370,23 @@ function SortableRow({
               {p}
             </Badge>
           ))}
+          {entry.funnelStage ? (
+            <Badge variant="secondary" className="text-xs">
+              {formatFunnelStage(entry.funnelStage)}
+            </Badge>
+          ) : null}
         </div>
         {entry.documentId != null && entry.documentApprovalStatus && (
           <div className="mt-1">
             <Badge variant={entry.documentApprovalStatus === "approved" ? "default" : "secondary"} className="text-[10px]">
-              Doc approval: {entry.documentApprovalStatus}
+              {formatDocApproval(entry.documentApprovalStatus)}
             </Badge>
           </div>
         )}
         {warnings.length > 0 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs mt-2">
             <AlertTriangle className="h-3 w-3 shrink-0" />
-            {warnings.join(", ")}
+            {formatEntryWarnings(warnings)}
           </div>
         )}
         {entry.documentId && (
@@ -314,41 +394,47 @@ function SortableRow({
             href={`/admin/content-studio/documents/${entry.documentId}`}
             className="text-xs text-primary underline mt-1 inline-block"
           >
-            Linked document
+            Open linked post
           </Link>
         )}
       </div>
       <div className="flex flex-col gap-1 shrink-0">
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="ghost" aria-label="Edit targets and status">
+            <Button size="sm" variant="ghost" aria-label="Edit slot">
               <Pencil className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit publish targets</DialogTitle>
+              <DialogTitle>Where to post &amp; status</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Calendar status</Label>
+                <Label>Status</Label>
                 <Select value={editStatus} onValueChange={setEditStatus}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">draft</SelectItem>
-                    <SelectItem value="scheduled">scheduled (cron picks up when due)</SelectItem>
-                    <SelectItem value="published">published</SelectItem>
-                    <SelectItem value="skipped">skipped</SelectItem>
-                    <SelectItem value="failed">failed (fix + set back to scheduled)</SelectItem>
+                    <SelectItem value="draft">Draft — not queued</SelectItem>
+                    <SelectItem value="scheduled">Ready to post — runs when the time passes</SelectItem>
+                    <SelectItem value="published">Posted</SelectItem>
+                    <SelectItem value="skipped">Skipped</SelectItem>
+                    <SelectItem value="failed">Needs fix — correct the issue, then choose Ready to post again</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Platforms (multi-select)</Label>
+                <Label>Funnel stage</Label>
+                <p className="text-xs text-muted-foreground">Used for Growth OS content mix and reporting.</p>
+                <ContentStudioFunnelStageSelect value={editFunnelStage} onValueChange={setEditFunnelStage} />
+              </div>
+              <div className="space-y-2">
+                <Label>Channels</Label>
                 <p className="text-xs text-muted-foreground">
-                  Use keys that match adapters (e.g. facebook_page, manual). Cron publishes each target when the slot is due.
+                  Check every network this slot should use. The site posts to each checked channel when the slot is due
+                  (if the channel is connected under Connections &amp; email).
                 </p>
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                   {activeAdapters.map((a) => (
@@ -371,6 +457,33 @@ function SortableRow({
                   ))}
                 </div>
               </div>
+              <Collapsible open={strategyOpen} onOpenChange={setStrategyOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-between font-normal text-muted-foreground"
+                  >
+                    <span>Content strategy brief (pillar, SEO, repurposing)</span>
+                    <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", strategyOpen && "rotate-180")} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <ContentStrategyBriefPanel
+                    value={editStrategyMeta}
+                    onChange={setEditStrategyMeta}
+                    workflow={strategyWorkflow}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    Opens the same fields as{" "}
+                    <Link href="/admin/content-studio/strategy" className="underline text-foreground">
+                      Strategy
+                    </Link>{" "}
+                    — stored as strategy metadata on this row, not a duplicate of funnel stage or CTA.
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
@@ -403,6 +516,8 @@ function SortableRow({
 
 export default function ContentStudioCalendarPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const qc = useQueryClient();
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState(() => new Date());
@@ -415,6 +530,7 @@ export default function ContentStudioCalendarPage() {
   const [qWhen, setQWhen] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [qCta, setQCta] = useState("");
   const [qPersonas, setQPersonas] = useState("");
+  const [qFunnelStage, setQFunnelStage] = useState("");
   const [qSelectedPlatforms, setQSelectedPlatforms] = useState<string[]>(["facebook_page", "manual"]);
   const [activeDragEntry, setActiveDragEntry] = useState<CalEntry | null>(null);
   const [statusFilter, setStatusFilter] = useState<
@@ -486,6 +602,15 @@ export default function ContentStudioCalendarPage() {
       const r = await fetch("/api/admin/content-studio/adapters", { credentials: "include" });
       if (!r.ok) throw new Error("Failed adapters");
       return r.json() as Promise<{ adapters: PlatformAdapterRow[] }>;
+    },
+  });
+
+  const { data: strategyWorkflowRes } = useQuery({
+    queryKey: ["/api/admin/content-studio/strategy-workflow"],
+    queryFn: async () => {
+      const r = await fetch("/api/admin/content-studio/strategy-workflow", { credentials: "include" });
+      if (!r.ok) throw new Error("Failed strategy workflow");
+      return r.json() as Promise<{ config: ContentStrategyWorkflowConfig }>;
     },
   });
 
@@ -643,6 +768,7 @@ export default function ContentStudioCalendarPage() {
             .map((s) => s.trim())
             .filter(Boolean),
           platformTargets: qSelectedPlatforms,
+          funnelStage: qFunnelStage.trim() || null,
           calendarStatus: "draft",
         }),
       });
@@ -653,7 +779,8 @@ export default function ContentStudioCalendarPage() {
       void qc.invalidateQueries({ queryKey: calendarQueryKey });
       setQuickOpen(false);
       setQTitle("");
-      toast({ title: "Scheduled" });
+      setQFunnelStage("");
+      toast({ title: "Added to calendar" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -698,23 +825,42 @@ export default function ContentStudioCalendarPage() {
     <div className="space-y-6">
       <Card className="border-primary/25 bg-primary/5">
         <CardHeader className="py-3">
-          <CardTitle className="text-sm">Automated social publishing</CardTitle>
-          <CardDescription className="text-xs leading-relaxed">
-            Vercel cron calls <code className="text-[10px] bg-muted px-1 rounded">/api/cron/content-studio-publish</code>{" "}
-            every 10 minutes (Bearer <code className="text-[10px] bg-muted px-1 rounded">CRON_SECRET</code>). A row is
-            eligible when it is <strong>scheduled</strong>, <strong>scheduledAt</strong> is in the past, it has a{" "}
-            <strong>linked document</strong>, and <strong>platform targets</strong> are set (e.g.{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">facebook_page</code>,{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">manual</code>). By default the document must be{" "}
-            <strong>approval: approved</strong> for auto-publish; set{" "}
-            <code className="text-[10px] bg-muted px-1 rounded">CONTENT_STUDIO_SCHEDULED_REQUIRE_APPROVAL=0</code> to
-            disable. Facebook Page posts need <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_ACCESS_TOKEN</code>{" "}
-            + <code className="text-[10px] bg-muted px-1 rounded">FACEBOOK_PAGE_ID</code>. Failures set calendar status{" "}
-            <strong>failed</strong> — fix tokens or copy, then set back to <strong>scheduled</strong>. Check{" "}
-            <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
-              workflow / publish logs
-            </Link>
-            .
+          <CardTitle className="text-sm">How scheduled posting works</CardTitle>
+          <CardDescription className="text-xs leading-relaxed space-y-2">
+            <p>
+              <strong className="text-foreground">1.</strong> Write the post and link it to this calendar row.{" "}
+              <strong className="text-foreground">2.</strong> When the copy is final, mark it approved on the document.{" "}
+              <strong className="text-foreground">3.</strong> Set this row to <strong>Ready to post</strong> and pick the
+              channels (Facebook, etc.). <strong className="text-foreground">4.</strong> After the scheduled time, the site
+              checks about every ten minutes and sends the post. If something breaks, the row shows{" "}
+              <strong>Needs fix</strong>—correct it, then set <strong>Ready to post</strong> again.
+            </p>
+            <p className="text-muted-foreground">
+              Connect social accounts under{" "}
+              <Link href="/admin/integrations" className="underline font-medium text-foreground">
+                Connections &amp; email
+              </Link>
+              . Plan editorial pillars, SEO intent, and repurposing on each row via the pencil →{" "}
+              <strong className="text-foreground">Content strategy brief</strong>, or use the{" "}
+              <Link href="/admin/content-studio/strategy" className="underline font-medium text-foreground">
+                Strategy
+              </Link>{" "}
+              hub. Recent activity is under{" "}
+              <Link href="/admin/content-studio/workflow" className="underline font-medium text-foreground">
+                Post history
+              </Link>
+              . You don&apos;t need to stay logged in—scheduled posts are picked up automatically.
+            </p>
+            {isSuperUser ? (
+              <details className="text-xs text-muted-foreground mt-2 rounded-md border border-dashed border-border bg-background/50 px-3 py-2">
+                <summary className="cursor-pointer font-medium text-foreground">Technical (super user)</summary>
+                <p className="mt-2 leading-relaxed">
+                  Publishing runs on a short interval (for example the{" "}
+                  <code className="text-[11px]">/api/cron/content-studio-publish</code> job, often about every ten minutes on
+                  Vercel). Production hosts must expose <code className="text-[11px]">CRON_SECRET</code> for that route.
+                </p>
+              </details>
+            ) : null}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -729,11 +875,11 @@ export default function ContentStudioCalendarPage() {
         <Card>
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>Editorial calendar</CardTitle>
+              <CardTitle>Calendar</CardTitle>
               <CardDescription>
-                Drag the grip to <strong className="text-foreground">reorder</strong> the day queue, or drop onto a{" "}
-                <strong className="text-foreground">day</strong> in month or week view to reschedule (time of day is
-                preserved).
+                Drag the handle to <strong className="text-foreground">change order</strong> for the same day. Drag a row
+                onto another <strong className="text-foreground">day</strong> in month or week view to move it—the clock time
+                stays the same.
               </CardDescription>
             </div>
             <div className="flex flex-col gap-3 w-full lg:max-w-none">
@@ -785,12 +931,12 @@ export default function ContentStudioCalendarPage() {
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="scheduled">Ready to post</SelectItem>
+                    <SelectItem value="published">Posted</SelectItem>
                     <SelectItem value="skipped">Skipped</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="failed">Needs fix</SelectItem>
                   </SelectContent>
                 </Select>
                 <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -849,30 +995,34 @@ export default function ContentStudioCalendarPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>New calendar entry</DialogTitle>
+                      <DialogTitle>New calendar slot</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3 py-2">
                       <div className="space-y-1">
-                        <Label>Title / headline</Label>
+                        <Label>Title</Label>
                         <Input value={qTitle} onChange={(e) => setQTitle(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>When (local → stored UTC)</Label>
+                        <Label>Date and time</Label>
                         <Input type="datetime-local" value={qWhen} onChange={(e) => setQWhen(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>CTA objective</Label>
+                        <Label>Call-to-action note (optional)</Label>
                         <Input value={qCta} onChange={(e) => setQCta(e.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <Label>Personas (comma)</Label>
+                        <Label>Audience tags (optional, comma-separated)</Label>
                         <Input value={qPersonas} onChange={(e) => setQPersonas(e.target.value)} />
                       </div>
+                      <div className="space-y-1">
+                        <Label>Funnel stage</Label>
+                        <ContentStudioFunnelStageSelect value={qFunnelStage} onValueChange={setQFunnelStage} />
+                      </div>
                       <div className="space-y-2">
-                        <Label>Platforms (publish targets)</Label>
+                        <Label>Channels for this slot</Label>
                         <p className="text-xs text-muted-foreground">
-                          Must match adapter keys. <code className="bg-muted px-1 rounded">facebook_page</code> uses Meta
-                          Graph when env is configured.
+                          Pick where this post should go when you mark it ready. Facebook and other options appear if they
+                          are set up.
                         </p>
                         <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                           {activeAdapters.map((a) => (
@@ -987,7 +1137,7 @@ export default function ContentStudioCalendarPage() {
                   variant="week"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Drop an entry here to move it to this day (same as week/month cells).
+                  Drop a row here to move it to this date.
                 </p>
               </div>
             )}
@@ -998,7 +1148,7 @@ export default function ContentStudioCalendarPage() {
                   .map((e) => (
                     <li key={e.id} className="rounded-lg border p-3 text-sm">
                       <div className="font-medium">{e.title}</div>
-                      <div className="text-xs text-muted-foreground">{format(new Date(e.scheduledAt), "PPp")}</div>
+                      <div className="text-xs text-muted-foreground">{formatLocaleMediumDateTime(e.scheduledAt)}</div>
                     </li>
                   ))}
               </ul>
@@ -1008,10 +1158,10 @@ export default function ContentStudioCalendarPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{format(selectedDay, "EEEE, MMM d")} — queue</CardTitle>
+            <CardTitle>{format(selectedDay, "EEEE, MMM d")}</CardTitle>
             <CardDescription>
-              Reorder with drag-and-drop; items animate into place. Drag onto a day in month or week view (or the day
-              card in day view) to reschedule.
+              Drag to reorder. To change the day, drop a row on another date in month or week view (or the day card in day
+              view).
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1027,6 +1177,7 @@ export default function ContentStudioCalendarPage() {
                       adapters={adaptersRes?.adapters ?? []}
                       calendarQueryKey={calendarQueryKey}
                       qc={qc}
+                      strategyWorkflow={strategyWorkflowRes?.config ?? null}
                     />
                   ))
                 )}

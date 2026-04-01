@@ -27,17 +27,108 @@ interface AgentBootstrap {
   greetingLine: string;
   mentorNudge: string | null;
   policyNotice: string;
+  mentorCompanion?: {
+    observeUsage: boolean;
+    proactiveCheckpoints: boolean;
+    actionsEnabled: boolean;
+  };
+}
+
+/** Avoid `res.json()` on HTML error pages (throws "Unexpected token '<'"). */
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const trimmed = text.trimStart();
+  if (
+    trimmed.startsWith("<!DOCTYPE") ||
+    trimmed.startsWith("<!doctype") ||
+    trimmed.startsWith("<html") ||
+    trimmed.startsWith("<HTML")
+  ) {
+    throw new Error(
+      "The assistant received a web page instead of API data (often a sign-in redirect, server error, or bad URL). Refresh the page, sign in again, or check the Network tab for /api/admin/agent.",
+    );
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      text.length > 0
+        ? `Assistant returned a non-JSON response (HTTP ${res.status}).`
+        : `Assistant request failed (HTTP ${res.status}).`,
+    );
+  }
 }
 
 const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 /** Runs a server-confirmed action and returns markdown for the chat transcript. */
+/** Local slash commands — scheduler shortcuts, quick navigation, optional context refresh. */
+function interpretAdminSlashCommand(text: string): { reply: string; navigateTo?: string; runRefresh?: boolean } | null {
+  const t = text.trim();
+  if (!t.startsWith("/") || t.includes("\n")) return null;
+  const cmd = t.slice(1).trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  if (!cmd) return null;
+
+  if (cmd === "help" || cmd === "commands") {
+    return {
+      reply:
+        "## Commands\n\n" +
+        "- `/calendar` — Master scheduler calendar\n" +
+        "- `/scheduler` — Meetings & calendar hub\n" +
+        "- `/workflows` — Booking automations\n" +
+        "- `/howto` — How-to & guides\n" +
+        "- `/directory` — Pages & tools directory\n" +
+        "- `/rescan` — Rebuild assistant site digest cache (admin; immediate)\n" +
+        "- `/help` — This list\n\n" +
+        "Natural language still works (e.g. “open Offer Engine”, “refresh assistant context”).",
+    };
+  }
+  if (cmd === "howto" || cmd === "guides") {
+    return { reply: "Opening **How-to & guides**.", navigateTo: "/admin/how-to" };
+  }
+  if (cmd === "directory" || cmd === "sitemap") {
+    return { reply: "Opening the **site directory**.", navigateTo: "/admin/site-directory" };
+  }
+  if (cmd === "calendar" || cmd === "meetings") {
+    return { reply: "Opening the **master calendar**.", navigateTo: "/admin/scheduler/calendar" };
+  }
+  if (cmd === "scheduler" || cmd === "bookings") {
+    return { reply: "Opening **Meetings & calendar**.", navigateTo: "/admin/scheduler" };
+  }
+  if (cmd === "workflows" || cmd === "automations") {
+    return { reply: "Opening **booking automations**.", navigateTo: "/admin/scheduler/workflows" };
+  }
+  if (cmd === "rescan" || cmd === "refresh-context") {
+    return {
+      reply: "Rebuilding the assistant’s **site digest** from disk…",
+      runRefresh: true,
+    };
+  }
+  return null;
+}
+
 async function runAgentAction(
   action: NonNullable<AgentResponse["action"]>,
   router: ReturnType<typeof useRouter>,
   queryClient: ReturnType<typeof useQueryClient>,
 ): Promise<{ ok: boolean; markdown: string }> {
+  if (action.type === "refresh_agent_context" && action.api === "POST /api/admin/agent/refresh-context") {
+    try {
+      await apiRequest("POST", "/api/admin/agent/refresh-context", {});
+      return {
+        ok: true,
+        markdown:
+          "## Action result\n\n- Assistant **site digest** invalidated — the next assistant reply loads a fresh map from disk.",
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Request failed";
+      return {
+        ok: false,
+        markdown: `## Action result\n\n- Context refresh **failed**: ${msg}`,
+      };
+    }
+  }
   if (action.type === "generate_reminders" && action.api === "POST /api/admin/reminders") {
     try {
       await apiRequest("POST", "/api/admin/reminders", {});
@@ -104,14 +195,15 @@ export function AdminAgentWidget() {
     queryKey: ["/api/admin/agent", "bootstrap"],
     queryFn: async (): Promise<AgentBootstrap> => {
       const res = await fetch("/api/admin/agent", { credentials: "include" });
+      const data = await readJsonResponse<AgentBootstrap & { message?: string }>(res);
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(typeof err.message === "string" ? err.message : "Bootstrap failed");
+        throw new Error(typeof data.message === "string" ? data.message : "Bootstrap failed");
       }
-      return res.json() as Promise<AgentBootstrap>;
+      return data;
     },
-    enabled: isAdmin && open,
+    enabled: isAdmin,
     staleTime: 60_000,
+    refetchInterval: (q) => (q.state.data?.mentorCompanion?.observeUsage ? 120_000 : false),
   });
 
   useEffect(() => {
@@ -137,7 +229,7 @@ export function AdminAgentWidget() {
         }),
         credentials: "include",
       });
-      const data = (await res.json()) as AgentResponse & { message?: string };
+      const data = await readJsonResponse<AgentResponse & { message?: string }>(res);
       if (!res.ok) throw new Error(data.reply || data.message || "Request failed");
       return data;
     },
@@ -190,6 +282,40 @@ export function AdminAgentWidget() {
   const handleSubmit = () => {
     const text = input.trim();
     if ((!text && imageAttachments.length === 0) || sendMutation.isPending) return;
+
+    const slash = text && imageAttachments.length === 0 ? interpretAdminSlashCommand(text) : null;
+    if (slash) {
+      setInput("");
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: text },
+        { role: "assistant", content: slash.reply },
+      ]);
+      if (slash.navigateTo) router.push(slash.navigateTo);
+      if (slash.runRefresh) {
+        void (async () => {
+          try {
+            await apiRequest("POST", "/api/admin/agent/refresh-context", {});
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content:
+                  "## Result\n\n- Site digest cache **cleared**. Your next assistant question uses an up-to-date route map.",
+              },
+            ]);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "Request failed";
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: `## Result\n\n- Refresh failed: ${msg}` },
+            ]);
+          }
+        })();
+      }
+      return;
+    }
+
     setInput("");
     sendMutation.mutate({ message: text, history: messages, imageAttachments });
   };
@@ -250,10 +376,11 @@ export function AdminAgentWidget() {
                   </>
                 )}
                 <p className="text-sm leading-relaxed">
-                  Ask where something lives, say “open …” for CRM or Content Studio, or attach screenshots (PNG, JPEG, WebP, GIF). Describe what you want done in text alongside images. With{" "}
-                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can run navigation and reminders; with{" "}
-                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step and see an Action result line after it runs. Build optional notes in{" "}
-                  <span className="text-foreground/90">Assistant knowledge</span> (Settings) for facts, research context, and message flows.
+                  Ask <strong className="font-medium text-foreground/90">how do I…</strong> or <strong className="font-medium text-foreground/90">where is…</strong> — answers use a live digest of routes plus a source scan of admin pages. Type <code className="text-xs bg-muted px-1 rounded">/help</code> for slash shortcuts (<code className="text-xs bg-muted px-1 rounded">/rescan</code> rebuilds that digest). Attach screenshots (PNG, JPEG, WebP, GIF) when useful. With{" "}
+                  <span className="text-foreground/90">Allow agent to perform actions</span> in Settings, I can navigate, run reminders, and refresh the digest; with{" "}
+                  <span className="text-foreground/90">Confirm before running actions</span>, you approve each step. Under{" "}
+                  <span className="text-foreground/90">Mentor companion</span>, optional coarse path learning and checkpoints. Add notes in{" "}
+                  <span className="text-foreground/90">Assistant knowledge</span> when you want extra grounding.
                 </p>
                 <p className="text-[11px] leading-snug text-muted-foreground/90 border-t border-border/60 pt-2">
                   {bootstrapQuery.data?.policyNotice ??
@@ -400,11 +527,17 @@ export function AdminAgentWidget() {
       )}
       <Button
         size="icon"
-        className="h-12 w-12 rounded-full shadow-lg"
+        className="h-12 w-12 rounded-full shadow-lg relative"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close mentor and assistant" : "Open admin mentor and assistant"}
       >
         <Bot className="h-6 w-6" />
+        {!open && bootstrapQuery.data?.mentorNudge ? (
+          <span
+            className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-background"
+            aria-hidden
+          />
+        ) : null}
       </Button>
     </div>
   );

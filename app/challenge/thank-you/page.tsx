@@ -18,7 +18,7 @@ export default function ChallengeThankYouPage() {
             <p className="text-muted-foreground mb-6">
               We&apos;ve received your application. Someone from the team will follow up based on your timeline and interest.
             </p>
-            <div className="text-left space-y-4 rounded-lg bg-muted/30 p-4 mb-6">
+            <div className="text-left space-y-4 rounded-lg bg-elevated border border-border/60 p-4 mb-6">
               <p className="text-sm font-medium text-foreground">What happens next</p>
               <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
                 <li>We&apos;ll review your challenge progress and qualification responses.</li>

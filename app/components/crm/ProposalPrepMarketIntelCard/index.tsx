@@ -36,7 +36,11 @@ export function ProposalPrepMarketIntelCard({ workspaceId, summary, sources, met
 
   const updated =
     meta?.generatedAt ?
-      new Date(meta.generatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+      new Date(meta.generatedAt).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        hour12: true,
+      })
     : null;
 
   return (

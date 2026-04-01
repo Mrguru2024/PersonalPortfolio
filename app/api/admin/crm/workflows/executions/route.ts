@@ -18,8 +18,11 @@ export async function GET(req: NextRequest) {
     if (!Number.isFinite(entityId)) {
       return NextResponse.json({ error: "entityId required" }, { status: 400 });
     }
-    if (!["contact", "account", "deal"].includes(entityType)) {
-      return NextResponse.json({ error: "entityType must be contact, account, or deal" }, { status: 400 });
+    if (!["contact", "account", "deal", "appointment"].includes(entityType)) {
+      return NextResponse.json(
+        { error: "entityType must be contact, account, deal, or appointment" },
+        { status: 400 },
+      );
     }
 
     const executions = await storage.getCrmWorkflowExecutionsByEntity(entityType, entityId, limit);

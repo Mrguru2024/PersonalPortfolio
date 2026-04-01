@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 export const dynamic = "force-dynamic";
 

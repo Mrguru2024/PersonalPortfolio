@@ -19,7 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { PageSEO } from "@/components/SEO";
 import { toast } from "@/hooks/use-toast";
 import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
@@ -98,14 +97,9 @@ export default function CompetitorPositionSnapshotPage() {
 
   return (
     <>
-      <PageSEO
-        title="Competitor position snapshot | Free growth tool"
-        description="Get a structured snapshot of how your online presence compares to competitors. Guided strategic review—brand clarity, visual trust, conversion readiness."
-        canonicalPath="/competitor-position-snapshot"
-      />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl space-y-10 sm:space-y-12">
+          <div className="mx-auto max-w-4xl marketing-stack">
             <section className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <BarChart3 className="h-7 w-7" />

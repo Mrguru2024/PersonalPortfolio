@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, CheckCircle2, Palette, Layout, Package } from "lucide-react";
 import { FaqSection } from "@/components/FaqSection";
 import {
@@ -20,6 +19,15 @@ import {
   ECOSYSTEM_CTA_LAUNCH,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_LAUNCH } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_LAUNCH_CTA_REASSURANCE,
+  ICP_LAUNCH_FINAL_REASSURANCE,
+  ICP_LAUNCH_WHAT_TO_EXPECT_ITEMS,
+  ICP_LAUNCH_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const LAUNCH_FAQ = [
   { q: "How long does a typical launch project take?", a: "Timeline depends on scope—brand only, brand + site, or full launch kit. Most launch projects run a few weeks to a few months. Book a call and we'll outline a timeline for your situation." },
@@ -44,13 +52,6 @@ const PROCESS_STEPS = [
 export default function LaunchYourBrandPage() {
   return (
     <>
-      <PageSEO
-        title="Launch Your Business With a Brand That Looks Professional | Brand Launch"
-        description="Complete business brand build for new entrepreneurs: brand identity, website, and marketing kit—built by one coordinated team. Book your brand launch call."
-        keywords={["brand launch", "new business branding", "startup brand", "brand identity", "launch kit"]}
-        canonicalPath="/launch-your-brand"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="launch">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-amber-500/30 dark:border-amber-400/25">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
@@ -92,11 +93,25 @@ export default function LaunchYourBrandPage() {
                 </div>
                 <span>Brand identity by Macon Designs</span>
               </Link>
+              <CTAReassuranceLine dense className="max-w-xl">
+                {ICP_LAUNCH_CTA_REASSURANCE}
+              </CTAReassuranceLine>
             </motion.div>
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl space-y-8">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_LAUNCH} />
+            <WhatToExpectList
+              title={ICP_LAUNCH_WHAT_TO_EXPECT_TITLE}
+              items={ICP_LAUNCH_WHAT_TO_EXPECT_ITEMS}
+              compact
+            />
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <FunnelHeroMedia
               src="/stock images/Diversity_16.jpeg"
@@ -143,7 +158,7 @@ export default function LaunchYourBrandPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               The Process
@@ -188,7 +203,7 @@ export default function LaunchYourBrandPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-6 sm:mb-8">
               One Team, One Launch
@@ -203,7 +218,7 @@ export default function LaunchYourBrandPage() {
           </div>
         </section>
 
-        <FaqSection items={LAUNCH_FAQ} className="bg-muted/30 dark:bg-muted/10" />
+        <FaqSection items={LAUNCH_FAQ} className="bg-section" />
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -213,6 +228,9 @@ export default function LaunchYourBrandPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8">
               Book a brand launch call. We’ll discuss your vision and outline the right path.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_LAUNCH_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-full">
               <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={STRATEGY_CALL_PATH}>

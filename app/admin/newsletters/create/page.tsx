@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, Save, Send, Sparkles, Wand2, Zap, FileText } from "lucide-react";
+import { Loader2, ArrowLeft, Save, Send, Sparkles, Wand2, Zap, FileText, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { NewsletterPreviewDialog } from "@/components/newsletter/NewsletterPreviewDialog";
 
 export default function CreateNewsletterPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -330,7 +331,20 @@ export default function CreateNewsletterPage() {
                 <CardTitle>Content</CardTitle>
                 <CardDescription>Write your newsletter content using the rich text editor</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 justify-end">
+                {subject.trim() || content.trim() ? (
+                  <NewsletterPreviewDialog
+                    subject={subject}
+                    previewText={previewText}
+                    contentHtml={content || "<p></p>"}
+                    triggerLabel="Preview as recipient"
+                  />
+                ) : (
+                  <Button type="button" variant="outline" size="sm" disabled title="Add a subject or body to preview">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Preview as recipient
+                  </Button>
+                )}
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
@@ -565,7 +579,7 @@ export default function CreateNewsletterPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-wrap justify-end gap-4">
           <Button
             variant="outline"
             onClick={() => router.push("/admin/newsletters")}

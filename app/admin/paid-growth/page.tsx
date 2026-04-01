@@ -32,6 +32,7 @@ type DashboardPayload = {
     leadQualityRows: number;
   };
   optimizationHints: string[];
+  persistedOptimization?: { id: number; campaignId: number; severity: string; title: string; detail: string }[];
   recentCampaigns: { id: number; name: string; status: string; platform: string }[];
   syncIssues: { id: number; name: string; lastSyncError: string | null }[];
   recentLeadQuality: { id: number; crmContactId: number; fitScore: number | null; contact?: { name: string; email: string } }[];
@@ -198,6 +199,34 @@ export default function PaidGrowthDashboardPage() {
           <CardContent className="text-sm space-y-2">
             {data.optimizationHints.map((h, i) => (
               <p key={i}>{h}</p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {data?.persistedOptimization && data.persistedOptimization.length > 0 && (
+        <Card className="border-primary/30">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-base">Optimization (persisted rules)</CardTitle>
+              <CardDescription>From the rules engine — dismiss or apply in the Optimization tab</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/paid-growth/optimization">Open optimization</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="text-sm space-y-3">
+            {data.persistedOptimization.slice(0, 8).map((r) => (
+              <div key={r.id} className="border-b border-border/50 pb-2 last:border-0">
+                <div className="flex flex-wrap gap-2 items-center mb-1">
+                  <Badge variant={r.severity === "critical" ? "destructive" : "secondary"}>{r.severity}</Badge>
+                  <Link href={`/admin/paid-growth/campaigns/${r.campaignId}`} className="font-medium text-primary hover:underline">
+                    Campaign #{r.campaignId}
+                  </Link>
+                </div>
+                <p className="font-medium">{r.title}</p>
+                <p className="text-muted-foreground">{r.detail}</p>
+              </div>
             ))}
           </CardContent>
         </Card>

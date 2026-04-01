@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface AnimatedButtonProps
@@ -15,33 +15,50 @@ export interface AnimatedButtonProps
   children?: React.ReactNode;
 }
 
+/**
+ * Thin wrapper around {@link Button}. Use **`variant="gradient"`** for at most one primary CTA per screen
+ * (same rule as `Button variant="gradient"`).
+ */
 const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButtonProps>(
   (
     {
       variant = "default",
       size = "default",
       withGlowEffect,
-      withPressEffect,
-      withHoverEffect,
+      withPressEffect: _withPressEffect,
+      withHoverEffect: _withHoverEffect,
       className,
       children,
       ...props
     },
     ref
   ) => {
-    const isGradient = variant === "gradient";
-    const buttonVariant = variant === "gradient" ? "default" : variant === "outline" ? "outline" : variant;
-
-    const baseClass = cn(
-      buttonVariants({ variant: buttonVariant, size }),
-      isGradient &&
-        "bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg",
-      withGlowEffect && "shadow-primary/25 shadow-lg hover:shadow-primary/40",
-      className
-    );
+    const resolvedVariant =
+      variant === "gradient"
+        ? "gradient"
+        : variant === "outline"
+          ? "outline"
+          : variant === "secondary"
+            ? "secondary"
+            : variant === "ghost"
+              ? "ghost"
+              : variant === "link"
+                ? "link"
+                : variant === "destructive"
+                  ? "destructive"
+                  : "default";
 
     return (
-      <Button ref={ref} className={baseClass} size={size} variant={buttonVariant} {...props}>
+      <Button
+        ref={ref}
+        variant={resolvedVariant}
+        size={size}
+        className={cn(
+          withGlowEffect && "shadow-primary/25 shadow-lg hover:shadow-primary/40",
+          className
+        )}
+        {...props}
+      >
         {children}
       </Button>
     );

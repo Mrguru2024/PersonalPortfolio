@@ -19,7 +19,13 @@ export interface CreateInvoiceParams {
   title: string;
   lineItems: InvoiceLineItem[];
   dueDate?: Date;
-  metadata?: { invoiceId?: string; invoiceNumber?: string; crmContactId?: string };
+  metadata?: {
+    invoiceId?: string;
+    invoiceNumber?: string;
+    crmContactId?: string;
+    /** Internal milestone row for service agreements (Stripe webhook marks paid). */
+    serviceAgreementMilestoneId?: string;
+  };
   /** Applies Service— / Product— prefixes on Stripe line text */
   invoiceSaleType?: "service" | "product" | "mixed" | null;
   /** Pre-calculated sales tax in cents (added as its own Stripe invoice line) */
@@ -68,6 +74,9 @@ export async function createDraftInvoice(
       ...(params.metadata?.invoiceId && { invoiceId: String(params.metadata.invoiceId) }),
       ...(params.metadata?.invoiceNumber && { invoiceNumber: params.metadata.invoiceNumber }),
       ...(params.metadata?.crmContactId && { crmContactId: String(params.metadata.crmContactId) }),
+      ...(params.metadata?.serviceAgreementMilestoneId && {
+        serviceAgreementMilestoneId: String(params.metadata.serviceAgreementMilestoneId),
+      }),
     },
     custom_fields: params.title ? [{ name: "Project", value: params.title }] : undefined,
   });

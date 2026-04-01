@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageSEO } from "@/components/SEO";
+import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { StartupWebsiteScoreCard } from "@/components/funnel/StartupWebsiteScoreCard";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
@@ -11,22 +11,25 @@ import {
   REVENUE_CALCULATOR_PATH,
   STARTUP_ACTION_PLAN_PATH,
 } from "@/lib/funnelCtas";
+import { buildMarketingMetadata } from "@/lib/marketingMetadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildMarketingMetadata({
   title: "Startup website score | Free growth tool",
   description:
     "Answer five questions about your startup website and get a readiness score (0–100) with improvement suggestions. Then view your Startup Action Plan.",
-};
+  path: "/tools/startup-website-score",
+  keywords: ["startup", "website score", "readiness", "founders"],
+});
 
 export default function StartupWebsiteScorePage() {
   return (
     <>
-      <PageSEO
+      <WebPageJsonLd
         title="Startup website score | Free growth tool"
         description="See how your startup website scores on offer clarity, lead capture, CTA, trust, and mobile. Get suggestions and your Startup Action Plan."
-        canonicalPath="/tools/startup-website-score"
+        path="/tools/startup-website-score"
       />
-      <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14 bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
         <div className="container mx-auto px-3 fold:px-4 sm:px-6">
           <div className="mx-auto max-w-2xl space-y-8">
             <section className="text-center">

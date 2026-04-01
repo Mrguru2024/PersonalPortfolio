@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Palette,
@@ -20,7 +19,6 @@ import {
   Megaphone,
   CheckCircle2,
   Target,
-  FileText,
 } from "lucide-react";
 import {
   BRAND_GROWTH_PATH,
@@ -34,6 +32,8 @@ import {
 import { personalInfo } from "@/lib/data";
 import { PersonaServiceHeroAccent } from "@/components/persona-journey/PersonaServiceHeroAccent";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_BRAND_GROWTH } from "@/lib/landingPageOutcomeFramework";
 
 const MACON_LOGO_BADGE = "/Ascendra images/logomacondesigns/Macon Designs_Logo_Tagline_Badge.png";
 const STYLE_STUDIO_LOGO = "/Ascendra images/Stylestudiologos/StyleStudio_Blk_Rd_.png";
@@ -94,11 +94,11 @@ const TEAM_ABOUT = [
     image: personalInfo.image,
     imageAlt: personalInfo.name,
     useLogo: false,
-    href: "/resume",
-    buttonLabel: "Download Resume",
-    buttonIcon: FileText,
-    secondaryHref: "/partners/ascendra-technologies",
-    secondaryLabel: "Visit Ascendra Technologies",
+    href: "/partners/ascendra-technologies",
+    buttonLabel: "Explore web, funnels & automation",
+    buttonIcon: Layout,
+    secondaryHref: STRATEGY_CALL_PATH,
+    secondaryLabel: "Book a strategy call",
   },
   {
     name: "Denishia",
@@ -146,21 +146,6 @@ const TEAM_ABOUT = [
 export default function BrandGrowthPage() {
   return (
     <>
-      <PageSEO
-        title="Build a Brand That Converts | Brand Growth System"
-        description="Brand strategy, websites, and marketing visuals—built together by one coordinated team. Launch, rebrand, or scale with Macon Designs, Style Studio Branding, and Ascendra Technologies."
-        keywords={[
-          "brand strategy",
-          "brand identity",
-          "website development",
-          "marketing design",
-          "rebrand",
-          "brand growth",
-          "conversion",
-        ]}
-        canonicalPath={BRAND_GROWTH_PATH}
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* 1. Hero */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">
@@ -231,8 +216,14 @@ export default function BrandGrowthPage() {
           </div>
         </section>
 
+        <section className="w-full min-w-0 max-w-full py-10 sm:py-14 bg-section">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_BRAND_GROWTH} />
+          </div>
+        </section>
+
         {/* 2. Problem */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why So Many Businesses Struggle to Grow
@@ -327,7 +318,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* Meet the team — About Anthony, Denishia (Macon), Kristopher (Style Studio) */}
-        <section id="meet-the-team" className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section id="meet-the-team" className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-4 sm:mb-6">
               Meet the team
@@ -344,7 +335,7 @@ export default function BrandGrowthPage() {
                     className="flex flex-col gap-6 sm:gap-8 min-w-0"
                   >
                     <div className="flex flex-row gap-4 sm:gap-5 items-center min-w-0">
-                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 shrink-0 rounded-xl overflow-hidden shadow-md bg-muted">
+                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 shrink-0 rounded-xl overflow-hidden shadow-md bg-elevated">
                         {member.useLogo ? (
                           <>
                             <Image
@@ -471,7 +462,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 6. Why one coordinated team */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why One Coordinated Team Beats Three Separate Vendors
@@ -499,7 +490,7 @@ export default function BrandGrowthPage() {
         </section>
 
         {/* 7. Client transformation */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/20 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-background">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               What Changes When Your Brand Is Aligned

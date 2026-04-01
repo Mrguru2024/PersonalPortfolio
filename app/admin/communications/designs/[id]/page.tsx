@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,6 +51,7 @@ type AiAssistResult =
 
 export default function EditCommDesignPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const params = useParams();
   const id = Number(params?.id);
@@ -63,6 +64,7 @@ export default function EditCommDesignPage() {
   const [content, setContent] = useState("<p></p>");
   const [category, setCategory] = useState("general");
   const [testTo, setTestTo] = useState("");
+  const [testContactId, setTestContactId] = useState<string>("");
   const [blockRows, setBlockRows] = useState<string[]>([""]);
   const [organizationIdText, setOrganizationIdText] = useState("");
   const [aiInstruction, setAiInstruction] = useState("");
@@ -75,6 +77,16 @@ export default function EditCommDesignPage() {
     if (!authLoading && !user) router.push("/auth");
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
+
+  const { data: crmContactsForTest = [] } = useQuery({
+    queryKey: ["/api/admin/crm/contacts", "comm-test-send", "short"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/contacts");
+      const rows = (await res.json()) as { id: number; name: string; email: string }[];
+      return Array.isArray(rows) ? rows.slice(0, 500) : [];
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
 
   const { data: design, isLoading } = useQuery({
     queryKey: ["/api/admin/communications/designs", id],
@@ -171,18 +183,10 @@ export default function EditCommDesignPage() {
     mutationFn: async () => {
       const blocksJson = blockRows.map((s) => s.trim()).filter(Boolean).map((bid) => ({ id: bid }));
 
-      const orgTrim = organizationIdText.trim();
-      let organizationId: number | null = null;
-      if (orgTrim !== "") {
-        const n = Number(orgTrim);
-        if (!Number.isFinite(n)) throw new Error("Organization ID must be a number");
-        organizationId = n;
-      }
-
       const temp = document.createElement("div");
       temp.innerHTML = content;
       const plain = temp.textContent || temp.innerText || "";
-      const res = await apiRequest("PATCH", `/api/admin/communications/designs/${id}`, {
+      const body: Record<string, unknown> = {
         name,
         subject,
         previewText,
@@ -190,8 +194,18 @@ export default function EditCommDesignPage() {
         plainText: plain,
         category,
         blocksJson,
-        organizationId,
-      });
+      };
+      if (isSuperUser) {
+        const orgTrim = organizationIdText.trim();
+        let organizationId: number | null = null;
+        if (orgTrim !== "") {
+          const n = Number(orgTrim);
+          if (!Number.isFinite(n)) throw new Error("Organization must be a number");
+          organizationId = n;
+        }
+        body.organizationId = organizationId;
+      }
+      const res = await apiRequest("PATCH", `/api/admin/communications/designs/${id}`, body);
       if (!res.ok) throw new Error("Save failed");
       return res.json();
     },
@@ -218,7 +232,10 @@ export default function EditCommDesignPage() {
 
   const testMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/admin/communications/designs/${id}/test-send`, { to: testTo });
+      const body: { to: string; contactId?: number } = { to: testTo.trim() };
+      const cid = testContactId ? Number(testContactId) : NaN;
+      if (Number.isFinite(cid)) body.contactId = cid;
+      const res = await apiRequest("POST", `/api/admin/communications/designs/${id}/test-send`, body);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error || "Send failed");
@@ -261,7 +278,13 @@ export default function EditCommDesignPage() {
       <Card>
         <CardHeader>
           <CardTitle>Edit design</CardTitle>
-          <CardDescription>Save changes, duplicate, or send a test (no tracking pixel).</CardDescription>
+          <CardDescription>
+            {isSuperUser ? (
+              <>Save changes, duplicate, or send a test. Test messages skip open tracking.</>
+            ) : (
+              <>Save changes, make a copy, or send yourself a test email.</>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -308,7 +331,11 @@ export default function EditCommDesignPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">AI assist</span>
-              <span className="text-xs text-muted-foreground">Uses current fields above + body below (via request body).</span>
+              {isSuperUser ? (
+                <span className="text-xs text-muted-foreground">Uses current fields above and body below (API request).</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Uses the subject, preview text, and body above.</span>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Optional instruction</Label>
@@ -361,6 +388,19 @@ export default function EditCommDesignPage() {
 
           <div className="space-y-2">
             <Label>Body</Label>
+            <p className="text-xs text-muted-foreground">
+              {isSuperUser ? (
+                <>
+                  Merge tags: {"{{firstName}}"}, {"{{Name}}"}, {"{{company}}"}, {"{{email}}"} — choose a CRM contact in
+                  test send to preview real values.
+                </>
+              ) : (
+                <>
+                  Personalization fields (name, company, and similar) fill in when you pick a CRM contact on a test
+                  send.
+                </>
+              )}
+            </p>
             <RichTextEditor content={content} onChange={setContent} />
           </div>
 
@@ -368,6 +408,7 @@ export default function EditCommDesignPage() {
             blockRows={blockRows}
             onBlockRowsChange={setBlockRows}
             externalLinkCount={externalLinkCount}
+            simplified={!isSuperUser}
           />
 
           <div className="flex flex-wrap gap-2">
@@ -389,16 +430,60 @@ export default function EditCommDesignPage() {
             <Send className="h-5 w-5" />
             Test send
           </CardTitle>
-          <CardDescription>Uses Brevo transactional API. Subject prefixed with [TEST].</CardDescription>
+          <CardDescription>
+            {isSuperUser ? (
+              <>
+                Sends via Brevo transactional API. Subject is prefixed with [TEST]. A CRM contact fills merge tags;
+                otherwise placeholders use the test email address.
+              </>
+            ) : (
+              <>
+                Sends a one-off test. The subject line is prefixed with [TEST]. Pick a CRM contact to preview
+                personalized content, or send a generic preview to your inbox.
+              </>
+            )}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2 items-end">
-          <div className="space-y-2 flex-1 min-w-[200px]">
-            <Label>Recipient email</Label>
-            <Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@company.com" />
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Recipient email</Label>
+              <Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@company.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Use CRM contact for preview (optional)</Label>
+              <Select value={testContactId || "__none__"} onValueChange={(v) => setTestContactId(v === "__none__" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None — use test email only" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {crmContactsForTest
+                    .filter((c) => c.email?.trim())
+                    .map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name} ({c.email})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Button onClick={() => testMutation.mutate()} disabled={!testTo.trim() || testMutation.isPending}>
-            Send test
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => testMutation.mutate()} disabled={!testTo.trim() || testMutation.isPending}>
+              {testMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Send test
+            </Button>
+            {isSuperUser ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/settings/brevo">Brevo setup &amp; IP allowlist</Link>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/settings/brevo">Email provider settings</Link>
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -429,8 +514,8 @@ export default function EditCommDesignPage() {
       <Dialog open={polishOpen} onOpenChange={setPolishOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Polished HTML</DialogTitle>
-            <DialogDescription>Review and replace the editor body, or cancel.</DialogDescription>
+            <DialogTitle>{isSuperUser ? "Polished HTML" : "Polished content"}</DialogTitle>
+            <DialogDescription>Review and replace the email body, or cancel.</DialogDescription>
           </DialogHeader>
           <Textarea readOnly value={polishHtml} className="font-mono text-xs min-h-[200px] flex-1" />
           <DialogFooter className="gap-2 sm:gap-0">

@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ImagePicker } from "@/components/admin/ImagePicker";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DEFAULT_OFFER_SECTIONS,
@@ -136,6 +137,8 @@ export default function EditOfferPage() {
   const [name, setName] = useState("");
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
+  /** Optional `offer_engine_offer_templates.slug` — merges public pricing into GET /api/offers/[slug] and can drive /growth-platform via GROWTH_PLATFORM_SITE_OFFER_SLUG. */
+  const [offerEngineTemplateSlug, setOfferEngineTemplateSlug] = useState("");
   const [sections, setSections] = useState<OfferSections>(DEFAULT_OFFER_SECTIONS);
   const [quickPersonaOpen, setQuickPersonaOpen] = useState(false);
   const [aiFillOpen, setAiFillOpen] = useState(false);
@@ -198,6 +201,7 @@ export default function EditOfferPage() {
         name: name.trim(),
         metaTitle: metaTitle.trim() || null,
         metaDescription: metaDescription.trim() || null,
+        offerEngineTemplateSlug: offerEngineTemplateSlug.trim() || null,
         sections: sections as unknown as Record<string, unknown>,
       };
       if (offer) {
@@ -377,6 +381,23 @@ export default function EditOfferPage() {
               <Label>Meta description</Label>
               <Textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={2} placeholder="Short description for search results" />
             </div>
+            <div>
+              <Label>Offer Engine template slug (optional)</Label>
+              <Input
+                value={offerEngineTemplateSlug}
+                onChange={(e) => setOfferEngineTemplateSlug(e.target.value)}
+                placeholder="e.g. startup-growth-system"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                When set, public GET <code className="text-[10px] bg-muted px-1 rounded">/api/offers/{slug}</code> includes a{" "}
+                <code className="text-[10px] bg-muted px-1 rounded">pricingSnapshot</code> from that template&apos;s pricing
+                package. For <code className="text-[10px] bg-muted px-1 rounded">/growth-platform</code>, set{" "}
+                <code className="text-[10px] bg-muted px-1 rounded">GROWTH_PLATFORM_SITE_OFFER_SLUG</code> to this offer&apos;s
+                slug (or set <code className="text-[10px] bg-muted px-1 rounded">GROWTH_PLATFORM_OFFER_ENGINE_SLUG</code>{" "}
+                directly).
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -552,7 +573,7 @@ export default function EditOfferPage() {
             </div>
             <div>
               <Label>Amount</Label>
-              <Input value={sections.price?.amount ?? ""} onChange={(e) => setPrice({ amount: e.target.value })} placeholder="e.g. $249 – $399" />
+              <Input value={sections.price?.amount ?? ""} onChange={(e) => setPrice({ amount: e.target.value })} placeholder="e.g. $497 – $899" />
             </div>
             <div>
               <Label>Note</Label>
@@ -678,7 +699,7 @@ export default function EditOfferPage() {
                   <span><strong>Grade:</strong> {offer.grading.overallGrade}</span>
                 </div>
                 {offer.grading.gradedAt && (
-                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>Graded {new Date(offer.grading.gradedAt).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>Graded {formatLocaleMediumDateTime(offer.grading.gradedAt)}</p>
                 )}
                 {/* Targets & measured — confirms grading accuracy for diagnostics/audits */}
                 {offer.grading.targets && offer.grading.measured && (

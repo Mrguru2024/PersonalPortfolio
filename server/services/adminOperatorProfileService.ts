@@ -6,7 +6,42 @@ import {
   type AdminOperatorIntelligencePayload,
   type AdminOperatorProfileRow,
 } from "@shared/schema";
+import { storage } from "../storage";
 import { generateOperatorIntelligence, type OperatorIntelligenceContext } from "./adminOperatorIntelligenceService";
+
+/** Live signals for operator AI plans (same sources as admin dashboard inbox). */
+export type OperatorDashboardSignals = {
+  pendingAssessments: number;
+  totalContacts: number;
+  crmContactsCount: number;
+};
+
+export async function getOperatorIntelligenceDashboardStats(): Promise<OperatorDashboardSignals> {
+  const [assessments, legacyContacts, crmContacts] = await Promise.all([
+    storage.getAllAssessments(),
+    storage.getAllContacts(),
+    storage.getCrmContacts().catch(() => []),
+  ]);
+  return {
+    pendingAssessments: assessments.filter((a) => a.status === "pending").length,
+    totalContacts: legacyContacts.length,
+    crmContactsCount: crmContacts.length,
+  };
+}
+
+function mergeDashboardSignals(
+  base: OperatorDashboardSignals,
+  overrides?: Partial<OperatorDashboardSignals>,
+): OperatorDashboardSignals {
+  if (!overrides) return base;
+  return {
+    pendingAssessments:
+      overrides.pendingAssessments !== undefined ? overrides.pendingAssessments : base.pendingAssessments,
+    totalContacts: overrides.totalContacts !== undefined ? overrides.totalContacts : base.totalContacts,
+    crmContactsCount:
+      overrides.crmContactsCount !== undefined ? overrides.crmContactsCount : base.crmContactsCount,
+  };
+}
 
 export type OperatorProfileDTO = {
   userId: number;
@@ -119,9 +154,11 @@ export async function saveOperatorIntelligence(
 
 export async function refreshOperatorIntelligence(
   userId: number,
-  dashboardStats: OperatorIntelligenceContext["dashboardStats"],
+  overrides?: Partial<OperatorDashboardSignals>,
 ): Promise<OperatorProfileDTO> {
   const profile = await getOrCreateOperatorProfile(userId);
+  const base = await getOperatorIntelligenceDashboardStats();
+  const dashboardStats = mergeDashboardSignals(base, overrides);
   const ctx: OperatorIntelligenceContext = {
     roleSelection: profile.roleSelection,
     mission: profile.mission,

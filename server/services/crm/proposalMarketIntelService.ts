@@ -3,7 +3,7 @@
  * Not financial advice; sources are third-party snippets only.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import type { CrmContact, CrmProposalPrepWorkspace } from "@shared/crmSchema";
 import type { ProposalPrepMarketIntelMeta, ProposalPrepMarketIntelSource } from "@shared/crmSchema";
 import { braveWebSearch, type WebSearchHit } from "@server/services/crm/socialProfileDiscoveryService";

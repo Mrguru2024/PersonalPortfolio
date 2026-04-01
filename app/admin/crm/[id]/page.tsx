@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Camera,
   BookOpen,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,8 +45,21 @@ import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
-import { format } from "date-fns";
+import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
+import { LeadControlActionBar } from "@/components/lead-control/LeadControlActionBar";
+import { HotLeadClockBadge } from "@/components/lead-control/HotLeadClockBadge";
+
+interface AfnCommunitySnapshot {
+  userId: number;
+  username: string;
+  founderTribe: string | null;
+  founderTribeLabel: string | null;
+  headline: string | null;
+  profileVisibility: string | null;
+  publicProfilePath: string | null;
+  isOnboardingComplete: boolean | null;
+}
 
 interface CrmContact {
   id: number;
@@ -80,8 +94,11 @@ interface CrmContact {
   doNotContact?: boolean | null;
   nurtureReason?: string | null;
   accountId?: number | null;
+  leadControlPriority?: string | null;
+  firstResponseAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  afnCommunity?: AfnCommunitySnapshot | null;
 }
 
 interface TimelineItem {
@@ -418,6 +435,71 @@ export default function CrmLeadProfilePage() {
 
   const CONTACT_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 
+  const [detailEdit, setDetailEdit] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    jobTitle: "",
+    industry: "",
+    source: "",
+    linkedinUrl: "",
+    estimatedValueDollars: "",
+    notes: "",
+  });
+
+  const updateDetailsMutation = useMutation({
+    mutationFn: async () => {
+      const ev = detailEdit.estimatedValueDollars.trim();
+      let estimatedValue: number | null = null;
+      if (ev) {
+        const n = parseFloat(ev);
+        if (!Number.isFinite(n) || n < 0) throw new Error("Estimated value must be a valid number.");
+        estimatedValue = Math.round(n * 100);
+      }
+      const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, {
+        name: detailEdit.name.trim(),
+        email: detailEdit.email.trim(),
+        phone: detailEdit.phone.trim() || null,
+        company: detailEdit.company.trim() || null,
+        jobTitle: detailEdit.jobTitle.trim() || null,
+        industry: detailEdit.industry.trim() || null,
+        source: detailEdit.source.trim() || null,
+        linkedinUrl: detailEdit.linkedinUrl.trim() || null,
+        estimatedValue,
+        notes: detailEdit.notes.trim() || null,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error || "Update failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/deals"] });
+      toast({ title: "Contact details saved" });
+    },
+    onError: (e: Error) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+  });
+
+  useEffect(() => {
+    if (!contact) return;
+    setDetailEdit({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone ?? "",
+      company: contact.company ?? "",
+      jobTitle: contact.jobTitle ?? "",
+      industry: contact.industry ?? "",
+      source: contact.source ?? "",
+      linkedinUrl: contact.linkedinUrl ?? "",
+      estimatedValueDollars: contact.estimatedValue != null ? String(contact.estimatedValue / 100) : "",
+      notes: contact.notes ?? "",
+    });
+  }, [contact?.id, contact?.updatedAt]);
+
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
       const res = await apiRequest("PATCH", `/api/admin/crm/contacts/${id}`, { status });
@@ -633,10 +715,27 @@ export default function CrmLeadProfilePage() {
               Proposal prep
             </Link>
           </Button>
+          <Button variant="default" size="sm" asChild>
+            <Link href={`/admin/email-hub/compose?contactId=${id}`}>
+              <Mail className="h-4 w-4 mr-2" />
+              Email Hub
+            </Link>
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-6">
+        {contact.type === "lead" ? (
+          <HotLeadClockBadge
+            contact={{
+              createdAt: contact.createdAt,
+              firstResponseAt: contact.firstResponseAt ?? null,
+              intentLevel: contact.intentLevel ?? null,
+              leadControlPriority: contact.leadControlPriority ?? null,
+            }}
+          />
+        ) : null}
+        <LeadControlActionBar contactId={contact.id} phone={contact.phone} email={contact.email} />
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -688,6 +787,37 @@ export default function CrmLeadProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {contact.afnCommunity && (
+              <div className="rounded-lg border border-primary/25 bg-primary/5 p-4 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Users className="h-4 w-4 text-primary shrink-0" />
+                  Ascendra Founder Network (matched by email)
+                </div>
+                <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+                  {contact.afnCommunity.founderTribeLabel && (
+                    <span>
+                      <span className="text-foreground font-medium">Community type: </span>
+                      {contact.afnCommunity.founderTribeLabel}
+                    </span>
+                  )}
+                  {contact.afnCommunity.headline && (
+                    <span className="min-w-0 max-w-full">{contact.afnCommunity.headline}</span>
+                  )}
+                  <span>
+                    Visibility: {contact.afnCommunity.profileVisibility ?? "—"}
+                    {contact.afnCommunity.isOnboardingComplete === false && " · profile incomplete"}
+                  </span>
+                </div>
+                {contact.afnCommunity.publicProfilePath && (
+                  <Button variant="outline" size="sm" className="gap-1" asChild>
+                    <Link href={contact.afnCommunity.publicProfilePath} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3" />
+                      View public member page
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
             {(contact.source || contact.industry || contact.jobTitle || contact.linkedinUrl) && (
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
                 {contact.source && <span>Source: {contact.source}</span>}
@@ -732,6 +862,116 @@ export default function CrmLeadProfilePage() {
             {contact.notes && (
               <p className="text-sm border-l-2 border-muted pl-3">{contact.notes}</p>
             )}
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm font-medium text-foreground">Edit contact details</p>
+              <p className="text-xs text-muted-foreground">
+                Update source, role, company, and other fields. Changes save to this lead only.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-name">Name</Label>
+                  <Input
+                    id="detail-name"
+                    value={detailEdit.name}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-email">Email</Label>
+                  <Input
+                    id="detail-email"
+                    type="email"
+                    value={detailEdit.email}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-phone">Phone</Label>
+                  <Input
+                    id="detail-phone"
+                    value={detailEdit.phone}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, phone: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-company">Company</Label>
+                  <Input
+                    id="detail-company"
+                    value={detailEdit.company}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, company: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-job">Job title</Label>
+                  <Input
+                    id="detail-job"
+                    value={detailEdit.jobTitle}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, jobTitle: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-industry">Industry</Label>
+                  <Input
+                    id="detail-industry"
+                    value={detailEdit.industry}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, industry: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-source">Source</Label>
+                  <Input
+                    id="detail-source"
+                    value={detailEdit.source}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, source: e.target.value }))}
+                    placeholder="e.g. website, referral, event"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="detail-li">LinkedIn URL</Label>
+                  <Input
+                    id="detail-li"
+                    value={detailEdit.linkedinUrl}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, linkedinUrl: e.target.value }))}
+                    placeholder="https://…"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-value">Estimated value (USD)</Label>
+                  <Input
+                    id="detail-value"
+                    inputMode="decimal"
+                    value={detailEdit.estimatedValueDollars}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, estimatedValueDollars: e.target.value }))}
+                    placeholder="e.g. 10000"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="detail-notes">Notes</Label>
+                  <Textarea
+                    id="detail-notes"
+                    value={detailEdit.notes}
+                    onChange={(e) => setDetailEdit((d) => ({ ...d, notes: e.target.value }))}
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => updateDetailsMutation.mutate()}
+                disabled={
+                  updateDetailsMutation.isPending ||
+                  !detailEdit.name.trim() ||
+                  !detailEdit.email.trim()
+                }
+              >
+                {updateDetailsMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Save details
+              </Button>
+            </div>
             {contact.customFields?.businessCardImage && typeof contact.customFields.businessCardImage === "string" ? (
               <div className="mt-3 pt-3 border-t">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Business card</p>
@@ -839,7 +1079,7 @@ export default function CrmLeadProfilePage() {
                 <Badge variant="secondary">Booked call logged</Badge>
               )}
               {contact.lastContactedAt && (
-                <span>Last contact: {format(new Date(contact.lastContactedAt), "MMM d, yyyy")}</span>
+                <span>Last contact: {formatLocaleMediumDate(contact.lastContactedAt)}</span>
               )}
               {contact.stripeCustomerId && <span>Stripe customer linked</span>}
             </div>
@@ -911,7 +1151,10 @@ export default function CrmLeadProfilePage() {
               <Zap className="h-4 w-4" />
               Workflow & outreach
             </CardTitle>
-            <CardDescription>Automation state and last workflow run</CardDescription>
+            <CardDescription>
+              Automation updates lead status from real events (email/SMS type, forms, deals, AI steps). Override anytime
+              with the Status control above.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex flex-wrap gap-2">
@@ -921,12 +1164,12 @@ export default function CrmLeadProfilePage() {
               {contact.doNotContact && <Badge variant="destructive">Do not contact</Badge>}
             </div>
             {contact.nextFollowUpAt && (
-              <p className="text-muted-foreground">Next follow-up: {format(new Date(contact.nextFollowUpAt), "PPp")}</p>
+              <p className="text-muted-foreground">Next follow-up: {formatLocaleMediumDateTime(contact.nextFollowUpAt)}</p>
             )}
             {contact.nurtureReason && <p className="text-muted-foreground">{contact.nurtureReason}</p>}
             {workflowExecutions.length > 0 && (
               <p className="text-muted-foreground pt-1">
-                Last automation: {workflowExecutions[0].workflowKey} ({workflowExecutions[0].status}) — {workflowExecutions[0].startedAt ? format(new Date(workflowExecutions[0].startedAt), "PP") : ""}
+                Last automation: {workflowExecutions[0].workflowKey} ({workflowExecutions[0].status}) — {workflowExecutions[0].startedAt ? formatLocaleMediumDate(workflowExecutions[0].startedAt) : ""}
               </p>
             )}
           </CardContent>
@@ -980,7 +1223,7 @@ export default function CrmLeadProfilePage() {
                             ))}
                           </ul>
                         )}
-                        <p className="text-xs text-muted-foreground">{guidanceData.guidance.lead_summary.generatedAt ? format(new Date(guidanceData.guidance.lead_summary.generatedAt), "PPp") : ""} · {guidanceData.guidance.lead_summary.providerType}</p>
+                        <p className="text-xs text-muted-foreground">{guidanceData.guidance.lead_summary.generatedAt ? formatLocaleMediumDateTime(guidanceData.guidance.lead_summary.generatedAt) : ""} · {guidanceData.guidance.lead_summary.providerType}</p>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -1117,7 +1360,7 @@ export default function CrmLeadProfilePage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex flex-nowrap overflow-x-auto overflow-y-hidden gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
+          <TabsList className="flex w-full flex-wrap gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="meetings">Meetings</TabsTrigger>
             <TabsTrigger value="tasks" id="tasks">Tasks</TabsTrigger>
@@ -1160,7 +1403,7 @@ export default function CrmLeadProfilePage() {
                           {item.metadata?.body && item.metadata.activityType === "meeting" && (
                             <div className="mt-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground whitespace-pre-wrap">{item.metadata.body}</div>
                           )}
-                          <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(item.createdAt), "PPp")}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{formatLocaleMediumDateTime(item.createdAt)}</p>
                         </div>
                       </li>
                     ))}
@@ -1336,7 +1579,7 @@ export default function CrmLeadProfilePage() {
                           <li key={item.id} className="rounded-lg border p-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="font-medium text-sm">{item.title}</span>
-                              <span className="text-xs text-muted-foreground">{format(new Date(item.createdAt), "PPp")}</span>
+                              <span className="text-xs text-muted-foreground">{formatLocaleMediumDateTime(item.createdAt)}</span>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-2">
                               {item.metadata?.startUrl && (
@@ -1399,7 +1642,7 @@ export default function CrmLeadProfilePage() {
                           <p className="font-medium text-sm">{t.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {t.type} · {t.priority}
-                            {t.dueAt && ` · Due ${format(new Date(t.dueAt), "PP")}`}
+                            {t.dueAt && ` · Due ${formatLocaleMediumDate(t.dueAt)}`}
                           </p>
                         </div>
                         {!t.completedAt && (
@@ -1434,7 +1677,7 @@ export default function CrmLeadProfilePage() {
                             {e.totalViewTimeSeconds != null && e.totalViewTimeSeconds > 0 && ` · ${Math.round(e.totalViewTimeSeconds / 60)} min total`}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            First: {format(new Date(e.firstViewedAt), "PPp")} · Last: {format(new Date(e.lastViewedAt), "PPp")}
+                            First: {formatLocaleMediumDateTime(e.firstViewedAt)} · Last: {formatLocaleMediumDateTime(e.lastViewedAt)}
                           </p>
                         </div>
                       </li>
@@ -1465,7 +1708,7 @@ export default function CrmLeadProfilePage() {
                         <li key={e.id} className="flex flex-col gap-0.5 text-sm py-2 border-b last:border-0">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="capitalize font-medium">{label}</span>
-                            <span className="text-muted-foreground text-xs">{format(new Date(e.createdAt), "PPp")}</span>
+                            <span className="text-muted-foreground text-xs">{formatLocaleMediumDateTime(e.createdAt)}</span>
                           </div>
                           {meta?.subject && <span className="text-xs text-muted-foreground truncate">{meta.subject}</span>}
                           {meta?.url && (

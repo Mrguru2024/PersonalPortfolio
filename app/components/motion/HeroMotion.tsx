@@ -6,7 +6,7 @@ import { motionTokens, heroChoreography } from "@/lib/motion";
 
 /** Single class string for CTA row — must match in reduced-motion and animated branches (hydration). */
 const HERO_ACTIONS_ROW_CLASS =
-  "mt-6 sm:mt-8 flex flex-col lg:flex-row lg:flex-wrap justify-center items-stretch lg:items-center gap-3 w-full min-w-0";
+  "mt-8 sm:mt-10 md:mt-12 flex flex-col lg:flex-row lg:flex-wrap justify-center items-stretch lg:items-center gap-4 w-full min-w-0";
 
 interface HeroMotionProps {
   /** Brand/eyebrow line */
@@ -35,11 +35,15 @@ export function HeroMotion({
   if (reduced) {
     return (
       <div className={className}>
-        {eyebrow && <div className="mb-2">{eyebrow}</div>}
-        <h1 className="mt-2 text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+        {eyebrow && <div className="mb-3 sm:mb-4">{eyebrow}</div>}
+        <h1 className="mt-1 sm:mt-2 text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
           {headline}
         </h1>
-        {subline && <div className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">{subline}</div>}
+        {subline && (
+          <div className="mt-5 sm:mt-6 md:mt-7 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            {subline}
+          </div>
+        )}
         {actions && (
           <div className={HERO_ACTIONS_ROW_CLASS}>
             {actions}
@@ -73,7 +77,7 @@ export function HeroMotion({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.05 }}
-          className="mb-2"
+          className="mb-3 sm:mb-4"
         >
           {eyebrow}
         </motion.div>
@@ -82,7 +86,7 @@ export function HeroMotion({
         initial={{ opacity: 0, y: heroChoreography.headline.y, filter: "blur(8px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={headlineTransition}
-        className="mt-2 text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight"
+        className="mt-1 sm:mt-2 text-2xl fold:text-3xl xs:text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight"
       >
         {headline}
       </motion.h1>
@@ -91,7 +95,7 @@ export function HeroMotion({
           initial={{ opacity: 0, y: heroChoreography.subline.y }}
           animate={{ opacity: 1, y: 0 }}
           transition={sublineTransition}
-          className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto"
+          className="mt-5 sm:mt-6 md:mt-7 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
         >
           {subline}
         </motion.div>

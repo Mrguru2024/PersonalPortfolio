@@ -1,6 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { AscendraPromoVideo } from "./index";
 
+const loadSpy = jest.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
+const playSpy = jest.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
+
+afterAll(() => {
+  loadSpy.mockRestore();
+  playSpy.mockRestore();
+});
+
 describe("AscendraPromoVideo", () => {
   it("renders video with accessible label", () => {
     render(<AscendraPromoVideo src="/test.mp4" ariaLabel="Test promo" />);

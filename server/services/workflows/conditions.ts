@@ -19,6 +19,12 @@ export function contactHasAccount(ctx: WorkflowContext): boolean {
   return !!(ctx.payload.contact?.accountId ?? ctx.payload.accountId);
 }
 
+/** CRM contact linked (scheduler bookings often have contactId once email matches CRM). */
+export function hasContact(ctx: WorkflowContext): boolean {
+  const id = ctx.payload.contactId ?? ctx.payload.contact?.id;
+  return typeof id === "number" && id > 0;
+}
+
 export function dealStageIs(stage: string): (ctx: WorkflowContext) => boolean {
   return (ctx) => (ctx.payload.deal?.pipelineStage ?? ctx.payload.newStage) === stage;
 }

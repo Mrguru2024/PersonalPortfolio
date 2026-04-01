@@ -10,9 +10,16 @@ export interface EmailDesignBlocksEditorProps {
   blockRows: string[];
   onBlockRowsChange: (rows: string[]) => void;
   externalLinkCount: number;
+  /** When true, use plain language and hide monospace / internal wording (regular admins). */
+  simplified?: boolean;
 }
 
-export function EmailDesignBlocksEditor({ blockRows, onBlockRowsChange, externalLinkCount }: EmailDesignBlocksEditorProps) {
+export function EmailDesignBlocksEditor({
+  blockRows,
+  onBlockRowsChange,
+  externalLinkCount,
+  simplified = false,
+}: EmailDesignBlocksEditorProps) {
   const rows = blockRows.length > 0 ? blockRows : [""];
 
   const setRow = (i: number, id: string) => {
@@ -45,26 +52,33 @@ export function EmailDesignBlocksEditor({ blockRows, onBlockRowsChange, external
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label>Click-tracking block names</Label>
+        <Label>{simplified ? "Track clicks by link area" : "Click-tracking block names"}</Label>
         <span className="text-xs text-muted-foreground">
           {externalLinkCount > 0 ?
-            `${externalLinkCount} external link${externalLinkCount === 1 ? "" : "s"} in body — one row per link in order (top to bottom).`
+            simplified ?
+              `${externalLinkCount} link${externalLinkCount === 1 ? "" : "s"} in the body — add one label per link, top to bottom.`
+            : `${externalLinkCount} external link${externalLinkCount === 1 ? "" : "s"} in body — one row per link in order (top to bottom).`
+          : simplified ?
+            "Add links in the body above to count clicks in reports."
           : "Add a link in the body to enable per-block click stats."}
         </span>
       </div>
       <ul className="space-y-2">
         {rows.map((id, i) => (
           <li key={i} className="flex items-center gap-2">
-            <span className="text-muted-foreground" title="Order matches link order in the email">
+            <span
+              className="text-muted-foreground"
+              title={simplified ? "Order matches links in the email, top to bottom" : "Order matches link order in the email"}
+            >
               <GripVertical className="h-4 w-4" />
             </span>
             <span className="text-xs text-muted-foreground w-6 tabular-nums">{i + 1}.</span>
             <Input
               value={id}
               onChange={(e) => setRow(i, e.target.value)}
-              placeholder="e.g. hero_cta"
-              className="font-mono text-sm"
-              aria-label={`Block id ${i + 1}`}
+              placeholder={simplified ? "e.g. Hero button" : "e.g. hero_cta"}
+              className={simplified ? "text-sm" : "font-mono text-sm"}
+              aria-label={simplified ? `Link area ${i + 1}` : `Block id ${i + 1}`}
             />
             <div className="flex shrink-0 gap-1">
               <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => move(i, i - 1)} disabled={i === 0} aria-label="Move up">
@@ -90,7 +104,7 @@ export function EmailDesignBlocksEditor({ blockRows, onBlockRowsChange, external
       </ul>
       <Button type="button" variant="outline" size="sm" onClick={addRow} className="gap-1">
         <Plus className="h-4 w-4" />
-        Add block row
+        {simplified ? "Add link area" : "Add block row"}
       </Button>
     </div>
   );

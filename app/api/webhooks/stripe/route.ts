@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { storage } from "@server/storage";
 import { logActivity } from "@server/services/crmFoundationService";
+import { markMilestonePaidByStripeInvoiceId } from "@server/services/serviceAgreementService";
+import { upsertRetainerFromStripeSubscription } from "@server/services/retainerSubscriptionService";
+import { recordGrowthRevenueFromStripeInvoicePaid } from "@server/services/growthEngine/stripeInvoiceRevenue";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,6 +48,11 @@ export async function POST(req: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice;
       const stripeInvId = invoice.id;
       if (stripeInvId) {
+        try {
+          await markMilestonePaidByStripeInvoiceId(stripeInvId);
+        } catch (mileErr) {
+          console.error("[stripe webhook] service agreement milestone", mileErr);
+        }
         const dbInv = await storage.getInvoiceByStripeId(stripeInvId);
         if (dbInv && dbInv.status !== "paid") {
           await storage.updateInvoice(dbInv.id, { status: "paid", paidAt: new Date() });
@@ -80,6 +88,8 @@ export async function POST(req: NextRequest) {
           metadata: {
             stripeInvoiceId: invoice.id,
             hostedInvoiceUrl: invoice.hosted_invoice_url,
+            amountPaidCents: typeof invoice.amount_paid === "number" ? invoice.amount_paid : 0,
+            currency: typeof invoice.currency === "string" ? invoice.currency : "usd",
           },
         });
         await mergeContactCustomFields(contactId, {
@@ -91,6 +101,28 @@ export async function POST(req: NextRequest) {
         if (contact && contact.status === "new") {
           await storage.updateCrmContact(contactId, { status: "contacted", lastContactedAt: new Date() });
         }
+      }
+
+      try {
+        const rev = await recordGrowthRevenueFromStripeInvoicePaid(invoice);
+        if (rev.created) {
+          console.info("[stripe webhook] growth_revenue_events", { stripeInvoiceId: invoice.id, id: rev.id });
+        }
+      } catch (revErr) {
+        console.error("[stripe webhook] growth revenue event", revErr);
+      }
+    }
+
+    if (
+      event.type === "customer.subscription.created" ||
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted"
+    ) {
+      const sub = event.data.object as Stripe.Subscription;
+      try {
+        await upsertRetainerFromStripeSubscription(sub);
+      } catch (retainerErr) {
+        console.error("[stripe webhook] retainer subscription", retainerErr);
       }
     }
   } catch (e) {

@@ -1,3 +1,5 @@
+import { getSiteOriginForMetadata } from "@/lib/siteUrl";
+
 // Dynamic import to avoid Turbopack bundling issues (Brevo uses AMD modules)
 // This ensures the package is only loaded at runtime, not during build
 let brevo: any = null;
@@ -42,7 +44,13 @@ export class EmailService {
       this.initializeBrevo().catch((error) => {
         console.error('Failed to initialize Brevo:', error);
       });
-      console.log(`📧 Email notifications: enabled (admin: ${this.adminEmail})`);
+      const extra = EmailService.parseAdminNotificationCcEmails(
+        this.adminEmail,
+        process.env.ADMIN_NOTIFICATION_EMAILS
+      ).length;
+      console.log(
+        `📧 Email notifications: enabled (admin: ${this.adminEmail}${extra ? `; +${extra} via ADMIN_NOTIFICATION_EMAILS` : ''})`
+      );
     } else {
       console.warn('⚠️  Email notifications: disabled. Form submissions (contact, resume, assessment) will not email you.');
       console.warn('   To enable: set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env). See .env.example.');
@@ -68,6 +76,34 @@ export class EmailService {
     const defaultClient = brevoModule.ApiClient.instance;
     const auth = defaultClient.authentications['api-key'];
     if (auth) auth.apiKey = process.env.BREVO_API_KEY;
+  }
+
+  /** Extra BCC recipients for form/opportunity alerts (comma- or semicolon-separated). Excludes duplicate of primary admin. */
+  static parseAdminNotificationCcEmails(
+    primaryAdminEmail: string,
+    rawList: string | undefined
+  ): Array<{ email: string }> {
+    const primary = (primaryAdminEmail || '').trim().toLowerCase();
+    const raw = rawList?.trim();
+    if (!raw) return [];
+    const seen = new Set<string>(primary ? [primary] : []);
+    const out: Array<{ email: string }> = [];
+    for (const part of raw.split(/[;,]/)) {
+      const e = part.trim();
+      if (!e || !e.includes('@')) continue;
+      const low = e.toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      out.push({ email: e });
+    }
+    return out;
+  }
+
+  private formNotificationBcc(): Array<{ email: string }> {
+    return EmailService.parseAdminNotificationCcEmails(
+      this.adminEmail,
+      process.env.ADMIN_NOTIFICATION_EMAILS
+    );
   }
 
   private formatContactEmail(data: any): { subject: string; html: string; text: string } {
@@ -524,6 +560,8 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       sendSmtpEmail.to = [{
         email: this.adminEmail
       }];
+      const formBcc = this.formNotificationBcc();
+      if (formBcc.length) sendSmtpEmail.bcc = formBcc;
       sendSmtpEmail.replyTo = {
         email: notification.data.email || this.adminEmail
       };
@@ -862,9 +900,7 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
         await this.initializeBrevo();
         if (!this.apiInstance) return false;
       }
-      const loginUrl =
-        process.env.NEXT_PUBLIC_BASE_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+      const loginUrl = getSiteOriginForMetadata();
       const brevoModule = await getBrevo();
       const sendSmtpEmail = new brevoModule.SendSmtpEmail();
       sendSmtpEmail.subject = 'Your admin access has been approved – Ascendra Technologies';
@@ -947,14 +983,14 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
     }
   }
 
-  /** Send growth diagnosis results to the lead (user). */
-  async sendGrowthDiagnosisToUser(data: {
+  /**
+   * Brevo transactional with a full HTML body (used when REST `/v3/smtp/email` and SDK need a second path).
+   */
+  async sendTransactionalHtmlEmail(data: {
     to: string;
-    name: string;
-    totalScore: number;
-    primaryBottleneck: string;
-    recommendation: string;
-    recommendationLabel: string;
+    subject: string;
+    htmlContent: string;
+    textContent?: string;
   }): Promise<boolean> {
     if (!this.isConfigured) return false;
     try {
@@ -964,9 +1000,39 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       }
       const brevoModule = await getBrevo();
       const sendSmtpEmail = new brevoModule.SendSmtpEmail();
-      sendSmtpEmail.subject = 'Your Growth Diagnosis Results';
-      const bottleneckLabel = data.primaryBottleneck === 'brand' ? 'Brand clarity & messaging' : data.primaryBottleneck === 'design' ? 'Visual identity & design' : 'Website & lead systems';
-      sendSmtpEmail.htmlContent = `
+      sendSmtpEmail.subject = data.subject;
+      sendSmtpEmail.htmlContent = data.htmlContent;
+      sendSmtpEmail.textContent =
+        data.textContent?.trim() || data.htmlContent.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+      sendSmtpEmail.to = [{ email: data.to.trim() }];
+      await this.ensureBrevoAuth();
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Transactional HTML email sent to ${data.to}`);
+      return true;
+    } catch (error: any) {
+      console.error("❌ Error sending transactional HTML email:", error?.message ?? error);
+      return false;
+    }
+  }
+
+  /** Send growth diagnosis results to the lead (user). */
+  async sendGrowthDiagnosisToUser(data: {
+    to: string;
+    name: string;
+    totalScore: number;
+    primaryBottleneck: string;
+    recommendation: string;
+    recommendationLabel: string;
+  }): Promise<boolean> {
+    const subject = "Your Growth Diagnosis Results";
+    const bottleneckLabel =
+      data.primaryBottleneck === "brand"
+        ? "Brand clarity & messaging"
+        : data.primaryBottleneck === "design"
+          ? "Visual identity & design"
+          : "Website & lead systems";
+    const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;}.container{max-width:600px;margin:0 auto;padding:20px;}.header{background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);color:white;padding:24px;border-radius:12px 12px 0 0;}.content{background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;}.score{font-size:2em;font-weight:700;color:#4f46e5;}.footer{margin-top:20px;font-size:12px;color:#64748b;}</style></head>
@@ -974,26 +1040,61 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
           <div class="container">
             <div class="header"><h2 style="margin:0;">Your Growth Diagnosis Results</h2></div>
             <div class="content">
-              <p>Hi ${(data.name || 'there').replace(/</g, '&lt;')},</p>
+              <p>Hi ${(data.name || "there").replace(/</g, "&lt;")},</p>
               <p>Here’s a quick summary of your growth diagnosis.</p>
               <p><strong>Overall score:</strong> <span class="score">${data.totalScore}/100</span></p>
-              <p><strong>Primary bottleneck:</strong> ${bottleneckLabel.replace(/</g, '&lt;')}</p>
-              <p><strong>Recommended next step:</strong> ${(data.recommendationLabel || data.recommendation).replace(/</g, '&lt;')}</p>
+              <p><strong>Primary bottleneck:</strong> ${bottleneckLabel.replace(/</g, "&lt;")}</p>
+              <p><strong>Recommended next step:</strong> ${(data.recommendationLabel || data.recommendation).replace(/</g, "&lt;")}</p>
               <p>We’ll follow up with you shortly to discuss your growth plan. If you have any questions in the meantime, just reply to this email.</p>
               <div class="footer"><p>— Ascendra Technologies & the Brand Growth ecosystem</p></div>
             </div>
           </div>
         </body>
         </html>`;
-      sendSmtpEmail.textContent = `Hi ${data.name},\n\nYour growth score: ${data.totalScore}/100.\nPrimary bottleneck: ${bottleneckLabel}\nRecommended next step: ${data.recommendationLabel}\n\nWe'll follow up shortly.`;
-      sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
-      sendSmtpEmail.to = [{ email: data.to }];
-      await this.ensureBrevoAuth();
-      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-      console.log(`✅ Growth diagnosis email sent to ${data.to}`);
-      return true;
-    } catch (error: any) {
-      console.error('❌ Error sending growth diagnosis email:', error?.message ?? error);
+    const textContent = `Hi ${data.name},\n\nYour growth score: ${data.totalScore}/100.\nPrimary bottleneck: ${bottleneckLabel}\nRecommended next step: ${data.recommendationLabel}\n\nWe'll follow up shortly.`;
+
+    const trySdk = async (): Promise<boolean> => {
+      if (!this.isConfigured) return false;
+      try {
+        if (!this.apiInstance) {
+          await this.initializeBrevo();
+          if (!this.apiInstance) return false;
+        }
+        const brevoModule = await getBrevo();
+        const sendSmtpEmail = new brevoModule.SendSmtpEmail();
+        sendSmtpEmail.subject = subject;
+        sendSmtpEmail.htmlContent = htmlContent;
+        sendSmtpEmail.textContent = textContent;
+        sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
+        sendSmtpEmail.to = [{ email: data.to }];
+        await this.ensureBrevoAuth();
+        await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log(`✅ Growth diagnosis email sent to ${data.to}`);
+        return true;
+      } catch (error: any) {
+        console.error("❌ Error sending growth diagnosis email (SDK):", error?.message ?? error);
+        return false;
+      }
+    };
+
+    if (await trySdk()) return true;
+
+    try {
+      const { sendBrevoTransactional } = await import("./communications/brevoTransactional");
+      const res = await sendBrevoTransactional({
+        to: data.to,
+        subject,
+        htmlContent,
+        textContent,
+      });
+      if (res.ok) {
+        console.log(`✅ Growth diagnosis email sent via REST to ${data.to}`);
+        return true;
+      }
+      console.error("❌ Growth diagnosis REST send failed:", res.error);
+      return false;
+    } catch (e) {
+      console.error("❌ Growth diagnosis REST fallback error:", e);
       return false;
     }
   }
@@ -1051,6 +1152,8 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
       sendSmtpEmail.textContent = `New lead: ${data.name} (${data.email}), ${data.businessName}. Score: ${data.totalScore}. Bottleneck: ${data.primaryBottleneck}. Recommendation: ${data.recommendation}.`;
       sendSmtpEmail.sender = { name: this.fromName, email: this.fromEmail };
       sendSmtpEmail.to = [{ email: this.adminEmail }];
+      const growthBcc = this.formNotificationBcc();
+      if (growthBcc.length) sendSmtpEmail.bcc = growthBcc;
       sendSmtpEmail.replyTo = { email: data.email };
       await this.ensureBrevoAuth();
       await this.apiInstance.sendTransacEmail(sendSmtpEmail);

@@ -1,4 +1,4 @@
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ForgotPasswordPage from "@/route-modules/ForgotPasswordPage";
 
 export default function ForgotPasswordRoute() {
   return <ForgotPasswordPage />;

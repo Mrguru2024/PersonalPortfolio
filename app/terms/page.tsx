@@ -13,7 +13,7 @@ const COMPANY = "Ascendra Technologies";
 
 export default function TermsPage() {
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-hidden py-10 sm:py-14">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden marketing-page-y">
       <div className="container mx-auto px-3 fold:px-4 sm:px-6">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

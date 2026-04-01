@@ -154,9 +154,10 @@ export default function AdminSchedulingSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Availability AI (admin)</CardTitle>
+          <CardTitle>Availability assistant</CardTitle>
           <CardDescription>
-            Preview JSON only, or parse and replace all rules for a scope. Full table editor:{" "}
+            Describe your usual hours in plain language to preview parsed rules, or apply them to replace rules for the
+            scope you choose. To edit in a grid, use{" "}
             <Link href="/admin/scheduling/availability" className="text-primary underline-offset-4 hover:underline">
               Availability
             </Link>
@@ -183,14 +184,17 @@ export default function AdminSchedulingSettingsPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" onClick={parseAi}>
-              Parse with AI (preview)
+              Preview parsed hours
             </Button>
             <Button type="button" onClick={parseAiAndSave} disabled={aiApplyBusy || !desc.trim()}>
-              {aiApplyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Parse & save to database"}
+              {aiApplyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save as availability rules"}
             </Button>
           </div>
           {aiParseResult ? (
-            <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto max-h-48">{aiParseResult}</pre>
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Technical preview (optional)</summary>
+              <pre className="mt-2 text-xs bg-muted p-3 rounded-md overflow-x-auto max-h-48">{aiParseResult}</pre>
+            </details>
           ) : null}
         </CardContent>
       </Card>
@@ -201,7 +205,7 @@ export default function AdminSchedulingSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 max-w-xl">
           <div className="space-y-2">
-            <Label>Business timezone (IANA)</Label>
+            <Label>Business time zone</Label>
             <Input value={form.businessTimezone} onChange={(e) => setForm({ ...form, businessTimezone: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">

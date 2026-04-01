@@ -102,7 +102,7 @@ export function ContactBookingSection() {
       };
 
   return (
-    <div className="relative isolate w-full min-w-0 max-w-full overflow-x-hidden py-8 fold:py-10 sm:py-14">
+    <div className="relative isolate w-full min-w-0 max-w-full overflow-x-hidden py-10 fold:py-12 sm:py-16 md:py-20">
       <div
         className="pointer-events-none absolute inset-x-0 -top-24 h-[28rem] overflow-hidden"
         aria-hidden
@@ -233,7 +233,7 @@ export function ContactBookingSection() {
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
             <div className="min-w-0 space-y-5">
               <Card className="overflow-hidden border-border/80 bg-card/95 shadow-lg backdrop-blur-sm dark:border-border">
-                <CardContent className="p-4 sm:p-6">
+                <CardContent className="px-5 py-5 sm:px-8 sm:py-7">
                   <h2 className="mb-1 text-xl font-semibold text-foreground">
                     Get the most from your call
                   </h2>

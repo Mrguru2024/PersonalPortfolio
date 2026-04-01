@@ -43,8 +43,23 @@ describe("parseStoredMentorState", () => {
     expect(p?.habits).toContain("Checks analytics Fridays");
   });
 
-  it("rejects wrong version", () => {
-    expect(parseStoredMentorState({ v: 2 })).toBeNull();
+  it("accepts v2 with route stats", () => {
+    const p = parseStoredMentorState({
+      v: 2,
+      habits: [],
+      painPoints: [],
+      goals: [],
+      strengths: [],
+      topicsOftenAsked: [],
+      pendingMentorNudges: [],
+      topRoutes: [{ path: "/admin/crm", visits: 3, lastVisitAt: "2026-03-01T12:00:00.000Z" }],
+    });
+    expect(p?.v).toBe(2);
+    expect(p?.topRoutes?.[0]?.path).toBe("/admin/crm");
+  });
+
+  it("rejects unknown version", () => {
+    expect(parseStoredMentorState({ v: 99 })).toBeNull();
   });
 });
 

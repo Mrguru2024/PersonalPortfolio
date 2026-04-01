@@ -6,7 +6,7 @@ import { getSessionUser } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/crm/discovery?contactId=1 or ?dealId=1 — list discovery workspaces for contact or deal. */
+/** GET /api/admin/crm/discovery?contactId=1 | ?dealId=1 | (no id = recent across CRM) */
 export async function GET(req: NextRequest) {
   try {
     if (!(await isAdmin(req))) {
@@ -19,15 +19,20 @@ export async function GET(req: NextRequest) {
       const id = Number(contactId);
       if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid contactId" }, { status: 400 });
       const list = await storage.getCrmDiscoveryWorkspacesByContactId(id);
-      return NextResponse.json({ workspaces: list });
+      return NextResponse.json({ workspaces: list, mode: "contact" as const });
     }
     if (dealId) {
       const id = Number(dealId);
       if (!Number.isFinite(id)) return NextResponse.json({ error: "Invalid dealId" }, { status: 400 });
       const list = await storage.getCrmDiscoveryWorkspacesByDealId(id);
-      return NextResponse.json({ workspaces: list });
+      return NextResponse.json({ workspaces: list, mode: "deal" as const });
     }
-    return NextResponse.json({ error: "contactId or dealId required" }, { status: 400 });
+    const limitRaw = searchParams.get("limit");
+    const limit = limitRaw ? Number(limitRaw) : 75;
+    const list = await storage.getCrmDiscoveryWorkspacesRecentWithContact(
+      Number.isFinite(limit) ? limit : 75,
+    );
+    return NextResponse.json({ workspaces: list, mode: "recent" as const });
   } catch (error: unknown) {
     console.error("Discovery GET error:", error);
     return NextResponse.json({ error: "Failed to load discovery workspaces" }, { status: 500 });

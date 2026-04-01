@@ -118,7 +118,7 @@ export default function ProposalViewByTokenPage() {
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="border-b bg-muted/30">
+        <CardHeader className="border-b bg-section/40 dark:bg-section/20">
           <CardTitle className="text-xl sm:text-2xl">{data.title}</CardTitle>
           <CardDescription>Proposal #{data.quoteId}</CardDescription>
           <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 mt-2">

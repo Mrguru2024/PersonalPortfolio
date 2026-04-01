@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PageSEO } from "@/components/SEO";
 import { ArrowRight, Layout, Zap, Cpu } from "lucide-react";
 import { BRAND_GROWTH_PATH, STRATEGY_CALL_PATH, ECOSYSTEM_CTA_STRATEGY_CALL } from "@/lib/funnelCtas";
 import { projects } from "@/lib/data";
@@ -27,13 +26,6 @@ const FOCUS_AREAS = [
 export default function AscendraTechnologiesPartnerPage() {
   return (
     <>
-      <PageSEO
-        title="Ascendra Technologies | Web Development & Automation"
-        description="Anthony Feaster leads Ascendra Technologies—development, websites, automation, and AI solutions. The technical pillar of the Brand Growth ecosystem."
-        keywords={["Ascendra Technologies", "web development", "automation", "AI solutions", "Anthony Feaster"]}
-        canonicalPath="/partners/ascendra-technologies"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-brand="ascendra">
         {/* Hero — brand accent: technical/systems */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-primary bg-gradient-to-b from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10">
@@ -75,7 +67,7 @@ export default function AscendraTechnologiesPartnerPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Focus areas
@@ -118,7 +110,7 @@ export default function AscendraTechnologiesPartnerPage() {
           </div>
         </section>
 
-        <section id="projects" className="scroll-mt-20 w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/20 dark:bg-muted/5">
+        <section id="projects" className="scroll-mt-20 w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-background">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-6xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Our work — from the ecosystem
@@ -132,7 +124,7 @@ export default function AscendraTechnologiesPartnerPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-6 sm:mb-8">
               Skills & technologies

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import type { PpcCampaign } from "@shared/paidGrowthSchema";
+import { parseCampaignModel } from "@shared/ppcCampaignModel";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json().catch(() => ({}));
     const updates: Partial<PpcCampaign> = {};
     if (typeof body.name === "string") updates.name = body.name.trim();
+    if (typeof body.campaignModel === "string") updates.campaignModel = parseCampaignModel(body.campaignModel);
     if (typeof body.clientLabel === "string") updates.clientLabel = body.clientLabel;
     if (typeof body.platform === "string") updates.platform = body.platform;
     if (typeof body.objective === "string") updates.objective = body.objective;

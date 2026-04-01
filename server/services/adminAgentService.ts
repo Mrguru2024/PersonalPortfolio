@@ -4,18 +4,18 @@
  * Actions only when admin has aiAgentCanPerformActions.
  */
 
-import "openai/shims/node";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { stripConversationalSearchNoise } from "@/lib/advancedSearchQuery";
 import { searchSiteDirectory, SITE_DIRECTORY_ENTRIES_UNIQUE } from "@/lib/siteDirectory";
 import { getCachedAdminAgentContext } from "@server/services/adminAgentContextBuilder";
-import type { AdminAgentMentorStateV1 } from "@shared/schema";
+import type { AdminAgentMentorStateV2 } from "@shared/schema";
 import {
   ADMIN_AGENT_MENTOR_POLICY,
   fetchWebContextForTeaching,
   mentorStateToPromptBlock,
   shouldAttachWebSources,
 } from "@server/services/adminAgentMentorService";
+import { getAdminAgentOpenAiModel } from "@server/services/growthIntelligence/growthIntelligenceConfig";
 
 export type AgentActionType =
   | "navigate"
@@ -27,7 +27,24 @@ export type AgentActionType =
   | "open_blog"
   | "open_invoices"
   | "open_chat"
-  | "generate_reminders";
+  | "generate_reminders"
+  | "refresh_agent_context"
+  | "open_scheduler"
+  | "open_scheduler_calendar"
+  | "open_scheduler_workflows"
+  | "open_how_to"
+  | "open_site_directory"
+  | "open_offer_engine"
+  | "open_agency_os"
+  | "open_paid_growth"
+  | "open_behavior_intelligence"
+  | "open_growth_platform"
+  | "open_content_studio"
+  | "open_brand_vault"
+  | "open_experiments"
+  | "open_communications"
+  | "open_email_hub"
+  | "open_market_intelligence";
 
 export interface AgentAction {
   type: AgentActionType;
@@ -69,6 +86,18 @@ export function isKnownSitePath(pathname: string): boolean {
   return false;
 }
 
+/** Paths for model-returned `open_*` actions (AdminAgentWidget navigates via `action.url`). */
+const OPEN_ACTION_URLS: Partial<Record<AgentActionType, string>> = {
+  open_reminders: "/admin/reminders",
+  open_crm: "/admin/crm",
+  open_dashboard: "/admin/dashboard",
+  open_settings: "/admin/settings",
+  open_contacts: "/admin/crm",
+  open_blog: "/admin/blog",
+  open_invoices: "/admin/invoices",
+  open_chat: "/admin/chat",
+};
+
 function normalizeModelAction(
   raw: unknown,
   canPerformActions: boolean
@@ -80,11 +109,20 @@ function normalizeModelAction(
     if (!canPerformActions) return undefined;
     return { type: "generate_reminders", api: "POST /api/admin/reminders" };
   }
+  if (type === "refresh_agent_context") {
+    if (!canPerformActions) return undefined;
+    return { type: "refresh_agent_context", api: "POST /api/admin/agent/refresh-context" };
+  }
   if (type === "navigate" && typeof o.url === "string") {
     if (!canPerformActions) return undefined;
     const url = o.url.trim();
     if (!isKnownSitePath(url)) return undefined;
     return { type: "navigate", url };
+  }
+  if (typeof type === "string" && type in OPEN_ACTION_URLS && OPEN_ACTION_URLS[type as AgentActionType]) {
+    if (!canPerformActions) return undefined;
+    const url = OPEN_ACTION_URLS[type as AgentActionType]!;
+    return { type: type as AgentActionType, url };
   }
   return undefined;
 }
@@ -95,7 +133,46 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
     keywords: ["generate reminders", "run reminders", "refresh reminders", "create reminders"],
     action: { type: "generate_reminders", api: "POST /api/admin/reminders" },
   },
+  {
+    keywords: [
+      "refresh assistant context",
+      "rescan site for assistant",
+      "reload assistant context",
+      "rebuild assistant context",
+      "refresh agent context",
+    ],
+    action: { type: "refresh_agent_context", api: "POST /api/admin/agent/refresh-context" },
+  },
   { keywords: ["site directory", "page directory", "sitemap", "find a page", "search pages"], action: { type: "navigate", url: "/admin/site-directory" } },
+  {
+    keywords: ["how-to guides", "how-to hub", "admin how-to", "admin guides", "open how-to"],
+    action: { type: "open_how_to", url: "/admin/how-to" },
+  },
+  {
+    keywords: ["offer engine", "ascendra offer engine", "offer template editor"],
+    action: { type: "open_offer_engine", url: "/admin/offer-engine" },
+  },
+  { keywords: ["agency os", "agency operating system"], action: { type: "open_agency_os", url: "/admin/agency-os" } },
+  { keywords: ["paid growth admin", "ppc campaigns admin"], action: { type: "open_paid_growth", url: "/admin/paid-growth" } },
+  {
+    keywords: [
+      "behavior intelligence",
+      "ascendra growth intelligence",
+      "growth intelligence",
+      "conversion diagnostics admin",
+      "friction report",
+      "heatmap admin",
+    ],
+    action: { type: "open_behavior_intelligence", url: "/admin/behavior-intelligence" },
+  },
+  {
+    keywords: ["growth platform admin", "service agreements admin"],
+    action: { type: "open_growth_platform", url: "/admin/growth-platform" },
+  },
+  { keywords: ["brand vault"], action: { type: "open_brand_vault", url: "/admin/brand-vault" } },
+  { keywords: ["experiments admin"], action: { type: "open_experiments", url: "/admin/experiments" } },
+  { keywords: ["communications admin", "email campaigns admin"], action: { type: "open_communications", url: "/admin/communications" } },
+  { keywords: ["email hub"], action: { type: "open_email_hub", url: "/admin/email-hub" } },
   { keywords: ["content studio", "content calendar", "scheduled posts"], action: { type: "navigate", url: "/admin/content-studio" } },
   { keywords: ["newsletter", "newsletters", "subscribers"], action: { type: "navigate", url: "/admin/newsletters" } },
   {
@@ -104,6 +181,15 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   },
   { keywords: ["lead intake", "inbound leads"], action: { type: "navigate", url: "/admin/lead-intake" } },
   { keywords: ["growth os", "gos hub", "gos dashboard"], action: { type: "navigate", url: "/admin/growth-os" } },
+  {
+    keywords: ["amie", "market intelligence engine", "decision intelligence", "ascendra market intelligence"],
+    action: { type: "navigate", url: "/admin/market-intelligence" },
+  },
+  {
+    keywords: ["growth os intelligence", "gos intelligence", "topic discovery", "intelligence tab growth os"],
+    action: { type: "navigate", url: "/admin/growth-os/intelligence" },
+  },
+  { keywords: ["assistant knowledge", "agent knowledge", "knowledge base assistant"], action: { type: "navigate", url: "/admin/agent-knowledge" } },
   { keywords: ["internal audit", "funnel audit"], action: { type: "navigate", url: "/admin/internal-audit" } },
   { keywords: ["growth diagnosis", "diagnosis admin", "diagnosis submissions"], action: { type: "navigate", url: "/admin/growth-diagnosis" } },
   { keywords: ["funnel admin", "funnel pages", "growth kit admin"], action: { type: "navigate", url: "/admin/funnel" } },
@@ -121,10 +207,39 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   { keywords: ["crm import", "import leads"], action: { type: "navigate", url: "/admin/crm/import" } },
   { keywords: ["email sequences", "sequences"], action: { type: "navigate", url: "/admin/crm/sequences" } },
   { keywords: ["discovery inbox"], action: { type: "navigate", url: "/admin/crm/discovery" } },
+  {
+    keywords: ["discovery toolkit", "zoom prep", "discovery tools hub"],
+    action: { type: "navigate", url: "/admin/crm/discovery-tools" },
+  },
+  { keywords: ["ltv report", "client ltv", "revenue report admin"], action: { type: "navigate", url: "/admin/crm/ltv" } },
   { keywords: ["playbooks"], action: { type: "navigate", url: "/admin/crm/playbooks" } },
   { keywords: ["proposal prep"], action: { type: "navigate", url: "/admin/crm/proposal-prep" } },
   { keywords: ["reminders", "reminder"], action: { type: "open_reminders", url: "/admin/reminders" } },
   { keywords: ["crm", "contacts", "leads"], action: { type: "open_crm", url: "/admin/crm" } },
+  {
+    keywords: [
+      "scheduler workflows",
+      "booking automations",
+      "meeting automations",
+      "scheduler automation",
+    ],
+    action: { type: "open_scheduler_workflows", url: "/admin/scheduler/workflows" },
+  },
+  {
+    keywords: ["scheduler calendar", "meetings calendar", "booking calendar", "master calendar"],
+    action: { type: "open_scheduler_calendar", url: "/admin/scheduler/calendar" },
+  },
+  {
+    keywords: [
+      "scheduler",
+      "scheduling",
+      "bookings and calendar",
+      "meetings & calendar",
+      "booking pages",
+      "meeting types",
+    ],
+    action: { type: "open_scheduler", url: "/admin/scheduler" },
+  },
   { keywords: ["dashboard", "admin home"], action: { type: "open_dashboard", url: "/admin/dashboard" } },
   { keywords: ["settings", "preferences"], action: { type: "open_settings", url: "/admin/settings" } },
   { keywords: ["blog", "posts", "cms"], action: { type: "open_blog", url: "/admin/blog" } },
@@ -172,6 +287,9 @@ export function describeAgentActionForUser(action: AgentAction): string {
   if (action.type === "generate_reminders") {
     return "Run the reminder generator and refresh your admin reminders list.";
   }
+  if (action.type === "refresh_agent_context") {
+    return "Rebuild the assistant’s site map digest from disk (next reply uses fresh CONTEXT).";
+  }
   if (action.url) {
     const label = titleForPath(action.url);
     return `Navigate to **${label}** (${action.url}).`;
@@ -200,11 +318,14 @@ function getReplyForAction(action: AgentAction): string {
   if (action.type === "generate_reminders") {
     return `Started the reminder run. Open ${mdLink("/admin/reminders")} to review new tasks.\n\nIf nothing shows yet, refresh the list in a moment.`;
   }
+  if (action.type === "refresh_agent_context") {
+    return `**Site context refresh** — rebuilding the assistant’s cached digest from this deployment (routes, APIs, page metadata). Your next question will use the updated map. ${mdLink("/admin/site-directory", "Site directory")} stays the human searchable index.`;
+  }
   if (action.url) {
     const label = titleForPath(action.url);
     return `**${label}** — ${mdLink(action.url, `Open ${label}`)}.\n\nTaking you there now.`;
   }
-  return "Done.";
+  return `Done. ${mdLink("/admin/site-directory", "Site directory")} — search if you need another screen, or open ${mdLink("/admin/dashboard", "Dashboard")}.`;
 }
 
 function stripJsonFence(raw: string): string {
@@ -213,6 +334,26 @@ function stripJsonFence(raw: string): string {
     return t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   }
   return t;
+}
+
+/** Parse agent JSON reply; tolerate extra prose or fenced blocks from the model. */
+function parseAgentModelJson(raw: string): { reply?: string; action?: unknown } | null {
+  const cleaned = stripJsonFence(raw);
+  try {
+    return JSON.parse(cleaned) as { reply?: string; action?: unknown };
+  } catch {
+    try {
+      const t = cleaned.trim();
+      const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const body = fenced ? fenced[1]!.trim() : t;
+      const start = body.indexOf("{");
+      const end = body.lastIndexOf("}");
+      if (start === -1 || end <= start) return null;
+      return JSON.parse(body.slice(start, end + 1)) as { reply?: string; action?: unknown };
+    } catch {
+      return null;
+    }
+  }
 }
 
 async function processWithOpenAI(input: {
@@ -228,19 +369,33 @@ async function processWithOpenAI(input: {
   operatorKnowledgeBlock: string;
   /** Longer-form notes for research-style grounding (when enabled per entry). */
   operatorResearchBlock: string;
+  mentorObserveUsage?: boolean;
+  mentorProactiveCheckpoints?: boolean;
 }): Promise<AgentResult | null> {
   const client = getOpenAIClient();
   if (!client) return null;
 
   const actionRules = input.canPerformActions
     ? `You may set "action" to run something in the app (exact JSON shapes only):
-- {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os.
-- Alternatively you may use these exact types (no url needed): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM).
-- {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate, run, or refresh reminders.
+- {"type":"navigate","url":"<path>"} — use only if <path> is listed in CONTEXT as a real route (no "[" or "]" in the string). Prefer hub paths such as /admin/crm, /admin/blog, /admin/content-studio, /admin/ascendra-intelligence, /admin/growth-os, /admin/market-intelligence, /admin/agent-knowledge.
+- Shorthand navigations (no url field): "open_reminders", "open_crm", "open_dashboard", "open_settings", "open_blog", "open_invoices", "open_chat", "open_contacts" (same as CRM), "open_scheduler", "open_scheduler_calendar", "open_scheduler_workflows", "open_how_to", "open_site_directory", "open_offer_engine", "open_agency_os", "open_paid_growth", "open_behavior_intelligence", "open_growth_platform", "open_content_studio", "open_brand_vault", "open_experiments", "open_communications", "open_email_hub", "open_market_intelligence".
+- {"type":"generate_reminders","api":"POST /api/admin/reminders"} when they ask to generate, run, or refresh reminders (tasks).
+- {"type":"refresh_agent_context","api":"POST /api/admin/agent/refresh-context"} when they ask to rescan/reload the assistant’s site map from disk (not the same as user reminders).
 Otherwise set "action": null. Never invent types or URLs.
 
 Spelling and labels: use correct product names — Ascendra, Ascendra Intelligence, Growth OS, Content Studio, Brand Growth. Match directory titles for screen names.`
     : `Do not return an action. Always set "action": null (actions are disabled for this user).`;
+
+  const companionCadence =
+    input.mentorObserveUsage || input.mentorProactiveCheckpoints
+      ? `
+
+Companion mode: Checkpoints in the assistant panel are rare and optional (never blocking modals). Do not nag. Use OPERATOR MEMORY — including navigation summaries when present — to infer habits and struggles; speak naturally without saying you "monitor" unless they opted in under Admin settings. When they sound stuck on a workflow, offer one small next step.${
+          input.canPerformActions
+            ? " If actions are enabled for them, you may suggest **one** concrete runnable action (navigation or generate_reminders) when it clearly saves time — they still confirm when confirmation is on."
+            : ""
+        }`
+      : "";
 
   const webSection =
     input.webContextBlock.trim().length > 0
@@ -249,14 +404,16 @@ Spelling and labels: use correct product names — Ascendra, Ascendra Intelligen
 
   const system = `You are the Ascendra admin assistant and mentor for approved CMS/CRM operators. You address the operator by name when natural: ${input.operatorDisplayName}.
 
-Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.
+Mission: solve their problem and help them grow — teach, guide, and (when helpful) remind them of habits that keep the business healthy (e.g. reviewing ${mdLink("/admin/reminders", "Reminders")}, checking ${mdLink("/admin/crm", "CRM")} follow-ups, keeping content and analytics on a rhythm). You are their **product tour guide**: for “how do I…”, “where is…”, and “what does X do”, ground answers in the **Site directory digest** and **metadata crawl** in CONTEXT—those blocks are rebuilt from this codebase (and can be refreshed via the refresh_agent_context action). Balance product wayfinding with coaching: if they sound stuck or overwhelmed, acknowledge it and offer a small next step.${companionCadence}
 
 Operator memory (INTERNAL — ${ADMIN_AGENT_MENTOR_POLICY}):
 ${input.mentorPromptBlock}
 
 Mission detail: give clear next steps, name the exact screen or API from CONTEXT when the task is in-app, and when they need to do something in the UI, tell them what to click or run. If they ask how to fix an issue, propose a concrete workflow (which admin area first, then what). If they want a command or automation, point to the matching npm script or /api/admin/... route from CONTEXT when relevant. Prefer actionable outcomes over generic chat.
 
-Grounding for THIS SITE: use only facts from CONTEXT (site routes, admin API paths, npm scripts, AGENTS.md) for navigation, APIs, and product behavior. The CONTEXT refreshes every few minutes from this deployment. If something is missing, say so and point them to ${mdLink("/admin/site-directory", "Site directory")} to search.
+Non-negotiable for "reply": every message must include (1) **at least one markdown link** — internal [Label](/admin/...) style from CONTEXT for in-app destinations, or full https URLs only when grounded in WEB RESULTS — and (2) for anything beyond a one-line greeting/thanks, **concrete actionable steps** or the explicit next control to use. Do not end with only vague encouragement. For a bare hello/thanks, still add one useful link (e.g. ${mdLink("/admin/dashboard", "Dashboard")} or ${mdLink("/admin/site-directory", "Site directory")}).
+
+Grounding for THIS SITE: use only facts from CONTEXT (full site digest, admin UI metadata crawl, site routes, admin API paths, npm scripts, AGENTS.md, FEATURE GUIDE) for navigation, APIs, and product behavior. The CONTEXT normally refreshes every few minutes; operators can trigger an immediate rebuild with refresh_agent_context when actions are enabled. If something is missing, say so and point them to ${mdLink("/admin/how-to", "How-to & guides")} and ${mdLink("/admin/site-directory", "Site directory")}.
 ${webSection}
 
 Navigation and wayfinding: whenever you mention an in-app place to go, include a markdown link using ONLY internal paths from CONTEXT, like [Analytics](/admin/analytics) or [Content Studio](/admin/content-studio). Use short, human labels. For multiple options, list 2–4 links with one sentence each so they can click the right destination. External https links are allowed only when citing WEB RESULTS for teaching.
@@ -288,9 +445,10 @@ ${input.contextText}`;
     content: m.content.slice(0, 4000),
   }));
 
+  const model = getAdminAgentOpenAiModel();
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4o",
+      model,
       temperature: 0.25,
       max_tokens: 1100,
       response_format: { type: "json_object" },
@@ -301,14 +459,24 @@ ${input.contextText}`;
       ],
     });
     const raw = response.choices[0]?.message?.content ?? "";
-    const cleaned = stripJsonFence(raw);
-    const parsed = JSON.parse(cleaned) as { reply?: string; action?: unknown };
+    const parsed = parseAgentModelJson(raw);
+    if (!parsed) {
+      console.warn("[admin agent] model output was not valid JSON object");
+      return null;
+    }
     const reply = typeof parsed.reply === "string" ? parsed.reply.trim().slice(0, 8000) : "";
     if (!reply) return null;
     const action = normalizeModelAction(parsed.action, input.canPerformActions);
     return { reply, action };
-  } catch (e) {
-    console.error("admin agent OpenAI error:", e);
+  } catch (e: unknown) {
+    if (e instanceof OpenAI.APIError && (e.status === 403 || e.code === "model_not_found")) {
+      console.error(
+        `[admin agent] OpenAI rejected model "${model}" (403 / model_not_found). Set OPENAI_ADMIN_AGENT_MODEL to an allowed model for this API key.`,
+        e.message,
+      );
+    } else {
+      console.error("admin agent OpenAI error:", e);
+    }
     return null;
   }
 }
@@ -322,7 +490,9 @@ export interface ProcessAgentMessageInput {
   /** Numeric user id for logging / future use */
   userId?: number;
   operatorDisplayName?: string;
-  mentorState?: AdminAgentMentorStateV1 | null;
+  mentorState?: AdminAgentMentorStateV2 | null;
+  mentorObserveUsage?: boolean;
+  mentorProactiveCheckpoints?: boolean;
   /** Pre-formatted operator knowledge (from DB); empty string if none. */
   operatorKnowledgeBlock?: string;
   /** Research-oriented notes (from DB); empty string if none. */
@@ -368,6 +538,8 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
       webContextBlock,
       operatorKnowledgeBlock: (input.operatorKnowledgeBlock ?? "").trim(),
       operatorResearchBlock: (input.operatorResearchBlock ?? "").trim(),
+      mentorObserveUsage: input.mentorObserveUsage === true,
+      mentorProactiveCheckpoints: input.mentorProactiveCheckpoints !== false,
     });
     if (ai) {
       if (ai.action && !canPerformActions) {
@@ -394,6 +566,11 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
         reply: `I can run the reminder job when **Allow agent to perform actions** is on — toggle it in ${mdLink("/admin/settings", "Admin settings")}.\n\nYou can still open ${mdLink("/admin/reminders", "Reminders")} and manage tasks there.`,
       };
     }
+    if (action.type === "refresh_agent_context") {
+      return {
+        reply: `I can rebuild my site map cache when **Allow agent to perform actions** is on — ${mdLink("/admin/settings", "Admin settings")}. Context still auto-refreshes every few minutes.`,
+      };
+    }
     const path = action.url ?? "/admin/site-directory";
     const link = mdLink(path, titleForPath(path));
     return {
@@ -401,7 +578,7 @@ export async function processAgentMessage(input: ProcessAgentMessageInput): Prom
     };
   }
 
-  const hint = `Browse the ${mdLink("/admin/site-directory", "site directory")} to search every route — use **quotes** for exact phrases (e.g. \`"lead intake"\` \`crm\`). Common hubs: ${mdLink("/admin/content-studio", "Content Studio")}, ${mdLink("/admin/crm", "CRM")}, ${mdLink("/admin/analytics", "Analytics")}, ${mdLink("/admin/ascendra-intelligence", "Ascendra Intelligence")}, ${mdLink("/admin/growth-os", "Growth OS")}. Say **generate reminders** to refresh admin reminders (if actions are enabled).`;
+  const hint = `Browse the ${mdLink("/admin/site-directory", "site directory")} or ${mdLink("/admin/how-to", "how-to guides")} — use **quotes** for exact phrases. Common hubs: ${mdLink("/admin/content-studio", "Content Studio")}, ${mdLink("/admin/crm", "CRM")}, ${mdLink("/admin/offer-engine", "Offer Engine")}, ${mdLink("/admin/paid-growth", "Paid growth")}. With actions on: say **generate reminders** or **refresh assistant context** to rescan the assistant’s site digest.`;
   const ranked = formatDirectorySuggestionBlock(message);
   return {
     reply: `I’m not sure which screen you mean.\n\n${hint}\n\nDescribe the problem you’re solving (e.g. “publish a newsletter”, “find lead intake”) and I’ll narrow it down.${ranked}`,

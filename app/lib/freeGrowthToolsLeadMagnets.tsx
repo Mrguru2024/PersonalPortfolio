@@ -1,11 +1,25 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, Calculator, Gauge, BarChart3, Layout, BookOpen, Sparkles, LineChart } from "lucide-react";
+import {
+  Search,
+  Calculator,
+  Gauge,
+  BarChart3,
+  Layout,
+  BookOpen,
+  Sparkles,
+  LineChart,
+  Target,
+  Radar,
+  Image,
+} from "lucide-react";
 import {
   STARTUP_GROWTH_KIT_PATH,
   STARTUP_WEBSITE_SCORE_PATH,
   GROWTH_DIAGNOSIS_ENGINE_PATH,
   DIGITAL_GROWTH_AUDIT_PATH,
   PPC_LEAD_MAGNET_PATH,
+  OFFER_AUDIT_PATH,
+  MARKET_SCORE_PATH,
 } from "@/lib/funnelCtas";
 
 export interface FreeGrowthToolMagnet {
@@ -20,6 +34,16 @@ export interface FreeGrowthToolMagnet {
 }
 
 export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
+  {
+    id: "market-score",
+    title: "Market Score (demand & competition)",
+    who: "Operators and marketers who need a fast read on whether a market is worth the squeeze.",
+    problem: "You don't have time for a full study—but you're flying blind on demand, crowding, and buying power.",
+    get: "A scored snapshot: demand, competition, and purchase power—saved to CRM with tags, lead score, and a three-step email follow-up. Full strategy report unlocks on a call.",
+    cta: "Run Market Score",
+    href: MARKET_SCORE_PATH,
+    icon: Radar,
+  },
   {
     id: "growth-diagnosis",
     title: "Website growth diagnosis",
@@ -49,6 +73,16 @@ export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
     cta: "Request consultation",
     href: PPC_LEAD_MAGNET_PATH,
     icon: LineChart,
+  },
+  {
+    id: "offer-audit",
+    title: "Offer valuation engine",
+    who: "Teams and founders whose offer messaging is not converting consistently.",
+    problem: "You are unsure whether outcome, certainty, speed, or effort friction is hurting conversion.",
+    get: "A 100M value-equation score with diagnosis, strategic fixes, upgraded offer direction, and monetization insight.",
+    cta: "Run offer audit",
+    href: OFFER_AUDIT_PATH,
+    icon: Target,
   },
   {
     id: "revenue-calculator",
@@ -109,6 +143,16 @@ export const LEAD_MAGNETS: FreeGrowthToolMagnet[] = [
     cta: "Get my score",
     href: STARTUP_WEBSITE_SCORE_PATH,
     icon: Sparkles,
+  },
+  {
+    id: "generate-images",
+    title: "AI image studio",
+    who: "Teams that need quick, on-brand visuals for landing pages, social, or concepts.",
+    problem: "Stock assets feel generic and design cycles are too slow for every idea.",
+    get: "Generate images from prompts in a simple studio workflow—useful for drafts, concepts, and iteration.",
+    cta: "Open image studio",
+    href: "/generate-images",
+    icon: Image,
   },
 ];
 

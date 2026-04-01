@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
-import { resolveCommAudience } from "@server/services/communications/resolveAudience";
+import { resolveCommCampaignRecipients } from "@server/services/communications/resolveAudience";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
 
 export const dynamic = "force-dynamic";
@@ -21,15 +21,27 @@ export async function POST(req: NextRequest) {
         filters = { ...list.filters, ...filters };
       }
     }
-    const contacts = await resolveCommAudience(storage, filters);
-    const sample = contacts.slice(0, 25).map((c) => ({
-      id: c.id,
-      email: c.email,
-      name: c.name,
-      status: c.status,
-      source: c.source,
-    }));
-    return NextResponse.json({ count: contacts.length, sample });
+    const recipients = await resolveCommCampaignRecipients(storage, filters);
+    const sample = recipients.slice(0, 25).map((r) =>
+      r.source === "crm" ?
+        {
+          id: r.contact.id,
+          email: r.contact.email,
+          name: r.contact.name,
+          status: r.contact.status,
+          source: r.contact.source,
+          inCrm: true as const,
+        }
+      : {
+          id: null,
+          email: r.email,
+          name: "(not in CRM)",
+          status: null,
+          source: null,
+          inCrm: false as const,
+        },
+    );
+    return NextResponse.json({ count: recipients.length, sample });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Preview failed" }, { status: 500 });

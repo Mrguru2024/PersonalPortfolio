@@ -3,6 +3,8 @@ import type { CrmContact, RevenueOpsSettingsConfig } from "@shared/crmSchema";
 import type { IStorage } from "@server/storage";
 import { logActivity } from "@server/services/crmFoundationService";
 import { sendSms, isSmsConfigured } from "@server/services/smsService";
+import { fireWorkflows, buildPayloadFromContactId } from "@server/services/workflows/engine";
+import type { JourneyEventMetadata } from "@server/services/workflows/types";
 
 const TEMPLATE_DEFAULTS = {
   welcomeSmsTemplate:
@@ -25,6 +27,19 @@ export async function getMergedRevenueOpsConfig(
 
 function interpolate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+}
+
+function fireContactSmsSentWorkflow(
+  storage: IStorage,
+  contactId: number,
+  journeyEvent?: JourneyEventMetadata
+): void {
+  void buildPayloadFromContactId(storage, contactId)
+    .then((payload) => {
+      const p = { ...payload, ...(journeyEvent ? { journeyEvent } : {}) };
+      return fireWorkflows(storage, "contact_sms_sent", p);
+    })
+    .catch(() => {});
 }
 
 /** Public redirect URL that logs a timeline event before sending the user to the real scheduler. */
@@ -67,6 +82,7 @@ export async function sendWelcomeSmsIfEnabled(storage: IStorage, contact: CrmCon
       metadata: { channel: "twilio_sms", messageSid: result.messageSid },
     });
     await storage.updateCrmContact(contact.id, { lastContactedAt: new Date(), lastOutreachAt: new Date() });
+    fireContactSmsSentWorkflow(storage, contact.id, { channel: "sms", smsVariant: "welcome" });
   } else {
     await logActivity(storage, {
       contactId: contact.id,
@@ -175,6 +191,7 @@ export async function handleVoiceStatusCallback(
       metadata: { callSid: params.CallSid, auto: true, messageSid: result.messageSid },
     });
     await storage.updateCrmContact(contact.id, { lastOutreachAt: new Date() });
+    fireContactSmsSentWorkflow(storage, contact.id);
   }
 }
 
@@ -199,6 +216,7 @@ export async function sendManualSms(
       createdByUserId,
     });
     await storage.updateCrmContact(contact.id, { lastContactedAt: new Date(), lastOutreachAt: new Date() });
+    fireContactSmsSentWorkflow(storage, contact.id, { channel: "sms", smsVariant: "manual" });
   }
   return result;
 }
@@ -238,6 +256,7 @@ export async function sendBookingLinkToContact(
     createdByUserId,
   });
   await storage.updateCrmContact(contact.id, { lastOutreachAt: new Date() });
+  fireContactSmsSentWorkflow(storage, contact.id, { channel: "sms", smsVariant: "booking" });
   return { ok: true, url: tracked };
 }
 

@@ -23,7 +23,7 @@ import {
   workspaceLabelForProjectKey,
 } from "@/lib/internal-audit/defaultAuditProjectKey";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 
 interface AuditRunRow {
   id: number;
@@ -291,7 +291,7 @@ export default function InternalAuditDashboardPage() {
                             <span className="font-mono text-[10px] opacity-80"> ({r.projectKey})</span>
                           )}
                           <span className="text-muted-foreground/80"> · </span>
-                          {format(new Date(r.startedAt), "PPp")}
+                          {formatLocaleMediumDateTime(r.startedAt)}
                         </div>
                       </div>
                       <Button variant="outline" size="sm" asChild>

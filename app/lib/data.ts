@@ -121,7 +121,7 @@ export const personalInfo: PersonalInfo = {
     "Automotive Locksmith Specialist",
     "Electronic Repair Technician",
   ],
-  resumeUrl: "/api/resume",
+  resumeUrl: "",
   image: "https://github.com/Mrguru2024.png",
 };
 

@@ -4,6 +4,41 @@
 
 export const PPC_READINESS_MIN_SCORE = 60;
 
+/** Operator-facing route from readiness (maps to UX copy in admin). */
+export const PPC_GROWTH_ROUTE_RECOMMENDATIONS = [
+  "needs_foundation",
+  "limited_test",
+  "ready_for_ppc",
+  "ready_to_scale",
+] as const;
+export type PpcGrowthRouteRecommendation = (typeof PPC_GROWTH_ROUTE_RECOMMENDATIONS)[number];
+
+export function growthRouteRecommendationFromReadiness(args: {
+  adReady: boolean;
+  overallScore: number;
+}): PpcGrowthRouteRecommendation {
+  const { adReady, overallScore } = args;
+  if (!adReady || overallScore < PPC_READINESS_MIN_SCORE) return "needs_foundation";
+  if (overallScore < 68) return "limited_test";
+  if (overallScore < 82) return "ready_for_ppc";
+  return "ready_to_scale";
+}
+
+export function growthRouteRecommendationLabel(route: PpcGrowthRouteRecommendation): string {
+  switch (route) {
+    case "needs_foundation":
+      return "Needs foundation work";
+    case "limited_test":
+      return "Ready for limited test campaign";
+    case "ready_for_ppc":
+      return "Ready for PPC";
+    case "ready_to_scale":
+      return "Ready to scale";
+    default:
+      return route;
+  }
+}
+
 /** Ad account lifecycle for admin surfacing (not platform OAuth state). */
 export const PPC_AD_READY_STATUSES = ["not_assessed", "ad_ready", "not_ad_ready"] as const;
 export type PpcAdReadyStatus = (typeof PPC_AD_READY_STATUSES)[number];
