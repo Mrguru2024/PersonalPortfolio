@@ -5,7 +5,10 @@ import { join } from "path";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type PublicUpdateCategory = "client_project" | "ascendra_innovation" | "site_update" | "market_update";
+type PublicUpdateCategory =
+  | "marketing_industry_update"
+  | "persona_interest"
+  | "new_project_intake";
 
 interface PublicUpdateEntry {
   date: string;
@@ -18,10 +21,9 @@ interface PublicUpdateEntry {
 const PUBLIC_UPDATES_PATH = join(process.cwd(), "content", "public-updates.json");
 
 const ALLOWED_CATEGORIES = new Set<PublicUpdateCategory>([
-  "client_project",
-  "ascendra_innovation",
-  "site_update",
-  "market_update",
+  "marketing_industry_update",
+  "persona_interest",
+  "new_project_intake",
 ]);
 
 const COMMIT_STYLE_PATTERNS: RegExp[] = [

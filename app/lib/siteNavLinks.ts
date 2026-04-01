@@ -29,7 +29,7 @@ export const MAIN_LINKS = [
   { label: "Community", href: COMMUNITY_HUB_PUBLIC_PATH },
   { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
-  { label: "Updates", href: "/updates" },
+  { label: "Market updates", href: "/updates" },
   { label: "Your Growth Score", href: "/diagnosis/results" },
   { label: "Contact", href: "/contact" },
 ] as const;

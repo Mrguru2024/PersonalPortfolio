@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-03-31T17:15:00Z",
+    "title": "Client onboarding handoff flow simplified",
+    "description": "We reduced onboarding handoff steps so project owners and clients can move from kickoff to first delivery with less back-and-forth and clearer next actions.",
+    "category": "project_update",
+    "audience": "admin_only"
+  },
+  {
+    "date": "2026-03-30T19:10:00Z",
+    "title": "Agency market watch: local-service demand remains conversion-focused",
+    "description": "Agency market tracking this week shows strongest demand around lead quality, appointment rates, and conversion reliability over broad traffic growth claims.",
+    "category": "agency_market_data",
+    "audience": "admin_only"
+  },
+  {
+    "date": "2026-03-29T15:40:00Z",
+    "title": "Client communication rhythm standardized for active builds",
+    "description": "Project teams now follow a simpler update rhythm with plain-language summaries and clear owner responsibilities to keep delivery communication consistent.",
+    "category": "project_update",
+    "audience": "admin_only"
+  },
+  {
+    "date": "2026-03-28T13:55:00Z",
+    "title": "Agency market watch: decision cycles favor shorter proof windows",
+    "description": "Inside-agency market data indicates buyers are preferring shorter proof windows with measurable checkpoints before expanding scope.",
+    "category": "agency_market_data",
+    "audience": "admin_only"
+  }
+]

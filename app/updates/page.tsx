@@ -11,15 +11,14 @@ interface ChangelogEntry {
   date: string;
   title: string;
   description: string;
-  category: "client_project" | "ascendra_innovation" | "site_update" | "market_update";
+  category: "marketing_industry_update" | "persona_interest" | "new_project_intake";
   factChecked: boolean;
 }
 
 const CATEGORY_LABELS: Record<ChangelogEntry["category"], string> = {
-  client_project: "Client project update",
-  ascendra_innovation: "Ascendra innovation update",
-  site_update: "Site update",
-  market_update: "Market update",
+  marketing_industry_update: "Marketing industry update",
+  persona_interest: "Persona interest signal",
+  new_project_intake: "New project intake",
 };
 
 export default function UpdatesPage() {
@@ -43,7 +42,7 @@ export default function UpdatesPage() {
           Relevant updates
         </h1>
         <p className="text-muted-foreground">
-          Fact-checked client project, Ascendra innovation, site, and market updates.
+          Fact-checked marketing industry updates, persona interest signals, and new project intake updates.
         </p>
       </div>
 
