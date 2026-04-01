@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { startAscendraBehaviorTracking } from "@/lib/tracking/ascendra-behavior-tracker";
 
@@ -47,5 +48,12 @@ export function AscendraBehaviorPageTracker() {
     };
   }, []);
 
+  const pathname = usePathname() ?? "/";
+  useEffect(() => {
+    const href =
+      typeof window !== "undefined" ? `${window.location.origin}${pathname}${window.location.search}` : "";
+    const { stop } = startAscendraBehaviorTracking({ businessId: "ascendra_main", pathname, href: href || undefined });
+    return () => stop();
+  }, [pathname]);
   return null;
 }

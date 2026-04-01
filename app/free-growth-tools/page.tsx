@@ -19,6 +19,7 @@ import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFr
 import { OUTCOME_FRAMEWORK_COPY_FREE_TOOLS } from "@/lib/landingPageOutcomeFramework";
 import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
 import { CTA_REASSURANCE_LEAD_MAGNET } from "@/lib/embeddedAssuranceCopy";
+import { MARKETING_CTA_CONTACT_US } from "@shared/marketingCtaCopy";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Free growth tools | Ascendra Technologies",
@@ -120,7 +121,7 @@ export default function FreeGrowthToolsPage() {
                 .
               </p>
               <Button asChild variant="outline" className="mt-4 min-h-[44px]">
-                <Link href="/contact">Book a free call</Link>
+                <Link href="/contact">{MARKETING_CTA_CONTACT_US}</Link>
               </Button>
             </section>
           </div>

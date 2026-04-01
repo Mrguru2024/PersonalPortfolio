@@ -980,7 +980,7 @@ export default function AdminDashboardPage() {
         {/* Tabs — sync with ?tab=assessments|contacts (e.g. from Suggested for you) */}
         <div ref={inboxTabsRef} id="admin-dashboard-inbox-tabs" className="scroll-mt-20">
           <Tabs value={inboxTab} onValueChange={onInboxTabChange} className="space-y-4" data-tour="tabs">
-            <TabsList className="w-full sm:w-auto flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
+            <TabsList className="w-full flex flex-wrap h-auto min-h-[44px] gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
           <TabsTrigger value="assessments">
             Assessments ({assessments.length})
           </TabsTrigger>

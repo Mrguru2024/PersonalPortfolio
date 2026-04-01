@@ -8,8 +8,10 @@ import {
   behaviorHeatmapEvents,
   behaviorFrictionReports,
   behaviorSurveys,
+  behaviorPhoneTrackedNumbers,
+  behaviorPhoneCallLogs,
 } from "@shared/schema";
-import { count, desc, gte } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,7 +26,7 @@ export async function GET(req: NextRequest) {
   const [sessionCount] = await db
     .select({ c: count() })
     .from(behaviorSessions)
-    .where(gte(behaviorSessions.startTime, since));
+    .where(and(gte(behaviorSessions.startTime, since), isNull(behaviorSessions.softDeletedAt)));
 
   const [eventCount] = await db
     .select({ c: count() })
@@ -49,6 +51,16 @@ export async function GET(req: NextRequest) {
 
   const [surveyCount] = await db.select({ c: count() }).from(behaviorSurveys);
 
+  const [trackedLines] = await db
+    .select({ c: count() })
+    .from(behaviorPhoneTrackedNumbers)
+    .where(eq(behaviorPhoneTrackedNumbers.active, true));
+
+  const [phoneCalls7d] = await db
+    .select({ c: count() })
+    .from(behaviorPhoneCallLogs)
+    .where(gte(behaviorPhoneCallLogs.loggedAt, since));
+
   return NextResponse.json({
     since: since.toISOString(),
     sessions7d: Number(sessionCount?.c ?? 0),
@@ -56,6 +68,8 @@ export async function GET(req: NextRequest) {
     replaySegments7d: Number(replayCount?.c ?? 0),
     heatmapPoints7d: Number(heatmapCount?.c ?? 0),
     surveysTotal: Number(surveyCount?.c ?? 0),
+    trackedPhoneLines: Number(trackedLines?.c ?? 0),
+    phoneCallLogs7d: Number(phoneCalls7d?.c ?? 0),
     latestFriction,
     note: "Tied to visitor_activity + CRM via optional ingest bridge (visitorId) and crmContactId on sessions.",
   });

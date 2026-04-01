@@ -36,6 +36,14 @@
     {
       "path": "/api/cron/behavior-friction",
       "schedule": "20 */6 * * *"
+    },
+    {
+      "path": "/api/cron/growth-engine",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/storage-retention",
+      "schedule": "30 5 * * *"
     }
   ]
 }

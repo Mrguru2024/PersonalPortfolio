@@ -66,7 +66,7 @@ export default function AdminAfnScoringPage() {
           <CardTitle>AFN scoring weights</CardTitle>
           <CardDescription>
             {isSuper ?
-              "Tunable multipliers for the matching / intelligence stack (Phase 12). Shape is a flat JSON object of numbers."
+              "Tunable multipliers for matching and profile intelligence. Shape is a flat JSON object of numbers."
             : "Advanced weights that tune how member signals affect matching. Incorrect values can skew results—edit carefully."}
           </CardDescription>
         </CardHeader>

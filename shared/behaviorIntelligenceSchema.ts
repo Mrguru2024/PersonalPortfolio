@@ -3,7 +3,8 @@
  * Complements visitor_activity + /api/track/visitor (lead events); stores richer behavioral payloads here.
  */
 import { pgTable, serial, text, timestamp, boolean, json, integer, real, index, uniqueIndex } from "drizzle-orm/pg-core";
-import { crmContacts } from "./crmSchema";
+import { crmContacts, growthExperiments } from "./crmSchema";
+import { aosAgencyProjects } from "./agencyOsSchema";
 
 /** Recorded visitor / session (distinct from CRM deals). Links optionally to CRM contact. */
 export const behaviorSessions = pgTable(
@@ -22,9 +23,19 @@ export const behaviorSessions = pgTable(
     sourceJson: json("source_json").$type<Record<string, unknown>>(),
     converted: boolean("converted").default(false).notNull(),
     optOut: boolean("opt_out").default(false).notNull(),
+    /** Exempt from automatic retention sweep (Ascendra OS storage policy). */
+    retentionImportant: boolean("retention_important").default(false).notNull(),
+    /** Long-term / legal hold–style flag — exempt from auto soft-delete. */
+    retentionArchived: boolean("retention_archived").default(false).notNull(),
+    /** Set by retention cron; row hidden from admin lists until restored (within grace) or hard-deleted. */
+    softDeletedAt: timestamp("soft_deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("behavior_sessions_session_id_uidx").on(t.sessionId), index("behavior_sessions_crm_idx").on(t.crmContactId)],
+  (t) => [
+    uniqueIndex("behavior_sessions_session_id_uidx").on(t.sessionId),
+    index("behavior_sessions_crm_idx").on(t.crmContactId),
+    index("behavior_sessions_soft_deleted_idx").on(t.softDeletedAt),
+  ],
 );
 
 export const behaviorEvents = pgTable(
@@ -144,9 +155,186 @@ export const behaviorUserTestObservations = pgTable(
   (t) => [index("behavior_uto_campaign_idx").on(t.campaignId)],
 );
 
+/**
+ * Admin-defined capture rules: path prefixes, replay/heatmap toggles, per-session caps, optional date window.
+ * When at least one row is active and in window, the public tracker scopes capture to matching paths only.
+ */
+export const behaviorWatchTargets = pgTable(
+  "behavior_watch_targets",
+  {
+    id: serial("id").primaryKey(),
+    businessId: text("business_id"),
+    name: text("name").notNull(),
+    scopeType: text("scope_type").notNull().default("path_prefix"),
+    fullUrlPrefix: text("full_url_prefix"),
+    aosAgencyProjectId: integer("aos_agency_project_id").references(() => aosAgencyProjects.id, {
+      onDelete: "set null",
+    }),
+    /** URL path prefix (e.g. `/pricing`) — always used for heatmap/replay SQL on this property. */
+    pathPattern: text("path_pattern").notNull(),
+    metadataJson: json("metadata_json").$type<Record<string, unknown>>().notNull().default({}),
+    active: boolean("active").default(true).notNull(),
+    recordReplay: boolean("record_replay").default(true).notNull(),
+    recordHeatmap: boolean("record_heatmap").default(true).notNull(),
+    /** Cap session recording length (minutes). Null = default 30. */
+    maxSessionRecordingMinutes: integer("max_session_recording_minutes"),
+    collectFrom: timestamp("collect_from"),
+    collectUntil: timestamp("collect_until"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("behavior_watch_targets_active_idx").on(t.active),
+    index("behavior_watch_targets_business_idx").on(t.businessId),
+    index("behavior_watch_targets_aos_project_idx").on(t.aosAgencyProjectId),
+  ],
+);
+
+/** Saved rollups for a path or target over a period; kept until admin deletes the row. */
+export const behaviorWatchReports = pgTable(
+  "behavior_watch_reports",
+  {
+    id: serial("id").primaryKey(),
+    targetId: integer("target_id").references(() => behaviorWatchTargets.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    periodStart: timestamp("period_start").notNull(),
+    periodEnd: timestamp("period_end").notNull(),
+    summaryJson: json("summary_json").$type<Record<string, unknown>>().notNull(),
+    createdByUserId: integer("created_by_user_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("behavior_watch_reports_target_idx").on(t.targetId),
+    index("behavior_watch_reports_period_idx").on(t.periodEnd),
+  ],
+);
+
 export type BehaviorSession = typeof behaviorSessions.$inferSelect;
 export type BehaviorEvent = typeof behaviorEvents.$inferSelect;
 export type BehaviorReplaySegment = typeof behaviorReplaySegments.$inferSelect;
 export type BehaviorHeatmapEvent = typeof behaviorHeatmapEvents.$inferSelect;
 export type BehaviorSurvey = typeof behaviorSurveys.$inferSelect;
 export type BehaviorFrictionReport = typeof behaviorFrictionReports.$inferSelect;
+export type BehaviorWatchTarget = typeof behaviorWatchTargets.$inferSelect;
+export type BehaviorWatchReport = typeof behaviorWatchReports.$inferSelect;
+
+/**
+ * Tracked business phone numbers (e.g. Twilio) for call logging and optional recording playback in admin.
+ * Only calls touching these numbers are ingested from voice webhooks.
+ */
+export const behaviorPhoneTrackedNumbers = pgTable(
+  "behavior_phone_tracked_numbers",
+  {
+    id: serial("id").primaryKey(),
+    businessId: text("business_id"),
+    /** E.164 preferred, e.g. +15551234567 */
+    phoneE164: text("phone_e164").notNull(),
+    label: text("label").notNull().default("Tracked line"),
+    /** twilio | other — informs webhook field mapping */
+    provider: text("provider").notNull().default("twilio"),
+    /** Default policy: store recording URL when provider sends it (Twilio RecordingUrl on status callback). */
+    recordingEnabled: boolean("recording_enabled").notNull().default(true),
+    /** When false, skip writing call log rows for this number. */
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("behavior_phone_tracked_e164_uidx").on(t.phoneE164),
+    index("behavior_phone_tracked_active_idx").on(t.active),
+  ],
+);
+
+/**
+ * Call log for tracked numbers (populated from Twilio voice status callbacks when the To/From matches a tracked line).
+ */
+export const behaviorPhoneCallLogs = pgTable(
+  "behavior_phone_call_logs",
+  {
+    id: serial("id").primaryKey(),
+    trackedNumberId: integer("tracked_number_id").references(() => behaviorPhoneTrackedNumbers.id, {
+      onDelete: "set null",
+    }),
+    direction: text("direction").notNull(),
+    fromE164: text("from_e164").notNull(),
+    toE164: text("to_e164").notNull(),
+    callStatus: text("call_status"),
+    /** Seconds from carrier when available */
+    durationSeconds: integer("duration_seconds"),
+    recordingUrl: text("recording_url"),
+    recordingDurationSeconds: integer("recording_duration_seconds"),
+    /** Twilio CallSid — idempotent upsert */
+    externalCallSid: text("external_call_sid").notNull(),
+    crmContactId: integer("crm_contact_id").references(() => crmContacts.id, { onDelete: "set null" }),
+    metadataJson: json("metadata_json").$type<Record<string, unknown>>().notNull().default({}),
+    loggedAt: timestamp("logged_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("behavior_phone_call_sid_uidx").on(t.externalCallSid),
+    index("behavior_phone_call_tracked_idx").on(t.trackedNumberId),
+    index("behavior_phone_call_logged_idx").on(t.loggedAt),
+  ],
+);
+
+export type BehaviorPhoneTrackedNumber = typeof behaviorPhoneTrackedNumbers.$inferSelect;
+export type BehaviorPhoneCallLog = typeof behaviorPhoneCallLogs.$inferSelect;
+
+/**
+ * Ascendra Growth Intelligence — operational tasks created from diagnostics / replay / friction.
+ * Internal admin workflow; not shown on client Conversion Diagnostics unless explicitly shared.
+ */
+export const growthInsightTasks = pgTable(
+  "growth_insight_tasks",
+  {
+    id: serial("id").primaryKey(),
+    businessId: text("business_id"),
+    title: text("title").notNull(),
+    body: text("body"),
+    status: text("status").notNull().default("open"),
+    priority: text("priority").notNull().default("medium"),
+    /** When true, task appears in the client portal for valid `clientCrmAccountId` (never without account scope). */
+    visibleToClient: boolean("visible_to_client").notNull().default(false),
+    /** CRM account whose portal users may see this task when `visibleToClient` is true. */
+    clientCrmAccountId: integer("client_crm_account_id"),
+    assigneeUserId: integer("assignee_user_id"),
+    createdByUserId: integer("created_by_user_id"),
+    evidenceJson: json("evidence_json").$type<Record<string, unknown>>().notNull().default({}),
+    pagePath: text("page_path"),
+    behaviorSessionKey: text("behavior_session_key"),
+    surveyId: integer("survey_id"),
+    heatmapPage: text("heatmap_page"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("growth_insight_tasks_status_idx").on(t.status),
+    index("growth_insight_tasks_business_idx").on(t.businessId),
+  ],
+);
+
+/** Links a task to Ascendra Experimentation Engine (AEE) experiments — pre/post metrics are advisory until stats engine exists. */
+export const growthInsightExperimentLinks = pgTable(
+  "growth_insight_experiment_links",
+  {
+    id: serial("id").primaryKey(),
+    insightTaskId: integer("insight_task_id")
+      .notNull()
+      .references(() => growthInsightTasks.id, { onDelete: "cascade" }),
+    growthExperimentId: integer("growth_experiment_id").references(() => growthExperiments.id, {
+      onDelete: "set null",
+    }),
+    experimentKey: text("experiment_key"),
+    variantNotes: text("variant_notes"),
+    preMetricsJson: json("pre_metrics_json").$type<Record<string, unknown>>(),
+    postMetricsJson: json("post_metrics_json").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("growth_insight_exp_links_task_idx").on(t.insightTaskId),
+    index("growth_insight_exp_links_exp_idx").on(t.growthExperimentId),
+  ],
+);
+
+export type GrowthInsightTask = typeof growthInsightTasks.$inferSelect;
+export type GrowthInsightExperimentLink = typeof growthInsightExperimentLinks.$inferSelect;

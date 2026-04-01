@@ -146,7 +146,7 @@ export async function computeRevenueOpsFinanceSnapshot(
   const impliedNetCents = primaryRevenueCents - totalCostCents;
 
   const notes: string[] = [
-    "Primary revenue uses paid client invoices in the window plus manual ledger revenue. Stripe timeline is shown separately and may duplicate invoice totals once webhooks include amounts.",
+    "Reported revenue combines paid client invoices in the window plus manual ledger revenue. Stripe timeline is shown separately and may duplicate invoice totals once webhooks include amounts.",
     "Internal costs prorate your monthly operating model across the reporting window — not a cash ledger by itself.",
     "Bank sync: record movements in Finance settings ledger (manual or CSV import) until a direct feed exists.",
   ];

@@ -4,6 +4,7 @@ import { storage } from "@server/storage";
 import { logActivity } from "@server/services/crmFoundationService";
 import { markMilestonePaidByStripeInvoiceId } from "@server/services/serviceAgreementService";
 import { upsertRetainerFromStripeSubscription } from "@server/services/retainerSubscriptionService";
+import { recordGrowthRevenueFromStripeInvoicePaid } from "@server/services/growthEngine/stripeInvoiceRevenue";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -100,6 +101,15 @@ export async function POST(req: NextRequest) {
         if (contact && contact.status === "new") {
           await storage.updateCrmContact(contactId, { status: "contacted", lastContactedAt: new Date() });
         }
+      }
+
+      try {
+        const rev = await recordGrowthRevenueFromStripeInvoicePaid(invoice);
+        if (rev.created) {
+          console.info("[stripe webhook] growth_revenue_events", { stripeInvoiceId: invoice.id, id: rev.id });
+        }
+      } catch (revErr) {
+        console.error("[stripe webhook] growth revenue event", revErr);
       }
     }
 

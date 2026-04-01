@@ -172,6 +172,8 @@ export const siteOffers = pgTable("site_offers", {
   name: text("name").notNull(),
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
+  /** Optional `offer_engine_offer_templates.slug` — merges public pricing snapshot into GET /api/offers/[slug]. */
+  offerEngineTemplateSlug: text("offer_engine_template_slug"),
   sections: json("sections").$type<Record<string, unknown>>().notNull(),
   /** Optional content grading (SEO, design, copy). Set by admin "Grade content" action. */
   grading: json("grading").$type<OfferContentGrading | null>(),
@@ -203,6 +205,10 @@ export const funnelContentAssets = pgTable("funnel_content_assets", {
   leadMagnetSlug: text("lead_magnet_slug"),
   /** Where to show: [{ pagePath, sectionId }, ...]. pagePath e.g. /digital-growth-audit; sectionId e.g. hero, lead_magnet_download */
   placements: json("placements").$type<Array<{ pagePath: string; sectionId: string }>>().default([]),
+  /** Exempt from automatic funnel asset retention (Ascendra OS storage policy). */
+  retentionImportant: boolean("retention_important").default(false).notNull(),
+  retentionArchived: boolean("retention_archived").default(false).notNull(),
+  softDeletedAt: timestamp("soft_deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1009,6 +1015,7 @@ export * from "./ascendraIntelligenceSchema";
 export * from "./amieSchema";
 export * from "./experimentationEngineSchema";
 export * from "./serviceAgreementSchema";
+export * from "./growthEngineSchema";
 export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
 export * from "./offerEngineSchema";

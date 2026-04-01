@@ -5,6 +5,14 @@
  */
 
 import { z } from "zod";
+import {
+  MARKETING_CTA_APPLY_GUIDED_PROGRAM,
+  MARKETING_CTA_BOOK_STRATEGY_CALL,
+  MARKETING_CTA_CONTACT_GET_STARTED,
+  MARKETING_CTA_EMAIL_US,
+  MARKETING_CTA_OPEN_FREE_TOOLS,
+  MARKETING_CTA_RUN_MARKET_SCORE,
+} from "@shared/marketingCtaCopy";
 
 export const ASCENDRA_OFFER_TIERS = ["DFY", "DWY", "DIY"] as const;
 export type AscendraOfferTier = (typeof ASCENDRA_OFFER_TIERS)[number];
@@ -50,8 +58,8 @@ export const ASCENDRA_OFFER_STACK: Record<AscendraOfferTier, AscendraOfferTierDe
     riskReversalSummary:
       "Scope, milestones, and revision limits are defined in writing before kickoff. We do not promise specific lead counts or revenue outcomes—results depend on your market, offer, budget, and follow-up.",
     ctas: [
-      { label: "Book strategy call", href: "/strategy-call", variant: "primary" },
-      { label: "Start system setup", href: "/contact", variant: "secondary" },
+      { label: MARKETING_CTA_BOOK_STRATEGY_CALL, href: "/strategy-call", variant: "primary" },
+      { label: MARKETING_CTA_CONTACT_GET_STARTED, href: "/contact", variant: "secondary" },
     ],
     illustrativeJobsPerMonthRange: [5, 15],
     roiFramingExample:
@@ -89,8 +97,8 @@ export const ASCENDRA_OFFER_STACK: Record<AscendraOfferTier, AscendraOfferTierDe
     riskReversalSummary:
       "Free tools are educational only—you remain responsible for implementation, compliance, and business decisions.",
     ctas: [
-      { label: "Open free growth tools", href: "/free-growth-tools", variant: "primary" },
-      { label: "Try market score", href: "/market-score", variant: "secondary" },
+      { label: MARKETING_CTA_OPEN_FREE_TOOLS, href: "/free-growth-tools", variant: "primary" },
+      { label: MARKETING_CTA_RUN_MARKET_SCORE, href: "/market-score", variant: "secondary" },
     ],
     illustrativeJobsPerMonthRange: [1, 5],
     roiFramingExample:

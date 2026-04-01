@@ -1,4 +1,5 @@
-"use client";
+import { loadGrowthPlatformEnginePricing } from "@server/services/growthPlatformOfferPricing";
+import { GrowthPlatformRecommendationClient } from "./GrowthPlatformRecommendationClient";
 
 import { useMemo, useState, Suspense } from "react";
 import Link from "next/link";
@@ -166,4 +167,7 @@ export default function GrowthPlatformRecommendationPage() {
       <RecommendationInner />
     </Suspense>
   );
+export default async function GrowthPlatformRecommendationPage() {
+  const enginePricing = await loadGrowthPlatformEnginePricing();
+  return <GrowthPlatformRecommendationClient enginePricing={enginePricing} />;
 }

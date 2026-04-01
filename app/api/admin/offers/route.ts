@@ -31,7 +31,17 @@ export async function POST(req: NextRequest) {
     const metaTitle = body.metaTitle ?? null;
     const metaDescription = body.metaDescription ?? null;
     const sections = body.sections != null && typeof body.sections === "object" ? body.sections as Record<string, unknown> : {};
-    const offer = await storage.setSiteOffer(slug, { name, metaTitle, metaDescription, sections });
+    const offerEngineTemplateSlug =
+      typeof body.offerEngineTemplateSlug === "string" && body.offerEngineTemplateSlug.trim() ?
+        body.offerEngineTemplateSlug.trim().toLowerCase()
+      : null;
+    const offer = await storage.setSiteOffer(slug, {
+      name,
+      metaTitle,
+      metaDescription,
+      offerEngineTemplateSlug,
+      sections,
+    });
     return NextResponse.json(offer);
   } catch (error: unknown) {
     console.error("Offers POST error:", error);

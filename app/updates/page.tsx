@@ -11,7 +11,16 @@ interface ChangelogEntry {
   date: string;
   title: string;
   description: string;
+  category: "client_project" | "ascendra_innovation" | "site_update" | "market_update";
+  factChecked: boolean;
 }
+
+const CATEGORY_LABELS: Record<ChangelogEntry["category"], string> = {
+  client_project: "Client project update",
+  ascendra_innovation: "Ascendra innovation update",
+  site_update: "Site update",
+  market_update: "Market update",
+};
 
 export default function UpdatesPage() {
   const { data, isLoading, error } = useQuery<{ entries: ChangelogEntry[] }>({
@@ -31,10 +40,10 @@ export default function UpdatesPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-violet-500" />
-          Project updates
+          Relevant updates
         </h1>
         <p className="text-muted-foreground">
-          Recent changes and improvements, in plain language—no technical jargon.
+          Fact-checked client project, Ascendra innovation, site, and market updates.
         </p>
       </div>
 
@@ -63,6 +72,14 @@ export default function UpdatesPage() {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-1">
                   <Calendar className="h-3.5 w-3.5" />
                   {format(new Date(entry.date), "PPP")}
+                  <span aria-hidden>•</span>
+                  <span>{CATEGORY_LABELS[entry.category]}</span>
+                  {entry.factChecked ? (
+                    <>
+                      <span aria-hidden>•</span>
+                      <span>Fact checked</span>
+                    </>
+                  ) : null}
                 </div>
                 <CardTitle className="text-base sm:text-lg">{entry.title}</CardTitle>
                 <CardDescription className="text-sm text-foreground/80">

@@ -21,7 +21,7 @@ export interface GrowthOsAdminShellProps {
 }
 
 /**
- * Phase 1: wraps Growth OS admin routes — approved platform admins only.
+ * Wraps Growth OS admin routes — approved platform admins only.
  * Uses the same gate as other admin pages (isAdmin + adminApproved).
  */
 export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
@@ -62,7 +62,7 @@ export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
           </Button>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="text-xs">
-              Growth OS · Phase 1
+              Growth OS
             </Badge>
             <Badge variant="outline" className="text-xs">
               {coarseRole === "ADMIN"

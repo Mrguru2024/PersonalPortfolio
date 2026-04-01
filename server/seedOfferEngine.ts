@@ -221,6 +221,7 @@ export async function seedOfferEngineStarters(): Promise<void> {
       copyBlocksJson: {},
       scoreCacheJson: null,
       warningsJson: null,
+      pricingPackageJson: null,
       updatedAt: new Date(),
     };
 

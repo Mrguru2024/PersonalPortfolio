@@ -62,11 +62,19 @@ export function GrowthSystemClient({
         <Button variant="ghost" size="sm" className="w-fit -ml-2 text-muted-foreground" asChild>
           <Link href="/dashboard">← Back to dashboard</Link>
         </Button>
-        {focusSection ?
-          <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
-            <Link href="/growth-system">View full growth system</Link>
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          <Button variant="outline" size="sm" className="w-fit shrink-0 border-emerald-500/40" asChild>
+            <Link href="/growth-system/conversion-diagnostics">Conversion Diagnostics</Link>
           </Button>
-        : null}
+          <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
+            <Link href="/growth-system/improvements">Improvements</Link>
+          </Button>
+          {focusSection ?
+            <Button variant="outline" size="sm" className="w-fit shrink-0" asChild>
+              <Link href="/growth-system">View full growth system</Link>
+            </Button>
+          : null}
+        </div>
       </div>
 
       {isLoading ?

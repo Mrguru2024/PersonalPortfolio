@@ -8,7 +8,7 @@ import { RecommendedNextStep } from "@/components/funnel/RecommendedNextStep";
 import { InsightsFromEcosystem } from "@/components/authority";
 import { getOneInsightForPage } from "@/lib/partnerFounders";
 import { TrackPageView } from "@/components/TrackPageView";
-import { DIGITAL_GROWTH_AUDIT_PATH, FREE_GROWTH_TOOLS_PATH } from "@/lib/funnelCtas";
+import { DIGITAL_GROWTH_AUDIT_PATH, FREE_GROWTH_TOOLS_PATH, SECONDARY_CTA } from "@/lib/funnelCtas";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 
@@ -146,7 +146,7 @@ export default function PpcLeadSystemPage() {
                 offerSlug="business-growth"
                 ctaText="See growth systems"
                 ctaHref="/services"
-                secondaryCtaText="Book a call"
+                secondaryCtaText={SECONDARY_CTA}
                 secondaryCtaHref="/strategy-call"
               />
             </section>

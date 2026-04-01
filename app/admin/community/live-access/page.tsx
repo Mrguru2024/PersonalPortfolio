@@ -82,7 +82,7 @@ export default function AdminAfnLiveAccessPage() {
           <CardTitle>Timeline Live access override</CardTitle>
           <CardDescription>
             {isSuper ?
-              "Phase 10 — set an admin tier for a member (e.g. featured) or clear to restore automatic scoring."
+              "Set an admin tier for a member (e.g. featured) or clear to restore automatic scoring."
             : "Set a spotlight tier for a member (for example featured) or clear it to restore automatic scoring."}
           </CardDescription>
         </CardHeader>

@@ -152,7 +152,7 @@ export default function RevenueOpsPage() {
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
-            title="Primary revenue"
+            title="Reported revenue"
             valueLabel={formatUsd(f.revenue.primaryRevenueCents)}
             subtitle="Paid invoices + manual ledger (window)"
           />
@@ -169,7 +169,7 @@ export default function RevenueOpsPage() {
           <MetricCard
             title="Implied net (window)"
             valueLabel={formatUsd(f.impliedNetCents)}
-            subtitle="Primary revenue − internal &amp; manual costs"
+            subtitle="Reported revenue minus costs in this window"
           />
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
@@ -207,7 +207,7 @@ export default function RevenueOpsPage() {
                 <span className="tabular-nums">{formatUsd(f.revenue.manualLedgerRevenueCents)}</span>
               </div>
               <div className="flex justify-between border-t border-border/60 pt-2 font-medium">
-                <span>Primary revenue</span>
+                <span>Total (window)</span>
                 <span className="tabular-nums">{formatUsd(f.revenue.primaryRevenueCents)}</span>
               </div>
               <div className="flex justify-between">

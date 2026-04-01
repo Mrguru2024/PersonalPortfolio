@@ -20,6 +20,7 @@ import type {
   ScoreResult,
   FunnelPathStep,
 } from "./offerEngineTypes";
+import type { AscendraPricingPackage } from "./ascendraPricingPackageTypes";
 
 /** Structured warnings + alignment flags computed on save/read. */
 export type OfferEngineWarningPayload = {
@@ -63,6 +64,7 @@ export const offerEngineOfferTemplates = pgTable("offer_engine_offer_templates",
   copyBlocksJson: json("copy_blocks_json").$type<OfferCopyBlocks>().notNull().default({}),
   scoreCacheJson: json("score_cache_json").$type<ScoreResult | null>(),
   warningsJson: json("warnings_json").$type<OfferEngineWarningPayload | null>(),
+  pricingPackageJson: json("pricing_package_json").$type<AscendraPricingPackage | null>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
