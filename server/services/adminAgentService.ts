@@ -155,7 +155,14 @@ const NAV_INTENTS: { keywords: string[]; action: AgentAction }[] = [
   { keywords: ["agency os", "agency operating system"], action: { type: "open_agency_os", url: "/admin/agency-os" } },
   { keywords: ["paid growth admin", "ppc campaigns admin"], action: { type: "open_paid_growth", url: "/admin/paid-growth" } },
   {
-    keywords: ["behavior intelligence", "friction report", "heatmap admin"],
+    keywords: [
+      "behavior intelligence",
+      "ascendra growth intelligence",
+      "growth intelligence",
+      "conversion diagnostics admin",
+      "friction report",
+      "heatmap admin",
+    ],
     action: { type: "open_behavior_intelligence", url: "/admin/behavior-intelligence" },
   },
   {

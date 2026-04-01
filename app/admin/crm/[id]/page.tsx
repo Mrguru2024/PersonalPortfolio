@@ -1360,7 +1360,7 @@ export default function CrmLeadProfilePage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex flex-nowrap overflow-x-auto overflow-y-hidden gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
+          <TabsList className="flex w-full flex-wrap gap-1 p-1.5 min-h-[44px] rounded-lg [&>button]:shrink-0 [&>button]:min-h-[40px]">
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="meetings">Meetings</TabsTrigger>
             <TabsTrigger value="tasks" id="tasks">Tasks</TabsTrigger>

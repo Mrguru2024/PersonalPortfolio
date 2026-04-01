@@ -108,7 +108,7 @@ export function SchedulerAdminNav() {
 
   return (
     <nav
-      className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-4 mb-6 overflow-x-auto"
+      className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-4 mb-6"
       aria-label="Admin navigation"
     >
       {ALL_ITEMS.map((item, index) => {

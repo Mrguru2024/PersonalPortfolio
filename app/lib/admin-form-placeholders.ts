@@ -4,7 +4,7 @@ export const ADMIN_PLACEHOLDERS = {
   websiteUrl: "https://example.com",
   industry: "e.g. SaaS, local services, healthcare",
   accountNotes: "Internal summary — your team sees this on the account in CRM.",
-  announcementTitle: "e.g. Phase 2 kickoff — new timeline",
+  announcementTitle: "e.g. Q2 kickoff — new timeline",
   announcementBody:
     "Short, friendly update. Clients see this text on their dashboard — avoid internal jargon.",
   announcementExpires: "Leave empty to keep the update until you remove it.",

@@ -2,13 +2,27 @@
 
 import Link from "next/link";
 import { ASCENDRA_OFFER_STACK, type AscendraOfferTier, formatUsdRange } from "@shared/ascendraOfferStack";
+import type { PublicOfferPricingSnapshot } from "@shared/publicOfferPricingSnapshot";
+import { formatUsdPair } from "@shared/publicOfferPricingSnapshot";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const ORDER: AscendraOfferTier[] = ["DFY", "DWY", "DIY"];
 
-export function OfferStackTierCards({ highlightTier }: { highlightTier?: AscendraOfferTier | null }) {
+function formatDollars(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return `$${Math.round(n).toLocaleString("en-US")}`;
+}
+
+export function OfferStackTierCards({
+  highlightTier,
+  enginePricing,
+}: {
+  highlightTier?: AscendraOfferTier | null;
+  /** When set (e.g. env-linked offer template), overrides displayed pricing bands. */
+  enginePricing?: PublicOfferPricingSnapshot | null;
+}) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {ORDER.map((tier) => {
@@ -30,9 +44,6 @@ export function OfferStackTierCards({ highlightTier }: { highlightTier?: Ascendr
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={tier === "DFY" ? "default" : "secondary"}>{o.tier}</Badge>
-                {tier === "DFY" ?
-                  <span className="text-xs text-muted-foreground">Primary revenue</span>
-                : null}
               </div>
               <CardTitle className="text-lg">{o.title}</CardTitle>
               <CardDescription>{o.headlineOutcome}</CardDescription>
@@ -52,32 +63,65 @@ export function OfferStackTierCards({ highlightTier }: { highlightTier?: Ascendr
               </div>
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pricing (ranges)</p>
-                {o.pricing.setup ?
+                {enginePricing && tier === "DFY" ?
+                  <p>
+                    Setup: {formatUsdPair(enginePricing.setupPriceRangeUsd)} · Monthly:{" "}
+                    {formatUsdPair(enginePricing.monthlyPriceRangeUsd)}
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      Suggested: {formatDollars(enginePricing.suggestedSetupUsd)} setup ·{" "}
+                      {formatDollars(enginePricing.suggestedMonthlyUsd)}/mo
+                    </span>
+                  </p>
+                : enginePricing && tier === "DWY" ?
+                  <p>
+                    Program: {formatUsdPair(enginePricing.dwyPriceRangeUsd)}
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      Suggested: {formatDollars(enginePricing.suggestedDwyOneTimeUsd)}
+                    </span>
+                  </p>
+                : enginePricing && tier === "DIY" ?
+                  <p>
+                    {enginePricing.diyPriceRangeUsd && enginePricing.diyPriceRangeUsd[1] === 0 ?
+                      <span>Free entry</span>
+                    : <>
+                        Range: {formatUsdPair(enginePricing.diyPriceRangeUsd)} · Suggested:{" "}
+                        {formatDollars(enginePricing.suggestedDiyUsd)}
+                      </>}
+                  </p>
+                : o.pricing.setup ?
                   <p>
                     Setup: {formatUsdRange(o.pricing.setup)} · Monthly: {formatUsdRange(o.pricing.monthly)}
                   </p>
                 : null}
-                {o.pricing.program ?
+                {!enginePricing && o.pricing.program ?
                   <p>Program: {formatUsdRange(o.pricing.program)}</p>
                 : null}
-                {!o.pricing.setup && !o.pricing.program ?
+                {!enginePricing && !o.pricing.setup && !o.pricing.program ?
                   <p>{o.pricing.note}</p>
-                : (
+                : null}
+                {(enginePricing ||
+                  (!enginePricing && (o.pricing.setup || o.pricing.program))) &&
+                o.pricing.note ?
                   <p className="text-xs text-muted-foreground mt-1">{o.pricing.note}</p>
-                )}
+                : null}
               </div>
+              {enginePricing ?
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                  Live bands · template {enginePricing.templateSlug}
+                </p>
+              : null}
               <div className="rounded-md border border-amber-500/25 bg-amber-500/[0.06] p-3 text-xs leading-relaxed">
                 <strong className="text-foreground">Risk clarity:</strong> {o.riskReversalSummary}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2 sm:flex-row">
               {primary ?
-                <Button asChild className="w-full sm:flex-1" size="sm">
+                <Button asChild className="w-full sm:flex-1">
                   <Link href={primary.href}>{primary.label}</Link>
                 </Button>
               : null}
               {secondary ?
-                <Button asChild variant="outline" className="w-full sm:flex-1" size="sm">
+                <Button asChild variant="outline" className="w-full sm:flex-1">
                   <Link href={secondary.href}>{secondary.label}</Link>
                 </Button>
               : null}

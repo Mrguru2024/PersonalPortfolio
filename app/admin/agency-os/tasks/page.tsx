@@ -15,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import type { AosAgencyTask } from "@shared/schema";
+import { AdminDevOnly, useIsAdminSuperUser } from "@/components/admin/AdminDevOnly";
+import { cn } from "@/lib/utils";
 
 const VALUE_OPTS = [
   { id: "leads", label: "Leads" },
@@ -30,6 +32,7 @@ export default function AgencyOsTasksPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
+  const superAdmin = useIsAdminSuperUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectIdFilter = searchParams.get("projectId");
@@ -214,7 +217,11 @@ export default function AgencyOsTasksPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">New task</CardTitle>
-          <CardDescription>Creates a task in pending acceptance with assignment + HVD fields (validated).</CardDescription>
+          <CardDescription>
+            {superAdmin ?
+              "Creates a task in pending acceptance with assignment + HVD fields (validated)."
+            : "Creates a task for someone to accept. They confirm understanding before work starts."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 max-w-xl">
           <div className="space-y-1.5">
@@ -226,7 +233,7 @@ export default function AgencyOsTasksPage() {
             <Input
               value={primaryHvd}
               onChange={(e) => setPrimaryHvd(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-              className="font-mono text-sm"
+              className={superAdmin ? "font-mono text-sm" : "text-sm"}
             />
           </div>
           <div className="space-y-2">
@@ -259,11 +266,19 @@ export default function AgencyOsTasksPage() {
             <Label>Description (optional)</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Assignee user ID</Label>
-            <Input value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className="font-mono text-sm" />
-            <p className="text-xs text-muted-foreground">Defaults to your user id; change to route to another admin.</p>
-          </div>
+          <AdminDevOnly
+            fallback={
+              <p className="text-xs text-muted-foreground">
+                New tasks assign to you. To route to another admin, ask a super admin to create the task or adjust assignment.
+              </p>
+            }
+          >
+            <div className="space-y-1.5">
+              <Label>Assignee user ID</Label>
+              <Input value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className="font-mono text-sm" />
+              <p className="text-xs text-muted-foreground">Defaults to your user id; change to route to another admin.</p>
+            </div>
+          </AdminDevOnly>
           <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
             {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create task"}
           </Button>
@@ -288,8 +303,17 @@ export default function AgencyOsTasksPage() {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-medium">{t.title}</p>
-                  <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                    HVD: {t.primaryHvdSlug} · assignee #{t.assigneeUserId}
+                  <p className={cn("text-xs text-muted-foreground mt-0.5", superAdmin && "font-mono")}>
+                    {superAdmin ?
+                      <>HVD: {t.primaryHvdSlug} · assignee #{t.assigneeUserId}</>
+                    : <>
+                        Step: {t.primaryHvdSlug}
+                        {typeof t.assigneeUserId === "number" &&
+                        typeof myId === "number" &&
+                        t.assigneeUserId === myId ?
+                          " · Assigned to you"
+                        : " · Assigned to a teammate"}
+                      </>}
                   </p>
                 </div>
                 <Badge variant={t.status === "pending_acceptance" ? "secondary" : "outline"}>{t.status}</Badge>
@@ -365,9 +389,13 @@ export default function AgencyOsTasksPage() {
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground rounded-md border border-border/80 bg-muted/30 px-3 py-2">
-                      Only assignee user #{t.assigneeUserId} can respond while strict mode is on. Set{" "}
-                      <code className="text-xs">AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1</code> in the environment so any
-                      approved admin can accept on their behalf.
+                      {superAdmin ?
+                        <>
+                          Only assignee user #{t.assigneeUserId} can respond while strict mode is on. Set{" "}
+                          <code className="text-xs">AGENCY_OS_ADMIN_TASK_ACCEPTANCE=1</code> in the environment so any
+                          approved admin can accept on their behalf.
+                        </>
+                      : "Only the assigned teammate can respond while strict mode is on. A super admin can allow broader acceptance in server settings."}
                     </p>
                   )}
                 </div>

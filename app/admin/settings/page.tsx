@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { dispatchReadAloudStatusRefresh } from "@/lib/readAloudRefresh";
 import { useToast } from "@/hooks/use-toast";
 import { FieldHint } from "@/lib/field-hint";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
@@ -245,6 +246,7 @@ export default function AdminSettingsPage() {
       setLocal(data);
       queryClient.setQueryData(["/api/admin/settings"], data);
       void queryClient.invalidateQueries({ queryKey: ["/api/admin/read-aloud/status"] });
+      dispatchReadAloudStatusRefresh();
       toast({ title: "Settings saved" });
     },
     onError: () => {

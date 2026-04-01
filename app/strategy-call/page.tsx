@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
@@ -168,7 +169,7 @@ export default function StrategyCallPage() {
               <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <h1 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Book a free call
+              {MARKETING_CTA_BOOK_STRATEGY_CALL}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
               Share a few details. We’ll reach out to schedule a call and align on your goals—no pressure, no obligation.
@@ -205,7 +206,7 @@ export default function StrategyCallPage() {
 
           <Card className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full">
             <CardHeader className="px-4 sm:px-6 md:px-8">
-              <CardTitle className="text-lg sm:text-xl">Book your free call</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Book your call</CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 All fields help us prepare for the conversation.
               </CardDescription>

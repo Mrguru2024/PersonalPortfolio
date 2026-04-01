@@ -61,7 +61,9 @@ export default function OfferEngineHubPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Ascendra Offer Engine</h1>
             <p className="text-muted-foreground mt-1 max-w-2xl">
-              Offers, lead magnets, and conversion strategy — persona-first, outcome-first. Internal admin only.
+              Offers, lead magnets, and conversion strategy — persona-first, outcome-first. Each offer template has a{" "}
+              <strong className="font-medium text-foreground">Pricing &amp; value</strong> tab for DFY/DWY/DIY bands,
+              value stack, legal gates, Stripe IDs, and exports. Internal admin only.
               Distinct from public{" "}
               <Link href="/admin/offers" className="underline-offset-2 hover:underline">
                 site offers

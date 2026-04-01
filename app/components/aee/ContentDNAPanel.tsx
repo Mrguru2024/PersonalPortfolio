@@ -8,7 +8,7 @@ export interface ContentDNAPanelProps {
 }
 
 /**
- * Winning pattern detection (hooks, CTA styles, angles) ties to Content Studio + insight runs — Phase 4.
+ * Winning pattern detection (hooks, CTA styles, angles) ties to Content Studio + insight runs.
  */
 export function ContentDNAPanel({ className }: ContentDNAPanelProps) {
   return (

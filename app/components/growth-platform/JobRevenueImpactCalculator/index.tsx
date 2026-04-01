@@ -21,15 +21,26 @@ export interface JobRevenueImpactCalculatorProps {
   /** When true, hide the “see recommendation” CTA (e.g. if embedded on recommendation page). */
   hideRecommendationCta?: boolean;
   className?: string;
+  /** Pre-fill from linked Offer Engine template inputs (e.g. /growth-platform snapshot). */
+  calculatorDefaults?: {
+    averageJobValue?: number | null;
+    jobsPerMonthGoal?: number | null;
+  };
+}
+
+function initialField(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n) || n < 0) return "";
+  return String(Math.round(n));
 }
 
 export function JobRevenueImpactCalculator({
   hideRecommendationCta = false,
   className,
+  calculatorDefaults,
 }: JobRevenueImpactCalculatorProps) {
   const { track } = useVisitorTracking();
-  const [avgJob, setAvgJob] = useState("");
-  const [goalJobs, setGoalJobs] = useState("");
+  const [avgJob, setAvgJob] = useState(() => initialField(calculatorDefaults?.averageJobValue));
+  const [goalJobs, setGoalJobs] = useState(() => initialField(calculatorDefaults?.jobsPerMonthGoal));
   const [leads, setLeads] = useState("");
   const [closePct, setClosePct] = useState("25");
   const [ran, setRan] = useState(false);
@@ -191,7 +202,7 @@ export function JobRevenueImpactCalculator({
             {!hideRecommendationCta && tier && (
               <Button asChild className="w-full sm:w-auto">
                 <Link href={recommendationHref}>
-                  See system recommendation ({tier})
+                  View your recommendation
                   <ArrowRight className="h-4 w-4 ml-2" aria-hidden />
                 </Link>
               </Button>

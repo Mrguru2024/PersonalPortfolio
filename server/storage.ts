@@ -208,7 +208,16 @@ export interface IStorage {
 
   getSiteOffer(slug: string): Promise<SiteOffer | undefined>;
   listSiteOffers(): Promise<SiteOffer[]>;
-  setSiteOffer(slug: string, data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }): Promise<SiteOffer>;
+  setSiteOffer(
+    slug: string,
+    data: {
+      name: string;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      offerEngineTemplateSlug?: string | null;
+      sections: Record<string, unknown>;
+    },
+  ): Promise<SiteOffer>;
   updateSiteOfferGrading(slug: string, grading: import("@shared/schema").OfferContentGrading): Promise<SiteOffer>;
 
   listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]>;
@@ -948,8 +957,20 @@ export class DatabaseStorage implements IStorage {
 
   async setSiteOffer(
     slug: string,
-    data: { name: string; metaTitle?: string | null; metaDescription?: string | null; sections: Record<string, unknown> }
+    data: {
+      name: string;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      offerEngineTemplateSlug?: string | null;
+      sections: Record<string, unknown>;
+    },
   ): Promise<SiteOffer> {
+    const templateSlug =
+      data.offerEngineTemplateSlug === undefined
+        ? undefined
+        : data.offerEngineTemplateSlug === null || String(data.offerEngineTemplateSlug).trim() === ""
+          ? null
+          : String(data.offerEngineTemplateSlug).trim().toLowerCase();
     const [row] = await db
       .insert(siteOffers)
       .values({
@@ -957,6 +978,7 @@ export class DatabaseStorage implements IStorage {
         name: data.name,
         metaTitle: data.metaTitle ?? null,
         metaDescription: data.metaDescription ?? null,
+        offerEngineTemplateSlug: templateSlug ?? null,
         sections: data.sections,
         updatedAt: new Date(),
       })
@@ -966,6 +988,7 @@ export class DatabaseStorage implements IStorage {
           name: data.name,
           metaTitle: data.metaTitle ?? null,
           metaDescription: data.metaDescription ?? null,
+          ...(templateSlug !== undefined ? { offerEngineTemplateSlug: templateSlug } : {}),
           sections: data.sections,
           updatedAt: new Date(),
         },
@@ -985,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listFunnelContentAssets(filters?: { status?: string; leadMagnetSlug?: string }): Promise<FunnelContentAsset[]> {
-    const conditions: ReturnType<typeof eq>[] = [];
+    const conditions: SQL[] = [isNull(funnelContentAssets.softDeletedAt)];
     if (filters?.status) conditions.push(eq(funnelContentAssets.status, filters.status));
     if (filters?.leadMagnetSlug) conditions.push(eq(funnelContentAssets.leadMagnetSlug, filters.leadMagnetSlug));
     const whereClause = conditions.length ? and(...conditions) : undefined;
@@ -1026,7 +1049,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFunnelContentAssetsByPlacement(pagePath: string, sectionId: string): Promise<FunnelContentAsset[]> {
-    const rows = await db.select().from(funnelContentAssets).where(eq(funnelContentAssets.status, "published"));
+    const rows = await db
+      .select()
+      .from(funnelContentAssets)
+      .where(and(eq(funnelContentAssets.status, "published"), isNull(funnelContentAssets.softDeletedAt)));
     return rows.filter((r) => {
       if (r.accessLevel === "registered") return false;
       const placements = (r.placements ?? []) as Array<{ pagePath: string; sectionId: string }>;
@@ -1039,7 +1065,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(funnelContentAssets)
       .where(
-        and(eq(funnelContentAssets.status, "published"), eq(funnelContentAssets.accessLevel, "registered")),
+        and(
+          eq(funnelContentAssets.status, "published"),
+          eq(funnelContentAssets.accessLevel, "registered"),
+          isNull(funnelContentAssets.softDeletedAt),
+        ),
       )
       .orderBy(desc(funnelContentAssets.updatedAt));
   }

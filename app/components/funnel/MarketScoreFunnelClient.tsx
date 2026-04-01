@@ -29,6 +29,7 @@ import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { TIMELINE_OPTIONS } from "@/lib/funnel-content";
 import { marketScoreFunnelBodySchema, type MarketScoreFunnelBody } from "@/lib/market-score/requestSchema";
 import { BOOK_CALL_HREF } from "@/lib/funnelCtas";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 import {
   Dialog,
   DialogContent,
@@ -110,7 +111,7 @@ function MarketScoreSnapshotCard({
           notes you can use on calls and campaigns.
         </p>
         <Button asChild size="lg" className="min-h-[48px] w-full sm:w-auto">
-          <Link href={BOOK_CALL_HREF}>Book strategy call</Link>
+          <Link href={BOOK_CALL_HREF}>{MARKETING_CTA_BOOK_STRATEGY_CALL}</Link>
         </Button>
       </div>
 

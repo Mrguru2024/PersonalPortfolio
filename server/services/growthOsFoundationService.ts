@@ -54,7 +54,7 @@ export const GOS_DEFAULT_MODULES: Array<{
   },
   {
     moduleKey: "gos_intelligence_phase3",
-    displayName: "Growth intelligence (Phase 3)",
+    displayName: "Growth intelligence",
     description: "AI content insights, research providers, dashboards, automation hooks.",
     defaultDataVisibility: "internal_only",
     minAdminAccessRole: "ADMIN",
@@ -72,18 +72,29 @@ export async function ensureGosDefaultModules(): Promise<void> {
   const existingKeys = await db.select({ key: gosModuleRegistry.moduleKey }).from(gosModuleRegistry);
   const have = new Set(existingKeys.map((r) => r.key));
   const missing = GOS_DEFAULT_MODULES.filter((m) => !have.has(m.moduleKey));
-  if (missing.length === 0) return;
+  if (missing.length > 0) {
+    await db.insert(gosModuleRegistry).values(
+      missing.map((m) => ({
+        moduleKey: m.moduleKey,
+        displayName: m.displayName,
+        description: m.description,
+        defaultDataVisibility: m.defaultDataVisibility,
+        minAdminAccessRole: m.minAdminAccessRole,
+        active: true,
+      })),
+    );
+  }
 
-  await db.insert(gosModuleRegistry).values(
-    missing.map((m) => ({
-      moduleKey: m.moduleKey,
-      displayName: m.displayName,
-      description: m.description,
-      defaultDataVisibility: m.defaultDataVisibility,
-      minAdminAccessRole: m.minAdminAccessRole,
-      active: true,
-    })),
-  );
+  const intel = GOS_DEFAULT_MODULES.find((m) => m.moduleKey === "gos_intelligence_phase3");
+  if (intel) {
+    await db
+      .update(gosModuleRegistry)
+      .set({
+        displayName: intel.displayName,
+        description: intel.description,
+      })
+      .where(eq(gosModuleRegistry.moduleKey, "gos_intelligence_phase3"));
+  }
 }
 
 export async function listGosModules() {

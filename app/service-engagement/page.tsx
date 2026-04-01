@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
-import { AscendraBehaviorMount } from "@/components/tracking/AscendraBehaviorMount";
 import { ASCENDRA_CORE_GUARANTEE_BODY, ASCENDRA_CORE_GUARANTEE_TITLE } from "@shared/ascendraCoreGuarantee";
 
 export const metadata: Metadata = buildMarketingMetadata({
@@ -54,7 +53,6 @@ const sections: { title: string; bullets: string[] }[] = [
 export default function ServiceEngagementPage() {
   return (
     <div className="min-h-screen bg-background">
-      <AscendraBehaviorMount />
       <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14 max-w-3xl space-y-10">
         <div
           className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100 dark:border-amber-400/35 dark:bg-amber-500/15"

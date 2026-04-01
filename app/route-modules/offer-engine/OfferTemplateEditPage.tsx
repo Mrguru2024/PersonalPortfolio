@@ -15,6 +15,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OfferPricingPackageTab } from "@/components/ascendra-offer-pricing/OfferPricingPackageTab";
+import type { AscendraPricingPackage } from "@shared/ascendraPricingPackageTypes";
 import {
   ASSET_STATUSES,
   ASSET_STATUS_LABELS,
@@ -152,6 +154,7 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
       perceivedOutcomeReview: draft.perceivedOutcomeReviewJson,
       funnelAlignment: draft.funnelAlignmentJson,
       copyBlocks: draft.copyBlocksJson,
+      pricingPackage: (draft.pricingPackageJson ?? null) as AscendraPricingPackage | null,
     });
   };
 
@@ -613,6 +616,22 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
           </Card>
         </TabsContent>
 
+        <TabsContent value="pricing" className="mt-4">
+          <OfferPricingPackageTab
+            offerId={id}
+            draft={{
+              id,
+              name: String(draft.name ?? ""),
+              slug: String(draft.slug ?? ""),
+              coreProblem: draft.coreProblem as string | null,
+              primaryPromise: draft.primaryPromise as string | null,
+              desiredOutcome: draft.desiredOutcome as string | null,
+            }}
+            pricingPackage={draft.pricingPackageJson as AscendraPricingPackage | null | undefined}
+            onChange={(pkg) => pushDraft({ pricingPackageJson: pkg })}
+          />
+        </TabsContent>
+
         <TabsContent value="publish" className="mt-4">
           <Card>
             <CardHeader>
@@ -652,6 +671,27 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
               <p className="text-sm text-muted-foreground">
                 Client-facing exposure is controlled here for future use; public site wiring stays separate from this template store.
               </p>
+              {draft.pricingPackageJson &&
+              typeof draft.pricingPackageJson === "object" &&
+              (draft.pricingPackageJson as { validationStatus?: string }).validationStatus === "publish_blocked" &&
+              (String(draft.visibility) === "live_public" ||
+                String(draft.visibility) === "admin_approved_client_facing") ? (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  Pricing package has <strong>publish blocked</strong> status. Lower visibility to internal-only or resolve
+                  validation on the Pricing &amp; value tab (or use documented admin override there).
+                </div>
+              ) : null}
+              {draft.pricingPackageJson &&
+              typeof draft.pricingPackageJson === "object" &&
+              (draft.pricingPackageJson as { computed?: { internalReadiness?: string } }).computed?.internalReadiness ===
+                "unvalidated" &&
+              (String(draft.visibility) === "live_public" ||
+                String(draft.visibility) === "admin_approved_client_facing") ? (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                  Internal readiness is <strong>unvalidated</strong>. Client-facing exposure is risky until internal gates
+                  are checked on the Pricing &amp; value tab.
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>

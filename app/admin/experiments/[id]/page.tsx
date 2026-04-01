@@ -291,7 +291,7 @@ export default function AdminExperimentDetailPage() {
         </CardHeader>
         <CardContent>
           {data.channelLinks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">None — add via API or admin form (Phase 2).</p>
+            <p className="text-sm text-muted-foreground">None — add via API or the admin form.</p>
           ) : (
             <ul className="text-sm space-y-1">
               {data.channelLinks.map((l) => (

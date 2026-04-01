@@ -22,11 +22,17 @@ export async function POST(req: NextRequest) {
   if (!question.trim()) {
     return NextResponse.json({ error: "question required" }, { status: 400 });
   }
+  const triggerConfigJson =
+    body?.triggerConfigJson != null && typeof body.triggerConfigJson === "object" && !Array.isArray(body.triggerConfigJson) ?
+      (body.triggerConfigJson as Record<string, unknown>)
+    : null;
+
   const row = await createSurvey({
     question,
     triggerType: typeof body?.triggerType === "string" ? body.triggerType : "time_based",
     businessId: typeof body?.businessId === "string" ? body.businessId : null,
     active: body?.active !== false,
+    triggerConfigJson,
   });
   return NextResponse.json(row);
 }

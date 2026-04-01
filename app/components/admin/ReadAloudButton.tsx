@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
+import { READ_ALOUD_STATUS_REFRESH_EVENT } from "@/lib/readAloudRefresh";
 import {
   DEFAULT_READ_ALOUD_PREFS,
   loadReadAloudPrefs,
@@ -64,9 +65,42 @@ export function ReadAloudButton({
   const [geminiTts, setGeminiTts] = useState(false);
   const [ttsResolved, setTtsResolved] = useState<ResolvedReadAloudTts | null>(null);
   const [neuralStatusLoaded, setNeuralStatusLoaded] = useState(false);
+  const [voicePanelOpen, setVoicePanelOpen] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+
+  type NeuralSnapshot = {
+    openaiTts: boolean;
+    geminiTts: boolean;
+    resolved: ResolvedReadAloudTts | null;
+  };
+
+  const fetchNeuralStatus = useCallback(async (): Promise<NeuralSnapshot> => {
+    const empty: NeuralSnapshot = { openaiTts: false, geminiTts: false, resolved: null };
+    try {
+      const res = await fetch("/api/admin/read-aloud/status", { credentials: "include" });
+      if (!res.ok) return empty;
+      const data = (await res.json()) as {
+        openaiTts?: boolean;
+        geminiTts?: boolean;
+        resolved?: ResolvedReadAloudTts;
+      };
+      const next: NeuralSnapshot = {
+        openaiTts: data.openaiTts === true,
+        geminiTts: data.geminiTts === true,
+        resolved: data.resolved ?? null,
+      };
+      setOpenaiTts(next.openaiTts);
+      setGeminiTts(next.geminiTts);
+      if (next.resolved) setTtsResolved(next.resolved);
+      setNeuralStatusLoaded(true);
+      return next;
+    } catch {
+      setNeuralStatusLoaded(true);
+      return empty;
+    }
+  }, []);
 
   useEffect(() => {
     setHasBrowserSpeech(typeof window !== "undefined" && "speechSynthesis" in window);
@@ -180,8 +214,9 @@ export function ReadAloudButton({
     window.speechSynthesis?.speak(utter);
   }, [prefs.browserVoiceUri, prefs.readingStyle, text, voices]);
 
-  const speakOpenAI = useCallback(async () => {
-    if (!openaiTts || !text.trim()) return;
+  const speakOpenAI = useCallback(async (availability?: boolean) => {
+    const ok = availability !== undefined ? availability : openaiTts;
+    if (!ok || !text.trim()) return;
     stop();
     setLastError(null);
     setSpeaking(true);
@@ -226,8 +261,9 @@ export function ReadAloudButton({
     }
   }, [openaiTts, prefs.openaiVoice, text, stop]);
 
-  const speakGemini = useCallback(async () => {
-    if (!geminiTts || !text.trim()) return;
+  const speakGemini = useCallback(async (availability?: boolean) => {
+    const ok = availability !== undefined ? availability : geminiTts;
+    if (!ok || !text.trim()) return;
     stop();
     setLastError(null);
     setSpeaking(true);
@@ -273,15 +309,40 @@ export function ReadAloudButton({
     }
   }, [geminiTts, prefs.geminiVoice, prefs.readingStyle, text, stop]);
 
-  const speak = useCallback(() => {
-    if (prefs.engine === "openai" && openaiTts) {
-      void speakOpenAI();
-    } else if (prefs.engine === "gemini" && geminiTts) {
-      void speakGemini();
-    } else {
-      speakBrowser();
+  const speak = useCallback(async () => {
+    if (speaking) {
+      stop();
+      return;
     }
-  }, [geminiTts, openaiTts, prefs.engine, speakBrowser, speakGemini, speakOpenAI]);
+    if (prefs.engine === "openai" || prefs.engine === "gemini") {
+      const s = await fetchNeuralStatus();
+      if (prefs.engine === "openai") {
+        if (!s.openaiTts) {
+          setLastError("OpenAI voice isn’t set up on the server yet. Use “This device” or ask your admin to add an API key.");
+          return;
+        }
+        await speakOpenAI(true);
+        return;
+      }
+      if (prefs.engine === "gemini") {
+        if (!s.geminiTts) {
+          setLastError("Gemini voice isn’t set up on the server yet. Use “This device” or add Gemini in Settings.");
+          return;
+        }
+        await speakGemini(true);
+        return;
+      }
+    }
+    speakBrowser();
+  }, [
+    speaking,
+    stop,
+    prefs.engine,
+    fetchNeuralStatus,
+    speakOpenAI,
+    speakGemini,
+    speakBrowser,
+  ]);
 
   useEffect(() => () => stop(), [stop]);
 
@@ -320,7 +381,7 @@ export function ReadAloudButton({
         size={size}
         variant={variant}
         className="gap-1.5"
-        onClick={() => (speaking ? stop() : speak())}
+        onClick={() => void speak()}
         aria-pressed={speaking}
         disabled={engineDisabled}
         title={
@@ -339,7 +400,13 @@ export function ReadAloudButton({
         {speaking ? "Stop" : label}
       </Button>
 
-      <Popover>
+      <Popover
+        open={voicePanelOpen}
+        onOpenChange={(open) => {
+          setVoicePanelOpen(open);
+          if (open) void fetchNeuralStatus();
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -359,7 +426,10 @@ export function ReadAloudButton({
               <RadioGroup
                 value={prefs.engine}
                 onValueChange={(v) =>
-                  updatePrefs({ engine: v === "openai" ? "openai" : "browser" })
+                  updatePrefs({
+                    engine:
+                      v === "openai" ? "openai" : v === "gemini" ? "gemini" : "browser",
+                  })
                 }
                 className="grid gap-2"
               >

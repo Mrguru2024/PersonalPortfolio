@@ -105,6 +105,7 @@ export default function AgreementSignPage() {
     <div className="min-h-screen bg-muted/30">
       <AscendraBehaviorMount />
       <div className="container max-w-3xl mx-auto px-3 py-6 space-y-5 fold:px-4 fold:py-8 sm:py-10 sm:space-y-6">
+      <div className="container max-w-3xl mx-auto px-4 py-10 space-y-6">
         <div className="flex flex-wrap gap-3 text-sm">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/">Home</Link>

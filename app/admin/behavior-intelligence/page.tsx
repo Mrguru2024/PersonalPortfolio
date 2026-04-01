@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Flame, Loader2, MapPin, MousePointer2, Video } from "lucide-react";
+import {
+  Activity,
+  ClipboardList,
+  Crosshair,
+  Database,
+  Flame,
+  LineChart,
+  Loader2,
+  MapPin,
+  MousePointer2,
+  Phone,
+  Users,
+  Video,
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +28,8 @@ type Overview = {
   replaySegments7d: number;
   heatmapPoints7d: number;
   surveysTotal: number;
+  trackedPhoneLines?: number;
+  phoneCallLogs7d?: number;
   latestFriction: Array<{
     id: number;
     page: string;
@@ -44,10 +59,15 @@ export default function BehaviorIntelligenceOverviewPage() {
   }
 
   if (isError || !data) {
-    return <p className="text-destructive text-sm">Could not load Behavior Intelligence overview.</p>;
+    return <p className="text-destructive text-sm">Could not load Ascendra Growth Intelligence overview.</p>;
   }
 
   const links = [
+    { href: "/admin/behavior-intelligence/conversion-diagnostics", label: "Conversion Diagnostics", icon: LineChart },
+    { href: "/admin/behavior-intelligence/insight-tasks", label: "Insight tasks", icon: ClipboardList },
+    { href: "/admin/behavior-intelligence/visitors", label: "Visitors", icon: Users },
+    { href: "/admin/storage-retention", label: "Storage & retention", icon: Database },
+    { href: "/admin/behavior-intelligence/watch", label: "Watch targets & reports", icon: Crosshair },
     { href: "/admin/behavior-intelligence/replays", label: "Session replays", icon: Video },
     { href: "/admin/behavior-intelligence/heatmaps", label: "Heatmaps", icon: MousePointer2 },
     { href: "/admin/behavior-intelligence/surveys", label: "Surveys", icon: MapPin },
@@ -58,10 +78,15 @@ export default function BehaviorIntelligenceOverviewPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Behavior Intelligence</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Ascendra Growth Intelligence</h1>
         <p className="text-muted-foreground text-sm max-w-3xl">
-          Session replay, heatmaps, surveys, and friction signals. Extends <code className="text-xs bg-muted px-1 rounded">visitor_activity</code>{" "}
-          without replacing it. Ingest: <code className="text-xs bg-muted px-1 rounded">POST /api/behavior/ingest</code>.
+          Session intelligence for operators: replay, heatmaps, surveys, friction, conversion diagnostics, and insight tasks.
+          Extends <code className="text-xs bg-muted px-1 rounded">visitor_activity</code>. Ingest:{" "}
+          <code className="text-xs bg-muted px-1 rounded">POST /api/behavior/ingest</code>. Client-facing summaries:{" "}
+          <Link href="/growth-system/conversion-diagnostics" className="text-primary underline-offset-4 hover:underline">
+            Conversion Diagnostics
+          </Link>
+          .
         </p>
         {data.note ? <p className="text-xs text-muted-foreground">{data.note}</p> : null}
       </div>
@@ -90,6 +115,21 @@ export default function BehaviorIntelligenceOverviewPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Heatmap points (7d)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{data.heatmapPoints7d}</CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tracked phone lines (active)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data.trackedPhoneLines ?? 0}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Phone call logs (7d)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{data.phoneCallLogs7d}</CardContent>
         </Card>
       </div>
 

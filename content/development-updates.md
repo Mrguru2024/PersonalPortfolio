@@ -8,6 +8,24 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-03-31 04:14 — Auto · c5fc760
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`c5fc760`)
+
+---
+
+## 2026-03-31 04:14 — Auto · 080d11e
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`080d11e`)
+
+---
+
+## 2026-03-31 04:10 — Auto · 46a601a
+
+- `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`46a601a`)
+
+---
+
 ## 2026-03-30 01:58 — Auto · 82074c9
 
 - `fix: restore production build (OpenAI nodeClient wrapper, PremiumOffer data)` (`82074c9`)

@@ -6,6 +6,7 @@ import { ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PremiumUpsellState } from "@/lib/growth-diagnosis/types";
+import { MARKETING_CTA_BOOK_STRATEGY_CALL } from "@shared/marketingCtaCopy";
 
 interface PremiumUpsellProps {
   overallScore: number;
@@ -63,7 +64,7 @@ export function PremiumUpsell({ overallScore, className }: PremiumUpsellProps) {
               <Button asChild variant="outline" className="gap-2">
                 <Link href="/strategy-call">
                   <Calendar className="h-4 w-4" />
-                  Book a call
+                  {MARKETING_CTA_BOOK_STRATEGY_CALL}
                 </Link>
               </Button>
             </div>

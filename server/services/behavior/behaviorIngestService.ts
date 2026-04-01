@@ -1,3 +1,5 @@
+import { visitorAliasFromSessionId, visitorSubtitleFromDevice } from "@/lib/behaviorVisitorAlias";
+import { evaluateLeadSignalsAfterIngest } from "@server/services/growthEngine/leadSignalEngine";
 import { db } from "@server/db";
 import {
   behaviorSessions,
@@ -6,7 +8,7 @@ import {
   behaviorHeatmapEvents,
   behaviorSurveyResponses,
 } from "@shared/schema";
-import { and, count, desc, eq, gte, like } from "drizzle-orm";
+import { and, count, desc, eq, exists, gte, ilike, inArray, isNotNull, isNull, like, lte, or, sql } from "drizzle-orm";
 
 export type BehaviorIngestInput = {
   sessionId: string;
@@ -142,6 +144,21 @@ export async function ingestBehaviorPayload(input: BehaviorIngestInput): Promise
     }
   }
 
+  const resolvedCrmId = input.crmContactId ?? existing?.crmContactId ?? null;
+
+  if (!input.optOut && input.events.length > 0) {
+    void evaluateLeadSignalsAfterIngest({
+      behaviorSessionId,
+      sessionKey: sid,
+      crmContactId: resolvedCrmId,
+      url: input.url,
+      events: input.events.map((e) => ({
+        eventType: e.eventType,
+        eventData: e.eventData as Record<string, unknown> | undefined,
+      })),
+    }).catch((err) => console.error("[behavior] lead signals", err));
+  }
+
   return { behaviorSessionId };
 }
 
@@ -149,17 +166,348 @@ export async function listBehaviorSessionsForAdmin(limit: number): Promise<(type
   return db.select().from(behaviorSessions).orderBy(desc(behaviorSessions.startTime)).limit(Math.min(200, limit));
 }
 
-export async function getReplayEventsForSession(sessionId: string): Promise<unknown[]> {
+/** Distinct non-null business/workspace ids seen on sessions (for admin filters). */
+export async function listDistinctBehaviorSessionBusinessIds(): Promise<string[]> {
+  const rows = await db
+    .select({ businessId: behaviorSessions.businessId })
+    .from(behaviorSessions)
+    .where(and(isNull(behaviorSessions.softDeletedAt), isNotNull(behaviorSessions.businessId)))
+    .groupBy(behaviorSessions.businessId)
+    .orderBy(behaviorSessions.businessId);
+  return rows.map((r) => r.businessId!).filter(Boolean);
+}
+
+const VISITOR_ONLINE_MS = 3 * 60 * 1000;
+
+export type BehaviorVisitorHubRow = {
+  id: number;
+  sessionId: string;
+  businessId: string | null;
+  startTime: string /** ISO */;
+  endTime: string | null;
+  device: string | null;
+  converted: boolean;
+  pageViews: number;
+  clickEvents: number;
+  durationLabel: string;
+  hasReplay: boolean;
+  hasHeatmap: boolean;
+  samplePage: string | null;
+  isOnline: boolean;
+  alias: string;
+  locationLabel: string;
+  retentionImportant: boolean;
+  retentionArchived: boolean;
+};
+
+export type BehaviorVisitorHubResponse = {
+  since: string;
+  until: string | null;
+  summary: {
+    visitsToday: number;
+    onlineNow: number;
+    totalInRange: number;
+  };
+  sessions: BehaviorVisitorHubRow[];
+};
+
+function startOfUtcDay(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+}
+
+function formatDurationMs(ms: number): string {
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m < 60) return `${m}m ${s.toString().padStart(2, "0")}s`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return `${h}h ${rm}m`;
+}
+
+/** Visitor hub list: aggregates heatmap/replay, online heuristic, friendly alias. */
+export async function listBehaviorSessionsVisitorHub(input: {
+  since: Date;
+  until?: Date | null;
+  search?: string | null;
+  onlineOnly?: boolean;
+  businessId?: string | null;
+  limit: number;
+  offset: number;
+}): Promise<BehaviorVisitorHubResponse> {
+  const since = input.since;
+  const until = input.until ?? null;
+  const q = input.search?.trim().replace(/[%_\\]/g, "") ?? "";
+  const onlineCutoff = new Date(Date.now() - VISITOR_ONLINE_MS);
+  const todayStart = startOfUtcDay(new Date());
+
+  const conditions = [
+    eq(behaviorSessions.optOut, false),
+    isNull(behaviorSessions.softDeletedAt),
+    gte(behaviorSessions.startTime, since),
+  ];
+  if (until) conditions.push(lte(behaviorSessions.startTime, until));
+
+  const biz = input.businessId?.trim();
+  if (biz === "__none__") {
+    conditions.push(isNull(behaviorSessions.businessId));
+  } else if (biz && biz.length > 0) {
+    conditions.push(eq(behaviorSessions.businessId, biz));
+  }
+
+  if (q.length > 0) {
+    const pattern = `%${q}%`;
+    conditions.push(
+      or(
+        like(behaviorSessions.sessionId, pattern),
+        exists(
+          db
+            .select({ x: sql`1` })
+            .from(behaviorEvents)
+            .where(
+              and(
+                eq(behaviorEvents.sessionId, behaviorSessions.sessionId),
+                sql`coalesce(${behaviorEvents.metadata}->>'url','') ilike ${pattern}`,
+              ),
+            ),
+        ),
+        exists(
+          db
+            .select({ x: sql`1` })
+            .from(behaviorHeatmapEvents)
+            .where(
+              and(
+                eq(behaviorHeatmapEvents.sessionId, behaviorSessions.sessionId),
+                ilike(behaviorHeatmapEvents.page, pattern),
+              ),
+            ),
+        ),
+      )!,
+    );
+  }
+  if (input.onlineOnly) {
+    conditions.push(isNotNull(behaviorSessions.endTime));
+    conditions.push(gte(behaviorSessions.endTime, onlineCutoff));
+  }
+
+  const [visitTodayRow] = await db
+    .select({ c: count() })
+    .from(behaviorSessions)
+    .where(
+      and(eq(behaviorSessions.optOut, false), gte(behaviorSessions.startTime, todayStart)),
+    );
+
+  const [onlineRow] = await db
+    .select({ c: count() })
+    .from(behaviorSessions)
+    .where(
+      and(
+        eq(behaviorSessions.optOut, false),
+        isNull(behaviorSessions.softDeletedAt),
+        isNotNull(behaviorSessions.endTime),
+        gte(behaviorSessions.endTime, onlineCutoff),
+      ),
+    );
+
+  const [totalRow] = await db.select({ c: count() }).from(behaviorSessions).where(and(...conditions));
+
+  const rows = await db
+    .select()
+    .from(behaviorSessions)
+    .where(and(...conditions))
+    .orderBy(desc(behaviorSessions.startTime))
+    .limit(Math.min(100, Math.max(1, input.limit)))
+    .offset(Math.max(0, input.offset));
+
+  if (rows.length === 0) {
+    return {
+      since: since.toISOString(),
+      until: until?.toISOString() ?? null,
+      summary: {
+        visitsToday: Number(visitTodayRow?.c ?? 0),
+        onlineNow: Number(onlineRow?.c ?? 0),
+        totalInRange: Number(totalRow?.c ?? 0),
+      },
+      sessions: [],
+    };
+  }
+
+  const ids = rows.map((r) => r.sessionId);
+
+  const heatPageCounts = await db
+    .select({
+      sessionId: behaviorHeatmapEvents.sessionId,
+      c: sql<number>`count(distinct ${behaviorHeatmapEvents.page})::int`,
+    })
+    .from(behaviorHeatmapEvents)
+    .where(
+      and(
+        inArray(behaviorHeatmapEvents.sessionId, ids),
+        gte(behaviorHeatmapEvents.createdAt, since),
+        ...(until ? [lte(behaviorHeatmapEvents.createdAt, until)] : []),
+      ),
+    )
+    .groupBy(behaviorHeatmapEvents.sessionId);
+
+  const heatClickCounts = await db
+    .select({
+      sessionId: behaviorHeatmapEvents.sessionId,
+      c: count(),
+    })
+    .from(behaviorHeatmapEvents)
+    .where(
+      and(
+        inArray(behaviorHeatmapEvents.sessionId, ids),
+        gte(behaviorHeatmapEvents.createdAt, since),
+        ...(until ? [lte(behaviorHeatmapEvents.createdAt, until)] : []),
+      ),
+    )
+    .groupBy(behaviorHeatmapEvents.sessionId);
+
+  const samplePages = await db
+    .select({
+      sessionId: behaviorHeatmapEvents.sessionId,
+      page: sql<string>`(array_agg(${behaviorHeatmapEvents.page} order by ${behaviorHeatmapEvents.createdAt} desc))[1]`,
+    })
+    .from(behaviorHeatmapEvents)
+    .where(inArray(behaviorHeatmapEvents.sessionId, ids))
+    .groupBy(behaviorHeatmapEvents.sessionId);
+
+  const replayDistinct = await db
+    .selectDistinct({ sessionId: behaviorReplaySegments.sessionId })
+    .from(behaviorReplaySegments)
+    .where(inArray(behaviorReplaySegments.sessionId, ids));
+
+  const pageMap = new Map(heatPageCounts.map((r) => [r.sessionId, Number(r.c)]));
+  const clickMap = new Map(heatClickCounts.map((r) => [r.sessionId, Number(r.c)]));
+  const sampleMap = new Map(samplePages.map((r) => [r.sessionId, r.page]));
+  const replaySet = new Set(replayDistinct.map((r) => r.sessionId));
+
+  const sessions: BehaviorVisitorHubRow[] = rows.map((r) => {
+    const end = r.endTime;
+    const durMs = end ? end.getTime() - r.startTime.getTime() : 0;
+    const isOnline = !!(end && end >= onlineCutoff);
+    return {
+      id: r.id,
+      sessionId: r.sessionId,
+      businessId: r.businessId ?? null,
+      startTime: r.startTime.toISOString(),
+      endTime: end?.toISOString() ?? null,
+      device: r.device,
+      converted: r.converted,
+      pageViews: pageMap.get(r.sessionId) ?? 0,
+      clickEvents: clickMap.get(r.sessionId) ?? 0,
+      durationLabel: formatDurationMs(durMs),
+      hasReplay: replaySet.has(r.sessionId),
+      hasHeatmap: (clickMap.get(r.sessionId) ?? 0) > 0 || (pageMap.get(r.sessionId) ?? 0) > 0,
+      samplePage: sampleMap.get(r.sessionId) ?? null,
+      isOnline,
+      alias: visitorAliasFromSessionId(r.sessionId),
+      locationLabel: visitorSubtitleFromDevice(r.device),
+      retentionImportant: r.retentionImportant,
+      retentionArchived: r.retentionArchived,
+    };
+  });
+
+  return {
+    since: since.toISOString(),
+    until: until?.toISOString() ?? null,
+    summary: {
+      visitsToday: Number(visitTodayRow?.c ?? 0),
+      onlineNow: Number(onlineRow?.c ?? 0),
+      totalInRange: Number(totalRow?.c ?? 0),
+    },
+    sessions,
+  };
+}
+
+export type BehaviorReplayPlaybackMeta = {
+  maxSeq: number;
+  segmentCount: number;
+  sessionEndTime: string | null;
+  recordingActive: boolean;
+  unavailableReason?: "soft_deleted" | "not_found";
+};
+
+export async function getReplayPayloadForSession(sessionId: string): Promise<{
+  events: unknown[];
+  playback: BehaviorReplayPlaybackMeta;
+}> {
+  const sid = sessionId.slice(0, 128);
+  const [sess] = await db.select().from(behaviorSessions).where(eq(behaviorSessions.sessionId, sid)).limit(1);
+  if (!sess) {
+    return {
+      events: [],
+      playback: {
+        maxSeq: 0,
+        segmentCount: 0,
+        sessionEndTime: null,
+        recordingActive: false,
+        unavailableReason: "not_found",
+      },
+    };
+  }
+  if (sess.softDeletedAt) {
+    return {
+      events: [],
+      playback: {
+        maxSeq: 0,
+        segmentCount: 0,
+        sessionEndTime: sess.endTime?.toISOString() ?? null,
+        recordingActive: false,
+        unavailableReason: "soft_deleted",
+      },
+    };
+  }
   const rows = await db
     .select()
     .from(behaviorReplaySegments)
-    .where(eq(behaviorReplaySegments.sessionId, sessionId))
+    .where(eq(behaviorReplaySegments.sessionId, sid))
     .orderBy(behaviorReplaySegments.seq);
   const out: unknown[] = [];
+  let maxSeq = -1;
   for (const r of rows) {
     if (Array.isArray(r.payloadJson)) out.push(...r.payloadJson);
+    if (r.seq > maxSeq) maxSeq = r.seq;
   }
-  return out;
+  const end = sess.endTime;
+  const onlineCutoff = new Date(Date.now() - VISITOR_ONLINE_MS);
+  const recordingActive = !!(end && end >= onlineCutoff);
+  return {
+    events: out,
+    playback: {
+      maxSeq: Math.max(0, maxSeq),
+      segmentCount: rows.length,
+      sessionEndTime: end?.toISOString() ?? null,
+      recordingActive,
+    },
+  };
+}
+
+export async function getReplayEventsForSession(sessionId: string): Promise<unknown[]> {
+  const { events } = await getReplayPayloadForSession(sessionId);
+  return events;
+}
+
+export async function updateBehaviorSessionRetention(
+  sessionId: string,
+  input: { retentionImportant?: boolean; retentionArchived?: boolean },
+): Promise<boolean> {
+  const sid = sessionId.slice(0, 128);
+  const patch: Partial<{
+    retentionImportant: boolean;
+    retentionArchived: boolean;
+  }> = {};
+  if (typeof input.retentionImportant === "boolean") patch.retentionImportant = input.retentionImportant;
+  if (typeof input.retentionArchived === "boolean") patch.retentionArchived = input.retentionArchived;
+  if (Object.keys(patch).length === 0) return false;
+  const rows = await db
+    .update(behaviorSessions)
+    .set(patch)
+    .where(eq(behaviorSessions.sessionId, sid))
+    .returning({ id: behaviorSessions.id });
+  return rows.length > 0;
 }
 
 export async function countHeatmapByPage(
