@@ -58,6 +58,13 @@ export interface EnsureLeadInput {
   attribution?: FormAttribution | null;
   /** Custom fields for lead intelligence (businessType, pain points, etc.). */
   customFields?: Record<string, unknown> | null;
+  /** Optional Offer Engine attribution slugs used by offer+magnet intelligence. */
+  offerEngineAttribution?: {
+    offerTemplateSlug?: string | null;
+    leadMagnetTemplateSlug?: string | null;
+    funnelPathSlug?: string | null;
+    trafficTemperature?: string | null;
+  } | null;
   /** Maps to crm_contacts age/gender/occupation/company_size/industry when present */
   demographics?: LeadFormDemographics | null;
 }
@@ -89,7 +96,17 @@ function demographicsPatch(d: LeadFormDemographics | null | undefined): Record<s
  * Returns the CRM contact (created or updated).
  */
 export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
-  const { email, name, phone, company, contactId, attribution, customFields, demographics } = input;
+  const {
+    email,
+    name,
+    phone,
+    company,
+    contactId,
+    attribution,
+    customFields,
+    offerEngineAttribution,
+    demographics,
+  } = input;
   const existing = await storage.getCrmContactsByEmails([email]);
   const now = new Date();
 
@@ -110,6 +127,15 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
   }
 
   const demo = demographicsPatch(demographics);
+  const offerAttributionFields =
+    offerEngineAttribution ?
+      {
+        offerEngineOfferTemplateSlug: offerEngineAttribution.offerTemplateSlug ?? undefined,
+        offerEngineLeadMagnetTemplateSlug: offerEngineAttribution.leadMagnetTemplateSlug ?? undefined,
+        offerEngineFunnelPathSlug: offerEngineAttribution.funnelPathSlug ?? undefined,
+        trafficTemperature: offerEngineAttribution.trafficTemperature ?? undefined,
+      }
+    : {};
 
   const attributionUpdates = {
     lastActivityAt: now,
@@ -125,11 +151,12 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     const lead = existing[0];
     const mergedCustom = mergeRecord(lead.customFields as Record<string, unknown>, customFields ?? undefined);
     const finalCustom = mergeRecord(mergedCustom, visitorEnrichment);
+    const finalCustomWithAttribution = mergeRecord(finalCustom, offerAttributionFields);
 
     await storage.updateCrmContact(lead.id, {
       ...attributionUpdates,
       ...demo,
-      customFields: Object.keys(finalCustom).length ? finalCustom : undefined,
+      customFields: Object.keys(finalCustomWithAttribution).length ? finalCustomWithAttribution : undefined,
       name: name || lead.name,
       phone: phone ?? lead.phone,
       company: company ?? lead.company,
@@ -152,6 +179,7 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
   }
 
   const finalCustomCreate = mergeRecord(mergeRecord(undefined, customFields ?? undefined), visitorEnrichment);
+  const finalCustomCreateWithAttribution = mergeRecord(finalCustomCreate, offerAttributionFields);
 
   const lead = await storage.createCrmContact({
     type: "lead",
@@ -167,7 +195,7 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     utmCampaign: attribution?.utm_campaign ?? null,
     referringPage: attribution?.referrer ?? null,
     landingPage: attribution?.landing_page ?? null,
-    customFields: Object.keys(finalCustomCreate).length ? finalCustomCreate : undefined,
+    customFields: Object.keys(finalCustomCreateWithAttribution).length ? finalCustomCreateWithAttribution : undefined,
     lastActivityAt: now,
     ageRange: demographics?.ageRange?.trim() || null,
     gender: demographics?.gender?.trim() || null,

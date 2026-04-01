@@ -6,6 +6,7 @@ import {
   updateOfferTemplate,
   deleteOfferTemplate,
 } from "@server/services/offerEngineService";
+import { buildOfferRelationshipSnapshot } from "@server/services/offerLeadMagnetIntelligenceService";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (!id.success) return NextResponse.json({ error: "Bad id" }, { status: 400 });
     const row = await getOfferTemplate(id.data);
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({ offer: serialize(row) });
+    const relationship = await buildOfferRelationshipSnapshot(row);
+    return NextResponse.json({ offer: serialize(row), relationship });
   } catch (e) {
     console.error("[GET offer-engine/offers/id]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });

@@ -109,7 +109,33 @@ export function LeadMagnetTemplateEditPage({ id }: { id: number }) {
   const p = draft.perceivedOutcomeReviewJson as Record<string, string>;
   const f = draft.funnelAlignmentJson as Record<string, string>;
   const copy = (draft.copyBlocksJson as Record<string, string>) ?? {};
-  const score = draft.scoreCacheJson as { overall: number; tier: string; weaknesses: string[]; recommendedFixes: string[] } | null | undefined;
+  const score = draft.scoreCacheJson as
+    | {
+        overall: number;
+        tier: string;
+        weaknesses: string[];
+        recommendedFixes: string[];
+        leadMagnetBuilder?: {
+          leadMagnetSummary: string;
+          hookStrengthScore: number;
+          specificityScore: number;
+          valueDensityScore: number;
+          nextStepAlignmentScore: number;
+          offerAlignmentScore: number;
+          trafficFitScore: number;
+          weaknesses: string[];
+          recommendations: string[];
+        };
+        leadMagnetGrade?: {
+          overallScore: number;
+          grade: string;
+          frictionPoints: string[];
+          improvementActions: string[];
+          recommendedUseCase: string;
+        };
+      }
+    | null
+    | undefined;
   const warns = draft.warningsJson as { messages?: string[]; copySafetyFlags?: string[] } | null | undefined;
 
   const push = (u: Record<string, unknown>) => setDraft((prev) => ({ ...prev!, ...u }));
@@ -463,6 +489,29 @@ export function LeadMagnetTemplateEditPage({ id }: { id: number }) {
               {warns?.messages?.length ? (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-200">
                   {warns.messages.join(" ")}
+                </div>
+              ) : null}
+              {score?.leadMagnetBuilder ? (
+                <div className="rounded-md border p-3 space-y-2">
+                  <strong>Lead magnet builder diagnostics</strong>
+                  <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                    <p>Hook: {score.leadMagnetBuilder.hookStrengthScore}</p>
+                    <p>Specificity: {score.leadMagnetBuilder.specificityScore}</p>
+                    <p>Value density: {score.leadMagnetBuilder.valueDensityScore}</p>
+                    <p>Next-step alignment: {score.leadMagnetBuilder.nextStepAlignmentScore}</p>
+                    <p>Offer alignment: {score.leadMagnetBuilder.offerAlignmentScore}</p>
+                    <p>Traffic fit: {score.leadMagnetBuilder.trafficFitScore}</p>
+                  </div>
+                </div>
+              ) : null}
+              {score?.leadMagnetGrade ? (
+                <div className="rounded-md border p-3 space-y-1">
+                  <strong>Lead magnet grader</strong>
+                  <p>
+                    Overall: {score.leadMagnetGrade.overallScore} / 100 ·{" "}
+                    {score.leadMagnetGrade.grade}
+                  </p>
+                  <p className="text-muted-foreground">{score.leadMagnetGrade.recommendedUseCase}</p>
                 </div>
               ) : null}
             </CardContent>

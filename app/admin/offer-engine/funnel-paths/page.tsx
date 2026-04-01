@@ -20,6 +20,7 @@ interface PathRow {
   stepsJson: { key: string; label: string; detail?: string }[];
   primaryOfferTemplateId: number | null;
   primaryLeadMagnetTemplateId: number | null;
+  relationshipWarnings?: string[];
 }
 
 export default function OfferEngineFunnelPathsPage() {
@@ -87,6 +88,11 @@ export default function OfferEngineFunnelPathsPage() {
                   ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{fp.slug}</p>
+                {fp.relationshipWarnings?.length ? (
+                  <div className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+                    {fp.relationshipWarnings.join(" ")}
+                  </div>
+                ) : null}
               </CardHeader>
               <CardContent className="text-sm space-y-2">
                 {fp.stepsJson.map((s, i) => (

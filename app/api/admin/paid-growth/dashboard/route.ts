@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { leadQualityGuidanceFromRows } from "@server/services/paid-growth/paidGrowthRecommendations";
+import {
+  buildOfferLeadMagnetDashboard,
+  toOfferLeadMagnetSnapshot,
+} from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +66,9 @@ export async function GET(req: NextRequest) {
     const syncIssues = campaigns.filter((c) => c.status === "sync_error" || c.lastSyncError).slice(0, 8);
     const optimizationHints = leadQualityGuidanceFromRows(leadsQ);
     const persistedOptimization = await storage.listPpcOptimizationRecommendations(undefined, ["open"]);
+    const offerLeadMagnetDashboard = buildOfferLeadMagnetDashboard(
+      await toOfferLeadMagnetSnapshot(),
+    );
 
     const avgCtr = ctrWeightedDen > 0 ? ctrWeightedNum / ctrWeightedDen : null;
     const avgCpcCents =
@@ -90,6 +97,7 @@ export async function GET(req: NextRequest) {
         leadQualityRows: leadsQ.length,
       },
       optimizationHints,
+      offerLeadMagnetDashboard,
       persistedOptimization: persistedOptimization.slice(0, 30),
       recentCampaigns: campaigns.slice(0, 12),
       syncIssues,

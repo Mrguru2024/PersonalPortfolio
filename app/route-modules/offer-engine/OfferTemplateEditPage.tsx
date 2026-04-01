@@ -121,7 +121,34 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
   const f = draft.funnelAlignmentJson as Record<string, string>;
   const copy = (draft.copyBlocksJson as Record<string, string>) ?? {};
   const score = draft.scoreCacheJson as
-    | { overall: number; tier: string; weaknesses: string[]; recommendedFixes: string[]; categoryScores: Record<string, number> }
+    | {
+        overall: number;
+        tier: string;
+        weaknesses: string[];
+        recommendedFixes: string[];
+        categoryScores: Record<string, number>;
+        valueEquation?: {
+          normalizedScore: number;
+          rating: string;
+          diagnostics: string[];
+          improvementSuggestions: string[];
+        };
+        grandSlam?: {
+          riskReversalScore: number;
+          perceivedValueScore: number;
+          clarityScore: number;
+          differentiationScore: number;
+          recommendations: string[];
+        };
+        offerGrade?: {
+          overallScore: number;
+          marketFit: string;
+          conversionProbability: number;
+          readinessStatus: string;
+          topWeaknesses: string[];
+          fixActions: string[];
+        };
+      }
     | null
     | undefined;
   const warns = draft.warningsJson as { messages?: string[]; copySafetyFlags?: string[] } | null | undefined;
@@ -574,6 +601,47 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
                   <ul className="list-disc pl-5 mt-1">
                     {warns.copySafetyFlags.map((m) => (
                       <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {score?.valueEquation ? (
+                <div className="rounded-md border p-3 space-y-1">
+                  <strong>Value equation</strong>
+                  <p>
+                    {score.valueEquation.normalizedScore}/100 ({score.valueEquation.rating})
+                  </p>
+                  <ul className="list-disc pl-5">
+                    {score.valueEquation.diagnostics.slice(0, 4).map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {score?.grandSlam ? (
+                <div className="rounded-md border p-3 space-y-1">
+                  <strong>Grand Slam diagnostics</strong>
+                  <p>
+                    Risk reversal {score.grandSlam.riskReversalScore} · Value {score.grandSlam.perceivedValueScore} ·
+                    Clarity {score.grandSlam.clarityScore} · Differentiation {score.grandSlam.differentiationScore}
+                  </p>
+                  <ul className="list-disc pl-5">
+                    {(score.grandSlam.recommendations ?? []).slice(0, 4).map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {score?.offerGrade ? (
+                <div className="rounded-md border p-3 space-y-1">
+                  <strong>Offer grader</strong>
+                  <p>
+                    Overall {score.offerGrade.overallScore} · Market fit {score.offerGrade.marketFit} · Conversion{" "}
+                    {score.offerGrade.conversionProbability}% · Status {score.offerGrade.readinessStatus}
+                  </p>
+                  <ul className="list-disc pl-5">
+                    {(score.offerGrade.topWeaknesses ?? []).slice(0, 3).map((w) => (
+                      <li key={w}>{w}</li>
                     ))}
                   </ul>
                 </div>

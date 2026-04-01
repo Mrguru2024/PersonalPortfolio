@@ -28,7 +28,18 @@ export default function OfferEngineAnalyticsHooksPage() {
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
 
-  const { data, isLoading } = useQuery<{ definitions: Def[]; note?: string }>({
+  const { data, isLoading } = useQuery<{ definitions: Def[]; note?: string; intelligence?: {
+    offers: {
+      totalTrackedLeads: number;
+      totalTrackedRevenue: number;
+      topByConversionRate: Array<{ offerId: number; offerName: string; conversionRate: number; leadCount: number }>;
+    };
+    leadMagnets: {
+      totalTrackedOptIns: number;
+      topByOptInRate: Array<{ leadMagnetId: number; leadMagnetName: string; optInRate: number; clickThroughRate: number }>;
+    };
+    recommendations: string[];
+  } }>({
     queryKey: ["/api/admin/offer-engine/analytics-hooks"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/offer-engine/analytics-hooks");
@@ -56,6 +67,29 @@ export default function OfferEngineAnalyticsHooksPage() {
       </Button>
       <h1 className="text-2xl font-bold mb-2">Analytics hooks (placeholders)</h1>
       <p className="text-sm text-muted-foreground mb-6">{data?.note}</p>
+      {data?.intelligence ? (
+        <Card className="mb-4 border-primary/30 bg-primary/5">
+          <CardHeader className="py-3">
+            <CardTitle className="text-base">Integrated signal preview</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <p>
+              Tracked offer leads: <strong>{data.intelligence.offers.totalTrackedLeads}</strong> · Tracked offer-attributed revenue:{" "}
+              <strong>${data.intelligence.offers.totalTrackedRevenue.toLocaleString()}</strong>
+            </p>
+            <p>
+              Tracked lead magnet opt-ins: <strong>{data.intelligence.leadMagnets.totalTrackedOptIns}</strong>
+            </p>
+            {data.intelligence.recommendations.length > 0 ? (
+              <ul className="list-disc pl-5">
+                {data.intelligence.recommendations.slice(0, 3).map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
       {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : null}
       <div className="space-y-2">
         {(data?.definitions ?? []).map((d) => (

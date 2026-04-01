@@ -44,6 +44,16 @@ export interface LeadCustomFields {
   latestOfferValuationName?: string;
   latestOfferValuationScore?: number;
   latestOfferValuationAt?: string;
+  /** Offer Engine attribution from funnel/public forms */
+  sourceOfferTemplateSlug?: string;
+  sourceOfferName?: string;
+  sourceLeadMagnetSlug?: string;
+  sourceLeadMagnetName?: string;
+  sourceFunnelSlug?: string;
+  sourceCampaignModel?: string;
+  leadTemperature?: "cold" | "warm" | "hot" | "unknown";
+  conversionStage?: "new_lead" | "qualified" | "booked_call" | "won" | "lost" | "nurture";
+  qualificationResult?: "qualified" | "unqualified" | "unknown";
   /** Free growth tools hub — optional note on which tools they want */
   freeToolsInterest?: string;
   /** ISO timestamp when hub qualification was submitted */

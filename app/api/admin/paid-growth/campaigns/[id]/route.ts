@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import type { PpcCampaign } from "@shared/paidGrowthSchema";
 import { parseCampaignModel } from "@shared/ppcCampaignModel";
+import { buildCampaignLaunchIntelligence } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const c = await storage.getPpcCampaignById(id);
     if (!c) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const logs = await storage.listPpcPublishLogs(id, 20);
-    return NextResponse.json({ ...c, publishLogs: logs });
+    const launchIntel = await buildCampaignLaunchIntelligence({
+      offerSlug: c.offerSlug,
+      leadMagnetSlug:
+        typeof (c.readinessSnapshotJson as Record<string, unknown> | null)?.leadMagnetSlug === "string"
+          ? ((c.readinessSnapshotJson as Record<string, unknown>).leadMagnetSlug as string)
+          : null,
+      landingPagePath: c.landingPagePath,
+      trafficType: c.platform === "google_ads" ? "cold" : "mixed",
+      personaId: c.personaId,
+    });
+    return NextResponse.json({ ...c, publishLogs: logs, launchIntel });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -50,6 +61,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.ppcAdAccountId !== undefined) updates.ppcAdAccountId = body.ppcAdAccountId != null ? Number(body.ppcAdAccountId) : null;
     if (typeof body.publishPausedDefault === "boolean") updates.publishPausedDefault = body.publishPausedDefault;
     if (typeof body.notes === "string") updates.notes = body.notes;
+    const incomingLeadMagnetSlug =
+      typeof body.leadMagnetSlug === "string" ? body.leadMagnetSlug.trim() : undefined;
+    if (incomingLeadMagnetSlug !== undefined) {
+      const prevSnapshot = await storage
+        .getPpcCampaignById(id)
+        .then((r) => (r?.readinessSnapshotJson as Record<string, unknown> | null) ?? null);
+      updates.readinessSnapshotJson = {
+        ...(prevSnapshot ?? {}),
+        leadMagnetSlug: incomingLeadMagnetSlug || null,
+      };
+    }
     const row = await storage.updatePpcCampaign(id, updates);
     return NextResponse.json(row);
   } catch (e) {

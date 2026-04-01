@@ -22,6 +22,10 @@ interface Row {
   leadMagnetType: string;
   relatedOfferTemplateId: number | null;
   scoreCacheJson: { overall: number; tier: string } | null;
+  intelligence?: {
+    trafficFitLabel?: string;
+    handoffRiskLabel?: string;
+  };
 }
 
 export default function OfferEngineLeadMagnetsListPage() {
@@ -96,6 +100,8 @@ export default function OfferEngineLeadMagnetsListPage() {
                     <Badge variant="secondary">{ASSET_STATUS_LABELS[o.status as keyof typeof ASSET_STATUS_LABELS] ?? o.status}</Badge>
                     {o.relatedOfferTemplateId ? <Badge>Offer #{o.relatedOfferTemplateId}</Badge> : null}
                     {o.scoreCacheJson ? <Badge>{o.scoreCacheJson.overall} pts</Badge> : null}
+                    {o.intelligence?.trafficFitLabel ? <Badge variant="outline">{o.intelligence.trafficFitLabel}</Badge> : null}
+                    {o.intelligence?.handoffRiskLabel ? <Badge variant="outline">{o.intelligence.handoffRiskLabel}</Badge> : null}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{o.slug}</p>

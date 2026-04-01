@@ -3,9 +3,12 @@ import { isAdmin } from "@/lib/auth-helpers";
 import { leadMagnetTemplateWriteSchema } from "@shared/offerEngineTypes";
 import {
   getLeadMagnetTemplate,
+  getOfferTemplate,
   updateLeadMagnetTemplate,
   deleteLeadMagnetTemplate,
 } from "@server/services/offerEngineService";
+import { computeOfferLeadMagnetIntelligence } from "@server/services/offerLeadMagnetIntelligenceService";
+import { storage } from "@server/storage";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +34,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (!id.success) return NextResponse.json({ error: "Bad id" }, { status: 400 });
     const row = await getLeadMagnetTemplate(id.data);
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({ leadMagnet: serialize(row) });
+    const intelligence = await computeOfferLeadMagnetIntelligence(storage, {
+      leadMagnetTemplateSlug: row.slug,
+    });
+    return NextResponse.json({
+      leadMagnet: serialize(row),
+      intelligence,
+    });
   } catch (e) {
     console.error("[GET offer-engine/lead-magnets/id]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -53,7 +62,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     }
     const updated = await updateLeadMagnetTemplate(id.data, partial.data);
     if (!updated) return NextResponse.json({ error: "Not found or invalid refs" }, { status: 404 });
-    return NextResponse.json({ leadMagnet: serialize(updated) });
+    const intelligence = await computeOfferLeadMagnetIntelligence(storage, {
+      leadMagnetTemplateSlug: updated.slug,
+    });
+    return NextResponse.json({
+      leadMagnet: serialize(updated),
+      intelligence,
+    });
   } catch (e) {
     console.error("[PATCH offer-engine/lead-magnets/id]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -73,6 +88,39 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[DELETE offer-engine/lead-magnets/id]", e);
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
+}
+
+/** GET /api/admin/offer-engine/lead-magnets/[id]?withRelatedOffer=true */
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+    const { id: raw } = await ctx.params;
+    const id = idParam.safeParse(raw);
+    if (!id.success) return NextResponse.json({ error: "Bad id" }, { status: 400 });
+    const row = await getLeadMagnetTemplate(id.data);
+    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const withRelatedOffer = body?.withRelatedOffer === true;
+    if (!withRelatedOffer || !row.relatedOfferTemplateId) {
+      const intelligence = await computeOfferLeadMagnetIntelligence(storage, {
+        leadMagnetTemplateSlug: row.slug,
+      });
+      return NextResponse.json({ leadMagnet: serialize(row), intelligence });
+    }
+
+    const relatedOffer = await getOfferTemplate(row.relatedOfferTemplateId);
+    const intelligence = await computeOfferLeadMagnetIntelligence(storage, {
+      leadMagnetTemplateSlug: row.slug,
+      offerTemplateSlug: relatedOffer?.slug ?? null,
+    });
+    return NextResponse.json({ leadMagnet: serialize(row), intelligence });
+  } catch (e) {
+    console.error("[POST offer-engine/lead-magnets/id]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

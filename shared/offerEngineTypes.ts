@@ -50,6 +50,16 @@ export const strategyWhyConvertSchema = z.object({
   frictionThatStillExists: z.string(),
   whatThisDoesNotSolve: z.string(),
   bestNextStepIfNotReady: z.string(),
+  currentAlternativesInMarket: z.string().optional(),
+  reasonToBelieve: z.string().optional(),
+  proofCredibilityFactors: z.string().optional(),
+  bonusIdeas: z.array(z.string()).optional(),
+  guaranteeIdeas: z.array(z.string()).optional(),
+  urgencyPlan: z.string().optional(),
+  scarcityPlan: z.string().optional(),
+  marketSophisticationLevel: z.string().optional(),
+  easeOfUnderstandingNotes: z.string().optional(),
+  pricingValueJustification: z.string().optional(),
 });
 export type StrategyWhyConvert = z.infer<typeof strategyWhyConvertSchema>;
 
@@ -61,6 +71,13 @@ export const bridgeToPaidSchema = z.object({
   paidStepItPointsTo: z.string(),
   ctaShouldComeNext: z.string(),
   whyNextStepFeelsNatural: z.string(),
+  leadCaptureGoal: z.string().optional(),
+  intendedNextStep: z.string().optional(),
+  messageAngle: z.string().optional(),
+  valueDensity: z.string().optional(),
+  easeOfConsumption: z.string().optional(),
+  specificityLevel: z.string().optional(),
+  awarenessLevel: z.string().optional(),
 });
 export type BridgeToPaid = z.infer<typeof bridgeToPaidSchema>;
 
@@ -132,6 +149,65 @@ export type LeadMagnetCopyBlocks = z.infer<typeof leadMagnetCopyBlocksSchema>;
 export const categoryScoresSchema = z.record(z.string(), z.number());
 export type CategoryScores = z.infer<typeof categoryScoresSchema>;
 
+export const valueEquationResultSchema = z.object({
+  rawScore: z.number(),
+  normalizedScore: z.number().min(0).max(100),
+  rating: z.enum(["Weak", "Average", "Strong", "Dominant"]),
+  diagnostics: z.array(z.string()),
+  improvementSuggestions: z.array(z.string()),
+});
+export type ValueEquationResult = z.infer<typeof valueEquationResultSchema>;
+
+export const grandSlamOfferResultSchema = z.object({
+  offerSummary: z.string(),
+  stackBreakdown: z.object({
+    coreOffer: z.array(z.string()),
+    bonuses: z.array(z.string()),
+    guarantees: z.array(z.string()),
+    urgency: z.array(z.string()),
+    scarcity: z.array(z.string()),
+    proof: z.array(z.string()),
+  }),
+  riskReversalScore: z.number().min(0).max(100),
+  perceivedValueScore: z.number().min(0).max(100),
+  clarityScore: z.number().min(0).max(100),
+  differentiationScore: z.number().min(0).max(100),
+  recommendations: z.array(z.string()),
+});
+export type GrandSlamOfferResult = z.infer<typeof grandSlamOfferResultSchema>;
+
+export const offerGradeResultSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  marketFit: z.enum(["Poor", "Moderate", "Strong"]),
+  conversionProbability: z.number().min(0).max(100),
+  topWeaknesses: z.array(z.string()),
+  fixActions: z.array(z.string()),
+  readinessStatus: z.enum(["Not Ready", "Needs Work", "Launch Ready"]),
+});
+export type OfferGradeResult = z.infer<typeof offerGradeResultSchema>;
+
+export const leadMagnetBuilderResultSchema = z.object({
+  leadMagnetSummary: z.string(),
+  hookStrengthScore: z.number().min(0).max(100),
+  specificityScore: z.number().min(0).max(100),
+  valueDensityScore: z.number().min(0).max(100),
+  nextStepAlignmentScore: z.number().min(0).max(100),
+  offerAlignmentScore: z.number().min(0).max(100),
+  trafficFitScore: z.number().min(0).max(100),
+  weaknesses: z.array(z.string()),
+  recommendations: z.array(z.string()),
+});
+export type LeadMagnetBuilderResult = z.infer<typeof leadMagnetBuilderResultSchema>;
+
+export const leadMagnetGradeResultSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["Weak", "Usable", "Strong", "High Converting Potential"]),
+  frictionPoints: z.array(z.string()),
+  improvementActions: z.array(z.string()),
+  recommendedUseCase: z.string(),
+});
+export type LeadMagnetGradeResult = z.infer<typeof leadMagnetGradeResultSchema>;
+
 export const scoreResultSchema = z.object({
   overall: z.number().min(0).max(100),
   categoryScores: categoryScoresSchema,
@@ -141,6 +217,11 @@ export const scoreResultSchema = z.object({
   confidenceNotes: z.string(),
   biggestConversionRisk: z.string(),
   bestImprovementLever: z.string(),
+  valueEquation: valueEquationResultSchema.optional(),
+  grandSlam: grandSlamOfferResultSchema.optional(),
+  offerGrade: offerGradeResultSchema.optional(),
+  leadMagnetBuilder: leadMagnetBuilderResultSchema.optional(),
+  leadMagnetGrade: leadMagnetGradeResultSchema.optional(),
 });
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
 
@@ -152,6 +233,16 @@ const emptyStrategyWhy: StrategyWhyConvert = {
   frictionThatStillExists: "",
   whatThisDoesNotSolve: "",
   bestNextStepIfNotReady: "",
+  currentAlternativesInMarket: "",
+  reasonToBelieve: "",
+  proofCredibilityFactors: "",
+  bonusIdeas: [],
+  guaranteeIdeas: [],
+  urgencyPlan: "",
+  scarcityPlan: "",
+  marketSophisticationLevel: "",
+  easeOfUnderstandingNotes: "",
+  pricingValueJustification: "",
 };
 
 const emptyBridge: BridgeToPaid = {
@@ -162,6 +253,13 @@ const emptyBridge: BridgeToPaid = {
   paidStepItPointsTo: "",
   ctaShouldComeNext: "",
   whyNextStepFeelsNatural: "",
+  leadCaptureGoal: "",
+  intendedNextStep: "",
+  messageAngle: "",
+  valueDensity: "",
+  easeOfConsumption: "",
+  specificityLevel: "",
+  awarenessLevel: "",
 };
 
 const emptyPerceived: PerceivedOutcomeReview = {
@@ -283,3 +381,80 @@ export const funnelPathWriteSchema = z.object({
   primaryOfferTemplateId: z.number().int().positive().nullable().optional(),
   primaryLeadMagnetTemplateId: z.number().int().positive().nullable().optional(),
 });
+
+export const offerLeadMagnetJourneyWarningLevelSchema = z.enum(["info", "warning", "critical"]);
+export type OfferLeadMagnetJourneyWarningLevel = z.infer<typeof offerLeadMagnetJourneyWarningLevelSchema>;
+
+export const offerLeadMagnetJourneyWarningSchema = z.object({
+  code: z.string(),
+  level: offerLeadMagnetJourneyWarningLevelSchema,
+  message: z.string(),
+});
+export type OfferLeadMagnetJourneyWarning = z.infer<typeof offerLeadMagnetJourneyWarningSchema>;
+
+export const offerPerformanceSnapshotSchema = z.object({
+  offerTemplateId: z.number().int().positive(),
+  offerSlug: z.string(),
+  linkedLeadMagnets: z.number().int().nonnegative(),
+  linkedCampaigns: z.number().int().nonnegative(),
+  leads: z.number().int().nonnegative(),
+  qualifiedLeads: z.number().int().nonnegative(),
+  bookedCalls: z.number().int().nonnegative(),
+  sales: z.number().int().nonnegative(),
+  revenue: z.number().nonnegative(),
+  conversionRate: z.number().min(0).max(1),
+  qualifiedLeadRate: z.number().min(0).max(1),
+  bookedCallRate: z.number().min(0).max(1),
+  scoreVsPerformanceDelta: z.number(),
+});
+export type OfferPerformanceSnapshot = z.infer<typeof offerPerformanceSnapshotSchema>;
+
+export const leadMagnetPerformanceSnapshotSchema = z.object({
+  leadMagnetTemplateId: z.number().int().positive(),
+  leadMagnetSlug: z.string(),
+  linkedOfferTemplateId: z.number().int().positive().nullable(),
+  linkedCampaigns: z.number().int().nonnegative(),
+  linkedAssets: z.number().int().nonnegative(),
+  views: z.number().int().nonnegative(),
+  optIns: z.number().int().nonnegative(),
+  nextStepClicks: z.number().int().nonnegative(),
+  bookedCalls: z.number().int().nonnegative(),
+  conversions: z.number().int().nonnegative(),
+  leadQualityAvg: z.number().min(0).max(100),
+  optInRate: z.number().min(0).max(1),
+  nextStepRate: z.number().min(0).max(1),
+  conversionRate: z.number().min(0).max(1),
+});
+export type LeadMagnetPerformanceSnapshot = z.infer<typeof leadMagnetPerformanceSnapshotSchema>;
+
+export const offerLeadMagnetRecommendationSchema = z.object({
+  recommendationType: z.enum([
+    "best_lead_magnet_for_offer",
+    "best_offer_for_lead_magnet",
+    "fix_handoff",
+    "improve_traffic_fit",
+    "improve_clarity",
+  ]),
+  message: z.string(),
+  offerTemplateId: z.number().int().positive().nullable().optional(),
+  leadMagnetTemplateId: z.number().int().positive().nullable().optional(),
+  confidence: z.number().min(0).max(1),
+});
+export type OfferLeadMagnetRecommendation = z.infer<typeof offerLeadMagnetRecommendationSchema>;
+
+export const offerLeadMagnetIntelligenceSchema = z.object({
+  offers: z.array(offerPerformanceSnapshotSchema),
+  leadMagnets: z.array(leadMagnetPerformanceSnapshotSchema),
+  warnings: z.array(offerLeadMagnetJourneyWarningSchema),
+  recommendations: z.array(offerLeadMagnetRecommendationSchema),
+  bestOfferIdsByConversionRate: z.array(z.number().int().positive()),
+  bestOfferIdsByLeadQuality: z.array(z.number().int().positive()),
+  bestOfferIdsByBookedCallRate: z.array(z.number().int().positive()),
+  bestOfferIdsByRevenue: z.array(z.number().int().positive()),
+  bestLeadMagnetIdsByOptInRate: z.array(z.number().int().positive()),
+  bestLeadMagnetIdsByLeadQuality: z.array(z.number().int().positive()),
+  weakOfferIds: z.array(z.number().int().positive()),
+  weakLeadMagnetIds: z.array(z.number().int().positive()),
+  generatedAt: z.string(),
+});
+export type OfferLeadMagnetIntelligence = z.infer<typeof offerLeadMagnetIntelligenceSchema>;

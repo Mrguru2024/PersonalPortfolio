@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { parseCampaignModel } from "@shared/ppcCampaignModel";
+import { getOfferEngineReadinessSnapshotForOfferSlug } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,18 @@ export async function POST(req: NextRequest) {
     if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
     const campaignModel =
       typeof body.campaignModel === "string" ? parseCampaignModel(body.campaignModel) : parseCampaignModel(undefined);
+    const offerSlug = typeof body.offerSlug === "string" ? body.offerSlug : null;
+    const leadMagnetSlug =
+      typeof body.leadMagnetSlug === "string" ? body.leadMagnetSlug.trim().toLowerCase() : null;
+    const readinessSnapshot =
+      offerSlug ? await getOfferEngineReadinessSnapshotForOfferSlug(storage, offerSlug) : null;
+    const launchWarnings = [
+      ...(readinessSnapshot?.warnings ?? []),
+      ...(readinessSnapshot?.weaknesses ?? []),
+    ];
+    const mergeNotes = [typeof body.notes === "string" ? body.notes : null, ...launchWarnings]
+      .filter((v): v is string => Boolean(v && v.trim()))
+      .join("\n");
     const row = await storage.createPpcCampaign({
       name,
       campaignModel,
@@ -36,7 +49,7 @@ export async function POST(req: NextRequest) {
       platform: platform === "google_ads" ? "google_ads" : "meta",
       objective: typeof body.objective === "string" ? body.objective : "traffic",
       status: "draft",
-      offerSlug: typeof body.offerSlug === "string" ? body.offerSlug : null,
+      offerSlug,
       landingPagePath: typeof body.landingPagePath === "string" ? body.landingPagePath : "/",
       thankYouPath: typeof body.thankYouPath === "string" ? body.thankYouPath : null,
       personaId: typeof body.personaId === "string" ? body.personaId : null,
@@ -49,9 +62,18 @@ export async function POST(req: NextRequest) {
       commCampaignId: body.commCampaignId != null ? Number(body.commCampaignId) : null,
       ppcAdAccountId: body.ppcAdAccountId != null ? Number(body.ppcAdAccountId) : null,
       publishPausedDefault: body.publishPausedDefault !== false,
-      notes: typeof body.notes === "string" ? body.notes : null,
+      notes: mergeNotes || null,
       createdBy: user?.id ?? null,
     });
+    if (leadMagnetSlug || readinessSnapshot) {
+      await storage.updatePpcCampaign(row.id, {
+        readinessSnapshotJson: {
+          ...(readinessSnapshot ?? {}),
+          ...(leadMagnetSlug ? { leadMagnetSlug } : {}),
+          launchWarnings,
+        },
+      });
+    }
     return NextResponse.json(row);
   } catch (e) {
     console.error(e);

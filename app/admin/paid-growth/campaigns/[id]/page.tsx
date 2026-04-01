@@ -42,6 +42,38 @@ type CampaignRow = {
   lastSyncError: string | null;
   trackingParamsJson: Record<string, string> | undefined;
   publishLogs?: { id: number; success: boolean; errorMessage: string | null; createdAt: string }[];
+  offerIntelligence?: {
+    offerSummary: {
+      id: number;
+      slug: string;
+      name: string;
+      score: number;
+      readiness: string;
+      tier: string | null;
+      topWeaknesses: string[];
+      warnings: string[];
+      linkedLeadMagnetCount: number;
+    } | null;
+    relationshipWarnings: string[];
+    bestLeadMagnets: Array<{
+      id: number;
+      slug: string;
+      name: string;
+      score: number;
+      qualitySignal: number;
+      handoffScore: number;
+      readiness: string;
+    }>;
+    weakLeadMagnets: Array<{
+      id: number;
+      slug: string;
+      name: string;
+      score: number;
+      qualitySignal: number;
+      handoffScore: number;
+      readiness: string;
+    }>;
+  };
 };
 
 export default function PaidGrowthCampaignDetailPage() {
@@ -267,6 +299,52 @@ export default function PaidGrowthCampaignDetailPage() {
           </p>
         </CardContent>
       </Card>
+
+      {c.offerIntelligence ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Offer + lead magnet intelligence</CardTitle>
+            <CardDescription>Launch guardrails from Offer Engine and live lead quality data.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {c.offerIntelligence.offerSummary ? (
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Badge variant="outline">{c.offerIntelligence.offerSummary.slug}</Badge>
+                  <Badge>
+                    Offer score {c.offerIntelligence.offerSummary.score}
+                  </Badge>
+                  <Badge variant={c.offerIntelligence.offerSummary.readiness === "Launch Ready" ? "default" : "secondary"}>
+                    {c.offerIntelligence.offerSummary.readiness}
+                  </Badge>
+                </div>
+                {c.offerIntelligence.offerSummary.topWeaknesses.length ? (
+                  <ul className="list-disc pl-5 text-muted-foreground">
+                    {c.offerIntelligence.offerSummary.topWeaknesses.slice(0, 3).map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                No linked Offer Engine template found for this campaign offer slug.
+              </p>
+            )}
+
+            {c.offerIntelligence.relationshipWarnings.length ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+                <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">Relationship warnings</p>
+                <ul className="list-disc pl-5">
+                  {c.offerIntelligence.relationshipWarnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {snap?.adReady === false && (
         <Card className="border-destructive/40">

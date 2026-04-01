@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { computePpcReadiness } from "@server/services/paid-growth/readinessEngine";
+import { getOfferLeadMagnetJourneyInsights } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const id = Number((await params).id);
     const c = await storage.getPpcCampaignById(id);
     if (!c) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const journey = await getOfferLeadMagnetJourneyInsights({ offerSlug: c.offerSlug ?? null });
     const result = await computePpcReadiness(c, storage);
+    const launchWarnings = [
+      ...journey.warningMessages.slice(0, 4),
+      ...journey.recommendations.slice(0, 3),
+    ];
     await storage.updatePpcCampaign(id, {
       readinessScore: result.overallScore,
       readinessSnapshotJson: {
@@ -24,6 +30,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         package: result.packageRecommendation,
         growthRoute: result.growthRouteRecommendation,
         adReady: result.adReady,
+        offerLeadMagnetJourney: {
+          warnings: launchWarnings,
+          topCombination: journey.bestJourneyCombinations[0] ?? null,
+          weakCombination: journey.weakJourneyCombinations[0] ?? null,
+          mismatchWarnings: journey.mismatchWarnings,
+        },
       },
     });
     if (c.ppcAdAccountId) {
@@ -44,7 +56,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       remediationChecklistJson: result.remediationChecklist,
       adReady: result.adReady,
     });
-    return NextResponse.json({ ...result, assessmentId: saved.id });
+    return NextResponse.json({
+      ...result,
+      assessmentId: saved.id,
+      offerLeadMagnetJourney: {
+        warnings: launchWarnings,
+        topCombination: journey.bestJourneyCombinations[0] ?? null,
+        weakCombination: journey.weakJourneyCombinations[0] ?? null,
+        mismatchWarnings: journey.mismatchWarnings,
+      },
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Readiness failed" }, { status: 500 });

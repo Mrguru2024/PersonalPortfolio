@@ -21,7 +21,16 @@ interface OfferRow {
   status: string;
   visibility: string;
   offerType: string;
-  scoreCacheJson: { overall: number; tier: string } | null;
+  scoreCacheJson: {
+    overall: number;
+    tier: string;
+    offerGrade?: { readinessStatus?: string; conversionProbability?: number };
+    valueEquation?: { rating?: string; normalizedScore?: number };
+  } | null;
+  intelligence?: {
+    linkedLeadMagnetCount: number;
+    topMismatchWarnings: string[];
+  };
   updatedAt: string;
 }
 
@@ -105,9 +114,27 @@ export default function OfferEngineOffersListPage() {
                         {o.scoreCacheJson.overall} — {SCORE_TIER_LABELS[o.scoreCacheJson.tier as keyof typeof SCORE_TIER_LABELS] ?? o.scoreCacheJson.tier}
                       </Badge>
                     ) : null}
+                    {o.scoreCacheJson?.offerGrade?.readinessStatus ? (
+                      <Badge variant={o.scoreCacheJson.offerGrade.readinessStatus === "Launch Ready" ? "default" : "secondary"}>
+                        {o.scoreCacheJson.offerGrade.readinessStatus}
+                      </Badge>
+                    ) : null}
+                    {o.scoreCacheJson?.valueEquation?.rating ? (
+                      <Badge variant="outline">
+                        Value {o.scoreCacheJson.valueEquation.rating}
+                      </Badge>
+                    ) : null}
+                    {(o.intelligence?.linkedLeadMagnetCount ?? 0) > 0 ? (
+                      <Badge variant="outline">LM {o.intelligence?.linkedLeadMagnetCount}</Badge>
+                    ) : null}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">{o.slug}</p>
+                {o.intelligence?.topMismatchWarnings?.length ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    {o.intelligence.topMismatchWarnings[0]}
+                  </p>
+                ) : null}
               </CardHeader>
             </Card>
           ))}

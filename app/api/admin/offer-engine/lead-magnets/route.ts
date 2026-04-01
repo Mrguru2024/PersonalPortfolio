@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { leadMagnetTemplateWriteSchema } from "@shared/offerEngineTypes";
 import { listLeadMagnetTemplates, createLeadMagnetTemplate } from "@server/services/offerEngineService";
+import { buildOfferLeadMagnetIntelligenceSnapshot } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,6 +12,17 @@ function serialize(row: Awaited<ReturnType<typeof listLeadMagnetTemplates>>[numb
     ...row,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+async function serializeWithIntelligence(row: Awaited<ReturnType<typeof listLeadMagnetTemplates>>[number]) {
+  const intelligence = await buildOfferLeadMagnetIntelligenceSnapshot({
+    leadMagnetTemplateSlug: row.slug,
+    relatedOfferTemplateId: row.relatedOfferTemplateId ?? undefined,
+  });
+  return {
+    ...serialize(row),
+    intelligence: intelligence.leadMagnets[0] ?? null,
   };
 }
 
@@ -27,7 +39,8 @@ export async function GET(req: NextRequest) {
       minScore: searchParams.get("minScore") ? Number(searchParams.get("minScore")) : undefined,
       q: searchParams.get("q") ?? undefined,
     });
-    return NextResponse.json({ leadMagnets: rows.map(serialize) });
+    const leadMagnets = await Promise.all(rows.map((row) => serializeWithIntelligence(row)));
+    return NextResponse.json({ leadMagnets });
   } catch (e) {
     console.error("[GET offer-engine/lead-magnets]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
