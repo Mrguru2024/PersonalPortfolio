@@ -246,14 +246,16 @@ export default function BehaviorReplaysPage() {
             </div>
           </div>
 
-          {hubLoading ?
+          {hubLoading ? (
             <Loader2 className="h-6 w-6 animate-spin" />
-          : <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">
-              {sessions.length === 0 ?
+          ) : (
+            <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">
+              {sessions.length === 0 ? (
                 <li className="px-3 py-6 text-center text-muted-foreground">
                   No visits match. Try another site filter, widen the dates, or shorten the search.
                 </li>
-              : sessions.map((s) => (
+              ) : (
+                sessions.map((s) => (
                   <li key={s.id}>
                     <button
                       type="button"
@@ -269,36 +271,37 @@ export default function BehaviorReplaysPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{s.alias}</span>
-                        {s.hasReplay ?
+                        {s.hasReplay ? (
                           <Badge variant="secondary" className="text-[10px]">
                             Recording
                           </Badge>
-                        : <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
                             No recording yet
                           </Badge>
-                        }
-                        {s.isOnline ?
+                        )}
+                        {s.isOnline ? (
                           <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-600">Live now</Badge>
-                        : null}
+                        ) : null}
                       </div>
-                      {s.samplePage ?
+                      {s.samplePage ? (
                         <div className="text-xs text-muted-foreground truncate" title={s.samplePage}>
                           {truncatePath(s.samplePage)}
                         </div>
-                      : null}
+                      ) : null}
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                         <span>{shortDateTime(s.startTime)}</span>
                         <span>{s.locationLabel}</span>
-                        {s.businessId ?
+                        {s.businessId ? (
                           <span className="text-[11px]">{trackedSiteLabel(s.businessId) ?? s.businessId}</span>
-                        : null}
+                        ) : null}
                       </div>
                     </button>
                   </li>
                 ))
-              }
+              )}
             </ul>
-          }
+          )}
           {sessionId && selectedHeading ?
             <p className="text-sm text-foreground">
               <span className="font-medium">Playing:</span> {selectedHeading}
