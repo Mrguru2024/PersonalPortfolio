@@ -139,7 +139,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/blog/[slug]", title: "Blog post", category: "Public · Content", audience: "public", description: "Dynamic blog article.", keywords: k("blog", "post") },
   { path: "/website-breakdowns", title: "Website breakdowns index", category: "Public · Content", audience: "public", description: "Breakdown series index.", keywords: k("breakdowns", "examples") },
   { path: "/website-breakdowns/[slug]", title: "Website breakdown article", category: "Public · Content", audience: "public", description: "Individual breakdown.", keywords: k("breakdown") },
-  { path: "/updates", title: "Updates / changelog", category: "Public · Content", audience: "public", description: "Product or site updates feed page.", keywords: k("changelog", "updates") },
+  { path: "/updates", title: "Market updates", category: "Public · Content", audience: "public", description: "Public feed with fact-checked market updates, persona-interest topics, and new project intake notes.", keywords: k("market updates", "marketing updates", "persona interests", "project intake") },
 
   // —— Public: community
   { path: "/Afn", title: "Community home", category: "Public · Community", audience: "public", description: "Community hub.", keywords: k("community", "forum") },
@@ -633,7 +633,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     keywords: k("roles", "raci", "agency", "delivery"),
     relatedPaths: ["/admin/agency-os/sops", "/admin/agency-os/training"],
   },
-  { path: "/admin/announcements", title: "Project announcements", category: "Admin · Ops", audience: "admin", description: "Client-facing project updates.", keywords: k("announcements", "updates") },
+  { path: "/admin/announcements", title: "Project announcements", category: "Admin · Ops", audience: "admin", description: "Client-facing project updates.", keywords: k("announcements", "client updates") },
+  { path: "/admin/updates", title: "Internal updates", category: "Admin · Ops", audience: "admin", description: "Admin-only updates with non-technical project summaries and agency-market data.", keywords: k("internal updates", "project updates", "agency market data") },
   { path: "/admin/feedback", title: "Feedback inbox", category: "Admin · Ops", audience: "admin", description: "User feedback tickets.", keywords: k("feedback") },
   { path: "/admin/chat", title: "Admin chat", category: "Admin · Ops", audience: "admin", description: "Operator chat with clients.", keywords: k("chat", "support") },
   { path: "/admin/challenge/leads", title: "Challenge leads", category: "Admin · Ops", audience: "admin", description: "Challenge purchasers/leads.", keywords: k("challenge", "leads") },

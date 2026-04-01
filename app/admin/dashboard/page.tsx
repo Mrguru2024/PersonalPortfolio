@@ -1328,11 +1328,11 @@ export default function AdminDashboardPage() {
                   helpAria: "Help: Invoices",
                 },
                 {
-                  href: "/admin/announcements",
-                  label: "Project updates",
+                  href: "/admin/updates",
+                  label: "Internal updates",
                   icon: Sparkles,
-                  help: "Write admin-facing project news that shows in digest and related surfaces. Use for shipped work and operating notes.",
-                  helpAria: "Help: Project updates",
+                  help: "Admin-only updates feed with non-technical project summaries and agency-focused market data.",
+                  helpAria: "Help: Internal updates",
                 },
                 {
                   href: "/admin/feedback",
