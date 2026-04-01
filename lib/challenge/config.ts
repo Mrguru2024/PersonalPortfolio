@@ -6,9 +6,9 @@
 export const CHALLENGE_NAME = "Build Your Client-Generating Website System";
 export const CHALLENGE_SUBTITLE = "5-Day Paid Challenge";
 
-/** Default entry price in cents. Support $27, $47, $97 later via env or CMS. */
-export const CHALLENGE_PRICE_CENTS = 2700; // $27
-export const CHALLENGE_PRICE_DISPLAY = "$27";
+/** Default entry price in cents. Tune via env/CMS later if needed. */
+export const CHALLENGE_PRICE_CENTS = 4700; // $47
+export const CHALLENGE_PRICE_DISPLAY = "$47";
 
 export const ORDER_BUMP = {
   enabled: true,

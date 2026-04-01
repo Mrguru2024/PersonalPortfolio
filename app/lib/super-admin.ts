@@ -9,3 +9,10 @@ export function isAuthSuperUser(
 ): boolean {
   return user?.isSuperUser === true;
 }
+
+/** Approved admin (same gate as server `isAdmin`: role flag + `adminApproved`). */
+export function isAuthApprovedAdmin(
+  user: { isAdmin?: boolean | null; adminApproved?: boolean | null } | null | undefined
+): boolean {
+  return user?.isAdmin === true && user?.adminApproved === true;
+}

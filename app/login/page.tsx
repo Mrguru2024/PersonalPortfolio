@@ -28,7 +28,7 @@ export default function SignInHubPage() {
 
   if (!isLoading && user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-section px-4">
         <p className="text-sm text-muted-foreground">Opening your account…</p>
       </div>
     );

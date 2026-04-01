@@ -1,10 +1,61 @@
 "use client";
 
-import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+const LEGACY_LINKS = [
+  { label: "Lead intake hub", href: "/admin/lead-intake" },
+  { label: "CRM workspace", href: "/admin/crm" },
+  { label: "CRM tasks", href: "/admin/crm/tasks" },
+  { label: "Content Studio", href: "/admin/content-studio" },
+  { label: "Funnel & offers", href: "/admin/funnel" },
+  { label: "Growth OS", href: "/admin/growth-os" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Settings", href: "/admin/settings" },
+  { label: "Site directory", href: "/admin/site-directory" },
+  { label: "Reminders", href: "/admin/reminders" },
+] as const;
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, FileText, MessageSquare, FileCheck, CheckCircle, Clock, Archive, Receipt, Trash2, Send, Copy, ExternalLink, RotateCcw, Download, BookOpen, RefreshCw, Sparkles, KeyRound, Tag, Radar, ClipboardList, PenLine, Inbox, Map } from "lucide-react";
+import {
+  Loader2,
+  MessageSquare,
+  FileCheck,
+  CheckCircle,
+  Clock,
+  Archive,
+  Receipt,
+  Trash2,
+  Send,
+  Copy,
+  ExternalLink,
+  RotateCcw,
+  Download,
+  BookOpen,
+  RefreshCw,
+  Sparkles,
+  KeyRound,
+  Tag,
+  Radar,
+  ClipboardList,
+  PenLine,
+  Inbox,
+  Map as MapIcon,
+  LineChart,
+  Search,
+  ChevronDown,
+  Calendar,
+  CalendarClock,
+  Layers,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,8 +65,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  formatDevUpdateDateLabel,
+  formatDevUpdateTimeInEastern,
+  formatDevUpdatesLastChecked,
+} from "@/lib/devUpdatesEastern";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -23,6 +81,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +110,13 @@ import {
   setTourDismissed,
   getStepsForRole,
 } from "@/lib/adminTourConfig";
+import { useMainDashboardLayout } from "@/hooks/useAdminUiLayouts";
+import { AdminUnifiedLayoutSheetTrigger } from "@/components/admin/AdminUnifiedLayoutSheet";
+import { CrmKpisWidget } from "@/components/admin/dashboard-widgets/CrmKpisWidget";
+import { CrmSourcesTagsWidget } from "@/components/admin/dashboard-widgets/CrmSourcesTagsWidget";
+import { CrmPipelineOverdueWidget } from "@/components/admin/dashboard-widgets/CrmPipelineOverdueWidget";
+import { CrmTasksActivityWidget } from "@/components/admin/dashboard-widgets/CrmTasksActivityWidget";
+import { AnalyticsSummaryCardsWidget } from "@/components/admin/dashboard-widgets/AnalyticsSummaryCardsWidget";
 /** Summary row for list (lightweight for fast load on mobile). */
 interface AssessmentSummary {
   id: number;
@@ -101,19 +167,6 @@ interface Contact {
   createdAt: string;
 }
 
-interface ResumeRequest {
-  id: number;
-  name: string;
-  email: string;
-  company?: string;
-  purpose?: string;
-  position?: string;
-  message?: string;
-  accessed: boolean;
-  accessedAt?: string;
-  createdAt: string;
-}
-
 /** Format assessment payload as plain text for display (no JSON). */
 function formatAssessmentDataAsText(data: Record<string, unknown> | null | undefined): string {
   if (!data || typeof data !== "object") return "No data.";
@@ -160,9 +213,88 @@ function formatPricingAsText(pb: Record<string, unknown> | null | undefined): st
   return lines.join("\n");
 }
 
+const DASHBOARD_INBOX_TABS = ["assessments", "contacts"] as const;
+type DashboardInboxTab = (typeof DASHBOARD_INBOX_TABS)[number];
+
+function parseDashboardInboxTab(raw: string | null): DashboardInboxTab {
+  if (raw === "contacts" || raw === "assessments") return raw;
+  return "assessments";
+}
+
+type DevDigestEntry = {
+  date: string;
+  time?: string;
+  title: string;
+  items: string[];
+  sourceBranches?: string[];
+};
+
+/** One release note block — full text always visible; the whole feed is collapsed via a parent Collapsible. */
+function DevUpdateDigestEntry({ entry, index }: { entry: DevDigestEntry; index: number }) {
+  const headingId = `dev-update-heading-${index}`;
+  const dateLabel = formatDevUpdateDateLabel(entry.date);
+  const timeInfo = entry.time ? formatDevUpdateTimeInEastern(entry.date, entry.time) : null;
+  const dateTimeAttr = timeInfo?.instant ? timeInfo.instant.toISOString() : entry.date;
+  const hasItems = entry.items && entry.items.length > 0;
+  const hasBranchNote = entry.sourceBranches && entry.sourceBranches.length > 1;
+
+  return (
+    <article className="border-b border-border/70 pb-6 last:border-b-0 last:pb-0 scroll-mt-2" aria-labelledby={headingId}>
+      <header className="mb-3 space-y-1 max-w-3xl">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-3 sm:gap-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 text-sm shrink-0">
+            <time
+              className="font-medium tabular-nums text-foreground"
+              dateTime={dateTimeAttr}
+              suppressHydrationWarning
+            >
+              {dateLabel}
+            </time>
+            {timeInfo ? (
+              <>
+                <span className="text-muted-foreground" aria-hidden>
+                  ·
+                </span>
+                <span className="tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
+                  {timeInfo.label}
+                </span>
+              </>
+            ) : null}
+          </div>
+          <h3 id={headingId} className="text-base font-semibold text-foreground leading-snug tracking-tight min-w-0 flex-1">
+            {entry.title}
+          </h3>
+        </div>
+        {!hasItems && !hasBranchNote ? (
+          <p className="text-sm text-muted-foreground">No detail bullets for this entry.</p>
+        ) : null}
+      </header>
+      {hasBranchNote ? (
+        <p className="text-sm text-muted-foreground mb-3 max-w-3xl leading-relaxed">
+          Also on branches: {entry.sourceBranches!.join(", ")}
+        </p>
+      ) : null}
+      {hasItems ? (
+        <ul className="space-y-3 list-none pl-0 m-0 max-w-3xl text-sm leading-relaxed text-foreground">
+          {entry.items.map((item, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="text-primary shrink-0 mt-0.5 select-none" aria-hidden>
+                •
+              </span>
+              <span className="min-w-0 break-words">{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
 export default function AdminDashboardPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<number | null>(null);
@@ -174,12 +306,18 @@ export default function AdminDashboardPage() {
   const [showTourBanner, setShowTourBanner] = useState(false);
   const [tourCompletedOrDismissed, setTourCompletedOrDismissed] = useState(false);
   const [passwordResetEmail, setPasswordResetEmail] = useState("");
+  /** Entire development-updates feed (metadata + entries) — not per-row. */
+  const [devUpdatesOpen, setDevUpdatesOpen] = useState(false);
+  const [inboxTab, setInboxTab] = useState<DashboardInboxTab>("assessments");
+  const inboxTabsRef = useRef<HTMLDivElement>(null);
   const handled403 = useRef(false);
   /** Avoid hydration mismatch: server vs client can disagree on auth (e.g. sessionStorage placeholderData). */
   const [clientReady, setClientReady] = useState(false);
   useEffect(() => {
     setClientReady(true);
   }, []);
+
+  const dashboardLayout = useMainDashboardLayout();
 
   const sendPasswordResetMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -202,40 +340,36 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const completed = getTourCompleted();
-    const dismissed = getTourDismissed();
-    setShowTourBanner(!completed && !dismissed);
-    setTourCompletedOrDismissed(completed || dismissed);
+    setMounted(true);
   }, []);
 
-  const handleAdmin403 = (errorMessage?: string) => {
-    if (handled403.current) return;
-    handled403.current = true;
-    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    let hint = "Session may have expired. Please sign in again.";
-    try {
-      const parsed = typeof errorMessage === "string" && errorMessage.startsWith("{") ? JSON.parse(errorMessage) : null;
-      if (parsed?.hint) hint = parsed.hint;
-    } catch {
-      if (errorMessage?.includes("create-session-table")) hint = "Run in terminal: npx tsx scripts/create-session-table.ts then log out and log back in.";
+  useEffect(() => {
+    if (!mounted || isLoading) return;
+    if (!user) {
+      router.replace("/auth");
+      return;
     }
-    toast({
-      title: "Access denied",
-      description: hint,
-      variant: "destructive",
-      duration: 12000,
-    });
-    router.push("/auth");
-  };
+    if (!user.isAdmin || !user.adminApproved) {
+      router.replace("/");
+    }
+  }, [mounted, isLoading, user, router]);
+  }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    } else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) {
-      router.push("/");
-    }
-  }, [user, authLoading, router]);
+    setInboxTab(parseDashboardInboxTab(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const onInboxTabChange = useCallback(
+    (value: string) => {
+      const next = parseDashboardInboxTab(value);
+      setInboxTab(next);
+      router.replace(`/admin/dashboard?tab=${next}`, { scroll: false });
+      requestAnimationFrame(() =>
+        inboxTabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    },
+    [router],
+  );
 
   // Fetch assessments (summary only for fast mobile load)
   const { data: assessments = [], isLoading: assessmentsLoading, error: assessmentsError } = useQuery<AssessmentSummary[]>({
@@ -340,21 +474,6 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Fetch resume requests
-  const { data: resumeRequests = [], isLoading: resumeLoading, error: resumeError } = useQuery<ResumeRequest[]>({
-    queryKey: ["/api/admin/resume-requests"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/resume-requests");
-      return await response.json();
-    },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
-    retry: (failureCount, error: Error) => {
-      const msg = String(error?.message ?? "");
-      if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) return false;
-      return failureCount < 1;
-    },
-  });
-
   const { data: operatorProfileData } = useQuery<{ profile: { roleSelection: string } }>({
     queryKey: ["/api/admin/operator-profile"],
     queryFn: async () => {
@@ -387,13 +506,13 @@ export default function AdminDashboardPage() {
 
   // Handle 403 from any admin query (onError was removed in TanStack Query v5)
   useEffect(() => {
-    const err = assessmentsError ?? contactsError ?? resumeError;
+    const err = assessmentsError ?? contactsError;
     if (!err) return;
     const msg = String(err?.message ?? "");
     if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) {
       handleAdmin403(msg);
     }
-  }, [assessmentsError, contactsError, resumeError]);
+  }, [assessmentsError, contactsError]);
 
   // Update assessment status mutation
   const updateStatusMutation = useMutation({
@@ -437,61 +556,10 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Restore soft-deleted assessment
-  const restoreAssessmentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("POST", `/api/admin/assessments/${id}/restore`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      invalidateAssessmentLists();
-      toast({ title: "Assessment restored", description: "It appears in the active list again." });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Cannot restore",
-        description: error?.message || "Failed to restore assessment",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      pending: "outline",
-      reviewed: "secondary",
-      contacted: "default",
-      archived: "secondary",
-    };
-    
-    const icons: Record<string, any> = {
-      pending: Clock,
-      reviewed: CheckCircle,
-      contacted: CheckCircle,
-      archived: Archive,
-    };
-    
-    const Icon = icons[status] || Clock;
-    
+  if (!mounted || isLoading) {
     return (
-      <Badge variant={variants[status] || "outline"} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(value);
-
-  if (!clientReady || authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" aria-busy="true" aria-label="Loading dashboard">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -500,28 +568,70 @@ export default function AdminDashboardPage() {
     return null;
   }
 
+  return (
+    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <AscendraOperationsDashboard />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
+          <CardDescription>
+            Existing workflows remain available from their dedicated admin routes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {LEGACY_LINKS.map((item) => (
+            <Button key={item.href} variant="outline" size="sm" asChild>
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
   const isSuperAdmin = isAuthSuperUser(user);
   const tourSteps = getStepsForRole(isSuperAdmin);
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const createdInLastWeek = (iso: string) => {
+    const t = new Date(iso).getTime();
+    return Number.isFinite(t) && t >= sevenDaysAgo;
+  };
+  const recentContactsWeek = contacts.filter((c) => createdInLastWeek(c.createdAt)).length;
+  const recentInboundWeekCount =
+    recentContactsWeek + assessments.filter((a) => createdInLastWeek(a.createdAt)).length;
   const nudgeItems = buildNudgeItems({
     pendingAssessments,
     totalContacts: contacts.length,
-    unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
     isSuperAdmin,
     operatorRoleFocus: operatorProfileData?.profile?.roleSelection,
+    recentInboundWeekCount,
+    recentContactsWeek,
   });
+
+  const sectionShell = (id: string, render: () => React.ReactNode) => {
+    const idx = dashboardLayout.visibleSectionOrder.indexOf(id);
+    if (idx < 0) return null;
+    return (
+      <div id={`admin-widget-${id}`} className="w-full min-w-0" style={{ order: idx }}>
+        {render()}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
-          Admin Dashboard
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Manage assessments, quotes, and responses
-        </p>
+      <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
+            Admin Dashboard
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+            Tune what appears and in what order with Customize—defaults favor inbound work first, then tools and
+            notes.
+          </p>
+        </div>
+        {dashboardLayout.ready ? <AdminUnifiedLayoutSheetTrigger initialSurface="main" /> : null}
       </div>
 
       {/* New admin: offer guided tour */}
@@ -554,32 +664,7 @@ export default function AdminDashboardPage() {
         </Card>
       )}
 
-      {/* Daily nudge: suggested actions by role */}
-      <div className="mb-4">
-        <AdminDailyNudge
-          items={nudgeItems}
-          onStartTour={() => setTourActive(true)}
-          showTourCta={tourCompletedOrDismissed}
-        />
-      </div>
-
-      {/* Operator profile + AI daily/weekly plan */}
-      <div className="mb-4">
-        <AdminOperatorIntelligenceCard
-          dashboardStats={{
-            pendingAssessments,
-            totalContacts: contacts.length,
-            unaccessedResume: resumeRequests.filter((r) => !r.accessed).length,
-          }}
-        />
-      </div>
-
-      {/* Growth reminders: goals + platform-driven tasks */}
-      <div className="mb-4">
-        <AdminRemindersCard compact maxItems={5} showGenerate />
-      </div>
-
-      {/* Guided tour overlay */}
+      {/* Guided tour overlay (not part of reorderable blocks) */}
       {tourActive && tourSteps.length > 0 && (
         <AdminGuideTour
           steps={tourSteps}
@@ -599,8 +684,45 @@ export default function AdminDashboardPage() {
         />
       )}
 
+      {dashboardLayout.visibleSectionOrder.length === 0 ? (
+        <Card className="mb-6 border-dashed border-amber-500/40 bg-amber-500/[0.06]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">No dashboard sections visible</CardTitle>
+            <CardDescription>
+              Open <span className="font-medium text-foreground">Customize pages</span> above and turn on at least one
+              module, or reset to the default layout.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      <div className="flex flex-col w-full min-w-0">
+        {sectionShell(
+          "suggested",
+          () => (
+            <div className="mb-4">
+              <AdminDailyNudge
+                items={nudgeItems}
+                onStartTour={() => setTourActive(true)}
+                showTourCta={tourCompletedOrDismissed}
+              />
+            </div>
+          ),
+        )}
+        {sectionShell(
+          "reminders",
+          () => (
+            <div className="mb-4">
+              <AdminRemindersCard compact maxItems={5} showGenerate />
+            </div>
+          ),
+        )}
+
       {/* Summary Cards */}
-      <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      {sectionShell(
+        "summary",
+        () => (
+        <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Card className="border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-sm font-medium">Assessments</CardTitle>
@@ -649,6 +771,12 @@ export default function AdminDashboardPage() {
           </Link>
         </Button>
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
+          <Link href="/admin/operations">
+            <Radar className="h-4 w-4 mr-2 shrink-0" />
+            <span className="truncate">Operations dashboard</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/invoices">
             <Receipt className="h-4 w-4 mr-2 shrink-0" />
             <span className="truncate">Invoices</span>
@@ -694,187 +822,30 @@ export default function AdminDashboardPage() {
           </Link>
         </Button>
       </div>
+        ),
+      )}
 
-      {/* Password reset control — send reset link to any user by email */}
-      <Card className="mb-6 border bg-card shadow-sm overflow-hidden">
-        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-          <CardTitle className="text-base flex items-center gap-2">
-            <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
-            Password reset
-          </CardTitle>
-          <CardDescription>
-            Send a password reset link to any user or subscriber by email. They will receive a link valid for 1 hour.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="flex-1 min-w-[200px] max-w-sm space-y-1">
-              <Label htmlFor="password-reset-email" className="text-sm">Email address</Label>
-              <Input
-                id="password-reset-email"
-                type="email"
-                placeholder="user@example.com"
-                value={passwordResetEmail}
-                onChange={(e) => setPasswordResetEmail(e.target.value)}
-                disabled={sendPasswordResetMutation.isPending}
-                className="max-w-xs"
-              />
-            </div>
-            <Button
-              size="sm"
-              onClick={() => sendPasswordResetMutation.mutate(passwordResetEmail)}
-              disabled={!passwordResetEmail.trim() || sendPasswordResetMutation.isPending}
-            >
-              {sendPasswordResetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Send reset email
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Users can also request a reset from the sign-in page via &quot;Forgot password?&quot; — same link, same expiry.
+      {sectionShell(
+        "inbox",
+        () => (
+        <section className="mb-6 sm:mb-8 space-y-2" aria-labelledby="admin-dashboard-inbox-heading">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 id="admin-dashboard-inbox-heading" className="text-base font-semibold text-foreground tracking-tight">
+            Inbox
+          </h2>
+          <p className="text-xs text-muted-foreground max-w-md text-right leading-snug">
+            Triage new assessments and contact form messages here before diving into other tools.
           </p>
-        </CardContent>
-      </Card>
-
-      {/* Development updates log — digestible, auto-updates from content/development-updates.md */}
-      <Card data-tour="development-updates" className="mb-6 sm:mb-8 border bg-card shadow-sm overflow-hidden">
-        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                Development updates
-              </CardTitle>
-              <CardDescription className="mt-0.5">
-                Features and fixes shipped to production. In production, the list loads from{" "}
-                <code className="text-xs bg-muted px-1 rounded">content/development-updates.md</code> on GitHub{" "}
-                <code className="text-xs bg-muted px-1 rounded">main</code> by default (
-                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On Vercel, the raw
-                URL is built from{" "}
-                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_OWNER</code> /{" "}
-                <code className="text-xs bg-muted px-1 rounded">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
-                <code className="text-xs bg-muted px-1 rounded">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the markdown on{" "}
-                <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes automatically.
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0"
-              onClick={() => refetchDevUpdates()}
-              disabled={devUpdatesLoading}
-            >
-              {devUpdatesLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span className="sr-only">Refresh</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-          {/* Update time log: when data was last checked and source */}
-          {(devUpdatesData || devUpdatesCheckedAt) && (
-            <div className="space-y-1.5 mb-4 pb-3 border-b border-border/60">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                {devUpdatesCheckedAt > 0 && (
-                  <span suppressHydrationWarning>
-                    Last checked: {format(new Date(devUpdatesCheckedAt), "MMM d, yyyy · h:mm a")}
-                  </span>
-                )}
-                {devUpdatesData?.source && (
-                  <span>
-                    Source:{" "}
-                    {devUpdatesData.source === "github"
-                      ? devUpdatesData.mergeInfo?.mode === "multi_branch"
-                        ? "GitHub (live, merged branches)"
-                        : "GitHub (live)"
-                      : "file"}
-                  </span>
-                )}
-                {devUpdatesData?.source === "github" && devUpdatesData.mergeInfo?.mode === "multi_branch" && (
-                  <span>
-                    · {devUpdatesData.mergeInfo.branchesWithFile}/{devUpdatesData.mergeInfo.branchesScanned} branches
-                    had the file
-                  </span>
-                )}
-                {devUpdatesData?.source === "github" && (
-                  <span>New pushes may take up to ~5 min to appear.</span>
-                )}
-              </div>
-              {devUpdatesData?.sourceNote && (
-                <p className="text-xs text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
-              )}
-            </div>
-          )}
-          {devUpdatesLoading && !devUpdatesData ? (
-            <div className="flex items-center gap-2 py-6 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              <span className="text-sm">Loading updates…</span>
-            </div>
-          ) : !devUpdatesData?.updates?.length ? (
-            <p className="text-sm text-muted-foreground py-4">
-              No entries yet. Add sections to content/development-updates.md: start each section with{" "}
-              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD — Title</code> or include time like{" "}
-              <code className="text-xs bg-muted px-1 rounded">## YYYY-MM-DD 14:30 — Title</code>, then bullet points. Push to
-              production to see them here.
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {devUpdatesData.updates.map((entry, idx) => (
-                <div key={idx} className="border-b border-muted/60 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <time className="text-sm font-medium tabular-nums text-foreground" dateTime={entry.date + "T12:00:00"} suppressHydrationWarning>
-                      {format(new Date(entry.date + "T12:00:00"), "MMM d, yyyy")}
-                    </time>
-                    {entry.time ? (
-                      <>
-                        <span className="text-muted-foreground" aria-hidden>
-                          ·
-                        </span>
-                        <span className="text-sm tabular-nums text-muted-foreground font-medium" suppressHydrationWarning>
-                          {entry.time}
-                        </span>
-                      </>
-                    ) : null}
-                    <span className="text-muted-foreground" aria-hidden>
-                      —
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">{entry.title}</span>
-                  </div>
-                  {entry.sourceBranches && entry.sourceBranches.length > 1 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Also on branches: {entry.sourceBranches.join(", ")}
-                    </p>
-                  )}
-                  {entry.items.length > 0 && (
-                    <ul className="mt-2 space-y-1 list-none pl-0 text-sm text-muted-foreground">
-                      {entry.items.map((item, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="text-primary shrink-0">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Tabs */}
-      <Tabs defaultValue="assessments" className="space-y-4" data-tour="tabs">
-        <TabsList className="w-full sm:w-auto flex flex-nowrap h-auto min-h-[44px] overflow-x-auto overflow-y-hidden gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
+        </div>
+        {/* Tabs — sync with ?tab=assessments|contacts (e.g. from Suggested for you) */}
+        <div ref={inboxTabsRef} id="admin-dashboard-inbox-tabs" className="scroll-mt-20">
+          <Tabs value={inboxTab} onValueChange={onInboxTabChange} className="space-y-4" data-tour="tabs">
+            <TabsList className="w-full flex flex-wrap h-auto min-h-[44px] gap-1 p-1.5 bg-muted/80 rounded-lg [&>button]:shrink-0 [&>button]:text-xs sm:[&>button]:text-sm [&>button]:px-3 [&>button]:py-2">
           <TabsTrigger value="assessments">
             Assessments ({assessments.length})
           </TabsTrigger>
           <TabsTrigger value="contacts">
             Contacts ({contacts.length})
-          </TabsTrigger>
-          <TabsTrigger value="resume-requests">
-            Resume ({resumeRequests.length})
           </TabsTrigger>
         </TabsList>
         <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
@@ -970,7 +941,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                          Submitted: {formatLocaleMediumDateTime(assessment.createdAt)}
                         </p>
                       </CardContent>
                     </Card>
@@ -1050,7 +1021,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                          Submitted: {format(new Date(assessment.createdAt), "PPp")}
+                          Submitted: {formatLocaleMediumDateTime(assessment.createdAt)}
                         </p>
                       </CardContent>
                     </Card>
@@ -1100,7 +1071,7 @@ export default function AdminDashboardPage() {
                           <p className="font-medium truncate">{assessment.name}</p>
                           <p className="text-sm text-muted-foreground break-all">{assessment.email}</p>
                           <p className="text-xs text-muted-foreground mt-1" suppressHydrationWarning>
-                            Removed {assessment.deletedAt ? format(new Date(assessment.deletedAt), "PPp") : "—"}
+                            Removed {assessment.deletedAt ? formatLocaleMediumDateTime(assessment.deletedAt) : "—"}
                           </p>
                         </div>
                         <Button
@@ -1226,7 +1197,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                         Submitted:{" "}
                         {contact.createdAt
-                          ? format(new Date(contact.createdAt), "PPp")
+                          ? formatLocaleMediumDateTime(contact.createdAt)
                           : "N/A"}
                       </p>
                     </CardContent>
@@ -1236,71 +1207,406 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </TabsContent>
+          </Tabs>
+        </div>
 
-        {/* Resume Requests Tab */}
-        <TabsContent value="resume-requests" className="space-y-4 mt-4">
-          {resumeLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin" />
+      </section>
+        ),
+      )}
+
+      {sectionShell(
+        "intelligence",
+        () => (
+        <div className="mb-6 sm:mb-8">
+          <AdminOperatorIntelligenceCard />
+        </div>
+        ),
+      )}
+
+      {sectionShell(
+        "shortcuts",
+        () => (
+          <>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-foreground">Workspace shortcuts</span>
+              <AdminHelpTip
+                content="Open deeper tools (billing, intel, content, directory) after inbox triage. On each destination page, use ? next to headings and fields—that’s where controls are explained, not the top nav."
+                ariaLabel="Help: Workspace shortcuts row"
+              />
             </div>
-          ) : resumeRequests.length === 0 ? (
-            <Card className="overflow-hidden">
-              <CardContent className="py-12 px-4 sm:px-6 text-center">
-                <p className="text-sm text-muted-foreground">No resume requests found</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {resumeRequests.map((request) => (
-                <Card key={request.id} className="overflow-hidden">
-                  <CardHeader className="px-4 sm:px-6">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg truncate">{request.name}</CardTitle>
-                        <CardDescription className="break-all">{request.email}</CardDescription>
-                        {request.company && (
-                          <CardDescription className="truncate">{request.company}</CardDescription>
-                        )}
-                      </div>
-                      {request.accessed ? (
-                        <Badge variant="default" className="flex items-center gap-1 shrink-0">
-                          <CheckCircle className="h-3 w-3" />
-                          Accessed
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="flex items-center gap-1 shrink-0">
-                          <Clock className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 sm:px-6 pt-0 space-y-3">
-                    {request.position && (
-                      <div>
-                        <p className="text-sm font-medium">Position</p>
-                        <p className="text-sm text-muted-foreground">{request.position}</p>
-                      </div>
-                    )}
-                    {request.message && (
-                      <div>
-                        <p className="text-sm font-medium">Message</p>
-                        <p className="text-sm text-muted-foreground line-clamp-3">{request.message}</p>
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      Requested: {format(new Date(request.createdAt), "PPp")}
-                      {request.accessedAt && ` • Accessed: ${format(new Date(request.accessedAt), "PPp")}`}
-                    </p>
-                  </CardContent>
-                </Card>
+            <div
+              data-tour="quick-links"
+              className="mb-6 grid grid-cols-1 gap-2.5 fold:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
+              {[
+                {
+                  href: "/admin/scheduler",
+                  label: "Meetings & calendar",
+                  icon: Calendar,
+                  help: "Calendar, appointment inbox, and branded booking links. Start here for day-to-day booking work.",
+                  helpAria: "Help: Meetings and calendar",
+                },
+                {
+                  href: "/admin/scheduling",
+                  label: "Booking & reminders setup",
+                  icon: CalendarClock,
+                  help: "Time zone, meeting types, availability, emails, and whether public booking is on.",
+                  helpAria: "Help: Booking setup",
+                },
+                {
+                  href: "/admin/site-directory",
+                  label: "Pages directory",
+                  icon: MapIcon,
+                  help: "On the directory screen: search and filter every route, open a page, or copy full JSON for tools. Tip: narrow by audience when you only want admin tools.",
+                  helpAria: "Help: Pages directory shortcut",
+                },
+                {
+                  href: "/admin/how-to",
+                  label: "How-to & guides",
+                  icon: BookOpen,
+                  help: "Curated step-by-step articles (LTV, discovery, intelligence, knowledge base). Read a section, then work in the target tool using its own ? tips on each field.",
+                  helpAria: "Help: How-to and guides",
+                },
+                {
+                  href: "/admin/invoices",
+                  label: "Invoices",
+                  icon: Receipt,
+                  help: "Build invoices, line items, and tax; send for payment when Stripe is connected. Check statuses as clients pay.",
+                  helpAria: "Help: Invoices",
+                },
+                {
+                  href: "/admin/announcements",
+                  label: "Project updates",
+                  icon: Sparkles,
+                  help: "Write admin-facing project news that shows in digest and related surfaces. Use for shipped work and operating notes.",
+                  helpAria: "Help: Project updates",
+                },
+                {
+                  href: "/admin/feedback",
+                  label: "Feedback",
+                  icon: MessageSquare,
+                  help: "Review submissions from site feedback flows; triage and archive so nothing important sits unread.",
+                  helpAria: "Help: Feedback inbox",
+                },
+                {
+                  href: "/admin/offers",
+                  label: "Site offers",
+                  icon: Tag,
+                  help: "Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site.",
+                  helpAria: "Help: Site offers",
+                },
+                {
+                  href: "/admin/growth-platform",
+                  label: "Growth platform",
+                  icon: Layers,
+                  help: "DFY/DWY/DIY offer stack catalog and PPC model summaries; links to the public hub and related admin tools.",
+                  helpAria: "Help: Growth platform",
+                },
+                {
+                  href: "/admin/challenge/leads",
+                  label: "Challenge leads",
+                  icon: Inbox,
+                  help: "Leads captured from challenge funnels; use filters and exports there to move people into CRM follow-up.",
+                  helpAria: "Help: Challenge leads",
+                },
+                {
+                  href: "/admin/growth-os",
+                  label: "Growth OS",
+                  icon: Radar,
+                  help: "Configure the Growth OS product: security, client shares, revenue settings. Explore sub-pages from there; each has its own forms and ? help.",
+                  helpAria: "Help: Growth OS",
+                },
+                {
+                  href: "/admin/growth-os/intelligence",
+                  label: "Market research",
+                  icon: Search,
+                  help: "Run keyword/topic batches, read performance rollups, and wire automations—creative ops research, not the scored AMIE economics model.",
+                  helpAria: "Help: Growth OS market research",
+                },
+                {
+                  href: "/admin/market-intelligence",
+                  label: "AMIE intelligence",
+                  icon: Radar,
+                  help: "Fill market inputs, run analysis, read scores and opportunity tier, then copy JSON or save a research row. ? icons on that page decode each card and field.",
+                  helpAria: "Help: AMIE intelligence",
+                },
+                {
+                  href: "/admin/internal-audit",
+                  label: "Funnel audit",
+                  icon: ClipboardList,
+                  help: "Internal checklist and scoring for funnel assets before launch. Work the items on that screen to clear readiness gaps.",
+                  helpAria: "Help: Funnel audit",
+                },
+                {
+                  href: "/offer-valuation",
+                  label: "Offer valuation",
+                  icon: LineChart,
+                  help: "Monitor the public offer-valuation funnel: submissions, status, and follow-up from the admin side of that flow.",
+                  helpAria: "Help: Offer valuation",
+                },
+                {
+                  href: "/admin/content-studio",
+                  label: "Content studio",
+                  icon: PenLine,
+                  help: "Draft documents, manage the editorial calendar, and schedule social posts from one hub. Each sub-view explains approvals and publishing on that page.",
+                  helpAria: "Help: Content studio",
+                },
+                {
+                  href: "/admin/agent-knowledge",
+                  label: "Assistant knowledge",
+                  icon: BookOpen,
+                  help: "Create entries and toggle where they’re allowed (assistant, research, messages). The floating mentor reads enabled text as trusted context—edit titles and bodies on that screen.",
+                  helpAria: "Help: Assistant knowledge",
+                },
+              ].map((shortcut) => (
+                <div
+                  key={shortcut.href}
+                  className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/70 bg-card/70 p-2.5 shadow-sm"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-h-[44px] w-full justify-start px-2 py-2 text-left"
+                    asChild
+                  >
+                    <Link href={shortcut.href} className="min-w-0">
+                      <span className="mr-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <shortcut.icon className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 break-words text-sm font-medium leading-snug">
+                        {shortcut.label}
+                      </span>
+                    </Link>
+                  </Button>
+                  <AdminHelpTip content={shortcut.help} ariaLabel={shortcut.helpAria} />
+                </div>
               ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </>
+        ),
+      )}
 
-      {/* Delete assessment confirmation (soft delete: recoverable from Deleted section) */}
+      {sectionShell(
+        "password",
+        () => (
+        <>
+      {/* Password reset control — send reset link to any user by email */}
+      <Card className="mb-6 border bg-card shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardTitle className="text-base flex items-center gap-2">
+            <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+            Password reset
+          </CardTitle>
+          <CardDescription>
+            Send a password reset link to any user or subscriber by email. They will receive a link valid for 1 hour.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[200px] max-w-sm space-y-1">
+              <Label htmlFor="password-reset-email" className="text-sm">Email address</Label>
+              <Input
+                id="password-reset-email"
+                type="email"
+                placeholder="user@example.com"
+                value={passwordResetEmail}
+                onChange={(e) => setPasswordResetEmail(e.target.value)}
+                disabled={sendPasswordResetMutation.isPending}
+                className="max-w-xs"
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={() => sendPasswordResetMutation.mutate(passwordResetEmail)}
+              disabled={!passwordResetEmail.trim() || sendPasswordResetMutation.isPending}
+            >
+              {sendPasswordResetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Send reset email
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Users can also request a reset from the sign-in page via &quot;Forgot password?&quot; — same link, same expiry.
+          </p>
+        </CardContent>
+      </Card>
+        </>
+        ),
+      )}
+
+      {sectionShell(
+        "devUpdates",
+        () => (
+        <>
+      {/* Development updates log — single collapsible for the whole feed; entries are always fully readable when open */}
+      <Card data-tour="development-updates" className="mb-6 sm:mb-8 border bg-card shadow-sm overflow-hidden">
+        <Collapsible open={devUpdatesOpen} onOpenChange={setDevUpdatesOpen}>
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6 space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex min-w-0 flex-1 items-start gap-2 rounded-lg text-left -m-1 p-1",
+                    "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  aria-expanded={devUpdatesOpen}
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200",
+                      devUpdatesOpen && "rotate-180",
+                    )}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <CardTitle className="text-base sm:text-lg flex flex-wrap items-center gap-2">
+                      <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      Development updates
+                      {devUpdatesData?.updates?.length ? (
+                        <Badge variant="secondary" className="font-normal text-xs">
+                          {devUpdatesData.updates.length}
+                        </Badge>
+                      ) : null}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {devUpdatesOpen ? "Click to hide the full log" : "Click to show release notes and source details"}
+                    </p>
+                  </div>
+                </button>
+              </CollapsibleTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void refetchDevUpdates();
+                }}
+                disabled={devUpdatesLoading}
+              >
+                {devUpdatesLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span className="sr-only">Refresh</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CollapsibleContent className="data-[state=closed]:animate-none">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0">
+              <CardDescription className="text-sm leading-relaxed max-w-3xl mb-4">
+                {isSuperAdmin ?
+                  <>
+                    Features and fixes shipped to production. In production, the list loads from{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">content/development-updates.md</code> on
+                    GitHub <code className="text-xs bg-muted px-1 rounded">main</code> by default (
+                    <code className="text-xs bg-muted px-1 rounded break-all">DEVELOPMENT_UPDATES_GITHUB_REF</code>). On
+                    Vercel, the raw URL is built from{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">VERCEL_GIT_REPO_OWNER</code> /{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">VERCEL_GIT_REPO_SLUG</code> unless you set{" "}
+                    <code className="text-xs bg-muted px-1 rounded break-all">DEVELOPMENT_UPDATES_RAW_URL</code>. Edit the
+                    markdown on <code className="text-xs bg-muted px-1 rounded">main</code> and push; this panel refreshes
+                    automatically.
+                  </>
+                : "Highlights of what shipped to production. The list updates from your team’s release notes on GitHub."}
+              </CardDescription>
+              {(devUpdatesData || devUpdatesCheckedAt) && (
+                <div className="space-y-2 mb-5 pb-4 border-b border-border/60 max-w-3xl">
+                  <div className="flex flex-col gap-1.5 text-sm text-muted-foreground leading-relaxed">
+                    {devUpdatesCheckedAt > 0 && (
+                      <span suppressHydrationWarning>
+                        Last checked: {formatDevUpdatesLastChecked(devUpdatesCheckedAt)} (US Eastern)
+                      </span>
+                    )}
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {devUpdatesData?.source && (
+                        <span>
+                          Source:{" "}
+                          {devUpdatesData.source === "github"
+                            ? devUpdatesData.mergeInfo?.mode === "multi_branch"
+                              ? "GitHub (live, merged branches)"
+                              : "GitHub (live)"
+                            : "file"}
+                        </span>
+                      )}
+                      {devUpdatesData?.source === "github" && devUpdatesData.mergeInfo?.mode === "multi_branch" && (
+                        <span>
+                          · {devUpdatesData.mergeInfo.branchesWithFile}/{devUpdatesData.mergeInfo.branchesScanned}{" "}
+                          branches had the file
+                        </span>
+                      )}
+                      {devUpdatesData?.source === "github" && <span>New pushes may take up to ~5 min to appear.</span>}
+                    </div>
+                    <span className="text-muted-foreground/90">
+                      Entry dates and headline times use US Eastern (America/New_York).
+                    </span>
+                  </div>
+                  {devUpdatesData?.sourceNote && (
+                    <p className="text-sm leading-relaxed text-amber-600 dark:text-amber-500">{devUpdatesData.sourceNote}</p>
+                  )}
+                </div>
+              )}
+              {devUpdatesLoading && !devUpdatesData ? (
+                <div className="flex items-center gap-2 py-6 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  <span className="text-sm">Loading updates…</span>
+                </div>
+              ) : !devUpdatesData?.updates?.length ? (
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl py-2">
+                  {isSuperAdmin ?
+                    <>
+                      No entries yet. Add sections to content/development-updates.md: start each section with{" "}
+                      <code className="text-xs bg-muted px-1 rounded break-all">## YYYY-MM-DD — Title</code> or include
+                      time like{" "}
+                      <code className="text-xs bg-muted px-1 rounded break-all">## YYYY-MM-DD 14:30 — Title</code>, then
+                      bullet points. Push to production to see them here.
+                    </>
+                  : "No release notes in the feed yet. Ask your technical lead to publish updates to the development-updates log."}
+                </p>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-4 sm:px-4 sm:py-5">
+                  {devUpdatesData.updates.map((entry, idx) => (
+                    <DevUpdateDigestEntry key={`${entry.date}-${entry.title}-${idx}`} entry={entry} index={idx} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+        </>
+        ),
+      )}
+
+        {sectionShell("kpis", () => (
+          <div className="mb-4 min-w-0">
+            <CrmKpisWidget />
+          </div>
+        ))}
+        {sectionShell("sourcesTags", () => (
+          <div className="mb-4 min-w-0">
+            <CrmSourcesTagsWidget />
+          </div>
+        ))}
+        {sectionShell("pipeline", () => (
+          <div className="mb-4 min-w-0">
+            <CrmPipelineOverdueWidget />
+          </div>
+        ))}
+        {sectionShell("tasksActivity", () => (
+          <div className="mb-4 min-w-0">
+            <CrmTasksActivityWidget />
+          </div>
+        ))}
+        {sectionShell("analytics_summary", () => (
+          <div className="mb-4 min-w-0">
+            <AnalyticsSummaryCardsWidget />
+          </div>
+        ))}
+      </div>
+
+            {/* Delete assessment confirmation (soft delete: recoverable from Deleted section) */}
       <AlertDialog open={deleteAssessmentId !== null} onOpenChange={(open) => !open && setDeleteAssessmentId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

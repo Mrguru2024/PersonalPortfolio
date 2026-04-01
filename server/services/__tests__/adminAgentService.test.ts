@@ -44,6 +44,15 @@ describe("processAgentMessage without OpenAI", () => {
     expect(r.reply).toMatch(/\[.*\]\(\/admin\/analytics\)/);
   });
 
+  it("navigates to discovery toolkit from keywords", async () => {
+    const r = await processAgentMessage({
+      message: "open the discovery toolkit",
+      canPerformActions: true,
+      openaiAvailable: false,
+    });
+    expect(r.action).toEqual({ type: "navigate", url: "/admin/crm/discovery-tools" });
+  });
+
   it("omits action when actions are disabled", async () => {
     const r = await processAgentMessage({
       message: "open newsletters",

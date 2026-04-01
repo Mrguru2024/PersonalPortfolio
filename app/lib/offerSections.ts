@@ -3,6 +3,8 @@
  * Used by admin editor and public offer page.
  */
 
+import { STARTUP_GROWTH_AUDIT_PRICE_RANGE } from "@/lib/servicePricing";
+
 export interface OfferHero {
   title: string;
   subtitle: string;
@@ -121,7 +123,7 @@ export const DEFAULT_OFFER_SECTIONS: OfferSections = {
   },
   price: {
     label: "Price range",
-    amount: "$249 – $399",
+    amount: STARTUP_GROWTH_AUDIT_PRICE_RANGE,
     note:
       "One-time audit and deliverable set. No ongoing retainer. You get the plan; you choose how to execute it.",
   },

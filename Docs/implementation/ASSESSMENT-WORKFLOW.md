@@ -51,13 +51,10 @@ A comprehensive, multi-step interactive assessment workflow that helps clients d
    - AI assistance popover component
    - Provides contextual help throughout the workflow
 
-3. **`app/pages/AssessmentResults.tsx`** (legacy)
-   - Results page component (alternative implementation)
-
-4. **`app/assessment/page.tsx`**
+3. **`app/assessment/page.tsx`**
    - Assessment page route
 
-5. **`app/assessment/results/page.tsx`**
+4. **`app/assessment/results/page.tsx`**
    - Results/summary page with pricing breakdown
 
 ### Services

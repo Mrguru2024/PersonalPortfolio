@@ -2,14 +2,15 @@
  * AI draft for admin site offer editor (OpenAI). Optional: OPENAI_API_KEY.
  */
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
 
 let openai: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  if (!openai) openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) return null;
+  if (!openai) openai = new OpenAI({ apiKey: key });
   return openai;
 }
 

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "operatingPrinciples": [
+    "Your merged principle appears after defaults unless you replace the whole array."
+  ],
+  "assistantDirectives": [
+    "Add studio-specific rules here; they append/replace per deep-merge rules for arrays you send."
+  ]
+}

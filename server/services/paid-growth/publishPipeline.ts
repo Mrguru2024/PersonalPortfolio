@@ -62,6 +62,7 @@ export async function runPpcPublishPipeline(campaignId: number): Promise<Publish
       gates: readiness.gates,
       remediationChecklist: readiness.remediationChecklist,
       package: readiness.packageRecommendation,
+      growthRoute: readiness.growthRouteRecommendation,
       adReady: readiness.adReady,
     },
   });
@@ -94,6 +95,7 @@ export async function runPpcPublishPipeline(campaignId: number): Promise<Publish
         remediationChecklist: readiness.remediationChecklist,
         blockers: readiness.blockers,
         packageRecommendation: readiness.packageRecommendation,
+        growthRouteRecommendation: readiness.growthRouteRecommendation,
       },
     };
   }

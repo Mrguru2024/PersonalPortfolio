@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { AdminHelpTip, AdminTipLabel } from "@/components/admin/AdminHelpTip";
 
 type KnowledgeEntry = {
   id: number;
@@ -125,8 +126,14 @@ export default function AdminAgentKnowledgePage() {
           <div className="rounded-lg bg-primary/10 p-2 text-primary">
             <BookOpen className="h-6 w-6" aria-hidden />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Assistant knowledge base</h1>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold tracking-tight">Assistant knowledge base</h1>
+              <AdminHelpTip
+                content="Operator-owned facts and tone. Entries with “Use in assistant” are merged into the floating admin agent system context. “Use in research” adds a second grounding block for harder questions. Keep wording precise — the model treats this text as high-trust."
+                ariaLabel="Help: Knowledge base overview"
+              />
+            </div>
             <p className="text-muted-foreground text-sm mt-1 max-w-xl">
               Add notes, positioning, and internal facts. Toggle where each entry is allowed: <strong>Use in assistant</strong> injects trusted context into the floating mentor (commands, media, and prompts). <strong>Use in research</strong> adds deeper notes into the same assistant for reasoning and suggestions. <strong>Use in messages</strong> allows newsletter and similar AI copy flows to reference your wording (when that flow loads knowledge). Keep spellings accurate—the model treats this as source of truth.
             </p>
@@ -135,12 +142,22 @@ export default function AdminAgentKnowledgePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">New entry</CardTitle>
-            <CardDescription>Short title plus detailed body. Keep facts accurate; the model treats this as trusted context.</CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg">New entry</CardTitle>
+                <CardDescription>Short title plus detailed body. Keep facts accurate; the model treats this as trusted context.</CardDescription>
+              </div>
+              <AdminHelpTip
+                content="Create SOP snippets, pricing guardrails, product names, or client nuances. After saving, toggles control which pipelines may read the entry."
+                ariaLabel="Help: New knowledge entry"
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="kb-title">Title</Label>
+              <AdminTipLabel htmlFor="kb-title" tip="Short label shown in lists. Use a name you’ll recognize when auditing what the assistant knows.">
+                Title
+              </AdminTipLabel>
               <Input
                 id="kb-title"
                 value={title}
@@ -150,7 +167,9 @@ export default function AdminAgentKnowledgePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kb-body">Notes</Label>
+              <AdminTipLabel htmlFor="kb-body" tip="Full text the model may see (subject to toggles). Write in plain sentences; avoid secrets you would not put in an internal wiki.">
+                Notes
+              </AdminTipLabel>
               <Textarea
                 id="kb-body"
                 value={body}
@@ -207,16 +226,22 @@ export default function AdminAgentKnowledgePage() {
                   <CardHeader className="pb-2">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <CardTitle className="text-base font-semibold">{e.title}</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive shrink-0"
-                        aria-label="Delete entry"
-                        onClick={() => deleteMutation.mutate(e.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          aria-label="Delete entry"
+                          onClick={() => deleteMutation.mutate(e.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <AdminHelpTip
+                          content="Permanently removes this note from your knowledge base. The assistant stops seeing it on the next request."
+                          ariaLabel="Help: Delete knowledge entry"
+                        />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

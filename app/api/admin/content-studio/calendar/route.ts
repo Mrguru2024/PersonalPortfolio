@@ -6,6 +6,10 @@ import {
   createCalendarEntry,
   getCalendarLinkedDocumentMeta,
 } from "@server/services/internalStudio/calendarService";
+import {
+  editorialStrategyMetaSchema,
+  sanitizeEditorialStrategyMetaForDb,
+} from "@shared/editorialStrategyMeta";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +27,7 @@ const postSchema = z.object({
   funnelStage: z.string().optional().nullable(),
   campaignId: z.number().int().optional().nullable(),
   projectKey: z.string().optional(),
+  strategyMeta: z.unknown().optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {
@@ -72,6 +77,22 @@ export async function POST(req: NextRequest) {
     if (endAt && Number.isNaN(endAt.getTime())) {
       return NextResponse.json({ error: "Invalid endAt" }, { status: 400 });
     }
+    let strategyMeta: ReturnType<typeof sanitizeEditorialStrategyMetaForDb> = null;
+    if (parsed.data.strategyMeta !== undefined) {
+      if (parsed.data.strategyMeta === null) {
+        strategyMeta = null;
+      } else {
+        const metaParsed = editorialStrategyMetaSchema.safeParse(parsed.data.strategyMeta);
+        if (!metaParsed.success) {
+          return NextResponse.json(
+            { error: "Validation", details: metaParsed.error.flatten() },
+            { status: 400 },
+          );
+        }
+        strategyMeta = sanitizeEditorialStrategyMetaForDb(metaParsed.data);
+      }
+    }
+
     const row = await createCalendarEntry({
       documentId: parsed.data.documentId ?? null,
       title: parsed.data.title,
@@ -83,6 +104,7 @@ export async function POST(req: NextRequest) {
       personaTags: parsed.data.personaTags ?? [],
       ctaObjective: parsed.data.ctaObjective ?? null,
       funnelStage: parsed.data.funnelStage ?? null,
+      strategyMeta,
       campaignId: parsed.data.campaignId ?? null,
       projectKey: parsed.data.projectKey ?? "ascendra_main",
     });

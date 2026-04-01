@@ -8,6 +8,8 @@ import { PersonaJourneyPanel } from "@/components/persona-journey/PersonaJourney
 import { useVisitorTracking } from "@/lib/useVisitorTracking";
 import { DIAGNOSTICS_HUB_PATH, PERSONA_JOURNEY_PATH } from "@/lib/funnelCtas";
 import { SectionReveal } from "@/components/motion";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_JOURNEY } from "@/lib/landingPageOutcomeFramework";
 
 function JourneyPageInner() {
   const { journey, setPersona, clearPersona, hydrated, activeId } = usePersonaJourney();
@@ -60,6 +62,7 @@ function JourneyPageInner() {
                   .
                 </p>
               </div>
+              <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_JOURNEY} className="pb-2" />
               <PersonaJourneySelector variant="full" pageVisited={PERSONA_JOURNEY_PATH} onSelect={setPersona} />
             </div>
           ) : (

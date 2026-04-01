@@ -11,6 +11,8 @@ export interface ProfileForScoring {
   id: number;
   industry: string | null;
   businessStage: string | null;
+  /** AFN tribe / founder type (e.g. startup_founder). */
+  founderTribe: string | null;
   headline: string | null;
   bio: string | null;
   location: string | null;
@@ -20,6 +22,13 @@ export interface ProfileForScoring {
   askMeAbout: string | null;
   whatBuilding: string | null;
   biggestChallenge: string | null;
+  /** Phase 3 — normalized tag slugs from junction tables */
+  skillSlugs?: string[];
+  industrySlugs?: string[];
+  interestSlugs?: string[];
+  goalSlugs?: string[];
+  challengeSlugs?: string[];
+  collabPreferenceSlugs?: string[];
   [key: string]: unknown;
 }
 
@@ -120,6 +129,18 @@ function textOverlapScore(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : intersection / union;
 }
 
+function jaccardSlugSets(a: string[] | undefined, b: string[] | undefined): number {
+  if (!a?.length || !b?.length) return 0;
+  const A = new Set(a);
+  const B = new Set(b);
+  let inter = 0;
+  A.forEach((s) => {
+    if (B.has(s)) inter++;
+  });
+  const uni = A.size + B.size - inter;
+  return uni === 0 ? 0 : inter / uni;
+}
+
 function stageDistance(s1: string | null, s2: string | null): number {
   if (!s1 || !s2) return -1;
   const i1 = STAGE_ORDER.indexOf(s1);
@@ -161,6 +182,28 @@ export function scoreConnectionCandidate(
   if (sameIndustry) {
     score += 25;
     reasons.push("Same industry");
+  }
+
+  // Normalized tag overlap (Phase 1–3 taxonomy)
+  const skillJ = jaccardSlugSets(me.skillSlugs, candidate.skillSlugs);
+  const goalJ = jaccardSlugSets(me.goalSlugs, candidate.goalSlugs);
+  const interestJ = jaccardSlugSets(me.interestSlugs, candidate.interestSlugs);
+  const indSlugJ = jaccardSlugSets(me.industrySlugs, candidate.industrySlugs);
+  if (skillJ > 0) {
+    score += Math.min(14, Math.round(skillJ * 18));
+    reasons.push("Shared skill tags");
+  }
+  if (goalJ > 0) {
+    score += Math.min(16, Math.round(goalJ * 20));
+    reasons.push("Aligned goal tags");
+  }
+  if (interestJ > 0.15) {
+    score += Math.min(12, Math.round(interestJ * 14));
+    reasons.push("Shared interests");
+  }
+  if (!sameIndustry && indSlugJ > 0) {
+    score += Math.min(10, Math.round(indSlugJ * 12));
+    reasons.push("Industry tag overlap");
   }
 
   // Business stage (peer or adjacent)
@@ -276,14 +319,27 @@ export function recommendConnections(
     .slice(0, max);
 }
 
+export type ProfileTagSlugsForScoring = {
+  skills?: string[];
+  industries?: string[];
+  interests?: string[];
+  goals?: string[];
+  challenges?: string[];
+  collabPreferences?: string[];
+};
+
 /** Map DB profile row to ProfileForScoring (snake_case or camelCase). */
-export function profileToScoringShape(row: AfnProfile | Record<string, unknown>): ProfileForScoring {
+export function profileToScoringShape(
+  row: AfnProfile | Record<string, unknown>,
+  tags?: ProfileTagSlugsForScoring
+): ProfileForScoring {
   const r = row as Record<string, unknown>;
   return {
     userId: Number(r.userId ?? r.user_id),
     id: Number(r.id),
     industry: (r.industry as string) ?? null,
     businessStage: (r.businessStage as string) ?? (r.business_stage as string) ?? null,
+    founderTribe: (r.founderTribe as string) ?? (r.founder_tribe as string) ?? null,
     headline: (r.headline as string) ?? null,
     bio: (r.bio as string) ?? null,
     location: (r.location as string) ?? null,
@@ -294,5 +350,11 @@ export function profileToScoringShape(row: AfnProfile | Record<string, unknown>)
     askMeAbout: (r.askMeAbout as string) ?? (r.ask_me_about as string) ?? null,
     whatBuilding: (r.whatBuilding as string) ?? (r.what_building as string) ?? null,
     biggestChallenge: (r.biggestChallenge as string) ?? (r.biggest_challenge as string) ?? null,
+    skillSlugs: tags?.skills,
+    industrySlugs: tags?.industries,
+    interestSlugs: tags?.interests,
+    goalSlugs: tags?.goals,
+    challengeSlugs: tags?.challenges,
+    collabPreferenceSlugs: tags?.collabPreferences,
   };
 }

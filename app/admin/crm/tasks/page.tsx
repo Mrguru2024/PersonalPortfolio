@@ -76,7 +76,7 @@ export default function CrmTasksPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="inline-flex flex-nowrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
+        <TabsList className="flex w-full flex-wrap items-center gap-1 p-1.5 min-h-[44px] rounded-lg bg-muted/80 [&>button]:shrink-0 [&>button]:min-h-[40px]">
           <TabsTrigger value="all">My tasks</TabsTrigger>
           <TabsTrigger value="overdue">Overdue</TabsTrigger>
         </TabsList>

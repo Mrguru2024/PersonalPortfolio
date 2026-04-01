@@ -3,7 +3,42 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+function parseBooleanEnv(value: string | undefined): boolean | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return undefined;
+}
+
+const databaseUrl = process.env.DATABASE_URL ?? "";
+const isLocalDatabase =
+  databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1");
+
+if (isLocalDatabase) {
+  neonConfig.wsProxy = () =>
+    process.env.NEON_WS_PROXY?.trim() || "localhost:443/v2";
+  neonConfig.useSecureWebSocket =
+    parseBooleanEnv(process.env.NEON_WS_PROXY_SECURE) ?? true;
+  neonConfig.pipelineTLS = false;
+  neonConfig.pipelineConnect = false;
+}
+
 neonConfig.webSocketConstructor = ws;
+/**
+ * Local Postgres via Neon WS needs non-TLS ws proxy and disabled pipeline connect.
+ * Keep this here (in addition to instrumentation.ts) so API routes/scripts that import db
+ * before instrumentation still connect in local dev.
+ */
+const dbUrl = process.env.DATABASE_URL ?? "";
+const isLocalDb =
+  dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
+if (isLocalDb) {
+  neonConfig.wsProxy = () => process.env.NEON_LOCAL_WS_PROXY ?? "localhost:5488/v2";
+  neonConfig.useSecureWebSocket = false;
+  neonConfig.pipelineTLS = false;
+  neonConfig.pipelineConnect = false;
+}
 
 /** Convert ErrorEvent or getter-only errors to a plain Error so no code can set .message and throw */
 function toPlainError(e: unknown): Error {

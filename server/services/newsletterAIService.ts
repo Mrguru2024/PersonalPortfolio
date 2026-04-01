@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 // Lazy initialization of OpenAI client - only create when actually needed
 let openai: OpenAI | null = null;

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import { formatLocaleMediumDateTime } from '@/lib/localeDateTime';
 
 interface GeneratedImage {
   url: string;
@@ -238,7 +239,7 @@ export default function ImageGenerator({ onImageSelect, className, defaultPrompt
           </div>
           
           <p className="text-xs text-muted-foreground mt-2">
-            Generated {new Date(data.timestamp).toLocaleString()}
+            Generated {formatLocaleMediumDateTime(data.timestamp)}
           </p>
         </div>
       )}

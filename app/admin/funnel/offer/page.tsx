@@ -57,7 +57,7 @@ export default function AdminFunnelOfferPage() {
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <ul className="list-disc list-inside space-y-2">
               <li><strong className="text-foreground">Hero:</strong> Title “Startup growth system”, subtitle.</li>
-              <li><strong className="text-foreground">Price:</strong> $249 – $399, one-time audit.</li>
+              <li><strong className="text-foreground">Price:</strong> $497 – $899, one-time audit (update in Site offers / offerSections if you change policy).</li>
               <li><strong className="text-foreground">Deliverables:</strong> Website audit, Messaging clarity, Conversion roadmap, Page structure blueprint, Actionable growth plan.</li>
               <li><strong className="text-foreground">Bullets:</strong> No long-term commitment, one deliverable set, etc.</li>
               <li><strong className="text-foreground">CTA:</strong> Strategy call / contact.</li>

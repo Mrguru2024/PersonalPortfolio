@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ type Design = {
 
 export default function CommunicationsDesignsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
 
   useEffect(() => {
@@ -52,7 +53,19 @@ export default function CommunicationsDesignsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Templates & designs</h2>
-          <p className="text-sm text-muted-foreground">Reusable HTML emails; block JSON reserved for richer builder later.</p>
+          <p className="text-sm text-muted-foreground">
+            Reusable email layouts for campaigns—subject, preview line, and body. Optional labels for link areas help
+            show which parts of the email get clicks in your reports.
+          </p>
+          {isSuperUser ? (
+            <details className="mt-2 text-xs text-muted-foreground max-w-2xl">
+              <summary className="cursor-pointer font-medium text-foreground">Technical note (site owner)</summary>
+              <p className="mt-2 leading-relaxed">
+                Stored fields include full HTML plus the link-area labels that power click breakdowns in analytics (and
+                any future drag-and-drop editor).
+              </p>
+            </details>
+          ) : null}
         </div>
         <Button asChild>
           <Link href="/admin/communications/designs/new">
@@ -68,7 +81,15 @@ export default function CommunicationsDesignsPage() {
         <Card>
           <CardHeader>
             <CardTitle>No designs yet</CardTitle>
-            <CardDescription>Create a design or run the seed script for starter templates.</CardDescription>
+            <CardDescription>
+              {isSuperUser ? (
+                <>
+                  Create a design to get started. Starter templates may exist if they were added for your environment.
+                </>
+              ) : (
+                <>Create a design to get started.</>
+              )}
+            </CardDescription>
           </CardHeader>
         </Card>
       ) : (

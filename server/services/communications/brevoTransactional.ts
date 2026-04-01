@@ -5,6 +5,18 @@
 
 export type BrevoTransactionalResult = { ok: true; messageId: string } | { ok: false; error: string };
 
+const AUTHORIZED_IPS_URL = "https://app.brevo.com/security/authorised_ips";
+
+/** Enrich Brevo error strings (e.g. IP allowlist) for admin-facing messages. */
+export function humanizeBrevoApiError(message: string): string {
+  const m = message.trim();
+  if (!m) return message;
+  if (/unrecognised IP|unrecognized IP|non autorisée|not authorized IP/i.test(m)) {
+    return `${m} Open Brevo → Security → Authorized IPs and add your server’s outbound IP (Vercel changes over time). ${AUTHORIZED_IPS_URL}`;
+  }
+  return m;
+}
+
 export async function sendBrevoTransactional(input: {
   to: string;
   subject: string;
@@ -37,7 +49,8 @@ export async function sendBrevoTransactional(input: {
   });
   const data = (await res.json().catch(() => ({}))) as { messageId?: string; message?: string };
   if (!res.ok) {
-    return { ok: false, error: typeof data.message === "string" ? data.message : `Brevo API ${res.status}` };
+    const raw = typeof data.message === "string" ? data.message : `Brevo API ${res.status}`;
+    return { ok: false, error: humanizeBrevoApiError(raw) };
   }
   return { ok: true, messageId: data.messageId?.toString() ?? "unknown" };
 }

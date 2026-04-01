@@ -13,6 +13,8 @@ export interface EcosystemPillar {
 export interface PremiumOffer {
   slug: "website-optimization" | "brand-website" | "business-growth";
   name: string;
+  /** Illustrative US SMB range; final scope in proposal / SOW. */
+  typicalInvestment: string;
   audience: string;
   outcome: string;
   includes: string[];
@@ -53,43 +55,49 @@ export const PREMIUM_OFFERS: PremiumOffer[] = [
   {
     slug: "website-optimization",
     name: "Website Optimization System",
+    typicalInvestment:
+      "$4,500 – $14,000 typical project · ongoing optimization often $950 – $2,200/mo",
     audience:
       "Businesses with an existing website that need better performance and more leads.",
     outcome:
       "Improved clarity, stronger CTAs, better mobile experience, and conversion issues fixed so your site turns more visitors into opportunities.",
     includes: [
-      "Clarity and structure improvements",
-      "Stronger CTAs and conversion path",
-      "Mobile experience optimization",
-      "Lead capture and conversion fixes",
+      "See where visitors drop off before you pay for a full redesign",
+      "Stronger CTAs and a single obvious next step per page",
+      "Mobile experience that matches how people actually buy from you",
+      "Capture and follow-up hooks that don’t depend on someone remembering",
     ],
   },
   {
     slug: "brand-website",
     name: "Brand + Website System",
+    typicalInvestment:
+      "$18,000 – $55,000 typical coordinated creative + site (scope varies with Macon Designs® + Ascendra)",
     audience:
       "Businesses that need stronger presentation and a better website. Includes collaboration with Macon Designs®.",
     outcome:
       "Visual refresh, improved presentation, website redesign, and clearer messaging so your business looks and communicates more effectively.",
     includes: [
-      "Visual refresh and presentation quality",
-      "Website redesign or strategic refresh",
-      "Clearer messaging and alignment",
-      "Lead path and conversion planning",
+      "Presentation that matches the quality of your offer and reviews",
+      "Site redesign or strategic refresh with conversion in mind—not just a new look",
+      "Messaging aligned to how buyers decide in your category",
+      "Lead paths planned so design and sales don’t fight each other",
     ],
   },
   {
     slug: "business-growth",
     name: "Business Growth System",
+    typicalInvestment:
+      "$32,000 – $98,000+ coordinated program (positioning, creative, web, funnel)",
     audience:
       "Businesses that need strategy, design, and technology aligned. Includes Style Studio Branding, Macon Designs®, and Ascendra Technologies.",
     outcome:
       "Positioning clarity, improved presentation, and conversion-ready website systems so you grow with one coordinated team.",
     includes: [
-      "Brand positioning and messaging clarity",
-      "Visual direction and execution",
-      "Website and funnel implementation",
-      "Conversion and growth support",
+      "Positioning and messaging you can execute without re-explaining every week",
+      "Visual direction tied to trust and conversion—not decoration",
+      "Website and funnel implementation you can read leads from",
+      "Ongoing refinement based on what the data shows, not opinions alone",
     ],
   },
 ];
@@ -121,10 +129,10 @@ export const HELP_OPTIONS = [
 ] as const;
 
 export const BUDGET_OPTIONS = [
-  "Under $1,500",
-  "$1,500-$3,500",
-  "$3,500-$7,500",
-  "$7,500+",
+  "Under $5,000",
+  "$5,000–$15,000",
+  "$15,000–$40,000",
+  "$40,000+",
 ] as const;
 
 /** Optional "prefer not to say" for lower-friction quote/call forms */

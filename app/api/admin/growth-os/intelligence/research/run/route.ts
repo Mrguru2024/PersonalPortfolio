@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(out);
   } catch (e: unknown) {
     console.error(e);
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("OpenAI rejected model")) {
+      return NextResponse.json({ error: msg }, { status: 422 });
+    }
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

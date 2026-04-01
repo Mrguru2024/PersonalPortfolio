@@ -28,6 +28,24 @@ export function signCommUnsubscribeToken(leadId: number, campaignId: number): st
   return signEmailTrackingPayload(leadId, buildUnsubCommEmailId(campaignId));
 }
 
+/** One-click unsubscribe for recipients not in CRM (leadId 0 in token). */
+export function buildUnsubCommExternalEmailId(campaignId: number, sendId: number): string {
+  return `unsubcommext-${campaignId}-${sendId}`;
+}
+
+export function signCommUnsubscribeTokenExternal(campaignId: number, sendId: number): string {
+  return signEmailTrackingPayload(0, buildUnsubCommExternalEmailId(campaignId, sendId));
+}
+
+export function parseUnsubCommExternal(emailId: string): { campaignId: number; sendId: number } | null {
+  const m = emailId.match(/^unsubcommext-(\d+)-(\d+)$/);
+  if (!m) return null;
+  const campaignId = Number(m[1]);
+  const sendId = Number(m[2]);
+  if (!Number.isFinite(campaignId) || !Number.isFinite(sendId)) return null;
+  return { campaignId, sendId };
+}
+
 /**
  * After a tracked open/click, update comm_campaign_sends + aggregate campaign stats.
  */

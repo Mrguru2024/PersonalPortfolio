@@ -27,6 +27,8 @@ export const LEAD_TRACKING_EVENT_TYPES = [
   "persona_journey_more_toggle",
   "persona_journey_viewed",
   "persona_journey_lead_magnet_click",
+  /** Market Score free tool — AMIE preview + CRM attach */
+  "market_score_complete",
 ] as const;
 
 export type LeadTrackingEventType = (typeof LEAD_TRACKING_EVENT_TYPES)[number];

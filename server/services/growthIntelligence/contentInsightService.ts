@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { z } from "zod";
 import { db } from "@server/db";
 import {
@@ -13,7 +13,11 @@ import {
   CONTENT_INSIGHT_DIMENSION_KEYS,
   type ContentInsightDimensionKey,
 } from "./contentInsightDimensions";
-import { getGrowthIntelligenceMode, type IntelligenceProviderMode } from "./growthIntelligenceConfig";
+import {
+  getGrowthIntelligenceMode,
+  getGosOpenAiModel,
+  type IntelligenceProviderMode,
+} from "./growthIntelligenceConfig";
 
 let openai: OpenAI | null = null;
 
@@ -110,7 +114,7 @@ async function runOpenAiInsight(docTitle: string, plain: string): Promise<z.infe
 - consolidated_internal_rationale: single string summarizing internal diagnosis (never show to clients).`;
 
   const res = await client.chat.completions.create({
-    model: process.env.GOS_OPENAI_MODEL?.trim() || "gpt-4o-mini",
+    model: getGosOpenAiModel(),
     temperature: 0.35,
     max_tokens: 4096,
     response_format: { type: "json_object" },

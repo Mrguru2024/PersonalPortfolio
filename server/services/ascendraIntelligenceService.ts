@@ -24,6 +24,10 @@ export type MarketingPersonaDTO = {
   goals: string[];
   objections: string[];
   dynamicSignals: string[];
+  /** Offer Engine: core personas protected from delete. */
+  offerEngineLocked: boolean;
+  /** Offer Engine: Persona Strategy Layer (extended fields). */
+  offerEngineStrategy: import("@shared/offerEngineTypes").PersonaStrategyLayer | null;
   updatedAt: string;
 };
 
@@ -39,6 +43,8 @@ function rowToPersona(r: MarketingPersonaRow): MarketingPersonaDTO {
     goals: r.goalsJson ?? [],
     objections: r.objectionsJson ?? [],
     dynamicSignals: r.dynamicSignalsJson ?? [],
+    offerEngineLocked: r.offerEngineLocked ?? false,
+    offerEngineStrategy: r.offerEngineStrategyJson ?? null,
     updatedAt: r.updatedAt.toISOString(),
   };
 }
@@ -82,6 +88,8 @@ export async function createMarketingPersona(data: {
     goalsJson: data.goals ?? [],
     objectionsJson: data.objections ?? [],
     dynamicSignalsJson: data.dynamicSignals ?? [],
+    offerEngineLocked: false,
+    offerEngineStrategyJson: null,
     updatedAt: new Date(),
   });
 

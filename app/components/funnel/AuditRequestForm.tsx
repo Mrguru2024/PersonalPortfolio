@@ -31,6 +31,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { funnelThankYouUrl } from "@/lib/funnelThankYou";
+import { CTAReassuranceLine } from "@/components/marketing/EmbeddedAssurance";
+import { CTA_REASSURANCE_AUDIT_FORM } from "@/lib/embeddedAssuranceCopy";
 import {
   AGE_RANGE_OPTIONS,
   BUDGET_OPTIONS,
@@ -141,7 +143,7 @@ export function AuditRequestForm() {
 
   return (
     <Card className="border-border bg-card">
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="px-5 py-5 sm:px-8 sm:py-7">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((values) => mutate(values))}
@@ -495,6 +497,10 @@ export function AuditRequestForm() {
                 />
               </div>
             </div>
+
+            <CTAReassuranceLine dense className="text-left max-w-none">
+              {CTA_REASSURANCE_AUDIT_FORM}
+            </CTAReassuranceLine>
 
             <Button type="submit" className="w-full min-h-[44px]" disabled={isPending}>
               {isPending ? "Submitting..." : "Submit Audit Request"}

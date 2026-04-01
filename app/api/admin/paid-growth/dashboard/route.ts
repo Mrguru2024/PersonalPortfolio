@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
 
     const syncIssues = campaigns.filter((c) => c.status === "sync_error" || c.lastSyncError).slice(0, 8);
     const optimizationHints = leadQualityGuidanceFromRows(leadsQ);
+    const persistedOptimization = await storage.listPpcOptimizationRecommendations(undefined, ["open"]);
 
     const avgCtr = ctrWeightedDen > 0 ? ctrWeightedNum / ctrWeightedDen : null;
     const avgCpcCents =
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
         leadQualityRows: leadsQ.length,
       },
       optimizationHints,
+      persistedOptimization: persistedOptimization.slice(0, 30),
       recentCampaigns: campaigns.slice(0, 12),
       syncIssues,
       recentLeadQuality: leadsQ.slice(0, 15),

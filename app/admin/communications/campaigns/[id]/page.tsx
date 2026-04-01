@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,12 +23,24 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { describeCommSegmentFilters } from "@/lib/describe-comm-segment-filters";
 import type { CommSegmentFilters } from "@shared/communicationsSchema";
+import { CommAudienceSegmentBuilder } from "@/components/communications/CommAudienceSegmentBuilder";
+import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
+
+const DEFAULT_SEGMENT: CommSegmentFilters = {
+  status: "new",
+  excludeDoNotContact: true,
+};
+
+function mergeSegmentFilters(raw: Record<string, unknown> | null | undefined): CommSegmentFilters {
+  return { ...DEFAULT_SEGMENT, ...(raw as CommSegmentFilters) };
+}
 
 type CampaignDetail = {
   id: number;
   name: string;
   status: string;
   campaignType: string;
+  savedListId: number | null;
   segmentFilters: Record<string, unknown>;
   sentCount: number | null;
   openedCount: number | null;
@@ -57,6 +69,7 @@ type CampaignDetail = {
 
 export default function CommCampaignDetailPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
   const params = useParams();
   const id = Number(params?.id);
@@ -67,6 +80,8 @@ export default function CommCampaignDetailPage() {
   const [variantEmailDesignId, setVariantEmailDesignId] = useState<string>("");
   const [abVariantBPercent, setAbVariantBPercent] = useState("50");
   const [organizationIdText, setOrganizationIdText] = useState("");
+  const [segmentFilters, setSegmentFilters] = useState<CommSegmentFilters>(DEFAULT_SEGMENT);
+  const [savedListId, setSavedListId] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/auth");
@@ -91,6 +106,8 @@ export default function CommCampaignDetailPage() {
     setOrganizationIdText(
       c.organizationId != null && Number.isFinite(c.organizationId) ? String(c.organizationId) : ""
     );
+    setSegmentFilters(mergeSegmentFilters(c.segmentFilters));
+    setSavedListId(c.savedListId != null && Number.isFinite(c.savedListId) ? String(c.savedListId) : "");
   }, [c]);
 
   const { data: designs = [], isLoading: dLoading } = useQuery({
@@ -103,21 +120,54 @@ export default function CommCampaignDetailPage() {
     enabled: !!user?.isAdmin && !!user?.adminApproved && !!c && c.status === "draft",
   });
 
+  const { data: savedLists = [] } = useQuery({
+    queryKey: ["/api/admin/crm/saved-lists", "comm-campaign-detail"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/crm/saved-lists");
+      if (!res.ok) return [];
+      return res.json() as Promise<{ id: number; name: string }[]>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved && !!c && c.status === "draft",
+  });
+
+  const previewAudienceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/communications/audience-preview", {
+        segmentFilters,
+        savedListId: savedListId.trim() ? Number(savedListId) : undefined,
+      });
+      if (!res.ok) throw new Error("Preview failed");
+      return res.json() as Promise<{ count: number; sample: { id: number; email: string; name: string }[] }>;
+    },
+    onSuccess: (d) => {
+      toast({
+        title: "Audience preview",
+        descriptionKey: "communications.audiencePreviewDescription",
+        values: { count: String(d.count) },
+      });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       const primaryId = c?.design?.id;
-      const orgTrim = organizationIdText.trim();
-      const organizationId =
-        orgTrim === "" ? null : Number.isFinite(Number(orgTrim)) ? Number(orgTrim) : NaN;
-      if (orgTrim !== "" && !Number.isFinite(organizationId)) {
-        throw new Error("Organization ID must be a number");
-      }
       const body: Record<string, unknown> = {
+        segmentFilters,
+        savedListId: savedListId.trim() ? Number(savedListId) : null,
         abTestEnabled,
         abVariantBPercent: Number(abVariantBPercent),
         variantEmailDesignId: abTestEnabled ? Number(variantEmailDesignId) : null,
-        organizationId: orgTrim === "" ? null : organizationId,
       };
+      if (isSuperUser) {
+        const orgTrim = organizationIdText.trim();
+        const organizationId =
+          orgTrim === "" ? null : Number.isFinite(Number(orgTrim)) ? Number(orgTrim) : NaN;
+        if (orgTrim !== "" && !Number.isFinite(organizationId)) {
+          throw new Error("Organization must be a number");
+        }
+        body.organizationId = orgTrim === "" ? null : organizationId;
+      }
       if (abTestEnabled) {
         if (!variantEmailDesignId || Number(variantEmailDesignId) === primaryId) {
           throw new Error("Pick a variant design different from the primary");
@@ -131,7 +181,7 @@ export default function CommCampaignDetailPage() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Campaign settings saved" });
+      toast({ title: "Campaign saved", description: "Audience and settings were updated." });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns", id] });
       qc.invalidateQueries({ queryKey: ["/api/admin/communications/campaigns"] });
     },
@@ -235,6 +285,36 @@ export default function CommCampaignDetailPage() {
       {c.status === "draft" && (
         <Card>
           <CardHeader>
+            <CardTitle>Audience</CardTitle>
+            <CardDescription>
+              Same choices as other CRM workflows: all contacts, segment rules, selected people, extra emails, or
+              email-only list. Use Preview audience for the match count, then save. Audience locks after send.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <CommAudienceSegmentBuilder
+              value={segmentFilters}
+              onChange={setSegmentFilters}
+              savedListId={savedListId}
+              onSavedListIdChange={setSavedListId}
+              savedLists={savedLists}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => previewAudienceMutation.mutate()}
+              disabled={previewAudienceMutation.isPending}
+            >
+              {previewAudienceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Preview audience
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {c.status === "draft" && (
+        <Card>
+          <CardHeader>
             <CardTitle>A/B & organization</CardTitle>
             <CardDescription>Editable while the campaign is in draft. Save before sending.</CardDescription>
           </CardHeader>
@@ -280,10 +360,16 @@ export default function CommCampaignDetailPage() {
                 </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label>Organization ID (optional)</Label>
-              <Input value={organizationIdText} onChange={(e) => setOrganizationIdText(e.target.value)} inputMode="numeric" />
-            </div>
+            {isSuperUser ? (
+              <div className="space-y-2">
+                <Label>Organization ID (optional)</Label>
+                <Input
+                  value={organizationIdText}
+                  onChange={(e) => setOrganizationIdText(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+            ) : null}
             <Button
               type="button"
               onClick={() => saveSettingsMutation.mutate()}
@@ -294,7 +380,7 @@ export default function CommCampaignDetailPage() {
               }
             >
               {saveSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save settings
+              Save audience and settings
             </Button>
           </CardContent>
         </Card>
@@ -307,7 +393,7 @@ export default function CommCampaignDetailPage() {
             Recipients {c.totalRecipients ?? 0} · Sent {c.sentCount ?? 0} · Failed {c.failedCount ?? 0} · Opens{" "}
             {c.openedCount ?? 0} · Clicks {c.clickedCount ?? 0}
             {c.sentAt && (
-              <span className="block text-xs mt-1">Last send: {new Date(c.sentAt).toLocaleString()}</span>
+              <span className="block text-xs mt-1">Last send: {formatLocaleMediumDateTime(c.sentAt)}</span>
             )}
           </CardDescription>
         </CardHeader>
@@ -315,37 +401,53 @@ export default function CommCampaignDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>UTM (stored on campaign)</CardTitle>
+          <CardTitle>Link tagging (UTM)</CardTitle>
           <CardDescription>
             {c.utmSource || c.utmMedium || c.utmCampaign
               ? `${c.utmSource ?? "—"} / ${c.utmMedium ?? "—"} / ${c.utmCampaign ?? "—"}`
-              : "None — add on edit via API or future form fields."}
+              : isSuperUser
+                ? "None set. Can be added via API if needed."
+                : "None set."}
           </CardDescription>
         </CardHeader>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Audience</CardTitle>
-          <CardDescription>How recipients were selected for this campaign.</CardDescription>
+          <CardTitle>{c.status === "draft" ? "Audience summary" : "Audience"}</CardTitle>
+          <CardDescription>
+            {c.status === "draft" ?
+              "Current saved rules (update the form above, then save)."
+            : "How recipients were selected for this campaign."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <ul className="list-disc pl-5 text-sm space-y-1 text-foreground">
-            {describeCommSegmentFilters(c.segmentFilters).map((line, i) => (
+            {describeCommSegmentFilters(
+              (c.status === "draft" ? segmentFilters : c.segmentFilters) as Record<string, unknown>,
+            ).map((line, i) => (
               <li key={`${i}-${line.slice(0, 48)}`}>{line}</li>
             ))}
           </ul>
-          <details className="text-xs">
-            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Technical details (advanced)</summary>
-            <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">{JSON.stringify(c.segmentFilters, null, 2)}</pre>
-          </details>
+          {isSuperUser ? (
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                Technical details (site owner)
+              </summary>
+              <pre className="mt-2 bg-muted p-3 rounded-md overflow-x-auto text-[11px]">
+                {JSON.stringify(c.status === "draft" ? segmentFilters : c.segmentFilters, null, 2)}
+              </pre>
+            </details>
+          ) : null}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Send log</CardTitle>
-          <CardDescription>Per-recipient rows; A/B bucket and first-click block when tracked.</CardDescription>
+          <CardDescription>
+            One row per recipient. Shows A/B version and whether they clicked a tracked link in the email.
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -354,7 +456,7 @@ export default function CommCampaignDetailPage() {
                 <th className="py-2 pr-4">Recipient</th>
                 <th className="py-2 pr-4">Status</th>
                 <th className="py-2 pr-4">A/B</th>
-                <th className="py-2 pr-4">First block</th>
+                <th className="py-2 pr-4">{isSuperUser ? "First link (internal ref)" : "Clicked link"}</th>
                 <th className="py-2">Sent</th>
               </tr>
             </thead>
@@ -371,8 +473,10 @@ export default function CommCampaignDetailPage() {
                     <td className="py-2 pr-4">{s.recipientEmail}</td>
                     <td className="py-2 pr-4">{s.status}</td>
                     <td className="py-2 pr-4 tabular-nums">{s.abVariant ?? "—"}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{s.firstClickedBlockId ?? "—"}</td>
-                    <td className="py-2 text-muted-foreground">{s.sentAt ? new Date(s.sentAt).toLocaleString() : "—"}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">
+                      {isSuperUser ? (s.firstClickedBlockId ?? "—") : s.firstClickedBlockId ? "Yes" : "—"}
+                    </td>
+                    <td className="py-2 text-muted-foreground">{s.sentAt ? formatLocaleMediumDateTime(s.sentAt) : "—"}</td>
                   </tr>
                 ))
               )}

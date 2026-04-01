@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyEmailTrackingToken } from "@/lib/track-email";
 import { storage } from "@server/storage";
-import { parseUnsubCommCampaignId } from "@server/services/communications/trackingSideEffects";
+import {
+  parseUnsubCommCampaignId,
+  parseUnsubCommExternal,
+} from "@server/services/communications/trackingSideEffects";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,25 @@ export async function GET(req: NextRequest) {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
+    const ext = parseUnsubCommExternal(parsed.emailId);
+    if (ext && parsed.leadId === 0) {
+      const send = await storage.getCommCampaignSendById(ext.sendId);
+      if (!send || send.campaignId !== ext.campaignId) {
+        return new NextResponse(PAGE("Unsubscribe", "This link is invalid or expired."), {
+          status: 400,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+      await storage.updateCommCampaignSend(ext.sendId, { unsubscribedAt: new Date() });
+      return new NextResponse(
+        PAGE(
+          "You are unsubscribed",
+          "We will not send further marketing emails from this campaign to this address.",
+        ),
+        { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } },
+      );
+    }
+
     const campaignId = parseUnsubCommCampaignId(parsed.emailId);
     if (campaignId == null) {
       return new NextResponse(PAGE("Unsubscribe", "This link is not valid for list unsubscribe."), {

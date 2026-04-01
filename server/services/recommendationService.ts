@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import { Project } from "@shared/schema";
 import { storage } from "../storage";
 

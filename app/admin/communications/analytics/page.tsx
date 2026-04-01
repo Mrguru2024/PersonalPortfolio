@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -40,6 +40,7 @@ type Analytics = {
 
 export default function CommunicationsAnalyticsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const isSuperUser = isAuthSuperUser(user);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,7 +73,14 @@ export default function CommunicationsAnalyticsPage() {
       <div>
         <h2 className="text-xl font-semibold">Communications analytics</h2>
         <p className="text-sm text-muted-foreground">
-          Aggregates from campaign send rows + first-open / first-click counters; A/B and block breakdowns from send-level fields.
+          {isSuperUser ? (
+            <>
+              Built from campaign sends, first opens, and first clicks per recipient. A/B and block stats come from stored
+              send fields.
+            </>
+          ) : (
+            <>Open and click rates across your communications campaigns.</>
+          )}
         </p>
       </div>
 
@@ -110,21 +118,29 @@ export default function CommunicationsAnalyticsPage() {
           {blockEntries.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>First clicks by block ID</CardTitle>
-                <CardDescription>Counts first tracked clicks per block (from design blocks JSON + link order).</CardDescription>
+                <CardTitle>Clicks by part of the email</CardTitle>
+                <CardDescription>
+                  {isSuperUser ? (
+                    <>First tracked click per content block (internal block ids + link order).</>
+                  ) : (
+                    <>Where people clicked first inside the email.</>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left text-muted-foreground">
-                      <th className="py-2 pr-4">Block ID</th>
+                      <th className="py-2 pr-4">{isSuperUser ? "Block ref" : "Part"}</th>
                       <th className="py-2">First clicks</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {blockEntries.map(([bid, n]) => (
+                    {blockEntries.map(([bid, n], i) => (
                       <tr key={bid} className="border-b border-border/50">
-                        <td className="py-2 pr-4 font-mono text-xs">{bid}</td>
+                        <td className={isSuperUser ? "py-2 pr-4 font-mono text-xs" : "py-2 pr-4 text-xs"}>
+                          {isSuperUser ? bid : `Area ${i + 1}`}
+                        </td>
                         <td className="py-2 tabular-nums">{n}</td>
                       </tr>
                     ))}

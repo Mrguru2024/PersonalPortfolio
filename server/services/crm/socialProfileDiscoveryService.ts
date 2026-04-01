@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 import type { CrmContact } from "@shared/crmSchema";
 import type { InsertCrmContactSocialSuggestion } from "@shared/crmSchema";
 import {

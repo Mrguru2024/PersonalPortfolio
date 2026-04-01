@@ -146,7 +146,7 @@ export function FreeToolsQualifiedLeadCard() {
   if (mode === "done") {
     return (
       <Card className="border-primary/25 bg-primary/5 dark:bg-primary/10">
-        <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+        <CardContent className="px-6 py-5 sm:px-8 sm:py-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
             <ClipboardList className="h-6 w-6" aria-hidden />
           </div>
@@ -164,7 +164,7 @@ export function FreeToolsQualifiedLeadCard() {
 
   if (mode === "skipped") {
     return (
-      <div className="rounded-xl border border-border bg-muted/30 dark:bg-muted/15 px-4 py-3 text-sm text-muted-foreground text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="rounded-xl border border-border bg-section/50 dark:bg-section/25 px-4 py-3 text-sm text-muted-foreground text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <span>
           You’re browsing without a saved profile—fine for exploring. Sharing details first helps us send
           qualified, relevant follow-up from CRM.

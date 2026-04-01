@@ -8,7 +8,6 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import {
   ArrowRight,
   Search,
@@ -28,6 +27,15 @@ import {
   STARTUP_GROWTH_KIT_PATH,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_STARTUP_MVP } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_STARTUP_MVP_CTA_REASSURANCE,
+  ICP_STARTUP_MVP_FINAL_REASSURANCE,
+  ICP_STARTUP_MVP_WHAT_TO_EXPECT_ITEMS,
+  ICP_STARTUP_MVP_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const VIEW_WORK_HREF = "/partners/ascendra-technologies#projects";
 
@@ -41,20 +49,6 @@ const STARTUP_MVP_FAQ = [
 export default function StartupMvpDevelopmentPage() {
   return (
     <>
-      <PageSEO
-        title="Startup & MVP Development | Ascendra Technologies"
-        description="MVP development and scalable architecture for SaaS founders, product builders, and marketplace creators. Ship faster with an experienced development partner."
-        keywords={[
-          "MVP development",
-          "SaaS development",
-          "startup development",
-          "product development",
-          "scalable architecture",
-          "Atlanta developer",
-        ]}
-        canonicalPath="/startup-mvp-development"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden">
         {/* Hero — modern SaaS aesthetic */}
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden">
@@ -111,9 +105,16 @@ export default function StartupMvpDevelopmentPage() {
                 <Link href={VIEW_WORK_HREF}>View Our Work</Link>
               </Button>
             </motion.div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 sm:mt-5 text-xs sm:text-sm text-muted-foreground">
-              Free audit · No obligation · Results in 24–48 hours
-            </motion.p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-4 sm:mt-5"
+            >
+              <CTAReassuranceLine dense className="max-w-xl mx-auto">
+                {ICP_STARTUP_MVP_CTA_REASSURANCE}
+              </CTAReassuranceLine>
+            </motion.div>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mt-2 text-xs sm:text-sm text-muted-foreground">
               Building on a tight budget?{" "}
               <Link href={STARTUP_GROWTH_KIT_PATH} className="font-medium text-primary hover:underline">
@@ -123,8 +124,14 @@ export default function StartupMvpDevelopmentPage() {
           </div>
         </section>
 
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_STARTUP_MVP} />
+          </div>
+        </section>
+
         {/* Problem awareness */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Why Startups Need the Right Dev Partner
@@ -183,7 +190,7 @@ export default function StartupMvpDevelopmentPage() {
         </section>
 
         {/* Outcomes */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-8 sm:mb-10">
               What This Helps You Do
@@ -236,7 +243,7 @@ export default function StartupMvpDevelopmentPage() {
         </section>
 
         {/* Authority */}
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl text-center">
             <Card className="border-border bg-card/80 dark:bg-card/60 shadow-sm text-left sm:text-center overflow-hidden">
               <CardContent className="py-6 sm:py-8 px-4 sm:px-6">
@@ -261,7 +268,7 @@ export default function StartupMvpDevelopmentPage() {
 
         <FaqSection items={STARTUP_MVP_FAQ} />
 
-        {/* Final CTA */}        {/* Final CTA */}
+        {/* Final CTA */}
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -274,6 +281,9 @@ export default function StartupMvpDevelopmentPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8 max-w-xl mx-auto">
               We’ll review your current website or product idea, identify gaps, and show you a clear path to launch or scale.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_STARTUP_MVP_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center">
               <Button asChild size="lg" className="gap-2 w-full sm:w-auto min-h-[48px] sm:min-h-[52px] bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={AUDIT_PATH}>{PRIMARY_CTA_SHORT}<ArrowRight className="h-4 w-4 shrink-0" /></Link>
@@ -282,7 +292,6 @@ export default function StartupMvpDevelopmentPage() {
                 <Link href={STRATEGY_CALL_PATH}>{SECONDARY_CTA}</Link>
               </Button>
             </div>
-            <p className="mt-4 text-xs text-primary-foreground/80">Free · No obligation · Response within 24–48 hours</p>
           </div>
         </section>
       </div>

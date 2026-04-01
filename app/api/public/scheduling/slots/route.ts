@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { computeAvailableSlots, getSchedulingSettings } from "@server/services/schedulingService";
+import {
+  computeAvailableSlots,
+  getSchedulingSettings,
+  listSchedulingHostUsers,
+  resolvePublicBookingHostUserId,
+} from "@server/services/schedulingService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,8 +24,20 @@ export async function GET(req: NextRequest) {
     if (!Number.isFinite(tid)) {
       return NextResponse.json({ error: "typeId required" }, { status: 400 });
     }
-    const slots = await computeAvailableSlots(date, tid);
-    return NextResponse.json({ date, typeId: tid, slots });
+    const hosts = await listSchedulingHostUsers();
+    const hostParam = req.nextUrl.searchParams.get("hostUserId");
+    const parsed =
+      hostParam != null && hostParam !== ""
+        ? parseInt(hostParam, 10)
+        : hosts.length === 1
+          ? hosts[0]!.id
+          : undefined;
+    const resolved = await resolvePublicBookingHostUserId(parsed);
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: 400 });
+    }
+    const slots = await computeAvailableSlots(date, tid, resolved.hostUserId);
+    return NextResponse.json({ date, typeId: tid, hostUserId: resolved.hostUserId, slots });
   } catch (e) {
     console.error("[public/scheduling/slots]", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

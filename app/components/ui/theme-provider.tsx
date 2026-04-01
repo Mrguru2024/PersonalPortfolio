@@ -59,6 +59,20 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
+  /** Re-sync when OS appearance changes while theme is "system". */
+  useEffect(() => {
+    if (typeof window === "undefined" || theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const root = document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(mq.matches ? "dark" : "light");
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [theme]);
+
   const setTheme = useCallback(
     (newTheme: Theme) => {
       if (typeof window !== "undefined") {

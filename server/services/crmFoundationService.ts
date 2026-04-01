@@ -168,7 +168,15 @@ export type ActivityLogType =
   | "revenue_ops_booking_link_click"
   | "revenue_ops_booking_confirmed"
   | "revenue_ops_deposit_link_sent"
-  | "revenue_ops_payment_completed";
+  | "revenue_ops_payment_completed"
+  /** Lead Control System — logged communication attempts (not a dialer) */
+  | "lead_control_call_attempted"
+  | "lead_control_voicemail_left"
+  | "lead_control_email_sent"
+  | "lead_control_sms_marked"
+  | "lead_control_meeting_started"
+  | "lead_control_copy_contact"
+  | "lead_control_note";
 
 export interface LogActivityPayload {
   contactId?: number;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { formDataToRecord, twilioRequestUrl, verifyTwilioSignature } from "@server/lib/twilioWebhook";
 import { handleVoiceStatusCallback } from "@server/services/revenueOpsService";
+import { ingestTwilioVoiceForBehaviorTracking } from "@server/services/behavior/behaviorPhoneTrackingService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +24,10 @@ export async function POST(req: NextRequest) {
     CallSid: params.CallSid,
     Direction: params.Direction,
   }).catch((e) => console.error("[twilio voice]", e));
+
+  await ingestTwilioVoiceForBehaviorTracking(storage, params).catch((e) =>
+    console.error("[twilio voice behavior tracking]", e),
+  );
 
   return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', {
     status: 200,

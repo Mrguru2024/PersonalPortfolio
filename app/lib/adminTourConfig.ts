@@ -20,56 +20,80 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
   {
     id: "welcome",
     title: "Welcome to the Admin Dashboard",
-    description: "Here you can manage assessments, contacts, CRM, invoices, and more. This short tour will point you to the main areas.",
+    description:
+      "This page prioritizes **inbound work** first (suggested actions, reminders, inbox lists), then shortcuts and utilities. The tour walks through the main areas in that order. Throughout the app, small ? icons next to titles and fields explain that screen—not the top menu.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "summary-cards",
     title: "Summary at a glance",
-    description: "These cards show counts for assessments, contact form submissions, and resume requests. Check pending items first to prioritize your day.",
+    description:
+      "These counts mirror your inbox: assessments and contacts. Use them with the **Inbox** section right below to spot volume before you triage.",
     target: "[data-tour=\"summary-cards\"]",
     roles: ["all"],
   },
   {
+    id: "tabs",
+    title: "Inbox — Assessments, Contacts, Resume",
+    description:
+      "Your primary work queue. Switch tabs to review submissions, update assessment status, and follow up. Use Lead intake hub when routing quizzes and CRM import.",
+    target: "[data-tour=\"tabs\"]",
+    roles: ["all"],
+  },
+  {
     id: "quick-links",
-    title: "Quick links",
-    description: "Jump to Invoices, Project updates (announcements), and Feedback. Use these daily to stay on top of client work.",
+    title: "Workspace shortcuts",
+    description:
+      "Meetings & calendar and booking setup appear first; then invoices, Growth OS, Content Studio, site directory, and more.",
     target: "[data-tour=\"quick-links\"]",
     roles: ["all"],
   },
   {
     id: "development-updates",
     title: "Development updates",
-    description: "See what’s new in production. Features and fixes are logged here so you know what’s available.",
+    description:
+      "Optional release notes near the bottom of the dashboard. Expand when you want to see what shipped to production.",
     target: "[data-tour=\"development-updates\"]",
     roles: ["all"],
   },
   {
-    id: "tabs",
-    title: "Assessments, Contacts, Resume",
-    description: "Switch between Assessments (project quotes), Contacts (form submissions), and Resume requests. Review and update statuses here.",
-    target: "[data-tour=\"tabs\"]",
+    id: "learn-more",
+    title: "Learning on any admin page",
+    description:
+      "Multi-step playbooks (e.g. LTV, discovery) live in **How-to & guides** in this shortcuts row. The **Assistant knowledge** shortcut opens entries you can toggle so trusted text flows into the floating assistant. Prefer ? tips on each screen first—they describe the fields and buttons in front of you.",
+    target: "center",
     roles: ["all"],
   },
   {
     id: "crm-link",
     title: "CRM and more",
-    description: "For full lead and deal management, use the CRM: contacts, pipeline, tasks, saved lists, and import. Go to CRM from the main nav or dashboard links.",
+    description:
+      "The CRM is for **doing** lead work: stages, tasks, imports, saved lists, and full contact records. Open it when you’re acting on prospects; each CRM screen has its own ? help for filters, bulk actions, and saves.",
+    target: "center",
+    roles: ["all"],
+  },
+  {
+    id: "lead-command-center",
+    title: "Lead command center (CRM-backed)",
+    description:
+      "Under **CRM & leads**, open **Lead command center** for a **priority queue** (P1–P5), **routing hints**, first-touch gaps, and follow-up load. Use **Lead Control settings** for ordered routing rules (hints still live on **CRM** contacts). **Batch recompute** refreshes priority + hints; on a contact, **Quick follow-up** creates **CRM tasks**. Same Ascendra OS stack — **crm_contacts** only.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "daily-habits",
     title: "Daily habits",
-    description: "Each visit, check the “Suggested for you” nudges above—they’re tailored to your role and current counts (e.g. pending assessments, unaccessed resumes).",
+    description:
+      "The **Suggested for you** strip on this page reacts to your role and live counts (pending assessments, new contacts, etc.). Use it as a same-day checklist; follow into each area and rely on local ? tips for the next click.",
     target: "center",
     roles: ["all"],
   },
   {
     id: "system",
     title: "System (super admin)",
-    description: "As a super admin you can access System (health, logs), Users, and Integrations. Use these for maintenance and troubleshooting.",
+    description:
+      "**System** surfaces health and logs; **Users** controls approvals and access; **Connections** verifies email and social integrations. Use those screens when debugging or onboarding—not for day-to-day CRM or content tasks. Each screen explains its own panels via ? icons.",
     target: "center",
     roles: ["super"],
   },

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageSEO } from "@/components/SEO";
 import { FaqSection } from "@/components/FaqSection";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
@@ -15,6 +14,15 @@ import {
   ECOSYSTEM_CTA_REBRAND,
 } from "@/lib/funnelCtas";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
+import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
+import { OUTCOME_FRAMEWORK_COPY_REBRAND } from "@/lib/landingPageOutcomeFramework";
+import { CTAReassuranceLine, WhatToExpectList } from "@/components/marketing/EmbeddedAssurance";
+import {
+  ICP_REBRAND_CTA_REASSURANCE,
+  ICP_REBRAND_FINAL_REASSURANCE,
+  ICP_REBRAND_WHAT_TO_EXPECT_ITEMS,
+  ICP_REBRAND_WHAT_TO_EXPECT_TITLE,
+} from "@/lib/embeddedAssuranceCopy";
 
 const REBRAND_FAQ = [
   { q: "How long does a rebrand take?", a: "It depends on scope. Most rebrands run from a few weeks to a few months. Book a strategy call and we'll outline a timeline for your situation." },
@@ -32,13 +40,6 @@ const REBRAND_SERVICES = [
 export default function RebrandYourBusinessPage() {
   return (
     <>
-      <PageSEO
-        title="Your Business Grew — But Your Brand Didn't | Rebrand Strategy"
-        description="Complete rebrand and website upgrade for established businesses. Outdated branding hurts credibility and conversion. Book your rebrand strategy call."
-        keywords={["rebrand", "brand refresh", "website rebuild", "brand redesign", "brand upgrade"]}
-        canonicalPath="/rebrand-your-business"
-      />
-
       <div className="w-full min-w-0 max-w-full overflow-x-hidden" data-funnel="rebrand">
         <section className="w-full min-w-0 max-w-full relative py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 overflow-hidden border-t-4 border-primary/80">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 dark:from-primary/10 dark:via-background dark:to-secondary/10" />
@@ -80,11 +81,25 @@ export default function RebrandYourBusinessPage() {
                 </div>
                 <span>Brand identity by Macon Designs</span>
               </Link>
+              <CTAReassuranceLine dense className="max-w-xl">
+                {ICP_REBRAND_CTA_REASSURANCE}
+              </CTAReassuranceLine>
             </motion.div>
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-8 sm:py-10">
+          <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-4xl space-y-8">
+            <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_REBRAND} />
+            <WhatToExpectList
+              title={ICP_REBRAND_WHAT_TO_EXPECT_TITLE}
+              items={ICP_REBRAND_WHAT_TO_EXPECT_ITEMS}
+              compact
+            />
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <FunnelHeroMedia
               src="/stock images/Graphic Design_15.jpeg"
@@ -93,7 +108,7 @@ export default function RebrandYourBusinessPage() {
               spacing="none"
               sizes="(max-width: 768px) 100vw, 512px"
               className="mb-6 sm:mb-8"
-              gradientClassName="from-muted/80 via-muted/10 to-transparent"
+              gradientClassName="from-section/90 via-section/20 to-transparent"
             />
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">
               Signs You've Outgrown Your Brand
@@ -142,7 +157,7 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-muted/30 dark:bg-muted/10">
+        <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 bg-section">
           <div className="container mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-3xl">
             <h2 className="text-xl fold:text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-10">The Rebrand Process</h2>
             <ol className="space-y-6 sm:space-y-8 min-w-0">
@@ -182,7 +197,7 @@ export default function RebrandYourBusinessPage() {
           </div>
         </section>
 
-        <FaqSection items={REBRAND_FAQ} title="Common Questions" className="bg-muted/30 dark:bg-muted/10" />
+        <FaqSection items={REBRAND_FAQ} title="Common Questions" className="bg-section" />
 
         <section className="w-full min-w-0 max-w-full py-10 fold:py-12 xs:py-16 sm:py-20 md:py-24 relative overflow-hidden bg-primary text-primary-foreground">
           <div className="container relative mx-auto px-3 fold:px-4 sm:px-4 md:px-6 min-w-0 max-w-2xl text-center">
@@ -192,6 +207,9 @@ export default function RebrandYourBusinessPage() {
             <p className="text-primary-foreground/90 text-sm sm:text-base mb-6 sm:mb-8">
               Book a rebrand strategy call. We’ll review where you are and outline a clear path forward.
             </p>
+            <CTAReassuranceLine dense className="text-primary-foreground/85 max-w-lg mx-auto mb-6">
+              {ICP_REBRAND_FINAL_REASSURANCE}
+            </CTAReassuranceLine>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-full">
               <Button asChild size="lg" className="gap-2 min-h-[48px] w-full sm:w-auto bg-primary-foreground text-primary hover:bg-primary-foreground/95 shadow-xl font-semibold">
                 <Link href={STRATEGY_CALL_PATH}>

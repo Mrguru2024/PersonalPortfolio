@@ -48,6 +48,14 @@ export const newsletters = pgTable("newsletters", {
   recipientFilter: json("recipient_filter").$type<{
     tags?: string[];
     subscribed?: boolean;
+    /** Send to every CRM contact with type=lead (no pasted list). */
+    crmLeads?: boolean;
+    /** Send to every CRM contact with type=client */
+    crmClients?: boolean;
+    /** Send to every CRM contact (leads + clients) with an email. */
+    crmAll?: boolean;
+    /** Send only to these CRM contact IDs (emails resolved at send time). */
+    crmContactIds?: number[];
   }>(),
   // Explicit recipient list: when set, send to these emails (bulk/CRM); otherwise use subscriber filter
   recipientEmails: json("recipient_emails").$type<string[]>(),

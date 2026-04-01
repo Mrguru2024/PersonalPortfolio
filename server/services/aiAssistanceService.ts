@@ -1,7 +1,7 @@
 // AI Assistance Service for Project Assessment
 // Uses OpenAI for accurate, contextual help with fallbacks when not configured
 
-import OpenAI from "openai";
+import OpenAI from "@server/openai/nodeClient";
 
 let openai: OpenAI | null = null;
 

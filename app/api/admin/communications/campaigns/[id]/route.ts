@@ -45,8 +45,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.name === "string") updates.name = body.name.trim();
     if (typeof body.description === "string") updates.description = body.description;
     if (typeof body.campaignType === "string") updates.campaignType = body.campaignType;
-    if (body.segmentFilters != null) updates.segmentFilters = body.segmentFilters as CommSegmentFilters;
-    if (body.savedListId !== undefined) updates.savedListId = body.savedListId != null ? Number(body.savedListId) : null;
+    const audienceLocked = existing.status !== "draft";
+    if (body.segmentFilters != null) {
+      if (audienceLocked) {
+        return NextResponse.json({ error: "Audience can only be edited while the campaign is in draft." }, { status: 400 });
+      }
+      updates.segmentFilters = body.segmentFilters as CommSegmentFilters;
+    }
+    if (body.savedListId !== undefined) {
+      if (audienceLocked) {
+        return NextResponse.json({ error: "Audience can only be edited while the campaign is in draft." }, { status: 400 });
+      }
+      updates.savedListId = body.savedListId != null ? Number(body.savedListId) : null;
+    }
     if (typeof body.offerSlug === "string") updates.offerSlug = body.offerSlug;
     if (body.leadMagnetId !== undefined) updates.leadMagnetId = body.leadMagnetId != null ? Number(body.leadMagnetId) : null;
     if (typeof body.landingPageUrl === "string") updates.landingPageUrl = body.landingPageUrl;

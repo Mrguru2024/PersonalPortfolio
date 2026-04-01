@@ -18,6 +18,8 @@ import {
   Megaphone,
   CheckCircle,
   Clock,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,6 +199,47 @@ export default function ClientDashboardPage() {
         <Button variant="link" className="px-0 mt-1 h-auto text-muted-foreground" asChild>
           <Link href="/updates">View change log &amp; updates</Link>
         </Button>
+      </div>
+
+      <div className="mb-6 sm:mb-8 grid gap-4 sm:grid-cols-2">
+        <Card className="border-2 border-teal-500/25 bg-gradient-to-r from-emerald-500/[0.07] via-background to-teal-500/[0.07] dark:from-emerald-500/10 dark:to-teal-500/10 overflow-hidden">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
+            <div className="flex gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+                <TrendingUp className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm sm:text-base">Your growth system</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Diagnose → Build → Scale: clarity on what&apos;s blocking consistency, what we&apos;re installing, and
+                  what to scale—tailored to your data (expected aims, not guaranteed results).
+                </p>
+              </div>
+            </div>
+            <Button asChild className="shrink-0 w-full sm:w-auto">
+              <Link href="/growth-system">Open growth system</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="border-2 border-teal-500/20 bg-gradient-to-br from-background to-teal-500/[0.06] dark:to-teal-950/20 overflow-hidden">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-5 sm:py-6 px-4 sm:px-6">
+            <div className="flex gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm">
+                <BarChart3 className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm sm:text-base">Advertising &amp; lead results</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Simple counts for leads, booked calls, and wins from your paid campaigns—with short explanations if you need
+                  them.
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="secondary" className="shrink-0 w-full sm:w-auto border-teal-500/30">
+              <Link href="/dashboard/ppc-results">View results</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">

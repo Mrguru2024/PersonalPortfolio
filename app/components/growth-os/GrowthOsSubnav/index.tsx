@@ -8,10 +8,10 @@ import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain, Inbox,
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/scheduling", label: "Scheduling", icon: Calendar },
+  { href: "/admin/scheduler", label: "Bookings & calendar", icon: Calendar },
   { href: "/admin/growth-os/revenue-ops", label: "Revenue ops", icon: TrendingUp },
   { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
-  { href: "/admin/growth-os/intelligence", label: "Intelligence", icon: Brain },
+  { href: "/admin/growth-os/intelligence", label: "Market research", icon: Brain },
   { href: "/admin/growth-os/security", label: "Activity log", icon: Shield },
   { href: "/admin/growth-os/shares", label: "Client shares", icon: FileKey },
   { href: "/admin/internal-audit", label: "Funnel audit", icon: ClipboardList },
@@ -29,7 +29,8 @@ export function GrowthOsSubnav() {
       {LINKS.map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href ||
-          (href === "/admin/scheduling" && pathname.startsWith("/admin/scheduling")) ||
+          (href === "/admin/scheduler" &&
+            (pathname.startsWith("/admin/scheduler") || pathname.startsWith("/admin/scheduling"))) ||
           (href === "/admin/lead-intake" && pathname.startsWith("/admin/lead-intake")) ||
           (href === "/admin/growth-os/intelligence" && pathname.startsWith("/admin/growth-os/intelligence")) ||
           (href.startsWith("/admin/growth-os/") && pathname.startsWith(href)) ||

@@ -6,6 +6,8 @@ import type { LeadTrackingEventType } from "@/lib/lead-tracking-types";
 const VISITOR_ID_KEY = "v_id";
 const SESSION_ID_KEY = "v_sid";
 const LAST_PAGE_VIEW_KEY = "v_last_pv";
+/** Latest `attributionSessionPublicId` from POST /api/track/visitor (session-scoped). */
+const ATTR_SESSION_PUBLIC_ID_KEY = "ascendra_attr_session_pub";
 const PAGE_VIEW_DEBOUNCE_MS = 30_000; // only one page_view per path per 30s per session
 
 /** @deprecated Use LeadTrackingEventType from @/lib/lead-tracking-types */
@@ -57,6 +59,7 @@ function markPageViewSent(path: string): void {
 /**
  * Fire-and-forget visitor tracking to POST /api/track/visitor.
  * Page views are deduped: at most one per path per 30s per session. Other events are sent as-is.
+ * For AEE, merge `buildAeeEventMetadata` from `@/lib/aeeTracking` into `options.metadata` (experiment_key, variant_id, persona_key, …).
  */
 export function useVisitorTracking() {
   const visitorIdRef = useRef<string>("");
@@ -118,7 +121,7 @@ export function useVisitorTracking() {
 
       if (eventType === "page_view") markPageViewSent(pageVisited);
 
-      fetch("/api/track/visitor", {
+      void fetch("/api/track/visitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,10 +133,66 @@ export function useVisitorTracking() {
           viewport,
           metadata: Object.keys(metadata).length ? metadata : undefined,
         }),
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          const data = (await res.json().catch(() => ({}))) as { attributionSessionPublicId?: string };
+          if (
+            typeof data.attributionSessionPublicId === "string" &&
+            data.attributionSessionPublicId.trim() &&
+            typeof sessionStorage !== "undefined"
+          ) {
+            try {
+              sessionStorage.setItem(ATTR_SESSION_PUBLIC_ID_KEY, data.attributionSessionPublicId.trim());
+            } catch {
+              /* ignore quota / privacy mode */
+            }
+          }
+        })
+        .catch(() => {});
     },
     []
   );
 
-  return { track, getVisitorId: () => visitorIdRef.current || getVisitorId(), getSessionId: () => sessionIdRef.current || getSessionId() };
+  const getAttributionSnapshot = useCallback(() => {
+    if (typeof window === "undefined") {
+      return {
+        visitorId: "",
+        sessionId: "",
+        utm_source: undefined as string | undefined,
+        utm_medium: undefined as string | undefined,
+        utm_campaign: undefined as string | undefined,
+        referrer: undefined as string | undefined,
+        landing_page: "/",
+      };
+    }
+    const visitorId = visitorIdRef.current || getVisitorId();
+    const params = new URLSearchParams(window.location.search);
+    const utm_source = params.get("utm_source")?.trim() || undefined;
+    const utm_medium = params.get("utm_medium")?.trim() || undefined;
+    const utm_campaign = params.get("utm_campaign")?.trim() || undefined;
+    const referrer = document.referrer?.trim() || undefined;
+    let attributionSessionPublicId: string | undefined;
+    try {
+      attributionSessionPublicId = sessionStorage.getItem(ATTR_SESSION_PUBLIC_ID_KEY)?.trim() || undefined;
+    } catch {
+      attributionSessionPublicId = undefined;
+    }
+    return {
+      visitorId,
+      sessionId: getSessionId(),
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      referrer,
+      landing_page: window.location.pathname || "/",
+      ...(attributionSessionPublicId ? { attributionSessionPublicId } : {}),
+    };
+  }, []);
+
+  return {
+    track,
+    getVisitorId: () => visitorIdRef.current || getVisitorId(),
+    getSessionId: () => sessionIdRef.current || getSessionId(),
+    getAttributionSnapshot,
+  };
 }
