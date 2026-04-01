@@ -15,7 +15,14 @@ export async function GET(req: NextRequest) {
     if (!(await isAdmin(req))) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const [offers, funnels, personas, comms, offerTemplates, leadMagnetTemplates] = await Promise.all([
+    const [
+      offersResult,
+      funnelsResult,
+      personasResult,
+      commsResult,
+      offerTemplatesResult,
+      leadMagnetTemplatesResult,
+    ] = await Promise.allSettled([
       storage.listSiteOffers(),
       storage.listFunnelContentPages(),
       db.select().from(marketingPersonas),
@@ -26,6 +33,17 @@ export async function GET(req: NextRequest) {
       listOfferTemplates(),
       listLeadMagnetTemplates(),
     ]);
+
+    const offers = offersResult.status === "fulfilled" ? offersResult.value : [];
+    const funnels = funnelsResult.status === "fulfilled" ? funnelsResult.value : [];
+    const personas = personasResult.status === "fulfilled" ? personasResult.value : [];
+    const comms = commsResult.status === "fulfilled" ? commsResult.value : [];
+    const offerTemplates =
+      offerTemplatesResult.status === "fulfilled" ? offerTemplatesResult.value : [];
+    const leadMagnetTemplates =
+      leadMagnetTemplatesResult.status === "fulfilled"
+        ? leadMagnetTemplatesResult.value
+        : [];
     return NextResponse.json({
       offers: offers.map((o) => ({ slug: o.slug, name: o.name })),
       funnelSlugs: funnels.map((f) => ({ slug: f.slug })),

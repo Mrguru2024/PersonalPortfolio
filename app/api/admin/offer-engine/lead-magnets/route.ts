@@ -15,14 +15,36 @@ function serialize(row: Awaited<ReturnType<typeof listLeadMagnetTemplates>>[numb
   };
 }
 
-async function serializeWithIntelligence(row: Awaited<ReturnType<typeof listLeadMagnetTemplates>>[number]) {
-  const intelligence = await buildOfferLeadMagnetIntelligenceSnapshot({
-    leadMagnetTemplateSlug: row.slug,
-    relatedOfferTemplateId: row.relatedOfferTemplateId ?? undefined,
-  });
+function summarizeIntelligence(intel: {
+  optIns: number;
+  leadQualityRate: number;
+  warnings: string[];
+} | null) {
+  if (!intel) return null;
+  const trafficFitLabel =
+    intel.optIns >= 8 && intel.leadQualityRate < 12
+      ? "High volume / low intent"
+      : intel.optIns >= 3 && intel.leadQualityRate >= 20
+        ? "High intent"
+        : "Needs data";
+  const handoffRiskLabel = intel.warnings.length > 0 ? "Handoff risk" : "Aligned";
+  return {
+    trafficFitLabel,
+    handoffRiskLabel,
+    warnings: intel.warnings,
+    optIns: intel.optIns,
+    leadQualityRate: intel.leadQualityRate,
+  };
+}
+
+function serializeWithIntelligence(
+  row: Awaited<ReturnType<typeof listLeadMagnetTemplates>>[number],
+  bySlug: Map<string, { optIns: number; leadQualityRate: number; warnings: string[] }>,
+) {
+  const intelligence = summarizeIntelligence(bySlug.get(row.slug) ?? null);
   return {
     ...serialize(row),
-    intelligence: intelligence.leadMagnets[0] ?? null,
+    intelligence,
   };
 }
 
@@ -39,7 +61,28 @@ export async function GET(req: NextRequest) {
       minScore: searchParams.get("minScore") ? Number(searchParams.get("minScore")) : undefined,
       q: searchParams.get("q") ?? undefined,
     });
-    const leadMagnets = await Promise.all(rows.map((row) => serializeWithIntelligence(row)));
+    let intelligenceBySlug = new Map<
+      string,
+      { optIns: number; leadQualityRate: number; warnings: string[] }
+    >();
+    try {
+      const snapshot = await buildOfferLeadMagnetIntelligenceSnapshot();
+      intelligenceBySlug = new Map(
+        snapshot.leadMagnetRows.map((row) => [
+          row.leadMagnetSlug,
+          {
+            optIns: row.optIns,
+            leadQualityRate: row.leadQualityRate,
+            warnings: row.warnings,
+          },
+        ]),
+      );
+    } catch (intelError) {
+      // Intelligence should not block primary list rendering.
+      console.warn("[GET offer-engine/lead-magnets] intelligence unavailable", intelError);
+    }
+
+    const leadMagnets = rows.map((row) => serializeWithIntelligence(row, intelligenceBySlug));
     return NextResponse.json({ leadMagnets });
   } catch (e) {
     console.error("[GET offer-engine/lead-magnets]", e);
