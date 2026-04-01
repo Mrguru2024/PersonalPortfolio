@@ -105,7 +105,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     description:
       "Token link: generated agreement HTML, typed legal name, optional drawn signature, consent checkboxes, audit digest; milestones billed via Stripe from admin.",
     keywords: k("agreement", "sign", "sow", "engagement"),
-    relatedPaths: ["/terms", "/service-engagement", "/admin/growth-platform/agreements"],
+    relatedPaths: ["/terms", "/service-engagement", "/admin/document-signing"],
   },
   { path: "/offer-audit", title: "Offer audit", category: "Public · Tools", audience: "public", description: "Lead-magnet offer valuation: score, diagnosis, strategic fixes, and CTA.", keywords: k("offer", "audit", "valuation", "lead magnet"), cluster: "calculators", relatedPaths: ["/offer-valuation", "/strategy-call"] },
   { path: "/competitor-position-snapshot", title: "Competitor snapshot", category: "Public · Tools", audience: "public", description: "Competitive positioning worksheet-style page.", keywords: k("competitor", "positioning") },
@@ -506,7 +506,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     keywords: k("growth platform", "offer stack", "dfy", "dwy", "diy", "catalog"),
     relatedPaths: [
       "/growth-platform",
-      "/admin/growth-platform/agreements",
+      "/admin/document-signing",
       "/admin/experiments",
       "/admin/offers",
       "/admin/leads",
@@ -514,8 +514,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     ],
   },
   {
-    path: "/admin/growth-platform/agreements",
-    title: "Growth platform — service agreements",
+    path: "/admin/document-signing",
+    title: "Admin — document signing workflow",
     category: "Admin · Ops",
     audience: "admin",
     description:
