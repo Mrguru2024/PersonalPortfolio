@@ -1025,6 +1025,7 @@ export * from "./paidGrowthSchema";
 export * from "./schedulingSchema";
 export * from "./afnSchema";
 export * from "./ascendraIntelligenceSchema";
+export * from "./offerValuationSchema";
 export * from "./amieSchema";
 export * from "./experimentationEngineSchema";
 export * from "./serviceAgreementSchema";

@@ -170,6 +170,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/auth", title: "Auth", category: "Public · Auth", audience: "public", description: "Auth shell / register login.", keywords: k("auth", "register") },
   { path: "/auth/forgot-password", title: "Forgot password", category: "Public · Auth", audience: "public", description: "Password reset request.", keywords: k("password", "reset") },
   { path: "/auth/reset-password", title: "Reset password", category: "Public · Auth", audience: "public", description: "Password reset form.", keywords: k("password") },
+  { path: "/dashboard", title: "Client dashboard", category: "Public · Client portal", audience: "client", description: "Signed-in customer dashboard.", keywords: k("dashboard", "client") },
+  { path: "/dashboard/offer-valuation", title: "Client offer valuation", category: "Public · Client portal", audience: "client", description: "Client-facing offer valuation workspace (admin-controlled visibility).", keywords: k("offer valuation", "value equation", "offer score"), relatedPaths: ["/admin/offer-valuation"] },
   { path: "/dashboard", title: "Client dashboard", category: "Public · Client portal", audience: "client", description: "Signed-in customer dashboard.", keywords: k("dashboard", "client"), relatedPaths: ["/growth-system", "/dashboard/ppc-results"] },
   {
     path: "/dashboard/ppc-results",
@@ -354,6 +356,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/offer-engine/analytics-hooks", title: "Offer Engine — analytics hooks", category: "Admin · Marketing IQ", audience: "admin", description: "Placeholder metric keys for future instrumentation.", keywords: k("analytics", "metrics") },
   { path: "/admin/offers", title: "Site offers list", category: "Admin · Marketing IQ", audience: "admin", description: "Editable site offer pages (e.g. startup growth system).", keywords: k("offers", "site offers", "pricing page") },
   { path: "/admin/offers/[slug]/edit", title: "Edit site offer", category: "Admin · Marketing IQ", audience: "admin", description: "CMS for offer sections + grading.", keywords: k("offer", "edit", "grade") },
+  { path: "/admin/offer-valuation", title: "Offer valuation engine", category: "Admin · Marketing IQ", audience: "admin", description: "Admin scoring and strategy engine for offer value diagnostics.", keywords: k("offer valuation", "score", "diagnosis", "value equation"), relatedPaths: ["/dashboard/offer-valuation"] },
   { path: "/admin/funnel", title: "Funnel admin hub", category: "Admin · Funnel", audience: "admin", description: "Links to funnel assets + offer.", keywords: k("funnel", "startup") },
   { path: "/admin/funnel/growth-kit", title: "Funnel: growth kit notes", category: "Admin · Funnel", audience: "admin", description: "Admin notes for startup kit.", keywords: k("growth kit", "funnel") },
   { path: "/admin/funnel/website-score", title: "Funnel: website score", category: "Admin · Funnel", audience: "admin", description: "Admin copy for score tool.", keywords: k("website score", "funnel") },

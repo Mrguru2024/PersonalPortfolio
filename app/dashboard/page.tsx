@@ -9,6 +9,7 @@ import {
   Loader2,
   FileText,
   DollarSign,
+  Calculator,
   ExternalLink,
   Calendar,
   MessageSquare,
@@ -78,6 +79,10 @@ interface ProposalItem {
   createdAt: string;
 }
 
+interface OfferValuationAccess {
+  canAccess: boolean;
+}
+
 export default function ClientDashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -127,6 +132,18 @@ export default function ClientDashboardPage() {
       const res = await apiRequest("GET", "/api/client/proposals");
       if (!res.ok) return [];
       return res.json();
+    },
+    enabled: !!user,
+  });
+
+  const { data: offerValuationAccess } = useQuery<OfferValuationAccess>({
+    queryKey: ["/api/offer-valuation/access"],
+    queryFn: async () => {
+      const res = await fetch("/api/offer-valuation/access", {
+        credentials: "include",
+      });
+      if (!res.ok) return { canAccess: false };
+      return (await res.json()) as OfferValuationAccess;
     },
     enabled: !!user,
   });
@@ -313,6 +330,24 @@ export default function ClientDashboardPage() {
                 )}
               </CardContent>
             </Card>
+            {offerValuationAccess?.canAccess ? (
+              <Card className="border-2 border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5 overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 shrink-0">
+                    <Calculator className="h-4 w-4 text-amber-500 shrink-0" />
+                    Offer valuation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0">
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Score and improve your offer value profile.
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-3" asChild>
+                    <Link href="/dashboard/offer-valuation">Open workspace</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
 
           {/* Project updates list on overview */}
