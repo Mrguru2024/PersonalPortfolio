@@ -1,5 +1,26 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+const LEGACY_LINKS = [
+  { label: "Lead intake hub", href: "/admin/lead-intake" },
+  { label: "CRM workspace", href: "/admin/crm" },
+  { label: "CRM tasks", href: "/admin/crm/tasks" },
+  { label: "Content Studio", href: "/admin/content-studio" },
+  { label: "Funnel & offers", href: "/admin/funnel" },
+  { label: "Growth OS", href: "/admin/growth-os" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Settings", href: "/admin/settings" },
+  { label: "Site directory", href: "/admin/site-directory" },
+  { label: "Reminders", href: "/admin/reminders" },
+] as const;
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
@@ -270,8 +291,9 @@ function DevUpdateDigestEntry({ entry, index }: { entry: DevDigestEntry; index: 
 }
 
 export default function AdminDashboardPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -318,39 +340,19 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const completed = getTourCompleted();
-    const dismissed = getTourDismissed();
-    setShowTourBanner(!completed && !dismissed);
-    setTourCompletedOrDismissed(completed || dismissed);
+    setMounted(true);
   }, []);
 
-  const handleAdmin403 = (errorMessage?: string) => {
-    if (handled403.current) return;
-    handled403.current = true;
-    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    let hint = "Session may have expired. Please sign in again.";
-    try {
-      const parsed = typeof errorMessage === "string" && errorMessage.startsWith("{") ? JSON.parse(errorMessage) : null;
-      if (parsed?.hint) hint = parsed.hint;
-    } catch {
-      if (errorMessage?.includes("create-session-table")) hint = "Run in terminal: npx tsx scripts/create-session-table.ts then log out and log back in.";
-    }
-    toast({
-      title: "Access denied",
-      description: hint,
-      variant: "destructive",
-      duration: 12000,
-    });
-    router.push("/auth");
-  };
-
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    } else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) {
-      router.push("/");
+    if (!mounted || isLoading) return;
+    if (!user) {
+      router.replace("/auth");
+      return;
     }
+    if (!user.isAdmin || !user.adminApproved) {
+      router.replace("/");
+    }
+  }, [mounted, isLoading, user, router]);
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -554,61 +556,10 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Restore soft-deleted assessment
-  const restoreAssessmentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("POST", `/api/admin/assessments/${id}/restore`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      invalidateAssessmentLists();
-      toast({ title: "Assessment restored", description: "It appears in the active list again." });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Cannot restore",
-        description: error?.message || "Failed to restore assessment",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      pending: "outline",
-      reviewed: "secondary",
-      contacted: "default",
-      archived: "secondary",
-    };
-    
-    const icons: Record<string, any> = {
-      pending: Clock,
-      reviewed: CheckCircle,
-      contacted: CheckCircle,
-      archived: Archive,
-    };
-    
-    const Icon = icons[status] || Clock;
-    
+  if (!mounted || isLoading) {
     return (
-      <Badge variant={variants[status] || "outline"} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(value);
-
-  if (!clientReady || authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" aria-busy="true" aria-label="Loading dashboard">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -617,6 +568,25 @@ export default function AdminDashboardPage() {
     return null;
   }
 
+  return (
+    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <AscendraOperationsDashboard />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
+          <CardDescription>
+            Existing workflows remain available from their dedicated admin routes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {LEGACY_LINKS.map((item) => (
+            <Button key={item.href} variant="outline" size="sm" asChild>
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
