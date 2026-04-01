@@ -10,6 +10,7 @@ import { SiteMain } from "./components/SiteMain";
 import { MobileNavProvider } from "./contexts/MobileNavContext";
 import { FacebookJsSdk } from "./components/FacebookJsSdk";
 import { SiteAnalyticsScripts } from "./components/SiteAnalyticsScripts";
+import { AscendraBehaviorMount } from "./components/tracking/AscendraBehaviorMount";
 import { getGtmNoscriptId, siteUsesAnalytics } from "./lib/siteAnalyticsConfig";
 import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
@@ -171,6 +172,7 @@ export default function RootLayout({
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
           <Providers>
             <MobileNavProvider>
+              <AscendraBehaviorMount />
               <AscendraBehaviorRootGate enabled={isAscendraPublicBehaviorTrackingEnabled()} />
               {/* Scroll progress bar (hidden when prefers-reduced-motion) */}
               <ScrollProgress />

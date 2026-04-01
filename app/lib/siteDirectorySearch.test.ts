@@ -13,4 +13,10 @@ describe("searchSiteDirectory", () => {
     expect(phraseFirst.length).toBeLessThanOrEqual(tokenWide.length);
     expect(phraseFirst[0]?.path).toContain("sequences");
   });
+
+  it("maps document signing workflow queries to agreements first", () => {
+    const hits = searchSiteDirectory('"document signing workflow"');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].path).toBe("/admin/growth-platform/agreements");
+  });
 });

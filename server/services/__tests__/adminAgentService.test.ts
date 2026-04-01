@@ -53,6 +53,16 @@ describe("processAgentMessage without OpenAI", () => {
     expect(r.action).toEqual({ type: "navigate", url: "/admin/crm/discovery-tools" });
   });
 
+  it("navigates to agreements from document signing workflow keywords", async () => {
+    const r = await processAgentMessage({
+      message: "open document signing workflow",
+      canPerformActions: true,
+      openaiAvailable: false,
+    });
+    expect(r.action).toEqual({ type: "navigate", url: "/admin/growth-platform/agreements" });
+    expect(r.reply).toMatch(/\(\/admin\/growth-platform\/agreements\)/);
+  });
+
   it("omits action when actions are disabled", async () => {
     const r = await processAgentMessage({
       message: "open newsletters",

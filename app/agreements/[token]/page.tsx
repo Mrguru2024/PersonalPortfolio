@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AgreementSignaturePad } from "@/components/legal/AgreementSignaturePad";
+
 type AgreementPayload = {
   publicToken: string;
   status: string;

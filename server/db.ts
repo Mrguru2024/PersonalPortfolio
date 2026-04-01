@@ -1,5 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless';
+import { Pool as PgPool } from 'pg';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
@@ -36,17 +38,31 @@ function toPlainError(e: unknown): Error {
   return new Error(msg);
 }
 
-let _pool: Pool | null = null;
-let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: NeonPool | PgPool | null = null;
+let _db: ReturnType<typeof drizzlePg> | ReturnType<typeof drizzleNeon> | null = null;
 
-function getPool(): Pool {
+function getPool(): NeonPool | PgPool {
   if (!_pool) {
     if (!process.env.DATABASE_URL) {
       throw new Error(
         "DATABASE_URL must be set. Did you forget to provision a database?",
       );
     }
-    const raw = new Pool({
+    
+    // Use standard pg driver for local development
+    if (isLocalDatabase) {
+      console.log('[server/db] Using standard pg driver for local database');
+      _pool = new PgPool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 8000,
+      });
+      return _pool;
+    }
+    
+    // Use Neon driver for production
+    const raw = new NeonPool({
       connectionString: process.env.DATABASE_URL,
       connectionTimeoutMillis: 8000,
       idleTimeoutMillis: 30_000,
@@ -66,15 +82,20 @@ function getPool(): Pool {
 
 function getDb() {
   if (!_db) {
-    _db = drizzle({ client: getPool(), schema });
+    const poolInstance = getPool();
+    if (isLocalDatabase) {
+      _db = drizzlePg(poolInstance as PgPool, { schema });
+    } else {
+      _db = drizzleNeon({ client: poolInstance as NeonPool, schema });
+    }
   }
   return _db;
 }
 
-export const pool = new Proxy({} as Pool, {
+export const pool = new Proxy({} as NeonPool | PgPool, {
   get(_target, prop) {
     const poolInstance = getPool();
-    const value = poolInstance[prop as keyof Pool];
+    const value = (poolInstance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(poolInstance);
     }
@@ -82,10 +103,10 @@ export const pool = new Proxy({} as Pool, {
   }
 });
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+export const db = new Proxy({} as ReturnType<typeof drizzlePg> | ReturnType<typeof drizzleNeon>, {
   get(_target, prop) {
     const dbInstance = getDb();
-    const value = dbInstance[prop as keyof ReturnType<typeof drizzle>];
+    const value = (dbInstance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(dbInstance);
     }
