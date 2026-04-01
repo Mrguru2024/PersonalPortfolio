@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
+import { getApprovedAdminSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import {
   describeAgentActionForUser,
@@ -55,10 +55,10 @@ function persistMentorMerge(
 /** GET /api/admin/agent — personalized greeting + policy for the admin mentor widget. */
 export async function GET(req: NextRequest) {
   try {
-    if (!(await isAdmin(req))) {
+    const user = await getApprovedAdminSessionUser(req);
+    if (!user) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
@@ -86,10 +86,10 @@ export async function GET(req: NextRequest) {
 /** POST /api/admin/agent — chat with admin AI agent; may return an action to run if permitted. */
 export async function POST(req: NextRequest) {
   try {
-    if (!(await isAdmin(req))) {
+    const user = await getApprovedAdminSessionUser(req);
+    if (!user) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
