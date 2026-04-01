@@ -1377,6 +1377,13 @@ export default function AdminDashboardPage() {
                   helpAria: "Help: Growth OS market research",
                 },
                 {
+                  href: "/admin/growth-os/market-research",
+                  label: "Research engine",
+                  icon: Search,
+                  help: "Structured market research projects with intake, source setup, evidence scoring, recommendations, and decision reports.",
+                  helpAria: "Help: Market research engine",
+                },
+                {
                   href: "/admin/market-intelligence",
                   label: "AMIE intelligence",
                   icon: Radar,

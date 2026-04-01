@@ -4,7 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain, Inbox, TrendingUp, Calendar } from "lucide-react";
+import {
+  LayoutDashboard,
+  Shield,
+  FileKey,
+  ClipboardList,
+  PenLine,
+  Brain,
+  Inbox,
+  TrendingUp,
+  Calendar,
+  SearchCheck,
+} from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os", label: "Overview", icon: LayoutDashboard },
@@ -12,6 +23,7 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os/revenue-ops", label: "Revenue ops", icon: TrendingUp },
   { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
   { href: "/admin/growth-os/intelligence", label: "Market research", icon: Brain },
+  { href: "/admin/growth-os/market-research", label: "Research engine", icon: SearchCheck },
   { href: "/admin/growth-os/security", label: "Activity log", icon: Shield },
   { href: "/admin/growth-os/shares", label: "Client shares", icon: FileKey },
   { href: "/admin/internal-audit", label: "Funnel audit", icon: ClipboardList },
@@ -33,6 +45,8 @@ export function GrowthOsSubnav() {
             (pathname.startsWith("/admin/scheduler") || pathname.startsWith("/admin/scheduling"))) ||
           (href === "/admin/lead-intake" && pathname.startsWith("/admin/lead-intake")) ||
           (href === "/admin/growth-os/intelligence" && pathname.startsWith("/admin/growth-os/intelligence")) ||
+          (href === "/admin/growth-os/market-research" &&
+            pathname.startsWith("/admin/growth-os/market-research")) ||
           (href.startsWith("/admin/growth-os/") && pathname.startsWith(href)) ||
           (href === "/admin/internal-audit" && pathname.startsWith("/admin/internal-audit")) ||
           (href === "/admin/content-studio" && pathname.startsWith("/admin/content-studio"));
