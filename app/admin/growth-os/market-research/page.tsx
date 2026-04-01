@@ -113,7 +113,7 @@ export default function MarketResearchEnginePage() {
         name: quickName.trim(),
         industry: "Unspecified",
         niche: "Unspecified",
-        service: "",
+        service: quickName.trim(), // Use project name as service to satisfy validation
         location: "",
         keywords: [],
         competitors: [],
