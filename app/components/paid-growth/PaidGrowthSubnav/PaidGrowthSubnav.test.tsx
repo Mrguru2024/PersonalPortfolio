@@ -8,7 +8,7 @@ jest.mock("next/navigation", () => ({
 describe("PaidGrowthSubnav", () => {
   it("renders dashboard link", () => {
     render(<PaidGrowthSubnav />);
-    expect(screen.getByRole("navigation", { name: "Paid Growth" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Growth Engine" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Dashboard/i })).toHaveAttribute("href", "/admin/paid-growth");
   });
 });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { db } from "@server/db";
-import { offerValuations } from "@shared/schema";
+import { offerValuations, type InsertOfferValuation } from "@shared/schema";
 import {
   canAccessOfferValuationEngine,
   calculateOfferValuation,
@@ -98,23 +98,22 @@ export async function POST(req: NextRequest) {
     const result = calculateOfferValuation(parsed.data);
     const now = new Date();
 
-    const [created] = await db
-      .insert(offerValuations)
-      .values({
-        userId: ownerUserId,
-        persona: parsed.data.persona,
-        offerName: parsed.data.offerName,
-        description: parsed.data.description ?? null,
-        dreamOutcomeScore: parsed.data.dreamOutcomeScore,
-        likelihoodScore: parsed.data.likelihoodScore,
-        timeDelayScore: parsed.data.timeDelayScore,
-        effortScore: parsed.data.effortScore,
-        finalScore: result.finalScore,
-        insights: result.insights,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    const insertRow: InsertOfferValuation = {
+      userId: ownerUserId,
+      persona: parsed.data.persona,
+      offerName: parsed.data.offerName,
+      description: parsed.data.description ?? "",
+      dreamOutcomeScore: parsed.data.dreamOutcomeScore,
+      likelihoodScore: parsed.data.likelihoodScore,
+      timeDelayScore: parsed.data.timeDelayScore,
+      effortScore: parsed.data.effortScore,
+      finalScore: result.finalScore,
+      insights: result.insights as unknown as Record<string, unknown>,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const [created] = await db.insert(offerValuations).values(insertRow).returning();
 
     return NextResponse.json({ valuation: created }, { status: 201 });
   } catch (e) {

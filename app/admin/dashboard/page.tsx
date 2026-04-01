@@ -1,26 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-const LEGACY_LINKS = [
-  { label: "Lead intake hub", href: "/admin/lead-intake" },
-  { label: "CRM workspace", href: "/admin/crm" },
-  { label: "CRM tasks", href: "/admin/crm/tasks" },
-  { label: "Content Studio", href: "/admin/content-studio" },
-  { label: "Funnel & offers", href: "/admin/funnel" },
-  { label: "Growth OS", href: "/admin/growth-os" },
-  { label: "Users", href: "/admin/users" },
-  { label: "Settings", href: "/admin/settings" },
-  { label: "Site directory", href: "/admin/site-directory" },
-  { label: "Reminders", href: "/admin/reminders" },
-] as const;
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
@@ -49,6 +28,7 @@ import {
   PenLine,
   Inbox,
   Map as MapIcon,
+  FileText,
   LineChart,
   Search,
   ChevronDown,
@@ -56,6 +36,7 @@ import {
   CalendarClock,
   Layers,
 } from "lucide-react";
+import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,6 +49,19 @@ import { useToast } from "@/hooks/use-toast";
 import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const LEGACY_LINKS = [
+  { label: "Lead intake hub", href: "/admin/lead-intake" },
+  { label: "CRM workspace", href: "/admin/crm" },
+  { label: "CRM tasks", href: "/admin/crm/tasks" },
+  { label: "Content Studio", href: "/admin/content-studio" },
+  { label: "Funnel & offers", href: "/admin/funnel" },
+  { label: "Growth OS", href: "/admin/growth-os" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Settings", href: "/admin/settings" },
+  { label: "Site directory", href: "/admin/site-directory" },
+  { label: "Reminders", href: "/admin/reminders" },
+] as const;
 import {
   formatDevUpdateDateLabel,
   formatDevUpdateTimeInEastern,
@@ -221,6 +215,27 @@ function parseDashboardInboxTab(raw: string | null): DashboardInboxTab {
   return "assessments";
 }
 
+function getStatusBadge(status: string) {
+  const variant: "default" | "secondary" | "destructive" | "outline" =
+    status === "pending"
+      ? "secondary"
+      : status === "approved" || status === "completed"
+        ? "default"
+        : status === "archived" || status === "deleted"
+          ? "outline"
+          : "secondary";
+  return (
+    <Badge variant={variant} className="capitalize">
+      {status}
+    </Badge>
+  );
+}
+
+function formatCurrency(amount: number | null | undefined): string {
+  if (amount == null || !Number.isFinite(Number(amount))) return "—";
+  return `$${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 type DevDigestEntry = {
   date: string;
   time?: string;
@@ -353,7 +368,6 @@ export default function AdminDashboardPage() {
       router.replace("/");
     }
   }, [mounted, isLoading, user, router]);
-  }, [user, authLoading, router]);
 
   useEffect(() => {
     setInboxTab(parseDashboardInboxTab(searchParams.get("tab")));
@@ -504,15 +518,33 @@ export default function AdminDashboardPage() {
     staleTime: 0,
   });
 
+  type ResumeRequestRow = { id: number; accessed?: boolean };
+  const { data: resumeRequests = [] } = useQuery<ResumeRequestRow[]>({
+    queryKey: ["/api/admin/resume-requests"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/resume-requests");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
   // Handle 403 from any admin query (onError was removed in TanStack Query v5)
   useEffect(() => {
     const err = assessmentsError ?? contactsError;
     if (!err) return;
     const msg = String(err?.message ?? "");
     if (msg.includes("403") || msg.includes("Forbidden") || msg.includes("Admin access required")) {
-      handleAdmin403(msg);
+      if (handled403.current) return;
+      handled403.current = true;
+      toast({
+        title: "Admin access required",
+        description: "Your session may have expired. Sign in again to continue.",
+        variant: "destructive",
+      });
+      router.replace("/auth");
     }
-  }, [assessmentsError, contactsError]);
+  }, [assessmentsError, contactsError, router, toast]);
 
   // Update assessment status mutation
   const updateStatusMutation = useMutation({
@@ -556,6 +588,26 @@ export default function AdminDashboardPage() {
     },
   });
 
+  const restoreAssessmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("POST", `/api/admin/assessments/${id}/restore`);
+    },
+    onSuccess: () => {
+      invalidateAssessmentLists();
+      toast({
+        title: "Assessment restored",
+        description: "The assessment is back in your active list.",
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: "Could not restore",
+        description: error instanceof Error ? error.message : "Try again shortly.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!mounted || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -568,25 +620,6 @@ export default function AdminDashboardPage() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      <AscendraOperationsDashboard />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
-          <CardDescription>
-            Existing workflows remain available from their dedicated admin routes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {LEGACY_LINKS.map((item) => (
-            <Button key={item.href} variant="outline" size="sm" asChild>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
   const pendingAssessments = assessments.filter((a) => a.status === "pending").length;
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
@@ -621,6 +654,24 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <AscendraOperationsDashboard />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
+          <CardDescription>
+            Existing workflows remain available from their dedicated admin routes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {LEGACY_LINKS.map((item) => (
+            <Button key={item.href} variant="outline" size="sm" asChild>
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
+
       <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
@@ -722,6 +773,7 @@ export default function AdminDashboardPage() {
       {sectionShell(
         "summary",
         () => (
+          <>
         <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Card className="border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
@@ -766,7 +818,7 @@ export default function AdminDashboardPage() {
       <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
         <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
           <Link href="/admin/site-directory">
-            <Map className="h-4 w-4 mr-2 shrink-0" />
+            <MapIcon className="h-4 w-4 mr-2 shrink-0" />
             <span className="truncate">Pages directory</span>
           </Link>
         </Button>
@@ -822,6 +874,7 @@ export default function AdminDashboardPage() {
           </Link>
         </Button>
       </div>
+          </>
         ),
       )}
 

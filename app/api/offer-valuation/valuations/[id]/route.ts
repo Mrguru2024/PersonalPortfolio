@@ -117,7 +117,7 @@ export async function PATCH(
     }
 
     const nextInput = {
-      persona: parsed.data.persona ?? row.persona,
+      persona: parsed.data.persona ?? row.persona ?? "",
       offerName: parsed.data.offerName ?? row.offerName,
       description: parsed.data.description ?? row.description,
       dreamOutcomeScore:
@@ -127,7 +127,10 @@ export async function PATCH(
       effortScore: parsed.data.effortScore ?? row.effortScore,
     };
 
-    const result = calculateOfferValuation(nextInput);
+    const result = calculateOfferValuation({
+      ...nextInput,
+      persona: nextInput.persona || "General",
+    });
 
     const [updated] = await db
       .update(offerValuations)
@@ -140,7 +143,7 @@ export async function PATCH(
         timeDelayScore: nextInput.timeDelayScore,
         effortScore: nextInput.effortScore,
         finalScore: result.finalScore,
-        insights: result.insights,
+        insights: result.insights as unknown as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(offerValuations.id, id))

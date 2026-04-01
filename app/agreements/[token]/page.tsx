@@ -105,7 +105,6 @@ export default function AgreementSignPage() {
     <div className="min-h-screen bg-muted/30">
       <AscendraBehaviorMount />
       <div className="container max-w-3xl mx-auto px-3 py-6 space-y-5 fold:px-4 fold:py-8 sm:py-10 sm:space-y-6">
-      <div className="container max-w-3xl mx-auto px-4 py-10 space-y-6">
         <div className="flex flex-wrap gap-3 text-sm">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/">Home</Link>
@@ -171,7 +170,7 @@ export default function AgreementSignPage() {
               </Card>
             : null}
 
-            {data.status === "signed" || done ?
+            {data.status === "signed" || done ? (
               <Card className="border-emerald-500/40 bg-emerald-500/5">
                 <CardHeader>
                   <CardTitle className="text-base text-emerald-700 dark:text-emerald-400">Signed</CardTitle>
@@ -183,7 +182,7 @@ export default function AgreementSignPage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
-            :
+            ) : (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Sign electronically</CardTitle>
@@ -248,7 +247,7 @@ export default function AgreementSignPage() {
                   </form>
                 </CardContent>
               </Card>
-            }
+            )}
           </>
         : null}
       </div>
