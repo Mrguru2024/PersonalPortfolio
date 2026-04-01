@@ -170,6 +170,61 @@ export default function BehaviorReplaysPage() {
     return null;
   }, [selectedFromList, pick, manual, sessions]);
 
+  /** Rendered inside `<ul>` — extracted so nested ternary + map stays out of JSX (SWC-safe on Vercel). */
+  const visitListItems = useMemo(() => {
+    if (sessions.length === 0) {
+      return (
+        <li className="px-3 py-6 text-center text-muted-foreground">
+          No visits match. Try another site filter, widen the dates, or shorten the search.
+        </li>
+      );
+    }
+    return sessions.map((s) => (
+      <li key={s.id}>
+        <button
+          type="button"
+          className={cn(
+            "w-full text-left px-3 py-2.5 hover:bg-muted/50 space-y-0.5",
+            pick === s.sessionId && "bg-muted",
+          )}
+          onClick={() => {
+            setManual("");
+            setPick(s.sessionId);
+            syncSessionUrl(s.sessionId);
+          }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">{s.alias}</span>
+            {s.hasReplay ? (
+              <Badge variant="secondary" className="text-[10px]">
+                Recording
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                No recording yet
+              </Badge>
+            )}
+            {s.isOnline ? (
+              <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-600">Live now</Badge>
+            ) : null}
+          </div>
+          {s.samplePage ? (
+            <div className="text-xs text-muted-foreground truncate" title={s.samplePage}>
+              {truncatePath(s.samplePage)}
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+            <span>{shortDateTime(s.startTime)}</span>
+            <span>{s.locationLabel}</span>
+            {s.businessId ? (
+              <span className="text-[11px]">{trackedSiteLabel(s.businessId) ?? s.businessId}</span>
+            ) : null}
+          </div>
+        </button>
+      </li>
+    ));
+  }, [sessions, pick, syncSessionUrl]);
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -249,60 +304,9 @@ export default function BehaviorReplaysPage() {
           {hubLoading ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
-            <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">
-              {sessions.length === 0 ? (
-                <li className="px-3 py-6 text-center text-muted-foreground">
-                  No visits match. Try another site filter, widen the dates, or shorten the search.
-                </li>
-              ) : (
-                sessions.map((s) => (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      className={cn(
-                        "w-full text-left px-3 py-2.5 hover:bg-muted/50 space-y-0.5",
-                        pick === s.sessionId && "bg-muted",
-                      )}
-                      onClick={() => {
-                        setManual("");
-                        setPick(s.sessionId);
-                        syncSessionUrl(s.sessionId);
-                      }}
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{s.alias}</span>
-                        {s.hasReplay ? (
-                          <Badge variant="secondary" className="text-[10px]">
-                            Recording
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                            No recording yet
-                          </Badge>
-                        )}
-                        {s.isOnline ? (
-                          <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-600">Live now</Badge>
-                        ) : null}
-                      </div>
-                      {s.samplePage ? (
-                        <div className="text-xs text-muted-foreground truncate" title={s.samplePage}>
-                          {truncatePath(s.samplePage)}
-                        </div>
-                      ) : null}
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        <span>{shortDateTime(s.startTime)}</span>
-                        <span>{s.locationLabel}</span>
-                        {s.businessId ? (
-                          <span className="text-[11px]">{trackedSiteLabel(s.businessId) ?? s.businessId}</span>
-                        ) : null}
-                      </div>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
+            <ul className="divide-y rounded-md border max-h-72 overflow-auto text-sm">{visitListItems}</ul>
           )}
-          {sessionId && selectedHeading ?
+          {sessionId && selectedHeading ? (
             <p className="text-sm text-foreground">
               <span className="font-medium">Playing:</span> {selectedHeading}
               {" · "}
@@ -318,7 +322,7 @@ export default function BehaviorReplaysPage() {
                 Clear
               </button>
             </p>
-          : null}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -336,7 +340,7 @@ export default function BehaviorReplaysPage() {
             <span className="font-medium text-sm">Support &amp; engineering</span>
             <span className="text-xs text-muted-foreground font-normal">— optional internal reference or shared admin link</span>
           </button>
-          {supportOpen ?
+          {supportOpen ? (
             <CardContent className="pt-4 space-y-2">
               <Label htmlFor="sid">Internal session reference</Label>
               <Input
@@ -360,7 +364,7 @@ export default function BehaviorReplaysPage() {
                 Bookmarked admin links may include this automatically. You normally do not need this field.
               </p>
             </CardContent>
-          : null}
+          ) : null}
         </Card>
       </AdminDevOnly>
 
