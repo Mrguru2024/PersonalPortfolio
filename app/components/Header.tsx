@@ -78,6 +78,7 @@ import {
   shellLoggedInAs,
   shellMainNavAria,
   shellMenuButtonText,
+  shellMobileNavAria,
   shellMoreTrigger,
   shellNavItemLabel,
   shellOpenMenuAria,
@@ -108,6 +109,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
 } from "@/components/ui/sheet";
 
 interface HeaderProps {
@@ -717,6 +719,7 @@ export default function Header(_props: HeaderProps) {
           className="xl:hidden w-[85vw] max-w-sm p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
+          <SheetTitle className="sr-only">{shellMobileNavAria(locale)}</SheetTitle>
           <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
                 <ul className="flex flex-col gap-0.5" aria-label={shellPrimaryLinksAria(locale)}>
                   {primaryNav.map((item) =>

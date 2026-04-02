@@ -265,7 +265,9 @@ function AdminInboxContent() {
                 </div>
               </div>
             </>
-          ) : null}
+          ) : (
+            <SheetTitle className="sr-only">Admin inbox item</SheetTitle>
+          )}
         </SheetContent>
       </Sheet>
     </div>

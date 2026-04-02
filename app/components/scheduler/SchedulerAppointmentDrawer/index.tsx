@@ -75,9 +75,12 @@ export function SchedulerAppointmentDrawer({ open, onOpenChange, loading, detail
         className="w-full sm:max-w-lg overflow-y-auto border-l border-border/80"
       >
         {loading || !detail || !a ? (
-          <div className="flex justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
-          </div>
+          <>
+            <SheetTitle className="sr-only">Appointment details</SheetTitle>
+            <div className="flex justify-center py-24">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
+            </div>
+          </>
         ) : (
           <>
             <SheetHeader className="pr-8">
