@@ -28,7 +28,7 @@ export async function computeOfferTemplatePerformance(offer: OfferEngineOfferTem
     .select({
       id: crmContacts.id,
       leadScore: crmContacts.leadScore,
-      sourceOfferSlug: crmContacts.sourceOfferSlug,
+      sourceOfferSlug: sql<string | null>`${crmContacts.customFields} ->> 'sourceOfferSlug'`,
       customFields: crmContacts.customFields,
       createdAt: crmContacts.createdAt,
     })
@@ -37,7 +37,7 @@ export async function computeOfferTemplatePerformance(offer: OfferEngineOfferTem
       and(
         gte(crmContacts.createdAt, thirtyDaysAgo),
         sql`(
-          ${crmContacts.sourceOfferSlug} = ${offer.slug}
+          (${crmContacts.customFields} ->> 'sourceOfferSlug') = ${offer.slug}
           OR (${crmContacts.customFields} ->> 'offerTemplateSlug') = ${offer.slug}
           OR (${crmContacts.customFields} ->> 'offerSlug') = ${offer.slug}
         )`,

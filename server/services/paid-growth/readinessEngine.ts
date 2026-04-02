@@ -47,6 +47,19 @@ function hasTrackingEnvScore(): number {
   return gtm || pixel || ga ? 85 : 45;
 }
 
+function campaignLeadMagnetSlug(campaign: PpcCampaign): string | undefined {
+  const fromTrackingParams = campaign.trackingParamsJson;
+  if (
+    fromTrackingParams &&
+    typeof fromTrackingParams === "object" &&
+    typeof fromTrackingParams.utm_content === "string"
+  ) {
+    const value = fromTrackingParams.utm_content.trim().toLowerCase();
+    if (value) return value;
+  }
+  return undefined;
+}
+
 function buildRemediationFromGates(gates: PpcPublishGates): string[] {
   const lines: string[] = [];
   if (!gates.adAccountConnected) {
@@ -131,7 +144,7 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
   }
   const scarcity = await evaluateScarcityForContext({
     offerSlug: campaign.offerSlug ?? undefined,
-    leadMagnetSlug: campaign.leadMagnetSlug ?? undefined,
+    leadMagnetSlug: campaignLeadMagnetSlug(campaign),
     funnelSlug:
       (campaign.landingPagePath || "")
         .replace(/^\//, "")

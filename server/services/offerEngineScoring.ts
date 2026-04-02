@@ -1,4 +1,9 @@
-import type { ScoreResult } from "@shared/offerEngineTypes";
+import type {
+  LeadMagnetBuilderResult,
+  LeadMagnetGraderResult,
+  OfferGraderResult,
+  ScoreResult,
+} from "@shared/offerEngineTypes";
 import type { OfferEngineOfferTemplateRow, OfferEngineLeadMagnetTemplateRow } from "@shared/offerEngineSchema";
 import type { ScoreTier } from "@shared/offerEngineConstants";
 
@@ -195,6 +200,36 @@ export function scoreLeadMagnetTemplate(row: OfferEngineLeadMagnetTemplateRow): 
     biggestConversionRisk: weaknesses[0] ?? "Unclear bridge to paid offer.",
     bestImprovementLever:
       bridgeStrength < hookStrength ? "Strengthen bridge-to-offer copy and CTA" : "Sharpen hook and quick win",
+  };
+}
+
+/**
+ * Backward-compatible wrappers for intelligence module consumers.
+ * Keep these thin and delegate to the canonical score* functions.
+ */
+export function gradeOffer(row: OfferEngineOfferTemplateRow): OfferGraderResult {
+  return scoreOfferTemplate(row);
+}
+
+export function gradeLeadMagnet(
+  row: OfferEngineLeadMagnetTemplateRow,
+  _relatedOffer: OfferEngineOfferTemplateRow | null,
+): LeadMagnetGraderResult {
+  return scoreLeadMagnetTemplate(row);
+}
+
+export function buildLeadMagnetResult(
+  row: OfferEngineLeadMagnetTemplateRow,
+  relatedOffer: OfferEngineOfferTemplateRow | null,
+): LeadMagnetBuilderResult {
+  const score = scoreLeadMagnetTemplate(row);
+  return {
+    score,
+    relatedOfferSlug: relatedOffer?.slug ?? null,
+    recommendedNextStep:
+      row.bridgeToPaidJson?.ctaShouldComeNext?.trim() ||
+      row.ctaAfterConsumption?.trim() ||
+      "Book a strategy call",
   };
 }
 

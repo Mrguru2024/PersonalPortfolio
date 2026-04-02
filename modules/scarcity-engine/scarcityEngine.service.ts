@@ -74,30 +74,24 @@ function mergeScope(primary: ScarcityQueryScope, override: ScarcityQueryScope): 
 
 async function countUsedSlots(scope: ScarcityQueryScope): Promise<number> {
   const contactFilters = [
-    sql`(${crmContacts.sourceConversionStage} IS NULL OR lower(${crmContacts.sourceConversionStage}) <> 'waitlist')`,
+    sql`(
+      (${crmContacts.customFields} ->> 'sourceConversionStage') IS NULL
+      OR lower(${crmContacts.customFields} ->> 'sourceConversionStage') <> 'waitlist'
+    )`,
   ];
   if (scope.offerSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceOfferSlug, scope.offerSlug),
-        sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
     );
   }
   if (scope.leadMagnetSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceLeadMagnetSlug, scope.leadMagnetSlug),
-        sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
     );
   }
   if (scope.funnelSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceFunnelSlug, scope.funnelSlug),
-        sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
     );
   }
   if (scope.personaId) {
@@ -129,32 +123,28 @@ async function countWaitlist(scope: ScarcityQueryScope): Promise<number> {
   const contactFilters = [];
   if (scope.offerSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceOfferSlug, scope.offerSlug),
-        sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
     );
   }
   if (scope.leadMagnetSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceLeadMagnetSlug, scope.leadMagnetSlug),
-        sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
     );
   }
   if (scope.funnelSlug) {
     contactFilters.push(
-      or(
-        eq(crmContacts.sourceFunnelSlug, scope.funnelSlug),
-        sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
     );
   }
   if (scope.personaId) {
     contactFilters.push(sql`${crmContacts.customFields} ->> 'personaId' = ${scope.personaId}`);
   }
-  contactFilters.push(or(eq(crmContacts.sourceConversionStage, "waitlist"), ilike(crmContacts.sourcePathStage, "waitlist"))!);
+  contactFilters.push(
+    or(
+      sql`lower(${crmContacts.customFields} ->> 'sourceConversionStage') = 'waitlist'`,
+      ilike(sql`${crmContacts.customFields} ->> 'sourcePathStage'`, "waitlist"),
+    )!,
+  );
   const [crmCount] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(crmContacts)
@@ -179,26 +169,17 @@ async function computePerformanceMetrics(scope: ScarcityQueryScope): Promise<{
   const leadFilters = [];
   if (scope.offerSlug) {
     leadFilters.push(
-      or(
-        eq(crmContacts.sourceOfferSlug, scope.offerSlug),
-        sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceOfferSlug' = ${scope.offerSlug}`,
     );
   }
   if (scope.leadMagnetSlug) {
     leadFilters.push(
-      or(
-        eq(crmContacts.sourceLeadMagnetSlug, scope.leadMagnetSlug),
-        sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceLeadMagnetSlug' = ${scope.leadMagnetSlug}`,
     );
   }
   if (scope.funnelSlug) {
     leadFilters.push(
-      or(
-        eq(crmContacts.sourceFunnelSlug, scope.funnelSlug),
-        sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
-      )!,
+      sql`${crmContacts.customFields} ->> 'sourceFunnelSlug' = ${scope.funnelSlug}`,
     );
   }
   if (scope.personaId) leadFilters.push(sql`${crmContacts.customFields} ->> 'personaId' = ${scope.personaId}`);
@@ -258,6 +239,25 @@ type PpcCampaignGuardRecord = {
   leadMagnetSlug: string | null;
   landingPagePath: string;
 };
+
+function inferPpcLeadMagnetSlug(
+  campaign: {
+    offerSlug: string | null;
+    landingPagePath: string;
+    trackingParamsJson?: Record<string, unknown> | null;
+  },
+): string | null {
+  const fromTracking =
+    typeof campaign.trackingParamsJson?.utm_content === "string"
+      ? normalizeSlug(campaign.trackingParamsJson.utm_content)
+      : undefined;
+  if (fromTracking) return fromTracking;
+  // Best-effort fallback: when campaign uses lead-magnet oriented landing paths.
+  const lp = campaign.landingPagePath || "";
+  if (lp.includes("growth-kit")) return "startup-growth-kit";
+  if (lp.includes("audit")) return "digital-growth-audit";
+  return null;
+}
 
 export async function upsertScarcityConfig(input: import("./scarcityEngine.types").ScarcityConfigWrite): Promise<ScarcityEngineConfigRow> {
   const values = {
@@ -441,14 +441,19 @@ export async function getPpcCapacityGuard(campaignId: number): Promise<{
     .select({
       id: ppcCampaigns.id,
       offerSlug: ppcCampaigns.offerSlug,
-      leadMagnetSlug: ppcCampaigns.leadMagnetSlug,
       landingPagePath: ppcCampaigns.landingPagePath,
+      trackingParamsJson: ppcCampaigns.trackingParamsJson,
     })
     .from(ppcCampaigns)
     .where(eq(ppcCampaigns.id, campaignId))
     .limit(1);
   if (!campaign) return { campaignId, blocked: false };
-  return evaluatePpcCampaignCapacityGuard(campaign);
+  return evaluatePpcCampaignCapacityGuard({
+    id: campaign.id,
+    offerSlug: campaign.offerSlug,
+    leadMagnetSlug: inferPpcLeadMagnetSlug(campaign),
+    landingPagePath: campaign.landingPagePath,
+  });
 }
 
 type PpcBlockedCampaignSummary = {
@@ -465,8 +470,8 @@ export async function getScarcityBlockedCampaignSummaries() {
       id: ppcCampaigns.id,
       name: ppcCampaigns.name,
       offerSlug: ppcCampaigns.offerSlug,
-      leadMagnetSlug: ppcCampaigns.leadMagnetSlug,
       landingPagePath: ppcCampaigns.landingPagePath,
+      trackingParamsJson: ppcCampaigns.trackingParamsJson,
       readinessScore: ppcCampaigns.readinessScore,
       status: ppcCampaigns.status,
     })
@@ -478,7 +483,12 @@ export async function getScarcityBlockedCampaignSummaries() {
   for (const campaign of campaigns) {
     const normalizedStatus = (campaign.status ?? "").toLowerCase();
     if (normalizedStatus !== "active") continue;
-    const guard = await evaluatePpcCampaignCapacityGuard(campaign);
+    const guard = await evaluatePpcCampaignCapacityGuard({
+      id: campaign.id,
+      offerSlug: campaign.offerSlug,
+      leadMagnetSlug: inferPpcLeadMagnetSlug(campaign),
+      landingPagePath: campaign.landingPagePath,
+    });
     if (!guard.blocked) continue;
     blocked.push({
       id: campaign.id,

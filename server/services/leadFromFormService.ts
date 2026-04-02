@@ -238,17 +238,6 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     await storage.updateCrmContact(lead.id, {
       ...attributionUpdates,
       ...demo,
-      sourceOfferSlug: sourceOfferSlug ?? undefined,
-      sourceLeadMagnetSlug: sourceLeadMagnetSlug ?? undefined,
-      sourceFunnelSlug: sourceFunnelSlug ?? undefined,
-      sourceCampaignSlug: sourceCampaignSlug ?? undefined,
-      sourceTrafficTemperature: sourceTrafficTemperature ?? undefined,
-      sourcePathStage:
-        scarcitySourcePathStage ?? sourcePathStage ?? undefined,
-      sourceConversionStage:
-        scarcityConversionStage ?? undefined,
-      sourceQualificationResult:
-        sourceQualificationResult ?? scarcityQualificationResult ?? undefined,
       customFields: Object.keys(sourceAwareCustom).length ? sourceAwareCustom : undefined,
       name: name || lead.name,
       phone: phone ?? lead.phone,
@@ -308,14 +297,6 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     utmCampaign: attribution?.utm_campaign ?? null,
     referringPage: attribution?.referrer ?? null,
     landingPage: attribution?.landing_page ?? null,
-    sourceOfferSlug,
-    sourceLeadMagnetSlug,
-    sourceFunnelSlug,
-    sourceCampaignSlug,
-    sourceTrafficTemperature,
-    sourcePathStage: scarcitySourcePathStage ?? sourcePathStage,
-    sourceConversionStage: scarcityConversionStage ?? undefined,
-    sourceQualificationResult: sourceQualificationResult ?? scarcityQualificationResult,
     customFields: Object.keys(finalCustomCreateWithSource).length ? finalCustomCreateWithSource : undefined,
     lastActivityAt: now,
     ageRange: demographics?.ageRange?.trim() || null,
