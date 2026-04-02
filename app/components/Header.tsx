@@ -56,6 +56,7 @@ import {
   Bell,
   Layers,
   FileSearch,
+  AlertTriangle,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -332,6 +333,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Growth OS", href: "/admin/growth-os", icon: Gauge, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Site offers (pages)", href: "/admin/offers", icon: Package, permission: "funnel" as const },
+    { section: "Marketing & funnel", name: "Scarcity Engine", href: "/admin/scarcity-engine", icon: AlertTriangle, permission: "funnel" as const },
     {
       section: "Delivery & platform",
       name: "Agency OS",

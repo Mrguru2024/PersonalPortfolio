@@ -812,6 +812,14 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
   systemScore: integer("system_score").notNull(),
   primaryBottleneck: text("primary_bottleneck").notNull(), // brand | design | system
   recommendation: text("recommendation").notNull(), // style_studio | macon_designs | ascendra
+  sourceOfferTemplateId: integer("source_offer_template_id"),
+  sourceLeadMagnetTemplateId: integer("source_lead_magnet_template_id"),
+  sourceCampaignId: integer("source_campaign_id"),
+  sourceFunnelPathSlug: text("source_funnel_path_slug"),
+  sourceTrafficTemperature: text("source_traffic_temperature"),
+  sourceTrafficType: text("source_traffic_type"),
+  conversionStage: text("conversion_stage"),
+  qualificationResult: text("qualification_result"),
   name: text("name"),
   email: text("email"),
   businessName: text("business_name"),
@@ -1069,3 +1077,4 @@ export * from "./growthEngineSchema";
 export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
 export * from "./offerEngineSchema";
+export * from "./scarcityEngineSchema";
