@@ -353,6 +353,12 @@ async function getLmBySlug(slug: string): Promise<OfferEngineLeadMagnetTemplateR
   return r ?? null;
 }
 
+export async function getLeadMagnetTemplateBySlug(
+  slug: string,
+): Promise<OfferEngineLeadMagnetTemplateRow | null> {
+  return getLmBySlug(slug.trim().toLowerCase());
+}
+
 export async function createLeadMagnetTemplate(data: LeadMagnetWrite): Promise<OfferEngineLeadMagnetTemplateRow | null> {
   const persona = await getMarketingPersona(data.personaId);
   if (!persona) return null;

@@ -60,6 +60,31 @@ export function evaluateOfferWarnings(input: {
     messages.push("Complete “Why this offer should convert” (persona relevance + why now).");
   }
 
+  if (!input.strategyWhyConvert.currentAlternativesInMarket?.trim()) {
+    codes.push("market_context_missing");
+    messages.push("Document current alternatives in market so differentiation can be assessed.");
+  }
+
+  if (!input.strategyWhyConvert.reasonToBelieve?.trim() && !input.strategyWhyConvert.proofCredibilityFactors?.trim()) {
+    codes.push("proof_missing");
+    messages.push("Reason-to-believe/proof is missing — add concrete credibility factors.");
+  }
+
+  if (!input.strategyWhyConvert.guaranteeIdeas?.length && !input.strategyWhyConvert.urgencyPlan?.trim()) {
+    codes.push("risk_reversal_light");
+    messages.push("Guarantee + urgency are both weak; add scoped risk reversal and a real urgency driver.");
+  }
+
+  if (!input.strategyWhyConvert.pricingValueJustification?.trim()) {
+    codes.push("pricing_justification_missing");
+    messages.push("Pricing-to-value justification is missing; add why this price is credible for the persona.");
+  }
+
+  if (!input.strategyWhyConvert.easeOfUnderstandingNotes?.trim()) {
+    codes.push("clarity_evidence_missing");
+    messages.push("Add ease-of-understanding notes to ensure the offer can be explained quickly.");
+  }
+
   if (!input.perceived.trustReason?.trim()) {
     codes.push("trust_gap");
     messages.push("Perceived outcome: add a concrete trust reason (proof, process, relevant experience).");
@@ -97,7 +122,14 @@ export function evaluateOfferWarnings(input: {
 export function evaluateLeadMagnetWarnings(input: {
   promiseHook: string | null | undefined;
   smallQuickWin: string | null | undefined;
-  bridge: { paidStepItPointsTo: string; ctaShouldComeNext: string };
+  bridge: {
+    paidStepItPointsTo: string;
+    ctaShouldComeNext: string;
+    specificityLevel?: string;
+    valueDensity?: string;
+    awarenessLevel?: string;
+    intendedNextStep?: string;
+  };
   perceived: PerceivedOutcomeReview;
   funnel: FunnelAlignment;
 }): OfferEngineWarningPayload {
@@ -116,6 +148,26 @@ export function evaluateLeadMagnetWarnings(input: {
   if (!input.bridge.paidStepItPointsTo?.trim() || !input.bridge.ctaShouldComeNext?.trim()) {
     codes.push("bridge_weak");
     messages.push("Bridge to paid offer incomplete — specify paid step and next CTA.");
+  }
+
+  if (!input.bridge.specificityLevel?.trim()) {
+    codes.push("specificity_missing");
+    messages.push("Specificity level is missing — vague magnets tend to attract low-intent leads.");
+  }
+
+  if (!input.bridge.valueDensity?.trim()) {
+    codes.push("value_density_missing");
+    messages.push("Value density is unclear — define exactly what they get in the first interaction.");
+  }
+
+  if (!input.bridge.awarenessLevel?.trim()) {
+    codes.push("awareness_mismatch_risk");
+    messages.push("Awareness level is undefined; magnet may mismatch traffic sophistication.");
+  }
+
+  if (!input.bridge.intendedNextStep?.trim()) {
+    codes.push("next_step_missing");
+    messages.push("Intended next step is missing — define the handoff after magnet consumption.");
   }
 
   if (!input.funnel.crmTaggingLogic?.trim()) {

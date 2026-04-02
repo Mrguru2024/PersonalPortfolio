@@ -7,6 +7,7 @@ import {
   type PpcPublishGates,
   isConversionTrackingConfiguredForPublish,
 } from "@shared/ppcBusinessRules";
+import { getOfferLeadMagnetIntelligence } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export type PpcReadinessResult = {
   overallScore: number;
@@ -19,6 +20,7 @@ export type PpcReadinessResult = {
   adReady: boolean;
   packageRecommendation: "Foundation" | "Launch" | "Revenue Engine";
   growthRouteRecommendation: PpcGrowthRouteRecommendation;
+  offerLeadMagnetWarnings: string[];
 };
 
 const CATEGORIES = [
@@ -117,6 +119,7 @@ async function computeGates(campaign: PpcCampaign, storage: IStorage, overallSco
 export async function computePpcReadiness(campaign: PpcCampaign, storage: IStorage): Promise<PpcReadinessResult> {
   const scores: Record<string, number> = {} as Record<string, number>;
   const blockers: string[] = [];
+  const offerLeadMagnetWarnings: string[] = [];
 
   scores.offer_clarity = await scoreOffer(campaign.offerSlug, storage);
   if (scores.offer_clarity < 60) blockers.push("Link a valid site offer slug (site_offers).");
@@ -182,6 +185,23 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
     blockers.push("Fill utm_source, utm_medium, and utm_campaign for attribution + CRM source tagging.");
   }
 
+  if (campaign.offerSlug?.trim()) {
+    const intelligence = await getOfferLeadMagnetIntelligence({
+      offerSlug: campaign.offerSlug.trim(),
+      trafficSource: campaign.trackingParamsJson?.utm_source ?? null,
+      audienceTemperature: "cold",
+    });
+    offerLeadMagnetWarnings.push(...intelligence.warnings);
+    if (intelligence.warnings.some((w) => w.toLowerCase().includes("weak"))) {
+      scores.offer_clarity = Math.min(scores.offer_clarity, 58);
+      blockers.push("Offer strategy warning: strengthen offer before launching cold traffic.");
+    }
+    if (intelligence.warnings.some((w) => w.toLowerCase().includes("lead magnet"))) {
+      scores.follow_up_readiness = Math.min(scores.follow_up_readiness, 58);
+      blockers.push("Lead magnet handoff warning: align lead magnet and offer flow before launch.");
+    }
+  }
+
   for (const k of CATEGORIES) {
     if (scores[k] == null) scores[k] = 50;
   }
@@ -221,5 +241,6 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
     adReady,
     packageRecommendation,
     growthRouteRecommendation,
+    offerLeadMagnetWarnings: Array.from(new Set(offerLeadMagnetWarnings)),
   };
 }

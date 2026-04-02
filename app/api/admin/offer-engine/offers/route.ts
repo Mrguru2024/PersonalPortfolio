@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { offerTemplateWriteSchema } from "@shared/offerEngineTypes";
 import { listOfferTemplates, createOfferTemplate } from "@server/services/offerEngineService";
+import { buildOfferLeadMagnetIntelligenceSnapshot } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,8 +26,19 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") ?? undefined;
     const minScore = searchParams.get("minScore") ? Number(searchParams.get("minScore")) : undefined;
     const q = searchParams.get("q") ?? undefined;
+    const includeIntelligence = searchParams.get("includeIntelligence") === "1";
     const rows = await listOfferTemplates({ personaId, status, minScore, q });
-    return NextResponse.json({ offers: rows.map(serializeOffer) });
+    if (!includeIntelligence) {
+      return NextResponse.json({ offers: rows.map(serializeOffer) });
+    }
+    const snapshot = await buildOfferLeadMagnetIntelligenceSnapshot();
+    const map = new Map(snapshot.offerRows.map((r) => [r.offerId, r]));
+    return NextResponse.json({
+      offers: rows.map((row) => ({
+        ...serializeOffer(row),
+        intelligence: map.get(row.id) ?? null,
+      })),
+    });
   } catch (e) {
     console.error("[GET offer-engine/offers]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });

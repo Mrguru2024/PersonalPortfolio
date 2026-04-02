@@ -15,6 +15,12 @@ interface Summary {
   leadMagnetTemplateCount: number;
   funnelPathCount: number;
   personaCount: number;
+  weakOfferCount?: number;
+  weakLeadMagnetCount?: number;
+  unmatchedOfferCount?: number;
+  orphanLeadMagnetCount?: number;
+  weakJourneyChainCount?: number;
+  topRecommendation?: string;
 }
 
 export default function OfferEngineHubPage() {
@@ -154,6 +160,33 @@ export default function OfferEngineHubPage() {
                 <Button asChild size="sm" variant="outline">
                   <Link href="/admin/offer-engine/funnel-paths">View paths</Link>
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Conversion readiness alerts</CardTitle>
+                <CardDescription>Weak assets and broken handoffs detected from live intelligence.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  Weak offers: <strong>{summary?.weakOfferCount ?? 0}</strong>
+                </p>
+                <p>
+                  Weak lead magnets: <strong>{summary?.weakLeadMagnetCount ?? 0}</strong>
+                </p>
+                <p>
+                  Offers missing magnet support: <strong>{summary?.unmatchedOfferCount ?? 0}</strong>
+                </p>
+                <p>
+                  Magnets without logical next offer: <strong>{summary?.orphanLeadMagnetCount ?? 0}</strong>
+                </p>
+                <p>
+                  Weak journey chains: <strong>{summary?.weakJourneyChainCount ?? 0}</strong>
+                </p>
+                {summary?.topRecommendation ? (
+                  <p className="text-muted-foreground">Top recommendation: {summary.topRecommendation}</p>
+                ) : null}
               </CardContent>
             </Card>
           </div>

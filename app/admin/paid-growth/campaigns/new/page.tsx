@@ -56,6 +56,15 @@ export default function NewPaidGrowthCampaignPage() {
       if (!res.ok) throw new Error("fail");
       return res.json() as Promise<{
         offers: { slug: string; name: string }[];
+        offerTemplates: { id: number; slug: string; name: string; overallScore: number | null; readinessStatus: string | null }[];
+        leadMagnetTemplates: {
+          id: number;
+          slug: string;
+          name: string;
+          overallScore: number | null;
+          grade: string | null;
+          relatedOfferTemplateId: number | null;
+        }[];
         funnelSlugs: { slug: string }[];
         personas: { id: string; displayName: string }[];
         commCampaigns: { id: number; name: string }[];
@@ -241,7 +250,37 @@ export default function NewPaidGrowthCampaignPage() {
                 ))}
               </SelectContent>
             </Select>
+            {ctx?.offerTemplates?.length ? (
+              <p className="text-xs text-muted-foreground">
+                Offer Engine templates:{" "}
+                {ctx.offerTemplates
+                  .slice(0, 3)
+                  .map((t) => `${t.name} (${t.overallScore ?? "—"})`)
+                  .join(" · ")}
+              </p>
+            ) : null}
           </div>
+          {ctx?.offerTemplates?.length || ctx?.leadMagnetTemplates?.length ? (
+            <div className="rounded-lg border bg-muted/20 p-3 text-xs space-y-2">
+              <p className="font-medium">Offer/Magnet launch guidance</p>
+              {ctx?.offerTemplates?.some((o) => (o.overallScore ?? 0) < 60) ? (
+                <p className="text-amber-700 dark:text-amber-300">
+                  Some linked offer templates score below 60. Run Offer Engine fixes before cold-traffic launch.
+                </p>
+              ) : null}
+              {ctx?.leadMagnetTemplates?.some((lm) => (lm.overallScore ?? 0) < 60) ? (
+                <p className="text-amber-700 dark:text-amber-300">
+                  Some lead magnets score weak/usable only. Use stronger hooks and bridge-to-offer before scaling.
+                </p>
+              ) : null}
+              {ctx?.offerTemplates?.every((o) => (o.overallScore ?? 0) >= 60) &&
+              ctx?.leadMagnetTemplates?.every((lm) => (lm.overallScore ?? 0) >= 60) ? (
+                <p className="text-emerald-700 dark:text-emerald-300">
+                  Available offer and lead magnet templates look launch-safe for paid testing.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label>Landing page path</Label>
             <Input value={landingPath} onChange={(e) => setLandingPath(e.target.value)} placeholder="/launch-your-brand" />

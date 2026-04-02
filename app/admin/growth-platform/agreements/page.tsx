@@ -342,9 +342,9 @@ export default function AdminGrowthPlatformAgreementsPage() {
     <div className="mx-auto max-w-4xl space-y-6 px-3 pb-16 pt-4 fold:px-4 sm:space-y-8 sm:p-6 sm:pb-16">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/growth-platform">
+          <Link href="/admin/document-signing">
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Growth platform
+            Document signing
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>

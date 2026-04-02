@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { funnelPathWriteSchema } from "@shared/offerEngineTypes";
 import { listFunnelPaths, upsertFunnelPath } from "@server/services/offerEngineService";
+import { buildOfferLeadMagnetIntelligenceSnapshot } from "@server/services/offerLeadMagnetIntelligenceService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,7 +24,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const personaId = searchParams.get("personaId") ?? undefined;
     const rows = await listFunnelPaths(personaId);
-    return NextResponse.json({ funnelPaths: rows.map(serialize) });
+    const intelligence = await buildOfferLeadMagnetIntelligenceSnapshot(personaId ?? undefined);
+    return NextResponse.json({
+      funnelPaths: rows.map(serialize),
+      intelligence,
+    });
   } catch (e) {
     console.error("[GET offer-engine/funnel-paths]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
