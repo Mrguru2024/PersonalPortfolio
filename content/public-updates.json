@@ -1,58 +1,50 @@
 [
   {
-    "date": "2026-03-30T15:30:00Z",
-    "title": "Client project dashboard rollout",
-    "description": "New client dashboard release with quote tracking, invoice visibility, proposal access, and direct feedback workflows.",
-    "category": "client_project",
+    "date": "2026-03-31T13:30:00Z",
+    "title": "Search ad CPC trend signals rising pressure on core service keywords",
+    "description": "Verified March benchmark sources show higher median CPC pressure in core service categories, which reinforces tighter intent targeting and stronger conversion page clarity.",
+    "category": "marketing_industry_update",
+    "visibility": "public",
     "factChecked": true
   },
   {
-    "date": "2026-03-29T18:00:00Z",
-    "title": "Ascendra innovation: Growth Intelligence refinements",
-    "description": "Ascendra Growth Intelligence now includes improved behavior watch controls and clearer decision support for growth actions.",
-    "category": "ascendra_innovation",
+    "date": "2026-03-30T16:00:00Z",
+    "title": "Founder persona requests increased for practical CRM follow-up playbooks",
+    "description": "Discovery conversations and intake forms show repeated demand for simple lead follow-up playbooks, reminder cadence guidance, and low-friction pipeline visibility.",
+    "category": "persona_interest",
+    "visibility": "public",
     "factChecked": true
   },
   {
-    "date": "2026-03-28T20:15:00Z",
-    "title": "Site update: faster diagnostics flow",
-    "description": "Public diagnostics pages were streamlined to reduce friction and improve completion rates across mobile and desktop.",
-    "category": "site_update",
+    "date": "2026-03-29T18:45:00Z",
+    "title": "New project intake opened for local service lead-to-booking systems",
+    "description": "Recent intake approvals are centered on projects that connect lead capture, call booking, and basic nurture sequencing for local service providers.",
+    "category": "new_project_intake",
+    "visibility": "public",
     "factChecked": true
   },
   {
-    "date": "2026-03-27T14:45:00Z",
-    "title": "Market update: lead quality benchmarks refreshed",
-    "description": "Lead-quality benchmark guidance was refreshed using the latest verified campaign and conversion datasets.",
-    "category": "market_update",
+    "date": "2026-03-28T15:20:00Z",
+    "title": "Email deliverability guidance emphasizes list quality over send volume",
+    "description": "Current provider guidance and industry reporting continue to prioritize consent quality, engagement signals, and authentication hygiene over bulk send frequency.",
+    "category": "marketing_industry_update",
+    "visibility": "public",
     "factChecked": true
   },
   {
-    "date": "2026-03-26T13:10:00Z",
-    "title": "Client project CRM workflow expansion",
-    "description": "CRM quick actions and workflow automation enhancements were delivered for active client pipeline operations.",
-    "category": "client_project",
+    "date": "2026-03-27T14:10:00Z",
+    "title": "Operator and owner personas prioritize visible ROI checkpoints",
+    "description": "Persona feedback trends consistently favor progress updates tied to booked calls, qualified leads, and practical revenue checkpoints rather than vanity metrics.",
+    "category": "persona_interest",
+    "visibility": "public",
     "factChecked": true
   },
   {
-    "date": "2026-03-25T17:25:00Z",
-    "title": "Ascendra innovation: content studio publishing adapters",
-    "description": "Content Studio publishing now supports more channel adapters with improved reliability and audit-friendly publish logs.",
-    "category": "ascendra_innovation",
-    "factChecked": true
-  },
-  {
-    "date": "2026-03-24T16:05:00Z",
-    "title": "Site update: accessibility and navigation polish",
-    "description": "Navigation clarity and accessibility affordances were improved across key public pages for faster route discovery.",
-    "category": "site_update",
-    "factChecked": true
-  },
-  {
-    "date": "2026-03-23T19:40:00Z",
-    "title": "Market update: conversion scoring guidance clarified",
-    "description": "Market-facing scoring guidance now reflects validated thresholds to keep recommendations accurate and practical.",
-    "category": "market_update",
+    "date": "2026-03-26T12:50:00Z",
+    "title": "New project intake accepted for startup launch visibility support",
+    "description": "Latest onboarding approvals include launch-stage startup projects focused on positioning clarity, landing-page conversion, and first-stage paid traffic testing.",
+    "category": "new_project_intake",
+    "visibility": "public",
     "factChecked": true
   }
 ]

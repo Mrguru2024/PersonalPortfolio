@@ -158,7 +158,7 @@ const MORE_NAV_SECTIONS_BASE: NavSection[] = [
       { name: "About", href: "/about" },
       { name: "Contact", href: "/contact" },
       { name: "FAQ", href: "/faq" },
-      { name: "Updates", href: "/updates" },
+      { name: "Market updates", href: "/updates" },
     ],
   },
   {
@@ -394,7 +394,8 @@ export default function Header(_props: HeaderProps) {
     { section: "Analytics", name: "Blog Analytics", href: "/admin/blog/analytics", icon: BarChart3, permission: "blog" as const },
     { section: "Operations", name: "Chat", href: "/admin/chat", icon: MessageSquare, permission: "dashboard" as const },
     { section: "Operations", name: "Feedback", href: "/admin/feedback", icon: MessageSquare, permission: "feedback" as const },
-    { section: "Operations", name: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
+    { section: "Operations", name: "Project announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements" as const },
+    { section: "Operations", name: "Internal updates", href: "/admin/updates", icon: Sparkles, permission: "dashboard" as const },
     { section: "Operations", name: "Invoices", href: "/admin/invoices", icon: Receipt, permission: "invoices" as const },
     { section: "Settings", name: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard" as const },
     { section: "Site tools", name: "Connections & email", href: "/admin/integrations", icon: Link2 },
