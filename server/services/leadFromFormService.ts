@@ -43,6 +43,8 @@ export interface FormAttribution {
   sourcePathStage?: string | null;
   sourceConversionStage?: string | null;
   sourceQualificationResult?: string | null;
+  persona_type?: string | null;
+  personaType?: string | null;
 }
 
 /** Self-reported fields from forms — stored on crm_contacts for analytics + tagging */
@@ -174,6 +176,11 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
   const sourcePathStage =
     normalizeText(attribution?.sourcePathStage) ?? normalizeText(attribution?.sourceConversionStage);
   const sourceQualificationResult = normalizeText(attribution?.sourceQualificationResult);
+  const personaType =
+    normalizeText(attribution?.persona_type) ??
+    normalizeText(attribution?.personaType) ??
+    normalizeText(customFields?.persona_type) ??
+    normalizeText(customFields?.personaType);
   const scarcityContextInput: MaybeScarcityInput = {
     sourceOfferSlug: sourceOfferSlug ?? normalizeText(customFields?.sourceOfferSlug),
     sourceLeadMagnetSlug: sourceLeadMagnetSlug ?? normalizeText(customFields?.sourceLeadMagnetSlug),
@@ -223,6 +230,7 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
       ...(sourceTrafficTemperature ? { sourceTrafficTemperature } : {}),
       ...(sourcePathStage ? { sourcePathStage } : {}),
       ...(sourceQualificationResult ? { sourceQualificationResult } : {}),
+      ...(personaType ? { personaType, persona_type: personaType } : {}),
       ...(scarcity ? {
         scarcityConfigId: scarcity.configId,
         scarcityStatus: scarcity.status,
@@ -271,6 +279,7 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     ...(sourceTrafficTemperature ? { sourceTrafficTemperature } : {}),
     ...(sourcePathStage ? { sourcePathStage } : {}),
     ...(sourceQualificationResult ? { sourceQualificationResult } : {}),
+    ...(personaType ? { personaType, persona_type: personaType } : {}),
     ...(scarcity ? {
       scarcityConfigId: scarcity.configId,
       scarcityStatus: scarcity.status,
