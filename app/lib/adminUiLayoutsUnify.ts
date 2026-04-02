@@ -1,8 +1,11 @@
 import { DEFAULT_ADMIN_DASHBOARD_ORDER } from "@/lib/adminDashboardLayout";
 import { DEFAULT_CRM_DASHBOARD_ORDER } from "@/lib/crmDashboardLayout";
 import {
+  defaultSurfaceForWidget,
   isAdminWidgetId,
+  isMainNativeWidget,
   UNIFIED_LAYOUT_SURFACE_IDS,
+  type AdminWidgetId,
   type UnifiedLayoutSurfaceId,
 } from "@/lib/adminWidgetCatalog";
 
@@ -72,7 +75,62 @@ export function hydrateUnifiedLayoutsFromServer(
     analytics = parseSurface(raw.analytics);
   }
 
-  return dedupeWidgetPlacementAcrossSurfaces({ main, crm, analytics });
+  return enforceMainSurfaceNativeWidgetsOnly(dedupeWidgetPlacementAcrossSurfaces({ main, crm, analytics }));
+}
+
+/**
+ * After drag-reorder on a surface, merge the new visible sequence back into the full order array
+ * (hidden entries keep their relative slots).
+ */
+export function mergeVisibleReorderIntoFullOrder(
+  fullOrder: string[],
+  hidden: string[],
+  nextVisibleOrder: string[],
+): string[] {
+  const hiddenSet = new Set(hidden);
+  const queue = [...nextVisibleOrder];
+  const result: string[] = [];
+  for (const id of fullOrder) {
+    if (hiddenSet.has(id)) {
+      result.push(id);
+    } else {
+      const next = queue.shift();
+      if (next) result.push(next);
+    }
+  }
+  for (const rest of queue) {
+    result.push(rest);
+  }
+  return result;
+}
+
+/** Main dashboard only hosts main-native modules; relocate CRM/analytics widgets to their home surface. */
+export function enforceMainSurfaceNativeWidgetsOnly(state: UnifiedAdminLayoutsState): UnifiedAdminLayoutsState {
+  let s = dedupeWidgetPlacementAcrossSurfaces(state);
+  const evicted: AdminWidgetId[] = [];
+  const nextMainOrder = s.main.order.filter((id) => {
+    if (!isAdminWidgetId(id)) return false;
+    if (isMainNativeWidget(id)) return true;
+    evicted.push(id);
+    return false;
+  });
+  const nextMainHidden = s.main.hidden.filter(
+    (id) => !isAdminWidgetId(id) || isMainNativeWidget(id),
+  );
+  let next: UnifiedAdminLayoutsState = {
+    ...s,
+    main: { order: nextMainOrder, hidden: nextMainHidden },
+  };
+  for (const id of evicted) {
+    const dest = defaultSurfaceForWidget(id);
+    if (!next[dest].order.includes(id)) {
+      next[dest] = {
+        ...next[dest],
+        order: [...next[dest].order, id],
+      };
+    }
+  }
+  return dedupeWidgetPlacementAcrossSurfaces(next);
 }
 
 export function analyticsLayoutKeyPresent(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { emailService } from "@server/services/emailService";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,13 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    queueAdminInboundNotification({
+      kind: "data_deletion",
+      title: `Data deletion request: ${email}`,
+      body: [name, message].filter(Boolean).join("\n\n") || undefined,
+      metadata: { email, name: name ?? null },
+    });
 
     const sent = await emailService.sendNotification({
       type: "data-deletion",

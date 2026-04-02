@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 import { z } from "zod";
 
 const subscribeSchema = z.object({
@@ -24,6 +25,16 @@ export async function POST(req: NextRequest) {
       subscribed: true,
       source: "blog_comment",
     });
+
+    queueAdminInboundNotification({
+      kind: "newsletter_subscribe",
+      title: `Newsletter subscriber: ${email.trim()}`,
+      body: name?.trim() ? `Name: ${name.trim()}` : undefined,
+      relatedType: "newsletter_subscriber",
+      relatedId: subscriber.id,
+      metadata: { email: subscriber.email, source: "blog_comment_gate" },
+    });
+
     return NextResponse.json(
       { message: "You're subscribed. You can now leave a comment.", subscriber: { id: subscriber.id, email: subscriber.email } },
       { status: 201 }

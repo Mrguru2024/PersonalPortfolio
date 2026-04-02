@@ -614,6 +614,42 @@ export type AdminChatMessage = typeof adminChatMessages.$inferSelect;
 export type InsertAdminChatMessage = typeof adminChatMessages.$inferInsert;
 export type AdminChatReadCursor = typeof adminChatReadCursor.$inferSelect;
 
+/**
+ * In-app inbox for inbound lead/form events (mirrors email alerts; survives when email fails).
+ * Admins see items in /admin/inbox and dashboard; per-user read state in admin_inbox_reads.
+ */
+export const adminInboxItems = pgTable("admin_inbox_items", {
+  id: serial("id").primaryKey(),
+  /** contact | quote | resume | assessment | free_lead | data_deletion | blog_comment | offer_valuation | growth_funnel | market_score | skill_endorsement | client_feedback | newsletter_subscribe | ... */
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  body: text("body"),
+  linkUrl: text("link_url").notNull(),
+  relatedType: text("related_type"),
+  relatedId: integer("related_id"),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminInboxReads = pgTable(
+  "admin_inbox_reads",
+  {
+    userId: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    itemId: integer("item_id")
+      .references(() => adminInboxItems.id, { onDelete: "cascade" })
+      .notNull(),
+    readAt: timestamp("read_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: unique().on(t.userId, t.itemId),
+  }),
+);
+
+export type AdminInboxItem = typeof adminInboxItems.$inferSelect;
+export type InsertAdminInboxItem = typeof adminInboxItems.$inferInsert;
+
 // User activity / login audit log (admin monitoring: logins, failures, errors)
 export const userActivityLog = pgTable("user_activity_log", {
   id: serial("id").primaryKey(),

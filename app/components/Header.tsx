@@ -89,6 +89,7 @@ import {
 import { useLocale } from "@/contexts/LocaleContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
+import { AdminInboxNotificationBell } from "@/components/AdminInboxNotificationBell";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useAdminAudienceView } from "@/contexts/AdminAudienceViewContext";
 import { isAuthApprovedAdmin } from "@/lib/super-admin";
@@ -292,6 +293,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Overview", name: "How-to & guides", href: "/admin/how-to", icon: BookOpen, permission: "dashboard" as const },
     { section: "Overview", name: "Assistant knowledge", href: "/admin/agent-knowledge", icon: Bot, permission: "dashboard" as const },
     { section: "Overview", name: "Reminders", href: "/admin/reminders", icon: Bell, permission: "dashboard" as const },
+    { section: "Overview", name: "Inbound inbox", href: "/admin/inbox", icon: Inbox, permission: "dashboard" as const },
     { section: "Overview", name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
     { section: "Bookings & calendar", name: "Meetings & calendar", href: "/admin/scheduler", icon: Calendar, permission: "dashboard" as const },
     { section: "Bookings & calendar", name: "Booking & reminders setup", href: "/admin/scheduling", icon: CalendarClock, permission: "dashboard" as const },
@@ -561,7 +563,12 @@ export default function Header(_props: HeaderProps) {
             )}
             {mounted && user ? (
               <>
-                {showAdminChrome ? <AdminChatNotificationBell /> : null}
+                {showAdminChrome ? (
+                  <>
+                    <AdminInboxNotificationBell />
+                    <AdminChatNotificationBell />
+                  </>
+                ) : null}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button

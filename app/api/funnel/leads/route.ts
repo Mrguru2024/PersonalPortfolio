@@ -3,6 +3,7 @@ import { db } from "@server/db";
 import { growthFunnelLeads } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
 import { RECOMMENDATION_LABELS } from "@/lib/scoring";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,22 @@ export async function POST(req: NextRequest) {
     }
 
     const recommendationLabel = RECOMMENDATION_LABELS[recommendation as keyof typeof RECOMMENDATION_LABELS] ?? recommendation;
+
+    queueAdminInboundNotification({
+      kind: "growth_funnel",
+      title: `Growth funnel lead: ${name}`,
+      body: [
+        email,
+        form.businessName && `Business: ${form.businessName}`,
+        form.website && `Site: ${form.website}`,
+        `Score: ${totalScore} · Bottleneck: ${primaryBottleneck}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      relatedType: "growth_funnel_lead",
+      relatedId: inserted.id,
+      metadata: { email, totalScore, recommendation },
+    });
 
     await Promise.all([
       emailService.sendGrowthDiagnosisToUser({

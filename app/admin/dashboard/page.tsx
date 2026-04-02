@@ -35,6 +35,7 @@ import {
   Calendar,
   CalendarClock,
   Layers,
+  ArrowDownUp,
 } from "lucide-react";
 import AscendraOperationsDashboard from "@/components/admin/operations-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,18 +51,6 @@ import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const LEGACY_LINKS = [
-  { label: "Lead intake hub", href: "/admin/lead-intake" },
-  { label: "CRM workspace", href: "/admin/crm" },
-  { label: "CRM tasks", href: "/admin/crm/tasks" },
-  { label: "Content Studio", href: "/admin/content-studio" },
-  { label: "Funnel & offers", href: "/admin/funnel" },
-  { label: "Growth OS", href: "/admin/growth-os" },
-  { label: "Users", href: "/admin/users" },
-  { label: "Settings", href: "/admin/settings" },
-  { label: "Site directory", href: "/admin/site-directory" },
-  { label: "Reminders", href: "/admin/reminders" },
-] as const;
 import {
   formatDevUpdateDateLabel,
   formatDevUpdateTimeInEastern,
@@ -106,11 +95,8 @@ import {
 } from "@/lib/adminTourConfig";
 import { useMainDashboardLayout } from "@/hooks/useAdminUiLayouts";
 import { AdminUnifiedLayoutSheetTrigger } from "@/components/admin/AdminUnifiedLayoutSheet";
-import { CrmKpisWidget } from "@/components/admin/dashboard-widgets/CrmKpisWidget";
-import { CrmSourcesTagsWidget } from "@/components/admin/dashboard-widgets/CrmSourcesTagsWidget";
-import { CrmPipelineOverdueWidget } from "@/components/admin/dashboard-widgets/CrmPipelineOverdueWidget";
-import { CrmTasksActivityWidget } from "@/components/admin/dashboard-widgets/CrmTasksActivityWidget";
-import { AnalyticsSummaryCardsWidget } from "@/components/admin/dashboard-widgets/AnalyticsSummaryCardsWidget";
+import { MainDashboardDraggableSections } from "@/components/admin/MainDashboardDraggableSections";
+import { ADMIN_DASHBOARD_SECTION_LABELS } from "@/lib/adminDashboardLayout";
 /** Summary row for list (lightweight for fast load on mobile). */
 interface AssessmentSummary {
   id: number;
@@ -324,6 +310,8 @@ export default function AdminDashboardPage() {
   /** Entire development-updates feed (metadata + entries) — not per-row. */
   const [devUpdatesOpen, setDevUpdatesOpen] = useState(false);
   const [inboxTab, setInboxTab] = useState<DashboardInboxTab>("assessments");
+  const [sectionReorderMode, setSectionReorderMode] = useState(false);
+  const [operationsSnapshotOpen, setOperationsSnapshotOpen] = useState(false);
   const inboxTabsRef = useRef<HTMLDivElement>(null);
   const handled403 = useRef(false);
   /** Avoid hydration mismatch: server vs client can disagree on auth (e.g. sessionStorage placeholderData). */
@@ -642,245 +630,63 @@ export default function AdminDashboardPage() {
     recentContactsWeek,
   });
 
-  const sectionShell = (id: string, render: () => React.ReactNode) => {
-    const idx = dashboardLayout.visibleSectionOrder.indexOf(id);
-    if (idx < 0) return null;
-    return (
-      <div id={`admin-widget-${id}`} className="w-full min-w-0" style={{ order: idx }}>
-        {render()}
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      <AscendraOperationsDashboard />
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Additional Admin Tools</CardTitle>
-          <CardDescription>
-            Existing workflows remain available from their dedicated admin routes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {LEGACY_LINKS.map((item) => (
-            <Button key={item.href} variant="outline" size="sm" asChild>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">
-            Admin Dashboard
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
-            Tune what appears and in what order with Customize—defaults favor inbound work first, then tools and
-            notes.
-          </p>
-        </div>
-        {dashboardLayout.ready ? <AdminUnifiedLayoutSheetTrigger initialSurface="main" /> : null}
-      </div>
-
-      {/* New admin: offer guided tour */}
-      {showTourBanner && !tourActive && (
-        <Card className="mb-4 border-primary/30 bg-primary/5">
-          <CardContent className="py-4 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Sparkles className="h-5 w-5 text-primary shrink-0" />
-              <div className="min-w-0">
-                <p className="font-medium text-sm">New to the admin?</p>
-                <p className="text-xs text-muted-foreground">Take a short tour to see features and daily actions.</p>
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0 sm:ml-4">
-              <Button size="sm" onClick={() => setTourActive(true)}>
-                Start tour
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setTourDismissed();
-                  setShowTourBanner(false);
-                }}
-              >
-                Maybe later
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Guided tour overlay (not part of reorderable blocks) */}
-      {tourActive && tourSteps.length > 0 && (
-        <AdminGuideTour
-          steps={tourSteps}
-          currentStep={tourStep}
-          onNext={() => setTourStep((s) => (s >= tourSteps.length - 1 ? s : s + 1))}
-          onBack={() => setTourStep((s) => (s <= 0 ? 0 : s - 1))}
-          onEnd={() => {
-            setTourCompleted();
-            setTourActive(false);
-            setTourStep(0);
-          }}
-          onDismiss={() => {
-            setTourDismissed();
-            setTourActive(false);
-            setTourStep(0);
-          }}
-        />
-      )}
-
-      {dashboardLayout.visibleSectionOrder.length === 0 ? (
-        <Card className="mb-6 border-dashed border-amber-500/40 bg-amber-500/[0.06]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">No dashboard sections visible</CardTitle>
-            <CardDescription>
-              Open <span className="font-medium text-foreground">Customize pages</span> above and turn on at least one
-              module, or reset to the default layout.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
-
-      <div className="flex flex-col w-full min-w-0">
-        {sectionShell(
-          "suggested",
-          () => (
-            <div className="mb-4">
-              <AdminDailyNudge
-                items={nudgeItems}
-                onStartTour={() => setTourActive(true)}
-                showTourCta={tourCompletedOrDismissed}
-              />
-            </div>
-          ),
-        )}
-        {sectionShell(
-          "reminders",
-          () => (
-            <div className="mb-4">
-              <AdminRemindersCard compact maxItems={5} showGenerate />
-            </div>
-          ),
-        )}
-
-      {/* Summary Cards */}
-      {sectionShell(
-        "summary",
-        () => (
-          <>
-        <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <Card className="border bg-card shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-            <CardTitle className="text-sm font-medium">Assessments</CardTitle>
-            <FileCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl font-bold">{assessments.length}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {pendingAssessments} pending review
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border bg-card shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-            <CardTitle className="text-sm font-medium">Quotes/Contacts</CardTitle>
-            <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl font-bold">{contacts.length}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Contact form submissions
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-            <CardTitle className="text-sm font-medium">Resume Requests</CardTitle>
-            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl font-bold">{resumeRequests.length}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {resumeRequests.filter((r) => !r.accessed).length} unaccessed
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div data-tour="quick-links" className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/site-directory">
-            <MapIcon className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Pages directory</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/operations">
-            <Radar className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Operations dashboard</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/invoices">
-            <Receipt className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Invoices</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/announcements">
-            <span className="truncate">Project updates</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/feedback">
-            <span className="truncate">Feedback</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/offers">
-            <Tag className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Site offers</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/challenge/leads">
-            <span className="truncate">Challenge leads</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/growth-os">
-            <Radar className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Growth OS</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/internal-audit">
-            <ClipboardList className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Funnel audit</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" className="shrink-0 min-h-[44px] sm:min-h-0" asChild>
-          <Link href="/admin/content-studio">
-            <PenLine className="h-4 w-4 mr-2 shrink-0" />
-            <span className="truncate">Content studio</span>
-          </Link>
-        </Button>
-      </div>
-          </>
-        ),
-      )}
-
-      {sectionShell(
-        "inbox",
-        () => (
+  const renderMainSection = (sectionId: string): React.ReactNode => {
+    switch (sectionId) {
+      case "suggested":
+        return (
+          <div className="mb-4">
+            <AdminDailyNudge
+              items={nudgeItems}
+              onStartTour={() => setTourActive(true)}
+              showTourCta={tourCompletedOrDismissed}
+            />
+          </div>
+        );
+      case "reminders":
+        return (
+          <div className="mb-4">
+            <AdminRemindersCard compact maxItems={5} showGenerate />
+          </div>
+        );
+      case "summary":
+        return (
+          <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <Card className="border bg-card shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-sm font-medium">Assessments</CardTitle>
+                <FileCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="text-xl sm:text-2xl font-bold">{assessments.length}</div>
+                <p className="text-xs text-muted-foreground mt-0.5">{pendingAssessments} pending review</p>
+              </CardContent>
+            </Card>
+            <Card className="border bg-card shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-sm font-medium">Quotes/Contacts</CardTitle>
+                <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="text-xl sm:text-2xl font-bold">{contacts.length}</div>
+                <p className="text-xs text-muted-foreground mt-0.5">Contact form submissions</p>
+              </CardContent>
+            </Card>
+            <Card className="border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-sm font-medium">Resume Requests</CardTitle>
+                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="text-xl sm:text-2xl font-bold">{resumeRequests.length}</div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {resumeRequests.filter((r) => !r.accessed).length} unaccessed
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case "inbox":
+        return (
         <section className="mb-6 sm:mb-8 space-y-2" aria-labelledby="admin-dashboard-inbox-heading">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 id="admin-dashboard-inbox-heading" className="text-base font-semibold text-foreground tracking-tight">
@@ -1264,21 +1070,15 @@ export default function AdminDashboardPage() {
         </div>
 
       </section>
-        ),
-      )}
-
-      {sectionShell(
-        "intelligence",
-        () => (
+        );
+      case "intelligence":
+        return (
         <div className="mb-6 sm:mb-8">
           <AdminOperatorIntelligenceCard />
         </div>
-        ),
-      )}
-
-      {sectionShell(
-        "shortcuts",
-        () => (
+        );
+      case "shortcuts":
+        return (
           <>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-foreground">Workspace shortcuts</span>
@@ -1436,12 +1236,9 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           </>
-        ),
-      )}
-
-      {sectionShell(
-        "password",
-        () => (
+        );
+      case "password":
+        return (
         <>
       {/* Password reset control — send reset link to any user by email */}
       <Card className="mb-6 border bg-card shadow-sm overflow-hidden">
@@ -1483,12 +1280,9 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
         </>
-        ),
-      )}
-
-      {sectionShell(
-        "devUpdates",
-        () => (
+        );
+      case "devUpdates":
+        return (
         <>
       {/* Development updates log — single collapsible for the whole feed; entries are always fully readable when open */}
       <Card data-tour="development-updates" className="mb-6 sm:mb-8 border bg-card shadow-sm overflow-hidden">
@@ -1629,35 +1423,182 @@ export default function AdminDashboardPage() {
         </Collapsible>
       </Card>
         </>
-        ),
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full min-w-0 max-w-7xl mx-auto px-3 fold:px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 text-foreground">Admin Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+            Triage inbound work first; use <span className="font-medium text-foreground">Customize dashboard</span> to
+            show or hide modules, or{" "}
+            <span className="font-medium text-foreground">Reorder on page</span> to drag sections into place.
+          </p>
+          <nav
+            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+            aria-label="Admin quick destinations"
+          >
+            <Link href="/admin/site-directory" className="font-medium text-primary hover:underline">
+              Site directory
+            </Link>
+            <span aria-hidden className="text-border">
+              ·
+            </span>
+            <Link href="/admin/crm/dashboard" className="font-medium text-primary hover:underline">
+              CRM overview
+            </Link>
+            <span aria-hidden className="text-border">
+              ·
+            </span>
+            <Link href="/admin/operations" className="font-medium text-primary hover:underline">
+              Full operations
+            </Link>
+            <span aria-hidden className="text-border">
+              ·
+            </span>
+            <Link href="/admin/lead-intake" className="font-medium text-primary hover:underline">
+              Lead intake
+            </Link>
+          </nav>
+        </div>
+        {dashboardLayout.ready ? (
+          <div className="flex flex-col gap-2 sm:items-end shrink-0 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+              <AdminUnifiedLayoutSheetTrigger
+                initialSurface="main"
+                label="Customize dashboard"
+                shortLabel="Customize"
+              />
+              <Button
+                type="button"
+                variant={sectionReorderMode ? "secondary" : "outline"}
+                size="sm"
+                className="gap-2 min-h-[44px] sm:min-h-9"
+                onClick={() => setSectionReorderMode((v) => !v)}
+              >
+                <ArrowDownUp className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="hidden sm:inline">{sectionReorderMode ? "Done reordering" : "Reorder on page"}</span>
+                <span className="sm:hidden">{sectionReorderMode ? "Done" : "Reorder"}</span>
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <Collapsible
+        open={operationsSnapshotOpen}
+        onOpenChange={setOperationsSnapshotOpen}
+        className="mb-6 rounded-xl border border-border/80 bg-card/30"
+      >
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 rounded-xl transition-colors data-[state=open]:rounded-b-none"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <Radar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="truncate">Operations snapshot (expand)</span>
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                operationsSnapshotOpen && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="border-t border-border/60 px-2 pb-4 pt-2 sm:px-3">
+          <AscendraOperationsDashboard />
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* New admin: offer guided tour */}
+      {showTourBanner && !tourActive && (
+        <Card className="mb-4 border-primary/30 bg-primary/5">
+          <CardContent className="py-4 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="h-5 w-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="font-medium text-sm">New to the admin?</p>
+                <p className="text-xs text-muted-foreground">Take a short tour to see features and daily actions.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0 sm:ml-4">
+              <Button size="sm" onClick={() => setTourActive(true)}>
+                Start tour
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setTourDismissed();
+                  setShowTourBanner(false);
+                }}
+              >
+                Maybe later
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-        {sectionShell("kpis", () => (
-          <div className="mb-4 min-w-0">
-            <CrmKpisWidget />
-          </div>
-        ))}
-        {sectionShell("sourcesTags", () => (
-          <div className="mb-4 min-w-0">
-            <CrmSourcesTagsWidget />
-          </div>
-        ))}
-        {sectionShell("pipeline", () => (
-          <div className="mb-4 min-w-0">
-            <CrmPipelineOverdueWidget />
-          </div>
-        ))}
-        {sectionShell("tasksActivity", () => (
-          <div className="mb-4 min-w-0">
-            <CrmTasksActivityWidget />
-          </div>
-        ))}
-        {sectionShell("analytics_summary", () => (
-          <div className="mb-4 min-w-0">
-            <AnalyticsSummaryCardsWidget />
-          </div>
-        ))}
-      </div>
+      {/* Guided tour overlay (not part of reorderable blocks) */}
+      {tourActive && tourSteps.length > 0 && (
+        <AdminGuideTour
+          steps={tourSteps}
+          currentStep={tourStep}
+          onNext={() => setTourStep((s) => (s >= tourSteps.length - 1 ? s : s + 1))}
+          onBack={() => setTourStep((s) => (s <= 0 ? 0 : s - 1))}
+          onEnd={() => {
+            setTourCompleted();
+            setTourActive(false);
+            setTourStep(0);
+          }}
+          onDismiss={() => {
+            setTourDismissed();
+            setTourActive(false);
+            setTourStep(0);
+          }}
+        />
+      )}
+
+      {dashboardLayout.visibleSectionOrder.length === 0 ? (
+        <Card className="mb-6 border-dashed border-amber-500/40 bg-amber-500/[0.06]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">No dashboard sections visible</CardTitle>
+            <CardDescription>
+              Open <span className="font-medium text-foreground">Customize dashboard</span> above and turn on at least one
+              module, or reset to the default layout.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      <MainDashboardDraggableSections
+        reorderMode={sectionReorderMode}
+        visibleIds={dashboardLayout.visibleSectionOrder}
+        fullOrder={dashboardLayout.layout.order}
+        hidden={dashboardLayout.layout.hidden}
+        sectionLabels={ADMIN_DASHBOARD_SECTION_LABELS}
+        onCommitFullOrder={dashboardLayout.setOrder}
+        renderSection={renderMainSection}
+      />
+
+
+
+
+
+
+
+
+
+
 
             {/* Delete assessment confirmation (soft delete: recoverable from Deleted section) */}
       <AlertDialog open={deleteAssessmentId !== null} onOpenChange={(open) => !open && setDeleteAssessmentId(null)}>

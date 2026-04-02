@@ -45,6 +45,7 @@ import { useAdminAudienceView, type AdminAudienceViewMode } from "@/contexts/Adm
 import { Checkbox } from "@/components/ui/checkbox";
 import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
 import { resolveReadAloudTts, type AdminTtsConfigStored, type ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
+import { AdminPushSubscribeButton } from "@/components/admin/AdminPushSubscribeButton";
 
 interface AscendraOsPlatformPayload {
   publicAccessEnabled: boolean;
@@ -842,10 +843,11 @@ export default function AdminSettingsPage() {
                   Push notifications
                 </CardTitle>
                 <CardDescription>
-                  Allow push to this device for reminders and admin alerts. Subscribe from the Chat page.
+                  Browser push for new form submissions, inbox items, internal chat (when enabled), and reminder runs.
+                  Requires VAPID keys in server env. Subscribe each browser you use.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="push-enabled" className="cursor-pointer">Push notifications enabled</Label>
                   <Switch
@@ -855,6 +857,13 @@ export default function AdminSettingsPage() {
                     disabled={saving}
                   />
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AdminPushSubscribeButton />
+                </div>
+                <FieldHint>
+                  Also available from <Link href="/admin/chat" className="text-primary underline-offset-2 hover:underline">Internal chat</Link>{" "}
+                  and <Link href="/admin/inbox" className="text-primary underline-offset-2 hover:underline">Inbound inbox</Link>.
+                </FieldHint>
               </CardContent>
             </Card>
 

@@ -325,6 +325,16 @@ export async function processMarketScoreSubmission(
     },
   ]);
 
+  const { queueAdminInboundNotification } = await import("./adminInboxService");
+  queueAdminInboundNotification({
+    kind: "market_score",
+    title: `Market Score lead: ${body.name.trim()}`,
+    body: `${body.email.trim()}\n${body.industry} · ${body.location}\nAMIE #${researchId}`,
+    relatedType: "crm_contact",
+    relatedId: lead.id,
+    metadata: { researchId, funnel: "market_score" },
+  });
+
   return {
     ok: true,
     preview,

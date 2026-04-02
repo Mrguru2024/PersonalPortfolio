@@ -17,6 +17,7 @@ import {
 import { getLeadCustomFields } from "@shared/leadCustomFields";
 import { canUseOfferValuation, sanitizePersonaTag } from "./lib";
 import { getSiteOriginForMetadata } from "@/lib/siteUrl";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 import { STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import {
   aeeFieldsForFormAttribution,
@@ -376,6 +377,26 @@ Business type: ${b.leadCapture.businessType ?? "N/A"}`,
       utmSource: b.attribution?.utm_source ?? null,
       utmMedium: b.attribution?.utm_medium ?? null,
       utmCampaign: b.attribution?.utm_campaign ?? null,
+    });
+
+    const submitter =
+      b.leadCapture?.email ??
+      (typeof sessionUser?.email === "string" ? sessionUser.email : "—");
+    const submitterName =
+      b.leadCapture?.name ??
+      (typeof sessionUser?.username === "string" ? sessionUser.username : "User");
+    queueAdminInboundNotification({
+      kind: "offer_valuation",
+      title: `Offer valuation: ${b.offerName} (${valuation.finalScore}/10)`,
+      body: `${submitterName} · ${submitter}\nMode: ${accessMode}${leadId != null ? `\nCRM lead #${leadId}` : ""}`,
+      relatedType: "offer_valuation",
+      relatedId: saved.id,
+      metadata: {
+        finalScore: valuation.finalScore,
+        leadId,
+        accessMode,
+        persona: b.persona ?? null,
+      },
     });
 
     return NextResponse.json({
