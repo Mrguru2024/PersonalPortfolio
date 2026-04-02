@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser, isAdmin } from "@/lib/auth-helpers";
+import { getApprovedAdminSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import {
   mergeObservationIntoMentorState,
@@ -16,10 +16,10 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   try {
-    if (!(await isAdmin(req))) {
+    const user = await getApprovedAdminSessionUser(req);
+    if (!user) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });

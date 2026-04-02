@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin, getSessionUser } from "@/lib/auth-helpers";
+import { getApprovedAdminSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,10 @@ function parseId(params: { id: string }): number | null {
 /** PATCH /api/admin/agent/knowledge/[id] */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    if (!(await isAdmin(req))) {
+    const user = await getApprovedAdminSessionUser(req);
+    if (!user) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
@@ -57,10 +57,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 /** DELETE /api/admin/agent/knowledge/[id] */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    if (!(await isAdmin(req))) {
+    const user = await getApprovedAdminSessionUser(req);
+    if (!user) {
       return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
-    const user = await getSessionUser(req);
     const userId = user?.id != null ? Number(user.id) : null;
     if (userId == null) {
       return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
