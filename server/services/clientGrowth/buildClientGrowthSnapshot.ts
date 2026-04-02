@@ -12,6 +12,7 @@ import type {
   GrowthStepState,
 } from "@shared/clientGrowthSnapshot";
 import { loadAmieDigestForCrmContacts } from "@server/services/clientGrowth/loadAmieDigestForCrmContacts";
+import { buildGuaranteeSnapshotForClient } from "@server/services/guaranteeEngineService";
 import { desc, sql } from "drizzle-orm";
 
 function normEmail(e: string | null | undefined): string {
@@ -364,6 +365,16 @@ export async function buildClientGrowthSnapshot(userId: number): Promise<ClientG
       improvementBullets,
       nextCta: { label: "Book a strategy check-in", href: "/strategy-call" },
     },
+    guarantee: await buildGuaranteeSnapshotForClient(userId, 30).then((g) => ({
+      qualifiedLeadsCount: g.qualifiedLeadsCount,
+      bookedJobsCount: g.bookedJobsCount,
+      conversionRate: g.conversionRate,
+      roiPercentage: g.roiPercentage,
+      dashboardStatus: g.dashboardStatus,
+      dashboardColor: g.dashboardColor,
+      timeframeLabel: g.timeframeLabel,
+      compliance: g.compliance,
+    })),
     activity: activity.slice(0, 12),
   };
 

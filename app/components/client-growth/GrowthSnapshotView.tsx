@@ -5,6 +5,7 @@ import type { ClientGrowthSnapshot } from "@shared/clientGrowthSnapshot";
 import { GrowthActivityFeed } from "@/components/client-growth/GrowthActivityFeed";
 import { GrowthBuildSection } from "@/components/client-growth/GrowthBuildSection";
 import { GrowthDiagnoseSection } from "@/components/client-growth/GrowthDiagnoseSection";
+import { GrowthGuaranteeStatusCard } from "@/components/client-growth/GrowthGuaranteeStatusCard";
 import { GrowthScaleSection } from "@/components/client-growth/GrowthScaleSection";
 import { GrowthStatusHero } from "@/components/client-growth/GrowthStatusHero";
 import { GrowthSystemOutcomeCallout } from "@/components/client-growth/GrowthSystemOutcomeCallout";
@@ -32,6 +33,7 @@ export function GrowthSnapshotView({ snapshot, focusSection }: GrowthSnapshotVie
       <GrowthStatusHero snapshot={snapshot} />
       <GrowthSystemOutcomeCallout />
       <GrowthStepTracker step={snapshot.step} />
+      {snapshot.guarantee ? <GrowthGuaranteeStatusCard /> : null}
       <GrowthDiagnoseSection diagnose={snapshot.diagnose} />
       <GrowthBuildSection build={snapshot.build} />
       <GrowthScaleSection scale={snapshot.scale} />

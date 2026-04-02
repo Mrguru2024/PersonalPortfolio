@@ -15,6 +15,7 @@ import {
   isCaseStudyDocument,
   type OperationsDocumentRecord,
 } from "@/lib/operations-dashboard";
+import { buildGuaranteeSnapshotForClient } from "@server/services/guaranteeEngineService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -198,11 +199,10 @@ export async function GET(req: NextRequest) {
     const publishingQueue = publishingCandidates.slice(0, 10).map((doc) => ({
       id: doc.id,
       title: doc.title,
-      status: doc.workflowStatus,
-      seoReadiness: doc.readiness.seoReady ? "Ready" : "Needs work",
+      workflowStatus: doc.workflowStatus,
       seoReady: doc.readiness.seoReady,
-      lastUpdated: toIso(doc.updatedAt),
-      publicUrl: doc.slug ? `/blog/${doc.slug}` : null,
+      updatedAt: toIso(doc.updatedAt),
+      slug: doc.slug,
     }));
 
     const projectCaseStudyCount = projects.filter((project) => project.synopsis?.caseStudy).length;
@@ -279,15 +279,18 @@ export async function GET(req: NextRequest) {
           "unknown";
 
         return {
-          id: lead.id,
-          name: lead.name,
-          company: getString(lead.company),
+          contactId: lead.id,
+          leadName: lead.name,
+          business: getString(lead.company) ?? "Unknown business",
           source: intakeSource,
-          score: lead.leadScore,
-          estimatedValue: lead.estimatedValue,
+          opportunity:
+            lead.estimatedValue != null
+              ? `$${Math.round(lead.estimatedValue / 100).toLocaleString()} est.`
+              : lead.leadScore != null
+                ? `Lead score ${lead.leadScore}`
+                : "Opportunity under review",
           status: getString(lead.status) ?? "new",
-          updatedAt: toIso(lead.updatedAt ?? lead.createdAt),
-          diagnosticPath: diagnosisReportId
+          diagnosticHref: diagnosisReportId
             ? `/api/admin/growth-diagnosis/reports/${diagnosisReportId}`
             : intakeSource.includes("diagnosis")
               ? "/admin/lead-intake?tab=growth_diagnosis"
@@ -296,6 +299,60 @@ export async function GET(req: NextRequest) {
                 : "/admin/lead-intake",
         };
       });
+
+    const clientGuaranteeMap = new Map<number, Awaited<ReturnType<typeof buildGuaranteeSnapshotForClient>>>();
+    for (const lead of leads) {
+      if (lead.contactId <= 0 || clientGuaranteeMap.has(lead.contactId)) continue;
+      try {
+        const snapshot = await buildGuaranteeSnapshotForClient(lead.contactId, 30);
+        clientGuaranteeMap.set(lead.contactId, snapshot);
+      } catch {
+        // Keep operations dashboard resilient even if guarantee snapshot fails for one client.
+      }
+    }
+
+    const guaranteeSummary = {
+      actionRequiredCount: 0,
+      inProgressCount: 0,
+      metCount: 0,
+    };
+    const guaranteeAlerts = Array.from(clientGuaranteeMap.entries())
+      .map(([clientId, snap]) => {
+        if (snap.dashboardStatus === "action_required") guaranteeSummary.actionRequiredCount += 1;
+        else if (snap.dashboardStatus === "in_progress") guaranteeSummary.inProgressCount += 1;
+        else guaranteeSummary.metCount += 1;
+        return {
+          clientId,
+          clientLabel:
+            leads.find((lead) => lead.contactId === clientId)?.leadName ||
+            leads.find((lead) => lead.contactId === clientId)?.business ||
+            `Client #${clientId}`,
+          dashboardStatus: snap.dashboardStatus,
+          dashboardColor: snap.dashboardColor,
+          qualifiedLeadsCount: snap.qualifiedLeadsCount,
+          bookedJobsCount: snap.bookedJobsCount,
+          conversionRate: snap.conversionRate,
+          roiPercentage: snap.roiPercentage,
+          compliance: snap.compliance,
+          suggestedActions: Array.from(
+            new Set(
+              snap.rows
+                .filter((row) => row.status === "not_met")
+                .map((row) => {
+                  if (row.type === "lead_flow") return "increase_traffic";
+                  if (row.type === "booked_jobs") return "fix_conversion_flow";
+                  if (row.type === "conversion") return "optimize_funnel";
+                  return "adjust_offer";
+                }),
+            ),
+          ).slice(0, 3),
+        };
+      })
+      .sort((a, b) => {
+        const score = (s: string) => (s === "action_required" ? 3 : s === "in_progress" ? 2 : 1);
+        return score(b.dashboardStatus) - score(a.dashboardStatus);
+      })
+      .slice(0, 8);
 
     return NextResponse.json({
       generatedAt: new Date().toISOString(),
@@ -306,15 +363,25 @@ export async function GET(req: NextRequest) {
         publishedCaseStudies,
         contentMissingKeyElements,
         itemsReadyToPublish,
+        guaranteeNotMet: guaranteeSummary.actionRequiredCount,
+        guaranteeAtRisk: guaranteeSummary.inProgressCount,
+        guaranteePerforming: guaranteeSummary.metCount,
       },
       diagnostics,
-      caseStudyPipeline: caseStudyPipelineRows,
+      caseStudies: caseStudyPipelineRows,
       publishingQueue,
       leads,
+      guaranteeSummary,
+      guaranteeAlerts,
       contentHealth: {
-        completionScore: readinessScore,
-        totalAssets: readinessTotal,
-        issueCounts: contentIssueCounts,
+        averageCompletionScore: readinessScore,
+        issues: [
+          { label: "Missing headline", count: contentIssueCounts.missingHeadline },
+          { label: "Missing results", count: contentIssueCounts.missingResults },
+          { label: "Missing visuals", count: contentIssueCounts.missingVisuals },
+          { label: "Missing CTA", count: contentIssueCounts.missingCta },
+          { label: "Missing SEO", count: contentIssueCounts.missingSeo },
+        ],
       },
     });
   } catch (error) {

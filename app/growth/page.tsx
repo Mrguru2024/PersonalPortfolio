@@ -89,6 +89,33 @@ export default function GrowthLandingPage() {
           </div>
         </section>
 
+        <section className="mb-16 sm:mb-20">
+          <Card className="border-primary/25 bg-gradient-to-br from-primary/10 to-background">
+            <CardContent className="p-6 sm:p-8 space-y-5">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-center">
+                Ascendra Growth System Guarantee
+              </h2>
+              <ul className="space-y-3 text-sm sm:text-base text-muted-foreground">
+                <li>• If you don’t receive qualified leads → we keep working until you do</li>
+                <li>• If leads don’t turn into booked jobs → we fix the system at no cost</li>
+                <li>• If your current traffic doesn’t improve → we optimize until it does</li>
+                <li>• If the system doesn’t pay for itself → we continue working until it does</li>
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild className="min-h-[44px]">
+                  <Link href="/market-score">See How Your System Would Perform</Link>
+                </Button>
+                <Button asChild variant="outline" className="min-h-[44px]">
+                  <Link href="/website-performance-score">Website Score Tool</Link>
+                </Button>
+                <Button asChild variant="outline" className="min-h-[44px]">
+                  <Link href="/diagnosis">Lead Funnel Entry</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* How it works */}
         <section className="mb-20 sm:mb-24 md:mb-28">
           <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-10 sm:mb-12 text-center">

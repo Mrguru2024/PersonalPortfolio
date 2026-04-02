@@ -1,5 +1,5 @@
 import type { AdminTtsConfigStored } from "./readAloudTtsConfig";
-import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real, date, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -834,6 +834,49 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
 
 export type GrowthFunnelLead = typeof growthFunnelLeads.$inferSelect;
 export type InsertGrowthFunnelLead = typeof growthFunnelLeads.$inferInsert;
+
+export const guaranteeStatusEnum = pgEnum("guarantee_status", ["pending", "met", "not_met"]);
+export const guaranteeTypeEnum = pgEnum("guarantee_type", [
+  "lead_flow",
+  "booked_jobs",
+  "conversion",
+  "payback",
+]);
+
+/**
+ * Ascendra Guarantee Engine snapshots by client + timeframe.
+ * One row per guarantee type, persisted for dashboard rendering and historical trend.
+ */
+export const guaranteeMetrics = pgTable("guarantee_metrics", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  timeframeStart: date("timeframe_start").notNull(),
+  timeframeEnd: date("timeframe_end").notNull(),
+  qualifiedLeadsCount: integer("qualified_leads_count").notNull().default(0),
+  bookedJobsCount: integer("booked_jobs_count").notNull().default(0),
+  conversionRate: real("conversion_rate").notNull().default(0),
+  revenueGenerated: integer("revenue_generated").notNull().default(0),
+  systemCost: integer("system_cost").notNull().default(0),
+  roiPercentage: real("roi_percentage").notNull().default(0),
+  guaranteeStatus: guaranteeStatusEnum("guarantee_status").notNull().default("pending"),
+  guaranteeType: guaranteeTypeEnum("guarantee_type").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueClientWindowType: unique("guarantee_metrics_client_window_type_uq").on(
+    t.clientId,
+    t.timeframeStart,
+    t.timeframeEnd,
+    t.guaranteeType,
+  ),
+}));
+
+export type GuaranteeMetricsRow = typeof guaranteeMetrics.$inferSelect;
+export type InsertGuaranteeMetricsRow = typeof guaranteeMetrics.$inferInsert;
+export type GuaranteeStatusValue = (typeof guaranteeStatusEnum.enumValues)[number];
+export type GuaranteeTypeValue = (typeof guaranteeTypeEnum.enumValues)[number];
 
 /** Offer Valuation Engine access/config toggles (singleton row id=1). */
 export const offerValuationSettings = pgTable("offer_valuation_settings", {
