@@ -160,7 +160,7 @@ function AdminLeadIntakePage() {
     if (useAi && !aiConfigured) {
       toast({
         title: "AI not configured",
-        description: "Set OPENAI_API_KEY or import without AI.",
+        description: "AI import is currently unavailable. Import without AI to continue.",
         variant: "destructive",
       });
       return;
@@ -202,9 +202,7 @@ function AdminLeadIntakePage() {
             </h1>
             <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
               Audits, diagnosis reports, funnel quiz submissions, and project assessments in one place. Import into CRM
-              with optional AI intent, lifecycle, tags, and notes (requires{" "}
-              <code className="text-xs bg-muted px-1 rounded">OPENAI_API_KEY</code>
-              ). Merges on email via existing CRM lead logic.
+              with optional AI enrichment for intent, lifecycle stage, tags, and notes.
             </p>
           </div>
         </div>
@@ -225,8 +223,9 @@ function AdminLeadIntakePage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Bulk actions</CardTitle>
           <CardDescription>
-            Select rows below, then import. AI adds tags, intent, lifecycle, industry, and a short internal note.
-            {!aiConfigured && " AI is off until OPENAI_API_KEY is set."}
+            Select rows below, then import to CRM. AI import adds tags, intent, lifecycle stage, industry, and a short
+            internal note.
+            {!aiConfigured && " AI import is currently unavailable in this environment."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
@@ -237,7 +236,7 @@ function AdminLeadIntakePage() {
             className="gap-2"
           >
             {importMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            Import selected (rules only)
+            Import selected
           </Button>
           <Button
             size="sm"
@@ -247,7 +246,7 @@ function AdminLeadIntakePage() {
             className="gap-2"
           >
             {importMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Import selected + AI classify
+            Import selected with AI
           </Button>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             Refresh list
