@@ -143,7 +143,7 @@ export default function AdminDeploymentEnvPage() {
             <Link href="/admin/integrations" className="underline text-foreground font-medium">
               Connect Facebook, LinkedIn, X, or Threads
             </Link>{" "}
-            on Connections &amp; email; use this screen when you already know the exact name your developer gave you.
+            on Connections &amp; email; use this screen when you already know the exact setting name.
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
@@ -162,7 +162,7 @@ export default function AdminDeploymentEnvPage() {
               vercel.com/account/tokens
             </a>{" "}
             that can manage this project. Save it only on this machine or in a private settings file—never in a public
-            repository. Your developer usually puts it in <code className="text-xs">VERCEL_API_TOKEN</code> for you.
+            repository. Save it as <code className="text-xs">VERCEL_API_TOKEN</code> in your private host settings.
           </p>
         </div>
       </div>

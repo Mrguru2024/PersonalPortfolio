@@ -562,8 +562,7 @@ function GrowthOsIntelligencePageContent() {
                     Refresh
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    Demo when <code className="text-foreground">OPENAI_API_KEY</code> is missing or{" "}
-                    <code className="text-foreground">GOS_INTELLIGENCE_MODE=mock</code>.
+                    Runs in preview mode when live AI access is unavailable or when intelligence mode is set to mock.
                   </span>
                 </div>
 
@@ -1265,8 +1264,8 @@ function GrowthOsIntelligencePageContent() {
                     <AccordionTrigger>AI models &amp; intelligence mode</AccordionTrigger>
                     <AccordionContent className="text-sm text-muted-foreground space-y-2">
                       <p>
-                        <code className="text-foreground">OPENAI_API_KEY</code> — enables live AI insights and research
-                        when <code className="text-foreground">GOS_INTELLIGENCE_MODE</code> is not forced to mock.
+                        AI provider access — enables live AI insights and research when{" "}
+                        <code className="text-foreground">GOS_INTELLIGENCE_MODE</code> is not forced to mock.
                       </p>
                       <p>
                         <code className="text-foreground">GOS_INTELLIGENCE_MODE</code> — <code>mock</code> or{" "}

@@ -1399,8 +1399,8 @@ export default function AdminIntegrationsPage() {
                 <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
                   {!socialPayload.linkedinOAuthAvailable ? (
                     <p>
-                      Add your LinkedIn app ID and secret in the site settings, then paste the LinkedIn link from the yellow
-                      box into your LinkedIn developer app.
+                      Add your LinkedIn app ID and secret in site settings, then paste the LinkedIn callback URL from the
+                      yellow box into your LinkedIn app settings.
                     </p>
                   ) : null}
                   <p>
@@ -1515,8 +1515,8 @@ export default function AdminIntegrationsPage() {
                 <li className="pl-6 text-xs border-l-2 border-border ml-1 space-y-1">
                   {!socialPayload.xOAuthAvailable ? (
                     <p>
-                      Add your X app ID and secret in the site settings, turn on user sign-in for the app, and paste the X
-                      link from the yellow box into X’s developer settings.
+                      Add your X app ID and secret in site settings, turn on user sign-in for the app, and paste the callback
+                      URL from the yellow box into your X app settings.
                     </p>
                   ) : null}
                   <p>
@@ -1653,9 +1653,9 @@ export default function AdminIntegrationsPage() {
                 </li>
               </ul>
               <p className="text-xs text-muted-foreground mt-3">
-                Tap <strong className="text-foreground">Refresh</strong> after your host changes saved settings. In production,
-                scheduled posts need a scheduler password (<code className="text-xs">CRON_SECRET</code>) set with your host.
-                Your developer can use the example settings file and Facebook setup doc in the project.
+                Tap <strong className="text-foreground">Refresh</strong> after hosting changes are saved. In production,
+                scheduled posts need a scheduler password (<code className="text-xs">CRON_SECRET</code>) set on your host.
+                Use the setup docs in this project for platform-specific steps.
               </p>
             </div>
           )}

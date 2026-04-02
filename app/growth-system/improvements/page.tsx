@@ -87,8 +87,8 @@ export default function ClientImprovementsPage() {
             Improvements
           </h1>
           <p className="text-muted-foreground text-sm max-w-xl">
-            Recommendations and work Ascendra has queued for your site. This is not your full internal task board — only
-            items explicitly shared with your business account.
+            Recommendations and work Ascendra has queued for your site. This view shows only items explicitly shared with
+            your business account.
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>

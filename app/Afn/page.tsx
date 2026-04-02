@@ -43,7 +43,7 @@ const VALUE_ITEMS = [
   },
   {
     title: "Collaboration board",
-    description: "Find or offer help—developers, designers, marketers, partners—in a dedicated space.",
+    description: "Find or offer help—specialists, designers, marketers, partners—in a dedicated space.",
     icon: Handshake,
   },
   {
