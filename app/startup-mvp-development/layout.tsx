@@ -13,7 +13,7 @@ export const metadata: Metadata = buildMarketingMetadata({
     "startup development",
     "product development",
     "scalable architecture",
-    "Atlanta developer",
+    "Atlanta development team",
   ],
 });
 

@@ -505,7 +505,7 @@ const AuthPage = () => {
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel className="cursor-pointer text-sm font-normal">
-                                Request admin (founder) access — dashboard, leads, content. Requires approval by the project developer.
+                                Request admin (founder) access — dashboard, leads, and content. Requires super-admin approval.
                               </FormLabel>
                             </div>
                           </FormItem>
