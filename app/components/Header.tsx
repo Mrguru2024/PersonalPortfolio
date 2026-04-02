@@ -212,6 +212,7 @@ const ADMIN_NAV_SECTION_ORDER = [
   "CRM & leads",
   "Content & email",
   "Marketing & funnel",
+  "Delivery & platform",
   "Analytics",
   "Operations",
   "Settings",
