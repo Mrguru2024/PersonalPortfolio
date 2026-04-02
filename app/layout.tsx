@@ -65,6 +65,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(`${baseUrl}/`),
   title: defaultTitle,
   description: defaultDescription,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
