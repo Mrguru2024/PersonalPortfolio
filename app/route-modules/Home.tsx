@@ -199,22 +199,24 @@ export default function Home() {
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
               Ascendra Growth System Guarantee
             </h2>
-            <ul className="mt-6 space-y-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
-              <li>- If you don’t receive qualified leads → we keep working until you do</li>
-              <li>- If leads don’t turn into booked jobs → we fix the system at no cost</li>
-              <li>- If your current traffic doesn’t improve → we optimize until it does</li>
-              <li>- If the system doesn’t pay for itself → we continue working until it does</li>
+            <ul className="mt-6 space-y-3 text-sm sm:text-base text-muted-foreground leading-relaxed list-disc pl-5 sm:pl-6">
+              <li>If you don&apos;t receive qualified leads → we keep working until you do</li>
+              <li>If leads don&apos;t turn into booked jobs → we fix the system at no cost</li>
+              <li>If your current traffic doesn&apos;t improve → we optimize until it does</li>
+              <li>If the system doesn&apos;t pay for itself → we continue working until it does</li>
             </ul>
-            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3">
-              <Button asChild size="lg" className="min-h-[48px]">
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <Button asChild size="lg" className="min-h-[48px] w-full sm:w-auto">
                 <Link href="/market-score">See How Your System Would Perform</Link>
               </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/website-performance-score">Website Score Tool</Link>
-              </Button>
-              <Button asChild variant="outline" className="min-h-[44px]">
-                <Link href="/diagnosis">Lead Funnel Entry</Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch justify-center gap-2 w-full sm:w-auto">
+                <Button asChild variant="outline" className="min-h-[44px]">
+                  <Link href="/website-performance-score">Website Score Tool</Link>
+                </Button>
+                <Button asChild variant="outline" className="min-h-[44px]">
+                  <Link href="/diagnosis">Lead Funnel Entry</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </SectionReveal>

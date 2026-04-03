@@ -178,13 +178,18 @@ export default function OfferEngineHubPage() {
                 </CardTitle>
                 <CardDescription>Capacity, cycle timing, waitlist demand, and flow-control routing.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <span className="text-2xl font-semibold tabular-nums">
                   {summary?.scarcity?.activeConfigCount ?? 0}/{summary?.scarcity?.configCount ?? 0}
                 </span>
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/admin/scarcity-engine">Open scarcity</Link>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/admin/scarcity-engine">Open scarcity</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/admin/urgency-conversion">Urgency &amp; scarcity UI</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

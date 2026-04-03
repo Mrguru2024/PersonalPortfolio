@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
-  ArrowRight,
   BookOpen,
   AlertCircle,
   Layers,
@@ -9,7 +7,6 @@ import {
   Map,
   CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 import { getFunnelContent } from "@/lib/funnelContent.server";
@@ -21,6 +18,8 @@ import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetR
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_STARTUP_KIT } from "@/lib/landingPageOutcomeFramework";
+import { LeadMagnetUrgencyZone } from "@/components/urgency-conversion/LeadMagnetUrgencyZone";
+import { GrowthKitNextStepsClient } from "@/components/funnel/GrowthKitNextStepsClient";
 
 export const metadata: Metadata = {
   title: "Startup growth kit | Where to begin building your business online",
@@ -94,6 +93,10 @@ export default async function StartupGrowthKitPage() {
             </section>
 
             <OutcomeLandingFramework copy={OUTCOME_FRAMEWORK_COPY_STARTUP_KIT} className="py-6 sm:py-8" />
+
+            <div className="max-w-2xl mx-auto mb-8 sm:mb-10">
+              <LeadMagnetUrgencyZone surfaceKey="startup-growth-kit" />
+            </div>
 
             {/* Why most startup websites fail */}
             <section>
@@ -208,21 +211,7 @@ export default async function StartupGrowthKitPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     See how your current site stacks up, then get a practical action plan—without spending a fortune.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-                    {nextStepCtas.map((cta) => (
-                      <Button
-                        key={cta.href + cta.label}
-                        asChild
-                        variant={cta.variant}
-                        className="gap-2 min-h-[44px]"
-                      >
-                        <Link href={cta.href}>
-                          {cta.label}
-                          {cta.variant === "default" ? <ArrowRight className="h-4 w-4" /> : null}
-                        </Link>
-                      </Button>
-                    ))}
-                  </div>
+                  <GrowthKitNextStepsClient ctas={nextStepCtas} />
                 </CardContent>
               </Card>
             </section>

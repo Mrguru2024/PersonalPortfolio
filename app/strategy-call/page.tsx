@@ -46,6 +46,8 @@ import {
   WHAT_TO_EXPECT_STRATEGY_FORM_ITEMS,
   WHAT_TO_EXPECT_STRATEGY_FORM_TITLE,
 } from "@/lib/embeddedAssuranceCopy";
+import { LeadMagnetUrgencyZone } from "@/components/urgency-conversion/LeadMagnetUrgencyZone";
+import { markFunnelSurfaceComplete } from "@/lib/funnelMicroCommitment";
 
 const strategyCallSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -135,7 +137,11 @@ export default function StrategyCallPage() {
       return res.json();
     },
     onSuccess: () => {
-      track("form_completed", { pageVisited: "/strategy-call", metadata: { form: "strategy_call" } });
+      markFunnelSurfaceComplete("strategy-call");
+      track("form_completed", {
+        pageVisited: "/strategy-call",
+        metadata: { form: "strategy_call", urgencySurface: "strategy-call", step: "form_complete" },
+      });
       toast({
         title: "Request received",
         description: "We'll be in touch to schedule your strategy call.",
@@ -176,6 +182,10 @@ export default function StrategyCallPage() {
             </p>
           </div>
 
+          <div className="max-w-xl mx-auto w-full mb-6 sm:mb-8">
+            <LeadMagnetUrgencyZone surfaceKey="strategy-call" />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8 min-w-0">
             <Card className="border-border bg-card/80 shadow-sm overflow-hidden min-w-0">
               <CardHeader className="pb-2">
@@ -204,7 +214,10 @@ export default function StrategyCallPage() {
             className="max-w-xl mx-auto mb-6 sm:mb-8"
           />
 
-          <Card className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full">
+          <Card
+            id="strategy-call-form"
+            className="border-border bg-card shadow-md overflow-hidden min-w-0 max-w-xl mx-auto w-full scroll-mt-24"
+          >
             <CardHeader className="px-4 sm:px-6 md:px-8">
               <CardTitle className="text-lg sm:text-xl">Book your call</CardTitle>
               <CardDescription className="text-sm sm:text-base">

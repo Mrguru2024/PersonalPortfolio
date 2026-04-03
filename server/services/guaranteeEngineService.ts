@@ -550,3 +550,32 @@ export function calculateGuaranteePreview(
   return calculateGuaranteePreviewFromLogic(input);
 }
 
+/** CRM task actions must attach to a real contact row (not portal user id). */
+export async function resolveCrmContactIdForClientUser(clientUserId: number): Promise<number | null> {
+  const user = await db.select().from(users).where(eq(users.id, clientUserId)).limit(1).then((r) => r[0]);
+  const email = user?.email?.trim()?.toLowerCase() ?? null;
+  if (!email) return null;
+  const [row] = await db
+    .select({ id: crmContacts.id })
+    .from(crmContacts)
+    .where(
+      and(eq(crmContacts.type, "lead"), sql`lower(trim(coalesce(${crmContacts.email}, ''))) = ${email}`),
+    )
+    .orderBy(desc(crmContacts.createdAt))
+    .limit(1);
+  return row?.id ?? null;
+}
+
+export async function summarizeGuaranteeOperationsCounts(): Promise<{
+  guaranteeNotMet: number;
+  guaranteeAtRisk: number;
+  guaranteePerforming: number;
+}> {
+  const rows = await listGuaranteeControlRows("all");
+  return {
+    guaranteeNotMet: rows.filter((r) => r.dashboardStatus === "action_required").length,
+    guaranteeAtRisk: rows.filter((r) => r.dashboardStatus === "in_progress").length,
+    guaranteePerforming: rows.filter((r) => r.dashboardStatus === "met").length,
+  };
+}
+

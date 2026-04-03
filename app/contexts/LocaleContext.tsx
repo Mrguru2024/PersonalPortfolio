@@ -48,7 +48,7 @@ export function LocaleProvider({
   initialLocale,
 }: {
   children: ReactNode;
-  /** From server (cookie); keeps first client render aligned with SSR. */
+  /** From server `cookies()` so SSR matches the first client render (avoids footer/nav hydration mismatches). */
   initialLocale?: AppLocale;
 }) {
   const [locale, setLocaleState] = useState<AppLocale>(() =>

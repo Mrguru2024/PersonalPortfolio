@@ -29,7 +29,7 @@ export function toScarcityFormAttribution(
     sourceConversionStage:
       evaluation.route === "waitlist"
         ? "waitlist"
-        : evaluation.route === "deferred_cycle"
+        : evaluation.route === "deferred_cycle" || evaluation.route === "delayed_intake"
           ? "deferred"
           : evaluation.route === "nurture"
             ? "nurture"

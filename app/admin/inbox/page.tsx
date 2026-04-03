@@ -221,7 +221,10 @@ function AdminInboxContent() {
           }
         }}
       >
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent
+          className="w-full sm:max-w-lg overflow-y-auto"
+          accessibilityTitle={detail ? undefined : "Admin inbox item"}
+        >
           {detail ? (
             <>
               <SheetHeader>
@@ -265,9 +268,7 @@ function AdminInboxContent() {
                 </div>
               </div>
             </>
-          ) : (
-            <SheetTitle className="sr-only">Admin inbox item</SheetTitle>
-          )}
+          ) : null}
         </SheetContent>
       </Sheet>
     </div>

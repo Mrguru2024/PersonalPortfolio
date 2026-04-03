@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gauge, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { STARTUP_ACTION_PLAN_PATH, REVENUE_CALCULATOR_PATH } from "@/lib/funnelCtas";
+import { useVisitorTracking } from "@/lib/useVisitorTracking";
+import { markFunnelSurfaceComplete } from "@/lib/funnelMicroCommitment";
 
 const QUESTIONS = [
   {
@@ -55,8 +57,10 @@ function getSuggestions(answers: Record<string, number>): string[] {
 
 export function StartupWebsiteScoreCard() {
   const router = useRouter();
+  const { track } = useVisitorTracking();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const completionLogged = useRef(false);
 
   const allAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined);
   const total = QUESTIONS.reduce((sum, q) => sum + (answers[q.id] ?? 0), 0);
@@ -76,6 +80,16 @@ export function StartupWebsiteScoreCard() {
     u.searchParams.set("quiz_complete", "1");
     router.replace(`${u.pathname}${u.search}`, { scroll: false });
   }, [submitted, router]);
+
+  useEffect(() => {
+    if (!submitted || completionLogged.current) return;
+    completionLogged.current = true;
+    markFunnelSurfaceComplete("startup-website-score");
+    track("tool_used", {
+      pageVisited: "/tools/startup-website-score",
+      metadata: { urgencySurface: "startup-website-score", step: "score_complete", tool: "startup_website_score" },
+    });
+  }, [submitted, track]);
 
   if (submitted) {
     return (

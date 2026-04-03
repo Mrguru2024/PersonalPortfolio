@@ -16,7 +16,11 @@ import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 import { isAscendraPublicBehaviorTrackingEnabled } from "./lib/behaviorTrackingConfig";
 import { AscendraBehaviorRootGate } from "./components/tracking/AscendraBehaviorRootGate";
-import { LOCALE_COOKIE, normalizeLocale } from "./lib/i18n/constants";
+import {
+  LOCALE_COOKIE,
+  normalizeLocale,
+  type AppLocale,
+} from "./lib/i18n/constants";
 
 /** Numeric Meta App ID only — enables FB.init client SDK (Login / xfbml / AppEvents). */
 const FACEBOOK_APP_ID_FOR_SDK =
@@ -131,10 +135,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const initialLocale = normalizeLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+  const initialLocale: AppLocale = normalizeLocale(
+    cookieStore.get(LOCALE_COOKIE)?.value,
+  );
   const gtmNoscriptId = getGtmNoscriptId();
   return (
-    <html lang={initialLocale === "es" ? "es" : "en"} suppressHydrationWarning className="overflow-x-hidden">
+    <html
+      lang={initialLocale === "es" ? "es" : "en"}
+      suppressHydrationWarning
+      className="overflow-x-hidden"
+    >
       <head>
         {siteUsesAnalytics() ? (
           <>

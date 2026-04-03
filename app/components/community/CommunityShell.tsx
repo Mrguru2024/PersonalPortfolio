@@ -15,7 +15,7 @@ import {
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -81,8 +81,11 @@ export function CommunityShell({ children }: { children: React.ReactNode }) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <SheetTitle className="sr-only">Community navigation</SheetTitle>
+              <SheetContent
+                side="left"
+                className="w-64 p-0"
+                accessibilityTitle="Community navigation"
+              >
                 <div className="flex flex-col gap-1 pt-6 px-3">
                   <Link
                     href="/Afn"

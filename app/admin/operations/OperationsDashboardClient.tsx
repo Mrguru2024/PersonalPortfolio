@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, BadgeCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +18,7 @@ import type {
   PublishingQueueItem,
 } from "@/lib/operations-dashboard/types";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardHeader } from "@/components/admin/operations-dashboard/DashboardHeader";
 import { QuickActionCards } from "@/components/admin/operations-dashboard/QuickActionCards";
 import { StatCards } from "@/components/admin/operations-dashboard/StatCards";
@@ -26,7 +28,6 @@ import { PublishingPanel } from "@/components/admin/operations-dashboard/Publish
 import { LeadPanel } from "@/components/admin/operations-dashboard/LeadPanel";
 import { AIActionPanel } from "@/components/admin/operations-dashboard/AIActionPanel";
 import { ContentHealthPanel } from "@/components/admin/operations-dashboard/ContentHealthPanel";
-import { GuaranteeControlPanel } from "@/components/admin/operations-dashboard/GuaranteeControlPanel";
 
 function trackAction(
   track: ReturnType<typeof useVisitorTracking>["track"],
@@ -323,7 +324,24 @@ export function OperationsDashboardClient() {
           />
 
           <ContentHealthPanel summary={payload.contentHealth} />
-          <GuaranteeControlPanel />
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.04] to-background">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <BadgeCheck className="h-5 w-5 text-primary shrink-0" aria-hidden />
+                Client growth guarantees
+              </CardTitle>
+              <CardDescription>
+                Guarantee control panel and sales preview calculator live under{" "}
+                <strong className="text-foreground">Growth OS</strong> with revenue ops, bookings, and lead intake — the
+                same client-outcome thread as the portal dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="default" className="min-h-[44px]">
+                <Link href="/admin/growth-os/guarantees">Open guarantee center</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </>
       ) : null}
     </div>
