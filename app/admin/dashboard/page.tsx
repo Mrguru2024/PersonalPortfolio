@@ -51,6 +51,19 @@ import { formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+const LEGACY_LINKS = [
+  { label: "Lead intake hub", href: "/admin/lead-intake" },
+  { label: "CRM workspace", href: "/admin/crm" },
+  { label: "CRM tasks", href: "/admin/crm/tasks" },
+  { label: "Document management", href: "/admin/growth-platform/agreements" },
+  { label: "Content Studio", href: "/admin/content-studio" },
+  { label: "Funnel & offers", href: "/admin/funnel" },
+  { label: "Growth OS", href: "/admin/growth-os" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Settings", href: "/admin/settings" },
+  { label: "Site directory", href: "/admin/site-directory" },
+  { label: "Reminders", href: "/admin/reminders" },
+] as const;
 import {
   formatDevUpdateDateLabel,
   formatDevUpdateTimeInEastern,
@@ -1147,6 +1160,13 @@ export default function AdminDashboardPage() {
                   icon: Tag,
                   help: "Edit offer copy, URLs, and funnel wiring for public lead magnets and sales pages tied to this site.",
                   helpAria: "Help: Site offers",
+                },
+                {
+                  href: "/admin/growth-platform/agreements",
+                  label: "Document management",
+                  icon: FileText,
+                  help: "Create and manage service agreements, signatures, PDFs, and signing handoff links.",
+                  helpAria: "Help: Document management",
                 },
                 {
                   href: "/admin/growth-platform",

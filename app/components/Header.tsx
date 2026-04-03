@@ -351,6 +351,12 @@ export default function Header(_props: HeaderProps) {
     },
     {
       section: "Delivery & platform",
+      name: "Document management",
+      href: "/admin/growth-platform/agreements",
+      icon: FileText,
+    },
+    {
+      section: "Delivery & platform",
       name: "Growth engine",
       href: "/admin/growth-engine",
       icon: GitBranch,
@@ -411,8 +417,8 @@ export default function Header(_props: HeaderProps) {
 
   const isApprovedAdmin = isAuthApprovedAdmin(user);
   const { mode: audienceViewMode } = useAdminAudienceView();
-  /** Hide Ascendra OS chrome on the public site when admin previews as customer or community member. */
-  const showAdminChrome = isApprovedAdmin && audienceViewMode === "admin";
+  /** Approved admins always see admin navigation links. */
+  const showAdminChrome = isApprovedAdmin;
 
   const isSuperUser = isAuthSuperUser(user);
   const permissions = (user?.permissions as Record<string, boolean> | null | undefined) ?? {};
