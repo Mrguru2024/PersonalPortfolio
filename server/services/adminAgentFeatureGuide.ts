@@ -24,6 +24,18 @@ export function getAdminAgentFeatureGuideText(): string {
 - **Public vs internal:** Admin → **Settings** → “Ascendra OS — public vs internal” toggles gated client/market tools (\`/api/market/*\`). Admin AMIE routes stay available to admins either way. Optional kill switch: \`ASCENDRA_OS_PUBLIC_ACCESS_LOCK=internal\`. Clients can probe readiness with GET \`/api/market/status\`.
 - Not the same as Growth OS topic research (below) — AMIE is decision/scoring layer; Growth OS research is content/topic batches.
 
+**Ascendra Market Research Engine** ([/admin/growth-os/market-research](/admin/growth-os/market-research)):
+- Admin-only structured research workspace for project intake, source setup, run execution, scoring, recommendations, and decision reports.
+- Dashboard: projects table + source status + recent findings + saved reports.
+- Intake fields: project name, industry, niche, service, location, keywords, competitors, subreddits, source toggles, notes.
+- Validation: requires at least one enabled source and at least one of service/keywords/competitors.
+- Source setup supports fallback/manual modes for Google Trends, Google Ads Keyword Planner, Reddit, Meta Ad Research (manual), competitor website snapshots, and manual entries.
+- Run endpoint: \`POST /api/admin/growth-os/market-research/projects/[id]/run\`.
+- Project/detail endpoints: \`GET/PUT /api/admin/growth-os/market-research/projects/[id]\`, runs detail \`GET /api/admin/growth-os/market-research/projects/[id]/runs/[runId]\`, compare \`GET /api/admin/growth-os/market-research/projects/[id]/compare\`.
+- Manual evidence endpoints: \`GET/POST /api/admin/growth-os/market-research/projects/[id]/manual-entries\`.
+- Source config endpoints: \`GET/PATCH /api/admin/growth-os/market-research/source-configs\`, test \`POST /api/admin/growth-os/market-research/source-configs/[sourceKey]/test\`.
+- Storage tables: \`market_research_projects\`, \`market_research_runs\`, \`market_research_findings\`, \`market_research_scores\`, \`market_research_recommendations\`, \`market_research_reports\`, \`market_research_source_configs\`, \`market_research_manual_entries\`, \`market_research_audit_logs\`.
+
 **Growth OS — Market & growth intelligence** ([/admin/growth-os/intelligence](/admin/growth-os/intelligence)):
 - Topic/keyword discovery, lead/content/ops dashboards, automation tab, provider config.
 - Related: Growth OS hub [/admin/growth-os](/admin/growth-os).
