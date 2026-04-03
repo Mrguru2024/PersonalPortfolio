@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 import { z } from "zod";
 
 const feedbackSchema = z.object({
@@ -57,6 +58,20 @@ export async function POST(req: NextRequest) {
       category: validatedData.category,
       assessmentId: validatedData.assessmentId,
       quoteId: validatedData.quoteId,
+    });
+
+    queueAdminInboundNotification({
+      kind: "client_feedback",
+      title: `Client feedback: ${validatedData.subject}`,
+      body: `${user.username} (user #${user.id})\nCategory: ${validatedData.category}\n\n${validatedData.message}`,
+      relatedType: "client_feedback",
+      relatedId: feedback.id,
+      metadata: {
+        userId: user.id,
+        category: validatedData.category,
+        assessmentId: validatedData.assessmentId,
+        quoteId: validatedData.quoteId,
+      },
     });
 
     return NextResponse.json(feedback, { status: 201 });

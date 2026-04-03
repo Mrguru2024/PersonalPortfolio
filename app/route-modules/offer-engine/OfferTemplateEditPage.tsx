@@ -205,7 +205,7 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
           <Card>
             <CardHeader>
               <CardTitle>Why this offer should convert</CardTitle>
-              <CardDescription>Required internal narrative before heavy copy.</CardDescription>
+              <CardDescription>Required strategy narrative before heavy copy.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {(
@@ -585,7 +585,7 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
         <TabsContent value="preview" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Internal preview</CardTitle>
+              <CardTitle>Template preview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm whitespace-pre-wrap">
               <div>
@@ -677,7 +677,7 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
               (String(draft.visibility) === "live_public" ||
                 String(draft.visibility) === "admin_approved_client_facing") ? (
                 <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  Pricing package has <strong>publish blocked</strong> status. Lower visibility to internal-only or resolve
+                  Pricing package has <strong>publish blocked</strong> status. Lower visibility to private review or resolve
                   validation on the Pricing &amp; value tab (or use documented admin override there).
                 </div>
               ) : null}
@@ -688,7 +688,7 @@ export function OfferTemplateEditPage({ id }: { id: number }) {
               (String(draft.visibility) === "live_public" ||
                 String(draft.visibility) === "admin_approved_client_facing") ? (
                 <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-                  Internal readiness is <strong>unvalidated</strong>. Client-facing exposure is risky until internal gates
+                  Readiness status is <strong>unvalidated</strong>. Client-facing exposure is risky until review gates
                   are checked on the Pricing &amp; value tab.
                 </div>
               ) : null}

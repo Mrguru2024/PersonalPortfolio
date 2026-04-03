@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import { githubService } from "../services/githubService";
 import { emailService } from "../services/emailService";
+import { queueAdminInboundNotification } from "../services/adminInboxService";
 
 // Still import these for now as fallback until we populate the database
 import {
@@ -107,6 +108,15 @@ export const portfolioController = {
 
       // Increment the endorsement count for the skill
       await storage.incrementSkillEndorsementCount(validatedData.skillId);
+
+      queueAdminInboundNotification({
+        kind: "skill_endorsement",
+        title: `Skill endorsement: ${validatedData.name}`,
+        body: `${validatedData.email}\nSkill #${validatedData.skillId}\nRating: ${validatedData.rating}\n${validatedData.comment ?? ""}`,
+        relatedType: "skill_endorsement",
+        relatedId: newEndorsement.id,
+        metadata: { skillId: validatedData.skillId, rating: validatedData.rating },
+      });
 
       // Send email notification for skill endorsement
       await emailService.sendNotification({
@@ -467,6 +477,25 @@ export const portfolioController = {
         `[Contact form] Saved id=${savedContact.id} email=${savedContact.email} name=${savedContact.name}`
       );
 
+      queueAdminInboundNotification({
+        kind: isQuoteRequest ? "quote" : "contact",
+        title: isQuoteRequest
+          ? `Quote request: ${validatedData.name}`
+          : `Contact form: ${validatedData.name}`,
+        body: [
+          validatedData.email,
+          "subject" in validatedData && validatedData.subject
+            ? `Subject: ${validatedData.subject}`
+            : null,
+          validatedData.message ? String(validatedData.message).slice(0, 4000) : null,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        relatedType: "contact",
+        relatedId: savedContact.id,
+        metadata: { email: validatedData.email, isQuote: isQuoteRequest },
+      });
+
       try {
         await ensureCrmLeadFromFormSubmission({
           email: savedContact.email,
@@ -564,6 +593,15 @@ export const portfolioController = {
       console.log(
         `[Resume request] Saved id=${savedRequest.id} email=${savedRequest.email} name=${savedRequest.name}`
       );
+
+      queueAdminInboundNotification({
+        kind: "resume",
+        title: `Resume request: ${validatedData.name}`,
+        body: `${validatedData.email}\n${validatedData.purpose}${validatedData.message ? `\n${validatedData.message}` : ""}`,
+        relatedType: "resume_request",
+        relatedId: savedRequest.id,
+        metadata: { email: validatedData.email },
+      });
 
       // Send email notification to admin
       const emailSent = await emailService.sendNotification({

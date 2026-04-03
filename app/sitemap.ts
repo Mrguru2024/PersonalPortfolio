@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
 import { and, desc, eq, lte } from "drizzle-orm";
 import { db } from "@server/db";
 import { blogPosts } from "@shared/schema";
@@ -34,6 +36,8 @@ const EXCLUDE_EXACT_PATHS = new Set<string>([
   "/call-confirmation",
   "/challenge/thank-you",
 ]);
+const APP_DIR = path.join(process.cwd(), "app");
+const PAGE_FILE_PATTERN = /^page\.(tsx|ts|jsx|js|mdx)$/i;
 
 function absolutePath(path: string): string {
   const trimmed = path.trim();
@@ -55,6 +59,43 @@ function isValidHttpUrlForSitemap(url: string): boolean {
 function isExcludedPath(path: string): boolean {
   if (EXCLUDE_EXACT_PATHS.has(path)) return true;
   return EXCLUDE_PREFIXES.some((pre) => path === pre || path.startsWith(`${pre}/`));
+}
+
+function hasDynamicSegment(parts: string[]): boolean {
+  return parts.some((part) => part.includes("[") || part.includes("]"));
+}
+
+async function discoverStaticPageRoutes(
+  directory: string,
+  routeSegments: string[] = [],
+): Promise<Set<string>> {
+  const routes = new Set<string>();
+  const entries = await readdir(directory, {
+    withFileTypes: true,
+    encoding: "utf8",
+  }).catch(() => null);
+  if (!entries) {
+    return routes;
+  }
+
+  const hasPageFile = entries.some((entry) => entry.isFile() && PAGE_FILE_PATTERN.test(entry.name));
+  if (hasPageFile && !hasDynamicSegment(routeSegments)) {
+    const routePath = routeSegments.length ? `/${routeSegments.join("/")}` : "/";
+    if (!isExcludedPath(routePath)) routes.add(routePath);
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const segment = entry.name;
+    if (segment === "api" || segment.startsWith("_") || segment.startsWith("@")) continue;
+
+    const isRouteGroup = segment.startsWith("(") && segment.endsWith(")");
+    const nextSegments = isRouteGroup ? routeSegments : [...routeSegments, segment];
+    const nestedRoutes = await discoverStaticPageRoutes(path.join(directory, segment), nextSegments);
+    for (const route of nestedRoutes) routes.add(route);
+  }
+
+  return routes;
 }
 
 function changeFrequency(path: string): MetadataRoute.Sitemap[0]["changeFrequency"] {
@@ -125,9 +166,23 @@ async function publishedBlogEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const routeAudienceByPath = new Map(SITE_DIRECTORY_ENTRIES_UNIQUE.map((entry) => [entry.path, entry.audience]));
   const staticPublic = SITE_DIRECTORY_ENTRIES_UNIQUE.filter(
     (e) => e.audience === "public" && !e.path.includes("[") && !isExcludedPath(e.path),
   );
+  const discoveredStaticPaths = await discoverStaticPageRoutes(APP_DIR);
+  const discoveredPublic: MetadataRoute.Sitemap = [...discoveredStaticPaths]
+    .filter((routePath) => {
+      const audience = routeAudienceByPath.get(routePath);
+      return !audience || audience === "public";
+    })
+    .map((routePath) => ({
+      url: absolutePath(routePath),
+      lastModified: new Date(),
+      changeFrequency: changeFrequency(routePath),
+      priority: priority(routePath),
+    }))
+    .filter((entry) => isValidHttpUrlForSitemap(entry.url));
 
   const fromDirectory: MetadataRoute.Sitemap = staticPublic
     .map((e) => ({
@@ -154,7 +209,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const urlSeen = new Set<string>();
   const merged: MetadataRoute.Sitemap = [];
-  for (const entry of [...fromDirectory, ...breakdowns, ...blogPostsEntries]) {
+  for (const entry of [...fromDirectory, ...discoveredPublic, ...breakdowns, ...blogPostsEntries]) {
     if (!isValidHttpUrlForSitemap(entry.url) || urlSeen.has(entry.url)) continue;
     urlSeen.add(entry.url);
     merged.push(entry);

@@ -264,11 +264,8 @@ export default function EmailHubInboxPage() {
           </CardTitle>
           <CardDescription>
             {isSuper ?
-              <>
-                OAuth is separate from Google Calendar. Gmail and Microsoft each need their own app registration (see{" "}
-                <code className="text-xs bg-muted px-1 rounded">.env.example</code>).
-              </>
-            : "Connecting Gmail or Microsoft here is separate from Calendar. If connect fails, your technical contact may need to finish provider setup."}
+              "OAuth is separate from Google Calendar. Gmail and Microsoft each need their own sign-in app setup."
+            : "Connecting Gmail or Microsoft here is separate from Calendar. If connect fails, ask your admin to finish mailbox setup."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">

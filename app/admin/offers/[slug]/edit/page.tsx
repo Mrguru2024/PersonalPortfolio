@@ -791,7 +791,7 @@ export default function EditOfferPage() {
               <DialogDescription>
                 Describe the offer, audience, pricing, and what they get. The model fills this page&apos;s fields.
                 Persona targeting (IQ) is never changed. Empty hero/banner image URLs keep your current URLs.
-                Requires <code className="text-xs bg-muted px-1 rounded">OPENAI_API_KEY</code>.
+                AI Fill works when AI access is enabled for your workspace.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">

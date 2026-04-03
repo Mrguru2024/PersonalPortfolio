@@ -101,7 +101,7 @@ export default function AgencyOsOverviewPage() {
           <CardHeader>
             <Shield className="h-5 w-5 text-primary mb-1" />
             <CardTitle className="text-base">Execution roles</CardTitle>
-            <CardDescription>Built-in strategist/developer/… plus custom; map approved admins.</CardDescription>
+            <CardDescription>Built-in role presets plus custom roles; map approved admins.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline" size="sm">

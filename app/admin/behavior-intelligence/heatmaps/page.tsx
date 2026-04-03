@@ -101,9 +101,8 @@ export default function BehaviorHeatmapsPage() {
                     ). See <code className="text-xs bg-muted px-1 rounded">app/lib/behaviorTrackingConfig.ts</code>.
                   </li>
                   <li>
-                    If ingest uses a Bearer token, set <code className="text-xs bg-muted px-1 rounded">NEXT_PUBLIC_BEHAVIOR_INGEST_TOKEN</code>{" "}
-                    to match <code className="text-xs bg-muted px-1 rounded">BEHAVIOR_INGEST_PUBLIC_TOKEN</code> (see{" "}
-                    <code className="text-xs bg-muted px-1 rounded">.env.example</code>).
+                    If ingest uses a Bearer token, the public token must match the server token for tracking to record
+                    properly.
                   </li>
                   <li>
                     With{" "}

@@ -144,6 +144,20 @@ export const scoreResultSchema = z.object({
 });
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
 
+/** Backward-compatible aliases for intelligence scoring payloads. */
+export type OfferGraderResult = ScoreResult;
+export type LeadMagnetGraderResult = ScoreResult;
+
+/**
+ * Lead magnet intelligence snapshot derived from template + optional related offer.
+ * Kept lightweight so admin summary APIs can remain stable.
+ */
+export interface LeadMagnetBuilderResult {
+  score: ScoreResult;
+  relatedOfferSlug: string | null;
+  recommendedNextStep: string;
+}
+
 const emptyStrategyWhy: StrategyWhyConvert = {
   whyPersonaCares: "",
   whyTheyCareNow: "",

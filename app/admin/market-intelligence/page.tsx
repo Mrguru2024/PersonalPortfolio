@@ -309,7 +309,7 @@ export default function MarketIntelligencePage() {
               <AdminHelpTip
                 content={
                   isSuper ?
-                    "AMIE: internal decision-intelligence layer. Scores demand, competition, purchase power, pain, and targeting difficulty; outputs opportunity tier plus CRM/funnel/PPC hints. Uses mock or mixed data until external adapters are configured (see .env.example)."
+                    "AMIE: decision-intelligence layer. Scores demand, competition, purchase power, pain, and targeting difficulty; outputs opportunity tier plus CRM/funnel/PPC hints. Results may use sample or mixed data until all live sources are connected."
                   : "Decision Intelligence scores your market inputs and suggests opportunity level plus practical next steps for CRM, funnel, and ads. Results may use sample data until live data sources are connected."
                 }
                 ariaLabel="Help: What is AMIE"

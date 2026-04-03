@@ -100,8 +100,7 @@ export default function Blog() {
           <div className="text-center">
             <h1 className="text-2xl fold:text-3xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-1">Blog</h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6 px-1">
-              Thoughts, insights, and updates from my journey as a developer and
-              entrepreneur.
+              Practical insights and updates for business growth, brand clarity, and digital execution.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-between gap-4 mb-6">
@@ -352,9 +351,8 @@ export default function Blog() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Practical insights on strategy, design, and technology—for
-                  business owners improving their digital presence and for
-                  developers and founders building products.
+                  Practical insights on strategy, design, and technology for business owners improving their digital
+                  presence.
                 </p>
                 <Button variant="outline" className="mt-4 w-full" asChild>
                   <Link href="/contact">Get in touch</Link>

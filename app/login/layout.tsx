@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Sign in | Ascendra Technologies",
   description:
-    "Clients, community members, and team: one Ascendra account—pick client workspace, community sign-in, or your internal dashboard.",
+    "Clients, community members, and team: one Ascendra account—pick client workspace, community sign-in, or admin tools based on your access.",
   robots: "noindex, nofollow",
 };
 
