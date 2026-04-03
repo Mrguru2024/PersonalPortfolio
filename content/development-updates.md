@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-04-03 06:47 — Auto · 136f7b3
+
+- `feat: urgency conversion engine, sheet a11y, locale SSR, guarantees ops` (`136f7b3`)
+
+---
+
 ## 2026-04-02 06:00 — Auto · c4fd634
 
 - `docs: append dev log for latest commit` (`c4fd634`)
