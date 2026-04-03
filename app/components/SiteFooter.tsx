@@ -39,8 +39,8 @@ function LinkGroup({
         {title}
       </h3>
       <ul className="flex flex-col gap-1.5">
-        {links.map(({ label, href }) => (
-          <li key={href}>
+        {links.map(({ label, href }, idx) => (
+          <li key={`${idx}:${href}`}>
             <Link
               href={href}
               className="block rounded-sm py-0.5 text-sm text-muted-foreground transition-colors hover:text-foreground"

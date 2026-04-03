@@ -22,6 +22,11 @@ import {
   COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
 
+/** English footer labels by href — single source to avoid SSR/client drift vs nav arrays. */
+const FOOTER_LINK_EN: Partial<Record<string, string>> = {
+  "/updates": "Market updates",
+};
+
 /** Spanish labels keyed by exact `href` from `siteNavLinks` (paths imported for parity). */
 const LINK_ES: Record<string, string> = {
   "/": "Inicio",
@@ -78,7 +83,7 @@ export function footerSecondaryCta(locale: AppLocale): string {
 }
 
 export function footerLinkLabel(href: string, englishLabel: string, locale: AppLocale): string {
-  if (locale === "en") return englishLabel;
+  if (locale === "en") return FOOTER_LINK_EN[href] ?? englishLabel;
   return LINK_ES[href] ?? englishLabel;
 }
 
