@@ -193,9 +193,8 @@ export default function AdminOperatorProfilePage() {
           <CardHeader>
             <CardTitle className="text-lg">Who you are in the system</CardTitle>
             <CardDescription>
-              This does not change app permissions — it guides nudges and the intelligence plan. Set{" "}
-              <code className="text-xs bg-muted px-1 rounded">OPENAI_API_KEY</code> for full AI; otherwise a smart
-              fallback runs.
+              This does not change app permissions — it guides nudges and the intelligence plan. Advanced AI features
+              appear automatically when available; otherwise, the page uses the standard guidance mode.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

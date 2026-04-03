@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { funnelPathWriteSchema } from "@shared/offerEngineTypes";
 import { listFunnelPaths, upsertFunnelPath } from "@server/services/offerEngineService";
+import { getOfferEngineFunnelReadinessSignals } from "@server/services/offerEngineIntelligence";
+import { evaluateScarcityForContext } from "@modules/scarcity-engine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,7 +25,13 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const personaId = searchParams.get("personaId") ?? undefined;
     const rows = await listFunnelPaths(personaId);
-    return NextResponse.json({ funnelPaths: rows.map(serialize) });
+    const withInsights = searchParams.get("withInsights") === "1";
+    if (!withInsights) return NextResponse.json({ funnelPaths: rows.map(serialize) });
+    const alerts = await getOfferEngineFunnelReadinessSignals();
+    return NextResponse.json({
+      funnelPaths: rows.map(serialize),
+      readiness: alerts,
+    });
   } catch (e) {
     console.error("[GET offer-engine/funnel-paths]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -43,7 +51,11 @@ export async function POST(req: NextRequest) {
     }
     const row = await upsertFunnelPath(parsed.data);
     if (!row) return NextResponse.json({ error: "Invalid persona or template refs" }, { status: 400 });
-    return NextResponse.json({ funnelPath: serialize(row) }, { status: 201 });
+    const scarcity = await evaluateScarcityForContext({
+      personaId: row.personaId,
+      funnelSlug: row.slug,
+    }).catch(() => null);
+    return NextResponse.json({ funnelPath: serialize(row), scarcity }, { status: 201 });
   } catch (e) {
     console.error("[POST offer-engine/funnel-paths]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });

@@ -31,6 +31,11 @@ import { generateOfferCopyBlocks, generateLeadMagnetCopyBlocks } from "./offerEn
 import type { CtaGoal } from "@shared/offerEngineConstants";
 import type { AscendraPricingPackage } from "@shared/ascendraPricingPackageTypes";
 import { ensurePricingPackage, refreshPricingPackageComputed } from "@shared/ascendraPricingEngine";
+import {
+  buildOfferAndLeadMagnetGradingRows,
+  buildOfferEngineRelationshipInsights,
+  getOfferEngineReadinessAlerts,
+} from "./offerEngineIntelligence";
 
 type OfferWrite = z.infer<typeof offerTemplateWriteSchema>;
 type LeadMagnetWrite = z.infer<typeof leadMagnetTemplateWriteSchema>;
@@ -611,4 +616,21 @@ export async function ensureAnalyticsMetricSeeds() {
       .values(s)
       .onConflictDoNothing({ target: offerEngineAnalyticsMetricDefinitions.metricKey });
   }
+}
+
+/**
+ * Compatibility export consumed by `/api/admin/offer-engine/summary`.
+ * Aggregates intelligence sections from the dedicated intelligence service.
+ */
+export async function buildOfferEngineIntelligence() {
+  const [relationship, grading, readiness] = await Promise.all([
+    buildOfferEngineRelationshipInsights(),
+    buildOfferAndLeadMagnetGradingRows(),
+    getOfferEngineReadinessAlerts(),
+  ]);
+  return {
+    relationship,
+    grading,
+    readiness,
+  };
 }

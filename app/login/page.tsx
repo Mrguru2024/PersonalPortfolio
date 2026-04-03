@@ -88,8 +88,8 @@ export default function SignInHubPage() {
               </Button>
             </CardContent>
             <CardFooter className="text-xs text-muted-foreground border-t pt-4 leading-relaxed">
-              Approved founders and internal team: use this sign-in too. After you&apos;re in, your admin dashboard
-              and tools appear when your account is set up for it.
+              Approved founders and team members: use this sign-in too. After you&apos;re in, any eligible workspace
+              and tools appear automatically for your account.
             </CardFooter>
           </Card>
 

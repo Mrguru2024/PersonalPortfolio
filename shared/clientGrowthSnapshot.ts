@@ -3,6 +3,11 @@
  * No internal field names from AMIE/CRM exposed as raw keys in UI copy.
  */
 import { z } from "zod";
+import {
+  guaranteeComplianceSchema,
+  guaranteeDashboardColorSchema,
+  guaranteeDashboardStatusSchema,
+} from "./guaranteeEngine";
 
 export const growthStepStateSchema = z.enum([
   "locked",
@@ -86,6 +91,16 @@ export const clientGrowthSnapshotSchema = z.object({
     improvementBullets: z.array(z.string()),
     nextCta: growthCtaSchema,
   }),
+  guarantee: z.object({
+    qualifiedLeadsCount: z.number().int().min(0),
+    bookedJobsCount: z.number().int().min(0),
+    conversionRate: z.number(),
+    roiPercentage: z.number(),
+    dashboardStatus: guaranteeDashboardStatusSchema,
+    dashboardColor: guaranteeDashboardColorSchema,
+    compliance: guaranteeComplianceSchema,
+    timeframeLabel: z.string(),
+  }).optional(),
   activity: z.array(growthActivityItemSchema),
 });
 

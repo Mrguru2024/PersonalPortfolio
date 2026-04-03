@@ -80,8 +80,8 @@ export default function PaidGrowthAccountsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center gap-4">
         <p className="text-sm text-muted-foreground max-w-xl">
-          Store platform account IDs here. OAuth tokens stay in server env (see .env.example). Map each row to campaigns in
-          the builder.
+          Store platform account IDs here. Connection credentials are managed in hosting settings and stay hidden in
+          this app. Map each account to campaigns in the builder.
         </p>
         <Button type="button" onClick={() => setOpen((o) => !o)}>
           <Plus className="h-4 w-4 mr-2" />

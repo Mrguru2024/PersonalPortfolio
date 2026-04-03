@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Crosshair, FileText, GitBranch, Loader2, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Crosshair, FileText, GitBranch, Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,6 +15,19 @@ interface Summary {
   leadMagnetTemplateCount: number;
   funnelPathCount: number;
   personaCount: number;
+  scarcity?: {
+    configCount?: number;
+    activeConfigCount?: number;
+  };
+  intelligence?: {
+    relationship?: {
+      offersMissingLeadMagnets?: string[];
+      leadMagnetsWithoutOffer?: string[];
+    };
+    readiness?: {
+      weakCampaigns?: Array<{ name: string; readinessScore: number }>;
+    };
+  };
 }
 
 export default function OfferEngineHubPage() {
@@ -156,15 +169,70 @@ export default function OfferEngineHubPage() {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <AlertTriangle className="h-5 w-5 text-primary" />
+                  Scarcity Engine
+                </CardTitle>
+                <CardDescription>Capacity, cycle timing, waitlist demand, and flow-control routing.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="text-2xl font-semibold tabular-nums">
+                  {summary?.scarcity?.activeConfigCount ?? 0}/{summary?.scarcity?.configCount ?? 0}
+                </span>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin/scarcity-engine">Open scarcity</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
+
+        {(summary?.intelligence?.relationship?.offersMissingLeadMagnets?.length ||
+          summary?.intelligence?.relationship?.leadMagnetsWithoutOffer?.length ||
+          summary?.intelligence?.readiness?.weakCampaigns?.length) ? (
+          <Card className="mt-6 border-amber-500/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                Conversion readiness alerts
+              </CardTitle>
+              <CardDescription>Fix these before scaling traffic.</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              {summary?.intelligence?.relationship?.offersMissingLeadMagnets?.length ? (
+                <p>
+                  Offers missing lead magnets:{" "}
+                  {summary.intelligence.relationship.offersMissingLeadMagnets.slice(0, 6).join(", ")}
+                </p>
+              ) : null}
+              {summary?.intelligence?.relationship?.leadMagnetsWithoutOffer?.length ? (
+                <p>
+                  Lead magnets without a linked offer:{" "}
+                  {summary.intelligence.relationship.leadMagnetsWithoutOffer.slice(0, 6).join(", ")}
+                </p>
+              ) : null}
+              {summary?.intelligence?.readiness?.weakCampaigns?.length ? (
+                <p>
+                  PPC campaigns below readiness threshold:{" "}
+                  {summary.intelligence.readiness.weakCampaigns
+                    .slice(0, 4)
+                    .map((c) => `${c.name} (${c.readinessScore})`)
+                    .join(", ")}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <p className="text-sm text-muted-foreground mt-10 max-w-2xl">
           Analytics hooks:{" "}
           <Link href="/admin/offer-engine/analytics-hooks" className="underline-offset-2 hover:underline">
-            metric definitions
+            performance intelligence
           </Link>{" "}
-          (placeholders for future instrumentation — no fabricated dashboards).
+          (live rollups from existing CRM, visitor tracking, and campaign data).
         </p>
       </div>
     </div>

@@ -30,7 +30,7 @@ export const MAIN_LINKS = [
   { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
   { label: "Market updates", href: "/updates" },
-  { label: "Your Growth Score", href: "/diagnosis/results" },
+  { label: "Your Growth Score", href: DIAGNOSTICS_HUB_PATH },
   { label: "Contact", href: "/contact" },
 ] as const;
 

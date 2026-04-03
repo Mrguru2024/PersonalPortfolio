@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "@server/storage";
 import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
 import { emailService } from "@server/services/emailService";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 import type { InsertContact } from "@shared/schema";
 import { aeeFieldsForFormAttribution, zOptionalAeeAttribution } from "@/lib/aeeFormAttributionZod";
 
@@ -69,6 +70,15 @@ export async function POST(req: NextRequest) {
     };
 
     const savedContact = await storage.createContact(contactRow);
+
+    queueAdminInboundNotification({
+      kind: "free_lead",
+      title: `Free growth tools lead: ${b.name}`,
+      body: message,
+      relatedType: "contact",
+      relatedId: savedContact.id,
+      metadata: { email: b.email, source: "free_growth_tools" },
+    });
 
     const submittedAt = new Date().toISOString();
     const customFields = {

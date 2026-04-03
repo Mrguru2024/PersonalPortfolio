@@ -3,6 +3,9 @@ import { db } from "@server/db";
 import { growthFunnelLeads } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
 import { RECOMMENDATION_LABELS } from "@/lib/scoring";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
+import { ensureCrmLeadFromFormSubmission } from "@server/services/leadFromFormService";
+import { evaluateScarcityForContext } from "@modules/scarcity-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +45,26 @@ export async function POST(req: NextRequest) {
     const systemScore = Number(scores.systemScore) || 0;
     const primaryBottleneck = String(scores.primaryBottleneck ?? "system");
     const recommendation = String(scores.recommendation ?? "ascendra");
+    const scarcity = await evaluateScarcityForContext({
+      offerSlug: typeof form.sourceOfferSlug === "string" ? form.sourceOfferSlug : undefined,
+      leadMagnetSlug:
+        typeof form.sourceLeadMagnetSlug === "string" ? form.sourceLeadMagnetSlug : undefined,
+      funnelSlug: typeof form.sourceFunnelSlug === "string" ? form.sourceFunnelSlug : undefined,
+      trafficTemperature:
+        typeof form.sourceTrafficTemperature === "string" ? form.sourceTrafficTemperature : undefined,
+      leadScore: Number.isFinite(totalScore) ? totalScore : undefined,
+    }).catch(() => null);
+
+    const derivedConversionStage =
+      scarcity?.route === "waitlist"
+        ? "waitlist"
+        : scarcity?.route === "delayed_intake"
+          ? "deferred"
+          : scarcity?.route === "nurture"
+            ? "nurture"
+            : "qualified";
+    const derivedQualification =
+      !scarcity || scarcity?.route === "qualified_path" ? "qualified" : "nurture_first";
 
     const [inserted] = await db
       .insert(growthFunnelLeads)
@@ -53,6 +76,8 @@ export async function POST(req: NextRequest) {
         systemScore,
         primaryBottleneck,
         recommendation,
+        conversionStage: derivedConversionStage,
+        qualificationResult: derivedQualification,
         name,
         email,
         businessName: String(form.businessName ?? "").trim() || null,
@@ -72,6 +97,22 @@ export async function POST(req: NextRequest) {
     }
 
     const recommendationLabel = RECOMMENDATION_LABELS[recommendation as keyof typeof RECOMMENDATION_LABELS] ?? recommendation;
+
+    queueAdminInboundNotification({
+      kind: "growth_funnel",
+      title: `Growth funnel lead: ${name}`,
+      body: [
+        email,
+        form.businessName && `Business: ${form.businessName}`,
+        form.website && `Site: ${form.website}`,
+        `Score: ${totalScore} · Bottleneck: ${primaryBottleneck}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      relatedType: "growth_funnel_lead",
+      relatedId: inserted.id,
+      metadata: { email, totalScore, recommendation },
+    });
 
     await Promise.all([
       emailService.sendGrowthDiagnosisToUser({
@@ -100,7 +141,68 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({ ok: true, id: inserted.id });
+    try {
+      await ensureCrmLeadFromFormSubmission({
+        email,
+        name,
+        company: String(form.businessName ?? "").trim() || null,
+        attribution: {
+          utm_source: typeof form.utm_source === "string" ? form.utm_source : "funnel_quiz",
+          utm_medium: typeof form.utm_medium === "string" ? form.utm_medium : null,
+          utm_campaign: typeof form.utm_campaign === "string" ? form.utm_campaign : null,
+          utm_content: typeof form.utm_content === "string" ? form.utm_content : null,
+          utm_term: typeof form.utm_term === "string" ? form.utm_term : null,
+          referrer: typeof form.referrer === "string" ? form.referrer : null,
+          landing_page: typeof form.landing_page === "string" ? form.landing_page : "/diagnosis",
+          visitorId: typeof form.visitorId === "string" ? form.visitorId : null,
+          sessionId: typeof form.sessionId === "string" ? form.sessionId : null,
+        },
+        customFields: {
+          intakeSource: "growth_funnel_quiz",
+          funnelLeadId: inserted.id,
+          sourceOfferSlug: typeof form.sourceOfferSlug === "string" ? form.sourceOfferSlug : undefined,
+          sourceLeadMagnetSlug:
+            typeof form.sourceLeadMagnetSlug === "string" ? form.sourceLeadMagnetSlug : undefined,
+          sourceFunnelSlug: typeof form.sourceFunnelSlug === "string" ? form.sourceFunnelSlug : undefined,
+          sourceCampaignSlug: typeof form.sourceCampaignSlug === "string" ? form.sourceCampaignSlug : undefined,
+          sourceTrafficTemperature:
+            typeof form.sourceTrafficTemperature === "string" ? form.sourceTrafficTemperature : undefined,
+          sourceAwarenessLevel:
+            typeof form.sourceAwarenessLevel === "string" ? form.sourceAwarenessLevel : undefined,
+          sourceConversionStage: derivedConversionStage,
+          sourceQualificationResult: derivedQualification,
+          ...(scarcity
+            ? {
+                scarcityConfigId: scarcity.configId,
+                scarcityStatus: scarcity.status,
+                scarcityRoute: scarcity.route,
+                scarcityAvailableSlots: scarcity.availableSlots,
+                scarcityUsedSlots: scarcity.usedSlots,
+                scarcityWaitlistCount: scarcity.waitlistCount,
+                scarcityNextCycleDate: scarcity.nextCycleDate,
+                scarcityMessage: scarcity.message,
+              }
+            : {}),
+        },
+      });
+    } catch (crmErr) {
+      console.warn("[funnel-leads] CRM ensure failed:", crmErr);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      id: inserted.id,
+      scarcity: scarcity
+        ? {
+            status: scarcity.status,
+            route: scarcity.route,
+            availableSlots: scarcity.availableSlots,
+            waitlistCount: scarcity.waitlistCount,
+            nextCycleDate: scarcity.nextCycleDate,
+            message: scarcity.message,
+          }
+        : null,
+    });
   } catch (e) {
     console.error("POST /api/funnel/leads error:", e);
     return NextResponse.json(

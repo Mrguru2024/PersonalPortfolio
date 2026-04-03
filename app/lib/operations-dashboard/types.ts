@@ -5,6 +5,9 @@ export interface OperationsSummaryStats {
   publishedCaseStudies: number;
   contentMissingKeyElements: number;
   itemsReadyToPublish: number;
+  guaranteeNotMet: number;
+  guaranteeAtRisk: number;
+  guaranteePerforming: number;
 }
 
 export interface OperationsQuickAction {
@@ -76,14 +79,39 @@ export interface ContentHealthSummary {
   issues: ContentHealthIssue[];
 }
 
+export interface GuaranteeControlApiRow {
+  clientId: number;
+  clientLabel: string;
+  qualifiedLeadsCount: number;
+  bookedJobsCount: number;
+  conversionRate: number;
+  roiPercentage: number;
+  dashboardStatus: "met" | "in_progress" | "action_required";
+  dashboardColor: "green" | "yellow" | "red";
+  compliance: {
+    isCompliant: boolean;
+    reasons: string[];
+  };
+  suggestedActions: Array<
+    "optimize_funnel" | "adjust_offer" | "increase_traffic" | "fix_conversion_flow"
+  >;
+}
+
 export interface OperationsDashboardPayload {
   generatedAt: string;
   summary: OperationsSummaryStats;
   quickActions: OperationsQuickAction[];
   diagnostics: DiagnosticActivityRow[];
   caseStudies: CaseStudyWorkflowItem[];
+  caseStudyPipeline?: CaseStudyWorkflowItem[];
   publishingQueue: PublishingQueueItem[];
   leads: LeadSnapshotItem[];
   aiActions: AiActionItem[];
   contentHealth: ContentHealthSummary;
+  guaranteeSummary?: {
+    actionRequiredCount: number;
+    inProgressCount: number;
+    metCount: number;
+  };
+  guaranteeAlerts?: GuaranteeControlApiRow[];
 }

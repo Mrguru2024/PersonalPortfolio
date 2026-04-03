@@ -50,6 +50,9 @@ interface OperationsSummary {
   publishedCaseStudies: number;
   contentMissingKeyElements: number;
   itemsReadyToPublish: number;
+  guaranteeNotMet: number;
+  guaranteeAtRisk: number;
+  guaranteePerforming: number;
 }
 
 interface DiagnosticItem {
@@ -256,6 +259,21 @@ export function StatCards({ summary }: StatCardsProps) {
       label: "Items Ready to Publish",
       value: summary.itemsReadyToPublish,
       icon: Megaphone,
+    },
+    {
+      label: "Guarantee Not Met",
+      value: summary.guaranteeNotMet,
+      icon: ListTodo,
+    },
+    {
+      label: "Guarantee At Risk",
+      value: summary.guaranteeAtRisk,
+      icon: Lightbulb,
+    },
+    {
+      label: "Guarantee Performing",
+      value: summary.guaranteePerforming,
+      icon: CheckCircle2,
     },
   ] as const;
 

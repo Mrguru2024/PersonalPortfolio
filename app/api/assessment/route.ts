@@ -5,6 +5,7 @@ import { proposalService } from "@server/services/proposalService";
 import { db } from "@server/db";
 import { projectAssessments, clientQuotes } from "@shared/schema";
 import { emailService } from "@server/services/emailService";
+import { queueAdminInboundNotification } from "@server/services/adminInboxService";
 import { storage } from "@server/storage";
 import { getSessionUser } from "@/lib/auth-helpers";
 
@@ -67,6 +68,22 @@ export async function POST(req: NextRequest) {
     console.log(
       `[Assessment form] Saved id=${assessment.id} email=${assessment.email} name=${assessment.name}`
     );
+
+    queueAdminInboundNotification({
+      kind: "assessment",
+      title: `Project assessment: ${validatedData.name}`,
+      body: [
+        validatedData.email,
+        `Project: ${validatedData.projectName} (${validatedData.projectType})`,
+        validatedData.projectDescription &&
+          String(validatedData.projectDescription).slice(0, 2000),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      relatedType: "project_assessment",
+      relatedId: assessment.id,
+      metadata: { email: validatedData.email },
+    });
 
     // Send email notification to admin
     const emailSent = await emailService.sendNotification({

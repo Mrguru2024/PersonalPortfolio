@@ -1,5 +1,5 @@
 import type { AdminTtsConfigStored } from "./readAloudTtsConfig";
-import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, timestamp, unique, real, date, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -614,6 +614,42 @@ export type AdminChatMessage = typeof adminChatMessages.$inferSelect;
 export type InsertAdminChatMessage = typeof adminChatMessages.$inferInsert;
 export type AdminChatReadCursor = typeof adminChatReadCursor.$inferSelect;
 
+/**
+ * In-app inbox for inbound lead/form events (mirrors email alerts; survives when email fails).
+ * Admins see items in /admin/inbox and dashboard; per-user read state in admin_inbox_reads.
+ */
+export const adminInboxItems = pgTable("admin_inbox_items", {
+  id: serial("id").primaryKey(),
+  /** contact | quote | resume | assessment | free_lead | data_deletion | blog_comment | offer_valuation | growth_funnel | market_score | skill_endorsement | client_feedback | newsletter_subscribe | ... */
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  body: text("body"),
+  linkUrl: text("link_url").notNull(),
+  relatedType: text("related_type"),
+  relatedId: integer("related_id"),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminInboxReads = pgTable(
+  "admin_inbox_reads",
+  {
+    userId: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    itemId: integer("item_id")
+      .references(() => adminInboxItems.id, { onDelete: "cascade" })
+      .notNull(),
+    readAt: timestamp("read_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: unique().on(t.userId, t.itemId),
+  }),
+);
+
+export type AdminInboxItem = typeof adminInboxItems.$inferSelect;
+export type InsertAdminInboxItem = typeof adminInboxItems.$inferInsert;
+
 // User activity / login audit log (admin monitoring: logins, failures, errors)
 export const userActivityLog = pgTable("user_activity_log", {
   id: serial("id").primaryKey(),
@@ -776,6 +812,14 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
   systemScore: integer("system_score").notNull(),
   primaryBottleneck: text("primary_bottleneck").notNull(), // brand | design | system
   recommendation: text("recommendation").notNull(), // style_studio | macon_designs | ascendra
+  sourceOfferTemplateId: integer("source_offer_template_id"),
+  sourceLeadMagnetTemplateId: integer("source_lead_magnet_template_id"),
+  sourceCampaignId: integer("source_campaign_id"),
+  sourceFunnelPathSlug: text("source_funnel_path_slug"),
+  sourceTrafficTemperature: text("source_traffic_temperature"),
+  sourceTrafficType: text("source_traffic_type"),
+  conversionStage: text("conversion_stage"),
+  qualificationResult: text("qualification_result"),
   name: text("name"),
   email: text("email"),
   businessName: text("business_name"),
@@ -790,6 +834,49 @@ export const growthFunnelLeads = pgTable("growth_funnel_leads", {
 
 export type GrowthFunnelLead = typeof growthFunnelLeads.$inferSelect;
 export type InsertGrowthFunnelLead = typeof growthFunnelLeads.$inferInsert;
+
+export const guaranteeStatusEnum = pgEnum("guarantee_status", ["pending", "met", "not_met"]);
+export const guaranteeTypeEnum = pgEnum("guarantee_type", [
+  "lead_flow",
+  "booked_jobs",
+  "conversion",
+  "payback",
+]);
+
+/**
+ * Ascendra Guarantee Engine snapshots by client + timeframe.
+ * One row per guarantee type, persisted for dashboard rendering and historical trend.
+ */
+export const guaranteeMetrics = pgTable("guarantee_metrics", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  timeframeStart: date("timeframe_start").notNull(),
+  timeframeEnd: date("timeframe_end").notNull(),
+  qualifiedLeadsCount: integer("qualified_leads_count").notNull().default(0),
+  bookedJobsCount: integer("booked_jobs_count").notNull().default(0),
+  conversionRate: real("conversion_rate").notNull().default(0),
+  revenueGenerated: integer("revenue_generated").notNull().default(0),
+  systemCost: integer("system_cost").notNull().default(0),
+  roiPercentage: real("roi_percentage").notNull().default(0),
+  guaranteeStatus: guaranteeStatusEnum("guarantee_status").notNull().default("pending"),
+  guaranteeType: guaranteeTypeEnum("guarantee_type").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueClientWindowType: unique("guarantee_metrics_client_window_type_uq").on(
+    t.clientId,
+    t.timeframeStart,
+    t.timeframeEnd,
+    t.guaranteeType,
+  ),
+}));
+
+export type GuaranteeMetricsRow = typeof guaranteeMetrics.$inferSelect;
+export type InsertGuaranteeMetricsRow = typeof guaranteeMetrics.$inferInsert;
+export type GuaranteeStatusValue = (typeof guaranteeStatusEnum.enumValues)[number];
+export type GuaranteeTypeValue = (typeof guaranteeTypeEnum.enumValues)[number];
 
 /** Offer Valuation Engine access/config toggles (singleton row id=1). */
 export const offerValuationSettings = pgTable("offer_valuation_settings", {
@@ -1033,3 +1120,4 @@ export * from "./growthEngineSchema";
 export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
 export * from "./offerEngineSchema";
+export * from "./scarcityEngineSchema";

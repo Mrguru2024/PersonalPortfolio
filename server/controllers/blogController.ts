@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { generateBlogPostImage } from "../services/autoImageService";
 import { emailService } from "../services/emailService";
+import { queueAdminInboundNotification } from "../services/adminInboxService";
 
 export const blogController = {
   // Get all published blog posts
@@ -210,6 +211,15 @@ export const blogController = {
         },
         ipAddress
       );
+
+      queueAdminInboundNotification({
+        kind: "blog_comment",
+        title: `Blog comment on: ${post.title}`,
+        body: `${validatedData.name} <${validatedData.email}>\n\n${validatedData.content}`,
+        relatedType: "blog_comment",
+        relatedId: comment.id,
+        metadata: { postId: post.id, slug: post.slug },
+      });
 
       // Send email notification for new blog comment
       await emailService.sendNotification({

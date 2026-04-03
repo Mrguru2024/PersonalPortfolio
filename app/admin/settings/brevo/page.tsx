@@ -80,8 +80,8 @@ export default function AdminBrevoSettingsPage() {
           Brevo (email)
         </h1>
         <p className="text-muted-foreground text-sm mb-8">
-          Transactional sends (newsletters, communications test send, notifications) use Brevo. API keys and sender
-          addresses are set in your host environment, not in the database.
+          Transactional sends (newsletters, communications test send, notifications) use Brevo. This page shows whether
+          your connection details and sender identity are ready.
         </p>
 
         {isLoading || !data ? (
@@ -134,24 +134,25 @@ export default function AdminBrevoSettingsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Test API key</CardTitle>
+                <CardTitle>Test connection</CardTitle>
                 <CardDescription>Calls Brevo GET /v3/account. Does not send an email.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button onClick={() => pingMutation.mutate()} disabled={pingMutation.isPending || !data.brevoApiKeySet}>
                   {pingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Verify API key
+                  Verify connection
                 </Button>
                 {!data.brevoApiKeySet && (
-                  <p className="text-sm text-muted-foreground">Set BREVO_API_KEY on your host, redeploy, then try again.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Add your Brevo key in hosting settings, then refresh this page and try again.
+                  </p>
                 )}
                 {pingMessage && <p className="text-sm text-foreground whitespace-pre-wrap break-words">{pingMessage}</p>}
               </CardContent>
             </Card>
 
             <p className="text-xs text-muted-foreground">
-              After changing env vars on Vercel (or locally), redeploy or restart the dev server. See{" "}
-              <code className="text-foreground">.env.example</code> for all email-related variables.
+              After updating your hosting settings, redeploy (or restart locally) so changes take effect.
             </p>
 
             <Button variant="outline" size="sm" onClick={() => void refetch()}>

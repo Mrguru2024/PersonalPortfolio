@@ -111,7 +111,7 @@ export default function CommunityCollabPage() {
           <div>
             <h1 className="text-2xl font-bold">Collaboration board</h1>
             <p className="text-muted-foreground text-sm">
-              Find or offer help—developers, designers, marketers, partners.
+              Find or offer help—technical, design, marketing, and partner support.
             </p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>

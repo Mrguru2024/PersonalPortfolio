@@ -7,6 +7,8 @@ import {
   type PpcPublishGates,
   isConversionTrackingConfiguredForPublish,
 } from "@shared/ppcBusinessRules";
+import { getOfferTemplateBySlug } from "@server/services/offerEngineService";
+import { evaluateScarcityForContext } from "@modules/scarcity-engine";
 
 export type PpcReadinessResult = {
   overallScore: number;
@@ -43,6 +45,19 @@ function hasTrackingEnvScore(): number {
   const pixel = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
   const ga = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
   return gtm || pixel || ga ? 85 : 45;
+}
+
+function campaignLeadMagnetSlug(campaign: PpcCampaign): string | undefined {
+  const fromTrackingParams = campaign.trackingParamsJson;
+  if (
+    fromTrackingParams &&
+    typeof fromTrackingParams === "object" &&
+    typeof fromTrackingParams.utm_content === "string"
+  ) {
+    const value = fromTrackingParams.utm_content.trim().toLowerCase();
+    if (value) return value;
+  }
+  return undefined;
 }
 
 function buildRemediationFromGates(gates: PpcPublishGates): string[] {
@@ -120,6 +135,34 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
 
   scores.offer_clarity = await scoreOffer(campaign.offerSlug, storage);
   if (scores.offer_clarity < 60) blockers.push("Link a valid site offer slug (site_offers).");
+  const offerEngineTemplate = campaign.offerSlug ? await getOfferTemplateBySlug(campaign.offerSlug.trim()) : null;
+  const offerEngineScore = offerEngineTemplate?.scoreCacheJson?.overall ?? 0;
+  if (offerEngineTemplate && offerEngineScore < 55) {
+    blockers.push(
+      `Offer template "${offerEngineTemplate.name}" is weak (${offerEngineScore}/100). Improve core problem, promise, and funnel bridge before launch.`,
+    );
+  }
+  const scarcity = await evaluateScarcityForContext({
+    offerSlug: campaign.offerSlug ?? undefined,
+    leadMagnetSlug: campaignLeadMagnetSlug(campaign),
+    funnelSlug:
+      (campaign.landingPagePath || "")
+        .replace(/^\//, "")
+        .split("?")[0]
+        .split("/")
+        .filter(Boolean)[0] || undefined,
+  }).catch(() => null);
+  if (scarcity?.status === "full" || scarcity?.status === "waitlist") {
+    blockers.push(
+      `Capacity is unavailable (${scarcity.message}). Pause paid traffic or reroute to lead magnet nurture until slots reopen.`,
+    );
+    scores.offer_clarity = Math.min(scores.offer_clarity, 25);
+  } else if (scarcity?.status === "limited") {
+    blockers.push(
+      `Capacity is limited (${scarcity.message}). Prioritize high-intent campaigns and nurture-first traffic flows.`,
+    );
+    scores.offer_clarity = Math.min(scores.offer_clarity, 70);
+  }
 
   const landing = (campaign.landingPagePath || "").trim();
   if (landing && landing !== "/") {

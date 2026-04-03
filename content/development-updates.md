@@ -8,6 +8,18 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-04-02 06:00 — Auto · c4fd634
+
+- `docs: append dev log for latest commit` (`c4fd634`)
+
+---
+
+## 2026-04-02 06:00 — Auto · 8ccac58
+
+- `feat: admin inbox, dashboard drag-reorder, agreements and API updates` (`8ccac58`)
+
+---
+
 ## 2026-03-31 04:14 — Auto · c5fc760
 
 - `Growth Intelligence, behavior watch, storage retention, proxy aliases` (`c5fc760`)

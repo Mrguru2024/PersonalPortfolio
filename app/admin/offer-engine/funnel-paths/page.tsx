@@ -22,6 +22,29 @@ interface PathRow {
   primaryLeadMagnetTemplateId: number | null;
 }
 
+interface ReadinessPayload {
+  weakOffers: Array<{ id: number; slug: string; name: string; score: number }>;
+  weakLeadMagnets: Array<{ id: number; slug: string; name: string; score: number }>;
+  weakCampaigns: Array<{ id: number; name: string; offerSlug: string | null; readinessScore: number | null }>;
+  scarcityReadiness?: Array<{
+    configId: number;
+    name: string;
+    status: "open" | "limited" | "full" | "waitlist";
+    availableSlots: number;
+    usedSlots: number;
+    waitlistCount: number;
+    nextCycleDate: string | null;
+    message: string;
+  }>;
+  scarcityBlockedCampaigns?: Array<{
+    id: number;
+    name: string;
+    offerSlug: string | null;
+    readinessScore: number;
+    reason: string;
+  }>;
+}
+
 export default function OfferEngineFunnelPathsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -31,10 +54,10 @@ export default function OfferEngineFunnelPathsPage() {
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
 
-  const { data, isLoading } = useQuery<{ funnelPaths: PathRow[] }>({
-    queryKey: ["/api/admin/offer-engine/funnel-paths"],
+  const { data, isLoading } = useQuery<{ funnelPaths: PathRow[]; readiness?: ReadinessPayload }>({
+    queryKey: ["/api/admin/offer-engine/funnel-paths", "withInsights=1"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/offer-engine/funnel-paths");
+      const res = await apiRequest("GET", "/api/admin/offer-engine/funnel-paths?withInsights=1");
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -59,6 +82,75 @@ export default function OfferEngineFunnelPathsPage() {
       </Button>
       <h1 className="text-2xl font-bold mb-2">Funnel paths</h1>
       <p className="text-sm text-muted-foreground mb-6">Visual sequence from traffic to conversion goal. Create/upsert via API POST with a unique slug.</p>
+      {data?.readiness ? (
+        <div className="grid md:grid-cols-3 gap-3 mb-6">
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm">Weak offers</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-sm">
+              {data.readiness.weakOffers.slice(0, 3).map((o) => (
+                <div key={o.id} className="flex justify-between gap-2">
+                  <span className="truncate">{o.name}</span>
+                  <Badge variant="outline">{o.score}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm">Weak lead magnets</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-sm">
+              {data.readiness.weakLeadMagnets.slice(0, 3).map((m) => (
+                <div key={m.id} className="flex justify-between gap-2">
+                  <span className="truncate">{m.name}</span>
+                  <Badge variant="outline">{m.score}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm">Weak paid campaigns</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-sm">
+              {data.readiness.weakCampaigns.slice(0, 3).map((c) => (
+                <div key={c.id} className="flex justify-between gap-2">
+                  <span className="truncate">{c.name}</span>
+                  <Badge variant="outline">{c.readinessScore}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+      {data?.readiness?.scarcityReadiness?.length ? (
+        <Card className="mb-6">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Scarcity readiness</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {data.readiness.scarcityReadiness.slice(0, 4).map((row) => (
+              <div key={row.configId} className="rounded-md border p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium truncate">{row.name}</span>
+                  <Badge variant="outline">{row.status}</Badge>
+                </div>
+                <div className="text-muted-foreground">
+                  {row.availableSlots} slots left · {row.waitlistCount} waitlist
+                </div>
+                <div>{row.message}</div>
+              </div>
+            ))}
+            {data.readiness.scarcityBlockedCampaigns?.length ? (
+              <p className="text-muted-foreground">
+                Blocked campaigns by scarcity: {data.readiness.scarcityBlockedCampaigns.length}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
       {isLoading ? (
         <Loader2 className="h-8 w-8 animate-spin" />
       ) : (

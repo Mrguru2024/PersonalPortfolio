@@ -56,6 +56,7 @@ import {
   Bell,
   Layers,
   FileSearch,
+  AlertTriangle,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -78,6 +79,7 @@ import {
   shellLoggedInAs,
   shellMainNavAria,
   shellMenuButtonText,
+  shellMobileNavAria,
   shellMoreTrigger,
   shellNavItemLabel,
   shellOpenMenuAria,
@@ -89,6 +91,7 @@ import {
 import { useLocale } from "@/contexts/LocaleContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminChatNotificationBell } from "@/components/AdminChatNotificationBell";
+import { AdminInboxNotificationBell } from "@/components/AdminInboxNotificationBell";
 import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
 import { useAdminAudienceView } from "@/contexts/AdminAudienceViewContext";
 import { isAuthApprovedAdmin } from "@/lib/super-admin";
@@ -107,6 +110,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
 } from "@/components/ui/sheet";
 
 interface HeaderProps {
@@ -208,6 +212,7 @@ const ADMIN_NAV_SECTION_ORDER = [
   "CRM & leads",
   "Content & email",
   "Marketing & funnel",
+  "Delivery & platform",
   "Analytics",
   "Operations",
   "Settings",
@@ -292,6 +297,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Overview", name: "How-to & guides", href: "/admin/how-to", icon: BookOpen, permission: "dashboard" as const },
     { section: "Overview", name: "Assistant knowledge", href: "/admin/agent-knowledge", icon: Bot, permission: "dashboard" as const },
     { section: "Overview", name: "Reminders", href: "/admin/reminders", icon: Bell, permission: "dashboard" as const },
+    { section: "Overview", name: "Inbound inbox", href: "/admin/inbox", icon: Inbox, permission: "dashboard" as const },
     { section: "Overview", name: "Operator profile", href: "/admin/operator-profile", icon: Target, permission: "dashboard" as const },
     { section: "Bookings & calendar", name: "Meetings & calendar", href: "/admin/scheduler", icon: Calendar, permission: "dashboard" as const },
     { section: "Bookings & calendar", name: "Booking & reminders setup", href: "/admin/scheduling", icon: CalendarClock, permission: "dashboard" as const },
@@ -328,6 +334,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Growth OS", href: "/admin/growth-os", icon: Gauge, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Site offers (pages)", href: "/admin/offers", icon: Package, permission: "funnel" as const },
+    { section: "Marketing & funnel", name: "Scarcity Engine", href: "/admin/scarcity-engine", icon: AlertTriangle, permission: "funnel" as const },
     {
       section: "Delivery & platform",
       name: "Agency OS",
@@ -562,7 +569,12 @@ export default function Header(_props: HeaderProps) {
             )}
             {mounted && user ? (
               <>
-                {showAdminChrome ? <AdminChatNotificationBell /> : null}
+                {showAdminChrome ? (
+                  <>
+                    <AdminInboxNotificationBell />
+                    <AdminChatNotificationBell />
+                  </>
+                ) : null}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -710,6 +722,7 @@ export default function Header(_props: HeaderProps) {
           className="xl:hidden w-[85vw] max-w-sm p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
+          <SheetTitle className="sr-only">{shellMobileNavAria(locale)}</SheetTitle>
           <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
                 <ul className="flex flex-col gap-0.5" aria-label={shellPrimaryLinksAria(locale)}>
                   {primaryNav.map((item) =>

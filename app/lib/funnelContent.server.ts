@@ -6,6 +6,11 @@ import type { FunnelContentData } from "@/lib/funnelContent";
  * Returns null if not found.
  */
 export async function getFunnelContent(slug: string): Promise<FunnelContentData> {
-  const row = await storage.getFunnelContent(slug);
-  return row?.data ?? null;
+  try {
+    const row = await storage.getFunnelContent(slug);
+    return row?.data ?? null;
+  } catch {
+    // Marketing pages should still render with built-in defaults when DB is unavailable at build/runtime.
+    return null;
+  }
 }

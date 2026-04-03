@@ -329,17 +329,24 @@ export function AdminUnifiedLayoutSheetTrigger({
   label,
   mobileLabel,
   className,
+  label,
+  shortLabel,
 }: {
   initialSurface?: UnifiedLayoutSurfaceId;
   label?: string;
   mobileLabel?: string;
   className?: string;
+  /** Desktop + screen reader label (default: Customize pages) */
+  label?: string;
+  /** Narrow screens (default: Pages) */
+  shortLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const layout = useUnifiedAdminLayouts();
   if (!layout.ready) return null;
   const desktopLabel = label ?? "Customize pages";
   const compactLabel = mobileLabel ?? "Pages";
+  const mobileLabel = shortLabel ?? "Pages";
   return (
     <>
       <Button
@@ -352,6 +359,7 @@ export function AdminUnifiedLayoutSheetTrigger({
         <LayoutGrid className="h-4 w-4" aria-hidden />
         <span className="hidden sm:inline">{desktopLabel}</span>
         <span className="sm:hidden">{compactLabel}</span>
+        <span className="sm:hidden">{mobileLabel}</span>
       </Button>
       <AdminUnifiedLayoutSheet open={open} onOpenChange={setOpen} initialSurface={initialSurface} />
     </>
