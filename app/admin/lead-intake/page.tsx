@@ -160,7 +160,8 @@ function AdminLeadIntakePage() {
     if (useAi && !aiConfigured) {
       toast({
         title: "Enhanced import unavailable",
-        description: "Use standard import for now or enable enhanced import in settings.",
+        description:
+          "AI isn’t configured, so enhanced import isn’t available. Use standard import or enable it in settings.",
         variant: "destructive",
       });
       return;

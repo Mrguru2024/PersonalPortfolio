@@ -71,6 +71,7 @@ import {
   PERSONA_JOURNEY_PATH,
   MARKET_SCORE_PATH,
 } from "@/lib/funnelCtas";
+import { UPDATES_PAGE_NAV_LABEL_EN } from "@/lib/siteNavLinks";
 import {
   shellAdminSectionLabel,
   shellHeaderBookCall,
@@ -161,7 +162,7 @@ const MORE_NAV_SECTIONS_BASE: NavSection[] = [
       { name: "About", href: "/about" },
       { name: "Contact", href: "/contact" },
       { name: "FAQ", href: "/faq" },
-      { name: "Market updates", href: "/updates" },
+      { name: UPDATES_PAGE_NAV_LABEL_EN, href: "/updates" },
     ],
   },
   {

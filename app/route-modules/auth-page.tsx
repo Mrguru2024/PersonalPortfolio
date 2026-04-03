@@ -130,7 +130,7 @@ const AuthPage = () => {
         router.push(redirect);
       }
     } catch {
-      devError("[auth-page] login request failed");
+      // Handled by loginMutation.onError (toast + message from /api/login)
     }
   };
 
@@ -142,7 +142,7 @@ const AuthPage = () => {
         requestAdmin: requestAdmin ?? false,
       });
     } catch {
-      devError("[auth-page] registration request failed");
+      // Handled by registerMutation.onError toast
     }
   };
 

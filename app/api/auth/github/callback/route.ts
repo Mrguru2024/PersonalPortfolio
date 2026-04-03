@@ -4,7 +4,6 @@ import { startDefaultClientTrialForUser } from "@server/services/userTrialServic
 import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
-import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 
 const scryptAsync = promisify(scrypt);
@@ -137,16 +136,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Create session
     const sessionId = randomBytes(32).toString("hex");
-    const cookieStore = await cookies();
-    
-    cookieStore.set("sessionId", sessionId, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
+      sameSite: "lax" as const,
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    };
 
     // Store session in database
     try {
@@ -167,8 +164,9 @@ export async function GET(req: NextRequest) {
       /* logged inside recordActivityLog */
     }
 
-    // Redirect to home page
-    return NextResponse.redirect(baseUrl);
+    const redirectRes = NextResponse.redirect(baseUrl);
+    redirectRes.cookies.set("sessionId", sessionId, cookieOptions);
+    return redirectRes;
   } catch (error: unknown) {
     console.error("[GitHub OAuth] callback error");
     if (process.env.NODE_ENV === "development" && error instanceof Error) {

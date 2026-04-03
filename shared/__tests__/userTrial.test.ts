@@ -55,6 +55,15 @@ describe("userTrial", () => {
     expect(s.showBanner).toBe(false);
   });
 
+  it("buildTrialSummaryForClient tolerates invalid trial end date (no throw)", () => {
+    const s = buildTrialSummaryForClient({
+      isAdmin: false,
+      trialEndsAt: "not-a-date",
+    });
+    expect(s.showBanner).toBe(false);
+    expect(s.endsAt).toBe(null);
+  });
+
   it("exports default duration constant", () => {
     expect(DEFAULT_CLIENT_TRIAL_DAYS).toBe(14);
   });

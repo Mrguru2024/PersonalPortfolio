@@ -78,20 +78,39 @@ export function buildTrialSummaryForClient(user: UserLikeForTrial): TrialClientS
   }
 
   const ends = new Date(endsRaw);
+  const endsMs = ends.getTime();
+  if (!Number.isFinite(endsMs)) {
+    return {
+      showBanner: false,
+      active: false,
+      expired: false,
+      startsAt: null,
+      endsAt: null,
+      daysRemaining: null,
+      configuredDays,
+    };
+  }
+
   const starts = startsRaw != null ? new Date(startsRaw) : null;
+  let startsIso: string | null = null;
+  if (starts != null) {
+    const sm = starts.getTime();
+    if (Number.isFinite(sm)) startsIso = starts.toISOString();
+  }
+
   const now = Date.now();
-  const active = ends.getTime() > now;
+  const active = endsMs > now;
   const expired = !active;
 
   const daysRemaining = active
-    ? Math.max(0, Math.ceil((ends.getTime() - now) / 86_400_000))
+    ? Math.max(0, Math.ceil((endsMs - now) / 86_400_000))
     : null;
 
   return {
     showBanner: active,
     active,
     expired,
-    startsAt: starts?.toISOString() ?? null,
+    startsAt: startsIso,
     endsAt: ends.toISOString(),
     daysRemaining,
     configuredDays,

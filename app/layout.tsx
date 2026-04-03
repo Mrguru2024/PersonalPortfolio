@@ -195,7 +195,7 @@ export default async function RootLayout({
               <SiteMain>{children}</SiteMain>
               {/* Fixed bottom nav on mobile/tablet for app-like UX; hidden on lg+ */}
               <MobileBottomNav />
-              <SiteFooter />
+              <SiteFooter initialLocale={initialLocale} />
             </MobileNavProvider>
           </Providers>
         </div>

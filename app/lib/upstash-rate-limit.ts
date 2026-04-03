@@ -43,7 +43,13 @@ export async function tryUpstashRateLimit(
   max: number,
   windowMs: number,
 ): Promise<UpstashRateLimitResult | null> {
-  const limiter = getLimiter(max, windowMs);
+  let limiter: Ratelimit | null;
+  try {
+    limiter = getLimiter(max, windowMs);
+  } catch (e) {
+    console.error("[tryUpstashRateLimit] init failed", e);
+    return null;
+  }
   if (!limiter) return null;
   try {
     const r = await limiter.limit(identifier);

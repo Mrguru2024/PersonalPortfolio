@@ -21,10 +21,11 @@ import {
   STRATEGY_CALL_PATH,
   COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
+import { UPDATES_PAGE_NAV_LABEL_EN } from "@/lib/siteNavLinks";
 
-/** English footer labels by href — single source to avoid SSR/client drift vs nav arrays. */
+/** English footer labels by href — aligned with {@link siteNavLinks} for hydration. */
 const FOOTER_LINK_EN: Partial<Record<string, string>> = {
-  "/updates": "Market updates",
+  "/updates": UPDATES_PAGE_NAV_LABEL_EN,
 };
 
 /** Spanish labels keyed by exact `href` from `siteNavLinks` (paths imported for parity). */

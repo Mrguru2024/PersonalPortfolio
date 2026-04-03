@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AUDIT_PATH, STRATEGY_CALL_PATH } from "@/lib/funnelCtas";
 import { MAIN_LINKS, GROWTH_LINKS, WHO_WE_SERVE_LINKS, LEGAL_LINKS } from "@/lib/siteNavLinks";
@@ -64,14 +64,20 @@ function mapLinks(
   }));
 }
 
-export default function SiteFooter() {
+export default function SiteFooter({ initialLocale }: { initialLocale: AppLocale }) {
   const { locale } = useLocale();
-  const mainLinks = useMemo(() => mapLinks(MAIN_LINKS, locale), [locale]);
-  const growthLinks = useMemo(() => mapLinks(GROWTH_LINKS, locale), [locale]);
-  const whoLinks = useMemo(() => mapLinks(WHO_WE_SERVE_LINKS, locale), [locale]);
-  const legalLinks = useMemo(() => mapLinks(LEGAL_LINKS, locale), [locale]);
-  const primaryCta = footerPrimaryCta(locale);
-  const secondaryCta = footerSecondaryCta(locale);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  /** Match SSR on first paint: server HTML uses `initialLocale` from the cookie; avoid client-only locale until mounted. */
+  const footerLocale = mounted ? locale : initialLocale;
+
+  const mainLinks = useMemo(() => mapLinks(MAIN_LINKS, footerLocale), [footerLocale]);
+  const growthLinks = useMemo(() => mapLinks(GROWTH_LINKS, footerLocale), [footerLocale]);
+  const whoLinks = useMemo(() => mapLinks(WHO_WE_SERVE_LINKS, footerLocale), [footerLocale]);
+  const legalLinks = useMemo(() => mapLinks(LEGAL_LINKS, footerLocale), [footerLocale]);
+  const primaryCta = footerPrimaryCta(footerLocale);
+  const secondaryCta = footerSecondaryCta(footerLocale);
 
   return (
     <footer
@@ -89,7 +95,7 @@ export default function SiteFooter() {
               >
                 Ascendra Technologies
               </Link>
-              <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{footerTagline(locale)}</p>
+              <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{footerTagline(footerLocale)}</p>
             </div>
             <div className="flex flex-shrink-0 flex-col gap-3 xs:flex-row xs:flex-wrap">
               <Button asChild size="sm" className="min-h-[44px] gap-1.5 shadow-sm sm:min-h-9">
@@ -111,16 +117,16 @@ export default function SiteFooter() {
 
           <nav
             className="grid min-w-0 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-8"
-            aria-label={footerNavAriaLabel(locale)}
+            aria-label={footerNavAriaLabel(footerLocale)}
             suppressHydrationWarning
           >
-            <LinkGroup title={footerSectionTitle("main", locale)} links={mainLinks} />
-            <LinkGroup title={footerSectionTitle("growth", locale)} links={growthLinks} />
-            <LinkGroup title={footerSectionTitle("who", locale)} links={whoLinks} />
-            <LinkGroup title={footerSectionTitle("legal", locale)} links={legalLinks} />
+            <LinkGroup title={footerSectionTitle("main", footerLocale)} links={mainLinks} />
+            <LinkGroup title={footerSectionTitle("growth", footerLocale)} links={growthLinks} />
+            <LinkGroup title={footerSectionTitle("who", footerLocale)} links={whoLinks} />
+            <LinkGroup title={footerSectionTitle("legal", footerLocale)} links={legalLinks} />
             <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 lg:col-span-1 xl:col-span-1">
               <h3 className="border-b border-border/70 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {footerSectionTitle("contact", locale)}
+                {footerSectionTitle("contact", footerLocale)}
               </h3>
               <address className="not-italic space-y-3 text-sm text-muted-foreground">
                 <a
@@ -145,7 +151,7 @@ export default function SiteFooter() {
                   href="/contact"
                   className="inline-flex w-fit text-sm font-medium text-primary underline-offset-4 transition-colors hover:underline"
                 >
-                  {footerContactFormLink(locale)}
+                  {footerContactFormLink(footerLocale)}
                 </Link>
               </address>
             </div>
@@ -154,10 +160,10 @@ export default function SiteFooter() {
           <div className="flex flex-col-reverse gap-6 border-t border-border/80 pt-8 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             <div className="min-w-0 space-y-1">
               <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                {footerPartnershipLine(locale)}
+                {footerPartnershipLine(footerLocale)}
               </p>
               <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                {footerCopyrightLine(locale, new Date().getFullYear())}
+                {footerCopyrightLine(footerLocale, new Date().getFullYear())}
               </p>
             </div>
             <div className="flex-shrink-0 sm:pt-0.5">

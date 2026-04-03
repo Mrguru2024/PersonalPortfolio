@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-04-02 23:38 — Auto · bdc480f
+
+- `Admin email (IONOS), auth/session fixes, footer locale hydration, offer engine and valuation updates` (`bdc480f`)
+
+---
+
 ## 2026-04-02 21:04 — Auto · 8d86af4
 
 - `fix(admin): lead intake toast and copy — remove duplicate object keys` (`8d86af4`)

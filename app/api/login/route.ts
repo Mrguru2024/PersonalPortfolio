@@ -3,7 +3,6 @@ import { storage } from "@server/storage";
 import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import { buildTrialSummaryForClient } from "@shared/userTrial";
@@ -15,11 +14,19 @@ export const runtime = "nodejs";
 
 const scryptAsync = promisify(scrypt);
 
-async function comparePasswords(supplied: string, stored: string) {
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  if (typeof stored !== "string" || !stored.includes(".")) return false;
   const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  if (!hashed || !salt) return false;
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    if (hashedBuf.length === 0) return false;
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    if (hashedBuf.length !== suppliedBuf.length) return false;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -177,47 +184,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let cookieStore;
-    try {
-      cookieStore = await cookies();
-    } catch (cookieError: unknown) {
-      console.error("[POST /api/login] cookie store unavailable");
-      return NextResponse.json(
-        {
-          message: "Error setting up session",
-          ...(process.env.NODE_ENV === "development" && cookieError instanceof Error
-            ? { error: cookieError.message }
-            : {}),
-        },
-        { status: 500 },
-      );
-    }
-
-    // Set cookie expiration based on remember me
+    // Cookie options (attached to the JSON response — avoids next/headers cookie mutation issues in some Next runtimes)
     const maxAge = rememberMe ? 30 * 24 * 60 * 60 : undefined;
-
-    try {
-      // Cookie settings optimized for mobile browsers and serverless
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // Required for HTTPS
-        sameSite: "lax" as const, // Works for most mobile browsers
-        path: "/",
-        ...(maxAge && { maxAge }),
-      };
-      cookieStore.set("sessionId", sessionId, cookieOptions);
-    } catch (setCookieError: unknown) {
-      console.error("[POST /api/login] set session cookie failed");
-      return NextResponse.json(
-        {
-          message: "Error setting session cookie",
-          ...(process.env.NODE_ENV === "development" && setCookieError instanceof Error
-            ? { error: setCookieError.message }
-            : {}),
-        },
-        { status: 500 },
-      );
-    }
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      path: "/",
+      ...(maxAge !== undefined && { maxAge }),
+    };
 
     // Step 5: Store session in database (non-fatal but important)
     try {
@@ -244,11 +219,14 @@ export async function POST(req: NextRequest) {
     try {
       const { password: _, ...userWithoutPassword } = user;
       const isSuperUser = userMatchesSuperAdminIdentity(userWithoutPassword);
-      return NextResponse.json({
+      const body = {
         ...userWithoutPassword,
         isSuperUser,
         trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
-      });
+      };
+      const res = NextResponse.json(body);
+      res.cookies.set("sessionId", sessionId, cookieOptions);
+      return res;
     } catch (responseError: unknown) {
       console.error("[POST /api/login] response serialization error");
       return NextResponse.json(

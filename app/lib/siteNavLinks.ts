@@ -19,6 +19,9 @@ import {
   COMMUNITY_HUB_PUBLIC_PATH,
 } from "@/lib/funnelCtas";
 
+/** Public /updates link — one string for nav + footer so EN labels can’t drift (hydration). */
+export const UPDATES_PAGE_NAV_LABEL_EN = "Market updates";
+
 export const MAIN_LINKS = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
@@ -29,7 +32,7 @@ export const MAIN_LINKS = [
   { label: "Community", href: COMMUNITY_HUB_PUBLIC_PATH },
   { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
-  { label: "Market updates", href: "/updates" },
+  { label: UPDATES_PAGE_NAV_LABEL_EN, href: "/updates" },
   { label: "Your Growth Score", href: DIAGNOSTICS_HUB_PATH },
   { label: "Contact", href: "/contact" },
 ] as const;

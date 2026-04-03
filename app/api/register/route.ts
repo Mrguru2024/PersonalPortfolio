@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { storage } from "@server/storage";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
-import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { userMatchesSuperAdminIdentity } from "@shared/super-admin-identities";
 import { recordActivityLog } from "@server/activityLog";
@@ -63,19 +62,15 @@ export async function POST(req: NextRequest) {
       role: wantsAdmin ? "admin" : "user",
     });
 
-    // Create session
     const sessionId = randomBytes(32).toString("hex");
-    const cookieStore = await cookies();
-    // Cookie settings optimized for mobile browsers and serverless
-    cookieStore.set("sessionId", sessionId, {
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Required for HTTPS
-      sameSite: "lax" as const, // Works for most mobile browsers
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
       path: "/",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    });
+      maxAge: 30 * 24 * 60 * 60,
+    };
 
-    // Store session and wait for it to be saved
     await setSession(sessionId, user.id);
 
     try {
@@ -90,17 +85,16 @@ export async function POST(req: NextRequest) {
       /* logged inside recordActivityLog */
     }
 
-    // Don't send password
     const { password: _, ...userWithoutPassword } = user;
     const isSuperUser = userMatchesSuperAdminIdentity(userWithoutPassword);
-    return NextResponse.json(
-      {
-        ...userWithoutPassword,
-        isSuperUser,
-        trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
-      },
-      { status: 201 },
-    );
+    const body = {
+      ...userWithoutPassword,
+      isSuperUser,
+      trial: buildTrialSummaryForClient({ ...userWithoutPassword, isSuperUser }),
+    };
+    const res = NextResponse.json(body, { status: 201 });
+    res.cookies.set("sessionId", sessionId, cookieOptions);
+    return res;
   } catch (error: any) {
     console.error("Registration error:", error);
     return NextResponse.json(

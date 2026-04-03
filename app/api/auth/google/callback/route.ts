@@ -4,7 +4,6 @@ import { startDefaultClientTrialForUser } from "@server/services/userTrialServic
 import { recordActivityLog } from "@server/activityLog";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
-import { cookies } from "next/headers";
 import { setSession, getIpAddress } from "@/lib/auth-helpers";
 import { ensureAbsoluteUrl } from "@/lib/siteUrl";
 
@@ -157,29 +156,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect("/auth?error=google_auth_failed&message=Error creating session");
     }
     
-    let cookieStore;
-    try {
-      cookieStore = await cookies();
-    } catch (cookieError: any) {
-      console.error("Google OAuth - Error getting cookie store:", cookieError);
-      return NextResponse.redirect("/auth?error=google_auth_failed&message=Error setting up session");
-    }
-    
-    try {
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax" as const,
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: "/",
-      };
-      cookieStore.set("sessionId", sessionId, cookieOptions);
-      console.log("Google OAuth - Session cookie set with options:", cookieOptions);
-      console.log("Google OAuth - Cookie value length:", sessionId.length);
-    } catch (setCookieError: any) {
-      console.error("Google OAuth - Error setting cookie:", setCookieError);
-      return NextResponse.redirect(`${baseUrl}/auth?error=google_auth_failed&message=Error setting session cookie`);
-    }
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: 30 * 24 * 60 * 60,
+      path: "/",
+    };
 
     // Store session in database
     try {
@@ -227,9 +210,10 @@ export async function GET(req: NextRequest) {
       /* logged inside recordActivityLog */
     }
 
-    // Redirect to home page
     console.log("Google OAuth - Authentication successful, redirecting to home");
-    return NextResponse.redirect(baseUrl);
+    const redirectRes = NextResponse.redirect(baseUrl);
+    redirectRes.cookies.set("sessionId", sessionId, cookieOptions);
+    return redirectRes;
   } catch (error: any) {
     console.error("Google OAuth callback error:", error);
     console.error("Error stack:", error?.stack);
