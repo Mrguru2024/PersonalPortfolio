@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { NextRequest } from "next/server";
+import { analyzeValueEquation } from "@shared/offerValuation";
 
 const mockGetSessionUser = jest.fn();
 const mockResolveRole = jest.fn();
@@ -115,11 +116,18 @@ describe("POST /api/offer-valuation", () => {
             : scoreBand === "mid"
               ? "optimization"
               : "scaling";
+        const inputsUsed = {
+          dreamOutcome: scores.dreamOutcome,
+          perceivedLikelihood: scores.perceivedLikelihood,
+          timeDelay: scores.timeDelay,
+          effortAndSacrifice: scores.effortAndSacrifice,
+        };
         return {
-          inputsUsed: scores,
+          inputsUsed,
           rawScore: raw,
           finalScore,
           scoreBand,
+          valueEquation: analyzeValueEquation(inputsUsed),
           aiUsed: aiEnabled,
           insights: {
             scoreBreakdown: {

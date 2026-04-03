@@ -317,7 +317,9 @@ export function startAscendraBehaviorTracking(opts: AscendraBehaviorTrackerOptio
         maskAllInputs: true,
         maskTextSelector:
           "[data-private], [data-behavior-mask], [type=\"password\"], [autocomplete=\"cc-number\"], [autocomplete=\"cc-csc\"]",
-        blockSelector: "[data-behavior-block]",
+        // Use blockClass only: rrweb <=2.0.0-alpha.4 calls node.matches(blockSelector) for non-elements (bug).
+        // Block regions: add class `ascendra-behavior-block` (optionally with data-behavior-block for clarity).
+        blockClass: "ascendra-behavior-block",
         ignoreClass: "ascendra-behavior-ignore",
         sampling: {
           mousemove: false,

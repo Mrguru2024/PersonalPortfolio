@@ -1,10 +1,12 @@
 import OpenAI from "@server/openai/nodeClient";
 import {
+  analyzeValueEquation,
   calculateOfferValueScore,
   clampOfferInput,
   getOfferScoreBand,
   type OfferScoreBand,
   type OfferValueInputs,
+  type ValueEquationAnalysis,
 } from "@shared/offerValuation";
 
 let openai: OpenAI | null = null;
@@ -41,6 +43,8 @@ export interface OfferValuationResult {
   rawScore: number;
   finalScore: number;
   scoreBand: OfferScoreBand;
+  /** Unified 0–100 scale + Weak/Average/Strong/Dominant (Phase 1 Offer Engine alignment). */
+  valueEquation: ValueEquationAnalysis;
   insights: OfferValuationInsights;
   aiUsed: boolean;
 }
@@ -395,6 +399,7 @@ export async function runOfferValuation(input: {
 }): Promise<OfferValuationResult> {
   const inputsUsed = clampInputSet(input.scores);
   const value = calculateOfferValueScore(inputsUsed);
+  const valueEquation = analyzeValueEquation(inputsUsed);
   const scoreBand = getOfferScoreBand(value.normalizedScore);
   const weakest = weakestVariable(inputsUsed);
   const diagnosis = baseDiagnosis(inputsUsed);
@@ -442,6 +447,7 @@ export async function runOfferValuation(input: {
       rawScore: value.rawScore,
       finalScore: value.normalizedScore,
       scoreBand,
+      valueEquation,
       insights: baseInsights,
       aiUsed: false,
     };
@@ -461,6 +467,7 @@ export async function runOfferValuation(input: {
     rawScore: value.rawScore,
     finalScore: value.normalizedScore,
     scoreBand,
+    valueEquation,
     insights: enhanced ?? baseInsights,
     aiUsed: enhanced != null,
   };

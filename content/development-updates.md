@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-04-02 21:04 — Auto · 8d86af4
+
+- `fix(admin): lead intake toast and copy — remove duplicate object keys` (`8d86af4`)
+
+---
+
 ## 2026-04-02 06:00 — Auto · c4fd634
 
 - `docs: append dev log for latest commit` (`c4fd634`)

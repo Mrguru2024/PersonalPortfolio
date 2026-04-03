@@ -4,6 +4,7 @@ import { funnelPathWriteSchema } from "@shared/offerEngineTypes";
 import { listFunnelPaths, upsertFunnelPath } from "@server/services/offerEngineService";
 import { getOfferEngineFunnelReadinessSignals } from "@server/services/offerEngineIntelligence";
 import { evaluateScarcityForContext } from "@modules/scarcity-engine";
+import { computeFunnelPathReadiness } from "@server/services/offerEngineIntegration";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,9 +28,17 @@ export async function GET(req: NextRequest) {
     const rows = await listFunnelPaths(personaId);
     const withInsights = searchParams.get("withInsights") === "1";
     if (!withInsights) return NextResponse.json({ funnelPaths: rows.map(serialize) });
-    const alerts = await getOfferEngineFunnelReadinessSignals();
+    const [enriched, alerts] = await Promise.all([
+      Promise.all(
+        rows.map(async (row) => ({
+          funnelPath: serialize(row),
+          readiness: await computeFunnelPathReadiness(row),
+        })),
+      ),
+      getOfferEngineFunnelReadinessSignals(),
+    ]);
     return NextResponse.json({
-      funnelPaths: rows.map(serialize),
+      funnelPaths: enriched,
       readiness: alerts,
     });
   } catch (e) {
@@ -51,11 +60,14 @@ export async function POST(req: NextRequest) {
     }
     const row = await upsertFunnelPath(parsed.data);
     if (!row) return NextResponse.json({ error: "Invalid persona or template refs" }, { status: 400 });
-    const scarcity = await evaluateScarcityForContext({
-      personaId: row.personaId,
-      funnelSlug: row.slug,
-    }).catch(() => null);
-    return NextResponse.json({ funnelPath: serialize(row), scarcity }, { status: 201 });
+    const [scarcity, readiness] = await Promise.all([
+      evaluateScarcityForContext({
+        personaId: row.personaId,
+        funnelSlug: row.slug,
+      }).catch(() => null),
+      computeFunnelPathReadiness(row),
+    ]);
+    return NextResponse.json({ funnelPath: serialize(row), scarcity, readiness }, { status: 201 });
   } catch (e) {
     console.error("[POST offer-engine/funnel-paths]", e);
     return NextResponse.json({ error: "Failed" }, { status: 500 });

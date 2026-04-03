@@ -69,7 +69,7 @@ const nextConfig = {
   
   // Mark server-side packages that use AMD modules as external
   // This prevents bundlers from trying to bundle them (Turbopack doesn't support AMD)
-  serverExternalPackages: ['@getbrevo/brevo', 'docusign-esign'],
+  serverExternalPackages: ['@getbrevo/brevo', 'docusign-esign', 'imap', 'mailparser'],
 
   /** Recharts + victory-vendor ESM re-exports confuse Webpack’s analyzer; transpiling stabilizes client bundles. */
   transpilePackages: ['recharts'],

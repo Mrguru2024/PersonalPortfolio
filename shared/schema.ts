@@ -29,6 +29,13 @@ export const users = pgTable("users", {
    * Otherwise eligibility is derived from linked client data.
    */
   clientPortalAccess: boolean("client_portal_access").default(false).notNull(),
+  /**
+   * Multi-admin IONOS outbound: when true and senderEmail is on the allowed domain,
+   * CRM “Send as” may use senderName + senderEmail for the From header (SMTP still authenticates as IONOS_MAILBOX).
+   */
+  isEmailAuthorized: boolean("is_email_authorized").default(false).notNull(),
+  senderName: text("sender_name"),
+  senderEmail: text("sender_email"),
   created_at: timestamp("created_at").defaultNow(),
 });
 

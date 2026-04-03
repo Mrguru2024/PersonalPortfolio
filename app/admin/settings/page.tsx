@@ -46,6 +46,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT } from "@shared/readAloudGeminiVoices";
 import { resolveReadAloudTts, type AdminTtsConfigStored, type ResolvedReadAloudTts } from "@shared/readAloudTtsConfig";
 import { AdminPushSubscribeButton } from "@/components/admin/AdminPushSubscribeButton";
+import { AdminIonosEmailSettingsCard } from "@/components/admin/AdminIonosEmailSettingsCard";
 
 interface AscendraOsPlatformPayload {
   publicAccessEnabled: boolean;
@@ -799,6 +800,8 @@ export default function AdminSettingsPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <AdminIonosEmailSettingsCard />
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

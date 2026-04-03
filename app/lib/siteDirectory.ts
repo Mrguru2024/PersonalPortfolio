@@ -322,6 +322,16 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     keywords: k("inbox", "gmail", "microsoft", "graph", "email hub"),
     relatedPaths: ["/admin/email-hub"],
   },
+  {
+    path: "/admin/system-email",
+    title: "System email (IONOS)",
+    category: "Admin · Communications",
+    audience: "admin",
+    description:
+      "IONOS SMTP/IMAP mailbox: read INBOX, sandboxed HTML preview, CRM match by sender. Complements Brevo/Email Hub; env IONOS_EMAIL, IONOS_PASSWORD.",
+    keywords: k("ionos", "smtp", "imap", "inbox", "system email", "admin mail"),
+    relatedPaths: ["/admin/email-hub", "/admin/inbox", "/admin/settings"],
+  },
   { path: "/admin/email-hub/compose", title: "Email Hub · Compose", category: "Admin · Communications", audience: "admin", description: "Compose and send one-off or scheduled outbound emails.", keywords: k("email", "compose", "send"), relatedPaths: ["/admin/email-hub", "/admin/email-hub/drafts"] },
   { path: "/admin/email-hub/contacts", title: "Email Hub · Contacts", category: "Admin · Communications", audience: "admin", description: "CRM-backed contact picker for outbound workflows.", keywords: k("email", "contacts", "crm") },
   { path: "/admin/email-hub/drafts", title: "Email Hub · Drafts", category: "Admin · Communications", audience: "admin", description: "Saved outbound drafts and queued edits.", keywords: k("email", "drafts") },

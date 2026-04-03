@@ -1,6 +1,9 @@
 /**
  * Ensure a CRM lead exists from a form submission; set attribution, run scoring and segmentation.
  * Call after contact/create or qualification form submit.
+ *
+ * For Offer Engine reporting, include keys from `shared/offerEngineCrmAttribution.ts` inside
+ * `customFields` (e.g. sourceSiteOfferSlug, sourceLeadMagnetTemplateId, trafficTemperature).
  */
 
 import { storage } from "@server/storage";

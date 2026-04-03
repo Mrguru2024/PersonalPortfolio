@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { intentLevelLabel } from "@/lib/crm-intent";
 import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
@@ -98,6 +99,7 @@ interface CrmContact {
   firstResponseAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  ownerUserId?: number | null;
   afnCommunity?: AfnCommunitySnapshot | null;
 }
 
@@ -221,9 +223,13 @@ export default function CrmLeadProfilePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
   const id = Number(params?.id);
   const [noteText, setNoteText] = useState("");
   const [smsBody, setSmsBody] = useState("");
+  const [leadEmailSubject, setLeadEmailSubject] = useState("");
+  const [leadEmailBody, setLeadEmailBody] = useState("");
+  const [leadSendAs, setLeadSendAs] = useState<string>("primary");
 
   const { data: contact, isLoading: contactLoading } = useQuery<CrmContact>({
     queryKey: ["/api/admin/crm/contacts", id],
@@ -413,6 +419,48 @@ export default function CrmLeadProfilePage() {
       toast({ title: "Booking link sent", description: "Check the timeline for the tracked URL." });
     },
     onError: (e: Error) => toast({ title: "Booking link failed", description: e.message, variant: "destructive" }),
+  });
+
+  const { data: emailSenders } = useQuery({
+    queryKey: ["/api/admin/email/authorized-senders"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/email/authorized-senders", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load senders");
+      return res.json() as Promise<{
+        primary: { key: string; label: string; email: string };
+        options: Array<{ key: string; label: string; email: string; userId: number }>;
+        defaultKey: string;
+      }>;
+    },
+    enabled: !!id && !!authUser,
+  });
+
+  const sendAsInitRef = useRef(false);
+  useEffect(() => {
+    if (emailSenders?.defaultKey && !sendAsInitRef.current) {
+      setLeadSendAs(emailSenders.defaultKey);
+      sendAsInitRef.current = true;
+    }
+  }, [emailSenders?.defaultKey]);
+
+  const sendLeadEmailMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/crm/contacts/${id}/send-email`, {
+        subject: leadEmailSubject.trim(),
+        body: leadEmailBody,
+        sendAs: leadSendAs,
+      });
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(d.error ?? "Failed to send email");
+      return d;
+    },
+    onSuccess: () => {
+      setLeadEmailSubject("");
+      setLeadEmailBody("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts", id, "timeline"] });
+      toast({ title: "Email sent", description: "Reply-To follows lead ownership when an owner is assigned." });
+    },
+    onError: (e: Error) => toast({ title: "Email failed", description: e.message, variant: "destructive" }),
   });
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -1058,6 +1106,103 @@ export default function CrmLeadProfilePage() {
             queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/contacts"] });
           }}
         />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Lead email (IONOS)
+            </CardTitle>
+            <CardDescription>
+              Sends via system SMTP with a <strong>Send as</strong> identity and <strong>Reply-To</strong> routed to the
+              lead owner when <code className="text-xs">ownerUserId</code> is set. Only @ascendra.tech senders can be
+              authorized — configure under Super User → Users.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {contact.doNotContact ? (
+              <p className="text-xs text-muted-foreground">Do not contact is enabled — email disabled.</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Send as</Label>
+                  <Select value={leadSendAs} onValueChange={setLeadSendAs}>
+                    <SelectTrigger className="max-w-lg">
+                      <SelectValue placeholder="Select sender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {emailSenders ? (
+                        <>
+                          <SelectItem value="primary">{emailSenders.primary.label}</SelectItem>
+                          {emailSenders.options.map((o) => (
+                            <SelectItem key={o.key} value={o.key}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </>
+                      ) : (
+                        <SelectItem value="primary">Primary (loading…)</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-email-subject">Subject</Label>
+                  <Input
+                    id="lead-email-subject"
+                    value={leadEmailSubject}
+                    onChange={(e) => setLeadEmailSubject(e.target.value)}
+                    placeholder="Subject line"
+                    disabled={sendLeadEmailMutation.isPending}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-email-body">Message</Label>
+                  <Textarea
+                    id="lead-email-body"
+                    value={leadEmailBody}
+                    onChange={(e) => setLeadEmailBody(e.target.value)}
+                    placeholder="Plain text — formatted as a safe HTML email on send."
+                    className="min-h-[120px] text-sm"
+                    disabled={sendLeadEmailMutation.isPending}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => sendLeadEmailMutation.mutate()}
+                    disabled={
+                      !leadEmailSubject.trim() ||
+                      !contact.email?.trim() ||
+                      sendLeadEmailMutation.isPending
+                    }
+                  >
+                    {sendLeadEmailMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-1" />
+                        Send email
+                      </>
+                    )}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" asChild>
+                    <Link href="/admin/system-email">System inbox</Link>
+                  </Button>
+                </div>
+                {!contact.email?.trim() && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Add an email on this contact to send.</p>
+                )}
+                {contact.ownerUserId == null && (
+                  <p className="text-xs text-muted-foreground">
+                    No owner assigned — replies route to the org default mailbox (see ADMIN_EMAIL / env).
+                  </p>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="pb-2">

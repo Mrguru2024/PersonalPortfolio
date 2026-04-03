@@ -10,11 +10,14 @@ export async function GET() {
   const adminEmail = process.env.ADMIN_EMAIL;
   const fromEmail =
     process.env.FROM_EMAIL || process.env.BREVO_FROM_EMAIL;
+  const ionosMailbox =
+    !!process.env.IONOS_EMAIL?.trim() && !!process.env.IONOS_PASSWORD?.trim();
 
   return NextResponse.json({
     configured: !!brevoKey,
     admin: adminEmail ? "set" : "not set",
     fromEmail: fromEmail ? "set" : "not set",
     ready: !!brevoKey && !!adminEmail && !!fromEmail,
+    ionosMailboxConfigured: ionosMailbox,
   });
 }

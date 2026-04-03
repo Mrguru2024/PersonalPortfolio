@@ -5,9 +5,15 @@ import { WebPageJsonLd } from "@/components/SEO/WebPageJsonLd";
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Market updates | Ascendra Technologies",
   description:
-    "Fact-checked marketing industry updates, persona-interest signals, and new project intake updates.",
+    "Live marketing, digital, and advertising headlines from curated publishers, plus verified Ascendra public updates—no internal posts.",
   path: "/updates",
-  keywords: ["market updates", "marketing updates", "new project intake", "Ascendra"],
+  keywords: [
+    "market updates",
+    "marketing news",
+    "digital marketing",
+    "advertising",
+    "Ascendra",
+  ],
 });
 
 export default function UpdatesLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +21,7 @@ export default function UpdatesLayout({ children }: { children: React.ReactNode 
     <>
       <WebPageJsonLd
         title="Market updates | Ascendra Technologies"
-        description="Fact-checked marketing industry updates, persona-interest signals, and new project intake updates."
+        description="Live curated marketing and advertising feeds plus verified Ascendra public updates."
         path="/updates"
         schemaType="WebPage"
       />

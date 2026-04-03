@@ -20,6 +20,13 @@ interface PathRow {
   stepsJson: { key: string; label: string; detail?: string }[];
   primaryOfferTemplateId: number | null;
   primaryLeadMagnetTemplateId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface FunnelPathListItem {
+  funnelPath: PathRow;
+  readiness: { level: "ok" | "warning"; messages: string[] };
 }
 
 interface ReadinessPayload {
@@ -54,7 +61,7 @@ export default function OfferEngineFunnelPathsPage() {
     else if (!authLoading && user && (!user.isAdmin || !user.adminApproved)) router.push("/");
   }, [user, authLoading, router]);
 
-  const { data, isLoading } = useQuery<{ funnelPaths: PathRow[]; readiness?: ReadinessPayload }>({
+  const { data, isLoading } = useQuery<{ funnelPaths: FunnelPathListItem[]; readiness?: ReadinessPayload }>({
     queryKey: ["/api/admin/offer-engine/funnel-paths", "withInsights=1"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/offer-engine/funnel-paths?withInsights=1");
@@ -155,12 +162,21 @@ export default function OfferEngineFunnelPathsPage() {
         <Loader2 className="h-8 w-8 animate-spin" />
       ) : (
         <div className="space-y-4">
-          {(data?.funnelPaths ?? []).map((fp) => (
+          {(data?.funnelPaths ?? []).map(({ funnelPath: fp, readiness }) => (
             <Card key={fp.id}>
               <CardHeader className="py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="text-base">{fp.label}</CardTitle>
                   <Badge variant="outline">{fp.personaId}</Badge>
+                  {readiness.level === "warning" ? (
+                    <Badge variant="destructive" className="text-xs">
+                      Needs attention
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">
+                      OK
+                    </Badge>
+                  )}
                   {fp.primaryOfferTemplateId ? (
                     <Link
                       href={`/admin/offer-engine/offers/${fp.primaryOfferTemplateId}`}
@@ -181,6 +197,13 @@ export default function OfferEngineFunnelPathsPage() {
                 <p className="text-xs text-muted-foreground font-mono">{fp.slug}</p>
               </CardHeader>
               <CardContent className="text-sm space-y-2">
+                {readiness.messages.length > 0 ? (
+                  <ul className="list-disc pl-5 text-amber-800 dark:text-amber-200/90 text-xs space-y-1 mb-3">
+                    {readiness.messages.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                ) : null}
                 {fp.stepsJson.map((s, i) => (
                   <div key={s.key} className="flex gap-2">
                     <span className="text-muted-foreground w-6 shrink-0">{i + 1}.</span>

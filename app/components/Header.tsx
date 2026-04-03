@@ -322,6 +322,7 @@ export default function Header(_props: HeaderProps) {
     { section: "Content & email", name: "Blog", href: "/admin/blog", icon: FileText, permission: "blog" as const },
     { section: "Content & email", name: "Content studio", href: "/admin/content-studio", icon: PenLine, permission: "blog" as const },
     { section: "Content & email", name: "Email hub", href: "/admin/email-hub", icon: Mails, permission: "newsletters" as const },
+    { section: "Content & email", name: "System email (IONOS)", href: "/admin/system-email", icon: Mail, permission: "newsletters" as const },
     { section: "Content & email", name: "Newsletters", href: "/admin/newsletters", icon: Mail, permission: "newsletters" as const },
     { section: "Content & email", name: "Newsletter Subscribers", href: "/admin/newsletters/subscribers", icon: Users, permission: "newsletters" as const },
     { section: "Content & email", name: "Communications", href: "/admin/communications", icon: Send, permission: "newsletters" as const },

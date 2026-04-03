@@ -59,6 +59,9 @@ interface UserRow {
   role: string | null;
   permissions: Record<string, boolean> | null;
   created_at: string | null;
+  isEmailAuthorized?: boolean;
+  senderName?: string | null;
+  senderEmail?: string | null;
 }
 
 interface Stats {
@@ -139,6 +142,12 @@ export default function AdminUsersPage() {
 
   const [privilegesUser, setPrivilegesUser] = useState<UserRow | null>(null);
   const [privilegesDraft, setPrivilegesDraft] = useState<Record<string, boolean>>({});
+  const [emailIdentityUser, setEmailIdentityUser] = useState<UserRow | null>(null);
+  const [emailIdentityDraft, setEmailIdentityDraft] = useState({
+    isEmailAuthorized: false,
+    senderName: "",
+    senderEmail: "",
+  });
 
   const approveMutation = useMutation({
     mutationFn: async (userId: number) => {
@@ -191,6 +200,43 @@ export default function AdminUsersPage() {
     setPrivilegesUser(u);
     setPrivilegesDraft({ ...(u.permissions ?? {}) });
   };
+
+  const openEmailIdentity = (u: UserRow) => {
+    setEmailIdentityUser(u);
+    setEmailIdentityDraft({
+      isEmailAuthorized: u.isEmailAuthorized === true,
+      senderName: u.senderName ?? "",
+      senderEmail: u.senderEmail ?? "",
+    });
+  };
+
+  const emailIdentityMutation = useMutation({
+    mutationFn: async (body: {
+      userId: number;
+      isEmailAuthorized: boolean;
+      senderName: string | null;
+      senderEmail: string | null;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${body.userId}/email-identity`, {
+        isEmailAuthorized: body.isEmailAuthorized,
+        senderName: body.senderName,
+        senderEmail: body.senderEmail,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Failed to save");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email/authorized-senders"] });
+      toast({ title: "Email identity saved" });
+      setEmailIdentityUser(null);
+    },
+    onError: (e: Error) =>
+      toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+  });
 
   const savePrivileges = () => {
     if (!privilegesUser) return;
@@ -457,6 +503,23 @@ export default function AdminUsersPage() {
                               </Button>
                             </>
                           )}
+                          {(u.role === "developer" || (u.isAdmin && u.adminApproved)) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 h-7 text-xs"
+                              onClick={() => openEmailIdentity(u)}
+                            >
+                              <Mail className="h-3 w-3" />
+                              Email send as…
+                            </Button>
+                          )}
+                          {u.isEmailAuthorized && u.senderEmail && (
+                            <Badge variant="outline" className="text-[10px]">
+                              Send as: {u.senderEmail}
+                            </Badge>
+                          )}
                         </div>
                       </li>
                     ))}
@@ -536,6 +599,91 @@ export default function AdminUsersPage() {
                 </p>
               </CardContent>
             </Card>
+
+            <Dialog open={!!emailIdentityUser} onOpenChange={(open) => !open && setEmailIdentityUser(null)}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>IONOS “Send as” identity</DialogTitle>
+                  <DialogDescription>
+                    {emailIdentityUser
+                      ? `Authorized senders must use an @ascendra.tech address (or your ASCENDRA_OUTBOUND_EMAIL_DOMAIN). SMTP still authenticates with the shared IONOS mailbox.`
+                      : ""}
+                  </DialogDescription>
+                </DialogHeader>
+                {emailIdentityUser ? (
+                  <div className="space-y-3 py-2">
+                    <p className="text-sm font-medium">{emailIdentityUser.username}</p>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="email-authz"
+                        checked={emailIdentityDraft.isEmailAuthorized}
+                        onCheckedChange={(c) =>
+                          setEmailIdentityDraft((d) => ({
+                            ...d,
+                            isEmailAuthorized: c === true,
+                          }))
+                        }
+                      />
+                      <label htmlFor="email-authz" className="text-sm cursor-pointer">
+                        Authorized to send from custom From address
+                      </label>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground" htmlFor="sender-display">
+                        Display name (From)
+                      </label>
+                      <Input
+                        id="sender-display"
+                        value={emailIdentityDraft.senderName}
+                        onChange={(e) =>
+                          setEmailIdentityDraft((d) => ({ ...d, senderName: e.target.value }))
+                        }
+                        disabled={!emailIdentityDraft.isEmailAuthorized}
+                        placeholder="e.g. Anthony"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground" htmlFor="sender-email">
+                        Sender email (@ascendra.tech)
+                      </label>
+                      <Input
+                        id="sender-email"
+                        type="email"
+                        value={emailIdentityDraft.senderEmail}
+                        onChange={(e) =>
+                          setEmailIdentityDraft((d) => ({ ...d, senderEmail: e.target.value }))
+                        }
+                        disabled={!emailIdentityDraft.isEmailAuthorized}
+                        placeholder="anthony@ascendra.tech"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEmailIdentityUser(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    disabled={!emailIdentityUser || emailIdentityMutation.isPending}
+                    onClick={() => {
+                      if (!emailIdentityUser) return;
+                      emailIdentityMutation.mutate({
+                        userId: emailIdentityUser.id,
+                        isEmailAuthorized: emailIdentityDraft.isEmailAuthorized,
+                        senderName: emailIdentityDraft.senderName.trim() || null,
+                        senderEmail: emailIdentityDraft.senderEmail.trim() || null,
+                      });
+                    }}
+                  >
+                    {emailIdentityMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <Dialog
               open={!!privilegesUser}

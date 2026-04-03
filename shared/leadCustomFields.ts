@@ -44,6 +44,19 @@ export interface LeadCustomFields {
   latestOfferValuationName?: string;
   latestOfferValuationScore?: number;
   latestOfferValuationAt?: string;
+  /**
+   * Offer Engine / funnel attribution (see `shared/offerEngineCrmAttribution.ts` for key list).
+   * Use `pickOfferEngineAttributionFields` when merging partial payloads.
+   */
+  sourceSiteOfferSlug?: string;
+  sourceOfferEngineTemplateId?: number;
+  sourceOfferEngineTemplateSlug?: string;
+  sourceLeadMagnetTemplateId?: number;
+  sourceLeadMagnetTemplateSlug?: string;
+  sourceAscendraIqLeadMagnetId?: number;
+  sourceFunnelPathSlug?: string;
+  /** cold | warm | hot — campaign or landing context */
+  trafficTemperature?: string;
   /** Free growth tools hub — optional note on which tools they want */
   freeToolsInterest?: string;
   /** ISO timestamp when hub qualification was submitted */

@@ -255,6 +255,7 @@ export async function POST(req: NextRequest) {
         preview: {
           finalScore: valuation.finalScore,
           scoreBand: valuation.scoreBand,
+          valueEquation: valuation.valueEquation,
           message:
             "Submit your contact details to unlock the full diagnosis, upgraded offer, and strategic fixes.",
         },
@@ -405,6 +406,7 @@ Business type: ${b.leadCapture.businessType ?? "N/A"}`,
       finalScore: valuation.finalScore,
       rawScore: valuation.rawScore,
       scoreBand: valuation.scoreBand,
+      valueEquation: valuation.valueEquation,
       aiUsed: valuation.aiUsed,
       insights: valuation.insights,
       leadId,

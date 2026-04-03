@@ -1,8 +1,13 @@
 /**
  * @jest-environment node
  */
-describe('GET /api/changelog', () => {
-  it("returns 200 and only fact-checked allowed-category entries sorted newest first", async () => {
+
+jest.mock("@/lib/publicUpdates/curatedFeeds", () => ({
+  fetchCuratedFeedItems: jest.fn().mockResolvedValue([]),
+}));
+
+describe("GET /api/changelog", () => {
+  it("returns 200 and only fact-checked allowed-category Ascendra rows plus empty feeds (mocked), newest first", async () => {
     jest.resetModules();
     jest.doMock("fs", () => ({
       existsSync: jest.fn(() => true),
@@ -87,24 +92,24 @@ describe('GET /api/changelog', () => {
     const res = await GET();
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.entries).toEqual([
-      {
-        date: "2026-03-31T10:00:00.000Z",
-        title: "Relevant",
-        description: "Allowed and fact checked",
-        category: "new_project_intake",
-        visibility: "public",
-        factChecked: true,
-      },
-      {
-        date: "2026-03-28T10:00:00.000Z",
-        title: "Older relevant",
-        description: "Allowed and fact checked",
-        category: "persona_interest",
-        visibility: "public",
-        factChecked: true,
-      },
-    ]);
+    expect(Array.isArray(data.entries)).toBe(true);
+    expect(data.entries).toHaveLength(2);
+    expect(data.refreshedAt).toBeDefined();
+    expect(data.entries[0]).toMatchObject({
+      title: "Relevant",
+      description: "Allowed and fact checked",
+      topic: "ascendra_public",
+      factChecked: true,
+      sourceName: "Ascendra",
+      kind: "ascendra_editorial",
+      visibility: "public",
+    });
+    expect(data.entries[0].id).toMatch(/^ascendra:/);
+    expect(data.entries[1]).toMatchObject({
+      title: "Older relevant",
+      topic: "ascendra_public",
+      category: "persona_interest",
+    });
   });
 
   it("returns entries array even when source read throws", async () => {

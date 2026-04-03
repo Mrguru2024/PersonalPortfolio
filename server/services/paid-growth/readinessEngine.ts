@@ -7,8 +7,12 @@ import {
   type PpcPublishGates,
   isConversionTrackingConfiguredForPublish,
 } from "@shared/ppcBusinessRules";
-import { getOfferTemplateBySlug } from "@server/services/offerEngineService";
 import { evaluateScarcityForContext } from "@modules/scarcity-engine";
+import {
+  offerClarityScoreForPpc,
+  offerEngineSignalsForPpcCampaign,
+  resolveSiteOfferWithEngineTemplate,
+} from "@server/services/offerEngineIntegration";
 
 export type PpcReadinessResult = {
   overallScore: number;
@@ -34,11 +38,6 @@ const CATEGORIES = [
   "creative_readiness",
   "conversion_goal_readiness",
 ] as const;
-
-function scoreOffer(offerSlug: string | null | undefined, storage: IStorage): Promise<number> {
-  if (!offerSlug?.trim()) return Promise.resolve(35);
-  return storage.getSiteOffer(offerSlug.trim()).then((o) => (o ? 90 : 40));
-}
 
 function hasTrackingEnvScore(): number {
   const gtm = process.env.NEXT_PUBLIC_GTM_ID?.trim();
@@ -133,15 +132,26 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
   const scores: Record<string, number> = {} as Record<string, number>;
   const blockers: string[] = [];
 
-  scores.offer_clarity = await scoreOffer(campaign.offerSlug, storage);
-  if (scores.offer_clarity < 60) blockers.push("Link a valid site offer slug (site_offers).");
-  const offerEngineTemplate = campaign.offerSlug ? await getOfferTemplateBySlug(campaign.offerSlug.trim()) : null;
-  const offerEngineScore = offerEngineTemplate?.scoreCacheJson?.overall ?? 0;
-  if (offerEngineTemplate && offerEngineScore < 55) {
+  const offerSlugTrim = campaign.offerSlug?.trim() ?? "";
+  const { siteOffer, engineTemplate } = await resolveSiteOfferWithEngineTemplate(
+    campaign.offerSlug,
+    storage,
+  );
+  const siteOfferExists = !!siteOffer;
+  scores.offer_clarity = offerClarityScoreForPpc({
+    siteOfferExists,
+    engineOverall: engineTemplate?.scoreCacheJson?.overall ?? null,
+  });
+  if (!offerSlugTrim) {
+    blockers.push("Set offer_slug on the campaign (site_offers slug).");
+  } else if (!siteOfferExists) {
+    blockers.push("Link a valid site offer slug (site_offers).");
+  } else if (scores.offer_clarity < 60) {
     blockers.push(
-      `Offer template "${offerEngineTemplate.name}" is weak (${offerEngineScore}/100). Improve core problem, promise, and funnel bridge before launch.`,
+      "Offer clarity is low — improve site offer content and/or the linked Offer Engine template before scaling spend.",
     );
   }
+
   const scarcity = await evaluateScarcityForContext({
     offerSlug: campaign.offerSlug ?? undefined,
     leadMagnetSlug: campaignLeadMagnetSlug(campaign),
@@ -238,7 +248,8 @@ export async function computePpcReadiness(campaign: PpcCampaign, storage: IStora
   const adReady = allGatesPass;
 
   const gateRemediation = buildRemediationFromGates(gates);
-  const checklistSet = new Set<string>([...gateRemediation, ...blockers]);
+  const offerEngineSignals = offerEngineSignalsForPpcCampaign(engineTemplate);
+  const checklistSet = new Set<string>([...gateRemediation, ...blockers, ...offerEngineSignals]);
   const remediationChecklist = Array.from(checklistSet);
 
   let packageRecommendation: PpcReadinessResult["packageRecommendation"] = "Foundation";

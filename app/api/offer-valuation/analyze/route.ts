@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         rawScore: valuation.rawScore,
         finalScore: valuation.finalScore,
         scoreBand: valuation.scoreBand,
+        valueEquation: valuation.valueEquation,
       },
       insights: valuation.insights,
     });

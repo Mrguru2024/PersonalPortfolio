@@ -1,8 +1,18 @@
 [
   {
+    "date": "2026-04-01T15:00:00Z",
+    "title": "Ascendra public: faster Growth OS intelligence exports for client reviews",
+    "description": "Customer-facing reports from Growth OS intelligence can now be exported with cleaner summaries—no admin-only tooling required to read them.",
+    "details": "What changed: export bundles now default to narrative summaries and plain-language next steps. Technical changelogs and internal rollout notes stay in admin-only areas. If you rely on exports for stakeholder reviews, re-download the latest run to pick up the new layout.",
+    "category": "ascendra_public",
+    "visibility": "public",
+    "factChecked": true
+  },
+  {
     "date": "2026-03-31T13:30:00Z",
     "title": "Search ad CPC trend signals rising pressure on core service keywords",
     "description": "Verified March benchmark sources show higher median CPC pressure in core service categories, which reinforces tighter intent targeting and stronger conversion page clarity.",
+    "details": "Practical takeaway: pair search campaigns with dedicated landing experiences for each service line, watch assisted conversions—not only last-click—and recalibrate bids when lead quality drops even if CPC looks \"fine\" on paper.",
     "category": "marketing_industry_update",
     "visibility": "public",
     "factChecked": true
