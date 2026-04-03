@@ -193,6 +193,32 @@ export default function Home() {
           </div>
         </SectionReveal>
       </section>
+      <section id="ascendra-growth-system-guarantee" className="container mx-auto px-3 fold:px-4 sm:px-6">
+        <SectionReveal className="mx-auto max-w-4xl">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-background to-primary/5 p-8 sm:p-10 md:p-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
+              Ascendra Growth System Guarantee
+            </h2>
+            <ul className="mt-6 space-y-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <li>- If you don’t receive qualified leads → we keep working until you do</li>
+              <li>- If leads don’t turn into booked jobs → we fix the system at no cost</li>
+              <li>- If your current traffic doesn’t improve → we optimize until it does</li>
+              <li>- If the system doesn’t pay for itself → we continue working until it does</li>
+            </ul>
+            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3">
+              <Button asChild size="lg" className="min-h-[48px]">
+                <Link href="/market-score">See How Your System Would Perform</Link>
+              </Button>
+              <Button asChild variant="outline" className="min-h-[44px]">
+                <Link href="/website-performance-score">Website Score Tool</Link>
+              </Button>
+              <Button asChild variant="outline" className="min-h-[44px]">
+                <Link href="/diagnosis">Lead Funnel Entry</Link>
+              </Button>
+            </div>
+          </div>
+        </SectionReveal>
+      </section>
       <SectionConnector variant="gradient" />
 
       {/* Problem: why most businesses don't convert; disconnect brand / design / systems */}

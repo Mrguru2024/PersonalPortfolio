@@ -26,6 +26,7 @@ import { PublishingPanel } from "@/components/admin/operations-dashboard/Publish
 import { LeadPanel } from "@/components/admin/operations-dashboard/LeadPanel";
 import { AIActionPanel } from "@/components/admin/operations-dashboard/AIActionPanel";
 import { ContentHealthPanel } from "@/components/admin/operations-dashboard/ContentHealthPanel";
+import { GuaranteeControlPanel } from "@/components/admin/operations-dashboard/GuaranteeControlPanel";
 
 function trackAction(
   track: ReturnType<typeof useVisitorTracking>["track"],
@@ -322,6 +323,7 @@ export function OperationsDashboardClient() {
           />
 
           <ContentHealthPanel summary={payload.contentHealth} />
+          <GuaranteeControlPanel />
         </>
       ) : null}
     </div>
