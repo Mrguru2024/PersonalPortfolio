@@ -50,6 +50,7 @@ import { DEFAULT_MARKETING_PERSONAS } from "@shared/ascendraPersonaSeed";
 import { OFFER_ENGINE_LOCKED_PERSONA_IDS } from "@shared/offerEngineConstants";
 import { OFFER_ENGINE_PERSONA_STRATEGY_BY_ID } from "@shared/offerEnginePersonaStrategySeed";
 import { seedOfferEngineStarters } from "./seedOfferEngine";
+import { seedUrgencyConversionStarters } from "./seedUrgencyConversion";
 import {
   projects as staticProjects,
   frontendSkills,
@@ -1209,6 +1210,16 @@ async function seedDatabase() {
         console.log("Offer Engine tables missing. Run: npm run db:push");
       } else {
         console.warn("Offer Engine seed skipped:", error);
+      }
+    }
+    try {
+      await seedUrgencyConversionStarters();
+      console.log("Urgency & Scarcity Conversion surfaces seeded (inactive until admin enables)");
+    } catch (error: unknown) {
+      if ((error as { code?: string })?.code === "42P01") {
+        console.log("Urgency conversion table missing. Run: npm run db:push");
+      } else {
+        console.warn("Urgency conversion seed skipped:", error);
       }
     }
     await seedBusinessGoalPresets();

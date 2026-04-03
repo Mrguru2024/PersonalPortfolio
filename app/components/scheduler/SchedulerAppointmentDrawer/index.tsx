@@ -73,10 +73,12 @@ export function SchedulerAppointmentDrawer({ open, onOpenChange, loading, detail
       <SheetContent
         side="right"
         className="w-full sm:max-w-lg overflow-y-auto border-l border-border/80"
+        accessibilityTitle={
+          loading || !detail || !a ? "Appointment details" : undefined
+        }
       >
         {loading || !detail || !a ? (
           <>
-            <SheetTitle className="sr-only">Appointment details</SheetTitle>
             <div className="flex justify-center py-24">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
             </div>

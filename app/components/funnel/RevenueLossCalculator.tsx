@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
+import { markFunnelSurfaceComplete } from "@/lib/funnelMicroCommitment";
 
 const EXPECTED_CONVERSION_RATE = 3;
 
@@ -56,7 +57,15 @@ export function RevenueLossCalculator() {
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
     if (visitors > 0 && saleValue > 0) {
-      track("tool_used", { pageVisited: "/website-revenue-calculator", metadata: { tool: "revenue_calculator" } });
+      markFunnelSurfaceComplete("revenue-calculator");
+      track("tool_used", {
+        pageVisited: "/website-revenue-calculator",
+        metadata: {
+          tool: "revenue_calculator",
+          urgencySurface: "revenue-calculator",
+          step: "calculator_complete",
+        },
+      });
       setHasCalculated(true);
     }
   };

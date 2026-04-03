@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { Providers } from "./providers";
 import FixedHeaderWrapper from "./components/FixedHeaderWrapper";
@@ -15,6 +16,11 @@ import { getSiteOriginForMetadata } from "./lib/siteUrl";
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE_E164 } from "./lib/company";
 import { isAscendraPublicBehaviorTrackingEnabled } from "./lib/behaviorTrackingConfig";
 import { AscendraBehaviorRootGate } from "./components/tracking/AscendraBehaviorRootGate";
+import {
+  LOCALE_COOKIE,
+  normalizeLocale,
+  type AppLocale,
+} from "./lib/i18n/constants";
 
 /** Numeric Meta App ID only — enables FB.init client SDK (Login / xfbml / AppEvents). */
 const FACEBOOK_APP_ID_FOR_SDK =
@@ -123,14 +129,22 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialLocale: AppLocale = normalizeLocale(
+    cookieStore.get(LOCALE_COOKIE)?.value,
+  );
   const gtmNoscriptId = getGtmNoscriptId();
   return (
-    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+    <html
+      lang={initialLocale === "es" ? "es" : "en"}
+      suppressHydrationWarning
+      className="overflow-x-hidden"
+    >
       <head>
         {siteUsesAnalytics() ? (
           <>
@@ -180,7 +194,7 @@ export default function RootLayout({
           </>
         )}
         <div className="flex min-h-[100dvh] min-h-screen w-full max-w-full min-w-0 flex-col overflow-x-hidden">
-          <Providers>
+          <Providers initialLocale={initialLocale}>
             <MobileNavProvider>
               <AscendraBehaviorRootGate enabled={isAscendraPublicBehaviorTrackingEnabled()} />
               {/* Scroll progress bar (hidden when prefers-reduced-motion) */}

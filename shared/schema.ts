@@ -1121,3 +1121,4 @@ export * from "./behaviorIntelligenceSchema";
 export * from "./agencyOsSchema";
 export * from "./offerEngineSchema";
 export * from "./scarcityEngineSchema";
+export * from "./urgencyConversionSchema";

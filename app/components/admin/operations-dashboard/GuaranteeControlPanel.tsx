@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { GuaranteePreviewCalculator } from "@/components/admin/operations-dashboard/GuaranteePreviewCalculator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -185,6 +186,7 @@ export function GuaranteeControlPanel() {
           )}
         </CardContent>
       </Card>
+      <GuaranteePreviewCalculator />
     </section>
   );
 }

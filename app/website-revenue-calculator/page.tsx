@@ -5,6 +5,7 @@ import { RevenueLossCalculator } from "@/components/funnel/RevenueLossCalculator
 import { LeadMagnetRelatedWorkSection } from "@/components/ecosystem/LeadMagnetRelatedWorkSection";
 import { FunnelHeroMedia } from "@/components/funnel/FunnelHeroMedia";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { LeadMagnetUrgencyZone } from "@/components/urgency-conversion/LeadMagnetUrgencyZone";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Website revenue loss calculator | Free growth tool",
@@ -41,6 +42,9 @@ export default function WebsiteRevenueCalculatorPage() {
                 priority
               />
             </section>
+            <div className="mb-6">
+              <LeadMagnetUrgencyZone surfaceKey="revenue-calculator" />
+            </div>
             <RevenueLossCalculator />
           </div>
           <div className="mx-auto max-w-4xl mt-12 sm:mt-16">

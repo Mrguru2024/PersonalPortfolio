@@ -181,6 +181,12 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     normalizeText(attribution?.personaType) ??
     normalizeText(customFields?.persona_type) ??
     normalizeText(customFields?.personaType);
+  const guaranteeCampaignTag =
+    normalizeText(attribution?.utm_campaign) ??
+    normalizeText(customFields?.campaign) ??
+    sourceCampaignSlug;
+  const guaranteeSourceTag =
+    normalizeText(attribution?.utm_source) ?? normalizeText(customFields?.source);
   const scarcityContextInput: MaybeScarcityInput = {
     sourceOfferSlug: sourceOfferSlug ?? normalizeText(customFields?.sourceOfferSlug),
     sourceLeadMagnetSlug: sourceLeadMagnetSlug ?? normalizeText(customFields?.sourceLeadMagnetSlug),
@@ -231,6 +237,8 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
       ...(sourcePathStage ? { sourcePathStage } : {}),
       ...(sourceQualificationResult ? { sourceQualificationResult } : {}),
       ...(personaType ? { personaType, persona_type: personaType } : {}),
+      ...(guaranteeCampaignTag ? { campaign: guaranteeCampaignTag } : {}),
+      ...(guaranteeSourceTag ? { source: guaranteeSourceTag } : {}),
       ...(scarcity ? {
         scarcityConfigId: scarcity.configId,
         scarcityStatus: scarcity.status,
@@ -280,6 +288,8 @@ export async function ensureCrmLeadFromFormSubmission(input: EnsureLeadInput) {
     ...(sourcePathStage ? { sourcePathStage } : {}),
     ...(sourceQualificationResult ? { sourceQualificationResult } : {}),
     ...(personaType ? { personaType, persona_type: personaType } : {}),
+    ...(guaranteeCampaignTag ? { campaign: guaranteeCampaignTag } : {}),
+    ...(guaranteeSourceTag ? { source: guaranteeSourceTag } : {}),
     ...(scarcity ? {
       scarcityConfigId: scarcity.configId,
       scarcityStatus: scarcity.status,

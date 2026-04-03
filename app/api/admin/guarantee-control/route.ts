@@ -4,7 +4,10 @@ import {
   guaranteeActionTypeSchema,
   guaranteeControlFilterSchema,
 } from "@shared/guaranteeEngine";
-import { listGuaranteeControlRows } from "@server/services/guaranteeEngineService";
+import {
+  listGuaranteeControlRows,
+  resolveCrmContactIdForClientUser,
+} from "@server/services/guaranteeEngineService";
 import { storage } from "@server/storage";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +54,17 @@ export async function POST(req: NextRequest) {
     }
 
     const action = parsedAction.data;
+    const crmContactId = await resolveCrmContactIdForClientUser(clientId);
+    if (crmContactId == null) {
+      return NextResponse.json(
+        {
+          message:
+            "No CRM lead row matches this client’s email. Link or create a CRM contact before triggering actions.",
+        },
+        { status: 422 },
+      );
+    }
+
     const titleByAction = {
       optimize_funnel: "Optimize Funnel",
       adjust_offer: "Adjust Offer",
@@ -59,10 +73,10 @@ export async function POST(req: NextRequest) {
     } as const;
 
     const task = await storage.createCrmTask({
-      contactId: clientId,
+      contactId: crmContactId,
       type: "follow_up",
       title: `Guarantee action: ${titleByAction[action]}`,
-      description: `Triggered from Guarantee Control Panel. Action: ${titleByAction[action]}.`,
+      description: `Triggered from Guarantee Control Panel for portal user id ${clientId}. Action: ${titleByAction[action]}.`,
       priority: "high",
       status: "pending",
       dueAt: null,

@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { GrowthGuaranteeStatusCard } from "@/components/client-growth/GrowthGuaranteeStatusCard";
 import { format } from "date-fns";
 import {
   Select,
@@ -148,6 +149,16 @@ export default function ClientDashboardPage() {
     enabled: !!user,
   });
 
+  const { data: portalGrowthEligible } = useQuery<{ eligible: boolean }>({
+    queryKey: ["/api/user/client-portal-eligibility"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/client-portal-eligibility", { credentials: "include" });
+      if (!res.ok) return { eligible: false };
+      return (await res.json()) as { eligible: boolean };
+    },
+    enabled: !!user,
+  });
+
   const feedbackMutation = useMutation({
     mutationFn: async (body: { subject: string; message: string; category: string }) => {
       const res = await apiRequest("POST", "/api/client/feedback", body);
@@ -200,6 +211,12 @@ export default function ClientDashboardPage() {
           <Link href="/updates">View change log &amp; updates</Link>
         </Button>
       </div>
+
+      {portalGrowthEligible?.eligible ? (
+        <div className="mb-6 sm:mb-8">
+          <GrowthGuaranteeStatusCard />
+        </div>
+      ) : null}
 
       <div className="mb-6 sm:mb-8 grid gap-4 sm:grid-cols-2">
         <Card className="border-2 border-teal-500/25 bg-gradient-to-r from-emerald-500/[0.07] via-background to-teal-500/[0.07] dark:from-emerald-500/10 dark:to-teal-500/10 overflow-hidden">

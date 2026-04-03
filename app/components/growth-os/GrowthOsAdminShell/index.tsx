@@ -106,6 +106,11 @@ export function GrowthOsAdminShell({ children }: GrowthOsAdminShellProps) {
                 <strong className="text-foreground">sanitized</strong> summary your customer can open. Sensitive
                 fields are stripped on the server.
               </p>
+              <p>
+                <strong className="text-foreground">Guarantees</strong> — Track the Ascendra Growth System guarantee
+                against CRM, bookings, and revenue signals; trigger follow-up tasks and run the internal sales preview
+                calculator.
+              </p>
             </AccordionContent>
           </AccordionItem>
         </Accordion>

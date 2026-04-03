@@ -1,4 +1,5 @@
 import { db } from "@server/db";
+import { summarizeGuaranteeOperationsCounts } from "@server/services/guaranteeEngineService";
 import { listLeadIntakeItems } from "@server/services/leadIntakeCrmService";
 import {
   crmContacts,
@@ -255,6 +256,13 @@ function extractBusinessTypeFromFunnelAnswers(answers: unknown): string {
 
 export async function getOperationsDashboardPayload(): Promise<OperationsDashboardPayload> {
   const generatedAt = new Date().toISOString();
+
+  let guaranteeCounts = { guaranteeNotMet: 0, guaranteeAtRisk: 0, guaranteePerforming: 0 };
+  try {
+    guaranteeCounts = await summarizeGuaranteeOperationsCounts();
+  } catch {
+    // Guarantee engine may fail if schema is behind; keep summary usable.
+  }
 
   const quickActions = DIAGNOSTIC_QUICK_ACTIONS;
   const aiActions = AI_ACTIONS;
@@ -515,9 +523,9 @@ export async function getOperationsDashboardPayload(): Promise<OperationsDashboa
       publishedCaseStudies,
       contentMissingKeyElements,
       itemsReadyToPublish,
-      guaranteeNotMet: 0,
-      guaranteeAtRisk: 0,
-      guaranteePerforming: 0,
+      guaranteeNotMet: guaranteeCounts.guaranteeNotMet,
+      guaranteeAtRisk: guaranteeCounts.guaranteeAtRisk,
+      guaranteePerforming: guaranteeCounts.guaranteePerforming,
     },
     quickActions,
     diagnostics,

@@ -57,6 +57,7 @@ import {
   Layers,
   FileSearch,
   AlertTriangle,
+  Timer,
 } from "lucide-react";
 import {
   STRATEGY_CALL_PATH,
@@ -107,11 +108,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface HeaderProps {
   currentSection?: string;
@@ -335,6 +332,13 @@ export default function Header(_props: HeaderProps) {
     { section: "Marketing & funnel", name: "Market intelligence", href: "/admin/market-intelligence", icon: ScanSearch, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Site offers (pages)", href: "/admin/offers", icon: Package, permission: "funnel" as const },
     { section: "Marketing & funnel", name: "Scarcity Engine", href: "/admin/scarcity-engine", icon: AlertTriangle, permission: "funnel" as const },
+    {
+      section: "Marketing & funnel",
+      name: "Urgency & scarcity",
+      href: "/admin/urgency-conversion",
+      icon: Timer,
+      permission: "funnel" as const,
+    },
     {
       section: "Delivery & platform",
       name: "Agency OS",
@@ -719,10 +723,10 @@ export default function Header(_props: HeaderProps) {
         <SheetContent
           side="right"
           id="mobile-nav-panel"
+          accessibilityTitle={shellMobileNavAria(locale)}
           className="xl:hidden w-[85vw] max-w-sm p-0 gap-0 flex flex-col border-l bg-background/95 backdrop-blur overflow-hidden"
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <SheetTitle className="sr-only">{shellMobileNavAria(locale)}</SheetTitle>
           <div className="flex flex-col gap-0 overflow-y-auto overscroll-contain flex-1 pt-14 pb-4 pr-2 pl-2 -mx-2">
                 <ul className="flex flex-col gap-0.5" aria-label={shellPrimaryLinksAria(locale)}>
                   {primaryNav.map((item) =>

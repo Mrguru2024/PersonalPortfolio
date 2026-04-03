@@ -4,12 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Shield, FileKey, ClipboardList, PenLine, Brain, Inbox, TrendingUp, Calendar } from "lucide-react";
+import {
+  LayoutDashboard,
+  Shield,
+  FileKey,
+  ClipboardList,
+  PenLine,
+  Brain,
+  Inbox,
+  TrendingUp,
+  Calendar,
+  BadgeCheck,
+} from "lucide-react";
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/growth-os", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/scheduler", label: "Bookings & calendar", icon: Calendar },
   { href: "/admin/growth-os/revenue-ops", label: "Revenue ops", icon: TrendingUp },
+  { href: "/admin/growth-os/guarantees", label: "Guarantees", icon: BadgeCheck },
   { href: "/admin/lead-intake", label: "Lead intake", icon: Inbox },
   { href: "/admin/growth-os/intelligence", label: "Market research", icon: Brain },
   { href: "/admin/growth-os/security", label: "Activity log", icon: Shield },

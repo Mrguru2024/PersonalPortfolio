@@ -43,8 +43,17 @@ function readStoredLocale(): AppLocale {
   );
 }
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<AppLocale>(DEFAULT_LOCALE);
+export function LocaleProvider({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  /** From server `cookies()` so SSR matches the first client render (avoids footer/nav hydration mismatches). */
+  initialLocale?: AppLocale;
+}) {
+  const [locale, setLocaleState] = useState<AppLocale>(
+    () => initialLocale ?? DEFAULT_LOCALE,
+  );
 
   useEffect(() => {
     setLocaleState(readStoredLocale());

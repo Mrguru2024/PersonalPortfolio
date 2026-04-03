@@ -40,12 +40,13 @@ function LinkGroup({
       </h3>
       <ul className="flex flex-col gap-1.5">
         {links.map(({ label, href }) => (
-          <li key={href}>
+          <li key={`${href}::${label}`}>
             <Link
               href={href}
               className="block rounded-sm py-0.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {label}
+              {/* suppressHydrationWarning: browser translate / extensions may rewrite link text before React hydrates */}
+              <span suppressHydrationWarning>{label}</span>
             </Link>
           </li>
         ))}

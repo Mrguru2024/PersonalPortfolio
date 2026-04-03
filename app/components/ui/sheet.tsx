@@ -50,28 +50,55 @@ const sheetVariants = cva(
 );
 
 interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+  extends Omit<
+      React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+      "id"
+    >,
+    VariantProps<typeof sheetVariants> {
+  /**
+   * Rendered as Radix Dialog.Title inside this component (screen-reader only).
+   * Prefer this over passing SheetTitle only from a parent: Radix’s dev warning
+   * uses document.getElementById and can false-negative when Title is not a
+   * direct descendant of the same module as Content (see radix-ui#2986).
+   */
+  accessibilityTitle?: string;
+  /** For aria-controls; not forwarded to Dialog.Content — Radix owns that element’s id. */
+  id?: string;
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content
-      ref={ref}
-      className={cn(sheetVariants({ side }), className)}
-      {...props}
-    >
+>(({ side = "right", className, children, accessibilityTitle, id: panelId, ...props }, ref) => {
+  const body = panelId ? (
+    <div id={panelId} className="contents">
       {children}
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+    </div>
+  ) : (
+    children
+  );
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(sheetVariants({ side }), className)}
+        {...props}
+      >
+        {accessibilityTitle ? (
+          <SheetPrimitive.Title className="sr-only">
+            {accessibilityTitle}
+          </SheetPrimitive.Title>
+        ) : null}
+        {body}
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  );
+});
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({
@@ -105,7 +132,7 @@ SheetFooter.displayName = "SheetFooter";
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
->(({ className, ...props }, ref) => (
+>(({ className, id: _consumerId, ...props }, ref) => (
   <SheetPrimitive.Title
     ref={ref}
     className={cn("text-lg font-semibold text-foreground", className)}

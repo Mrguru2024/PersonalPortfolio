@@ -214,7 +214,7 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   // —— Admin: core
   { path: "/admin/dashboard", title: "Ascendra Operations Dashboard", category: "Admin · Core", audience: "admin", description: "Unified operations control center for diagnostics, case studies, publishing, AI content tools, and lead activity.", keywords: k("dashboard", "admin", "operations", "diagnostics", "case study", "publishing", "crm", "ai") },
   { path: "/admin/inbox", title: "Inbound inbox", category: "Admin · Core", audience: "admin", description: "In-app feed of form submissions and leads with read state; complements email alerts and browser push.", keywords: k("inbox", "notifications", "forms", "leads", "submissions"), relatedPaths: ["/admin/dashboard", "/admin/settings"] },
-  { path: "/admin/operations", title: "Ascendra operations dashboard", category: "Admin · Core", audience: "admin", description: "Unified control center for diagnostics, proof, publishing, AI content, and lead operations.", keywords: k("operations", "dashboard", "diagnostics", "publishing", "leads", "case studies"), relatedPaths: ["/admin/lead-intake", "/admin/crm", "/admin/content-studio/documents", "/admin/content-studio/workflow"] },
+  { path: "/admin/operations", title: "Ascendra operations dashboard", category: "Admin · Core", audience: "admin", description: "Unified control center for diagnostics, proof, publishing, AI content, and lead operations.", keywords: k("operations", "dashboard", "diagnostics", "publishing", "leads", "case studies"), relatedPaths: ["/admin/lead-intake", "/admin/crm", "/admin/growth-os/guarantees", "/admin/content-studio/documents", "/admin/content-studio/workflow"] },
   { path: "/admin/settings", title: "Admin settings", category: "Admin · Core", audience: "admin", description: "Notifications, AI agent toggles, preferences.", keywords: k("settings", "preferences") },
   { path: "/admin/settings/brevo", title: "Brevo settings", category: "Admin · Core", audience: "admin", description: "Brevo API and sender configuration for outbound email features.", keywords: k("brevo", "email", "settings") },
   { path: "/admin/agent-knowledge", title: "Assistant knowledge base", category: "Admin · Core", audience: "admin", description: "Private notes and knowledge the AI assistant and optional flows may use when you enable each entry.", keywords: k("assistant", "knowledge", "notes", "agent", "ai") },
@@ -381,7 +381,8 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/offer-engine/personas/[id]", title: "Offer Engine — persona strategy", category: "Admin · Marketing IQ", audience: "admin", description: "Edit Offer Engine fields for one persona.", keywords: k("persona") },
   { path: "/admin/offer-engine/funnel-paths", title: "Offer Engine — funnel paths", category: "Admin · Marketing IQ", audience: "admin", description: "Saved funnel visualization paths.", keywords: k("funnel", "path") },
   { path: "/admin/offer-engine/analytics-hooks", title: "Offer Engine — analytics hooks", category: "Admin · Marketing IQ", audience: "admin", description: "Placeholder metric keys for future instrumentation.", keywords: k("analytics", "metrics") },
-  { path: "/admin/scarcity-engine", title: "Scarcity Engine", category: "Admin · Marketing IQ", audience: "admin", description: "Real capacity and cycle controls tied to CRM/funnel/PPC flow routing.", keywords: k("scarcity", "capacity", "waitlist", "cycles", "intake control"), relatedPaths: ["/admin/offer-engine", "/admin/funnel", "/admin/paid-growth"] },
+  { path: "/admin/scarcity-engine", title: "Scarcity Engine", category: "Admin · Marketing IQ", audience: "admin", description: "Real capacity and cycle controls tied to CRM/funnel/PPC flow routing.", keywords: k("scarcity", "capacity", "waitlist", "cycles", "intake control"), relatedPaths: ["/admin/offer-engine", "/admin/funnel", "/admin/paid-growth", "/admin/urgency-conversion"] },
+  { path: "/admin/urgency-conversion", title: "Urgency & Scarcity Manager", category: "Admin · Marketing IQ", audience: "admin", description: "Lead magnet urgency modes, proof/loss copy, capacity display, and CTA variants (honest deadlines only).", keywords: k("urgency", "scarcity", "lead magnet", "conversion", "CTA"), relatedPaths: ["/admin/scarcity-engine", "/admin/offer-engine", "/admin/funnel"] },
   { path: "/admin/offers", title: "Site offers list", category: "Admin · Marketing IQ", audience: "admin", description: "Editable site offer pages (e.g. startup growth system).", keywords: k("offers", "site offers", "pricing page") },
   { path: "/admin/offers/[slug]/edit", title: "Edit site offer", category: "Admin · Marketing IQ", audience: "admin", description: "CMS for offer sections + grading.", keywords: k("offer", "edit", "grade") },
   { path: "/admin/offer-valuation", title: "Offer valuation engine", category: "Admin · Marketing IQ", audience: "admin", description: "Admin scoring and strategy engine for offer value diagnostics.", keywords: k("offer valuation", "score", "diagnosis", "value equation"), relatedPaths: ["/dashboard/offer-valuation"] },
@@ -394,7 +395,15 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   { path: "/admin/funnel/[slug]/edit", title: "Edit funnel page", category: "Admin · Funnel", audience: "admin", description: "Dynamic funnel page editor.", keywords: k("funnel", "edit") },
 
   // —— Admin: growth products
-  { path: "/admin/growth-os", title: "Growth OS hub", category: "Admin · Growth OS", audience: "admin", description: "Client Growth OS admin shell.", keywords: k("growth os", "gos") },
+  {
+    path: "/admin/growth-os",
+    title: "Growth OS hub",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description: "Client Growth OS admin shell.",
+    keywords: k("growth os", "gos"),
+    relatedPaths: ["/admin/growth-os/revenue-ops", "/admin/growth-os/guarantees", "/admin/scheduler", "/admin/lead-intake"],
+  },
   {
     path: "/admin/scheduler",
     title: "Meetings & calendar",
@@ -437,7 +446,25 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     keywords: k("intelligence", "market research", "research", "growth os", "automation"),
     relatedPaths: ["/admin/market-intelligence"],
   },
-  { path: "/admin/growth-os/revenue-ops", title: "Growth OS · Revenue ops", category: "Admin · Growth OS", audience: "admin", description: "Revenue operations controls tied to Growth OS and pipeline outcomes.", keywords: k("growth os", "revenue ops", "operations") },
+  {
+    path: "/admin/growth-os/guarantees",
+    title: "Growth OS · Client guarantees",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description:
+      "Ascendra Guarantee Engine: client compliance, lead/booking/ROI status, optimization actions, and internal sales preview calculator (CRM + scheduling + quotes/invoices).",
+    keywords: k("guarantee", "growth os", "client success", "leads", "bookings", "roi", "portal"),
+    relatedPaths: ["/admin/growth-os/revenue-ops", "/admin/crm", "/admin/scheduler", "/admin/operations", "/growth-system", "/dashboard"],
+  },
+  {
+    path: "/admin/growth-os/revenue-ops",
+    title: "Growth OS · Revenue ops",
+    category: "Admin · Growth OS",
+    audience: "admin",
+    description: "Revenue operations controls tied to Growth OS and pipeline outcomes.",
+    keywords: k("growth os", "revenue ops", "operations"),
+    relatedPaths: ["/admin/growth-os/guarantees", "/admin/crm/tasks"],
+  },
   { path: "/admin/growth-os/revenue-ops/settings", title: "Growth OS · Revenue ops settings", category: "Admin · Growth OS", audience: "admin", description: "Configuration settings for Growth OS revenue operations.", keywords: k("growth os", "revenue ops", "settings") },
   {
     path: "/admin/market-intelligence",

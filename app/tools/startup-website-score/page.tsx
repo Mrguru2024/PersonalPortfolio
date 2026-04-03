@@ -12,6 +12,7 @@ import {
   STARTUP_ACTION_PLAN_PATH,
 } from "@/lib/funnelCtas";
 import { buildMarketingMetadata } from "@/lib/marketingMetadata";
+import { LeadMagnetUrgencyZone } from "@/components/urgency-conversion/LeadMagnetUrgencyZone";
 
 export const metadata: Metadata = buildMarketingMetadata({
   title: "Startup website score | Free growth tool",
@@ -47,6 +48,10 @@ export default function StartupWebsiteScorePage() {
                 priority
               />
             </section>
+
+            <div className="mb-6">
+              <LeadMagnetUrgencyZone surfaceKey="startup-website-score" />
+            </div>
 
             <StartupWebsiteScoreCard />
 

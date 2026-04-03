@@ -29,6 +29,12 @@ export const LEAD_TRACKING_EVENT_TYPES = [
   "persona_journey_lead_magnet_click",
   /** Market Score free tool — AMIE preview + CRM attach */
   "market_score_complete",
+  /** Urgency & Scarcity Conversion Engine — impressions and CTA engagement (metadata: urgencySurface, variantKey, …) */
+  "urgency_surface_view",
+  "urgency_cta_impression",
+  "urgency_cta_click",
+  /** Micro-commitment funnel — metadata: surfaceKey, step */
+  "funnel_micro_step",
 ] as const;
 
 export type LeadTrackingEventType = (typeof LEAD_TRACKING_EVENT_TYPES)[number];

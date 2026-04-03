@@ -20,6 +20,11 @@ type EvaluateMetricsInput = {
   compliance: GuaranteeCompliance;
 };
 
+/** Visitor → lead assumption for sales preview (remaining funnel uses lead → book rate). */
+const PREVIEW_VISITOR_TO_LEAD_DIVISOR = 100;
+/** Default share of qualified leads that book (preview only; tune with data). */
+const PREVIEW_LEAD_TO_BOOK_RATE = 0.35;
+
 type EvaluateMetricsOutput = {
   rows: GuaranteeMetricRow[];
   dashboardStatus: GuaranteeDashboardStatus;
@@ -57,6 +62,7 @@ function deriveStatus(
     if (input.baselineConversionRate == null) return "pending";
     return input.conversionRate > input.baselineConversionRate ? "met" : "not_met";
   }
+  if (input.systemCost <= 0) return "pending";
   return input.roiPercentage <= 0 ? "not_met" : "met";
 }
 
@@ -99,11 +105,14 @@ export function evaluateGuaranteeFromMetrics(
 export function calculateGuaranteePreview(
   input: GuaranteePreviewInput & { systemCost?: number },
 ): GuaranteePreviewOutput {
-  const projectedLeads = int(input.monthlyTraffic * (input.estimatedConversionRate / 100));
-  const projectedJobs = int(projectedLeads * 0.65);
+  const projectedLeads = int(
+    input.monthlyTraffic * (input.estimatedConversionRate / PREVIEW_VISITOR_TO_LEAD_DIVISOR),
+  );
+  const projectedJobs = int(projectedLeads * PREVIEW_LEAD_TO_BOOK_RATE);
   const projectedRevenue = int(projectedJobs * input.avgJobValue);
   const cost = Math.max(0, Number(input.systemCost ?? 0));
-  const projectedRoiPercentage = cost <= 0 ? 0 : pct(((projectedRevenue - cost) / cost) * 100);
+  const projectedRoiPercentage =
+    cost <= 0 ? 0 : pct(((projectedRevenue - cost) / cost) * 100);
   return {
     projectedLeads,
     projectedJobs,
