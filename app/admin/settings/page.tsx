@@ -482,8 +482,9 @@ export default function AdminSettingsPage() {
                       </>
                     : (
                       <>
-                        <strong className="font-medium">Hosting lock:</strong> Public Ascendra OS access is forced off in
-                        hosting configuration until your developer clears the internal lock.
+                        <strong className="font-medium">Hosting lock:</strong> Public Ascendra OS access is currently forced
+                        off by hosting configuration. Ask your site owner to update that setting when you're ready to open
+                        public access.
                       </>
                     )}
                   </p>
@@ -597,13 +598,13 @@ export default function AdminSettingsPage() {
                       <SelectValue placeholder="Choose" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__env__">Same as server env (or tts-1)</SelectItem>
+                      <SelectItem value="__env__">Use default model (or tts-1)</SelectItem>
                       <SelectItem value="tts-1">Standard — tts-1</SelectItem>
                       <SelectItem value="tts-1-hd">Higher quality — tts-1-hd</SelectItem>
                       <SelectItem value="__custom__">Custom model id…</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FieldHint>Uses OPENAI_READ_ALOUD_MODEL on the server when you pick “Same as server env”.</FieldHint>
+                  <FieldHint>Uses the default OpenAI speech model when you pick “Use default model”.</FieldHint>
                 </div>
                 {openAiPresetValue === "__custom__" ? (
                   <div className="space-y-1.5">
@@ -629,14 +630,14 @@ export default function AdminSettingsPage() {
                       <SelectValue placeholder="Choose" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__env__">Same as server env</SelectItem>
+                      <SelectItem value="__env__">Use default model</SelectItem>
                       <SelectItem value="__default_flash__">
                         Recommended — {GEMINI_READ_ALOUD_TTS_MODEL_DEFAULT}
                       </SelectItem>
                       <SelectItem value="__custom__">Custom model id…</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FieldHint>Uses GEMINI_READ_ALOUD_TTS_MODEL when you pick “Same as server env”.</FieldHint>
+                  <FieldHint>Uses the default Gemini TTS model when you pick “Use default model”.</FieldHint>
                 </div>
                 {geminiPresetValue === "__custom__" ? (
                   <div className="space-y-1.5">
@@ -788,7 +789,8 @@ export default function AdminSettingsPage() {
               Brevo email delivery
             </CardTitle>
             <CardDescription>
-              Check API key status, authorized IPs, and sender env vars. Use this when test sends fail with an IP or auth error.
+              Check connection status, approved IPs, and sender details. Use this when test sends fail with an IP or
+              authentication error.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 pb-4">
@@ -844,7 +846,7 @@ export default function AdminSettingsPage() {
                 </CardTitle>
                 <CardDescription>
                   Browser push for new form submissions, inbox items, internal chat (when enabled), and reminder runs.
-                  Requires VAPID keys in server env. Subscribe each browser you use.
+                  Requires push-notification keys to be configured. Subscribe each browser you use.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

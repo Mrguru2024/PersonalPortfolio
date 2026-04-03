@@ -265,7 +265,7 @@ export default function AdminSiteDirectoryPage() {
                 className="flex w-full items-center gap-2 p-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${technicalOpen ? "rotate-180" : ""}`} />
-                {isSuper ? "Technical export (developers & AI tools)" : "Export full page list"}
+                {isSuper ? "Advanced export (AI tools)" : "Export full page list"}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>

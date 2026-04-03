@@ -93,7 +93,7 @@ export default function AdminChatPage() {
 
       const hintLabel = (hint?: string) => {
         const map: Record<string, string> = {
-          brevo_not_configured: "Email: set BREVO_API_KEY (and verified sender) in server env.",
+          brevo_not_configured: "Email: complete your email-delivery setup in Connections & email.",
           no_recipients: "Email/SMS: add recipient(s) in the fields or set ADMIN_EMAIL / ADMIN_PHONE.",
           send_failed: "Provider rejected the send — check server logs or Brevo/Twilio dashboard.",
           twilio_not_configured: "SMS: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER.",

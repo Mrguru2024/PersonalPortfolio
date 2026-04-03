@@ -161,6 +161,8 @@ function AdminLeadIntakePage() {
       toast({
         title: "AI not configured",
         description: "AI import is currently unavailable. Import without AI to continue.",
+        title: "Enhanced import unavailable",
+        description: "Use standard import for now or enable enhanced import in settings.",
         variant: "destructive",
       });
       return;
@@ -203,6 +205,8 @@ function AdminLeadIntakePage() {
             <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
               Audits, diagnosis reports, funnel quiz submissions, and project assessments in one place. Import into CRM
               with optional AI enrichment for intent, lifecycle stage, tags, and notes.
+              with optional enhanced tagging and summary notes. Matches existing contacts by email to avoid duplicate
+              records.
             </p>
           </div>
         </div>
@@ -226,6 +230,8 @@ function AdminLeadIntakePage() {
             Select rows below, then import to CRM. AI import adds tags, intent, lifecycle stage, industry, and a short
             internal note.
             {!aiConfigured && " AI import is currently unavailable in this environment."}
+            Select rows below, then import. Enhanced import adds tags, intent, lifecycle, industry, and a short
+            summary note. {!aiConfigured && " Enhanced import is currently off."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
@@ -247,6 +253,7 @@ function AdminLeadIntakePage() {
           >
             {importMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Import selected with AI
+            Import selected + enhanced import
           </Button>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             Refresh list
@@ -392,7 +399,7 @@ function AdminLeadIntakePage() {
                                         importMutation.mutate({ items: [{ kind: row.kind, id: row.id }], useAi: true })
                                       }
                                     >
-                                      AI
+                                      Enhanced
                                     </Button>
                                   </div>
                                   {row.kind === "growth_diagnosis" && (

@@ -78,7 +78,9 @@ export default function GrowthEngineAutomationsPage() {
       <Card className="max-w-xl">
         <CardHeader>
           <CardTitle className="text-base">New rule</CardTitle>
-          <CardDescription>Optional email — requires BREVO_API_KEY and FROM_EMAIL.</CardDescription>
+          <CardDescription>
+            Optional email can be enabled from the Brevo email settings page.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2">
