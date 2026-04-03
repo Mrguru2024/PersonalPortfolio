@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-04-02 23:38 — Auto · 0703e10
+
+- `Admin email (IONOS), auth/session fixes, footer locale hydration, offer engine and valuation updates` (`0703e10`)
+
+---
+
 ## 2026-04-02 23:38 — Auto · bdc480f
 
 - `Admin email (IONOS), auth/session fixes, footer locale hydration, offer engine and valuation updates` (`bdc480f`)
