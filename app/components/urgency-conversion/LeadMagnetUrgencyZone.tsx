@@ -55,9 +55,12 @@ function HonestDeadlineCountdown({ endsAtIso, label }: { endsAtIso: string; labe
 export function LeadMagnetUrgencyZone({
   surfaceKey,
   className,
+  progressHeading,
 }: {
   surfaceKey: string;
   className?: string;
+  /** Override default “Your growth path” (e.g. homepage engagement framing). */
+  progressHeading?: string;
 }) {
   const { track, getVisitorId, getSessionId } = useVisitorTracking();
   const [data, setData] = useState<PublicUrgencyPayload | null>(null);
@@ -126,7 +129,9 @@ export function LeadMagnetUrgencyZone({
     <Card className={`border-primary/20 bg-card/95 ${className ?? ""}`}>
       <CardContent className="p-4 sm:p-5 space-y-4">
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your growth path</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {progressHeading ?? "Your growth path"}
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {data.microCommitment.funnelSteps.map((st, i) => (
               <Badge

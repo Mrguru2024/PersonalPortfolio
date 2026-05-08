@@ -29,13 +29,13 @@ export const ADMIN_TOUR_STEPS: AdminTourStep[] = [
     id: "summary-cards",
     title: "Summary at a glance",
     description:
-      "These counts mirror your inbox: assessments and contacts. Use them with the **Inbox** section right below to spot volume before you triage.",
+      "These counts mirror your inbox: assessments and contact form leads. Use them with the **Inbox** section right below to spot volume before you triage.",
     target: "[data-tour=\"summary-cards\"]",
     roles: ["all"],
   },
   {
     id: "tabs",
-    title: "Inbox — Assessments, Contacts, Resume",
+    title: "Inbox — Assessments & contacts",
     description:
       "Your primary work queue. Switch tabs to review submissions, update assessment status, and follow up. Use Lead intake hub when routing quizzes and CRM import.",
     target: "[data-tour=\"tabs\"]",

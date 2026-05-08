@@ -4,7 +4,7 @@ import { getMergedPublicUpdates } from "@/lib/publicUpdates/readAndMergePublicUp
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/** GET /api/changelog — Ascendra public editorials + curated marketing/ad feeds (publisher links). */
+/** GET /api/changelog — Ascendra public editorials + curated marketing/ad feeds (publisher links); fact-checked where noted. */
 export async function GET() {
   try {
     const entries = await getMergedPublicUpdates(110);

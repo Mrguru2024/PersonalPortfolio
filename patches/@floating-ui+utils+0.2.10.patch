@@ -1,0 +1,28 @@
+diff --git a/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.esm.js b/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.esm.js
+index 3a7ddc7..d26833c 100644
+--- a/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.esm.js
++++ b/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.esm.js
+@@ -58,6 +58,9 @@ function isTableElement(element) {
+ }
+ const topLayerSelectors = [':popover-open', ':modal'];
+ function isTopLayer(element) {
++  if (element == null || typeof element.matches !== 'function') {
++    return false;
++  }
+   return topLayerSelectors.some(selector => {
+     try {
+       return element.matches(selector);
+diff --git a/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs b/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
+index 3a7ddc7..d26833c 100644
+--- a/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
++++ b/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
+@@ -58,6 +58,9 @@ function isTableElement(element) {
+ }
+ const topLayerSelectors = [':popover-open', ':modal'];
+ function isTopLayer(element) {
++  if (element == null || typeof element.matches !== 'function') {
++    return false;
++  }
+   return topLayerSelectors.some(selector => {
+     try {
+       return element.matches(selector);

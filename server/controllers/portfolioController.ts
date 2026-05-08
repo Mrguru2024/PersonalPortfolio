@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import {
   contactFormSchema,
   InsertContact,
-  resumeRequestFormSchema,
-  InsertResumeRequest,
   skillEndorsementFormSchema,
   InsertSkillEndorsement,
   InsertSkill,
@@ -13,8 +11,6 @@ import { storage } from "../storage";
 import { ensureCrmLeadFromFormSubmission } from "../services/leadFromFormService";
 import { ZodError } from "zod";
 import { format } from "date-fns";
-import path from "path";
-import fs from "fs";
 import { githubService } from "../services/githubService";
 import { emailService } from "../services/emailService";
 import { queueAdminInboundNotification } from "../services/adminInboxService";
@@ -572,112 +568,6 @@ export const portfolioController = {
         });
       }
       res.status(500).json({ message: "Error submitting contact form" });
-    }
-  },
-
-  requestResume: async (req: Request, res: Response) => {
-    try {
-      // Validate request with Zod schema
-      const validatedData = resumeRequestFormSchema.parse(req.body);
-
-      // Create resume request record in database
-      const requestData: InsertResumeRequest = {
-        name: validatedData.name,
-        email: validatedData.email,
-        company: validatedData.company || "",
-        purpose: validatedData.purpose,
-        message: validatedData.message || "",
-      };
-
-      const savedRequest = await storage.createResumeRequest(requestData);
-      console.log(
-        `[Resume request] Saved id=${savedRequest.id} email=${savedRequest.email} name=${savedRequest.name}`
-      );
-
-      queueAdminInboundNotification({
-        kind: "resume",
-        title: `Resume request: ${validatedData.name}`,
-        body: `${validatedData.email}\n${validatedData.purpose}${validatedData.message ? `\n${validatedData.message}` : ""}`,
-        relatedType: "resume_request",
-        relatedId: savedRequest.id,
-        metadata: { email: validatedData.email },
-      });
-
-      // Send email notification to admin
-      const emailSent = await emailService.sendNotification({
-        type: "resume",
-        data: {
-          ...validatedData,
-          accessToken: savedRequest.accessToken,
-        },
-      });
-      if (!emailSent) {
-        console.warn(
-          "[Resume request] Email notification was not sent. Set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env) to receive form notifications."
-        );
-      }
-
-      // Return only the token to the client - we'll use this to validate the download
-      res.status(200).json({
-        message: "Resume request submitted successfully",
-        accessToken: savedRequest.accessToken,
-      });
-    } catch (error) {
-      console.error("Error submitting resume request:", error);
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          message: "Validation error",
-          errors: error.errors,
-        });
-      }
-      res.status(500).json({ message: "Error submitting resume request" });
-    }
-  },
-
-  downloadResume: async (req: Request, res: Response) => {
-    try {
-      const { token } = req.params;
-
-      if (!token) {
-        return res.status(400).json({ message: "Access token is required" });
-      }
-
-      // Verify the token exists and is valid
-      const request = await storage.getResumeRequestByToken(token);
-
-      if (!request) {
-        return res.status(404).json({ message: "Invalid access token" });
-      }
-
-      // Mark the resume as accessed
-      await storage.markResumeRequestAsAccessed(request.id);
-
-      // For now, we'll return the static resume URL, but this could be enhanced to serve an actual PDF
-      // In a production environment, you'd likely have the resume stored in a secured location
-      // and only serve it with valid tokens
-      res.json({
-        message: "Resume access granted",
-        resumeUrl: personalInfo.resumeUrl,
-        name: request.name,
-      });
-
-      // Alternative: If you have a PDF file to serve directly:
-      /*
-      const resumePath = path.join(__dirname, '../../assets/resume.pdf');
-      
-      if (!fs.existsSync(resumePath)) {
-        return res.status(404).json({ message: 'Resume file not found' });
-      }
-      
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="AnthonyFeaster_Resume.pdf"`);
-      
-      const fileStream = fs.createReadStream(resumePath);
-      fileStream.pipe(res);
-      */
-    } catch (error) {
-      console.error("Error downloading resume:", error);
-      res.status(500).json({ message: "Error downloading resume" });
     }
   },
 };

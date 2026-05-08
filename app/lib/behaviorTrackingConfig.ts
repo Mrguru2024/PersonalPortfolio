@@ -42,9 +42,13 @@ export function ascendraBehaviorTrackingPathAllowed(pathname: string): boolean {
   });
 }
 
-/** Routes that never mount the tracker (admin UI, etc.). */
+/** Routes that never mount the tracker (admin UI, authenticated client surfaces, etc.). */
 export function ascendraBehaviorTrackingPathExcluded(pathname: string): boolean {
   const path = pathname.split("?")[0] ?? pathname;
   if (path === "/admin" || path.startsWith("/admin/")) return true;
+  // Portal / client dashboard: heavy Radix + portals; rrweb can hit non-Element nodes when matching selectors.
+  if (path === "/dashboard" || path.startsWith("/dashboard/")) return true;
+  if (path === "/portal" || path.startsWith("/portal/")) return true;
+  if (path === "/growth-system" || path.startsWith("/growth-system/")) return true;
   return false;
 }

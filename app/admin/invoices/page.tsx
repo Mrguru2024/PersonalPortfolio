@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useShowAdminTechnicalCopy } from "@/components/admin/AdminDevOnly";
 import { format } from "date-fns";
 import Link from "next/link";
 import {
@@ -105,6 +106,7 @@ interface PresetRow {
 
 export default function AdminInvoicesPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const showTechnical = useShowAdminTechnicalCopy();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -654,8 +656,14 @@ export default function AdminInvoicesPage() {
                 onChange={(e) => setForm((f) => ({ ...f, taxRatePercent: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
-                Default from server <code className="text-[10px]">INVOICE_DEFAULT_TAX_PERCENT</code>. Subtotal × rate = tax;
-                total includes tax.
+                {showTechnical ? (
+                  <>
+                    Default from server <code className="text-[10px]">INVOICE_DEFAULT_TAX_PERCENT</code>. Subtotal × rate =
+                    tax; total includes tax.
+                  </>
+                ) : (
+                  "Default tax rate comes from your invoice server settings. Tax is subtotal × rate; the total includes tax."
+                )}
               </p>
             </div>
 

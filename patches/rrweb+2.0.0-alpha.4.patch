@@ -1,16 +1,44 @@
+diff --git a/node_modules/rrweb/es/rrweb/packages/rrweb-snapshot/es/rrweb-snapshot.js b/node_modules/rrweb/es/rrweb/packages/rrweb-snapshot/es/rrweb-snapshot.js
+index 3ed9139..3748f7e 100644
+--- a/node_modules/rrweb/es/rrweb/packages/rrweb-snapshot/es/rrweb-snapshot.js
++++ b/node_modules/rrweb/es/rrweb/packages/rrweb-snapshot/es/rrweb-snapshot.js
+@@ -334,7 +334,7 @@ function _isBlockedElement(element, blockClass, blockSelector) {
+         }
+     }
+     if (blockSelector) {
+-        return element.matches(blockSelector);
++        return typeof element.matches === 'function' && element.matches(blockSelector);
+     }
+     return false;
+ }
+@@ -373,9 +373,9 @@ function needMaskingText(node, maskTextClass, maskTextSelector) {
+             return true;
+     }
+     if (maskTextSelector) {
+-        if (el.matches(maskTextSelector))
++        if (typeof el.matches === 'function' && el.matches(maskTextSelector))
+             return true;
+-        if (el.closest(maskTextSelector))
++        if (typeof el.closest === 'function' && el.closest(maskTextSelector))
+             return true;
+     }
+     return false;
 diff --git a/node_modules/rrweb/es/rrweb/packages/rrweb/src/utils.js b/node_modules/rrweb/es/rrweb/packages/rrweb/src/utils.js
-index f9adad9..bb835b7 100644
+index f9adad9..f2f979d 100644
 --- a/node_modules/rrweb/es/rrweb/packages/rrweb/src/utils.js
 +++ b/node_modules/rrweb/es/rrweb/packages/rrweb/src/utils.js
-@@ -141,7 +141,7 @@ function isBlocked(node, blockClass, blockSelector, checkAncestors) {
+@@ -141,9 +141,9 @@ function isBlocked(node, blockClass, blockSelector, checkAncestors) {
              return true;
      }
      if (blockSelector) {
 -        if (node.matches(blockSelector))
-+        if (el.matches(blockSelector))
++        if (typeof el.matches === 'function' && el.matches(blockSelector))
              return true;
-         if (checkAncestors && el.closest(blockSelector) !== null)
+-        if (checkAncestors && el.closest(blockSelector) !== null)
++        if (checkAncestors && typeof el.closest === 'function' && el.closest(blockSelector) !== null)
              return true;
+     }
+     return false;
 diff --git a/node_modules/rrweb/lib/record/rrweb-record.js b/node_modules/rrweb/lib/record/rrweb-record.js
 index 8b8f438..9e2c620 100644
 --- a/node_modules/rrweb/lib/record/rrweb-record.js

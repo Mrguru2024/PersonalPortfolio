@@ -139,6 +139,18 @@ function defaultVariantsForSurface(surfaceKey: string): UrgencyCtaVariant[] {
         proofNote: "No pressure — if we are not a fit, we will say so.",
       },
     ],
+    "ascendra-home": [
+      {
+        key: "default",
+        primaryText: "Request a strategy call",
+        subText:
+          "Prefer to self-serve first? Run the free growth diagnosis — it surfaces your bottleneck in minutes.",
+        href: "/strategy-call",
+        urgencyBadge: "Focused onboarding",
+        scarcityNote:
+          "We take a limited number of new engagements at a time so delivery stays hands-on, not handoff-heavy.",
+      },
+    ],
   };
   return presets[surfaceKey] ?? [
     {
@@ -156,8 +168,30 @@ const FUNNEL_STEPS: { key: string; label: string; href: string }[] = [
   { key: "strategy-call", label: "Scale · Strategy call", href: "/strategy-call" },
 ];
 
+/** Homepage: engagement sequence (not the lead-magnet chain). */
+const HOME_FUNNEL_STEPS: { key: string; label: string; href: string }[] = [
+  { key: "home-diagnose", label: "Clarify · Growth diagnosis", href: "/diagnosis" },
+  { key: "home-audit", label: "Align · Digital Growth Audit", href: "/digital-growth-audit" },
+  { key: "home-call", label: "Decide · Strategy call", href: "/strategy-call" },
+];
+
 function funnelStepIndexFor(surfaceKey: string): number {
   return Math.max(0, FUNNEL_STEPS.findIndex((s) => s.key === surfaceKey));
+}
+
+function microCommitmentFor(surfaceKey: string): PublicUrgencyPayload["microCommitment"] {
+  if (surfaceKey === "ascendra-home") {
+    return {
+      surfaceKey,
+      funnelStepIndex: 0,
+      funnelSteps: HOME_FUNNEL_STEPS,
+    };
+  }
+  return {
+    surfaceKey,
+    funnelStepIndex: funnelStepIndexFor(surfaceKey),
+    funnelSteps: FUNNEL_STEPS,
+  };
 }
 
 function buildCapacityLabel(used: number, max: number | null, mode: string): { label: string; approximate: boolean } {
@@ -335,11 +369,7 @@ export async function resolvePublicUrgencyPayload(
       cta: null,
       prerequisiteSurfaceKey: null,
       growthExperimentKey: null,
-      microCommitment: {
-        surfaceKey,
-        funnelStepIndex: funnelStepIndexFor(surfaceKey),
-        funnelSteps: FUNNEL_STEPS,
-      },
+      microCommitment: microCommitmentFor(surfaceKey),
       analyticsEnabled: false,
     } as PublicUrgencyPayload;
   }
@@ -462,11 +492,7 @@ export async function resolvePublicUrgencyPayload(
     cta,
     prerequisiteSurfaceKey: row.prerequisiteSurfaceKey,
     growthExperimentKey: row.growthExperimentKey,
-    microCommitment: {
-      surfaceKey: row.surfaceKey,
-      funnelStepIndex: funnelStepIndexFor(row.surfaceKey),
-      funnelSteps: FUNNEL_STEPS,
-    },
+    microCommitment: microCommitmentFor(row.surfaceKey),
     analyticsEnabled: row.analyticsEnabled,
   } as PublicUrgencyPayload;
 }

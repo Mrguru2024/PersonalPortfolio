@@ -4,6 +4,7 @@ import type {
   ClientServiceAgreementMilestone,
   LegalClauseLibraryRow,
 } from "@shared/schema";
+import { agreementDisplayTitleFromVariables } from "@shared/documentSigningEngine";
 
 function stripHtml(html: string): string {
   return html
@@ -61,7 +62,10 @@ export async function buildServiceAgreementPdfBuffer(opts: {
     y -= 6;
   };
 
-  drawPara("SERVICE AGREEMENT SUMMARY", true);
+  const summaryHeading = `${agreementDisplayTitleFromVariables(
+    agreement.variablesJson as Record<string, unknown> | null,
+  ).toUpperCase()} SUMMARY`;
+  drawPara(summaryHeading, true);
   drawPara(
     `${agreement.companyLegalName || agreement.clientName} — ${agreement.clientEmail}. Status: ${agreement.status}.`,
   );

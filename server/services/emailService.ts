@@ -21,7 +21,6 @@ interface DataDeletionPayload {
 type EmailNotification =
   | { type: 'contact'; data: Record<string, any> }
   | { type: 'quote'; data: Record<string, any> }
-  | { type: 'resume'; data: Record<string, any> }
   | { type: 'recommendation'; data: Record<string, any> }
   | { type: 'skill-endorsement'; data: Record<string, any> }
   | { type: 'data-deletion'; data: DataDeletionPayload };
@@ -52,7 +51,7 @@ export class EmailService {
         `📧 Email notifications: enabled (admin: ${this.adminEmail}${extra ? `; +${extra} via ADMIN_NOTIFICATION_EMAILS` : ''})`
       );
     } else {
-      console.warn('⚠️  Email notifications: disabled. Form submissions (contact, resume, assessment) will not email you.');
+      console.warn('⚠️  Email notifications: disabled. Form submissions (contact, assessment) will not email you.');
       console.warn('   To enable: set BREVO_API_KEY and ADMIN_EMAIL in .env.local (or production env). See .env.example.');
     }
   }
@@ -293,85 +292,6 @@ Reply directly to this email to respond to ${data.name}.
     };
   }
 
-  private formatResumeRequestEmail(data: any): { subject: string; html: string; text: string } {
-    return {
-      subject: `📄 Resume Request from ${data.name}${data.company ? ` at ${data.company}` : ''}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-            .field { margin: 15px 0; }
-            .label { font-weight: bold; color: #2563eb; }
-            .value { margin-top: 5px; padding: 10px; background: white; border-radius: 4px; }
-            .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h2>📄 Resume Request</h2>
-            </div>
-            <div class="content">
-              <div class="field">
-                <div class="label">Requestor Information:</div>
-                <div class="value">
-                  <strong>${data.name}</strong><br>
-                  Email: <a href="mailto:${data.email}">${data.email}</a><br>
-                  ${data.company ? `Company: ${data.company}` : ''}
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="label">Purpose:</div>
-                <div class="value">${data.purpose || 'Not specified'}</div>
-              </div>
-
-              ${data.message ? `
-              <div class="field">
-                <div class="label">Additional Message:</div>
-                <div class="value">${data.message.replace(/\n/g, '<br>')}</div>
-              </div>
-              ` : ''}
-
-              <div class="field">
-                <div class="label">Access Token:</div>
-                <div class="value"><code>${data.accessToken}</code></div>
-              </div>
-
-              <div class="footer">
-                <p>This resume request was generated from your portfolio website.</p>
-                <p>Access token: ${data.accessToken}</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-      text: `
-Resume Request
-
-Requestor Information:
-Name: ${data.name}
-Email: ${data.email}
-${data.company ? `Company: ${data.company}\n` : ''}
-
-Purpose: ${data.purpose || 'Not specified'}
-
-${data.message ? `Additional Message:\n${data.message}\n` : ''}
-
-Access Token: ${data.accessToken}
-
----
-This resume request was generated from your portfolio website.
-      `.trim()
-    };
-  }
-
   private formatSkillEndorsementEmail(data: any): { subject: string; html: string; text: string } {
     return {
       subject: `⭐ New Skill Endorsement from ${data.name}`,
@@ -535,9 +455,6 @@ Process this request per your Privacy Policy. Reply to the user to confirm when 
           break;
         case 'quote':
           emailContent = this.formatQuoteRequestEmail(notification.data);
-          break;
-        case 'resume':
-          emailContent = this.formatResumeRequestEmail(notification.data);
           break;
         case 'skill-endorsement':
           emailContent = this.formatSkillEndorsementEmail(notification.data);

@@ -11,7 +11,9 @@ export default function AdminLayout({
     <>
       <AdminGlobalTips />
       <AdminMentorCompanion />
-      {children}
+      <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+        {children}
+      </div>
       <AdminAgentWidget />
     </>
   );

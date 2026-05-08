@@ -17,6 +17,8 @@ type AgreementPayload = {
   publicToken: string;
   status: string;
   documentType?: DocumentType;
+  /** Resolved display title (includes optional admin override). */
+  documentTitle?: string;
   clientName: string;
   htmlBody: string;
   signatureFields?: Array<{ key: string; label: string; required: boolean }>;
@@ -134,7 +136,8 @@ export default function AgreementSignPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="break-words text-lg sm:text-xl">
-                  {DOCUMENT_TYPE_LABELS[data.documentType ?? "agreement"]} for {data.clientName}
+                  {(data.documentTitle?.trim() || DOCUMENT_TYPE_LABELS[data.documentType ?? "agreement"])} for{" "}
+                  {data.clientName}
                 </CardTitle>
                 <CardDescription>
                   Review the generated summary below. Electronic signature records your typed legal name, optional drawn

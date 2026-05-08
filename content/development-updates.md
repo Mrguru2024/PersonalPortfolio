@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-05-07 23:49 — Auto · b2b704b
+
+- `feat: ship growth platform updates feed and admin UX improvements` (`b2b704b`)
+
+---
+
 ## 2026-04-03 06:49 — Auto · 5d8bd21
 
 - `chore: dev log for 136f7b3` (`5d8bd21`)

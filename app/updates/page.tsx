@@ -1,273 +1,197 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Calendar,
-  ChevronDown,
-  ExternalLink,
-  Loader2,
-  Radio,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { format, formatDistanceToNow } from "date-fns";
+import { Calendar, ExternalLink, Loader2, Radio, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import type { PublicUpdateKind, PublicUpdatesTopic } from "@/lib/publicUpdates/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { UpdatesFeedItem } from "@/lib/updatesFeedTypes";
+import {
+  UPDATES_TOPIC_IDS,
+  UPDATES_TOPIC_LABELS,
+  UPDATES_TOPIC_SOURCE_NOTES,
+  type UpdatesTopicId,
+} from "@/lib/updatesFeedTopics";
 
-type ChangelogEntry = {
-  id: string;
-  date: string;
-  title: string;
-  description: string;
-  details: string | null;
-  topic: PublicUpdatesTopic;
-  category?: string;
-  factChecked: boolean;
-  sourceName: string;
-  sourceUrl: string | null;
-  kind: PublicUpdateKind;
-};
+/** Poll faster than server cache so revisits pick up fresh merges quickly. */
+const POLL_MS = 30_000;
 
-type ChangelogResponse = {
-  entries: ChangelogEntry[];
-  refreshedAt?: string;
-  error?: string;
-};
+type TabValue = "all" | UpdatesTopicId;
 
-const TOPIC_FILTERS: { value: "all" | PublicUpdatesTopic; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "marketing", label: "Marketing" },
-  { value: "digital_marketing", label: "Digital marketing" },
-  { value: "advertising", label: "Advertising tips" },
-  { value: "ascendra_public", label: "Ascendra" },
-];
-
-function topicBadgeClass(topic: PublicUpdatesTopic): string {
-  switch (topic) {
-    case "marketing":
-      return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-    case "digital_marketing":
-      return "bg-sky-500/15 text-sky-800 dark:text-sky-300";
-    case "advertising":
-      return "bg-amber-500/15 text-amber-900 dark:text-amber-200";
-    case "ascendra_public":
-    default:
-      return "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300";
-  }
+function itemMatchesTab(item: UpdatesFeedItem, tab: TabValue): boolean {
+  if (tab === "all") return true;
+  return item.topics.includes(tab);
 }
 
-function UpdateCard({ entry }: { entry: ChangelogEntry }) {
-  const [open, setOpen] = useState(false);
-  const detailText = entry.details?.trim() ?? "";
-  const hasExpandable = detailText.length > 0;
+function FeedCard({ item }: { item: UpdatesFeedItem }) {
+  const dateLabel = format(new Date(item.publishedAt), "PPP");
+  const isExternal = item.kind === "rss";
+  const href = item.url ?? undefined;
 
   return (
     <Card className="overflow-hidden border-border/80">
-      <CardHeader className="pb-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-1">
-          <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <time dateTime={entry.date}>{format(new Date(entry.date), "PPP p")}</time>
-          <span aria-hidden>•</span>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide",
-              topicBadgeClass(entry.topic),
-            )}
-          >
-            {TOPIC_FILTERS.find((t) => t.value === entry.topic)?.label ?? entry.topic}
+      <CardHeader className="pb-2 space-y-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <time dateTime={item.publishedAt}>{dateLabel}</time>
           </span>
-          {entry.kind === "ascendra_editorial" && entry.factChecked ? (
+          <span aria-hidden>•</span>
+          <Badge variant="secondary" className="font-normal text-xs">
+            {item.sourceName}
+          </Badge>
+          {item.kind === "ascendra_note" ? (
             <>
               <span aria-hidden>•</span>
-              <span className="text-emerald-700 dark:text-emerald-400">Ascendra verified</span>
-            </>
-          ) : entry.kind === "publisher_feed" ? (
-            <>
-              <span aria-hidden>•</span>
-              <span>Publisher feed · verify at source</span>
+              <span className="text-emerald-600 dark:text-emerald-400">Verified note</span>
             </>
           ) : null}
         </div>
-        <CardTitle className="text-base sm:text-lg pr-8">{entry.title}</CardTitle>
-        <CardDescription className="text-sm text-foreground/85 leading-relaxed">
-          {entry.description}
-        </CardDescription>
-        <p className="text-xs text-muted-foreground mt-2">
-          Source: <span className="font-medium text-foreground/80">{entry.sourceName}</span>
-          {entry.sourceUrl ? (
-            <>
-              {" "}
+        <div className="flex flex-wrap gap-1.5">
+          {item.topics.map((t) => (
+            <Badge key={t} variant="outline" className="text-[10px] font-medium uppercase tracking-wide">
+              {UPDATES_TOPIC_LABELS[t]}
+            </Badge>
+          ))}
+        </div>
+        <CardTitle className="text-base sm:text-lg leading-snug">
+          {href ? (
+            isExternal ? (
               <a
-                href={entry.sourceUrl}
+                href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-violet-600 hover:underline dark:text-violet-400"
+                className="hover:text-violet-600 dark:hover:text-violet-400 underline-offset-4 hover:underline inline-flex items-start gap-1.5"
               >
-                Open article
-                <ExternalLink className="h-3 w-3" aria-hidden />
+                <span>{item.title}</span>
+                <ExternalLink className="h-4 w-4 shrink-0 mt-0.5 opacity-70" aria-hidden />
               </a>
-            </>
-          ) : null}
-        </p>
-      </CardHeader>
-      <CardContent className="pt-0 pb-4">
-        {hasExpandable ? (
-          <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="gap-1 px-2 -ml-2 h-8 text-muted-foreground hover:text-foreground"
-                aria-expanded={open}
+            ) : (
+              <Link
+                href={href}
+                className="hover:text-violet-600 dark:hover:text-violet-400 underline-offset-4 hover:underline"
               >
-                <ChevronDown
-                  className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
-                  aria-hidden
-                />
-                {open ? "Hide detail" : "More detail"}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 rounded-md border border-border/60 bg-muted/30 px-3 py-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-              {detailText}
-            </CollapsibleContent>
-          </Collapsible>
-        ) : null}
-      </CardContent>
+                {item.title}
+              </Link>
+            )
+          ) : (
+            item.title
+          )}
+        </CardTitle>
+        <CardDescription className="text-sm text-foreground/80 leading-relaxed">{item.summary}</CardDescription>
+      </CardHeader>
     </Card>
   );
 }
 
 export default function UpdatesPage() {
-  const queryClient = useQueryClient();
-  const [topicFilter, setTopicFilter] = useState<"all" | PublicUpdatesTopic>("all");
+  const [tab, setTab] = useState<TabValue>("all");
 
-  const { data, isLoading, error, isFetching, dataUpdatedAt } = useQuery<ChangelogResponse>({
-    queryKey: ["/api/changelog"],
+  const { data, isLoading, isFetching, error, dataUpdatedAt } = useQuery({
+    queryKey: ["/api/updates-feed"],
     queryFn: async () => {
-      const res = await fetch(`/api/changelog?t=${Date.now()}`, { cache: "no-store" });
-      const json = (await res.json()) as ChangelogResponse;
+      const res = await fetch("/api/updates-feed", { cache: "no-store" });
+      const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to load");
-      return json;
+      return json as { items: UpdatesFeedItem[]; generatedAt: string; cacheTtlMs: number; error?: string };
     },
-    staleTime: 12_000,
-    refetchInterval: 30_000,
+    refetchInterval: POLL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0,
   });
 
-  const entries = data?.entries ?? [];
-  const filtered = useMemo(() => {
-    if (topicFilter === "all") return entries;
-    return entries.filter((e) => e.topic === topicFilter);
-  }, [entries, topicFilter]);
+  const items = data?.items ?? [];
 
-  const liveLabel = useMemo(() => {
-    const ts = data?.refreshedAt
-      ? new Date(data.refreshedAt).getTime()
-      : typeof dataUpdatedAt === "number"
-        ? dataUpdatedAt
-        : null;
-    if (ts == null || Number.isNaN(ts)) return null;
-    return formatDistanceToNow(ts, { addSuffix: true });
-  }, [data?.refreshedAt, dataUpdatedAt]);
+  const filtered = useMemo(() => items.filter((i) => itemMatchesTab(i, tab)), [items, tab]);
+
+  const lastUpdated =
+    dataUpdatedAt && !Number.isNaN(dataUpdatedAt)
+      ? formatDistanceToNow(dataUpdatedAt, { addSuffix: true })
+      : null;
 
   return (
     <div className="min-h-screen w-full min-w-0 max-w-3xl mx-auto px-3 fold:px-4 sm:px-6 py-8 sm:py-12">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex flex-wrap items-center gap-2">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-violet-500 shrink-0" aria-hidden />
-          Market updates
+          Live marketing &amp; industry feed
         </h1>
-        <p className="text-muted-foreground max-w-prose">
-          This page refreshes automatically from{" "}
-          <strong className="font-medium text-foreground/90">major marketing, digital, and advertising publishers</strong>{" "}
-          (RSS)—plus <strong className="font-medium text-foreground/90">Ascendra public</strong> items we mark verified in
-          our CMS. <strong className="font-medium text-foreground/90">Internal and admin-only updates never appear here.</strong>{" "}
-          Use <span className="font-medium text-foreground/85">More detail</span> for longer excerpts; for feed items, open
-          the article at the publisher to fact-check claims at the source.
+        <p className="text-muted-foreground">
+          Marketing, how-tos, digital marketing, industry news, and Ascendra public updates from hand-picked RSS sources.
+          The feed refreshes automatically while you keep this tab open, and when you return to it.
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
-          {liveLabel ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Radio
-                className={cn("h-3.5 w-3.5", isFetching ? "text-amber-500 animate-pulse" : "text-emerald-600")}
-                aria-hidden
-              />
-              Last merged {liveLabel}
-              {isFetching ? " · fetching…" : ""}
-            </span>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Radio className="h-3.5 w-3.5 text-violet-500 shrink-0" aria-hidden />
+            Auto-refresh about every {Math.max(1, Math.round(POLL_MS / 1000))} sec
+          </span>
+          {lastUpdated ? (
+            <>
+              <span aria-hidden>•</span>
+              <span>Last fetched {lastUpdated}</span>
+            </>
           ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 rounded-full text-xs"
-            disabled={isLoading || isFetching}
-            onClick={() => {
-              void queryClient.invalidateQueries({ queryKey: ["/api/changelog"] });
-            }}
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden />
-            Refresh now
-          </Button>
+          {isFetching && !isLoading ? <span className="text-violet-600 dark:text-violet-400">Updating…</span> : null}
         </div>
       </div>
 
-      <div
-        className="mb-6 flex flex-wrap gap-2"
-        role="toolbar"
-        aria-label="Filter updates by topic"
-      >
-        {TOPIC_FILTERS.map(({ value, label }) => (
-          <Button
-            key={value}
-            type="button"
-            size="sm"
-            variant={topicFilter === value ? "default" : "outline"}
-            className="rounded-full"
-            onClick={() => setTopicFilter(value)}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as TabValue)} className="w-full">
+        <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="all">All topics</TabsTrigger>
+          {UPDATES_TOPIC_IDS.map((id) => (
+            <TabsTrigger key={id} value={id} className="text-xs sm:text-sm">
+              {UPDATES_TOPIC_LABELS[id]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      <p className="text-xs text-muted-foreground mb-4">
+        {tab === "all"
+          ? "Blend of marketing strategy, actionable how-tos, digital and SEO depth, industry headlines, and Ascendra’s own posts and verified notes."
+          : UPDATES_TOPIC_SOURCE_NOTES[tab]}
+      </p>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading updates" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading feed" />
         </div>
       ) : error ? (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">
-              We couldn’t load updates right now. Please try again in a moment.
-            </p>
+            <p className="text-muted-foreground">We couldn&apos;t load the feed right now. Please try again later.</p>
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" aria-hidden />
-            <p className="text-muted-foreground">
-              {entries.length === 0
-                ? "No updates to show yet. Check back soon."
-                : "No items in this topic filter. Try All or another tab."}
-            </p>
+            <p className="text-muted-foreground">No items for this topic yet. Try another tab or check back shortly.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {filtered.map((entry) => (
-            <UpdateCard key={entry.id} entry={entry} />
+          {filtered.map((item) => (
+            <FeedCard key={item.id} item={item} />
           ))}
         </div>
       )}
+
+      <div className="mt-10 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
+        <p>
+          External articles link to third-party publishers; Ascendra does not control their content. Verified notes are
+          written and reviewed in-house before they appear here.
+        </p>
+        {data?.generatedAt ? (
+          <p>Last refreshed: {format(new Date(data.generatedAt), "PPpp")}.</p>
+        ) : null}
+      </div>
 
       <div className="mt-8 flex justify-center">
         <Button variant="outline" asChild>

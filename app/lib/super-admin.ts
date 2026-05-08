@@ -16,3 +16,18 @@ export function isAuthApprovedAdmin(
 ): boolean {
   return user?.isAdmin === true && user?.adminApproved === true;
 }
+
+/**
+ * File paths, env names, schema/table identifiers, raw keys — show only to super admins, or to any
+ * approved admin while running a local `next dev` build (not on public routes).
+ */
+export function shouldShowAdminTechnicalCopy(
+  user:
+    | { isSuperUser?: boolean; isAdmin?: boolean | null; adminApproved?: boolean | null }
+    | null
+    | undefined
+): boolean {
+  if (isAuthSuperUser(user)) return true;
+  if (process.env.NODE_ENV !== "development") return false;
+  return isAuthApprovedAdmin(user);
+}

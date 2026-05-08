@@ -34,7 +34,16 @@ function k(...words: string[]): string[] {
 /** All primary routes (static + common dynamic patterns). */
 export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
   // —— Public: core marketing
-  { path: "/", title: "Home", category: "Public · Marketing", audience: "public", description: "Main landing: hero, ecosystem, CTAs.", keywords: k("home", "landing"), cluster: "marketing-core" },
+  {
+    path: "/",
+    title: "Home",
+    category: "Public · Marketing",
+    audience: "public",
+    description: "Main landing: hero, ecosystem, CTAs, and optional intake/capacity callout (urgency surface ascendra-home).",
+    keywords: k("home", "landing", "intake", "strategy call", "growth diagnosis"),
+    cluster: "marketing-core",
+    relatedPaths: ["/diagnosis", "/digital-growth-audit", "/strategy-call", "/admin/urgency-conversion"],
+  },
   { path: "/about", title: "About", category: "Public · Marketing", audience: "public", description: "Company story and team context.", keywords: k("about", "company"), relatedPaths: ["/brand-growth"] },
   { path: "/brand-growth", title: "Brand Growth hub", category: "Public · Marketing", audience: "public", description: "Ecosystem hub: Ascendra + partners, growth systems.", keywords: k("brand", "ecosystem", "hub"), cluster: "marketing-core" },
   { path: "/services", title: "Services", category: "Public · Marketing", audience: "public", description: "Service overview and positioning.", keywords: k("services", "what we do") },
@@ -587,10 +596,29 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     relatedPaths: [
       "/growth-platform",
       "/admin/growth-platform/agreements",
+      "/admin/growth-platform/legal-funnel",
       "/admin/experiments",
       "/admin/offers",
       "/admin/leads",
       "/admin/paid-growth",
+    ],
+  },
+  {
+    path: "/admin/growth-platform/legal-funnel",
+    title: "Growth platform — legal & funnel",
+    category: "Admin · Ops",
+    audience: "admin",
+    description:
+      "Hub for public terms and engagement pages, growth-platform recommendation path, Growth Engine entry, and links to service agreements plus clause library.",
+    keywords: k("legal", "funnel", "terms", "agreements", "clauses", "growth platform"),
+    relatedPaths: [
+      "/admin/growth-platform",
+      "/admin/growth-platform/agreements",
+      "/admin/growth-platform/clauses",
+      "/admin/paid-growth",
+      "/terms",
+      "/service-engagement",
+      "/growth-platform/recommendation",
     ],
   },
   {
@@ -601,9 +629,17 @@ export const SITE_DIRECTORY_ENTRIES: SiteDirectoryEntry[] = [
     description:
       "Document signing engine: create contracts/agreements, manage reusable signature fields, capture admin signatures, and send DocuSign plus Stripe milestone invoices.",
     keywords: k("agreement", "contract", "esign", "docusign", "signature fields", "admin sign", "stripe", "milestones", "sow"),
-    relatedPaths: ["/admin/growth-platform", "/agreements/[token]", "/admin/behavior-intelligence/heatmaps"],
+    relatedPaths: ["/admin/growth-platform", "/admin/growth-platform/legal-funnel", "/agreements/[token]", "/admin/behavior-intelligence/heatmaps"],
   },
-  { path: "/admin/growth-platform/clauses", title: "Growth platform — clause library", category: "Admin · Ops", audience: "admin", description: "Manage reusable legal/service clauses for agreement generation.", keywords: k("growth platform", "clauses", "agreements", "legal") },
+  {
+    path: "/admin/growth-platform/clauses",
+    title: "Growth platform — clause library",
+    category: "Admin · Ops",
+    audience: "admin",
+    description: "Manage reusable legal/service clauses for agreement generation.",
+    keywords: k("growth platform", "clauses", "agreements", "legal"),
+    relatedPaths: ["/admin/growth-platform", "/admin/growth-platform/legal-funnel", "/admin/growth-platform/agreements"],
+  },
   { path: "/admin/paid-growth/optimization", title: "PPC optimization (rules)", category: "Admin · Ops", audience: "admin", description: "Persisted recommendations from spend + lead-quality rules.", keywords: k("optimization", "ppc", "rules") },
   { path: "/admin/paid-growth/verification", title: "PPC lead verification queue", category: "Admin · Ops", audience: "admin", description: "Pending verification for paid-attributed CRM leads; ties to attribution sessions and billable events.", keywords: k("verification", "ppc", "leads", "queue") },
   { path: "/admin/paid-growth/billable-events", title: "PPC billable events", category: "Admin · Ops", audience: "admin", description: "Performance billing line items: approve, dispute, or reject before invoicing.", keywords: k("billing", "ppc", "billable", "events") },

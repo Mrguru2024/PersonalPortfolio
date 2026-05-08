@@ -6,7 +6,6 @@ import { users, type User, type InsertUser,
   blogPosts, type BlogPost, type InsertBlogPost,
   blogComments, type BlogComment, type InsertBlogComment,
   blogPostContributions, type BlogPostContribution, type InsertBlogPostContribution,
-  resumeRequests, type ResumeRequest, type InsertResumeRequest,
   projectAssessments, type ProjectAssessment, type InsertProjectAssessment,
   clientQuotes, type ClientQuote, type InsertClientQuote,
   clientInvoices,
@@ -283,12 +282,6 @@ export interface IStorage {
   updateAssessmentStatus(id: number, status: string): Promise<ProjectAssessment>;
   deleteAssessment(id: number): Promise<void>;
   restoreAssessment(id: number): Promise<ProjectAssessment>;
-  
-  // Resume request operations
-  createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest>;
-  getAllResumeRequests(): Promise<ResumeRequest[]>;
-  getResumeRequestByToken(token: string): Promise<ResumeRequest | undefined>;
-  markResumeRequestAsAccessed(id: number): Promise<ResumeRequest>;
   
   // Blog operations
   getBlogPosts(): Promise<BlogPost[]>;
@@ -1522,55 +1515,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Resume request operations
-  async createResumeRequest(request: InsertResumeRequest): Promise<ResumeRequest> {
-    const now = new Date();
-    // Generate a unique token for resume access
-    const accessToken = crypto.randomUUID().replace(/-/g, '');
-    
-    const [insertedRequest] = await db
-      .insert(resumeRequests)
-      .values({
-        ...request,
-        createdAt: now.toISOString(),
-        accessToken,
-        accessed: false,
-      })
-      .returning();
-      
-    return insertedRequest;
-  }
-  
-  async getResumeRequestByToken(token: string): Promise<ResumeRequest | undefined> {
-    const [request] = await db
-      .select()
-      .from(resumeRequests)
-      .where(eq(resumeRequests.accessToken, token));
-      
-    return request || undefined;
-  }
-  
-  async getAllResumeRequests(): Promise<ResumeRequest[]> {
-    return db
-      .select()
-      .from(resumeRequests)
-      .orderBy(desc(resumeRequests.createdAt));
-  }
-  
-  async markResumeRequestAsAccessed(id: number): Promise<ResumeRequest> {
-    const now = new Date();
-    const [updatedRequest] = await db
-      .update(resumeRequests)
-      .set({
-        accessed: true,
-        accessedAt: now,
-      })
-      .where(eq(resumeRequests.id, id))
-      .returning();
-      
-    return updatedRequest;
-  }
-  
   // Blog operations
   async getBlogPosts(): Promise<BlogPost[]> {
     return db.select().from(blogPosts).orderBy(desc(blogPosts.publishedAt));

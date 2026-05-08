@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClientServiceAgreementByToken } from "@server/services/serviceAgreementService";
-import {
-  getAgreementDocumentType,
-} from "@server/services/serviceAgreementService";
+import { getAgreementDocumentType } from "@server/services/serviceAgreementService";
+import { agreementDisplayTitleFromVariables } from "@shared/documentSigningEngine";
 import {
   SIGNATURE_FIELDS_BY_ROLE,
 } from "@shared/documentSigningEngine";
@@ -25,6 +24,7 @@ export async function GET(
       publicToken: agreement.publicToken,
       status: agreement.status,
       documentType: getAgreementDocumentType(agreement),
+      documentTitle: agreementDisplayTitleFromVariables(agreement.variablesJson as Record<string, unknown> | null),
       clientName: agreement.clientName,
       htmlBody: agreement.htmlBody,
       signatureFields: SIGNATURE_FIELDS_BY_ROLE.client,

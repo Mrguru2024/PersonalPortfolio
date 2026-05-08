@@ -17,7 +17,6 @@ import { BRAND_GROWTH_PATH } from "@/lib/funnelCtas";
 type SessionExtras = {
   bookingManageHref: string | null;
   bookingEmailSent: boolean | null;
-  resumeDownloadUrl: string | null;
 };
 
 function copyForForm(form: ThankYouFormId): {
@@ -88,11 +87,6 @@ function copyForForm(form: ThankYouFormId): {
         title: "You’re booked",
         body: "Your meeting is saved. Check your email for confirmation and calendar details when available.",
       };
-    case "resume_request":
-      return {
-        title: "Request received",
-        body: "Thanks — your resume access request went through. Use the button below if your download is ready.",
-      };
     case "data_deletion":
       return {
         title: "Data deletion request received",
@@ -122,7 +116,6 @@ export default function ThankYouContent() {
 
     let bookingManageHref: string | null = null;
     let bookingEmailSent: boolean | null = null;
-    let resumeDownloadUrl: string | null = null;
 
     if (formId === "native_booking") {
       bookingManageHref = sessionStorage.getItem(THANK_YOU_SESSION.bookingManageHref);
@@ -135,14 +128,7 @@ export default function ThankYouContent() {
       sessionStorage.removeItem(THANK_YOU_SESSION.bookingEmailSent);
     }
 
-    if (formId === "resume_request") {
-      resumeDownloadUrl = sessionStorage.getItem(THANK_YOU_SESSION.resumeDownloadUrl);
-      sessionStorage.removeItem(THANK_YOU_SESSION.resumeDownloadUrl);
-    } else {
-      sessionStorage.removeItem(THANK_YOU_SESSION.resumeDownloadUrl);
-    }
-
-    setExtras({ bookingManageHref, bookingEmailSent, resumeDownloadUrl });
+    setExtras({ bookingManageHref, bookingEmailSent });
   }, [formId]);
 
   const bookingEmailNote =
@@ -195,18 +181,6 @@ export default function ThankYouContent() {
                     </li>
                   ))}
                 </ul>
-              </div>
-            ) : null}
-
-            {formId === "resume_request" && extras?.resumeDownloadUrl ? (
-              <div className="mb-6">
-                <Button
-                  className="w-full gap-2"
-                  onClick={() => window.open(extras.resumeDownloadUrl!, "_blank", "noopener,noreferrer")}
-                >
-                  Download resume
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
               </div>
             ) : null}
 

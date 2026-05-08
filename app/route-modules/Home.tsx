@@ -33,6 +33,7 @@ import {
 import { OutcomeLandingFramework } from "@/components/marketing/OutcomeLandingFramework";
 import { OUTCOME_FRAMEWORK_COPY_HOME } from "@/lib/landingPageOutcomeFramework";
 import { ASCENDRA_VIDEO } from "@/lib/ascendraMedia";
+import { LeadMagnetUrgencyZone } from "@/components/urgency-conversion/LeadMagnetUrgencyZone";
 
 const AscendraPromoVideo = dynamic(
   () => import("@/components/media/AscendraPromoVideo").then((m) => ({ default: m.AscendraPromoVideo })),
@@ -219,6 +220,27 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </SectionReveal>
+      </section>
+      <section
+        id="how-we-take-on-work"
+        className="container mx-auto px-3 fold:px-4 sm:px-6 py-2 sm:py-4"
+        aria-label="How we take on new client work"
+      >
+        <SectionReveal className="mx-auto max-w-3xl">
+          <div className="text-center space-y-2 mb-6">
+            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">How we take on new work</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              Coordinated brand, design, and systems work needs attention—not a revolving door of half-scoped
+              requests. We review new engagements on a clear rhythm so your first conversations are about fit and
+              priorities; when a window is full, we say so and still point you to diagnostics and tools.
+            </p>
+          </div>
+          <LeadMagnetUrgencyZone
+            surfaceKey="ascendra-home"
+            progressHeading="Typical path with Ascendra"
+            className="shadow-sm"
+          />
         </SectionReveal>
       </section>
       <SectionConnector variant="gradient" />

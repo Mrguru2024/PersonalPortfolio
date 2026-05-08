@@ -299,25 +299,29 @@ export default function AdminSystemPage() {
   }
 
   return (
-    <div className="container max-w-6xl py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="container max-w-6xl py-6 sm:py-8 px-3 sm:px-4 min-w-0">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         <Link href="/admin/dashboard">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">System monitor</h1>
           <p className="text-muted-foreground text-sm max-w-2xl">
             SQL-backed counts and audit log, merged <strong>live feed</strong> (memory + audit + visitor events), and an
             in-memory error buffer for this server instance only. Super-admin only.
           </p>
         </div>
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
         <Button
           variant="outline"
           size="sm"
           onClick={handleRefresh}
           disabled={refreshing || loading}
+          className="justify-start sm:justify-center"
         >
           {refreshing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -331,6 +335,7 @@ export default function AdminSystemPage() {
           size="sm"
           onClick={handleDownloadLogs}
           disabled={logs.length === 0}
+          className="justify-start sm:justify-center"
         >
           <Download className="h-4 w-4" />
           <span className="ml-2">Download logs</span>
@@ -340,6 +345,7 @@ export default function AdminSystemPage() {
           size="sm"
           onClick={handleClear}
           disabled={clearing || logs.length === 0}
+          className="justify-start sm:justify-center"
         >
           {clearing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -348,22 +354,23 @@ export default function AdminSystemPage() {
           )}
           <span className="ml-2">Clear logs</span>
         </Button>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="justify-start sm:justify-center" asChild>
           <Link href="/admin/lead-intake?tab=growth_diagnosis" className="gap-2">
             <Gauge className="h-4 w-4" />
             Lead intake (diagnosis)
           </Link>
         </Button>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="justify-start sm:justify-center" asChild>
           <Link href="/admin/deployment-env" className="gap-2">
             Deployment env
           </Link>
         </Button>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="justify-start sm:justify-center" asChild>
           <Link href="/admin/integrations" className="gap-2">
             Integrations
           </Link>
         </Button>
+      </div>
       </div>
 
       {/* Health & overview */}
@@ -637,7 +644,7 @@ export default function AdminSystemPage() {
               </CardDescription>
             </div>
             <Select value={activityLogFilter || "all"} onValueChange={(v) => setActivityLogFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Event type" />
               </SelectTrigger>
               <SelectContent>
@@ -670,7 +677,7 @@ export default function AdminSystemPage() {
               OAuth (Google/GitHub) and registration also record here.
             </p>
           ) : activityLogEntries.length === 0 ? null : (
-            <div className="overflow-x-auto -mx-2 space-y-2">
+            <div className="space-y-2">
               {(() => {
                 const ACTIVITY_INITIAL = 25;
                 const initialRows = activityLogEntries.slice(0, ACTIVITY_INITIAL);
@@ -794,24 +801,83 @@ export default function AdminSystemPage() {
                     })}
                   </>
                 );
+                const MobileList = ({ entries }: { entries: ActivityLogEntry[] }) => (
+                  <div className="space-y-2 md:hidden">
+                    {entries.map((entry) => {
+                      const expanded = expandedActivityId === entry.id;
+                      const breakdown = isErrorType(entry) ? getErrorBreakdown(entry) : null;
+                      return (
+                        <Card key={entry.id} className={isErrorType(entry) ? "border-destructive/40" : undefined}>
+                          <CardContent className="p-3 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <Badge variant={isErrorType(entry) ? "destructive" : "secondary"}>
+                                {entry.eventType}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {formatLocaleMediumDateTime(entry.createdAt)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground break-all">
+                              {entry.username ?? entry.identifier ?? (entry.userId ? `#${entry.userId}` : "—")} · {entry.ipAddress ?? "—"}
+                            </p>
+                            <p className="text-sm text-muted-foreground break-words">
+                              {entry.message ?? "—"}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="-ml-2"
+                              onClick={() => setExpandedActivityId((id) => (id === entry.id ? null : entry.id))}
+                            >
+                              <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                              {expanded ? "Hide details" : "Show details"}
+                            </Button>
+                            {expanded ? (
+                              <div className="space-y-2 rounded-md border bg-muted/20 p-2 text-xs">
+                                {entry.userAgent ? (
+                                  <p className="text-muted-foreground break-all">
+                                    <span className="font-medium text-foreground">User agent:</span> {entry.userAgent}
+                                  </p>
+                                ) : null}
+                                {breakdown ? (
+                                  <>
+                                    <p className="text-muted-foreground whitespace-pre-wrap break-words">
+                                      <span className="font-medium text-foreground">Where:</span> {breakdown.where}
+                                    </p>
+                                    <p className="text-muted-foreground break-words">
+                                      <span className="font-medium text-foreground">Fix:</span> {breakdown.fix}
+                                    </p>
+                                  </>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
                 return (
                   <>
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="border-b text-left">
-                          <th className="py-2 px-2 w-8 font-medium text-muted-foreground" aria-label="Expand" />
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <TableBody entries={initialRows} />
-                      </tbody>
-                    </table>
+                    <MobileList entries={initialRows} />
+                    <div className="hidden md:block overflow-x-auto -mx-2">
+                      <table className="w-full text-sm border-collapse min-w-[760px]">
+                        <thead>
+                          <tr className="border-b text-left">
+                            <th className="py-2 px-2 w-8 font-medium text-muted-foreground" aria-label="Expand" />
+                            <th className="py-2 px-2 font-medium text-muted-foreground">Time</th>
+                            <th className="py-2 px-2 font-medium text-muted-foreground">Event</th>
+                            <th className="py-2 px-2 font-medium text-muted-foreground">User</th>
+                            <th className="py-2 px-2 font-medium text-muted-foreground">Success</th>
+                            <th className="py-2 px-2 font-medium text-muted-foreground max-w-[200px]">Message</th>
+                            <th className="py-2 px-2 font-medium text-muted-foreground">IP</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <TableBody entries={initialRows} />
+                        </tbody>
+                      </table>
+                    </div>
                     {moreRows.length > 0 && (
                       <Collapsible>
                         <CollapsibleTrigger asChild>
@@ -820,8 +886,10 @@ export default function AdminSystemPage() {
                             Show {moreRows.length} more activit{moreRows.length !== 1 ? "ies" : "y"}
                           </Button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <table className="w-full text-sm border-collapse rounded-md border">
+                        <CollapsibleContent className="space-y-2">
+                          <MobileList entries={moreRows} />
+                          <div className="hidden md:block overflow-x-auto">
+                          <table className="w-full text-sm border-collapse rounded-md border min-w-[760px]">
                             <thead>
                               <tr className="border-b text-left bg-muted/30">
                                 <th className="py-2 px-2 w-8 font-medium text-muted-foreground" aria-label="Expand" />
@@ -837,6 +905,7 @@ export default function AdminSystemPage() {
                               <TableBody entries={moreRows} />
                             </tbody>
                           </table>
+                          </div>
                         </CollapsibleContent>
                       </Collapsible>
                     )}

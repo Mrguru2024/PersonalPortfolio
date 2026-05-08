@@ -226,8 +226,6 @@ app.get("/api/projects/:id", portfolioController.getProjectById);
 app.get("/api/personal-info", portfolioController.getPersonalInfo);
 app.get("/api/contact-info", portfolioController.getContactInfo);
 app.post("/api/contact", portfolioController.submitContactForm);
-app.post("/api/request-resume", portfolioController.requestResume);
-app.get("/api/resume/:token", portfolioController.downloadResume);
 
 // Blog routes
 app.get("/api/blog", blogController.getBlogPosts);

@@ -9,7 +9,6 @@ export const THANK_YOU_PATH = "/thank-you";
 export const THANK_YOU_SESSION = {
   bookingManageHref: "ascendra_ty_booking_manage_href",
   bookingEmailSent: "ascendra_ty_booking_email_sent",
-  resumeDownloadUrl: "ascendra_ty_resume_download_url",
 } as const;
 
 export function funnelThankYouUrl(formId: string): string {
@@ -46,7 +45,6 @@ export function normalizeThankYouFormId(raw: string | null): ThankYouFormId {
     "growth_plan_apply",
     "ppc_lead_consultation",
     "native_booking",
-    "resume_request",
     "data_deletion",
   ];
   return (allowed.includes(raw as ThankYouFormId) ? raw : "default") as ThankYouFormId;

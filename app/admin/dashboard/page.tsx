@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, isAuthSuperUser } from "@/hooks/use-auth";
+import { useAuth, isAuthSuperUser, shouldShowAdminTechnicalCopy } from "@/hooks/use-auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +28,6 @@ import {
   PenLine,
   Inbox,
   Map as MapIcon,
-  FileText,
   LineChart,
   Search,
   ChevronDown,
@@ -506,17 +505,6 @@ export default function AdminDashboardPage() {
     staleTime: 0,
   });
 
-  type ResumeRequestRow = { id: number; accessed?: boolean };
-  const { data: resumeRequests = [] } = useQuery<ResumeRequestRow[]>({
-    queryKey: ["/api/admin/resume-requests"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/resume-requests");
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
-  });
-
   // Handle 403 from any admin query (onError was removed in TanStack Query v5)
   useEffect(() => {
     const err = assessmentsError ?? contactsError;
@@ -612,6 +600,7 @@ export default function AdminDashboardPage() {
   const activeAssessments = assessments.filter((a) => a.status !== "archived");
   const archivedAssessments = assessments.filter((a) => a.status === "archived");
   const isSuperAdmin = isAuthSuperUser(user);
+  const showAdminTechnicalCopy = shouldShowAdminTechnicalCopy(user);
   const tourSteps = getStepsForRole(isSuperAdmin);
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const createdInLastWeek = (iso: string) => {
@@ -668,18 +657,6 @@ export default function AdminDashboardPage() {
               <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                 <div className="text-xl sm:text-2xl font-bold">{contacts.length}</div>
                 <p className="text-xs text-muted-foreground mt-0.5">Contact form submissions</p>
-              </CardContent>
-            </Card>
-            <Card className="border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-                <CardTitle className="text-sm font-medium">Resume Requests</CardTitle>
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                <div className="text-xl sm:text-2xl font-bold">{resumeRequests.length}</div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {resumeRequests.filter((r) => !r.accessed).length} unaccessed
-                </p>
               </CardContent>
             </Card>
           </div>
@@ -1342,7 +1319,7 @@ export default function AdminDashboardPage() {
           <CollapsibleContent className="data-[state=closed]:animate-none">
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0">
               <CardDescription className="text-sm leading-relaxed max-w-3xl mb-4">
-                {isSuperAdmin ?
+                {showAdminTechnicalCopy ?
                   <>
                     Features and fixes shipped to production. In production, the list loads from{" "}
                     <code className="text-xs bg-muted px-1 rounded break-all">content/development-updates.md</code> on
@@ -1400,7 +1377,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : !devUpdatesData?.updates?.length ? (
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl py-2">
-                  {isSuperAdmin ?
+                  {showAdminTechnicalCopy ?
                     <>
                       No entries yet. Add sections to content/development-updates.md: start each section with{" "}
                       <code className="text-xs bg-muted px-1 rounded break-all">## YYYY-MM-DD — Title</code> or include

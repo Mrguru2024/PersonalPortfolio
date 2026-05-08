@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import type { LeadIntakeKind } from "@shared/leadIntakeTypes";
 import { Input } from "@/components/ui/input";
 import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
+import { useShowAdminTechnicalCopy } from "@/components/admin/AdminDevOnly";
 
 interface IntakeItem {
   kind: LeadIntakeKind;
@@ -54,6 +55,7 @@ function itemKey(k: LeadIntakeKind, id: number) {
 
 function AdminLeadIntakePage() {
   const { user, isLoading: authLoading } = useAuth();
+  const showTechnical = useShowAdminTechnicalCopy();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") ?? "all";
@@ -159,9 +161,10 @@ function AdminLeadIntakePage() {
     }
     if (useAi && !aiConfigured) {
       toast({
-        title: "Enhanced import unavailable",
-        description:
-          "AI isn’t configured, so enhanced import isn’t available. Use standard import or enable it in settings.",
+        title: "AI not configured",
+        description: showTechnical
+          ? "Set OPENAI_API_KEY or import without AI."
+          : "Configure OpenAI in your hosting settings, or import without AI.",
         variant: "destructive",
       });
       return;
@@ -203,8 +206,16 @@ function AdminLeadIntakePage() {
             </h1>
             <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
               Audits, diagnosis reports, funnel quiz submissions, and project assessments in one place. Import into CRM
-              with optional enhanced tagging and summary notes. Matches existing contacts by email to avoid duplicate
-              records.
+              with optional AI intent, lifecycle, tags, and notes
+              {showTechnical ? (
+                <>
+                  {" "}
+                  (requires <code className="text-xs bg-muted px-1 rounded">OPENAI_API_KEY</code>)
+                </>
+              ) : (
+                " (requires OpenAI to be enabled in hosting)"
+              )}
+              . Merges on email using your existing CRM rules.
             </p>
           </div>
         </div>
@@ -225,9 +236,9 @@ function AdminLeadIntakePage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Bulk actions</CardTitle>
           <CardDescription>
-            Select rows below, then import. Enhanced import adds tags, intent, lifecycle, industry, and a short summary
-            note.
-            {!aiConfigured && " Enhanced import is currently off."}
+            Select rows below, then import. AI adds tags, intent, lifecycle, industry, and a short internal note.
+            {!aiConfigured &&
+              (showTechnical ? " AI is off until OPENAI_API_KEY is set." : " AI is off until OpenAI is configured.")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">

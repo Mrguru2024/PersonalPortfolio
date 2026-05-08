@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useShowAdminTechnicalCopy } from "@/components/admin/AdminDevOnly";
 
 type Row = {
   id: number;
@@ -29,6 +30,7 @@ type Row = {
 
 export default function PaidGrowthLeadQualityPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const showTechnical = useShowAdminTechnicalCopy();
   const router = useRouter();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -88,8 +90,17 @@ export default function PaidGrowthLeadQualityPage() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground max-w-2xl">
-        Score paid-sourced leads for fit and outcomes. Data lives in <code className="text-xs">ppc_lead_quality</code> keyed
-        by CRM contact — no duplicate lead table.
+        {showTechnical ? (
+          <>
+            Score paid-sourced leads for fit and outcomes. Data lives in{" "}
+            <code className="text-xs">ppc_lead_quality</code> keyed by CRM contact — no duplicate lead table.
+          </>
+        ) : (
+          <>
+            Score paid-sourced leads for fit and outcomes. Scores and notes are stored on the matching CRM contact—there
+            is no separate duplicate lead list.
+          </>
+        )}
       </p>
       {isLoading ? (
         <Loader2 className="h-8 w-8 animate-spin" />

@@ -97,6 +97,8 @@ interface LeadItem {
   status: string;
   updatedAt: string;
   diagnosticPath: string;
+  /** From API `opportunity` string when score/value are not structured */
+  opportunityLabel?: string | null;
 }
 
 interface ContentHealth {
@@ -115,10 +117,138 @@ interface OperationsDashboardData {
   generatedAt: string;
   summary: OperationsSummary;
   diagnostics: DiagnosticItem[];
-  caseStudyPipeline: CaseStudyPipelineItem[];
+  caseStudies: CaseStudyPipelineItem[];
   publishingQueue: PublishingQueueItem[];
   leads: LeadItem[];
   contentHealth: ContentHealth;
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
+/** Map GET /api/admin/operations-dashboard JSON to the shape this UI expects. */
+function normalizeOperationsDashboardPayload(raw: unknown): OperationsDashboardData {
+  if (!isRecord(raw)) {
+    throw new Error("Invalid operations dashboard payload");
+  }
+
+  const summaryIn = isRecord(raw.summary) ? raw.summary : {};
+  const summary: OperationsSummary = {
+    newDiagnosticsToReview: Number(summaryIn.newDiagnosticsToReview ?? 0),
+    qualifiedLeads: Number(summaryIn.qualifiedLeads ?? 0),
+    draftCaseStudies: Number(summaryIn.draftCaseStudies ?? 0),
+    publishedCaseStudies: Number(summaryIn.publishedCaseStudies ?? 0),
+    contentMissingKeyElements: Number(summaryIn.contentMissingKeyElements ?? 0),
+    itemsReadyToPublish: Number(summaryIn.itemsReadyToPublish ?? 0),
+    guaranteeNotMet: Number(summaryIn.guaranteeNotMet ?? 0),
+    guaranteeAtRisk: Number(summaryIn.guaranteeAtRisk ?? 0),
+    guaranteePerforming: Number(summaryIn.guaranteePerforming ?? 0),
+  };
+
+  const diagnostics = (Array.isArray(raw.diagnostics) ? raw.diagnostics : []) as DiagnosticItem[];
+
+  const caseStudiesRaw = Array.isArray(raw.caseStudies)
+    ? raw.caseStudies
+    : Array.isArray(raw.caseStudyPipeline)
+      ? raw.caseStudyPipeline
+      : [];
+  const caseStudies: CaseStudyPipelineItem[] = caseStudiesRaw.map((row) => {
+    const r = row as Record<string, unknown>;
+    const missing = r.missingElements;
+    return {
+      id: Number(r.id),
+      title: String(r.title ?? ""),
+      workflowStatus: String(r.workflowStatus ?? "draft"),
+      completionScore: Number(r.completionScore ?? 0),
+      missingElements: Array.isArray(missing) ? (missing as string[]) : [],
+      updatedAt: String(r.updatedAt ?? new Date().toISOString()),
+      publicUrl: r.publicUrl == null ? null : String(r.publicUrl),
+    };
+  });
+
+  const pubRaw = Array.isArray(raw.publishingQueue) ? raw.publishingQueue : [];
+  const publishingQueue: PublishingQueueItem[] = pubRaw.map((row) => {
+    const r = row as Record<string, unknown>;
+    const workflowStatus = String(r.workflowStatus ?? r.status ?? "draft");
+    const slug = r.slug == null || r.slug === "" ? null : String(r.slug);
+    const seoReady = Boolean(r.seoReady);
+    const updated = r.lastUpdated ?? r.updatedAt;
+    return {
+      id: Number(r.id),
+      title: String(r.title ?? ""),
+      status: workflowStatus,
+      seoReadiness: seoReady ? "Ready" : "Needs work",
+      seoReady,
+      lastUpdated: typeof updated === "string" ? updated : new Date().toISOString(),
+      publicUrl: slug ? `/blog/${slug}` : null,
+    };
+  });
+
+  const leadsRaw = Array.isArray(raw.leads) ? raw.leads : [];
+  const leads: LeadItem[] = leadsRaw.map((row) => {
+    const r = row as Record<string, unknown>;
+    const id = Number(r.contactId ?? r.id ?? 0);
+    const opportunity = r.opportunity != null ? String(r.opportunity) : null;
+    return {
+      id,
+      name: String(r.leadName ?? r.name ?? "Unknown"),
+      company: r.business != null ? String(r.business) : r.company != null ? String(r.company) : null,
+      source: String(r.source ?? "unknown"),
+      score: typeof r.score === "number" ? r.score : null,
+      estimatedValue: typeof r.estimatedValue === "number" ? r.estimatedValue : null,
+      status: String(r.status ?? "new"),
+      updatedAt: String(r.updatedAt ?? new Date().toISOString()),
+      diagnosticPath: String(r.diagnosticHref ?? r.diagnosticPath ?? "/admin/lead-intake"),
+      opportunityLabel: opportunity,
+    };
+  });
+
+  const ch = raw.contentHealth;
+  let contentHealth: ContentHealth;
+  if (isRecord(ch) && Array.isArray(ch.issues)) {
+    const issues = ch.issues as unknown[];
+    const countFor = (label: string) => {
+      for (const entry of issues) {
+        if (!isRecord(entry)) continue;
+        if (entry.label === label && typeof entry.count === "number") return entry.count;
+      }
+      return 0;
+    };
+    contentHealth = {
+      completionScore: typeof ch.averageCompletionScore === "number" ? ch.averageCompletionScore : 0,
+      totalAssets: Math.max(1, summary.draftCaseStudies + summary.publishedCaseStudies),
+      issueCounts: {
+        missingHeadline: countFor("Missing headline"),
+        missingResults: countFor("Missing results"),
+        missingVisuals: countFor("Missing visuals"),
+        missingCta: countFor("Missing CTA"),
+        missingSeo: countFor("Missing SEO"),
+      },
+    };
+  } else {
+    contentHealth = {
+      completionScore: 0,
+      totalAssets: Math.max(1, summary.draftCaseStudies + summary.publishedCaseStudies),
+      issueCounts: {
+        missingHeadline: 0,
+        missingResults: 0,
+        missingVisuals: 0,
+        missingCta: 0,
+        missingSeo: 0,
+      },
+    };
+  }
+
+  return {
+    generatedAt: String(raw.generatedAt ?? new Date().toISOString()),
+    summary,
+    diagnostics,
+    caseStudies,
+    publishingQueue,
+    leads,
+    contentHealth,
+  };
 }
 
 function formatOpportunity(estimatedValue: number | null, score: number | null): string {
@@ -326,7 +456,7 @@ export function DiagnosticsTable({
               No recent diagnostic submissions found.
             </p>
           ) : (
-            <Table>
+            <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Business Type</TableHead>
@@ -442,6 +572,7 @@ export function CaseStudyList({
   onDuplicate,
   onActionClick,
 }: CaseStudyListProps) {
+  const safeRows = rows ?? [];
   return (
     <section className="space-y-3">
       <div>
@@ -452,12 +583,12 @@ export function CaseStudyList({
       </div>
       <Card>
         <CardContent className="pt-4 space-y-3">
-          {rows.length === 0 ? (
+          {safeRows.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No case-study items in Content Studio yet. Use “Create Case Study” to start the pipeline.
             </p>
           ) : (
-            rows.map((row) => (
+            safeRows.map((row) => (
               <div key={row.id} className="rounded-lg border p-4 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
@@ -470,9 +601,9 @@ export function CaseStudyList({
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-medium">Completion Score: {row.completionScore}%</span>
-                  {row.missingElements.length > 0 ? (
+                  {(row.missingElements ?? []).length > 0 ? (
                     <span className="text-muted-foreground">
-                      Missing: {row.missingElements.join(", ")}
+                      Missing: {(row.missingElements ?? []).join(", ")}
                     </span>
                   ) : (
                     <span className="text-emerald-600 dark:text-emerald-400">All key elements covered</span>
@@ -575,7 +706,7 @@ export function PublishingPanel({ rows, onPublish, onActionClick }: PublishingPa
               Nothing in the publishing queue yet.
             </p>
           ) : (
-            <Table>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -687,7 +818,7 @@ export function LeadPanel({
           {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No lead records available.</p>
           ) : (
-            <Table>
+            <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Lead / Business</TableHead>
@@ -707,7 +838,11 @@ export function LeadPanel({
                       </div>
                     </TableCell>
                     <TableCell>{toTitleCase(row.source)}</TableCell>
-                    <TableCell>{formatOpportunity(row.estimatedValue, row.score)}</TableCell>
+                    <TableCell>
+                      {row.opportunityLabel != null && row.opportunityLabel !== ""
+                        ? row.opportunityLabel
+                        : formatOpportunity(row.estimatedValue, row.score)}
+                    </TableCell>
                     <TableCell>
                       <Select
                         value={row.status || "new"}
@@ -883,7 +1018,7 @@ export default function AscendraOperationsDashboard() {
     queryFn: async () => {
       const res = await fetch("/api/admin/operations-dashboard", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load operations dashboard");
-      return res.json();
+      return normalizeOperationsDashboardPayload(await res.json());
     },
     staleTime: 45_000,
     refetchOnWindowFocus: true,
@@ -1101,7 +1236,7 @@ export default function AscendraOperationsDashboard() {
         onActionClick={onActionClick}
       />
       <CaseStudyList
-        rows={data.caseStudyPipeline}
+        rows={data.caseStudies}
         onPublish={(documentId, publish) => publishMutation.mutate({ documentId, publish })}
         onDuplicate={(documentId) => duplicateMutation.mutate(documentId)}
         onActionClick={onActionClick}

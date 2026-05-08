@@ -10,8 +10,8 @@ import {
 } from "./legalClauseService";
 import { createAndSendEnvelopeWithPdf, isDocuSignConfigured } from "./docusignEnvelopeService";
 import {
-  documentDisplayTitle,
   normalizeDocumentType,
+  resolveAgreementDisplayTitle,
   SIGNATURE_FIELDS_BY_ROLE,
   type DocumentType,
   type SignerRole,
@@ -44,6 +44,8 @@ export async function createClientServiceAgreement(input: {
   clientName: string;
   clientEmail: string;
   documentType?: DocumentType;
+  /** Optional; overrides the default label for the chosen document type in HTML and client UI. */
+  documentTitleOverride?: string | null;
   companyLegalName?: string | null;
   scopeBullets: string[];
   pricingNarrative: string;
@@ -56,6 +58,10 @@ export async function createClientServiceAgreement(input: {
 }) {
   const effectiveDateIso = new Date().toISOString().slice(0, 10);
   const documentType = normalizeDocumentType(input.documentType);
+  const titleOverride =
+    input.documentTitleOverride != null && String(input.documentTitleOverride).trim() ?
+      String(input.documentTitleOverride).trim().slice(0, 200)
+    : null;
   const clauseSlugs =
     input.clauseSlugs?.filter((s) => s.trim()).length ?
       input.clauseSlugs!.map((s) => s.trim().toLowerCase())
@@ -64,7 +70,7 @@ export async function createClientServiceAgreement(input: {
   const libraryClauses = clauseRows.map((r) => ({ title: r.title, bodyHtml: r.bodyHtml }));
 
   const template: ServiceAgreementTemplateInput = {
-    documentTypeLabel: documentDisplayTitle(documentType),
+    documentTypeLabel: resolveAgreementDisplayTitle(documentType, titleOverride),
     providerLegalName: providerLegalName(),
     clientLegalName: input.companyLegalName?.trim() || input.clientName.trim(),
     clientContactName: input.clientName.trim(),
@@ -94,6 +100,7 @@ export async function createClientServiceAgreement(input: {
       clauseSlugsJson: clauseSlugs,
       variablesJson: {
         documentType,
+        ...(titleOverride ? { documentTitleOverride: titleOverride } : {}),
         providerLegalName: template.providerLegalName,
         effectiveDateIso,
       },

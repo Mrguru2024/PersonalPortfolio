@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
     const scopeLines = String(body.scopeBullets ?? "").split("\n");
     const milestonesRaw = Array.isArray(body.milestones) ? body.milestones : [];
     const documentType = normalizeDocumentType(body.documentType);
+    const rawOverride = body.documentTitleOverride != null ? String(body.documentTitleOverride).trim() : "";
+    if (documentType === "custom" && !rawOverride) {
+      return NextResponse.json({ error: "Custom document type requires a display title." }, { status: 400 });
+    }
     const milestones = milestonesRaw.map((m: unknown) => {
       const o = m as Record<string, unknown>;
       const cents =
@@ -57,6 +61,7 @@ export async function POST(req: NextRequest) {
       clientName,
       clientEmail,
       documentType,
+      documentTitleOverride: rawOverride || null,
       companyLegalName: body.companyLegalName != null ? String(body.companyLegalName) : null,
       scopeBullets: scopeLines,
       pricingNarrative: String(body.pricingNarrative ?? ""),

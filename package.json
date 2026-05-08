@@ -4,6 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "postinstall": "patch-package",
     "prepare": "node scripts/install-git-hooks.mjs",
     "postinstall": "patch-package",
     "dev:install-hooks": "node scripts/install-git-hooks.mjs",
