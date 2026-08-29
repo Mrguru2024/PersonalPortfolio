@@ -21,6 +21,7 @@ import type { LeadAuditCategoryKey, LeadAuditEvidenceItem } from "@/lib/internal
 import { priorityLabel, strengthStateLabel } from "@/lib/internal-audit/auditUiLabels";
 import { VisibilityBadge } from "@/components/growth-os/VisibilityBadge";
 import { useMemo, useState, useEffect } from "react";
+import { formatConstantToLabel } from "@/lib/utils";
 
 const DB_SNAPSHOT_LABELS: Record<string, string> = {
   growthExperiments: "Growth experiments (rows)",
@@ -258,7 +259,7 @@ export function InternalAuditRunDetailClient() {
                       key={key}
                       className="flex justify-between gap-4 rounded-md border border-border/50 px-3 py-2 bg-muted/30"
                     >
-                      <span className="text-muted-foreground">{DB_SNAPSHOT_LABELS[key] ?? key}</span>
+                      <span className="text-muted-foreground">{DB_SNAPSHOT_LABELS[key] ?? formatConstantToLabel(key)}</span>
                       <span className="font-mono tabular-nums font-medium">
                         {val < 0 ? "—" : val}
                       </span>

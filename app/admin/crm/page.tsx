@@ -39,6 +39,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import { useToast } from "@/hooks/use-toast";
 import { intentLevelLabel } from "@/lib/crm-intent";
+import { formatConstantToLabel } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -823,7 +824,7 @@ export default function CrmPage() {
                 return (
                   <Card key={status} className="min-w-[200px] flex flex-col max-h-[70vh] overflow-hidden rounded-xl border shadow-sm">
                     <CardHeader className="py-3 px-4 bg-muted/30 border-b">
-                      <CardTitle className="text-sm font-semibold capitalize">{status}</CardTitle>
+                      <CardTitle className="text-sm font-semibold capitalize">{formatConstantToLabel(status)}</CardTitle>
                       <CardDescription className="text-xs font-medium">{columnContacts.length} contact{columnContacts.length !== 1 ? "s" : ""}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto space-y-2 p-3">
@@ -914,11 +915,11 @@ export default function CrmPage() {
                             <Link href={`/admin/crm/${c.id}`} className="hover:underline hover:text-primary transition-colors">
                               {c.name}
                             </Link>
-                            <Badge variant={c.type === "client" ? "default" : "secondary"} className="rounded-md">{c.type}</Badge>
+                            <Badge variant={c.type === "client" ? "default" : "secondary"} className="rounded-md">{formatConstantToLabel(c.type)}</Badge>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-lg">
-                                  {c.status ?? "new"} <ChevronDown className="h-3 w-3" />
+                                  {formatConstantToLabel(c.status ?? "new")} <ChevronDown className="h-3 w-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
@@ -928,7 +929,7 @@ export default function CrmPage() {
                                     onClick={() => quickStatusMutation.mutate({ id: c.id, status: s })}
                                     disabled={quickStatusMutation.isPending}
                                   >
-                                    {s}
+                                    {formatConstantToLabel(s)}
                                   </DropdownMenuItem>
                                 ))}
                               </DropdownMenuContent>
@@ -1044,7 +1045,7 @@ export default function CrmPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CONTACT_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                      <SelectItem key={s} value={s}>{formatConstantToLabel(s)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1124,7 +1125,7 @@ export default function CrmPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {CONTACT_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                        <SelectItem key={s} value={s}>{formatConstantToLabel(s)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

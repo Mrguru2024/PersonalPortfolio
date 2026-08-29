@@ -35,6 +35,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatConstantToLabel } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -1004,16 +1005,16 @@ function LogEntryCard({
                       <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
                     <Badge variant={entry.type === "error" ? "destructive" : "secondary"}>
-                      {entry.type}
+                      {formatConstantToLabel(entry.type)}
                     </Badge>
                     {entry.route && (
                       <Badge variant="outline">{entry.route}</Badge>
                     )}
                     {entry.method && (
-                      <Badge variant="outline">{entry.method}</Badge>
+                      <Badge variant="outline">{formatConstantToLabel(entry.method)}</Badge>
                     )}
                     {entry.status != null && (
-                      <Badge variant="outline">{entry.status}</Badge>
+                      <Badge variant="outline">{formatConstantToLabel(String(entry.status))}</Badge>
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
