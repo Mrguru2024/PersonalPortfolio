@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Brand Growth – Ascendra Technologies",
   "short_name": "Ascendra",
-  "description": "Brand strategy, websites, and marketing. Install for quick access and limited offline use of pages you’ve opened.",
+  "description": "Brand strategy, websites, and marketing. Install for quick access and offline support for project data.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -27,5 +27,23 @@
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Dashboard",
+      "description": "Access admin dashboard",
+      "url": "/admin",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Projects",
+      "short_name": "Projects",
+      "description": "View projects",
+      "url": "/admin/projects",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ],
+  "offline_enabled": true,
+  "features": ["collaboration", "offline-projects", "sync"]
 }

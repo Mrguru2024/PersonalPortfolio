@@ -8,6 +8,36 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-08-29 03:06 — Auto · 1afb92a
+
+- `fix: resolve Next.js route export and pre-existing TypeScript errors` (`1afb92a`)
+
+---
+
+## 2026-08-29 02:43 — Auto · 5612b99
+
+- `fix: resolve TypeScript errors in enterprise features` (`5612b99`)
+
+---
+
+## 2026-08-29 02:17 — Auto · 6027257
+
+- `docs: add enterprise features implementation guide` (`6027257`)
+
+---
+
+## 2026-08-29 02:15 — Auto · d6a91e6
+
+- `feat: enterprise collaboration features` (`d6a91e6`)
+
+---
+
+## 2026-08-29 02:15 — Auto · 68a7d5d
+
+- `feat: enterprise collaboration features` (`68a7d5d`)
+
+---
+
 ## 2026-05-07 23:50 — Auto · 6f032ce
 
 - `feat: ship growth platform updates feed and admin UX improvements` (`6f032ce`)

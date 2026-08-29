@@ -1074,6 +1074,111 @@ export const growthDiagnosisReports = pgTable("growth_diagnosis_reports", {
 export type GrowthDiagnosisReport = typeof growthDiagnosisReports.$inferSelect;
 export type InsertGrowthDiagnosisReport = typeof growthDiagnosisReports.$inferInsert;
 
+/** Queue jobs for Redis/Postgres-backed job processing */
+export const queueJobs = pgTable("queue_jobs", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  data: json("data").$type<Record<string, unknown>>().notNull(),
+  priority: integer("priority").default(0).notNull(),
+  status: text("status").default("pending").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  maxAttempts: integer("max_attempts").default(3).notNull(),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processAfter: timestamp("process_after").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  failedAt: timestamp("failed_at"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type QueueJob = typeof queueJobs.$inferSelect;
+export type InsertQueueJob = typeof queueJobs.$inferInsert;
+
+/** Real-time collaboration: user presence on documents/sheets */
+export const collaborationPresence = pgTable("collaboration_presence", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resourceType: text("resource_type").notNull(),
+  resourceId: text("resource_id").notNull(),
+  cursorPosition: json("cursor_position").$type<{ line?: number; column?: number; x?: number; y?: number } | null>(),
+  color: text("color").notNull(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+});
+
+export type CollaborationPresence = typeof collaborationPresence.$inferSelect;
+export type InsertCollaborationPresence = typeof collaborationPresence.$inferInsert;
+
+/** Real-time collaboration: markup and comments */
+export const collaborationMarkup = pgTable("collaboration_markup", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resourceType: text("resource_type").notNull(),
+  resourceId: text("resource_id").notNull(),
+  markupType: text("markup_type").notNull(),
+  content: text("content").notNull(),
+  position: json("position").$type<Record<string, unknown>>(),
+  resolved: boolean("resolved").default(false).notNull(),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CollaborationMarkup = typeof collaborationMarkup.$inferSelect;
+export type InsertCollaborationMarkup = typeof collaborationMarkup.$inferInsert;
+
+/** Enterprise controls: organization-level AI policy */
+export const enterpriseAiPolicy = pgTable("enterprise_ai_policy", {
+  id: serial("id").primaryKey(),
+  orgId: text("org_id").notNull().unique(),
+  aiEnabled: boolean("ai_enabled").default(true).notNull(),
+  allowedModels: json("allowed_models").$type<string[] | null>(),
+  rateLimitPerUser: integer("rate_limit_per_user").default(100),
+  rateLimitWindow: integer("rate_limit_window").default(3600),
+  dataRetentionDays: integer("data_retention_days").default(30),
+  auditLogEnabled: boolean("audit_log_enabled").default(true).notNull(),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type EnterpriseAiPolicy = typeof enterpriseAiPolicy.$inferSelect;
+export type InsertEnterpriseAiPolicy = typeof enterpriseAiPolicy.$inferInsert;
+
+/** Enterprise controls: AI usage audit log */
+export const enterpriseAiAuditLog = pgTable("enterprise_ai_audit_log", {
+  id: serial("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  model: text("model"),
+  tokensUsed: integer("tokens_used"),
+  success: boolean("success").notNull(),
+  errorMessage: text("error_message"),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type EnterpriseAiAuditLog = typeof enterpriseAiAuditLog.$inferSelect;
+export type InsertEnterpriseAiAuditLog = typeof enterpriseAiAuditLog.$inferInsert;
+
+/** Backup metadata for enterprise backup/restore drills */
+export const enterpriseBackups = pgTable("enterprise_backups", {
+  id: serial("id").primaryKey(),
+  backupId: text("backup_id").notNull().unique(),
+  backupType: text("backup_type").notNull(),
+  status: text("status").default("in_progress").notNull(),
+  size: integer("size"),
+  location: text("location"),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export type EnterpriseBackup = typeof enterpriseBackups.$inferSelect;
+export type InsertEnterpriseBackup = typeof enterpriseBackups.$inferInsert;
+
 export * from "./growthOsSchema";
 export * from "./growthIntelligenceSchema";
 export * from "./internalStudioSchema";
