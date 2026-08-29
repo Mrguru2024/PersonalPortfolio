@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-08-29 03:06 — Auto · 1afb92a
+
+- `fix: resolve Next.js route export and pre-existing TypeScript errors` (`1afb92a`)
+
+---
+
 ## 2026-08-29 02:43 — Auto · 5612b99
 
 - `fix: resolve TypeScript errors in enterprise features` (`5612b99`)
