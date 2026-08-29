@@ -96,6 +96,22 @@ const OPEN_ACTION_URLS: Partial<Record<AgentActionType, string>> = {
   open_blog: "/admin/blog",
   open_invoices: "/admin/invoices",
   open_chat: "/admin/chat",
+  open_scheduler: "/admin/scheduler",
+  open_scheduler_calendar: "/admin/scheduler/calendar",
+  open_scheduler_workflows: "/admin/scheduler/workflows",
+  open_how_to: "/admin/how-to",
+  open_site_directory: "/admin/site-directory",
+  open_offer_engine: "/admin/offer-engine",
+  open_agency_os: "/admin/agency-os",
+  open_paid_growth: "/admin/paid-growth",
+  open_behavior_intelligence: "/admin/behavior-intelligence",
+  open_growth_platform: "/admin/growth-platform",
+  open_content_studio: "/admin/content-studio",
+  open_brand_vault: "/admin/brand-vault",
+  open_experiments: "/admin/experiments",
+  open_communications: "/admin/communications",
+  open_email_hub: "/admin/email-hub",
+  open_market_intelligence: "/admin/market-intelligence",
 };
 
 function normalizeModelAction(

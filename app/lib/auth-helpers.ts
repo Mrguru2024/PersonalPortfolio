@@ -329,6 +329,18 @@ export async function isAdmin(req?: NextRequest): Promise<boolean> {
   return user !== null && user.isAdmin === true && user.adminApproved === true;
 }
 
+/**
+ * Approved admin session in one `getSessionUser` round-trip.
+ * Prefer this over `isAdmin(req)` + `getSessionUser(req)` in the same handler: each call hits
+ * connect-pg-simple and `storage.getUser` with short timeouts; doubling them can yield 401 on the
+ * second pass under slow DB (e.g. floating assistant POST after a successful `isAdmin` check).
+ */
+export async function getApprovedAdminSessionUser(req?: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user || user.isAdmin !== true || user.adminApproved !== true) return null;
+  return user;
+}
+
 // Check if user is developer (full backend access; only project developer)
 export async function isDeveloper(req?: NextRequest): Promise<boolean> {
   const user = await getSessionUser(req);
