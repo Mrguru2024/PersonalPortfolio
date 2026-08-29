@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatConstantToLabel } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -382,7 +383,7 @@ export default function DiscoveryWorkspacePage() {
                   <p className="text-xs font-medium text-muted-foreground mb-1">By category</p>
                   <ul className="space-y-1 text-sm">
                     {questionsData.default.slice(0, 12).map((q: { id: string; category: string; question: string }) => (
-                      <li key={q.id}><span className="text-muted-foreground">{q.category}:</span> {q.question}</li>
+                      <li key={q.id}><span className="text-muted-foreground">{formatConstantToLabel(q.category)}:</span> {q.question}</li>
                     ))}
                   </ul>
                 </div>
@@ -399,11 +400,11 @@ export default function DiscoveryWorkspacePage() {
           <CardContent className="space-y-4">
             {NOTE_SECTION_KEYS.map((key) => (
               <div key={key}>
-                <Label>{NOTE_LABELS[key] ?? key}</Label>
+                <Label>{NOTE_LABELS[key] ?? formatConstantToLabel(key)}</Label>
                 <Textarea
                   value={localNotes[key] ?? notesSections[key] ?? ""}
                   onChange={(e) => setLocalNotes((prev) => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={`${NOTE_LABELS[key] ?? key}…`}
+                  placeholder={`${NOTE_LABELS[key] ?? formatConstantToLabel(key)}…`}
                   rows={2}
                   className="mt-1"
                 />

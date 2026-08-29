@@ -48,6 +48,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { intentLevelLabel } from "@/lib/crm-intent";
 import { formatLocaleMediumDate, formatLocaleMediumDateTime } from "@/lib/localeDateTime";
 import { SocialProfileDiscoveryCard } from "@/components/crm/SocialProfileDiscoveryCard";
+import { formatConstantToLabel } from "@/lib/utils";
 import { LeadControlActionBar } from "@/components/lead-control/LeadControlActionBar";
 import { HotLeadClockBadge } from "@/components/lead-control/HotLeadClockBadge";
 
@@ -790,8 +791,8 @@ export default function CrmLeadProfilePage() {
               <div>
                 <CardTitle className="text-2xl flex items-center gap-2">
                   {contact.name}
-                  <Badge variant={contact.type === "client" ? "default" : "secondary"}>{contact.type}</Badge>
-                  {contact.status && <Badge variant="outline">{contact.status}</Badge>}
+                  <Badge variant={contact.type === "client" ? "default" : "secondary"}>{formatConstantToLabel(contact.type)}</Badge>
+                  {contact.status && <Badge variant="outline">{formatConstantToLabel(contact.status)}</Badge>}
                   {contact.intentLevel && (
                     <Badge variant="secondary">{intentLevelLabel(contact.intentLevel)}</Badge>
                   )}

@@ -10,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatLocaleDateTime } from "@/lib/localeDateTime";
+import { formatConstantToLabel } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -103,7 +104,7 @@ export default function EmailHubSentPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={m.status === "failed" ? "destructive" : "secondary"}>{m.status}</Badge>
+                <Badge variant={m.status === "failed" ? "destructive" : "secondary"}>{formatConstantToLabel(m.status)}</Badge>
                 {m.relatedContactId ?
                   <Button variant="outline" size="sm" onClick={() => setContactSheetId(m.relatedContactId!)}>
                     Contact

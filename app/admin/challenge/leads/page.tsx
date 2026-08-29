@@ -13,6 +13,7 @@ import { matchesLiveSearch } from "@/lib/matchesLiveSearch";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { formatConstantToLabel } from "@/lib/utils";
 
 interface ChallengeLead {
   id: number;
@@ -128,7 +129,7 @@ export default function AdminChallengeLeadsPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{lead.status}</Badge>
+                    <Badge variant="secondary">{formatConstantToLabel(lead.status)}</Badge>
                     {lead.orderBumpPurchased && <Badge variant="outline">Order bump</Badge>}
                     {lead.qualificationSubmitted && <Badge variant="default">Applied</Badge>}
                     {lead.readyForCall && <Badge className="bg-green-600">Ready for call</Badge>}

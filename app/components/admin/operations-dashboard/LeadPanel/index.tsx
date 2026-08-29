@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { LeadSnapshotItem } from "@/lib/operations-dashboard/types";
+import { formatConstantToLabel } from "@/lib/utils";
 
 interface LeadPanelProps {
   leads: LeadSnapshotItem[];
@@ -32,8 +33,8 @@ export function LeadPanel({ leads, onStartFollowUp, onAction, followUpPendingCon
                       <p className="text-xs text-muted-foreground">{lead.business}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{lead.source}</Badge>
-                      <Badge variant="secondary">{lead.status}</Badge>
+                      <Badge variant="outline">{formatConstantToLabel(lead.source)}</Badge>
+                      <Badge variant="secondary">{formatConstantToLabel(lead.status)}</Badge>
                     </div>
                   </div>
                   <p className="text-sm mt-2">Opportunity: {lead.opportunity}</p>

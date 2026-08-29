@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-08-29 02:17 — Auto · f4e2fbc
+
+- `Add formatConstantToLabel utility and fix raw constant displays in admin UI` (`f4e2fbc`)
+
+---
+
 ## 2026-05-07 23:50 — Auto · 6f032ce
 
 - `feat: ship growth platform updates feed and admin UX improvements` (`6f032ce`)

@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { isAuthSuperUser } from "@/lib/super-admin";
 import { AdminDevOnly } from "@/components/admin/AdminDevOnly";
-import { cn } from "@/lib/utils";
+import { cn, formatConstantToLabel } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -74,7 +74,7 @@ const METADATA_LABELS: Record<string, string> = {
 
 function formatMetadataForDisplay(meta: Record<string, unknown>): { label: string; value: string }[] {
   return Object.entries(meta).map(([key, val]) => {
-    const label = METADATA_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const label = METADATA_LABELS[key] ?? formatConstantToLabel(key);
     let value: string;
     if (val == null) value = "—";
     else if (typeof val === "string") value = val;
