@@ -4,10 +4,13 @@ import { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, ZoomIn, ZoomOut, Move } from "lucide-react";
+import { Upload, ZoomIn, ZoomOut, Move, MousePointer2, Hand } from "lucide-react";
 import { SymbolLibrary } from "./SymbolLibrary";
 import { PlacedMarker } from "./PlacedMarker";
 import type { MarkerSymbol, PlacedMarkerData } from "./types";
+import { cn } from "@/lib/utils";
+
+type Tool = "select" | "pan" | "place";
 
 interface BlueprintViewerProps {
   blueprintUrl?: string;
@@ -25,6 +28,8 @@ export function BlueprintViewer({
   );
   const [placedMarkers, setPlacedMarkers] = useState<PlacedMarkerData[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState<MarkerSymbol | null>(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+  const [activeTool, setActiveTool] = useState<Tool>("select");
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -42,23 +47,28 @@ export function BlueprintViewer({
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!selectedSymbol || !canvasRef.current) return;
+    if (isPanning) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - pan.x) / zoom;
-    const y = (e.clientY - rect.top - pan.y) / zoom;
+    if (activeTool === "place" && selectedSymbol && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left - pan.x) / zoom;
+      const y = (e.clientY - rect.top - pan.y) / zoom;
 
-    const newMarker: PlacedMarkerData = {
-      id: `marker-${Date.now()}`,
-      symbol: selectedSymbol,
-      position: { x, y },
-      rotation: 0,
-    };
+      const newMarker: PlacedMarkerData = {
+        id: `marker-${Date.now()}`,
+        symbol: selectedSymbol,
+        position: { x, y },
+        rotation: 0,
+      };
 
-    const updated = [...placedMarkers, newMarker];
-    setPlacedMarkers(updated);
-    onMarkersChange?.(updated);
-    setSelectedSymbol(null);
+      const updated = [...placedMarkers, newMarker];
+      setPlacedMarkers(updated);
+      onMarkersChange?.(updated);
+      setSelectedSymbol(null);
+      setActiveTool("select");
+    } else if (activeTool === "select") {
+      setSelectedMarkerId(null);
+    }
   };
 
   const handleMarkerUpdate = (id: string, updates: Partial<PlacedMarkerData>) => {
@@ -79,7 +89,12 @@ export function BlueprintViewer({
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.5));
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    const shouldPan =
+      activeTool === "pan" ||
+      e.button === 1 ||
+      (e.button === 0 && e.altKey);
+
+    if (shouldPan) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       e.preventDefault();
@@ -99,11 +114,51 @@ export function BlueprintViewer({
     setIsPanning(false);
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = -e.deltaY * 0.001;
+      setZoom((z) => Math.max(0.5, Math.min(3, z + delta)));
+    } else {
+      e.preventDefault();
+      setPan((prev) => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY,
+      }));
+    }
+  };
+
+  const handleSymbolSelect = (symbol: MarkerSymbol | null) => {
+    setSelectedSymbol(symbol);
+    if (symbol) {
+      setActiveTool("place");
+    } else {
+      setActiveTool("select");
+    }
+  };
+
+  const handleToolChange = (tool: Tool) => {
+    setActiveTool(tool);
+    if (tool !== "place") {
+      setSelectedSymbol(null);
+    }
+    if (tool !== "select") {
+      setSelectedMarkerId(null);
+    }
+  };
+
+  const getCursor = () => {
+    if (isPanning) return "grabbing";
+    if (activeTool === "pan") return "grab";
+    if (activeTool === "place" && selectedSymbol) return "crosshair";
+    return "default";
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 h-[calc(100vh-200px)]">
       <SymbolLibrary
         selectedSymbol={selectedSymbol}
-        onSymbolSelect={setSelectedSymbol}
+        onSymbolSelect={handleSymbolSelect}
       />
 
       <Card className="flex flex-col">
@@ -139,8 +194,38 @@ export function BlueprintViewer({
               </Button>
             </div>
           </div>
-          {selectedSymbol && (
-            <p className="text-sm text-muted-foreground">
+
+          {blueprintUrl && (
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant={activeTool === "select" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleToolChange("select")}
+                className={cn(
+                  "flex items-center gap-2",
+                  activeTool === "select" && "ring-2 ring-offset-2"
+                )}
+              >
+                <MousePointer2 className="h-4 w-4" />
+                Select
+              </Button>
+              <Button
+                variant={activeTool === "pan" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleToolChange("pan")}
+                className={cn(
+                  "flex items-center gap-2",
+                  activeTool === "pan" && "ring-2 ring-offset-2"
+                )}
+              >
+                <Hand className="h-4 w-4" />
+                Grab
+              </Button>
+            </div>
+          )}
+
+          {activeTool === "place" && selectedSymbol && (
+            <p className="text-sm text-muted-foreground mt-2">
               Click on the blueprint to place: <strong>{selectedSymbol.name}</strong>
             </p>
           )}
@@ -161,14 +246,15 @@ export function BlueprintViewer({
           ) : (
             <div
               ref={canvasRef}
-              className="w-full h-full relative bg-slate-100 dark:bg-slate-900 cursor-crosshair"
+              className="w-full h-full relative bg-slate-100 dark:bg-slate-900"
               onClick={handleCanvasClick}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
               style={{
-                cursor: isPanning ? "grabbing" : selectedSymbol ? "crosshair" : "default",
+                cursor: getCursor(),
               }}
             >
               <div
@@ -190,6 +276,7 @@ export function BlueprintViewer({
                     key={marker.id}
                     marker={marker}
                     zoom={zoom}
+                    isInteractive={activeTool === "select"}
                     onUpdate={(updates) => handleMarkerUpdate(marker.id, updates)}
                     onDelete={() => handleMarkerDelete(marker.id)}
                   />
