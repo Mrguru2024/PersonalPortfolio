@@ -64,6 +64,17 @@ export default function AdminGrowthPlatformPage() {
     }
   }, [authLoading, user, router]);
 
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["/api/admin/growth-platform/catalog", previewPersona ?? ""],
+    queryFn: async () => {
+      const q = previewPersona ? `?persona=${encodeURIComponent(previewPersona)}` : "";
+      const res = await fetch(`/api/admin/growth-platform/catalog${q}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load catalog");
+      return res.json() as Promise<CatalogResponse>;
+    },
+    enabled: !!user?.isAdmin && !!user?.adminApproved,
+  });
+
   /** If segment was chosen before persona rows loaded, hydrate the form once data is available. */
   useEffect(() => {
     if (showTechnical || !previewPersona || !data?.personaPricing?.length || pKey) return;
@@ -75,17 +86,6 @@ export default function AdminGrowthPlatformPage() {
     setPDfyM(String(row.dfyMonthlyMultiplier));
     setPDwy(String(row.dwyProgramMultiplier));
   }, [showTechnical, previewPersona, data?.personaPricing, pKey]);
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["/api/admin/growth-platform/catalog", previewPersona ?? ""],
-    queryFn: async () => {
-      const q = previewPersona ? `?persona=${encodeURIComponent(previewPersona)}` : "";
-      const res = await fetch(`/api/admin/growth-platform/catalog${q}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load catalog");
-      return res.json() as Promise<CatalogResponse>;
-    },
-    enabled: !!user?.isAdmin && !!user?.adminApproved,
-  });
 
   const handleTechnicalPreviewChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setPreviewPersona(e.target.value ? e.target.value : null);

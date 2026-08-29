@@ -8,6 +8,12 @@ Log of features and fixes shipped to production. Edit this file when you ship an
 
 ---
 
+## 2026-08-29 02:43 — Auto · 5612b99
+
+- `fix: resolve TypeScript errors in enterprise features` (`5612b99`)
+
+---
+
 ## 2026-08-29 02:17 — Auto · 6027257
 
 - `docs: add enterprise features implementation guide` (`6027257`)
