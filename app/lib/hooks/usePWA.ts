@@ -38,8 +38,9 @@ export function usePWA() {
 
     const handleOnline = () => {
       setIsOnline(true);
-      if (registration) {
-        registration.sync.register('sync-project-updates').catch(() => {});
+      // Background sync is experimental - only use if supported
+      if (registration && 'sync' in registration) {
+        (registration as any).sync.register('sync-project-updates').catch(() => {});
       }
     };
 

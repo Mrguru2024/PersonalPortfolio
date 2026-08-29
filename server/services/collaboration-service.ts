@@ -112,10 +112,11 @@ class CollaborationService {
         },
       });
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, update.userId),
-      columns: { username: true },
-    });
+    const userResult = await db.select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, update.userId))
+      .limit(1);
+    const user = userResult[0];
 
     this.broadcast(resourceKey, {
       type: 'presence',
@@ -159,18 +160,16 @@ class CollaborationService {
   async getPresence(resourceType: string, resourceId: string): Promise<PresenceUpdate[]> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    const presence = await db.query.collaborationPresence.findMany({
-      where: and(
-        eq(collaborationPresence.resourceType, resourceType),
-        eq(collaborationPresence.resourceId, resourceId),
-        gt(collaborationPresence.lastSeenAt, fiveMinutesAgo)
-      ),
-      with: {
-        user: {
-          columns: { username: true },
-        },
-      },
-    });
+    const presence = await db
+      .select()
+      .from(collaborationPresence)
+      .where(
+        and(
+          eq(collaborationPresence.resourceType, resourceType),
+          eq(collaborationPresence.resourceId, resourceId),
+          gt(collaborationPresence.lastSeenAt, fiveMinutesAgo)
+        )
+      );
 
     return presence.map((p) => ({
       userId: p.userId,
@@ -199,10 +198,11 @@ class CollaborationService {
       .returning({ id: collaborationMarkup.id });
 
     const resourceKey = `${markup.resourceType}:${markup.resourceId}`;
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, markup.userId),
-      columns: { username: true },
-    });
+    const userResult = await db.select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, markup.userId))
+      .limit(1);
+    const user = userResult[0];
 
     this.broadcast(resourceKey, {
       type: 'markup',
@@ -221,10 +221,13 @@ class CollaborationService {
    * Resolve a markup/comment
    */
   async resolveMarkup(markupId: number, userId: number): Promise<void> {
-    const markup = await db.query.collaborationMarkup.findFirst({
-      where: eq(collaborationMarkup.id, markupId),
-    });
+    const markupResult = await db
+      .select()
+      .from(collaborationMarkup)
+      .where(eq(collaborationMarkup.id, markupId))
+      .limit(1);
 
+    const markup = markupResult[0];
     if (!markup) return;
 
     await db
@@ -251,7 +254,7 @@ class CollaborationService {
    * Get all markup for a resource
    */
   async getMarkup(resourceType: string, resourceId: string, includeResolved = false): Promise<any[]> {
-    const where = includeResolved
+    const whereClause = includeResolved
       ? and(
           eq(collaborationMarkup.resourceType, resourceType),
           eq(collaborationMarkup.resourceId, resourceId)
@@ -262,15 +265,11 @@ class CollaborationService {
           eq(collaborationMarkup.resolved, false)
         );
 
-    return await db.query.collaborationMarkup.findMany({
-      where,
-      with: {
-        user: {
-          columns: { username: true, full_name: true },
-        },
-      },
-      orderBy: (markup, { desc }) => [desc(markup.createdAt)],
-    });
+    return await db
+      .select()
+      .from(collaborationMarkup)
+      .where(whereClause)
+      .orderBy(sql`${collaborationMarkup.createdAt} DESC`);
   }
 
   /**

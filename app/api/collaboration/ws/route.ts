@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { WebSocketServer, WebSocket } from 'ws';
-import { collaborationService } from '@/server/services/collaboration-service';
+import { collaborationService } from '../../../../server/services/collaboration-service';
 
 let wss: WebSocketServer | null = null;
 

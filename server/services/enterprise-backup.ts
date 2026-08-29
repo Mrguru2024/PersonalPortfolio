@@ -4,7 +4,7 @@
  */
 
 import { db } from '../db';
-import { enterpriseBackups } from '../../shared/schema';
+import { enterpriseBackups as enterpriseBackupsTable } from '../../shared/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -44,7 +44,7 @@ class EnterpriseBackupService {
     const fullPath = path.join(this.backupDir, filename);
 
     const [backup] = await db
-      .insert(enterpriseBackups)
+      .insert(enterpriseBackupsTable)
       .values({
         backupId,
         backupType: options.backupType,
@@ -90,19 +90,19 @@ class EnterpriseBackupService {
       const stats = await fs.stat(fullPath);
 
       await db
-        .update(enterpriseBackups)
+        .update(enterpriseBackupsTable)
         .set({
           status: 'completed',
           size: stats.size,
           completedAt: new Date(),
         })
-        .where(eq(enterpriseBackups.backupId, backupId));
+        .where(eq(enterpriseBackupsTable.backupId, backupId));
 
       console.log(`✓ Backup created: ${backupId} (${stats.size} bytes)`);
       return backupId;
     } catch (error) {
       await db
-        .update(enterpriseBackups)
+        .update(enterpriseBackupsTable)
         .set({
           status: 'failed',
           metadata: {
@@ -110,7 +110,7 @@ class EnterpriseBackupService {
             error: error instanceof Error ? error.message : String(error),
           },
         })
-        .where(eq(enterpriseBackups.backupId, backupId));
+        .where(eq(enterpriseBackupsTable.backupId, backupId));
 
       throw error;
     }
@@ -120,9 +120,13 @@ class EnterpriseBackupService {
    * Restore from a backup
    */
   async restoreBackup(options: RestoreOptions): Promise<void> {
-    const backup = await db.query.enterpriseBackups.findFirst({
-      where: eq(enterpriseBackups.backupId, options.backupId),
-    });
+    const backupResult = await db
+      .select()
+      .from(enterpriseBackupsTable)
+      .where(eq(enterpriseBackupsTable.backupId, options.backupId))
+      .limit(1);
+
+    const backup = backupResult[0];
 
     if (!backup || !backup.location) {
       throw new Error(`Backup ${options.backupId} not found`);
@@ -228,10 +232,11 @@ class EnterpriseBackupService {
    * List all backups
    */
   async listBackups(limit = 50): Promise<any[]> {
-    return await db.query.enterpriseBackups.findMany({
-      orderBy: [desc(enterpriseBackups.createdAt)],
-      limit,
-    });
+    return await db
+      .select()
+      .from(enterpriseBackupsTable)
+      .orderBy(sql`${enterpriseBackupsTable.createdAt} DESC`)
+      .limit(limit);
   }
 
   /**
@@ -240,9 +245,10 @@ class EnterpriseBackupService {
   async cleanupOldBackups(retentionDays = 30): Promise<number> {
     const cutoffDate = new Date(Date.now() - retentionDays * 86400000);
 
-    const oldBackups = await db.query.enterpriseBackups.findMany({
-      where: sql`${enterpriseBackups.createdAt} < ${cutoffDate}`,
-    });
+    const oldBackups = await db
+      .select()
+      .from(enterpriseBackupsTable)
+      .where(sql`${enterpriseBackupsTable.createdAt} < ${cutoffDate}`);
 
     for (const backup of oldBackups) {
       if (backup.location) {
@@ -255,8 +261,8 @@ class EnterpriseBackupService {
     }
 
     const result = await db
-      .delete(enterpriseBackups)
-      .where(sql`${enterpriseBackups.createdAt} < ${cutoffDate}`);
+      .delete(enterpriseBackupsTable)
+      .where(sql`${enterpriseBackupsTable.createdAt} < ${cutoffDate}`);
 
     return result.rowCount || 0;
   }

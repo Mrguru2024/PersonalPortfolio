@@ -53,7 +53,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
   async dequeue(types?: string[]): Promise<QueueJob | null> {
     const typeFilter = types ? sql`AND type = ANY(${types})` : sql``;
 
-    const result = await db.execute<QueueJob>(sql`
+    const result = await db.execute<{ id: string; type: string; data: string; priority: number; attempts: number; maxAttempts: number; createdAt: string; processAfter: string; completedAt: string | null; failedAt: string | null; error: string | null }>(sql`
       UPDATE queue_jobs
       SET status = 'processing', attempts = attempts + 1, updated_at = NOW()
       WHERE id = (
@@ -91,6 +91,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
       processAfter: row.processAfter ? new Date(row.processAfter) : undefined,
       completedAt: row.completedAt ? new Date(row.completedAt) : undefined,
       failedAt: row.failedAt ? new Date(row.failedAt) : undefined,
+      error: row.error || undefined,
     };
   }
 
@@ -128,7 +129,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
   }
 
   async getJob(jobId: string): Promise<QueueJob | null> {
-    const result = await db.execute<QueueJob>(sql`
+    const result = await db.execute<{ id: string; type: string; data: string; priority: number; attempts: number; maxAttempts: number; createdAt: string; processAfter: string; completedAt: string | null; failedAt: string | null; error: string | null }>(sql`
       SELECT
         id,
         type,
@@ -157,6 +158,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
       processAfter: row.processAfter ? new Date(row.processAfter) : undefined,
       completedAt: row.completedAt ? new Date(row.completedAt) : undefined,
       failedAt: row.failedAt ? new Date(row.failedAt) : undefined,
+      error: row.error || undefined,
     };
   }
 
@@ -173,7 +175,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
   }
 
   async getFailedJobs(limit: number = 10): Promise<QueueJob[]> {
-    const result = await db.execute<QueueJob>(sql`
+    const result = await db.execute<{ id: string; type: string; data: string; priority: number; attempts: number; maxAttempts: number; createdAt: string; processAfter: string; completedAt: string | null; failedAt: string | null; error: string | null }>(sql`
       SELECT
         id,
         type,
@@ -199,6 +201,7 @@ export class PostgresQueueAdapter implements QueueAdapter {
       processAfter: row.processAfter ? new Date(row.processAfter) : undefined,
       completedAt: row.completedAt ? new Date(row.completedAt) : undefined,
       failedAt: row.failedAt ? new Date(row.failedAt) : undefined,
+      error: row.error || undefined,
     }));
   }
 

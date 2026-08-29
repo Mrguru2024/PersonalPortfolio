@@ -4,7 +4,7 @@
  */
 
 import { db } from '../db';
-import { enterpriseAiPolicy, enterpriseAiAuditLog } from '../../shared/schema';
+import { enterpriseAiPolicy as enterpriseAiPolicyTable, enterpriseAiAuditLog } from '../../shared/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -43,13 +43,17 @@ class EnterpriseAiPolicyService {
    * Get or create AI policy for an organization
    */
   async getPolicy(orgId: string): Promise<AiPolicyConfig> {
-    const policy = await db.query.enterpriseAiPolicy.findFirst({
-      where: eq(enterpriseAiPolicy.orgId, orgId),
-    });
+    const policyResult = await db
+      .select()
+      .from(enterpriseAiPolicyTable)
+      .where(eq(enterpriseAiPolicyTable.orgId, orgId))
+      .limit(1);
+
+    const policy = policyResult[0];
 
     if (!policy) {
-      const [newPolicy] = await db
-        .insert(enterpriseAiPolicy)
+      const newPolicyResult = await db
+        .insert(enterpriseAiPolicyTable)
         .values({
           orgId,
           aiEnabled: true,
@@ -59,6 +63,8 @@ class EnterpriseAiPolicyService {
           auditLogEnabled: true,
         })
         .returning();
+
+      const newPolicy = newPolicyResult[0];
 
       return {
         aiEnabled: newPolicy.aiEnabled,
@@ -85,14 +91,14 @@ class EnterpriseAiPolicyService {
    */
   async updatePolicy(orgId: string, config: Partial<AiPolicyConfig>): Promise<void> {
     await db
-      .insert(enterpriseAiPolicy)
+      .insert(enterpriseAiPolicyTable)
       .values({
         orgId,
         ...config,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: enterpriseAiPolicy.orgId,
+        target: enterpriseAiPolicyTable.orgId,
         set: {
           ...config,
           updatedAt: new Date(),
@@ -182,7 +188,7 @@ class EnterpriseAiPolicyService {
     byModel: Record<string, number>;
     byUser: Record<string, number>;
   }> {
-    const where = startDate && endDate
+    const whereClause = startDate && endDate
       ? and(
           eq(enterpriseAiAuditLog.orgId, orgId),
           gte(enterpriseAiAuditLog.createdAt, startDate),
@@ -190,15 +196,16 @@ class EnterpriseAiPolicyService {
         )
       : eq(enterpriseAiAuditLog.orgId, orgId);
 
-    const logs = await db.query.enterpriseAiAuditLog.findMany({
-      where,
-    });
+    const logs = await db
+      .select()
+      .from(enterpriseAiAuditLog)
+      .where(whereClause);
 
     const stats = {
       totalRequests: logs.length,
-      successfulRequests: logs.filter((l) => l.success).length,
-      failedRequests: logs.filter((l) => !l.success).length,
-      totalTokens: logs.reduce((sum, l) => sum + (l.tokensUsed || 0), 0),
+      successfulRequests: logs.filter((l: any) => l.success).length,
+      failedRequests: logs.filter((l: any) => !l.success).length,
+      totalTokens: logs.reduce((sum: number, l: any) => sum + (l.tokensUsed || 0), 0),
       byModel: {} as Record<string, number>,
       byUser: {} as Record<string, number>,
     };
@@ -208,7 +215,7 @@ class EnterpriseAiPolicyService {
         stats.byModel[log.model] = (stats.byModel[log.model] || 0) + 1;
       }
       if (log.userId) {
-        stats.byUser[log.userId] = (stats.byUser[log.userId] || 0) + 1;
+        stats.byUser[String(log.userId)] = (stats.byUser[String(log.userId)] || 0) + 1;
       }
     }
 
@@ -255,4 +262,4 @@ class EnterpriseAiPolicyService {
   }
 }
 
-export const enterpriseAiPolicy = new EnterpriseAiPolicyService();
+export const enterpriseAiPolicyService = new EnterpriseAiPolicyService();
