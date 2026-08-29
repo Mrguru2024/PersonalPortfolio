@@ -1,184 +1,231 @@
-// PWA service worker: push notifications + offline caching for installed app use
-const CACHE_VERSION = 'v4';
-const STATIC_CACHE = `static-${CACHE_VERSION}`;
-const PAGES_CACHE = `pages-${CACHE_VERSION}`;
+/**
+ * Service Worker for Progressive Web App
+ * Caches shell, static assets, and selective project data for offline use
+ */
 
-const OFFLINE_PATH = '/offline.html';
+const CACHE_VERSION = 'v1.0.0';
+const SHELL_CACHE = `shell-${CACHE_VERSION}`;
+const DATA_CACHE = `data-${CACHE_VERSION}`;
+const ASSET_CACHE = `assets-${CACHE_VERSION}`;
+
+const SHELL_FILES = [
+  '/',
+  '/manifest.json',
+  '/favicon.svg',
+  '/offline',
+];
+
+const CACHE_STRATEGIES = {
+  shell: 'cache-first',
+  api: 'network-first',
+  assets: 'cache-first',
+  images: 'cache-first',
+};
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    (async () => {
-      try {
-        const cache = await caches.open(STATIC_CACHE);
-        await cache.add(new Request(OFFLINE_PATH, { cache: 'reload' }));
-      } catch (_) {
-        /* offline page may fail in dev; continue */
-      }
-    })()
+    caches.open(SHELL_CACHE).then((cache) => {
+      console.log('[SW] Caching shell files');
+      return cache.addAll(SHELL_FILES);
+    })
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    (async () => {
-      try {
-        if (self.registration.navigationPreload) {
-          await self.registration.navigationPreload.disable();
-        }
-      } catch (_) {
-        /* ignore */
-      }
-      const keys = await caches.keys();
-      await Promise.all(
-        keys
-          .filter((k) => (k.startsWith('static-') || k.startsWith('pages-')) && k !== STATIC_CACHE && k !== PAGES_CACHE)
-          .map((k) => caches.delete(k))
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => {
+            return name.startsWith('shell-') || name.startsWith('data-') || name.startsWith('assets-');
+          })
+          .filter((name) => {
+            return name !== SHELL_CACHE && name !== DATA_CACHE && name !== ASSET_CACHE;
+          })
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
-      await self.clients.claim();
-    })()
-  );
-});
-
-self.addEventListener('push', (event) => {
-  if (!event.data) return;
-  let data = { title: 'Notification', body: '' };
-  try {
-    data = event.data.json();
-  } catch {
-    data.body = event.data.text();
-  }
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Notification', {
-      body: data.body,
-      icon: data.icon || '/favicon.ico',
-      tag: data.tag || 'default',
-      requireInteraction: !!data.requireInteraction,
-      data: data.data || {},
     })
   );
+  self.clients.claim();
 });
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = event.notification.data?.url || '/admin/chat';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes('/admin') && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
-  );
-});
-
-function isSameOrigin(url) {
-  try {
-    return new URL(url).origin === self.location.origin;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * HTML navigations we cache for offline replay (network-first).
- * Includes marketing start URL + common app hubs so “Add to Home Screen” stays useful offline.
- */
-function usesOfflineDocumentCache(url) {
-  try {
-    const path = new URL(url).pathname;
-    if (path.startsWith('/admin')) return true;
-    if (path === '/auth' || path === '/login' || path.startsWith('/auth/')) return true;
-    if (path === '/') return true;
-    if (path.startsWith('/dashboard')) return true;
-    if (path.startsWith('/portal')) return true;
-    if (path.startsWith('/blog')) return true;
-    if (path === '/free-growth-tools' || path.startsWith('/free-growth-tools/')) return true;
-    if (path === '/contact' || path.startsWith('/contact/')) return true;
-    if (path === '/strategy-call' || path.startsWith('/strategy-call/')) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function isStaticAsset(url) {
-  try {
-    const path = new URL(url).pathname;
-    return (
-      path.startsWith('/_next/static/') ||
-      path.startsWith('/favicon') ||
-      path === '/manifest.json' ||
-      path === OFFLINE_PATH ||
-      path.endsWith('.svg') ||
-      path.endsWith('.ico')
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function offlineFallbackResponse() {
-  const cached = await caches.match(OFFLINE_PATH);
-  if (cached) return cached;
-  return new Response(
-    '<!DOCTYPE html><html><body><p>Offline</p><script>location.reload()</script></body></html>',
-    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-  );
-}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || !isSameOrigin(request.url)) return;
+  const url = new URL(request.url);
 
-  if (isStaticAsset(request.url)) {
-    event.respondWith(
-      caches.open(STATIC_CACHE).then((cache) =>
-        cache.match(request).then((cached) => cached || fetch(request).then((res) => {
-          if (res.ok) cache.put(request, res.clone());
-          return res;
-        }))
-      )
-    );
+  if (request.method !== 'GET') {
     return;
   }
 
-  if (usesOfflineDocumentCache(request.url)) {
-    event.respondWith(
-      (async () => {
-        let res;
-        if (request.mode === 'navigate') {
-          try {
-            const preloaded = await event.preloadResponse;
-            if (preloaded && preloaded.ok) {
-              res = preloaded;
-            }
-          } catch (_) {
-            /* ignore */
-          }
-        }
-        try {
-          if (!res) {
-            res = await fetch(request);
-          }
-          const clone = res.clone();
-          if (res.ok && res.type === 'basic') {
-            caches.open(PAGES_CACHE).then((cache) => cache.put(request, clone));
-          }
-          return res;
-        } catch (_) {
-          const cached = await caches.open(PAGES_CACHE).then((cache) => cache.match(request));
-          if (cached) return cached;
-          if (request.mode === 'navigate') {
-            return offlineFallbackResponse();
-          }
-          return new Response('Offline', { status: 503, statusText: 'Offline' });
-        }
-      })()
-    );
+  if (url.origin !== location.origin) {
     return;
+  }
+
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(handleApiRequest(request));
+    return;
+  }
+
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/i)) {
+    event.respondWith(handleAssetRequest(request, ASSET_CACHE));
+    return;
+  }
+
+  if (url.pathname.match(/\.(css|js|woff|woff2|ttf|eot)$/i)) {
+    event.respondWith(handleAssetRequest(request, ASSET_CACHE));
+    return;
+  }
+
+  event.respondWith(handleNavigationRequest(request));
+});
+
+async function handleApiRequest(request) {
+  const url = new URL(request.url);
+
+  if (url.pathname.startsWith('/api/projects/') || 
+      url.pathname.startsWith('/api/client/') ||
+      url.pathname.startsWith('/api/portfolio/')) {
+    try {
+      const networkResponse = await fetch(request);
+      
+      if (networkResponse.ok) {
+        const cache = await caches.open(DATA_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+
+      return networkResponse;
+    } catch (error) {
+      console.log('[SW] Network failed, trying cache for:', request.url);
+      const cachedResponse = await caches.match(request);
+      
+      if (cachedResponse) {
+        return new Response(cachedResponse.body, {
+          ...cachedResponse,
+          headers: new Headers({
+            ...Object.fromEntries(cachedResponse.headers),
+            'X-Offline-Response': 'true',
+          }),
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: 'Offline and no cached data available',
+          offline: true,
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+
+  return fetch(request);
+}
+
+async function handleAssetRequest(request, cacheName) {
+  const cachedResponse = await caches.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Failed to fetch asset:', request.url);
+    return new Response('', { status: 404 });
+  }
+}
+
+async function handleNavigationRequest(request) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      const cache = await caches.open(SHELL_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Navigation offline, serving from cache');
+    const cachedResponse = await caches.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    const offlinePage = await caches.match('/offline');
+    return offlinePage || new Response('Offline', { status: 503 });
+  }
+}
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'CACHE_PROJECT_DATA') {
+    const { projectId, data } = event.data;
+    caches.open(DATA_CACHE).then((cache) => {
+      const request = new Request(`/api/projects/${projectId}`);
+      const response = new Response(JSON.stringify(data), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      cache.put(request, response);
+    });
+  }
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== SHELL_CACHE) {
+            return caches.delete(name);
+          }
+        })
+      );
+    });
   }
 });
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-project-updates') {
+    event.waitUntil(syncProjectUpdates());
+  }
+});
+
+async function syncProjectUpdates() {
+  try {
+    const cache = await caches.open(DATA_CACHE);
+    const requests = await cache.keys();
+    
+    for (const request of requests) {
+      if (request.url.includes('/api/projects/')) {
+        try {
+          const response = await fetch(request);
+          if (response.ok) {
+            await cache.put(request, response);
+          }
+        } catch (error) {
+          console.log('[SW] Failed to sync:', request.url);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[SW] Sync failed:', error);
+  }
+}
