@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth-helpers";
 import { storage } from "@server/storage";
 import { getAfnCommunitySnapshotByEmail } from "@server/afnStorage";
-import { insertCrmContactSchema, type InsertCrmContact } from "@shared/crmSchema";
+import { insertCrmContactSchema, type InsertCrmContact, type CrmContact } from "@shared/crmSchema";
 import {
   getLatestAeeAttributionForContact,
   recordAeeCrmAttributionEvent,
@@ -11,6 +11,42 @@ import {
 const crmContactPatchSchema = insertCrmContactSchema.partial();
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Normalize CRM contact to ensure all array fields are initialized.
+ * Prevents "X is not a function" errors when UI tries to map over null/undefined arrays.
+ */
+function normalizeCrmContact(contact: CrmContact): CrmContact {
+  return {
+    ...contact,
+    tags: Array.isArray(contact.tags) ? contact.tags : [],
+    customFields: contact.customFields && typeof contact.customFields === "object" ? 
+      normalizeCustomFields(contact.customFields as Record<string, unknown>) : 
+      {},
+  };
+}
+
+/**
+ * Recursively normalize customFields to ensure nested arrays are initialized.
+ */
+function normalizeCustomFields(fields: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === null || value === undefined) {
+      // Check if the key suggests it should be an array
+      if (key.endsWith('s') || key.includes('list') || key.includes('items') || key.includes('data') || key.includes('attachments')) {
+        normalized[key] = [];
+      } else {
+        normalized[key] = value;
+      }
+    } else if (typeof value === 'object' && !Array.isArray(value)) {
+      normalized[key] = normalizeCustomFields(value as Record<string, unknown>);
+    } else {
+      normalized[key] = value;
+    }
+  }
+  return normalized;
+}
 
 export async function GET(
   req: NextRequest,
@@ -24,7 +60,8 @@ export async function GET(
     const contact = await storage.getCrmContactById(id);
     if (!contact) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const afnCommunity = await getAfnCommunitySnapshotByEmail(contact.email);
-    return NextResponse.json({ ...contact, afnCommunity });
+    const normalized = normalizeCrmContact(contact);
+    return NextResponse.json({ ...normalized, afnCommunity });
   } catch (error: any) {
     console.error("Error fetching CRM contact:", error);
     return NextResponse.json({ error: "Failed to fetch CRM contact" }, { status: 500 });
@@ -70,7 +107,8 @@ export async function PATCH(
         }).catch(() => {});
       }
     }
-    return NextResponse.json(contact);
+    const normalized = normalizeCrmContact(contact);
+    return NextResponse.json(normalized);
   } catch (error: any) {
     console.error("Error updating CRM contact:", error);
     return NextResponse.json({ error: "Failed to update CRM contact" }, { status: 500 });
