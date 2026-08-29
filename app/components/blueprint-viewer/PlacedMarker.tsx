@@ -10,6 +10,7 @@ import type { PlacedMarkerData } from "./types";
 interface PlacedMarkerProps {
   marker: PlacedMarkerData;
   zoom: number;
+  isInteractive: boolean;
   onUpdate: (updates: Partial<PlacedMarkerData>) => void;
   onDelete: () => void;
 }
@@ -17,6 +18,7 @@ interface PlacedMarkerProps {
 export function PlacedMarker({
   marker,
   zoom,
+  isInteractive,
   onUpdate,
   onDelete,
 }: PlacedMarkerProps) {
@@ -47,12 +49,14 @@ export function PlacedMarker({
   }, [isSelected]);
 
   const handleClick = (e: React.MouseEvent) => {
+    if (!isInteractive) return;
     e.stopPropagation();
     setIsSelected(true);
     setShowPopup(true);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isInteractive) return;
     if (e.button === 0 && !e.shiftKey) {
       e.stopPropagation();
       setIsDragging(true);
@@ -64,15 +68,14 @@ export function PlacedMarker({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.stopPropagation();
-      onUpdate({
-        position: {
-          x: e.clientX / zoom - dragStart.x,
-          y: e.clientY / zoom - dragStart.y,
-        },
-      });
-    }
+    if (!isInteractive || !isDragging) return;
+    e.stopPropagation();
+    onUpdate({
+      position: {
+        x: e.clientX / zoom - dragStart.x,
+        y: e.clientY / zoom - dragStart.y,
+      },
+    });
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
@@ -99,7 +102,8 @@ export function PlacedMarker({
         ref={markerRef}
         className={cn(
           "absolute select-none group",
-          isDragging ? "cursor-grabbing" : "cursor-grab"
+          isInteractive && (isDragging ? "cursor-grabbing" : "cursor-grab"),
+          !isInteractive && "pointer-events-none opacity-70"
         )}
         style={{
           left: marker.position.x,
@@ -114,7 +118,7 @@ export function PlacedMarker({
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0 }}
-        whileHover={{ scale: 1.05 }}
+        whileHover={isInteractive ? { scale: 1.05 } : {}}
       >
         <div
           className={cn(
