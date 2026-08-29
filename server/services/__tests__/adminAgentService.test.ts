@@ -1,5 +1,22 @@
 import { describeAgentActionForUser, isKnownSitePath, processAgentMessage } from "../adminAgentService";
 
+describe("processAgentMessage resilience", () => {
+  it("returns fallback help when context cache build throws", async () => {
+    const mockCwd = jest.spyOn(process, "cwd").mockImplementation(() => "/non-existent-admin-agent-root");
+    try {
+      const r = await processAgentMessage({
+        message: "where should I start",
+        canPerformActions: false,
+        openaiAvailable: false,
+      });
+      expect(r.action).toBeUndefined();
+      expect(r.reply).toMatch(/site directory|how-to/i);
+    } finally {
+      mockCwd.mockRestore();
+    }
+  });
+});
+
 describe("isKnownSitePath", () => {
   it("accepts static admin routes from the site directory", () => {
     expect(isKnownSitePath("/admin/analytics")).toBe(true);
